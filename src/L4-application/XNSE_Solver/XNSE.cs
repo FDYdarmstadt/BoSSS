@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;    // need to change naming convention of old XNSE_Solver
 
             LevelSetUpdater lsUpdater;
-            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.Interface, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.FluidInterface, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
             switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier: {
                     if (Control.EnforceLevelSetConservation) {
@@ -65,33 +65,33 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                     FourrierLevelSet fourrierLevelSet = new FourrierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.Interface);
-                    lsUpdater.AddLevelSetParameter(VariableNames.Interface, levelSetVelocity);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.FluidInterface);
+                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.FastMarching: {
                     LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     levelSetDG.ProjectField(Control.InitialValues_Evaluators["Phi"]); 
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.Interface);
-                    var fastMarcher = new FastMarchingEvolver(VariableNames.Interface, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
-                    lsUpdater.AddEvolver(VariableNames.Interface, fastMarcher);
-                    lsUpdater.AddLevelSetParameter(VariableNames.Interface, levelSetVelocity);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.FluidInterface);
+                    var fastMarcher = new FastMarchingEvolver(VariableNames.FluidInterface, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
+                    lsUpdater.AddEvolver(VariableNames.FluidInterface, fastMarcher);
+                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.SplineLS: {
                     int nodeCount = 30;
                     Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                     SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.Interface);
-                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.Interface, (GridData)SplineLevelSet.GridDat);
-                    lsUpdater.AddEvolver(VariableNames.Interface, SplineEvolver);
-                    lsUpdater.AddLevelSetParameter(VariableNames.Interface, levelSetVelocity);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.FluidInterface);
+                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.FluidInterface, (GridData)SplineLevelSet.GridDat);
+                    lsUpdater.AddEvolver(VariableNames.FluidInterface, SplineEvolver);
+                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.None: {
                     LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.Interface);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.FluidInterface);
                     break;
                 }
                 default:
@@ -185,21 +185,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
             }
 
-            lsUpdater.AddLevelSetParameter(VariableNames.Interface, v0Mean);
-            lsUpdater.AddLevelSetParameter(VariableNames.Interface, normalsParameter);
+            lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, v0Mean);
+            lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, normalsParameter);
             switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
                 MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                 opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.Interface, maxSigmaParameter);
+                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, maxSigmaParameter);
                 BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.Interface, lsBGradient);
+                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsBGradient);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
                 BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.Interface, lsGradient);
+                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsGradient);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
@@ -208,7 +208,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 BeltramiGradientAndCurvature lsGradientAndCurvature =
                     FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
                 opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter(VariableNames.Interface, lsGradientAndCurvature);
+                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsGradientAndCurvature);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
@@ -217,8 +217,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     ls,
                     Control.FourierLevSetControl,
                     Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.Interface, fourrier);
-                lsUpdater.AddEvolver(VariableNames.Interface, fourrier);
+                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, fourrier);
+                lsUpdater.AddEvolver(VariableNames.FluidInterface, fourrier);
                 opFactory.AddParameter(fourrier);
                 break;
 
@@ -234,7 +234,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 plotFields = ArrayTools.Cat(plotFields, Timestepping.Parameters);
             }
             if (LsUpdater?.Parameters != null) {
-                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.Interface].DGLevelSet);
+                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet);
             }
 
             Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
@@ -243,8 +243,9 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
+            Console.WriteLine($"Starting time step {TimestepNo}, dt={dt}");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with timestep {TimestepNo}");
+            Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
     }

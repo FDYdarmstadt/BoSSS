@@ -101,7 +101,7 @@ typeof(CNS.Program).Assembly.Location;
 /// \item advection velocity of the vortex (here: 1.0)
 /// \end{itemize}
 int noOfCellsPerDirection = 20;       \newline 
-var c = ControlExamples.IsentropicVortex(myDatabase.Path,      \newline 
+var c = ControlExamples_Subsonic.IsentropicVortex(myDatabase.Path,      \newline 
 \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab  noOfCellsPerDirection,2,1.0);\newline 
 c.savetodb = true;       \newline 
 /// Now, we have a set of input data stored in our variable \verb|c| and we 
@@ -164,7 +164,7 @@ c.ExplicitOrder;\newline
  }
 \BoSSSexe
 \BoSSScmd{
-/// These are all predefined input values, which were set by calling \verb|ControlExamples.IsentropicVortex(...)|.
+/// These are all predefined input values, which were set by calling \verb|ControlExamples_Subsonic.IsentropicVortex(...)|.
 /// Since we are in the interactiv mode, we can change them directly in the \code{BoSSSPad}.
 /// For example, we can reduce the order of our timestepping scheme to 3, 
 /// because we only use DG order 2:

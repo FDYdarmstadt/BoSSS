@@ -350,7 +350,7 @@ namespace BoSSS.Application.SipPoisson {
 
 
         /// <summary>
-        /// Test on a Cartesian grid, with a sinusodial solution.
+        /// 2D and 3D test on a Cartesian grid, with a sinusodial solution, on a domain of (0,10)x(-1,1)x(-1,1)
         /// </summary>
         /// <param name="Res">
         /// Grid resolution
@@ -382,6 +382,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
             R.LinearSolver.SolverCode = solver_name;
+            R.GridPartType = GridPartType.Hilbert;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
@@ -452,6 +453,8 @@ namespace BoSSS.Application.SipPoisson {
 
                      //throw new ArgumentOutOfRangeException();
                  });
+
+
             return R;
         }
 

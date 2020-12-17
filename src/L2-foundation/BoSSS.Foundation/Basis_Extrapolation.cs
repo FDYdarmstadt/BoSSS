@@ -83,7 +83,9 @@ namespace BoSSS.Foundation {
             MultidimensionalArray Minv_tmp = MultidimensionalArray.Create(N, N);
             MultidimensionalArray M_tmp = MultidimensionalArray.Create(N, N);
 
+       
 
+            QuadRule basicQr = null;
             for (int esub = 0; esub < Esub; esub++) { // loop over the cell pairs...
 
                 int jCell0 = CellPairs[esub, 0];
@@ -112,12 +114,26 @@ namespace BoSSS.Foundation {
 
                 Debug.Assert(jCell0 < J);
 
-                var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
+                //Scales very badly:
+                //var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
+                //var QuadRule = (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2);
+
+                // compile a quadrature rule:
+                // -----------------------------------------------
+                // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
+                // due to cell mask operations. 
+                // For the construction of the aggregation grid basis, this causes a quadratic runtime behavior.
+                var quadRule = new CompositeQuadRule<QuadRule>();
+                var Kref0 = GridDat.iGeomCells.GetRefElement(jCell0);
+                if(basicQr == null || !object.ReferenceEquals(basicQr.Nodes.RefElement, Kref0))
+                    basicQr = Kref0.GetQuadratureRule(2 * this.Degree);
+                quadRule.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(
+                    Chunk.GetSingleElementChunk(jCell0),
+                    basicQr));
 
                 // we project the basis function from 'jCell1' onto 'jCell0'
-
                 CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
-                    (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2), // integrate over target cell
+                    quadRule, // integrate over target cell
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                         NodeSet nodes_Cell0 = QR.Nodes;
                         Debug.Assert(Length == 1);
@@ -136,13 +152,14 @@ namespace BoSSS.Foundation {
 
                         EvalResult.Multiply(1.0, phi_1, phi_0, 0.0, "kmn", "kn", "km");
                     },
-                    /*_SaveIntegrationResults:*/ delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                                                     Debug.Assert(Length == 1);
+                    /*_SaveIntegrationResults:*/ 
+                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                        Debug.Assert(Length == 1);
 
-                                                     var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                                                     Minv_tmp.Clear();
-                                                     Minv_tmp.Acc(1.0, res);
-                                                 }).Execute();
+                        var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                        Minv_tmp.Clear();
+                        Minv_tmp.Acc(1.0, res);
+                    }).Execute();
 
                 // compute the inverse
                 Minv_tmp.InvertTo(M_tmp);

@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.IO {
         /// - if pointing to a file, a ZIP archive of a BoSSS database
         /// </param>
         public StandardFsDriver(string databasePath) {
-            if (!File.Exists(databasePath) && !Directory.Exists(databasePath))
+            if(!File.Exists(databasePath) && !Directory.Exists(databasePath))
                 throw new FileNotFoundException("Database directory/file does not exist.");
 
             int Rank, Size;
@@ -45,17 +45,17 @@ namespace BoSSS.Foundation.IO {
 
             // A hack to support zip-files
             // ---------------------------
-            if (File.Exists(databasePath)) {
+            if(File.Exists(databasePath)) {
                 // Database is provided a ZIP-file, we need to uncompress it
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                if (Rank == 0) {
+                if(Rank == 0) {
                     // we use the application directory (and not some temp-directory)
                     // because the application directory is most likely to be accessible from all
                     // MPI processes.
                     System.Reflection.Assembly a = System.Reflection.Assembly.GetEntryAssembly();
 
-                    if (a == null) {
+                    if(a == null) {
                         // Entry assembly might be null if called from
                         // unmanaged code; fall back to executing assembly in
                         // this case
@@ -65,11 +65,11 @@ namespace BoSSS.Foundation.IO {
                     string appdir = Path.GetDirectoryName(a.Location);
 
                     UnZippedDirectory = Path.Combine(appdir, "bosss_db_tmp");
-                    if (Directory.Exists(UnZippedDirectory)) {
+                    if(Directory.Exists(UnZippedDirectory)) {
                         // this may be some artifact from a previous run
                         Directory.Delete(UnZippedDirectory, true);
                     }
-                    if (File.Exists(UnZippedDirectory)) {
+                    if(File.Exists(UnZippedDirectory)) {
                         throw new IOException("Can't create temporary database directory because there is already a file with the same name ('" + UnZippedDirectory + "').");
                     }
 
@@ -79,7 +79,7 @@ namespace BoSSS.Foundation.IO {
                     List<ZipStorer.ZipFileEntry> dir = zip.ReadCentralDir();
 
                     // Look for the desired file
-                    foreach (ZipStorer.ZipFileEntry entry in dir) {
+                    foreach(ZipStorer.ZipFileEntry entry in dir) {
                         var out_file = Path.Combine(UnZippedDirectory, entry.FilenameInZip);
                         zip.ExtractFile(entry, out_file);
                     }
@@ -88,7 +88,7 @@ namespace BoSSS.Foundation.IO {
                     DirectoryInfo di = new DirectoryInfo(UnZippedDirectory);
                     try {
                         VerifyDirectoryStructure(di.FullName);
-                    } catch (ArgumentException) {
+                    } catch(ArgumentException) {
                         di = di.GetDirectories()[0]; // brutal hack.
                     }
 
@@ -117,27 +117,27 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="path"></param>
         public static void VerifyDirectoryStructure(string path) {
-            if (!Directory.Exists(path)) {
+            if(!Directory.Exists(path)) {
                 throw new ArgumentException(
                     "Database Error: base directory (" + path + ") does not exist.");
             }
 
-            if (!Directory.Exists(Path.Combine(path, TimestepDir))) {
+            if(!Directory.Exists(Path.Combine(path, TimestepDir))) {
                 throw new ArgumentException(
                     "Database Error: field state directory (" + Path.Combine(path, TimestepDir) + ") does not exist.");
             }
 
-            if (!Directory.Exists(Path.Combine(path, DistVectorDataDir))) {
+            if(!Directory.Exists(Path.Combine(path, DistVectorDataDir))) {
                 throw new ArgumentException(
                     "Database Error: distributed vector data directory (" + Path.Combine(path, DistVectorDataDir) + ") does not exist.");
             }
 
-            if (!Directory.Exists(Path.Combine(path, SessionsDir))) {
+            if(!Directory.Exists(Path.Combine(path, SessionsDir))) {
                 throw new ArgumentException(
                     "Database Error: session directory (" + Path.Combine(path, SessionsDir) + ") does not exist.");
             }
 
-            if (!Directory.Exists(Path.Combine(path, GridsDir))) {
+            if(!Directory.Exists(Path.Combine(path, GridsDir))) {
                 throw new ArgumentException(
                     "Database Error: grid directory (" + Path.Combine(path, GridsDir) + ") does not exist.");
             }
@@ -187,29 +187,16 @@ namespace BoSSS.Foundation.IO {
             private set;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="create">
-        /// true: creates a new file for writing, an exception is thrown if the file already exists;
-        /// false: open a file for reading;
-        /// </param>
-        /// <param name="RelPath">
-        /// relative path within the base paths.
-        /// </param>
-        /// <returns>
-        /// a file stream
-        /// </returns>
-        private Stream OpenFile(bool create, string RelPath) {
-            return OpenFile(create, RelPath, false);
-        }
 
         /// <summary>
-        /// 
+        /// This is intended for files which store log-files: 
+        /// Opens some file in the database **cooperatively**, i.e. if it is opened for writing (<paramref name="create"/> == true)
+        /// this method will allow reading by any other process.
+        /// Simultaneous writing, however, should yield to an exception.
         /// </summary>
         /// <param name="create">
-        /// true: creates a new file for writing;
-        /// false: open a file for reading;
+        /// - true: creates a new file for writing;
+        /// - false: open a file for reading;
         /// </param>
         /// <param name="RelPath">
         /// relative path within the base paths.
@@ -220,39 +207,136 @@ namespace BoSSS.Foundation.IO {
         /// <param name="ForceOverride">
         /// when opening a stream for writing (<paramref name="create"/>=true), this argument
         /// toggles how existing files should be treated:
-        /// false: an exception is thrown if the file already exists;
-        /// true: an existing file would be overwritten
+        /// - false: an exception is thrown if the file already exists;
+        /// - true: an existing file would be overwritten
         /// </param>
         /// <returns></returns>
-        private Stream OpenFile(bool create, string RelPath, bool ForceOverride) {
-            using (var tr = new FuncTrace()) {
+        private Stream OpenFileCooperatively(bool create, string RelPath, bool ForceOverride) {
+            using(var tr = new FuncTrace()) {
                 tr.Info("opening file '" + RelPath + "', create='" + create + "'");
-
-                if (create) {
-                    // create new file
+                if(create) {
+                    // ++++++++++++++++++++++++++++++++++
+                    // create new/overwrite existing file
+                    // ++++++++++++++++++++++++++++++++++
                     string fullpath = Path.Combine(BasePath, RelPath);
-                    if (ForceOverride == true) {
-                        FileStream fs = new FileStream(fullpath, FileMode.Create); //, FileAccess.ReadWrite, FileShare.Read); // overwrites existing file
-                        return fs;
-                    } else {
-                        FileStream fs = new FileStream(fullpath, FileMode.CreateNew);//, FileAccess.ReadWrite, FileShare.Read); // throws exception if file exists
-                        return fs;
-                    }
+
+                    FileStream fs = null;
+                    int i = 0;
+
+                    fs = new FileStream(fullpath,
+                        ForceOverride ? FileMode.Create : FileMode.CreateNew,
+                        FileAccess.ReadWrite, FileShare.Read);
+
+                    return fs;
 
                 } else {
-                    // try to open file
+                    // ++++++++++++++++++++++++++++
+                    // try to open file for reading
+                    // ++++++++++++++++++++++++++++
 
                     FileNotFoundException exc = null;
 
-                    try {
-                        FileStream fs = new FileStream(Path.Combine(BasePath, RelPath),
-                            FileMode.Open, FileAccess.Read, FileShare.Read);
-                        return fs;
-                    } catch (FileNotFoundException fnf) {
-                        exc = fnf;
-                    }
+                    FileStream fs = new FileStream(Path.Combine(BasePath, RelPath),
+                                FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                    return fs;
 
-                    throw exc;
+                }
+            }
+
+        }
+
+
+        /// <summary>
+        /// This is intended for files which store objects: 
+        /// Opens some file in the database **exclusively**, i.e. if it is opened for writing (<paramref name="create"/> == true)
+        /// this method will block on any other process 
+        /// for write **and read** operations until the file 
+        /// is released by the first process.
+        /// Simultaneous reading should be allowed, however.
+        /// </summary>
+        /// <param name="create">
+        /// - true: creates a new file for writing;
+        /// - false: open a file for reading;
+        /// </param>
+        /// <param name="RelPath">
+        /// relative path within the base paths.
+        /// </param>
+        /// <returns>
+        /// a file stream
+        /// </returns>
+        /// <param name="ForceOverride">
+        /// when opening a stream for writing (<paramref name="create"/>=true), this argument
+        /// toggles how existing files should be treated:
+        /// - false: an exception is thrown if the file already exists;
+        /// - true: an existing file would be overwritten
+        /// </param>
+        /// <returns></returns>
+        private Stream OpenFileExclusiveBlocking(bool create, string RelPath, bool ForceOverride) {
+            using(var tr = new FuncTrace()) {
+                tr.Info("opening file '" + RelPath + "', create='" + create + "'");
+
+                string fullpath = Path.Combine(BasePath, RelPath);
+               
+                if(create) {
+                    // ++++++++++++++++++++++++++++++++++
+                    // create new/overwrite existing file
+                    // ++++++++++++++++++++++++++++++++++
+
+                    if(ForceOverride == false && File.Exists(fullpath))
+                        throw new IOException($"Unable to open file for writing: not allowed to overwrite, but file '{fullpath}' already exists;");
+
+                    FileStream fs = null;
+                    int i = 0;
+                    while(fs == null) {
+                        try {
+                            fs = new FileStream(fullpath,
+                                ForceOverride ? FileMode.Create : FileMode.CreateNew,
+                                FileAccess.ReadWrite, FileShare.None);
+                        } catch(IOException ioe) {
+                            fs = null;
+                            tr.Info($"Write access to file {fullpath} is delayed by {ioe.GetType().Name}: {ioe.Message}.");
+                            i++;
+                            if(i > 1000) {
+                                tr.Logger.Error($"Write access to file {fullpath} TIMEOUT: {ioe.GetType().Name}: {ioe.Message}.");
+                                throw new IOException("File write open failed more than 1000 times. ", ioe);
+                            }
+                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond + 501);
+                        }
+                    }
+                    //if(i > 0)
+                    //    Console.WriteLine();
+                    return fs;
+
+                } else {
+                    // ++++++++++++++++++++++++++++
+                    // try to open file for reading
+                    // ++++++++++++++++++++++++++++
+
+                    FileNotFoundException exc = null;
+
+                    FileStream fs = null;
+                    int i = 0;
+                    while(fs == null) {
+                        try {
+                            fs = new FileStream(fullpath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                        } catch(FileNotFoundException fnf) {
+                            exc = fnf;
+                            throw exc;
+                        } catch(IOException ioe) {
+                            fs = null;
+                            tr.Info($"Read access to file {fullpath} is delayed by {ioe.GetType().Name}: {ioe.Message}.");
+                            i++;
+                            if(i > 1000) {
+                                tr.Logger.Error($"Read access to file {fullpath} TIMEOUT: {ioe.GetType().Name}: {ioe.Message}.");
+                                throw new IOException("File read open failed more than 1000 times. ", ioe);
+                            }
+                            System.Threading.Thread.Sleep(System.DateTime.Now.Millisecond * 3 + 27);
+                        }
+                    }
+                    //if(i > 0)
+                    //    Console.WriteLine();
+                    return fs;
+
                 }
             }
         }
@@ -270,7 +354,7 @@ namespace BoSSS.Foundation.IO {
         public Stream GetDistVectorDataStream(bool create, Guid vecGuid, int part) {
             string filename = Path.Combine(
                 DistVectorDataDir, vecGuid.ToString() + "." + (part + 1) + ".data");
-            return OpenFile(create, filename, true);
+            return OpenFileExclusiveBlocking(create, filename, true);
         }
 
         /// <summary>
@@ -281,7 +365,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns></returns>
         public Stream GetTimestepStream(bool create, Guid sessionGuid) {
             string filename = Path.Combine(TimestepDir, sessionGuid.ToString() + ".ts");
-            return OpenFile(create, filename);
+            return OpenFileExclusiveBlocking(create, filename, false);
         }
 
         /// <summary>
@@ -291,8 +375,8 @@ namespace BoSSS.Foundation.IO {
             if(IsDisposed)
                 return;
 
-            if (UnZippedDirectory != null) {
-                if (Directory.Exists(UnZippedDirectory)) {
+            if(UnZippedDirectory != null) {
+                if(Directory.Exists(UnZippedDirectory)) {
                     Directory.Delete(UnZippedDirectory, true);
                 }
             }
@@ -311,7 +395,7 @@ namespace BoSSS.Foundation.IO {
         /// creates a new session directory.
         /// </summary>
         public void CreateSessionDirectory(Guid sessionGuid) {
-            if (sessionGuid.Equals(Guid.Empty))
+            if(sessionGuid.Equals(Guid.Empty))
                 throw new ArgumentException();
 
             // create session directory
@@ -328,28 +412,31 @@ namespace BoSSS.Foundation.IO {
         }
 
         private Stream OpenFileVersionized(bool create, string filename) {
-            if (create == true) {
-                return OpenFile(create, filename, true);
+            if(create == true) {
+                return OpenFileExclusiveBlocking(create, filename, true);
             } else {
-                return OpenFile(create, filename);
+                return OpenFileExclusiveBlocking(create, filename, false);
             }
         }
 
         /// <summary>
         /// See <see cref="IFileSystemDriver"/>
         /// </summary>
-        /// <param name="create"></param>
+        /// <param name="create">
+        /// - true for a write stream (also overwriting)
+        /// - false for a read stream;
+        /// </param>
         /// <param name="sessionGuid"></param>
         /// <returns></returns>
         public Stream GetSessionInfoStream(bool create, Guid sessionGuid) {
             string dirname = Path.Combine(SessionsDir, sessionGuid.ToString());
             string fullDirName = Path.Combine(BasePath, dirname);
-            if (!Directory.Exists(fullDirName))
+            if(!Directory.Exists(fullDirName))
                 Directory.CreateDirectory(fullDirName);
 
             string filename = Path.Combine(dirname, "Session.info");
 
-            return OpenFile(create, filename, true);
+            return OpenFileExclusiveBlocking(create, filename, true);
         }
 
         /// <summary>
@@ -367,10 +454,12 @@ namespace BoSSS.Foundation.IO {
             string filename = Path.Combine(
                 SessionsDir, sessionGuid.ToString(), logName + ".txt");
 
-            Stream fs = OpenFile(true, filename, true);
+            Stream fs = OpenFileCooperatively(true, filename, true);
 
             return fs;
         }
+
+        
 
         /// <summary>
         /// returns a text writer for logging information

@@ -10,6 +10,8 @@ using System.Collections.Generic;
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     public struct DualLevelSet
     {
+        public string Identification;
+
         public int LevelSetIndex;
 
         public LevelSet CGLevelSet;
@@ -178,29 +180,129 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         Dictionary<string, DGField> lsParameterFields;
 
-        public LevelSetUpdater(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, string LevelSetName,
-            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG) {
-
+        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, string interfaceName) {
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
-                    dgLevelSet, BackgroundGrid, continuityMode);
+                    dgLevelSet, backgroundGrid, continuityMode);
             cgLevelSet.AccLaidBack(1.0, dgLevelSet);
+            
+            Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
 
-            ContinuityProjection enforcer = new ContinuityProjection(
-                cgLevelSet.Basis,
-                dgLevelSet.Basis,
-                BackgroundGrid,
-                continuityMode);
-            Tracker = new LevelSetTracker(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
-            DualLevelSet currentInterface = new DualLevelSet {
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(1);
+
+            DualLevelSet levelSet0 = new DualLevelSet {
+                Identification = interfaceName,
                 LevelSetIndex = 0,
                 CGLevelSet = cgLevelSet,
                 DGLevelSet = dgLevelSet,
                 Tracker = Tracker,
             };
-            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(4);
-            lsUpdaters.Add(LevelSetName, new SingleLevelSetUpdater(currentInterface, enforcer));
+            SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(levelSet0, backgroundGrid, continuityMode);
+            lsUpdaters.Add(levelSet0.Identification, singleUpdater);
+            
             Tracker.UpdateTracker(0.0);
+        }
+
+        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+            int __NearRegionWidth, string[,] _SpeciesTable, LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1) {
+            
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
+            LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1 };
+            string[] interfaceNames = new string[] { interfaceName0, interfaceName1 };
+
+            LevelSet[] cgLevelSets = new LevelSet[2];
+
+            for (int i = 0; i < 2; ++i) {
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+            }
+            Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1]);
+            
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
+            for(int i = 0; i < 2; ++i) {
+                DualLevelSet dualLevelSet = new DualLevelSet {
+                    Identification = interfaceNames[i],
+                    LevelSetIndex = i,
+                    CGLevelSet = cgLevelSets[i],
+                    DGLevelSet = dgLevelSets[i],
+                    Tracker = Tracker,
+                };
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
+            }
+
+            Tracker.UpdateTracker(0.0);
+        }
+
+        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+            int __NearRegionWidth, string[,,] _SpeciesTable, LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2) {
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
+
+            LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2 };
+            LevelSet[] cgLevelSets = new LevelSet[2];
+            string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2 };
+
+            for (int i = 0; i < 2; ++i) {
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+            }
+            Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2]);
+
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
+            for (int i = 0; i < 2; ++i) {
+                DualLevelSet dualLevelSet = new DualLevelSet {
+                    Identification = interfaceNames[i],
+                    LevelSetIndex = i,
+                    CGLevelSet = cgLevelSets[i],
+                    DGLevelSet = dgLevelSets[i],
+                    Tracker = Tracker,
+                };
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
+            }
+
+            Tracker.UpdateTracker(0.0);
+        }
+
+        public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
+            int __NearRegionWidth, string[,,,] _SpeciesTable, 
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3) {
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
+
+            LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2, dgLevelSet3 };
+            LevelSet[] cgLevelSets = new LevelSet[3];
+            string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2, interfaceName3};
+
+            for (int i = 0; i < 2; ++i) {
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+            }
+            Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2], cgLevelSets[3]);
+
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
+            for (int i = 0; i < 2; ++i) {
+                DualLevelSet dualLevelSet = new DualLevelSet {
+                    Identification = interfaceNames[i],
+                    LevelSetIndex = i,
+                    CGLevelSet = cgLevelSets[i],
+                    DGLevelSet = dgLevelSets[i],
+                    Tracker = Tracker,
+                };
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
+            }
+
+            Tracker.UpdateTracker(0.0);
+        }
+
+        static SingleLevelSetUpdater CreateSingleLevelSetUpdater( DualLevelSet levelSet, GridData grid, ContinuityProjectionOption continuityMode) {
+            ContinuityProjection enforcer1 = new ContinuityProjection(
+                levelSet.CGLevelSet.Basis,
+                levelSet.DGLevelSet.Basis,
+                grid,
+                continuityMode);
+            return new SingleLevelSetUpdater(levelSet, enforcer1);
         }
 
         public IReadOnlyDictionary<string, DGField> Parameters {
@@ -337,7 +439,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
             double time)
         {
-            //IReadOnlyDictionary<string, DGField> combinedParameters = Combine(ParameterVarFields, lsParameterFields);
             foreach (SingleLevelSetUpdater updater in lsUpdaters.Values)
             {
                 updater.UpdateParameters(DomainVarFields, ParameterVarFields, time);
