@@ -25,29 +25,31 @@ namespace BoSSS.Application.FSI_Solver {
 
         public static FSI_Control StokesFlow(int k = 2, int amrLevel = 1) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "wetParticleWallCollision");
-            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            C.SetSaveOptions(@"D:\BoSSS_databases\2particleInteractions", 1);
 
             List<string> boundaryValues = new List<string> {
-                "Wall"
+                "Velocity_Inlet_left",
+                "Velocity_Inlet_right",
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 12, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel, true);
+            C.SetGrid(lengthX: 2, lengthY: 5, cellsPerUnitLength: 12, periodicX: false, periodicY: true);
+            C.SetAddaptiveMeshRefinement(amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1e-2;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
-            C.gravity = new Vector(0, -0.01 );
+            C.gravity = new Vector(0, -0.0 );
             // Particle Properties
             // =============================   
-            double particleDensity = 2;
+            double particleDensity = 10;
             C.Particles = new List<Particle>();
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
-            C.Particles.Add(new Particle_Sphere(motion, 0.25, new double[] { 0.0, 0.0 },-90, 0, new double[] { 0, 0 }));
-
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4,0.2, new double[] { 0.0, 0.0 },45, 0, new double[] { 0, 0 }, 0));
+            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.1);
+            C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.1);
             // Quadrature rules
             // =============================   
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -55,34 +57,23 @@ namespace BoSSS.Application.FSI_Solver {
             // Physical Parameters
             // =============================  
             C.PhysicalParameters.IncludeConvection = false;
-
-            // misc. solver options
-            // =============================  
+            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 100000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
-            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LSunderrelax = 1.0;
-
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.TargetBlockSize = 10000;
 
             // Coupling Properties
             // =============================
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.LSunderrelax = 1;
-            C.fullyCoupledSplittingMaxIterations = 20000;
-
-
-            // Timestepping
-            // =============================  
-            C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
-
-            // haben fertig...
-            // ===============
+            C.fullyCoupledSplittingMaxIterations = 100;
+            C.FullOutputToConsole = true;
 
             return C;
         }

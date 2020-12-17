@@ -21,7 +21,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 180, double verticalDistance = 0, double distance = 1.1, double halfAxis = 0.5, double aspectRatio = 0.5) {
+        public static FSI_Control Main(double angle = 180, double verticalDistance = 0, double distance = 1.125, double halfAxis = 0.5, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
 
             C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\2PI", 1);
@@ -36,7 +36,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetBoundaries(boundaryValues);
             double length = 10;
             C.SetGrid(lengthX: length, lengthY: length, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(0);
+            C.SetAddaptiveMeshRefinement(2);
 
             // Coupling Properties
             // =============================
@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================   
             C.fixPosition = true;
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0, false);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance / 2, -verticalDistance / 2 }, 0, 1),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance / 2, verticalDistance / 2 }, angle, 1)
@@ -83,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Single(double angle = 0, double distance = 0, double aspectRatio = 0.5, double activeStress = 1) {
+        public static FSI_Control Single(double angle = 180, double verticalDistance = 0, double distance = 1.125, double halfAxis = 0.5, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -121,9 +121,8 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0, false);
-            double particleRadius = 2.5;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, particleRadius, aspectRatio * particleRadius, new double[] { -distance / 2, -0.0 }, angle, activeStress)
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance / 2, verticalDistance / 2 }, angle, 1)
             };
 
             // misc. solver options

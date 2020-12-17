@@ -33,6 +33,7 @@ namespace FSI_Solver {
         private double AccumulatedCollisionTimestep = 0;
         private double[][] AccumulatedLocalSaveTimestep;
         private bool[][] Overlapping;
+        private readonly bool DetermineOnlyOverlap;
         private Vector[][] DistanceVector;
         private Vector[][] ClosestPoints;
         private readonly double[][] WallCoordinates;
@@ -76,13 +77,15 @@ namespace FSI_Solver {
         /// <param name="minDistance">
         /// Min. distance threshold.
         /// </param>
-        public ParticleCollision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance) {
+        public ParticleCollision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance, bool DetermineOnlyOverlap) {
             CoefficientOfRestitution = coefficientOfRestitution;
             TimestepSize = dt;
             GridLengthScale = gridLenghtscale;
             WallCoordinates = wallCoordinates;
             MinDistance = minDistance;
             this.IsPeriodicBoundary = IsPeriodicBoundary;
+            this.DetermineOnlyOverlap = DetermineOnlyOverlap;
+            this.DetermineOnlyOverlap = true;
         }
 
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
@@ -164,6 +167,8 @@ namespace FSI_Solver {
                                 globalMinimalDistance = DistanceVector[p0][wallID].Abs();
                             }
                             if (temp_Overlapping) {
+                                if (DetermineOnlyOverlap)
+                                    throw new Exception("Static particles overlap");
                                 double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
                                 saveTimestep = 0;
                                 Particle[] overlappingParticles = new Particle[] { Particles[p0] };
@@ -196,6 +201,8 @@ namespace FSI_Solver {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
                             }
                             if (temp_Overlapping) {
+                                if (DetermineOnlyOverlap)
+                                    throw new Exception("Static particles overlap");
                                 double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
                                 saveTimestep = 0;
                                 Particle[] overlappingParticles = new Particle[] { Particles[p0], Particles[p1] };
@@ -243,6 +250,8 @@ namespace FSI_Solver {
         }
 
         private void TransferResultsToGhostParticles(int currentParticleID) {
+            if (Particles.Length < currentParticleID)
+                throw new Exception("No particle with ID " + currentParticleID);
             if (Particles[currentParticleID].MasterGhostIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
                 for (int k = 0; k < Particles[currentParticleID].MasterGhostIDs.Length; k++) {
                     if(Particles[currentParticleID].MasterGhostIDs[k] - 1 != currentParticleID && Particles[currentParticleID].MasterGhostIDs[k] > 0) {

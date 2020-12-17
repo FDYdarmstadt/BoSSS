@@ -29,60 +29,71 @@ using System.Runtime.Serialization;
 namespace BoSSS.Application.FSI_Solver {
     public class ParticleHydrodynamicsIntegration {
 
-        public ParticleHydrodynamicsIntegration(int spatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker levelSetTracker, double fluidViscosity) {
-            m_SpatialDim = spatialDim;
-            m_RequiredOrder = U[0].Basis.Degree * 3 + 2;
-            m_U = U.ToArray();
-            m_P = P;
-            m_LevelSetTracker = levelSetTracker;
-            m_GridData = m_LevelSetTracker.GridDat;
-            m_FluidViscosity = fluidViscosity;
+        /// <summary>
+        /// Constructor for the integrator. Calculates the forces and torque at the particle boundary.
+        /// </summary>
+        /// <param name="SpatialDim">Spatial dimension of the problem</param>
+        /// <param name="U">Velocity field</param>
+        /// <param name="P">Pressure field</param>
+        /// <param name="LevelSetTracker">The level set tracker</param>
+        /// <param name="FluidViscosity">FLuid viscosity</param>
+        public ParticleHydrodynamicsIntegration(int SpatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LevelSetTracker, double FluidViscosity) {
+            this.SpatialDim = SpatialDim;
+            RequiredOrder = U[0].Basis.Degree * 3 + 2;
+            this.U = U.ToArray();
+            this.P = P;
+            this.LevelSetTracker = LevelSetTracker;
+            GridData = this.LevelSetTracker.GridDat;
+            this.FluidViscosity = FluidViscosity;
         }
 
         [DataMember]
-        private readonly int m_SpatialDim;
+        private readonly int SpatialDim;
         [DataMember]
-        readonly int m_RequiredOrder;
+        private readonly int RequiredOrder;
         [DataMember]
-        readonly SinglePhaseField[] m_U;
+        private readonly SinglePhaseField[] U;
         [DataMember]
-        private readonly ConventionalDGField m_P;
+        private readonly ConventionalDGField P;
         [DataMember]
-        private readonly LevelSetTracker m_LevelSetTracker;
+        private readonly LevelSetTracker LevelSetTracker;
         [DataMember]
-        private readonly GridData m_GridData;
+        private readonly GridData GridData;
         [DataMember]
-        private readonly double m_FluidViscosity;
+        private readonly double FluidViscosity;
 
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double[] Forces(CellMask cutCells) {
-            double[] tempForces = new double[m_SpatialDim];
+        /// <param name="CutCells">
+        /// Cut cells of a single particle.
+        /// </param>
+        internal double[] Forces(CellMask CutCells) {
+            double[] tempForces = new double[SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
-            for (int d = 0; d < m_SpatialDim; d++) {
+            for (int d = 0; d < SpatialDim; d++) {
                 void ErrFunc(int CurrentCellID, int Length, NodeSet Ns, MultidimensionalArray result) {
                     int K = result.GetLength(1);
-                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, m_SpatialDim, m_SpatialDim);
+                    MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Length, K, SpatialDim, SpatialDim);
                     MultidimensionalArray pARes = MultidimensionalArray.Create(Length, K);
-                    MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
-                    for (int i = 0; i < m_SpatialDim; i++) {
-                        m_U[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                    MultidimensionalArray Normals = LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, CurrentCellID, Length);
+                    for (int i = 0; i < SpatialDim; i++) {
+                        U[i].EvaluateGradient(CurrentCellID, Length, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                     }
-                    m_P.Evaluate(CurrentCellID, Length, Ns, pARes);
+                    P.Evaluate(CurrentCellID, Length, Ns, pARes);
                     for (int j = 0; j < Length; j++) {
                         for (int k = 0; k < K; k++) {
-                            result[j, k] = StressTensor(Grad_UARes, pARes, Normals, m_FluidViscosity, k, j, m_SpatialDim, d);
+                            result[j, k] = CalculateStressVector(Grad_UARes, pARes, Normals, FluidViscosity, k, j, SpatialDim, d);
                         }
                     }
                 }
 
                 int[] noOfIntegrals = new int[] { 1 };
-                XQuadSchemeHelper SchemeHelper = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, cutCells);
-                ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder);
+                XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+                CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCells);
+                ICompositeQuadRule<QuadRule> surfaceRule = cqs.Compile(GridData, RequiredOrder);
 
-                CellQuadrature.GetQuadrature(noOfIntegrals, m_GridData, surfaceRule,
+                CellQuadrature.GetQuadrature(noOfIntegrals, GridData, surfaceRule,
                     delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { ErrFunc(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0)); },
                     delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { IntegrationForces[d] = ForceTorqueSummationWithNeumaierArray(IntegrationForces[d], ResultsOfIntegration, Length); }
                 ).Execute();
@@ -93,28 +104,30 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate Forces acting from fluid onto the particle
         /// </summary>
-        internal double Torque(double[] position, CellMask cutCells) {
+        /// <param name="Position">Position of the centre of mass of the current particle</param>
+        /// <param name="CutCells">Cut cells of a single particle.</param>
+        internal double Torque(double[] Position, CellMask CutCells) {
             double tempTorque = new double();
             void ErrFunc2(int j0, int Len, NodeSet Ns, MultidimensionalArray result) {
                 int K = result.GetLength(1);
-                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, m_SpatialDim, m_SpatialDim); ;
+                MultidimensionalArray Grad_UARes = MultidimensionalArray.Create(Len, K, SpatialDim, SpatialDim); ;
                 MultidimensionalArray pARes = MultidimensionalArray.Create(Len, K);
-                MultidimensionalArray Normals = m_LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
-                for (int i = 0; i < m_SpatialDim; i++) {
-                    m_U[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
+                MultidimensionalArray Normals = LevelSetTracker.DataHistories[0].Current.GetLevelSetNormals(Ns, j0, Len);
+                for (int i = 0; i < SpatialDim; i++) {
+                    U[i].EvaluateGradient(j0, Len, Ns, Grad_UARes.ExtractSubArrayShallow(-1, -1, i, -1), 0, 1);
                 }
-                m_P.Evaluate(j0, Len, Ns, pARes);
+                P.Evaluate(j0, Len, Ns, pARes);
                 for (int j = 0; j < Len; j++) {
                     MultidimensionalArray Ns_Global = Ns.CloneAs();
-                    m_LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
+                    LevelSetTracker.GridDat.TransformLocal2Global(Ns, Ns_Global, j0 + j);
                     for (int k = 0; k < K; k++) {
-                        result[j, k] = TorqueStressTensor(Grad_UARes, pARes, Normals, Ns_Global, m_FluidViscosity, k, j, position);
+                        result[j, k] = CalculateTorque(Grad_UARes, pARes, Normals, Ns_Global, FluidViscosity, k, j, Position);
                     }
                 }
             }
-            var SchemeHelper2 = m_LevelSetTracker.GetXDGSpaceMetrics(new[] { m_LevelSetTracker.GetSpeciesId("A") }, m_RequiredOrder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, cutCells);
-            CellQuadrature.GetQuadrature(new int[] { 1 }, m_LevelSetTracker.GridDat, cqs2.Compile(m_LevelSetTracker.GridDat, m_RequiredOrder),
+            var SchemeHelper2 = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
+            CellQuadratureScheme cqs2 = SchemeHelper2.GetLevelSetquadScheme(0, CutCells);
+            CellQuadrature.GetQuadrature(new int[] { 1 }, GridData, cqs2.Compile(GridData, RequiredOrder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                     ErrFunc2(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                 },
@@ -153,21 +166,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        private double StressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int SpatialDim, int currentDimension) {
-            double temp;
+        private double CalculateStressVector(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int SpatialDim, int currentDimension) {
+            double stressVector;
             switch (SpatialDim) {
                 case 2:
-                    temp = CalculateStressTensor2D(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j, currentDimension);
+                    stressVector = CalculateStressVector2D(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j, currentDimension);
                     break;
                 case 3:
-                    temp = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j, currentDimension);
+                    stressVector = CalculateStressTensor3D(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j, currentDimension);
                     break;
                 default:
                     throw new NotSupportedException("Unknown particle dimension: SpatialDim = " + SpatialDim);
             }
-            if (double.IsNaN(temp) || double.IsInfinity(temp))
+            if (double.IsNaN(stressVector) || double.IsInfinity(stressVector))
                 throw new ArithmeticException("Error trying to calculate the particle stress tensor");
-            return temp;
+            return stressVector;
         }
 
         /// <summary>
@@ -197,25 +210,22 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="currentPosition">
         /// The current position of the particle.
         /// </param>
-        private double TorqueStressTensor(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition) {
-            double temp1;
-            double temp2;
-            temp1 = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            //temp1 *= -NormalVector[j, k, 1] * (currentPosition[1] - NodeSetClone[k, 1]).Abs();
-            temp1 *= -(NodeSetClone[k, 1] - currentPosition[1]);
-            if (double.IsNaN(temp1) || double.IsInfinity(temp1))
+        private double CalculateTorque(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, MultidimensionalArray NodeSetClone, double FluidViscosity, int k, int j, double[] currentPosition) {
+            double torqueFromXStress;
+            double torqueFromYStress;
+            torqueFromXStress = CalculateStressVectorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+            torqueFromXStress *= -(NodeSetClone[k, 1] - currentPosition[1]);
+            if (double.IsNaN(torqueFromXStress) || double.IsInfinity(torqueFromXStress))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
-            temp2 = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
-            //temp2 *= NormalVector[j, k, 0] * (currentPosition[0] - NodeSetClone[k, 0]).Abs();
-            temp2 *= (NodeSetClone[k, 0] - currentPosition[0]);
-            if (double.IsNaN(temp2) || double.IsInfinity(temp2))
+            torqueFromYStress = CalculateStressVectorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+            torqueFromYStress *= (NodeSetClone[k, 0] - currentPosition[0]);
+            if (double.IsNaN(torqueFromYStress) || double.IsInfinity(torqueFromYStress))
                 throw new ArithmeticException("Error trying to calculate the particle torque");
-            return temp1 + temp2;
+            return torqueFromXStress + torqueFromYStress;
         }
 
         /// <summary>
-        /// This method calculates the stress tensor in case of a 2D-probem
-        /// torque.
+        /// This method calculates the stress tensor in case of a 2D-problem
         /// </summary>
         /// <param name="Grad_UARes">
         /// The gradient of the velocity.
@@ -238,14 +248,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="currentDimension">
         /// The current dimension to be calculated.
         /// </param>
-        private double CalculateStressTensor2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension) {
+        private double CalculateStressVector2D(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j, int currentDimension) {
             double acc;
             switch (currentDimension) {
                 case 0:
-                    acc = CalculateStressTensorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+                    acc = CalculateStressVectorX(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
                     break;
                 case 1:
-                    acc = CalculateStressTensorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
+                    acc = CalculateStressVectorY(Grad_UARes, pARes, NormalVector, FluidViscosity, k, j);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -255,7 +265,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         /// <summary>
         /// This method performs the integration in x-direction
-        /// torque.
         /// </summary>
         /// <param name="Grad_UARes">
         /// The gradient of the velocity.
@@ -275,7 +284,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        private double CalculateStressTensorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
+        private double CalculateStressVectorX(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
@@ -286,7 +295,6 @@ namespace BoSSS.Application.FSI_Solver {
 
         /// <summary>
         /// This method performs the integration in y-direction
-        /// torque.
         /// </summary>
         /// <param name="Grad_UARes">
         /// The gradient of the velocity.
@@ -306,13 +314,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="j">
         /// The current cell ID
         /// </param>
-        private double CalculateStressTensorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
+        private double CalculateStressVectorY(MultidimensionalArray Grad_UARes, MultidimensionalArray pARes, MultidimensionalArray NormalVector, double FluidViscosity, int k, int j) {
             double[] SummandsVelGradient = new double[3];
-            double SummandsPressure;
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * NormalVector[j, k, 1];
             SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
-            SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
+            double SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
             return NeumaierSummation(SummandsVelGradient, SummandsPressure, FluidViscosity);
         }
 
@@ -419,10 +426,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="SummandsPressure">
         /// The pressure.
         /// </param>
-        /// <param name="muA">
+        /// <param name="FluidViscosity">
         /// The fluid viscosity.
         /// </param>
-        private double NeumaierSummation(double[] SummandsVelGradient, double SummandsPressure, double muA) {
+        private double NeumaierSummation(double[] SummandsVelGradient, double SummandsPressure, double FluidViscosity) {
             double sum = SummandsVelGradient[0];
             double naiveSum;
             double c = 0;
@@ -436,8 +443,8 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 sum = naiveSum;
             }
-            sum *= muA;
-            c *= muA;
+            sum *= FluidViscosity;
+            c *= FluidViscosity;
             naiveSum = sum + SummandsPressure;
             if (Math.Abs(sum) >= SummandsPressure) {
                 c += (sum - naiveSum) + SummandsPressure;

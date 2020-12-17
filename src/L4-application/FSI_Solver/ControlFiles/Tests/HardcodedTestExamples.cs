@@ -138,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Endtime = 120;
             C.NoOfTimesteps = 25;
 
-           
+            C.FullOutputToConsole = true;
 
             // haben fertig...
             // ===============

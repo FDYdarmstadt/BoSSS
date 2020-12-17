@@ -73,14 +73,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
-            return 0;
-        }
-
-        /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>

@@ -53,21 +53,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// ...
         /// </summary>
         /// <param name="AllParticles"></param>
-        /// <param name="hydrodynamicsIntegration"></param>
-        /// <param name="fluidDensity"></param>
-        /// <param name="underrelax"></param>
-        internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, bool underrelax) {
+        /// <param name="HydrodynamicIntegrator"></param>
+        /// <param name="FluidDensity"></param>
+        /// <param name="UseRelaxation"></param>
+        internal void CalculateHydrodynamics(List<Particle> AllParticles, ParticleHydrodynamicsIntegration HydrodynamicIntegrator, double FluidDensity, bool UseRelaxation) {
             using (new FuncTrace()) {
                 double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * AllParticles.Count()];
                 CellMask allCutCells = LsTrk.Regions.GetCutCellMask();
 
                 for (int p = 0; p < AllParticles.Count(); p++) {
                     Particle currentParticle = AllParticles[p];
-                    CellMask cutCells = currentParticle.ParticleCutCells(LsTrk, allCutCells);
+                    CellMask particleCutCells = currentParticle.ParticleCutCells(LsTrk, allCutCells);
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
 
-                    double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(hydrodynamicsIntegration, cutCells);
-                    double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(hydrodynamicsIntegration, cutCells);
+                    double[] tempForces = currentParticle.Motion.CalculateHydrodynamicForces(HydrodynamicIntegrator, particleCutCells);
+                    double tempTorque = currentParticle.Motion.CalculateHydrodynamicTorque(HydrodynamicIntegrator, particleCutCells);
 
                     for (int d = 0; d < SpatialDimension; d++) 
                         hydrodynamics[offset + d] = tempForces[d];
@@ -79,6 +79,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int p = 0; p < AllParticles.Count(); p++) {
                     Particle currentParticle = AllParticles[p];
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
+
                     if (currentParticle.IsMaster) {
                         //Add forces and torque from ghost particles to master particles
                         if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
@@ -95,7 +96,7 @@ namespace BoSSS.Application.FSI_Solver {
                             }
                         }
 
-                        Vector gravity = currentParticle.Motion.GetGravityForces(fluidDensity);
+                        Vector gravity = currentParticle.Motion.GetGravityForces(FluidDensity);
                         for (int d = 0; d < SpatialDimension; d++) {
                             hydrodynamics[offset + SpatialDimension] += gravity[d];
                         }
@@ -103,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 double omega = AllParticles[0].Motion.omega;
-                if (underrelax)
+                if (UseRelaxation)
                     hydrodynamics = HydrodynamicsPostprocessing(hydrodynamics, ref omega);
                 AllParticles[0].Motion.omega = omega;
 
@@ -143,7 +144,7 @@ namespace BoSSS.Application.FSI_Solver {
             using (new FuncTrace()) {
                 double residual = 0;
                 double denom = 0;
-                if (iterationCounter < 1) {
+                if (iterationCounter < 2) {
                     iterationCounter += 1;
                     return double.MaxValue;
                 }

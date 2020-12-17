@@ -106,7 +106,7 @@ namespace BoSSS.Application.FSI_Solver {
             double alpha = -(Motion.GetAngle(0));
             double r;
             r = -Math.Pow(((X[0] - Motion.GetPosition(0)[0]) * Math.Cos(alpha) - (X[1] - Motion.GetPosition(0)[1]) * Math.Sin(alpha)) / m_Length, m_Exponent)
-                - Math.Pow(((X[0] - Motion.GetPosition(0)[0]) * Math.Sin(alpha) + (X[1] - Motion.GetPosition(0)[1]) * Math.Cos(alpha)) / m_Thickness, m_Exponent)
+                -Math.Pow(((X[0] - Motion.GetPosition(0)[0]) * Math.Sin(alpha) + (X[1] - Motion.GetPosition(0)[1]) * Math.Cos(alpha)) / m_Thickness, m_Exponent)
                 + 1;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();

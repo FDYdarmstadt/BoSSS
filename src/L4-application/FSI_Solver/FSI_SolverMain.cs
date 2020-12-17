@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
-using BoSSS.Foundation.Comm;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -34,7 +33,6 @@ using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -117,11 +115,6 @@ namespace BoSSS.Application.FSI_Solver {
         private SinglePhaseField MPIProcessMarker;
 
         /// <summary>
-        /// Sensor for shock capturing after Persson and Peraire (2006). Used for addaptive mesh refinement 
-        /// </summary>
-        private PerssonSensor perssonsensor;
-
-        /// <summary>
         /// Create the colour and level set distance field. 
         /// </summary>
         protected override void CreateFields() {
@@ -135,15 +128,9 @@ namespace BoSSS.Application.FSI_Solver {
             m_RegisteredFields.Add(LevelSetDistance);
             m_IOFields.Add(LevelSetDistance);
 
-
             MPIProcessMarker = new SinglePhaseField(new Basis(GridData, 0), "ProcessColor");
             m_RegisteredFields.Add(MPIProcessMarker);
             m_IOFields.Add(MPIProcessMarker);
-
-            if (((FSI_Control)Control).UsePerssonSensor == true) {
-                perssonsensor = new PerssonSensor(Pressure);
-                this.IOFields.Add(perssonsensor.GetField());
-            }
         }
 
         /// <summary>
@@ -186,6 +173,9 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
 
+        /// <summary>
+        /// Using static time-step or dynamic?
+        /// </summary>
         [DataMember]
         private bool StaticTimestep => ((FSI_Control)Control).staticTimestep;
 
@@ -207,17 +197,14 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private double RestartDt => ((FSI_Control)Control).dtMax / 1000;
 
-        private double CountFromRestart = 0;
-
         /// <summary>
-        /// FluidDensity
+        /// MaxGridLength
         /// </summary>
         [DataMember]
         private double MaxGridLength => ((FSI_Control)Control).MaxGridLength;
 
-
         /// <summary>
-        /// FluidDensity
+        /// RefinementLevel
         /// </summary>
         [DataMember]
         private double RefinementLevel => ((FSI_Control)Control).RefinementLevel;
@@ -252,7 +239,7 @@ namespace BoSSS.Application.FSI_Solver {
 
 
         /// <summary>
-        /// FluidDensity
+        /// MinimalDistanceForCollision
         /// </summary>
         [DataMember]
         private double MinimalDistanceForCollision => ((FSI_Control)Control).minDistanceThreshold;
@@ -392,28 +379,22 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Continuum equation
             // =============================
-            {
-                for (int d = 0; d < spatialDim; d++) {
-                    var src = new Divergence_DerivativeSource(d, spatialDim);
-                    var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
-                    IBM_Op.EquationComponents["div"].Add(src);
-                    IBM_Op.EquationComponents["div"].Add(flx);
-                }
-                var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, Particles.ToArray(), GetMinGridLength());
-                IBM_Op.EquationComponents["div"].Add(divPen);
+            for (int d = 0; d < spatialDim; d++) {
+                var src = new Divergence_DerivativeSource(d, spatialDim);
+                var flx = new Divergence_DerivativeSource_Flux(d, boundaryCondMap);
+                IBM_Op.EquationComponents["div"].Add(src);
+                IBM_Op.EquationComponents["div"].Add(flx);
             }
+            var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, Particles.ToArray(), GetMinGridLength());
+            IBM_Op.EquationComponents["div"].Add(divPen);
 
             // temporal operator
             // =================
-
-            {
-                var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);
-                foreach (var kv in this.MassScale) {
-                    tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
-                }
-                IBM_Op.TemporalOperator = tempOp;
-
+            var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);
+            foreach (var kv in this.MassScale) {
+                tempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
             }
+            IBM_Op.TemporalOperator = tempOp;
 
             // Finalize
             // ========
@@ -483,7 +464,7 @@ namespace BoSSS.Application.FSI_Solver {
                 m_ResidualNames = ArrayTools.Cat(ResidualMomentum.Select(f => f.Identification), ResidualContinuity.Identification),
                 IterUnderrelax = ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? ((FSI_Control)Control).LSunderrelax : 1.0,
                 Config_LevelSetConvergenceCriterion = ((FSI_Control)Control).hydrodynamicsConvergenceCriterion,
-                Timestepper_Init = Solution.Timestepping.TimeStepperInit.SingleInit
+                Timestepper_Init = TimeStepperInit.SingleInit
             };
         }
 
@@ -591,9 +572,9 @@ namespace BoSSS.Application.FSI_Solver {
                 LsTrk.UpdateTracker(phystime, __NearRegionWith: 2);
             } catch (LevelSetCFLException e) {//hacky workaround
                 if (AddedGhostParticle)
-                    Console.WriteLine("Ghost particle added, exception thrown: " + e);
+                    Console.WriteLine("Ghost particle added" + e);
                 //else
-                // throw e;
+                     //throw e;
                 AddedGhostParticle = false;
             }
         }
@@ -833,10 +814,6 @@ namespace BoSSS.Application.FSI_Solver {
             if (StaticTimestep)
                 return dt;
             else {
-                if (CountFromRestart > 0) {
-                    CountFromRestart -= 1;
-                    return RestartDt;
-                }
                 double maxVelocityL2Norm = 1e-15;
                 if (phystime == 0)
                     dt = StartDt;
@@ -956,8 +933,9 @@ namespace BoSSS.Application.FSI_Solver {
                         Console.WriteLine("RunTime per Iteration" + elapsedTime);
                     }
                 }
+
+                CalculateCollision(ParticleList, dt, FixPosition);
                 if (!FixPosition) {
-                    CalculateCollision(ParticleList, dt);
                     CalculateParticlePosition(dt);
                 }
 
@@ -1086,7 +1064,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt">
         /// Timestep
         /// </param>
-        private void CalculateCollision(List<Particle> Particles, double dt) {
+        private void CalculateCollision(List<Particle> Particles, double dt, bool DetermineOnlyOverlap = false) {
             foreach (Particle p in Particles) {
                 p.IsCollided = false;
             }
@@ -1106,8 +1084,9 @@ namespace BoSSS.Application.FSI_Solver {
                     for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
                         currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
                     }
-                    ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision);
-                    Collision.Calculate(currentParticles);
+                    ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
+                    Collision.Calculate(ParticleList.ToArray());
+                    //Collision.Calculate(currentParticles);
                 }
                 // Remove already examined particles/colours from array
                 // =================================================
@@ -1138,10 +1117,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (((FSI_Control)Control).AdaptiveMeshRefinement) {
                 CellMask cutCells = LsTrk.Regions.GetCutCellMask();
                 GridRefinementController gridRefinementController = new GridRefinementController(gridData, cutCells, null);
-                if (TimestepNo < 1 || ((FSI_Control)Control).ConstantRefinement)
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
-                else
-                    AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
+                AnyChangeInGrid = gridRefinementController.ComputeGridChange(GetCellsToRefine(), out CellsToRefineList, out Coarsening);
             }
             if (AnyChangeInGrid) {
                 int[] consoleRefineCoarse = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
@@ -1227,7 +1203,6 @@ namespace BoSSS.Application.FSI_Solver {
             UpdateLevelSetParticles(time);
             CreatePhysicalDataLogger();
             MarkEachMPIProcess();
-            CountFromRestart = 50;
             ((FSI_Control)Control).IsRestart = false;
         }
 

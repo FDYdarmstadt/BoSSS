@@ -115,7 +115,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Computing Flux
             // =============================
-            double FlxNeg = m_UseMovingMesh == true
+            double FlxNeg = m_UseMovingMesh
                 ? 0 // Moving mesh
                 : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scaleActiveBoundary);// Splitting
             return FlxNeg;

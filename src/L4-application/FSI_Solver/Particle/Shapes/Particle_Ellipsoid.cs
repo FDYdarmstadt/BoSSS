@@ -99,8 +99,8 @@ namespace BoSSS.Application.FSI_Solver {
         public override double LevelSetFunction(double[] X) {
             double[] position = Motion.GetPosition(0);
             Vector orientation = Motion.orientationVector;
-            double r = -(((X[0] - position[0]) * orientation[0] - (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
-                       - (((X[0] - position[0]) * orientation[1] + (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
+            double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
+                       -(((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
                        + 1.0;
             return r;
         }
@@ -119,7 +119,7 @@ namespace BoSSS.Application.FSI_Solver {
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
-            double Ellipse = ((point[0] - position[0]) * orientation[0] - (point[1] - position[1]) * orientation[1]).Pow2() / a.Pow2() + ((point[0] - position[0]) * orientation[1] + (point[1] - position[1]) * orientation[0]).Pow2() / b.Pow2();
+            double Ellipse = ((point[0] - position[0]) * orientation[0] + (point[1] - position[1]) * orientation[1]).Pow2() / a.Pow2() + ((point[0] - position[0]) * orientation[1] - (point[1] - position[1]) * orientation[0]).Pow2() / b.Pow2();
             return Ellipse < 1;
         }
 

@@ -414,8 +414,9 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int h = 0; h < NumberOfHistoryEntries; h++) {
                     stuetzstelle.Add(variable[h]);
                 }
-                List<double> newVariable = new List<double>();
-                newVariable.Add(variable[0]);
+                List<double> newVariable = new List<double> {
+                    variable[0]
+                };
                 for (int i = 1; i < NumberOfHistoryEntries; i++) {
                     double currentNewTimestep = -i * newTimestep;
                     double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
