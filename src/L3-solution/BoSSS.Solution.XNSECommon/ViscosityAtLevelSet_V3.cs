@@ -87,21 +87,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
             double Ret = 0.0;
 
-            //double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
-            //double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
-
-            //double hCutCellMin = Math.Min(NegCellLengthScale, PosCellLengthScale);
-            //if (hCutCellMin <= 1.0e-10 * hCellMin)
-            //    // very small cell -- clippling
-            //    hCutCellMin = hCellMin;
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
 
             Debug.Assert(uA.Length == this.ArgumentOrdering.Count);
             Debug.Assert(uB.Length == this.ArgumentOrdering.Count);
-            //switch (m_ViscosityImplementation) {
-            //    // old Form (H-Implementation)
-            //    case ViscosityImplementation.H: {
 
             double wA;
             double wB;
@@ -160,10 +150,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         double m_penalty;
 
         /// <summary>
-        /// computation of penalty parameter according to:
-        /// An explicit expression for the penalty parameter of the
-        /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
-        /// look at formula (7) in cited paper
+        /// computation of penalty parameter according to: $` \mathrm{SafetyFactor} \cdot k^2 / h `$
         /// </summary>
         protected double Penalty(int jCellIn, int jCellOut) {
 
