@@ -439,7 +439,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
             double time)
         {
-            //IReadOnlyDictionary<string, DGField> combinedParameters = Combine(ParameterVarFields, lsParameterFields);
             foreach (SingleLevelSetUpdater updater in lsUpdaters.Values)
             {
                 updater.UpdateParameters(DomainVarFields, ParameterVarFields, time);

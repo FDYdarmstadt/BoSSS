@@ -746,7 +746,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// variable name for the phase dividing interface
         /// </summary>
-        public const string Interface = "Interface";
+        public const string FluidInterface = "Interface";
 
 
         /// <summary>

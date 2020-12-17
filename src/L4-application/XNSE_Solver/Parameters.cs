@@ -24,7 +24,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
                 levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             } else {
-                levelSetDegree = 1;
+                throw new Exception("Level set options not found in FieldOptions");
             }
 
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts)) {
                 curvatureDegree = opts.Degree;
             } else {
-                curvatureDegree = 1;
+                throw new Exception("Curvature options not found in FieldOptions");
             }
             
             string levelSet = levelSetName;

@@ -74,8 +74,8 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
             
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
 
@@ -94,8 +94,8 @@ namespace BoSSS.Application.XNSE_Solver {
             ////Tests.UnitTest.TestRayleighTaylorInstability();
             ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
 
-            ////Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
-            ////    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
+                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0d, false,
             //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
