@@ -1563,7 +1563,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \oint_{\Gamma_{\mathrm{int}}} 
     ///              {f}^\mathrm{in} (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{in} 
     ///            + {f}^\mathrm{out}(\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{out} 
@@ -1572,9 +1572,9 @@ namespace BoSSS.Foundation {
     ///          \oint_{\partial \Omega} 
     ///              {f}_{0}(\vec{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $` U = (u_0, \ldots, u_{L-1} ) `$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinEdgeForm_V : IEdgeForm, INonlinInnerEdgeForm_V, INonlinBoundaryEdgeForm_V {
@@ -1585,22 +1585,22 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface INonlinInnerEdgeForm_V : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ {f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the values of \f$ {f}^{*}(\ldots) \f$ on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="fin">
-        /// output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
+        /// - output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :
+        /// - 1st index: edge index
+        /// - 2nd index: quadrature node
         /// </param>
         /// <param name="fot">
-        /// output: the values of \f$ {f}^\mathrm{out}(\ldots)\f$ :<br/>
+        /// output: the values of \f$ {f}^\mathrm{out}(\ldots)\f$
         /// </param>
         /// <param name="Uin">
-        /// input: the values of \f$ U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
-        /// 2nd index: edge index<br/>
-        /// 3rd index: quadrature node<br/>
+        /// - input: the values of \f$ U^\mathrm{in}\f$ 
+        /// - 1st index: component index of \f$ U\f$
+        /// - 2nd index: edge index
+        /// - 3rd index: quadrature node
         /// </param>
         /// <param name="Uout">
         /// analog to <paramref name="Uin"/>, for 'out'-values.<br/>

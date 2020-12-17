@@ -102,7 +102,6 @@
     <Compile Include="SolverUtils.cs" />
     <Compile Include="UpwindMomentumConvection.cs" />
     <Compile Include="VariableNames.cs" />
-    <Compile Include="Viscosity.cs" />
     <Compile Include="ViscosityAtIB.cs" />
   </ItemGroup>
   <ItemGroup>

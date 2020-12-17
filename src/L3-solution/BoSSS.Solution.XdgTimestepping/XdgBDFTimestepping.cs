@@ -1008,7 +1008,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
             using (new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1312,6 +1312,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public override double GetSimulationTime() {
+            return m_CurrentPhystime;
+        }
 
         bool CoupledIteration = true;
 
@@ -1724,18 +1730,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
 
-            /*
-            // ====================
-            // release end-of-stack
-            // ====================
-            int ie = m_Stack_OpMatrix.Length - 1;
-            Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
-            m_Stack_OpMatrix[ie] = null;
-            m_Stack_OpAffine[ie] = null;
-            //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
-            */
+            // ======
+            // return 
+            // ======
 
+            m_CurrentPhystime = phystime + dt;
             return success;
         }
 

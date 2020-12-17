@@ -223,15 +223,7 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
-        /*
-        /// <summary>
-        /// viscosity Implementation
-        /// H: SIP
-        /// SWIP: weighted
-        /// </summary>
-        [DataMember]
-        public ViscosityImplementation ViscosityImplementation = ViscosityImplementation.H;
-        */
+       
         
         /// <summary>
         /// Turn the use of ghost penalties on or off, see <br/>

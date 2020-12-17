@@ -12,6 +12,10 @@ using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP.Utils;
 
 namespace BoSSS.Solution.XNSECommon {
+
+    /// <summary>
+    /// Incompressible, constant density momentum equation in the bulk
+    /// </summary>
     public class NavierStokes : BulkEquation {
         string speciesName;
 
@@ -23,6 +27,19 @@ namespace BoSSS.Solution.XNSECommon {
 
         double rho;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="d">
+        /// Momentum component index
+        /// </param>
+        /// <param name="LsTrk"></param>
+        /// <param name="D">
+        /// Spatial dimension
+        /// </param>
+        /// <param name="boundaryMap"></param>
+        /// <param name="config"></param>
         public NavierStokes(
             string spcName,
             int d,
@@ -35,6 +52,10 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
             this.d = d;
             this.D = D;
+            if(D != 2 && D != 3)
+                throw new ArgumentOutOfRangeException("only supported for 2D and 3D");
+            if(d < 0 || d >= D)
+                throw new ArgumentOutOfRangeException();
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
@@ -162,6 +183,10 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
+
+    /// <summary>
+    /// Continuity equation for the incompressible case, for constant density in the bulk.
+    /// </summary>
     public class Continuity : BulkEquation {
         //Methode aus der XNSF_OperatorFactory
         string speciesName;

@@ -372,7 +372,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Agglomerated length scales, input for <see cref="ComputeOperatorMatrix"/>.
         /// </summary>
-        protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
+        internal protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
             if(m_CurrentAgglomeration != null) {
                 //
                 // agglomerated length scales are available from 
@@ -618,7 +618,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
+        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
@@ -662,5 +662,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             return Ret;
         }
+
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public abstract double GetSimulationTime();
     }
 }

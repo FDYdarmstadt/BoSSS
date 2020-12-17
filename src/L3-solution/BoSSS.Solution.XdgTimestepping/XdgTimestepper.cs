@@ -618,6 +618,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+
+        /// <summary>
+        /// Intended For analysis purposes:
+        /// Returns the Jacobi matrix at the latest/current linearization point, **not** including any temporal derivative.
+        /// </summary>
+        public BlockMsrMatrix GetCurrentSpatialMatrix() {
+            var OpMtx = new BlockMsrMatrix(this.IterationResiduals, this.CurrentState);
+
+            ComputeOperatorMatrix(OpMtx, new double[OpMtx.RowPartitioning.LocalLength], this.CurrentState, this.CurrentState.Fields.ToArray(),
+                this.TimesteppingBase.GetAgglomeratedLengthScales(), this.TimesteppingBase.GetSimulationTime(), 1);
+
+            return OpMtx;
+        }
+        
+        /// <summary>
+        /// Intended For analysis purposes:
+        /// Returns the Jacobi matrix at the latest/current linearization point, **including** the temporal derivative
+        /// </summary>
+        public BlockMsrMatrix GetCurrentJacobiMatrix() {
+
+            this.TimesteppingBase.AssembleMatrixCallback(out var OpMtx, out _, out _, CurrentState.Fields.ToArray(), true, out _);
+
+            return OpMtx;
+        }
+
+
         /// <summary>
         /// the internal object
         /// </summary>
@@ -631,6 +657,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException("internal error");
             }
         }
+
+
 
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
