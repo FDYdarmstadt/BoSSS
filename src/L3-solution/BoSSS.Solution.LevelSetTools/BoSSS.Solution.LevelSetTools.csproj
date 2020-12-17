@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Solution.LevelSetTools</RootNamespace>
     <AssemblyName>BoSSS.Solution.LevelSetTools</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -104,6 +104,8 @@
     <Compile Include="Advection\ScalarVelocityAdvection.cs" />
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\LevelSetEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\LevelSetUpdater.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBoundaryType.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldControl.cs" />
@@ -118,10 +120,12 @@
     <Compile Include="SemiLagrangianLevelSet\SemiLagrangianLevelSetMethod.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
     <Compile Include="TestCases\Flower.cs" />
     <Compile Include="TestCases\RotationFieldClipped.cs" />
     <Compile Include="TestCases\Torus.cs" />
     <Compile Include="TestCases\ZalesaksDisk.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdater.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">

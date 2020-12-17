@@ -167,8 +167,8 @@ namespace ilPSP {
                 sms.Dispose();
             }
 
-            m_NoOfSMPs = Broadcast(NoOfSMPs, 0, csMPI.Raw._COMM.WORLD);
-            m_RankOfSMPs = Broadcast(SMPRank, 0, csMPI.Raw._COMM.WORLD);
+            m_NoOfSMPs = MPIExtensions.MPIBroadcast(NoOfSMPs, 0, csMPI.Raw._COMM.WORLD);
+            m_RankOfSMPs = MPIExtensions.MPIBroadcast(SMPRank, 0, csMPI.Raw._COMM.WORLD);
 
 
             {
@@ -309,76 +309,7 @@ namespace ilPSP {
             get { return m_ProcessRankOnSMP; }
         }
 
-        /// <summary>
-        /// broadcasts an object to all other processes in the 
-        /// MPI communicator <paramref name="comm"/>.
-        /// </summary>
-        /// <param name="o">
-        /// an arbitrary, serialize able object;
-        /// ignored on all processes which are not <paramref name="root"/>
-        /// </param>
-        /// <param name="root">
-        /// rank of the sender process
-        /// </param>
-        /// <param name="comm">MPI communicator</param>
-        /// <returns>
-        /// on the sender process, the input <paramref name="o"/> is returned;
-        /// </returns>
-        /// <typeparam name="T">
-        /// type of the object to transmit
-        /// </typeparam>
-        static public T Broadcast<T>(T o, int root, MPI_Comm comm) {
-
-            int MyRank;
-            csMPI.Raw.Comm_Rank(comm, out MyRank);
-
-            IFormatter _Formatter = new BinaryFormatter();
-
-            // -----------------------------------------------------
-            // 1st phase: serialize object and broadcast object size 
-            // -----------------------------------------------------
-
-            byte[] buffer = null;
-            int Size = -1;
-            MemoryStream ms = null;
-            if (root == MyRank) {
-
-                ms = new MemoryStream();
-                _Formatter.Serialize(ms, o);
-                Size = (int)ms.Position;
-                buffer = ms.GetBuffer();
-            }
-
-
-            unsafe {
-                csMPI.Raw.Bcast((IntPtr)(&Size), 4, csMPI.Raw._DATATYPE.BYTE, root, comm);
-            }
-
-            // ---------------------------
-            // 2nd phase: broadcast object
-            // ---------------------------
-
-            if (buffer == null) {
-                buffer = new byte[Size];
-            }
-
-            unsafe {
-                fixed (byte* pBuffer = buffer) {
-                    csMPI.Raw.Bcast((IntPtr)pBuffer, Size, csMPI.Raw._DATATYPE.BYTE, root, comm);
-                }
-            }
-
-            if (MyRank == root) {
-                ms.Dispose();
-                return o;
-            } else {
-                T r;
-                ms = new MemoryStream(buffer);
-                r = (T)_Formatter.Deserialize(ms);
-                ms.Dispose();
-                return r;
-            }
-        }
+        
 
     }
 }

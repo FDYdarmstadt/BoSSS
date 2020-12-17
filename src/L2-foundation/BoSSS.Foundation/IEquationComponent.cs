@@ -1213,15 +1213,15 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxV">
-        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
-        ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
-        ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
-        ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
+        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$:
+        /// - 1st index: edge index
+        /// - 2nd index: quadrature node
+        /// - 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        ///              ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
+        /// - 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        ///              ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
+        /// - 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        ///              see <see cref="IEquationComponent.ArgumentOrdering"/>
         /// </param>
         void InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV);
     }
@@ -1736,11 +1736,11 @@ namespace BoSSS.Foundation {
         /// 3rd index: quadrature node<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
-        /// 2nd index: edge index<br/>
-        /// 3rd index: quadrature node<br/>
-        /// 4th index: spatial direction of derivative<br/>
+        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ 
+        /// - 1st index: component index of \f$ U\f$ 
+        /// - 2nd index: edge index
+        /// - 3rd index: quadrature node
+        /// - 4th index: spatial direction of derivative
         /// </param>
         void NonlinBoundaryEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,

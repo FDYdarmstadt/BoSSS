@@ -296,7 +296,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Vertices[2, 5] = 1;
                                 Vertices[2, 3] = 1;
 
-                                C_cnt.NodeIndices = new int[8];
+                                C_cnt.NodeIndices = new long[8];
                                 for (int pointnumber = 0; pointnumber < 8; pointnumber++) {
                                     C_cnt.NodeIndices[pointnumber] = i + Vertices[0, pointnumber] + (j + Vertices[1, pointnumber]) * xNodes.Length + (k + Vertices[2, pointnumber]) * xNodes.Length * yNodes.Length;
                                 }
@@ -676,7 +676,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Vertices[2, 3] = 1;
 
 
-                                Cj0.NodeIndices = new int[8];
+                                Cj0.NodeIndices = new long[8];
 
                                 for (int pointnumber = 0; pointnumber < 8; pointnumber++) {
                                     Cj0.NodeIndices[pointnumber] = i + Vertices[0, pointnumber] + (k + Vertices[1, pointnumber]) * rNodes.Length + (l + Vertices[2, pointnumber]) * rNodes.Length * sNodes.Length;
@@ -1062,7 +1062,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
 
                                 // node indices (neighborship via cell face tags
-                                Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3, PtCount + 4, PtCount + 5, PtCount + 6, PtCount + 7 };
+                                Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3, PtCount + 4, PtCount + 5, PtCount + 6, PtCount + 7 };
                                 PtCount += 8;
 
                                 // neigborship
@@ -1263,7 +1263,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     }
 
                                     // node indices (neighborship via cell face tags
-                                    Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3, PtCount + 4, PtCount + 5, PtCount + 6, PtCount + 7 };
+                                    Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3, PtCount + 4, PtCount + 5, PtCount + 6, PtCount + 7 };
                                     PtCount += 8;
 
                                     // neigborship

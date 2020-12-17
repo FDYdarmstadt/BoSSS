@@ -167,7 +167,7 @@ namespace ilPSP.Connectors.Matlab {
 
             }
 
-            MPIEnviroment.Broadcast(this.WorkingDirectory, 0, csMPI.Raw._COMM.WORLD);
+            MPIExtensions.MPIBroadcast(this.WorkingDirectory, 0, csMPI.Raw._COMM.WORLD);
 
             // more checks
             // ===========
@@ -758,7 +758,7 @@ namespace ilPSP.Connectors.Matlab {
                         outputMtx.LoadFromTextFile(filepath);
 
 
-                    var _outputMtx = ilPSP.MPIEnviroment.Broadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
+                    var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
 
                     if (Rank != 0) {
                         outputMtx.Clear();
@@ -778,7 +778,7 @@ namespace ilPSP.Connectors.Matlab {
                     if (Rank == 0)
                         outputMtx = IMatrixExtensions.LoadFromTextFile(filepath);
 
-                    var _outputMtx = ilPSP.MPIEnviroment.Broadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
+                    var _outputMtx = MPIExtensions.MPIBroadcast(outputMtx, 0, csMPI.Raw._COMM.WORLD);
                     m_OutputObjects[key] = _outputMtx;
 
                 } else if (outputObj is int[][]) {
@@ -787,7 +787,7 @@ namespace ilPSP.Connectors.Matlab {
                     if (Rank == 0)
                         LoadStaggeredArray(outputStAry, filepath);
 
-                    var _outputStAry = ilPSP.MPIEnviroment.Broadcast(outputStAry, 0, csMPI.Raw._COMM.WORLD);
+                    var _outputStAry = MPIExtensions.MPIBroadcast(outputStAry, 0, csMPI.Raw._COMM.WORLD);
 
                     if (Rank != 0) {
                         for (int i = 0; i < Math.Max(_outputStAry.Length, outputStAry.Length); i++) { // we use max to ensure an index-out-of-range if something is fishy

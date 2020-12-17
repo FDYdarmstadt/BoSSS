@@ -105,7 +105,8 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
-                        typeof(MPITest.Program)
+                        typeof(MPITest.Program),
+                        typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
@@ -389,7 +390,7 @@ namespace PublicTestRunner {
                 tracerfile.Flush();
                 tracerfile.Close();
                 tracerfile.Dispose();
-            } catch (Exception e) {
+            } catch (Exception) {
                 //Console.Error.WriteLine(e.GetType().Name + " during closing of tracing: " + e.Message);
             }
         }
@@ -1134,7 +1135,7 @@ namespace PublicTestRunner {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
                 Console.WriteLine("No of args: " + args.Length);
-                int i = 0;
+                //int i = 0;
                 foreach(string arg in args) {
                     Console.WriteLine("    " + arg);
                 }

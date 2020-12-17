@@ -204,7 +204,7 @@ namespace BoSSS.Application.XNSE_Solver {
         */
 
 
-
+        /*
 
 
 
@@ -261,15 +261,17 @@ namespace BoSSS.Application.XNSE_Solver {
             /// </summary>
             DropDeformation
         }
+        */
 
-        /// <summary>
-        /// See <see cref="LoggingValues"/>
-        /// </summary>
-        [DataMember]
-        public LoggingValues LogValues = LoggingValues.None;
 
-        [DataMember]
-        public int LogPeriod = 1;
+        ///// <summary>
+        ///// See <see cref="LoggingValues"/>
+        ///// </summary>
+        //[DataMember]
+        //public LoggingValues LogValues = LoggingValues.None;
+
+        //[DataMember]
+        //public int LogPeriod = 1;
 
       
 

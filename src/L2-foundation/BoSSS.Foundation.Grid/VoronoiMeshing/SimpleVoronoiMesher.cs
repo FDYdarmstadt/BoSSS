@@ -22,7 +22,6 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             get { return node.Position; }
             set {
                 node.Position = value;
-                node.Velocity = new Vector(value.Dim);
             }
         }
 

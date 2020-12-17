@@ -389,11 +389,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// The maximum order of the coarse system, which is solved by a direct solver.
+        /// NOTE: there is a hack, which consideres <see cref="CoarseLowOrder"/>-1 for pressure.
+        /// pressure is assumed to be the Dimension-1-th variable
+        /// </summary>
         public int CoarseLowOrder {
             get { return pLow; }
             set { pLow = value; }
         }
 
+        /// <summary>
+        /// Determines, if cutcells are fully assigned (<see cref="CoarseLowOrder"/>=p) to the coarse solver
+        /// </summary>
         public bool CoarseSolveOfCutcells {
             get;
             set;
@@ -949,10 +957,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // hi order smoother
                                 SolveHiSystem(iPart);
 
-                                // re-evaluate residual
-                                ReEvaluateRes(iPart, bi);
-                                // hi order smoother
-                                SolveLoSystem(iPart);
+                                //// re-evaluate residual
+                                //ReEvaluateRes(iPart, bi);
+                                //// hi order smoother
+                                //SolveLoSystem(iPart);
 
                                 xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
 
@@ -1031,8 +1039,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
         }
-
-
 
         /// <summary>
         /// ~
@@ -1342,6 +1348,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } // end FuncTrace
         }
 
+
+
         /// <summary>
         /// ~
         /// </summary>
@@ -1462,22 +1470,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             List<BlockMsrMatrix> Blocks = new List<BlockMsrMatrix>();
-            var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
-            var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<int>());
+            var BlkIdx_gI_lR = NoOfSchwzBlocks.ForLoop(b => new List<long>());
+            var BlkIdx_gI_eR = NoOfSchwzBlocks.ForLoop(b => new List<long>());
             int[][] BlockIndices_Local = new int[NoOfSchwzBlocks][];
             int[][] BlockIndices_External = new int[NoOfSchwzBlocks][];
 
-            int LocalI0 = MopMap.i0;
+            long LocalI0 = MopMap.i0;
             for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
                 BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIList_Internal;
                 BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIList_External;
                 var locallist = new List<int>();
                 var extlist = new List<int>();
                 foreach (int lIdx in BlkIdx_gI_lR[iPart]) {
-                    locallist.Add(lIdx - LocalI0);
+                    locallist.Add((int)(lIdx - LocalI0));
                 }
                 foreach (int eIdx in BlkIdx_gI_eR[iPart]) {
-                    extlist.Add(eIdx - LocalI0);
+                    extlist.Add((int)(eIdx - LocalI0));
                 }
                 BlockIndices_Local[iPart] = locallist.ToArray();
                 BlockIndices_External[iPart] = extlist.ToArray();

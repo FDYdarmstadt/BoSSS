@@ -6,9 +6,9 @@
     <ProjectGuid>{3D867374-BF9A-475E-8F5C-E1C067605B9C}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>XNSE_Solver</RootNamespace>
+    <RootNamespace>BoSSS.Application.XNSE_Solver</RootNamespace>
     <AssemblyName>XNSE_Solver</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile>
     </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
@@ -38,16 +38,16 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Optimize>false</Optimize>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
@@ -57,7 +57,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics">
+    <Reference Include="MathNet.Numerics, Version=4.9.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
@@ -78,6 +79,20 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
+    <Compile Include="CapillaryHeightLogging.cs" />
+    <Compile Include="ChannelFlowLogging.cs" />
+    <Compile Include="Coefficients.cs" />
+    <Compile Include="Dropletlike.cs" />
+    <Compile Include="Equations.cs" />
+    <Compile Include="EvaporationLogging.cs" />
+    <Compile Include="FourierLevelSetLogger.cs" />
+    <Compile Include="InterfacePointsLogger.cs" />
+    <Compile Include="L2ErrorLogger.cs" />
+    <Compile Include="MovingContactLineLogging.cs" />
+    <Compile Include="Parameters.cs" />
+    <Compile Include="RisingBubble2DBenchmarkQuantities.cs" />
+    <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />
     <Compile Include="PhysicalBasedTestcases\ElementalTestProgramm.cs" />
@@ -91,10 +106,16 @@
     <Compile Include="PhysicalBasedTestcases\PhysicalTestProgram.cs" />
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
+    <Compile Include="Tests\HeatTransportTest.cs" />
     <Compile Include="Tests\SinglePhaseChannel.cs" />
+    <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />
+    <Compile Include="WaveLikeLogging.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
+    <Compile Include="XHeat.cs" />
+    <Compile Include="XNSE.cs" />
+    <Compile Include="XNSEinSituPostProcessingModule.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
     <Compile Include="Tests\ITest.cs" />
@@ -111,6 +132,7 @@
     <Compile Include="XNSE_SolverMain.cs" />
     <Compile Include="XNSE_SolverMain_LevelSet.cs" />
     <Compile Include="XNSE_SolverMain_Utils.cs" />
+    <Compile Include="XNSFE.cs" />
     <Compile Include="XNSFE_OperatorComponents.cs" />
     <Compile Include="XNSFE_OperatorFactory.cs" />
   </ItemGroup>

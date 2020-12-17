@@ -52,7 +52,7 @@ namespace NSE_SIMPLE {
                 case PredictorApproximations.Identity:
                 case PredictorApproximations.Identity_IP1:
                 case PredictorApproximations.Diagonal:
-                    int i0 = Approx.RowPartitioning.i0;
+                    long i0 = Approx.RowPartitioning.i0;
                     int LocalLength = Approx.RowPartitioning.LocalLength;
 
                     for (int row = 0; row < LocalLength; row++) {

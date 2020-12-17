@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         public OpAnalysisBase(LevelSetTracker LsTrk, BlockMsrMatrix Mtx, double[] RHS, UnsetteledCoordinateMapping Mapping, MultiphaseCellAgglomerator CurrentAgglomeration, BlockMsrMatrix _mass, IEnumerable<MultigridOperator.ChangeOfBasisConfig[]> OpConfig, ISpatialOperator abstractOperator) {
 
 
-            int RHSlen = Mapping.TotalLength;
+            //int RHSlen = Mapping.TotalLength;
             m_map = Mapping; // mapping
             VarGroup = Mapping.BasisS.Count.ForLoop(i => i); //default: all dependent variables are included in operator matrix
 
@@ -413,13 +413,13 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             //MsrMatrix OpMtxMSR = m_OpMtx.ToMsrMatrix();
 
-            int[] SubMatrixIdx_Row = m_map.GetSubvectorIndices(false, DepVars);
-            int[] SubMatrixIdx_Cols = m_map.GetSubvectorIndices(false, DepVars);
+            long[] SubMatrixIdx_Row = m_map.GetSubvectorIndices(false, DepVars);
+            long[] SubMatrixIdx_Cols = m_map.GetSubvectorIndices(false, DepVars);
             int L = SubMatrixIdx_Row.Length;
 
             MsrMatrix SubOpMtx = new MsrMatrix(L, L, 1, 1);
 
-            m_OpMtx.WriteSubMatrixTo(SubOpMtx, SubMatrixIdx_Row, default(int[]), SubMatrixIdx_Cols, default(int[]));
+            m_OpMtx.WriteSubMatrixTo(SubOpMtx, SubMatrixIdx_Row, default(long[]), SubMatrixIdx_Cols, default(long[]));
 
 
             // symmetry test by calculation of symmetry deviation
@@ -443,7 +443,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     posDef = false;
                 }
             }
-            res[1] = MPIEnviroment.Broadcast<bool>(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
+            res[1] = MPIExtensions.MPIBroadcast(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
 
             Debug.Assert(res[0].MPIEquals(), "value does not match on procs");
             Debug.Assert(res[1].MPIEquals(), "value does not match on procs");
@@ -517,7 +517,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Debug.Assert(Blocks[j].NoOfCols == N);
                 Debug.Assert(Blocks[j].NoOfRows == N);
 
-                int i0 = m_MultigridOp.Mapping.GlobalUniqueIndex(this.VarGroup.Min(), j, 0);
+                long i0 = m_MultigridOp.Mapping.GlobalUniqueIndex(this.VarGroup.Min(), j, 0);
                 Debug.Assert(Mtx[i0, i0] == Blocks[j][0, 0]);
 #endif
 

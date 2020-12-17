@@ -201,7 +201,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         cell.TransformationParams[0, 0] = nodesInSegment[i];
                         cell.TransformationParams[1, 0] = nodesInSegment[i + 1];
 
-                        cell.NodeIndices = new int[] {
+                        cell.NodeIndices = new long[] {
                             globalCellIndex,
                             globalCellIndex + 1
                         };

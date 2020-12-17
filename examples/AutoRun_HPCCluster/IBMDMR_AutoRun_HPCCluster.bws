@@ -1,0 +1,162 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 5 instances of IDatabaseInfo {
+  0: { Session Count = 7; Grid Count = 10; Path = C:\bosss_db }
+  1: { Session Count = 3; Grid Count = 6; Path = H:\geisenhofer\bosss_db_ibmdmr_bug_fixed }
+  2: { Session Count = 2; Grid Count = 2; Path = H:\geisenhofer\bosss_db_svi_video }
+  3: { Session Count = 2; Grid Count = 2; Path = D:\svi_movie\bosss_db_svi_video }
+  4: { Session Count = 22; Grid Count = 44; Path = C:\Users\geisenhofer\HESSENBOX-DA\Paper\BoSSS_Databases\bosss_db_paper }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+string WFlowName = "ibmdmr_paper_revision2";
+**************
+==============
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'ibmdmr_test_clustering'.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+//string dbPath = @"\\dc1\userspace\geisenhofer\bosss_db_paper_ibmdmr";
+//string dbPath      = @"E:\hpccluster-scratch\geisenhofer\bosss_db_paper_ibmdmr";
+//string dbPathLocal = @"E:\geisenhofer\bosss_db_paper_ibmdmr";
+string dbPath      = @"E:\hpccluster-scratch\geisenhofer\bosss_db_ibmdmr_bug_fixed";
+string dbPathLocal = @"H:\geisenhofer\bosss_db_ibmdmr_bug_fixed";
+var myDb           = OpenOrCreateDatabase(dbPathLocal);
+**************
+Opening existing database 'H:\geisenhofer\bosss_db_ibmdmr_bug_fixed'.
+
+==============
+//var myAutoRunJob = new MsHPC2012Client(@"\\dc1\userspace\geisenhofer\tmp", "hpccluster", ComputeNodes : new[]{"hpccluster"});
+var myAutoRunJob = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\geisenhofer\tmp", "hpccluster", ComputeNodes : new[]{"hpccluster"});
+**************
+==============
+using CNS;
+using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Timestepping;
+using System.Text;
+using System.Threading.Tasks;
+using ilPSP.Tracing;
+**************
+==============
+Type solver = typeof(CNS.Program);
+**************
+==============
+// Use the self-compiled BoSSSpad (release mode)
+solver.Assembly.Location;
+**************
+C:\BoSSS\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release\CNS.exe
+==============
+//------------------------------------------------
+//   Parameter study - Time to make changes 
+//------------------------------------------------
+int savePeriod = 100;
+
+int[] dgDegree           = {3};
+
+int numOfCellsX = 300;
+int numOfCellsY = 200;
+//int numOfCellsX = 225;
+//int numOfCellsY = 150;
+
+double[] sensorLimit     = {1e-4};
+
+double dtFixed     = 0.0; // set to 0.0 if CFLFraction shall be used
+double[] CFLFraction = {0.1};
+
+//ExplicitSchemes myScheme = ExplicitSchemes.RungeKutta;
+//ExplicitSchemes myScheme = ExplicitSchemes.LTS;
+ExplicitSchemes myScheme = ExplicitSchemes.AdamsBashforth;
+int explicitScheme       = (int) myScheme;
+int[] explicitOrder        = {3};
+int[] numberOfSubGrids     = {3};
+int[] reclusteringInterval = {1};
+int[] maxNumOfSubSteps = {0};
+
+double agg = 0.3;
+
+double[] fudgeFactor = {0.5};
+double[] kappa       = {0.5};
+
+double endTime = 0.2;
+
+string restart = "False";
+**************
+==============
+int cores = 14;
+**************
+==============
+// Feed the machine
+for (int dg = 0; dg < dgDegree.Length; dg++){
+        for(int sl = 0; sl < sensorLimit.Length; sl++){
+            for(int or = 0; or < explicitOrder.Length; or++){
+                for(int sg = 0; sg < numberOfSubGrids.Length; sg++){
+                    for(int re = 0; re < reclusteringInterval.Length; re++){
+                        for(int su = 0; su < maxNumOfSubSteps.Length; su++){
+                            for(int cfl = 0; cfl < CFLFraction.Length; cfl++){
+                                for(int ka = 0; ka < kappa.Length; ka++){
+                                    for(int ff = 0; ff < fudgeFactor.Length; ff++){
+        // Shock Tube
+        string StartupString = string.Format("cs:CNS.TestCases.IBMDoubleMachReflection(@\"{0}\", {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, @\"{17}\")",
+            dbPath, savePeriod, dgDegree[dg], numOfCellsX, numOfCellsY, sensorLimit[sl], dtFixed, CFLFraction[cfl], explicitScheme, explicitOrder[or], numberOfSubGrids[sg], reclusteringInterval[re], maxNumOfSubSteps[su], agg, fudgeFactor[ff], endTime, kappa[ka], restart);
+        string jobName = null;
+        if (myScheme == ExplicitSchemes.RungeKutta){
+            jobName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_RK{9}",
+                dgDegree[dg], numOfCellsX, numOfCellsY, agg, sensorLimit[sl], fudgeFactor[ff], kappa[ka], dtFixed, CFLFraction[cfl], explicitOrder[or]);
+        } else if (myScheme == ExplicitSchemes.AdamsBashforth){
+            jobName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_AB{9}",
+                dgDegree[dg], numOfCellsX, numOfCellsY, agg, sensorLimit[sl], fudgeFactor[ff], kappa[ka], dtFixed, CFLFraction[cfl], explicitOrder[or]);            
+        } else {
+            jobName = string.Format("IBMDMR_p{0}_xCells{1}_yCells{2}_agg{3}_s0={4:0.0E-00}_ff{5}_ka{6}_dtFixed{7}_CFLFrac{8}_ALTS{9}_{10}_re{11}_subs{12}",
+                dgDegree[dg], numOfCellsX, numOfCellsY, agg, sensorLimit[sl], fudgeFactor[ff], kappa[ka], dtFixed, CFLFraction[cfl], explicitOrder[or], numberOfSubGrids[sg], reclusteringInterval[re], maxNumOfSubSteps[su]);                
+        }
+        
+        var oneJob        = new Job(jobName, solver);
+        oneJob.RetryCount = int.MaxValue;
+        oneJob.SetCommandLineArguments(StartupString);
+        oneJob.NumberOfMPIProcs = cores;
+        oneJob.Activate(myAutoRunJob);
+    }
+    }
+    }
+}
+}
+}
+}
+}
+}
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\geisenhofer\tmp\CNS2019Jul04_17-19-43
+Source directory: C:\BoSSS\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release
+copied 25 files.
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [IBMDMR_p3_xCells300_yCells200_agg0.3_s0=1.0E-04_ff0.5_ka0.5_dtFixed0_CFLFrac0.1_ALTS3_3_re1_subs0, IBMDMR_p3_xCells300_yCells200_agg0.3_s0=1.0E-04_ff0.5_ka0.5_dtFixed0_CFLFrac0.1_ALTS3_3_re1_subs0: PendingInExecutionQueue (BoSSS.Application.BoSSSpad.MsHPC2012Client)]
+}
+==============
+//WorkflowMgm.BlockUntilAllJobsTerminate();
+**************
+==============
+**************
+==============
+**************
+==============

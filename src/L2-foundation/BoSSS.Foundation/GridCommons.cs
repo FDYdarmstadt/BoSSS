@@ -1063,10 +1063,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new ApplicationException("Illegal node indexing: minimal node index is " + NodeIdMin + "(must be non-negative).");
                     }
 
-                    int iNode_0 = (NodeIdMax + 1) * MyRank / Size;
-                    int iNode_E = (NodeIdMax + 1) * (MyRank + 1) / Size;
+                    long iNode_0 = (((long)NodeIdMax + 1) * MyRank) / Size;
+                    long iNode_E = (((long)NodeIdMax + 1) * (MyRank + 1)) / Size;
+                    long LocalLength = iNode_E - iNode_0;
+                    if (LocalLength > int.MaxValue)
+                        throw new OverflowException("Integer overflow.");
 
-                    m_NodePartitioning = new Partitioning(iNode_E - iNode_0);
+                    m_NodePartitioning = new Partitioning((int)LocalLength);
                 }
                 return m_NodePartitioning;
             }
@@ -1456,12 +1459,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int J = this.Cells.Length;
                 for (int j = 0; j < J; j++) {
                     var Cj = this.Cells[j];
-                    oldNodeIdx.AddRange(Cj.NodeIndices);
+                    oldNodeIdx.AddRange(Cj.NodeIndices.Select(l => checked((int)l)));
                 }
                 int J_BC = this.NoOfBcCells;
                 for (int j = 0; j < J_BC; j++) {
                     var Bj = this.BcCells[j];
-                    oldNodeIdx.AddRange(Bj.NodeIndices);
+                    oldNodeIdx.AddRange(Bj.NodeIndices.Select(l => checked((int)l)));
                 }
 
 
@@ -1506,15 +1509,15 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // 1st pass: find maximum node index & alloc memory
                 // ================================================
-                int NoOfNodes = 0;
+                long NoOfNodes = 0;
                 for (int j = 0; j < J; j++) { // loop over cells
                     Cell Cl = this.Cells[j];
 
                     NoOfNodes = Math.Max(NoOfNodes, Cl.NodeIndices.Max());
                 }
                 NoOfNodes++;
-                MultidimensionalArray GlobalNodes = MultidimensionalArray.Create(NoOfNodes, D);
-                MultidimensionalArray hLocal = MultidimensionalArray.Create(NoOfNodes);
+                MultidimensionalArray GlobalNodes = MultidimensionalArray.Create(checked((int)NoOfNodes), D);
+                MultidimensionalArray hLocal = MultidimensionalArray.Create(checked((int)NoOfNodes));
                 int[] NodesIndices = new int[NoOfNodes];
                 NodesIndices.SetAll(-1);
 
@@ -1552,7 +1555,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     double h = Vtx.MindistBetweenRows();
 
                     for (int ivtx = 0; ivtx < Kref.NoOfVertices; ivtx++) {
-                        int iNode = Cl.NodeIndices[ivtx];
+                        int iNode = checked((int)(Cl.NodeIndices[ivtx]));
                         double[] NodeCoord = Vtx.GetRow(VertexIdx[ivtx]);
 
                         if (NodesIndices[iNode] < 0) {
@@ -1714,7 +1717,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         if (Cl.NodeIndices != null) {
                             Debug.Assert(Cl.NodeIndices.Length == VertxPerm.Length);
-                            int[] NewNodeIndices = new int[Cl.NodeIndices.Length];
+                            long[] NewNodeIndices = new long[Cl.NodeIndices.Length];
                             for (int k = 0; k < NewNodeIndices.Length; k++) {
                                 NewNodeIndices[k] = Cl.NodeIndices[VertxPerm[k]];
                             }

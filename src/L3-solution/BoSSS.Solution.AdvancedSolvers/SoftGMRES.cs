@@ -154,7 +154,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
                 int Nloc = Matrix.RowPartitioning.LocalLength;
-                int Ntot = Matrix.RowPartitioning.TotalLength;
+                long Ntot = Matrix.RowPartitioning.TotalLength;
 
                 double[] r = new double[Nloc];
                 double[] z = new double[Nloc];
@@ -351,7 +351,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 if (IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    IterationCallback(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
                 }
 
 

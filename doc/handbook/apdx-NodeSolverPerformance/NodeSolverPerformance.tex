@@ -1,11 +1,14 @@
 This section covers basic performance tests, i.e. how specific algorithms scale
-with grid resolution or with polynomial degree, on a \emph{single compute node}.
+with grid resolution and with polynomial degree, on a \emph{single compute node}.
+
+
+
 
 % --------------------------------------------------------------------------------
-\section{Solver Performance - Poisson problems}
+\section{Solver Performance - Poisson/Stokes problems}
 \label{sec:SolverPerformancePoisson}
 % --------------------------------------------------------------------------------
-Three different groups of solvers are compared:
+Two groups of solver are compared:
 \begin{itemize}
 \item
 Direct Solvers: directs sparse methods, such as PARDISO\footnote{
@@ -15,23 +18,135 @@ and MUMPS\footnote{
 are compared.
 Their performance also serves as a comparative baseline.
 
-\item
-Iterative Algorithms without preconditioning, resp. low-impact, generic preconditioning:
-This includes solver libraries such as \code{monkey} (BoSSS-specific, supports GPU)
-as well as
-HYPRE\footnote{
-\url{https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods}}
-(native library, used via wrappers).
+%\item
+%Iterative Algorithms without preconditioning, resp. low-impact, generic preconditioning:
+%This includes solver libraries such as \code{monkey} (BoSSS-specific, supports GPU)
+%as well as
+%HYPRE\footnote{
+%\url{https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods}}
+%(native library, used via wrappers).
 
 \item
 Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation multigrid
 and multi-level additive Schwarz
 \end{itemize}
 
+The scaling and performance profile is investigated in subsequent sections. For Performance profiling we stick to our working horse: the kcycle-Schwarz algorithm.
+The performance profile of the krylov V-cycle with Schwarz pre and post-smoother is investigated. A direct solver (PARDISO) is used to solve the deepest coarse system. One may choose another direct solver for the coarse system, e.g. MUMPS. In practise PARDISO is more robust to ill-conditioned system, therefore in this performance analysis investigation we will stick to PARDISO as solver, wherever a direct solver is needed.
+NOTE: the p-two-grid used in Schwarz or as a standalone preconditioner, the coarse system is solved by a direct solver.
 
-\subsection{Constant Diffusion Coefficient test problem}
+We distinguish four phases of every solver-scenario: 
+\begin{itemize}
+	\item MatrixAssembly: assemble Block matrix
+	\item Aggregation basis init: create multigrid sequence, contains information about the transformation at the multigrid levels
+	\item Solver Init: hand over/assemble relevant data for the chosen solver, e.g. operator matrix etc.
+	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
+\end{itemize}
+Matrix assembly and aggregation init is discritization specific, whereas, Solver init and run ist specific for the used solver.
+
+\subsection{Introduction of solvers}
+
+\subsubsection{linear Solver: preconditioned GMRES}
+\label{sec:ptg_gmres}
+
+
+
+\newcommand{\gvec}[1]{\boldsymbol{#1}}
+%%\newcommand{\gmat}[1]{\underline{\underline{#1}}}
+\newcommand{\gmat}[1]{\boldsymbol{\mathrm{#1}}}
+%\newcommand{\setI}{\mathbb{I}}
+%\newcommand{\setV}{\mathbb{V}}
+
+The pTG algorithm, used as left preconditioner of the well known GMRES-algorithm ...
+
+... TBD: Darstellung klären ...
+%\begin{algorithmic}
+%	\label{alg:pMultigrid}
+%	\Require A right-hand-side $\gvec{b}$,
+%	a vector of DG polynomial degrees $\gvec{k}_{\text{lo}}$, 
+%	which separates low from high order modes, for each variable.
+%	Optionally, an index-set $\mathbb{I} \subset \mathbb{J}^\lambda$ of 
+%	sub-cells, denoting the block to solve.
+%	\Ensure  An approximate solution $\gvec{x}$
+%	\State
+%	$\gvec{x} := 0$ 
+%	\Comment{initialize approximate solution}
+%	\State $I_{\text{lo}} := m(\mathbb{I},-,-,\leq N_{\gvec{k}_{\text{lo}}})$
+%	\Comment{Indices for low-order modes in cells $\mathbb{I}$}
+%	\State 
+%	$\gmat{M}_{\text{lo}} := \gmat{M}_{ I_{\text{lo}} , I_{\text{lo}} }$
+%	\Comment{extract low-order system}
+%	\State 
+%	$\gvec{r}_{\text{lo}} := \gvec{b}_{ I_{\text{lo}} }$
+%	\Comment{extract low-order RHS}
+%	\State Solve: $\gvec{x}_{\text{lo}} := \gmat{M}_{\text{lo}} \setminus \gvec{r}_{\text{lo}}$
+%	\Comment{using a sparse direct solver}
+%	\State
+%	$\gvec{x}_{ I_{\text{lo}} } := \gvec{x}_{ I_{\text{lo}} } + \gvec{x}_{\text{lo}}$
+%	\Comment{accumulate low-order solution}
+%	\State
+%	$\gvec{r} := \gvec{b} - \gmat{M}\gvec{x}_{ I_{\text{lo}} }$
+%	\Comment{compute residual of solution}
+%	\ForAll {$j \in \mathbb{I}$}
+%	\Comment{loop over cells...}
+%	\State $I_{\text{hi},j} := m(j,-,-,> N_{\gvec{k}_{\text{lo}}})$
+%	\Comment{Indices for high-order modes in cell $j$}
+%	\State $\gmat{M}_{\text{hi},j} := \gmat{M}_{I_{\text{hi},j} \ I_{\text{hi},j}}$
+%	\Comment{extract high-order system in cell $j$}
+%	\State $\gvec{r}_{\text{hi},j} := \gvec{r}_{ I_{\text{hi},j} }$
+%	\Comment{extract high-order residuum in cell $j$}
+%	\State Solve: $\gvec{x}_{\text{hi},j} := \gmat{M}_{\text{hi},j} \setminus \gvec{r}_{\text{hi},j}$
+%	\Comment{using a dense direct solver}
+%	\State $\gvec{x}_{ I_{\text{hi},j} } := \gvec{x}_{ I_{\text{hi},j} } + \gvec{x}_{\text{hi},j}$
+%	\Comment{accumulate local high-order correction}
+%	\EndFor
+%\end{algorithmic}
+
+
+\subsubsection{linear Solver: V-krylov-cycle with Schwarz smoother}
+\label{sec:kcycle}
+
+The V-krylov-cycle with Schwarz smoother with pTG, which is introduced in \ref{sec:ptg_gmres}, as block solver.
+
+... TBD: Darstellung klären ...
+%\begin{algorithmic}
+%	\label{alg:OrthoMG}
+%	\Require A right-hand-side $\gvec{b}$ and an initial solution guess $\gvec{x}_0$ (can be zero).
+%	\Ensure An approximate solution $\gvec{x}$ whose residual norm is 
+%	less than or equal to the residual norm of the initial guess $\gvec{x}_0$. 
+%	\State $\gmat{Z} := (), \gmat{W} := ()$
+%	\Comment{Initialize as empty}
+%	\State $\gvec{r}_0 := \gvec{b} - \gmat{M} \gvec{x}_0$, $\gvec{r} := \gvec{r}_0$, $\gvec{x} := \gvec{x}_0$
+%	\Comment{residual of interstitial solution}
+%	\While{$|\gvec{r}|_2 > \varepsilon$}
+%	\State{ $\gvec{z} := \text{Swz}(\gvec{r})$}
+%	\Comment{pre-smoother}
+%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
+%	\Comment{minimize residual of pre-smoother}
+%	\State{$\gvec{r}_c := (\gmat{R}^{X,\lambda})^T \gvec{r}$}
+%	\Comment{restrict residual}
+%	\If {\text{ dimension of matrix } $L_{c}>L_{min}$ }  %%$\lambda + 1 < \lambda_{max}$
+%	\State{$(\gvec{z}_c, \gvec{r}_c) = \text{MG}(0,\gvec{r}_c, \gmat{M}^{\lambda + 1})$}
+%	\Comment{call multigrid on coarser level}
+%	\Else
+%	\State  $\gvec{z}_c := \gmat{M}_{c} \setminus \gvec{r}_{c}$
+%	\Comment{using a sparse direct solver}
+%	\EndIf
+%	\State{$\gvec{z} := \gmat{R}^{X,\lambda} \gvec{z}_c $}
+%	\Comment{prolongate coarse-grid correction}
+%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
+%	\Comment{minimize residual}
+%	\State{ $\gvec{z} := \text{Swz}(\gvec{r})$}
+%	\Comment{pre-smoother}
+%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
+%	\Comment{minimize residual of pre-smoother}
+%	\EndWhile
+%\end{algorithmic}
+
+
+\subsection{DG-Poisson test problem}
 \label{sec:ConstantDiffusionCoefficient}
-The problem
+The stationary 3D-problem:
 \begin{equation}
 \left\{ \begin{array} {rclll}
 - \Delta T   & = & g_{\domain}                      
@@ -47,30 +162,22 @@ T   & = & g_D = 0
 \end{array} \right.
 \label{eq:ContantCoeffPoissonBenchmark}
 \end{equation}
+where $g_{\domain}=-sin(x)$.
 is investigated on a non-uniform, Cartesian grid
 (equidistant in $z$, sinus-spacing in $x$ and $y$ direction).
 The large $\Gamma_N$ makes the problem harder for non-preconditioned
 iterative methods. See Figure \ref{fig:ConstantCoeffRuntimes} for results.
 
+\subsection{DG-Poisson: scaling of solvers}
+
 \graphicspath{{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/}}
-
-Subsequent the performance of some code parts are investigated for the block Jacobian and the Schwarz multigrid preconditioned conjugate gradient method (PCG):
-\begin{itemize}
-	\item MatrixAssembly: assemble Block matrix
-	\item Aggregation basis init: create multigrid sequence, contains information about the transformation at the multigrid levels
-	\item Solver Init: hand over/assemble relevant data for the chosen solver, e.g. operator matrix etc.
-	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
-\end{itemize}
-Both variants are using pre and post smoothing solvers (5 runs at each multigrid level).
-
-
 
 \begin{figure}[!h]
 	\begin{center}
 		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonScaling.tex}
 	\end{center}
 	\caption{
-		Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		Solver wallclock-time vs. degrees-of-freedom, for different polynomial degrees $k$,
 		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 	}
 	\label{fig:ConstantCoeffRuntimes}
@@ -78,73 +185,74 @@ Both variants are using pre and post smoothing solvers (5 runs at each multigrid
 
 \newpage
 
-\subsubsection{Block Jacobian and Schwarz-Multigrid Preconditioning}
+\subsubsection{DG-Poisson: krylov-cycle Profiling}
+
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-NodeSolverPerformance/zeug/jacobischwarz-scheme.pdf_tex}
+		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonexp_Kcycle_schwarz.tex}
 	\end{center}
 	\caption{
-		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
-	}
-	\label{fig:schema_BlockPCG}
-\end{figure}
-
-\begin{figure}[!h]
-	\begin{center}
-		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoisson_MG.tex}
-	\end{center}
-	\caption{
-		Investigation of runtime of different code parts of the block Jacobian PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		Investigation of runtime of different code parts of the V-kcycle with additive Schwarz (p-two-grid as block solver) smoother. wallclock-time vs. degrees-of-freedom, for different polynomial degrees $k$,
 		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 	}
 	\label{fig:SIP_blockJacobianPCG}
 \end{figure}
 \newpage
 
-\subsubsection{Schwarz-Multigrid Preconditioning}
+\subsubsection{DG-Poisson: preconditioned GMRES Profiling}
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-NodeSolverPerformance/zeug/schwarz-scheme.pdf_tex}
+		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoissonexp_gmres_levelpmg.tex}
 	\end{center}
 	\caption{
-		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
-	}
-	\label{fig:schema_SchwarzPCG}
-\end{figure}
-
-\begin{figure}[!h]
-	\begin{center}
-		\input{./apdx-NodeSolverPerformance/PoissonConstCoeff/plots/ConstCoeffPoisson_Schwarz.tex}
-	\end{center}
-	\caption{
-		Investigation of runtime of different code parts of the Schwarz PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		Investigation of runtime of different code parts of the preconditioned GMRES algorithm. Wallclock-time vs. degrees-of-freedom, for different polynomial degrees $k$,
 		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
 	}
 	\label{fig:SIP_SchwarzPGC}
 \end{figure}
 \newpage
 
-\subsection{velocity test problem with levelset and Xdg}
+\subsection{Xdg-Poisson test problem}
 \label{sec:XdgPoisson}
-The problem
+
+\newcommand{\frakA}{\mathfrak{A}}
+\newcommand{\frakB}{\mathfrak{B}}
+\newcommand{\nOmega}{\vec{n}_{\partial \Omega } }
+%\newcommand*{\jump}[1]{\left\llbracket {#1} \right\rrbracket}
+\newcommand{\frakI}{\mathfrak{I}}
+\newcommand{\nI}{\vec{n}_\frakI}
+
+The test problem can be considered as stationary 3 dimensional heat equation with source-term and with two phases:
 \begin{equation}
-\left\{ \begin{array} {rclll}
-- \nabla \cdot (\mu \nabla u)   & = & g_{\domain}=(1)^T                       
-& \text{in}\ \Omega \setminus \varphi, \text{with}\ \Omega= [-1,1]^3  &  \\
-% ----
-u_D & = & 0                            
-& \text{on}\ \Gamma_D = \partial \Omega
-& \text{Dirichlet-boundary} \\
-% ----
-\jump{\mu \nabla u} \cdot \vec{n} & = & 0  & \text{on}\ \varphi = \{\vec{X}=(x,y,z); \ |\vec{X}|_2=0.7\} & \text{levelset}
-\end{array} \right.
-\label{eq:XdgPoissonBenchmark}
+\left\{ \begin{array}{rll}
+- \mu \Delta u                   & = f               & \text{ in } \Omega \setminus \frakI , \\
+\jump{u}                         & = 0               & \text{ on } \frakI ,                  \\
+\jump{\mu \nabla u \cdot \nI}    & = 0               & \text{ on } \frakI ,                  \\
+u                                & = g_\text{Diri}   & \text{ on } \Gamma_\mathrm{Diri} ,    \\
+\nabla u \cdot \nOmega           & = g_\text{Neu}    & \text{ on } \Gamma_\mathrm{Neu} .     \\
+\end{array}
+\right.
+\label{eq:poisson-jump-problem-def}
 \end{equation}
+with a constant diffusion coefficient in each subdomain
+
+
+\begin{equation}
+\mu (\vec{x}) = 
+\left\{ \begin{array}{ll}
+\mu_\frakA & \text{for } \vec{x} \in \frakA, \\
+\mu_\frakB & \text{for } \vec{x} \in \frakB. \\
+\end{array} \right.
+\label{eq:DiscDiffKoeff}
+\end{equation}
+
 where $\mu_1=1$ (inner) and $\mu_2=1000$ (outer) characterize the two phases. is investigated on a uniform, equidistant Cartesian grid. See \ref{fig:XdgRuntimes} for results.
 
 \graphicspath{{./apdx-NodeSolverPerformance/XDGPoisson/plots/}}
+
+\subsubsection{Xdg-Poisson: scaling of solvers}
 
 \begin{figure}[!h]
 	\begin{center}
@@ -157,30 +265,13 @@ where $\mu_1=1$ (inner) and $\mu_2=1000$ (outer) characterize the two phases. is
 	\label{fig:XdgRuntimes}
 \end{figure}
 \newpage
-Subsequent the performance of some code parts are investigated for the block Jacobian and the Schwarz multigrid preconditioned conjugate gradient method (PCG):
-\begin{itemize}
-	\item MatrixAssembly: assemble Block matrix
-	\item Aggregation basis init: create multigrid sequence, contains information about the transformation at the multigrid levels
-	\item Solver Init: hand over/assemble relevant data for the chosen solver, e.g. operator matrix etc.
-	\item Solver Run: solves the equation system: operator matrix, vector of dg coordinates and given RHS 
-\end{itemize}
-Both variants are using pre and post smoothing solvers (5 runs at each multigrid level).
 
-\subsubsection{Block Jacobian and Schwarz-Multigrid Preconditioning}
+\subsubsection{Xdg-Poisson: krylov-cycle Profiling}
+
 
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-NodeSolverPerformance/zeug/jacobischwarz-scheme.pdf_tex}
-	\end{center}
-	\caption{
-		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
-	}
-	\label{fig:schema_BlockPCG_2}
-\end{figure}
-
-\begin{figure}[!h]
-	\begin{center}
-		\input{./apdx-NodeSolverPerformance/XDGPoisson/plots/XdgPoisson_MG.tex}
+		\input{./apdx-NodeSolverPerformance/XDGPoisson/plots/XdgPoissonexp_Kcycle_schwarz.tex}
 	\end{center}
 	\caption{
 		Investigation of runtime of different code parts of the block Jacobian PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
@@ -189,22 +280,13 @@ Both variants are using pre and post smoothing solvers (5 runs at each multigrid
 	\label{fig:Xdg_blockJacobianPCG}
 \end{figure}
 
-\subsubsection{Schwarz-Multigrid Preconditioning}
+\subsubsection{Xdg-Poisson: preconditioned GMRES Profiling}
 
-\begin{figure}[!h]
-	\begin{center}
-		\input{./apdx-NodeSolverPerformance/zeug/schwarz-scheme.pdf_tex}
-	\end{center}
-	\caption{
-		schematic of the Multigrid Schwarz \& Block Jacobian Preconditioning (for a CG solver).
-	}
-	\label{fig:schema_SchwarzPCG_2}
-\end{figure}
 
 \newpage
 \begin{figure}[!h]
 	\begin{center}
-		\input{./apdx-NodeSolverPerformance/XdgPoisson/plots/XdgPoisson_Schwarz.tex}
+		\input{./apdx-NodeSolverPerformance/XdgPoisson/plots/XdgPoissonexp_gmres_levelpmg.tex}
 	\end{center}
 	\caption{
 		Investigation of runtime of different code parts of the Schwarz PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
@@ -213,6 +295,106 @@ Both variants are using pre and post smoothing solvers (5 runs at each multigrid
 	\label{fig:Xdg_SchwarzPGC}
 \end{figure}
 \newpage
+
+\subsection{Xdg-Stokes test problem}
+
+As a test case for a two-phase stokes problem with Xdg approach, we choose an ellipsoid within a closed cube. The body is not touching the cube. There is no gravitational force and the boundaries are considered as walls ($\vec{u}_\mathrm{Diri}=\vec{0}$).
+
+\newcommand{\divergence}[1]{{\mathrm{div}\left({#1}\right)}}
+\newcommand{\normI}{{\vec{n}_{\frakI}}}
+
+\begin{equation}
+\left\{ \begin{array}{rll}
+
+\nabla p
+- 
+\divergence{\mu ( \nabla \vec{u} + (   \nabla \vec{u})^T ) }  
+& = 0  
+& \text{ in } \Omega \setminus \frakI = (-1,1)^3 , \\
+\textrm{div}(\vec{u})  &=  0    
+& \text{ in } \Omega \setminus \frakI , \\
+\jump{\vec{u}} & =  0
+& \text{ on } \frakI \\ 
+\jump{
+	p \nI
+	- \mu ( \nabla \vec{u} + (   \nabla \vec{u})^T ) \cdot \nI
+}
+& = 
+\sigma \kappa \normI
+& \text{ on } \frakI(t), \\ 
+u  & = \vec{u}_\mathrm{Diri}   
+& \text{ on } \Gamma_\mathrm{Diri} .    \\
+\end{array} \right.
+\label{eq:XdgStokes-Benchmark}
+\end{equation}
+with piece-wise constant density and viscosity for both phases, i.e.
+\begin{equation}
+\rho(\vec{x}) = \left\{ \begin{array}{ll}
+\rho_\frakA & \textrm{for } \vec{x} \in \frakA \\
+\rho_\frakB & \textrm{for } \vec{x} \in \frakB \\
+\end{array} \right.
+\quad \textrm{and} \quad
+\mu(\vec{x}) = \left\{ \begin{array}{ll}
+\mu_\frakA & \textrm{for } \vec{x} \in \frakA \\
+\mu_\frakB & \textrm{for } \vec{x} \in \frakB \\
+\end{array} \right.
+.
+\label{eq:defRhoAndMu}
+\end{equation}
+Furthermore, $\sigma$ denotes surface tension and $\kappa$ denotes the 
+mean curvature of $\frakI$. The body (ellipsoid) is defined by a level-set function:
+
+\begin{equation}
+(x/(\beta*r))^2 + (y/r)^2 +(z/r)^2-1=0
+\end{equation} 
+
+where $\beta=0.5$ is the spherical aberration and $r=0.5$ the radius. The physical parameters are:
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{l|c}
+		$\rho_A$ & 1e-3  $kg / cm^3$\\
+		$\rho_B$ & 1.2e-6  $kg / cm^3$\\
+		$\mu_A$ & 1e-5 $kg / cm / sec$\\
+		$\mu_B$ & 17.1e-8 $kg / cm / sec$\\
+		$\sigma$ & 72.75e-3 $kg / sec^2$\\
+	\end{tabular}
+\end{table}
+
+The surface tension is inducing a velocity field around the ellipsoid. This test case is non-physical due to the static body. A more realistic body would reshape to compensate the surface tension, which leads to oscillation of the body.
+
+\graphicspath{{./apdx-NodeSolverPerformance/XDGStokes/plots/}}
+
+\subsubsection{Xdg-Poisson: scaling of solvers}
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/XDGStokes/plots/XdgStokesScaling.tex}
+	\end{center}
+	\caption{
+		Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:XdgStokes-Benchmark}).
+	}
+	\label{fig:XdgStokes-scaling}
+\end{figure}
+
+The size of Schwarzblocks was set to 10.000 DOF. It is known, that this raises the number of iterations and therefore the number of Schwarz blocks shall be constant for next study ... 
+
+\newpage
+
+\subsubsection{Xdg-Poisson: krylov-cycle Profiling}
+
+
+\begin{figure}[!h]
+	\begin{center}
+		\input{./apdx-NodeSolverPerformance/XDGStokes/plots/XdgStokesexp_Kcycle_schwarz.tex}
+	\end{center}
+	\caption{
+		Investigation of runtime of different code parts of the block Jacobian PCG. Solver runtime vs. degrees-of-freedom, for different polynomial degrees $k$,
+		for problem/Equation (\ref{eq:XdgStokes-Benchmark}).
+	}
+	\label{fig:XdgStokes-kcylce}
+\end{figure}
 
 
 \section{Solver Performance - Navier-Stokes problems}

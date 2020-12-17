@@ -13,47 +13,70 @@ namespace BoSSS.Solution.NSECommon {
     /// Based on the NASA-polynomials used in the GRI-Mech kinetic mechanism. 
     /// http://combustion.berkeley.edu/gri_mech/version30/files30/thermo30.dat
     /// </summary>
-    public class ThermodynamicalProperties{
-        private NumberFormatInfo provider;
-        public ThermodynamicalProperties() {
-            string dataPath = @"..\..\thermo30.dat.txt"; // TODO change  
+    public class ThermodynamicalProperties {
+        static private NumberFormatInfo provider;
+        static ThermodynamicalProperties() {
 
-            StreamReader sr = new StreamReader(dataPath);
-            var lineCount = File.ReadAllLines(dataPath).Length;
+            string AllData = Resource1.thermo30_dat;
 
-            provider = new NumberFormatInfo();
-            provider.NumberDecimalSeparator = ".";
-            provider.NumberGroupSeparator = ",";
+            using (MemoryStream stream = new MemoryStream(Encoding.UTF8.GetBytes(AllData))) {
+                using (StreamReader sr = new StreamReader(stream)) {
 
-            sr.ReadLine();
-            var data = sr.ReadLine();
-            var split = data.Split(' ');
 
-            int i = 0;
-            foreach (string s in split) {
-                if (!(s == "")) {
-                    TemperatureLimits[i] = Convert.ToDouble(s, provider);
-                    i++;
+                    // Read number of lines 
+
+                    int lineCount = getTotalNumberOfLines(sr);
+
+                    provider = new NumberFormatInfo();
+                    provider.NumberDecimalSeparator = ".";
+                    provider.NumberGroupSeparator = ",";
+
+                    sr.DiscardBufferedData();
+                    sr.BaseStream.Seek(0, System.IO.SeekOrigin.Begin); // Go back to beginning of the file 
+
+                    sr.ReadLine();
+                    var data = sr.ReadLine();
+                    var split = data.Split(' ');
+
+                    int i = 0;
+                    foreach (string s in split) {
+                        if (!(s == "")) {
+                            TemperatureLimits[i] = Convert.ToDouble(s, provider);
+                            i++;
+                        }
+                    }
+
+
+                    CreateAtomicWeigthsDictionary(); //
+
+                    //Loop over all species and store species name and coefficients in the dictionary
+                    int no_of_species = (lineCount - 6) / 4;//  Total number of species present in thermo.data
+                    for (int n = 1; n < no_of_species + 1; n++) {
+                        int linenumber = 4 * (n - 1) + 7;
+                        string name = getname(sr, linenumber - 1);   //Get the name of the species             
+                        double[][] coefficients = getCoefficients(sr, linenumber);   //Get all coefficients from this species
+                        coefficientsDict.Add(name, coefficients);
+
+                        double MW = calculateMW(name);
+                        molecularWeightDict.Add(name, MW);
+                    }
+
                 }
-            }
-
-
-            CreateAtomicWeigthsDictionary(); //
-
-            //Loop over all species and store species name and coefficients in the dictionary
-            int no_of_species = (lineCount - 6) / 4;//  Total number of species present in thermo.data
-            for (int n = 1; n < no_of_species + 1; n++) {
-                int linenumber = 4 * (n - 1) + 7;
-                string name = getname(sr, linenumber - 1);   //Get the name of the species             
-                double[][] coefficients = getCoefficients(sr, linenumber);   //Get all coefficients from this species
-                coefficientsDict.Add(name, coefficients);
-
-                double MW = calculateMW(name);
-                molecularWeightDict.Add(name, MW);
             }
         }
 
-        void CreateAtomicWeigthsDictionary() {
+
+
+        static int getTotalNumberOfLines(StreamReader sr) {
+            int lines = 0;
+            string line = "dummy";
+            while (line != "END") {
+                line = sr.ReadLine();
+                lines++;
+            }
+            return lines;
+        }
+        static void CreateAtomicWeigthsDictionary() {
             // Calculate molecular weight and store in dictionary
             char[] a = new char[] { 'H', 'C', 'N', 'O', 'A' };
             double[] atomicWeigths = new double[] { 1, 12, 14, 16, 40 };
@@ -63,15 +86,15 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
- 
-        Dictionary<char, double> atomicWeigthsDictionary = new Dictionary<char, double>();
+
+        static Dictionary<char, double> atomicWeigthsDictionary = new Dictionary<char, double>();
         /// <summary>
         /// Calculates molecular weight based on the molecular formula of the species
         /// Example: Molecular weight of CH4 is calculated as: AtomicWeigth(C)*1 + AtomicWeigth(H)*4
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public double calculateMW(string name) {
+        static public double calculateMW(string name) {
             char[] charName = name.ToCharArray();
             int nameLength = name.Length;
 
@@ -105,7 +128,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="sr"></param>
         /// <param name="linenumber"></param>
         /// <returns></returns>
-        public string getname(StreamReader sr, int linenumber) {
+        static public string getname(StreamReader sr, int linenumber) {
             string name = "";
             rewind(sr, linenumber);
             char[] charline = sr.ReadLine().ToCharArray();
@@ -128,7 +151,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="sr"></param>
         /// <param name="line_number"></param>
         /// <returns></returns>
-        double[][] getCoefficients(StreamReader sr, int line_number) {
+        static double[][] getCoefficients(StreamReader sr, int line_number) {
             rewind(sr, line_number); // now we are positioned in the line number here specified
             string line1 = sr.ReadLine();
             string line2 = sr.ReadLine();
@@ -165,7 +188,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="sr"></param>
         /// <param name="line"></param>
-        void rewind(StreamReader sr, int line) {
+        static void rewind(StreamReader sr, int line) {
             sr.DiscardBufferedData();
             sr.BaseStream.Seek(0, System.IO.SeekOrigin.Begin); // Go back to beginning of the file 
             int actualLine = 0;
@@ -178,17 +201,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         ///  lower, middle and upper temperature limit
         ///  /// </summary>
-        private double[] TemperatureLimits = new double[3];
+        static private double[] TemperatureLimits = new double[3];
 
         /// <summary>
         /// for a given component name two double arrays with coefficients
         /// </summary>
-        private Dictionary<string, double[][]> coefficientsDict = new Dictionary<string, double[][]>();
+        static private Dictionary<string, double[][]> coefficientsDict = new Dictionary<string, double[][]>();
 
         /// <summary>
         /// for a given component name two double arrays with coefficients
         /// </summary>
-        private Dictionary<string, double> molecularWeightDict = new Dictionary<string, double>();
+        static private Dictionary<string, double> molecularWeightDict = new Dictionary<string, double>();
 
 
         /// <summary>
@@ -200,31 +223,31 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public double getCp(string name, double T) {
             //using (var tr = new FuncTrace()) {
-                double[] coefficients;
-                if (/*T >= TemperatureLimits[0] - 200.0 &&*/ T < TemperatureLimits[1]) { // Lower range, with a threshold 5.0 K
-                    coefficients = coefficientsDict[name][1];
-                } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] + 5.0) { // Higher range
-                    coefficients = coefficientsDict[name][0];
-                } else {
-                    throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds. The used temperature is" + T);
-                }
+            double[] coefficients;
+            if (/*T >= TemperatureLimits[0] - 200.0 &&*/ T < TemperatureLimits[1]) { // Lower range, with a threshold 5.0 K
+                coefficients = coefficientsDict[name][1];
+            } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] + 5.0) { // Higher range
+                coefficients = coefficientsDict[name][0];
+            } else {
+                throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds. The used temperature is" + T);
+            }
 
             //Force temperature
             if (T < TemperatureLimits[0])
                 T = TemperatureLimits[0];
 
-                double R = 8.314; // KJ /Kmol K
-                double MW = molecularWeightDict[name]; // Kg/Kmol
-                double cp;
-                //using (new BlockTrace("Heat capacity calculation", tr)) {
-                    cp = (
-                    coefficients[0] +
-                    coefficients[1] * T +
-                    coefficients[2] * T * T +
-                    coefficients[3] * T * T * T +
-                    coefficients[4] * T * T * T * T) * R / MW;
-                //}
-                return cp; // KJ/(kg K
+            double R = 8.314; // KJ /Kmol K
+            double MW = molecularWeightDict[name]; // Kg/Kmol
+            double cp;
+            //using (new BlockTrace("Heat capacity calculation", tr)) {
+            cp = (
+            coefficients[0] +
+            coefficients[1] * T +
+            coefficients[2] * T * T +
+            coefficients[3] * T * T * T +
+            coefficients[4] * T * T * T * T) * R / MW;
+            //}
+            return cp; // KJ/(kg K
             //}
 
         }
@@ -249,11 +272,11 @@ namespace BoSSS.Solution.NSECommon {
             double R = 8.314; // J /mol K
 
             double cp = (
-                coefficients[0]*Math.Log(T) +
+                coefficients[0] * Math.Log(T) +
                 coefficients[1] * T +
-                coefficients[2] * T * T/2.0 +
-                coefficients[3] * T * T * T/3.0 +
-                coefficients[4] * T * T * T * T/4+
+                coefficients[2] * T * T / 2.0 +
+                coefficients[3] * T * T * T / 3.0 +
+                coefficients[4] * T * T * T * T / 4 +
                 coefficients[6]) * R;
             return cp;
         }
@@ -273,7 +296,7 @@ namespace BoSSS.Solution.NSECommon {
                 cpMixture = cpMixture + cp_i * MassFractions[i];
             }
             double cpRef = 1.4;
-            return cpMixture/cpRef;
+            return cpMixture / cpRef;
         }
 
 

@@ -104,10 +104,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private PolynomialList lambdaBasis;
 
-        /// <summary>
-        /// The sub-grid for the current execution mask
-        /// </summary>
-        private SubGrid subGrid;
+        ///// <summary>
+        ///// The sub-grid for the current execution mask
+        ///// </summary>
+        //private SubGrid subGrid;
 
         /// <summary>
         /// The requested polynomial order in the last call of
@@ -115,6 +115,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private int lastOrder = -1;
 
+        /// seems to be incorectly implementd:
         /// <summary>
         /// Cache for quadrature rules
         /// <list type="bullet">
@@ -122,14 +123,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         ///     <item>Value: Quadrature rule</item>
         /// </list>
         /// </summary>
-        private Dictionary<int, CellBoundaryQuadRule> cache =
-            new Dictionary<int, CellBoundaryQuadRule>();
+        private Dictionary<int, CellBoundaryQuadRule> cache = new Dictionary<int, CellBoundaryQuadRule>();
 
         /// <summary>
         /// If there are any cached rules, this method returns their order.
         /// </summary>
         public int[] GetCachedRuleOrders() {
-            return cache.Keys.ToArray();
+            //return cache.Keys.ToArray();
+            if (lastOrder < 0)
+                return new int[] { };
+            else 
+                return new int[] { lastOrder };
         }
 
         /// <summary>
@@ -182,7 +186,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             private set;
         }
 
-        private int[] localCellIndex2SubgridIndex;
+        //private int[] localCellIndex2SubgridIndex;
 
         #region IQuadRuleFactory<CellBoundaryQuadRule> Members
 
@@ -227,8 +231,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
 #endif
 
-                subGrid = new SubGrid(tmpLogicalMask);
-                localCellIndex2SubgridIndex = subGrid.LocalCellIndex2SubgridIndex;
+                //var subGrid = new SubGrid(tmpLogicalMask);
+                //localCellIndex2SubgridIndex = subGrid.LocalCellIndex2SubgridIndex;
 
                 if (order != lastOrder) {
                     cache.Clear();
@@ -238,19 +242,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 var result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
                 CellBoundaryQuadRule[] optimizedRules = GetOptimizedRules((CellMask)mask, order);
                 int n = 0;
-                foreach (Chunk chunk in mask) {
-                    foreach (int cell in chunk.Elements) {
-                        if (cache.ContainsKey(cell)) {
-                            result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                Chunk.GetSingleElementChunk(cell), cache[cell]));
-                        } else {
-                            cache.Add(cell, optimizedRules[n]);
-                            result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                Chunk.GetSingleElementChunk(cell), optimizedRules[n]));
-                        }
-
-                        n++;
+                foreach (int cell in mask.ItemEnum) {
+                    if (cache.ContainsKey(cell)) {
+                        // use rule from cache
+                        result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(cell), cache[cell]));
+                    } else {
+                        // not in cache: use recently computed rule
+                        cache.Add(cell, optimizedRules[n]);
+                        result.Add(new ChunkRulePair<CellBoundaryQuadRule>(Chunk.GetSingleElementChunk(cell), optimizedRules[n]));
                     }
+
+                    n++;
+
                 }
 
                 return result;
@@ -312,12 +315,13 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 int noOfRhs = 0;
                 int[,] rhsIndexMap = new int[mask.NoOfItemsLocally, noOfFaces];
+                int iSubGrid = -1;
                 foreach (Chunk chunk in mask) {
                     MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(signTestRule.Nodes, chunk.i0, chunk.Len);
                     
                     for (int i = 0; i < chunk.Len; i++) {
                         int cell = i + chunk.i0;
-                        int iSubGrid = localCellIndex2SubgridIndex[cell];
+                        iSubGrid++;
 
                         optimizedRules[iSubGrid] = new CellBoundaryQuadRule() {
                             Nodes = baseRule.Nodes,
@@ -395,39 +399,37 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // Leading dimension of B (rhs); required by DGELSY
                 int LDB = Math.Max(noOfLambdas, noOfNodesPerEdge);
                 double[] rhs = new double[LDB * noOfRhs];
-                foreach (Chunk chunk in mask) {
-                    for (int i = 0; i < chunk.Len; i++) {
-                        int cell = i + chunk.i0;
-                        int iSubGrid = localCellIndex2SubgridIndex[cell];
+                iSubGrid = -1;
+                foreach (int cell in mask.ItemEnum) {
+                    iSubGrid++;
 
-                        for (int e = 0; e < noOfFaces; e++) {
-                            int rhsIndex = rhsIndexMap[iSubGrid, e];
-                            if (rhsIndex < 0) {
-                                continue;
-                            }
+                    for (int e = 0; e < noOfFaces; e++) {
+                        int rhsIndex = rhsIndexMap[iSubGrid, e];
+                        if (rhsIndex < 0) {
+                            continue;
+                        }
 
-                            switch (jumpType) {
-                                case JumpTypes.Heaviside:
-                                    for (int k = 0; k < noOfLambdas; k++) {
-                                        rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] - surfaceResults[iSubGrid, e, k];
-                                    }
-                                    break;
+                        switch (jumpType) {
+                            case JumpTypes.Heaviside:
+                                for (int k = 0; k < noOfLambdas; k++) {
+                                    rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] - surfaceResults[iSubGrid, e, k];
+                                }
+                                break;
 
-                                case JumpTypes.OneMinusHeaviside:
-                                    for (int k = 0; k < noOfLambdas; k++) {
-                                        rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] + surfaceResults[iSubGrid, e, k];
-                                    }
-                                    break;
+                            case JumpTypes.OneMinusHeaviside:
+                                for (int k = 0; k < noOfLambdas; k++) {
+                                    rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] + surfaceResults[iSubGrid, e, k];
+                                }
+                                break;
 
-                                case JumpTypes.Sign:
-                                    for (int k = 0; k < noOfLambdas; k++) {
-                                        rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] - 2.0 * surfaceResults[iSubGrid, e, k];
-                                    }
-                                    break;
+                            case JumpTypes.Sign:
+                                for (int k = 0; k < noOfLambdas; k++) {
+                                    rhs[rhsIndex * LDB + k] = boundaryResults[iSubGrid, e, k] - 2.0 * surfaceResults[iSubGrid, e, k];
+                                }
+                                break;
 
-                                default:
-                                    throw new NotImplementedException();
-                            }
+                            default:
+                                throw new NotImplementedException();
                         }
                     }
                 }
@@ -436,38 +438,36 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     LAPACK.F77_LAPACK.DGELSY(noOfLambdas, noOfNodesPerEdge, basisValuesEdge.Storage, rhs, noOfRhs, 1e-12);
                 }
 
-                foreach (Chunk chunk in mask) {
-                    for (int i = 0; i < chunk.Len; i++) {
-                        int cell = i + chunk.i0;
-                        int iSubGrid = localCellIndex2SubgridIndex[cell];
+                iSubGrid = -1;
+                foreach (int cell in mask.ItemEnum) {
+                    iSubGrid++;
 
-                        int noOfProcessedNodes = 0;
-                        for (int e = 0; e < noOfFaces; e++) {
-                            int noOfNodesOnEdge = baseRule.NumbersOfNodesPerFace[e];
-                            int rhsIndex = rhsIndexMap[iSubGrid, e];
-                            if (rhsIndex < 0) {
-                                noOfProcessedNodes += noOfNodesOnEdge;
-                                continue;
-                            }
-
-                            for (int j = 0; j < noOfNodesOnEdge; j++) {
-                                optimizedRules[iSubGrid].Weights[noOfProcessedNodes + j] = rhs[rhsIndex * LDB + j];
-                            }
-
+                    int noOfProcessedNodes = 0;
+                    for (int e = 0; e < noOfFaces; e++) {
+                        int noOfNodesOnEdge = baseRule.NumbersOfNodesPerFace[e];
+                        int rhsIndex = rhsIndexMap[iSubGrid, e];
+                        if (rhsIndex < 0) {
                             noOfProcessedNodes += noOfNodesOnEdge;
+                            continue;
                         }
 
-
-                        double max = optimizedRules[iSubGrid].Weights.Max(d => d.Abs());
-                        if (max > 2.0 * RefElement.Volume) {
-                            tr.Info(String.Format(
-                                "Warning: Abnormally large integration weight detected"
-                                + " for level set edge volume integral in cell {0}"
-                                + " (|w| = {1}). This may indicate a loss of"
-                                + " integration accuracy.",
-                                cell,
-                                max));
+                        for (int j = 0; j < noOfNodesOnEdge; j++) {
+                            optimizedRules[iSubGrid].Weights[noOfProcessedNodes + j] = rhs[rhsIndex * LDB + j];
                         }
+
+                        noOfProcessedNodes += noOfNodesOnEdge;
+                    }
+
+
+                    double max = optimizedRules[iSubGrid].Weights.Max(d => d.Abs());
+                    if (max > 2.0 * RefElement.Volume) {
+                        tr.Info(String.Format(
+                            "Warning: Abnormally large integration weight detected"
+                            + " for level set edge volume integral in cell {0}"
+                            + " (|w| = {1}). This may indicate a loss of"
+                            + " integration accuracy.",
+                            cell,
+                            max));
                     }
                 }
 
@@ -811,6 +811,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
             }
 
+            int iSubGrid = -1;
+
             /// <summary>
             /// Saves the integration results to <see cref="Results"/>
             /// </summary>
@@ -820,7 +822,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                 for (int i = 0; i < Length; i++) {
                     int cell = i0 + i;
-                    int iSubGrid = owner.localCellIndex2SubgridIndex[cell];
+                    iSubGrid++;
 
                     for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
                         for (int k = 0; k < IntegralCompDim[0]; k++) {
@@ -947,16 +949,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
             }
 
+            int iSubGrid = -1;
+
             /// <summary>
             /// Saves the integration results to <see cref="Results"/>
             /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="Length"></param>
-            /// <param name="ResultsOfIntegration"></param>
             protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                 for (int i = 0; i < Length; i++) {
                     int cell = i0 + i;
-                    int iSubGrid = owner.localCellIndex2SubgridIndex[cell];
+                    iSubGrid++;
 
                     for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
                         for (int k = 0; k < IntegralCompDim[0]; k++) {

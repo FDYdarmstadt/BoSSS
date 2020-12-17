@@ -70,9 +70,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             /// </remarks>
             public int GetLocalCellIndex(long globalCellIndex) {
                 Partitioning part = m_owner.CellPartitioning;
-                int i0 = part.i0;
+                long i0 = part.i0;
                 int J = part.LocalLength;
-                int jLoc = (int)globalCellIndex - i0;
+                int jLoc = checked((int)(globalCellIndex - i0));
                 if (jLoc >= 0 && jLoc < J) {
                     return jLoc;
                 } else {

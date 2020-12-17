@@ -9,7 +9,7 @@
     <RootNamespace>BoSSS.Foundation.XDG</RootNamespace>
     <AssemblyName>BoSSS.Foundation.XDG</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -45,12 +45,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CellAgglomerator.cs" />
+    <Compile Include="CoefficientsList.cs" />
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
     <Compile Include="MappingExtensions.cs" />
     <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
+    <Compile Include="OperatorFactory.cs" />
+    <Compile Include="ParameterList.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
     <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
@@ -64,6 +67,7 @@
     <Compile Include="Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LevelSetIntegrator.cs" />
+    <Compile Include="Quadrature\LevelSetOnEdgeRule.cs" />
     <Compile Include="Quadrature\LevelSetQuadRuleFactory2.cs" />
     <Compile Include="Quadrature\LevelSetVolumeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\LineAndPointQuadratureFactory.cs" />
@@ -92,6 +96,7 @@
     <Compile Include="ReducedRegionCode.cs" />
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
     <Compile Include="Quadrature\SimplexSubdivisionTree.cs" />
+    <Compile Include="SpatialEquation.cs" />
     <Compile Include="SpeciesId.cs" />
     <Compile Include="TestingIOExtensions.cs" />
     <Compile Include="XDGBasis.cs" />

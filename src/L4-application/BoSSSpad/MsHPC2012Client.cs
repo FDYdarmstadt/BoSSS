@@ -28,7 +28,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
-    /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
+    /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server (or later).
     /// </summary>
     [DataContract]
     [Serializable]
@@ -39,6 +39,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private MsHPC2012Client() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
+
+            if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+                throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
+            }
         }
 
         /// <summary>
@@ -62,6 +66,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
         public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) {
+            if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+                throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
+            }
+
+            
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
 

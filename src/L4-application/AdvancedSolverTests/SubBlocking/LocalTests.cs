@@ -35,7 +35,7 @@ namespace AdvancedSolverTests.SubBlocking
             MultigridOperator MGOp = Utils.CreateTestMGOperator(UseXdg, DGOrder);
             var map = MGOp.Mapping;
             int[] fields = map.NoOfVariables.ForLoop(i => i);
-            int[] GlobalIdxMap_loc = map.GetSubvectorIndices(fields);
+            long[] GlobalIdxMap_loc = map.GetSubvectorIndices(fields);
 
             //Arrange --- Prepare stuff for mask
             var selector = new SubBlockSelector(map);
@@ -46,7 +46,7 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             var mask = new BlockMask(selector,null);
             stw.Stop();
-            int[] GlobalIdxMask_loc = mask.GlobalIList_Internal.ToArray();
+            long[] GlobalIdxMask_loc = mask.GlobalIList_Internal.ToArray();
 
             //Assert --- Idx lists are of same length
             Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
@@ -134,9 +134,9 @@ namespace AdvancedSolverTests.SubBlocking
             for (int i = 0; i < map.LocalNoOfBlocks; i++) {
 
                 //Arrange --- get ith diagonal block of M: M_i
-                int iBlock = i + map.AggGrid.CellPartitioning.i0;
+                long iBlock = i + map.AggGrid.CellPartitioning.i0;
                 int L = map.GetBlockLen(iBlock);
-                int i0 = map.GetBlockI0(iBlock);
+                long i0 = map.GetBlockI0(iBlock);
                 var Mblock = MultidimensionalArray.Create(L, L);
                 M.ReadBlock(i0, i0, Mblock);
 
@@ -197,7 +197,7 @@ namespace AdvancedSolverTests.SubBlocking
             //var extractOnes = mask.GetSubBlockMatrix(Ones, false, coup[0], coup[1]);
             var Mext = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
             stw.Stop();
-            var Mquad=M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(),true);
+            var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
             Mext.Acc(-1.0, Mquad);
 
             //Assert --- Mext conains only diagonal blocks of M
@@ -232,7 +232,7 @@ namespace AdvancedSolverTests.SubBlocking
             var Mext = mask.GetSubBlockMatrix(M);
             stw.Stop();
 
-            var Mquad=M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(),true);
+            var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
             Mext.Acc(-1.0, Mquad);
 
             //Assert --- Mext conains only diagonal blocks of M
@@ -359,8 +359,8 @@ namespace AdvancedSolverTests.SubBlocking
             BlockMsrMatrix compA = Utils.GetCellCompMatrix(SType, mgo, sampleCellA);
             BlockMsrMatrix compB = Utils.GetCellCompMatrix(SType, mgo, sampleCellB);
 
-            int iBlock = sampleCellB + mgo.Mapping.AggGrid.CellPartitioning.i0;
-            int i0 = mgo.Mapping.GetBlockI0(iBlock);
+            long iBlock = sampleCellB + mgo.Mapping.AggGrid.CellPartitioning.i0;
+            long i0 = mgo.Mapping.GetBlockI0(iBlock);
             var block = MultidimensionalArray.Create(mgo.Mapping.GetBlockLen(iBlock), mgo.Mapping.GetBlockLen(iBlock));
             mgo.OperatorMatrix.ReadBlock(i0, i0, block);
 

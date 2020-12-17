@@ -52,7 +52,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(selector, dummy);
 
             //Arrange --- get stuff to put into matlab
-            int[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
+            long[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = GlobalIdx_ext.Length.ForLoop(i => (double)GlobalIdx_ext[i]+1.0);
 
             //Arrange --- get external rows by mask
@@ -101,7 +101,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(sbs, M_ext);
 
             //Arrange --- get index list of all external cells
-            int[] idc = Utils.GetAllExtCellIdc(map);
+            long[] idc = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
 
             //Arrange --- stopwatch
@@ -162,7 +162,7 @@ namespace AdvancedSolverTests.SubBlocking
 
 
             //Arrange --- get index list of all external cells
-            int[] idc = Utils.GetAllExtCellIdc(map);
+            long[] idc = Utils.GetAllExtCellIdc(map);
             double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i]+1.0);
 
             //Arrange --- stopwatch
@@ -223,7 +223,7 @@ namespace AdvancedSolverTests.SubBlocking
             //bool[] coup = Utils.SetCoupling(MShape);
 
             //Arrange --- get index dictonary of all external cell indices
-            Dictionary<int,int[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
+            Dictionary<int, long[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
 
             //Arrange --- stopwatch
             var stw = new Stopwatch();
@@ -246,7 +246,7 @@ namespace AdvancedSolverTests.SubBlocking
                 var infNorm = MultidimensionalArray.Create(4, 1);
                 int rank = map.MpiRank;
                 int ExtBlockIdx = iBlock + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                Didc.TryGetValue(ExtBlockIdx, out int[] idc);
+                Didc.TryGetValue(ExtBlockIdx, out long[] idc);
 
                 using (BatchmodeConnector matlab = new BatchmodeConnector()) {
 
@@ -336,7 +336,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
             double[] Res_g = mask.GetSubVec(Res_ext);
-            var qM_ext=M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(),false);
+            var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(), false);
             qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
             if (map.MpiRank == 0) {
@@ -374,7 +374,7 @@ namespace AdvancedSolverTests.SubBlocking
             var mask = new BlockMask(sbs, M_ext);
 
             //Arrange --- get GlobalIdxList
-            int[] idc = Utils.GetIdcOfSubBlock(map,cells);
+            long[] idc = Utils.GetIdcOfSubBlock(map, cells);
             bool[] coup = Utils.SetCoupling(MShape);
 
             var M_sub = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
@@ -405,8 +405,15 @@ namespace AdvancedSolverTests.SubBlocking
             Assert.IsTrue(infNorm[rank, 0] == 0.0);
         }
 
+        /// <summary>
+        /// this test is for the version, which has local and external vector as imput
+        /// </summary>
+        /// <param name="UseXdg"></param>
+        /// <param name="DGOrder"></param>
+        /// <param name="MShape"></param>
+        /// <param name="Res"></param>
         [Test]
-        public static void VectorSplitOperation(
+        public static void VectorSplitOperation_Op1(
             [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
@@ -454,6 +461,120 @@ namespace AdvancedSolverTests.SubBlocking
             Assert.IsTrue(VecAB.L2Norm() == 0.0, String.Format("L2Norm neq 0!"));
         }
 
+        /// <summary>
+        /// This test is for the version, which has an extended vector as imput.
+        /// Extended vector contains local and external parts
+        /// </summary>
+        /// <param name="UseXdg"></param>
+        /// <param name="DGOrder"></param>
+        /// <param name="MShape"></param>
+        /// <param name="Res"></param>
+        [Test]
+        public static void VectorSplitOperation_Op2([Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
+            [Values(16)] int Res) {
+
+            Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
+            Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
+
+            //Arrange --- create test matrix, MG mapping
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, Res);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            BlockMsrMatrix M_ext = BlockMask.GetAllExternalRows(map, M);
+
+            //Arrange --- setup masking
+            SubBlockSelector sbsA = new SubBlockSelector(map);
+            sbsA.SetDefaultSplitSelection(MShape, true, false);
+            BlockMask maskA = new BlockMask(sbsA, M_ext);
+            SubBlockSelector sbsB = new SubBlockSelector(map);
+            sbsB.SetDefaultSplitSelection(MShape, false, false);
+            BlockMask maskB = new BlockMask(sbsB, M_ext);
+            SubBlockSelector sbsFull = new SubBlockSelector(map);
+            BlockMask maskFull = new BlockMask(sbsFull, M_ext);
+
+            //Arrange --- the test vectors
+            double[] locVec = Utils.GetRandomVector(M.RowPartitioning.LocalLength);
+            MPIexchange<double[]> Exchange;
+            Exchange = new MPIexchange<double[]>(map, locVec);
+            Exchange.TransceiveStartImReturn();
+            Exchange.TransceiveFinish(0.0);
+            var extVec = Exchange.Vector_Ext;
+            var fullVec = maskFull.GetSubVec(extVec, new double[locVec.Length]);
+            var test = new double[fullVec.Length];
+            Debug.Assert(fullVec.L2Norm() != 0);
+
+            //Act --- check operations
+            var subA = maskA.GetSubVec(fullVec);   
+            var subB = maskB.GetSubVec(fullVec);
+
+            maskA.AccSubVec(subA, test);
+            maskB.AccSubVec(subB, test);
+
+            double fac = ((MShape == MatrixShape.full_var || MShape == MatrixShape.diagonal_var) && UseXdg == XDGusage.none) ? -2.0 : -1.0;
+            test.AccV(fac, fullVec);
+
+            //Assert --- are extracted blocks and 
+            Assert.IsTrue(test.L2Norm() == 0.0, String.Format("L2Norm neq 0!"));
+        }
+
+        /// <summary>
+        /// Delete this, if one of the operations is dismissed
+        /// </summary>
+        /// <param name="UseXdg"></param>
+        /// <param name="DGOrder"></param>
+        /// <param name="MShape"></param>
+        /// <param name="Res"></param>
+        [Test]
+        public static void CompareVectorOps([Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
+            [Values(2)] int DGOrder,
+            [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
+            [Values(16)] int Res) {
+
+            Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
+            Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
+
+            //Arrange --- create test matrix, MG mapping
+            MultigridOperator mgo = Utils.CreateTestMGOperator(UseXdg, DGOrder, MShape, Res);
+            MultigridMapping map = mgo.Mapping;
+            BlockMsrMatrix M = mgo.OperatorMatrix;
+            BlockMsrMatrix M_ext = BlockMask.GetAllExternalRows(map, M);
+
+            //Arrange --- setup masking
+            SubBlockSelector sbsA = new SubBlockSelector(map);
+            sbsA.SetDefaultSplitSelection(MShape, true, false);
+            BlockMask maskA = new BlockMask(sbsA, M_ext);
+            SubBlockSelector sbsFull = new SubBlockSelector(map);
+            BlockMask maskFull = new BlockMask(sbsFull, M_ext);
+
+            //Arrange --- the test vectors
+            double[] locVec = Utils.GetRandomVector(M.RowPartitioning.LocalLength);
+            MPIexchange<double[]> Exchange;
+            Exchange = new MPIexchange<double[]>(map, locVec);
+            Exchange.TransceiveStartImReturn();
+            Exchange.TransceiveFinish(0.0);
+            var extVec = Exchange.Vector_Ext;
+            var exttmp = new double[extVec.Length];
+            var fullVec = maskFull.GetSubVec(extVec, new double[locVec.Length]);
+            var test_two = new double[fullVec.Length];
+            Debug.Assert(fullVec.L2Norm() != 0);
+
+            //Act --- Compare operations
+            var sub_two = maskA.GetSubVec(fullVec);
+            var sub_one = maskA.GetSubVec(extVec, new double[0]);
+            sub_one.AccV(-1.0, sub_two);
+
+            maskA.AccSubVec(sub_two, test_two);
+            maskA.AccSubVec(sub_two, exttmp, new double[0]);
+            var test_one = maskFull.GetSubVec(exttmp, new double[locVec.Length]);
+            test_one.AccV(-1.0, test_two);
+
+            //Assert --- check equality
+            Assert.IsTrue(sub_one.L2Norm() == 0.0, String.Format("operations differ in getsubvec"));
+            Assert.IsTrue(test_one.L2Norm() == 0.0, String.Format("operations differ in accsubvec"));
+        }
+
         [Test]
         public static void ExternalIndexTest(
         [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
@@ -467,7 +588,7 @@ namespace AdvancedSolverTests.SubBlocking
             //Arrange --- Get global index by mapping
             MultigridOperator MGOp = Utils.CreateTestMGOperator(UseXdg, DGOrder,MatrixShape.laplace, Res);
             var map = MGOp.Mapping;
-            int[] GlobalIdxMap_ext = Utils.GetAllExtCellIdc(map);
+            long[] GlobalIdxMap_ext = Utils.GetAllExtCellIdc(map);
 
             //Arrange --- Prepare stuff for mask
             var selector = new SubBlockSelector(map);
@@ -479,7 +600,7 @@ namespace AdvancedSolverTests.SubBlocking
             stw.Start();
             var mask = new BlockMask(selector, dummy);
             stw.Stop();
-            int[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
+            long[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
 
             //Assert --- Idx lists are of same length
             Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);

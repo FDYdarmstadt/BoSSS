@@ -62,8 +62,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.CapillaryHeight;
-            C.LogPeriod = 10;
+            //C.LogValues = XNSE_Control.LoggingValues.CapillaryHeight;
+            //C.LogPeriod = 10;
+
+            C.PostprocessingModules.Add(new CapillaryHeightLogging() { LogPeriod = 10 });
+
 
             #endregion
 
@@ -276,8 +279,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 100;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogPeriod = 100;
+            C.PostprocessingModules.Add(new MovingContactLineLogging() { LogPeriod = 100 });
+
 
             #endregion
 

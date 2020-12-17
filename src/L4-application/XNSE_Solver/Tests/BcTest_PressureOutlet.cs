@@ -42,20 +42,47 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// Since the terms of the boundary condition do not cancel out individually, but only in sum,
     /// this example is very suitable to verify the correctness of the <see cref="IncompressibleBcType.Pressure_Outlet"/>-implementation.
     /// </summary>
-    class BcTest_PressureOutlet : ITest {
+    class BcTest_PressureOutlet : IXNSETest {
 
+        private int m_SpatialDimension;
+
+        public BcTest_PressureOutlet(int _SpatialDimension) {
+            m_SpatialDimension = _SpatialDimension;
+        }
 
         public Func<double[], double, double> GetPhi() {
-            return ((_2D)((x, y) => (x - 0.5))).Convert_xy2X().Convert_X2Xt();
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_2D)((x, y) => (x - 0.5))).Convert_xy2X().Convert_X2Xt();
+                case 3:
+                    return ((_3D)((x, y, z) => (x - 0.5))).Convert_xyz2X().Convert_X2Xt();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public Func<double[], double, double> GetU(string species, int d) {
-            if (d == 0) {
-                return ((_2D)((x, y) => x)).Convert_xy2X().Convert_X2Xt();
-            } else if (d == 1) {
-                return ((_2D)((x, y) => -y)).Convert_xy2X().Convert_X2Xt();
-            } else {
-                throw new ArgumentOutOfRangeException();
+            switch (m_SpatialDimension) {
+                case 2:
+                    if (d == 0) {
+                        return ((_2D)((x, y) => x)).Convert_xy2X().Convert_X2Xt();
+                    } else if (d == 1) {
+                        return ((_2D)((x, y) => -y)).Convert_xy2X().Convert_X2Xt();
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                case 3:
+                    if (d == 0) {
+                        return ((_3D)((x, y, z) => x)).Convert_xyz2X().Convert_X2Xt();
+                    } else if (d == 1) {
+                        return ((_3D)((x, y, z) => -y)).Convert_xyz2X().Convert_X2Xt();
+                    } else if (d == 2) {
+                        return ((_3D)((x, y, z) => 0)).Convert_xyz2X().Convert_X2Xt();
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -70,7 +97,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)
                 throw new ArgumentException();
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 1, 3*Resolution + 1), GenericBlas.Linspace(0, 1, 3 * Resolution + 1));
+
+            GridCommons grd;
+            switch (m_SpatialDimension) {
+                case 2:
+                    grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 1, 3 * Resolution + 1), GenericBlas.Linspace(0, 1, 3 * Resolution + 1));
+                    break;
+                case 3:
+                    grd = Grid3D.Cartesian3DGrid(GenericBlas.Linspace(0, 1, 3 * Resolution + 1),
+                        GenericBlas.Linspace(0, 1, 3 * Resolution + 1), GenericBlas.Linspace(0, 1, 3 * Resolution + 1));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             grd.EdgeTagNames.Add(1, IncompressibleBcType.Velocity_Inlet.ToString());
             grd.EdgeTagNames.Add(2, outcond.ToString());
@@ -101,6 +140,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             config["Velocity_Inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(1) + "#B",
                 (X, t) => -X[1]);
+            if (m_SpatialDimension == 3) {
+                config["Velocity_Inlet"].Evaluators.Add(
+                    VariableNames.Velocity_d(2) + "#A",
+                    (X, t) => 0);
+                config["Velocity_Inlet"].Evaluators.Add(
+                    VariableNames.Velocity_d(2) + "#B",
+                    (X, t) => 0);
+            }
 
             config.Add(outcond.ToString(), new AppControl.BoundaryValueCollection());
 
@@ -117,7 +164,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPress(string species) {
-            return ((_2D)((x, y) => 1.0 / this.Rey)).Convert_xy2X().Convert_X2Xt();
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_2D)((x, y) => 1.0 / this.Rey)).Convert_xy2X().Convert_X2Xt();
+                case 3:
+                    return ((_3D)((x, y, z) => 1.0 / this.Rey)).Convert_xyz2X().Convert_X2Xt();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public double rho_A {
@@ -183,20 +237,34 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public double[] AcceptableL2Error {
-            get {
-                return new double[] { 1.0e-8, 1.0e-8, 1.0e-8 };
+            get {              
+                switch (m_SpatialDimension) {
+                    case 2:
+                        return new double[] { 1.0e-8, 1.0e-8, 1.0e-8 };
+                    case 3:
+                        return new double[] { 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8 };
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
 
         public double[] AcceptableResidual {
             get {
-                return new double[] { 1.0e-8, 1.0e-8, 1.0e-8 };
+                switch (m_SpatialDimension) {
+                    case 2:
+                        return new double[] { 1.0e-8, 1.0e-8, 1.0e-8 };
+                    case 3:
+                        return new double[] { 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8 };
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
 
         public int SpatialDimension {
             get {
-                return 2;
+                return m_SpatialDimension;
             }
         }
 

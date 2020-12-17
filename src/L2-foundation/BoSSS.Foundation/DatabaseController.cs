@@ -21,8 +21,8 @@ using System.Linq;
 using System.Xml;
 using ilPSP;
 using BoSSS.Platform;
-using Renci.SshNet;
-using Renci.SshNet.Common;
+//using Renci.SshNet;
+//using Renci.SshNet.Common;
 using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Foundation.IO {
@@ -86,18 +86,18 @@ namespace BoSSS.Foundation.IO {
                         relPath = "/";
                     }
 
-                    KeyboardInteractiveConnectionInfo ci =
-                        new KeyboardInteractiveConnectionInfo(host, user);
-                    ci.AuthenticationPrompt +=
-                            delegate (object sender, AuthenticationPromptEventArgs arg) {
-                                var prompt = arg.Prompts.SingleOrDefault(p => p.Request == "Password: ");
-                                if (prompt != null) {
-                                    prompt.Response = PasswordCallback(user + "@" + host);
-                                }
-                            };
-                    ci.Timeout = TimeSpan.FromSeconds(15);
+                    //KeyboardInteractiveConnectionInfo ci =
+                    //    new KeyboardInteractiveConnectionInfo(host, user);
+                    //ci.AuthenticationPrompt +=
+                    //        delegate (object sender, AuthenticationPromptEventArgs arg) {
+                    //            var prompt = arg.Prompts.SingleOrDefault(p => p.Request == "Password: ");
+                    //            if (prompt != null) {
+                    //                prompt.Response = PasswordCallback(user + "@" + host);
+                    //            }
+                    //        };
+                    //ci.Timeout = TimeSpan.FromSeconds(15);
 
-                    fsDriver = new SFTPFileSystemDriver(ci, relPath);
+                    //fsDriver = new SFTPFileSystemDriver(ci, relPath);
                 } catch (Exception) {
                     throw new ArgumentException(String.Format(
                         "Given path '{0}' has an invalid format", path));

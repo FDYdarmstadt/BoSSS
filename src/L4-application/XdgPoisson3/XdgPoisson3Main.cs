@@ -58,6 +58,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         static void Main(string[] args) {
             //InitMPI();
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
             //throw new Exception("remove me");
@@ -215,24 +216,15 @@ namespace BoSSS.Application.XdgPoisson3 {
                     this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
                 }
 
-                double D = this.GridData.SpatialDimension;
-                int p = u.Basis.Degree;
-                double penalty_base = (p + 1) * (p + D) / D;
                 double penalty_multiplyer = base.Control.penalty_multiplyer;
-
-                XQuadFactoryHelper.MomentFittingVariants momentFittingVariant;
-                if (D == 3)
-                    momentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Classic;
-
-                momentFittingVariant = this.Control.CutCellQuadratureType;
 
                 int order = this.u.Basis.Degree * 2;
 
                 Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
                 var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
-                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer * penalty_base, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, lengthScales, this.Control.ViscosityMode);
+                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
                 Op.EquationComponents["c1"].Add(lap);      // Bulk form
-                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, this.Control.ViscosityMode));   // coupling form
+                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
 
                 Op.Commit();
 
@@ -338,7 +330,8 @@ namespace BoSSS.Application.XdgPoisson3 {
            
             double mintime, maxtime;
             bool converged;
-            int NoOfIterations, DOFs;
+            int NoOfIterations;
+            long DOFs;
             MultigridOperator mgo;
 
             // direct solver 
@@ -350,7 +343,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             // new solver framework: multigrid, blablablah ...
 
-            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs,out mgo);           
+            ExperimentalSolver(out mintime, out maxtime, out converged, out NoOfIterations, out DOFs, out mgo);           
             this.Op_Agglomeration.Extrapolate(this.u.Mapping);
 
             //Stats:
@@ -451,10 +444,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Console.WriteLine("Error norm (HMF, Species B): " + L2_ERR_HMF_B);
                 Console.WriteLine("Error norm (HMF):            " + L2_ERR_HMF);
             }
+
 #if TEST
             OperatorAnalysis();
 #endif
-
 
             return dt;
         }
@@ -507,7 +500,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
-        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out int DOFs, out MultigridOperator MultigridOp) {
+        private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out long DOFs, out MultigridOperator MultigridOp) {
             using (var tr = new FuncTrace()) {
                 mintime = double.MaxValue;
                 maxtime = 0;
@@ -557,7 +550,15 @@ namespace BoSSS.Application.XdgPoisson3 {
 #endif
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
-
+                //var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.LsTrk,
+                //this.Op_Matrix, this.Op_Affine,
+                //this.u.Mapping, Op_Agglomeration,
+                //this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()),
+                //this.OpConfig, this.Op);
+                ////double condnum = ana.CondNumMUMPS();
+                //double condnum = MultigridOp.OperatorMatrix.ToFullMatrixOnProc0().Cond();
+                //base.QueryHandler.ValueQuery("OpAnalysis:" + "CondNum", condnum, false);
+                //Console.WriteLine("Condnum: " + condnum);
 
                 using (new BlockTrace("Solver_Init", tr)) {
                     exsolver.Init(MultigridOp);
@@ -599,6 +600,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double ERR = ErrField.L2Norm();
                 double RelERR = ERR / u.L2Norm();
 #if TEST
+                u = u2;
                 Assert.LessOrEqual(RelERR, 1.0e-6, "Result from iterative solver above threshold.");
                 WriteTrendToDatabase(CO);
 #endif
@@ -614,7 +616,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 ReferenceSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
 
                 var EqSys = this.Op_Matrix.ToMsrMatrix();
-                for (int iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
+                for (long iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
                     if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
                         EqSys[iRow, iRow] = 1.0;
                 }
@@ -732,7 +734,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             mgOp.OperatorMatrix.SpMV(1.0, mgSolVec, -1.0, mgResidual);
             double scale = 1.0 / (mgRhsVec.L2Norm() + mgSolVec.L2Norm());
 
-            int DOFs = mgOp.Mapping.TotalLength;
+            long DOFs = mgOp.Mapping.TotalLength;
             Debug.Assert(DOFs == mgOp.OperatorMatrix.NoOfRows);
             Debug.Assert(DOFs == mgOp.OperatorMatrix.NoOfCols);
 

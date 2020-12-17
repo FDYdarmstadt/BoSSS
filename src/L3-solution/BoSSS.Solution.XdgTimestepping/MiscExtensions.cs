@@ -47,6 +47,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             int J = LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             int NoOfEq = RowMapping.BasisS.Count;
+            bool[] isXrow = RowMapping.BasisS.Select(b => b is XDGBasis).ToArray();
+
             
             List<(int j, SpeciesId sid, int iEq, int n, double CelVol, double errVal)> allErrors = null;
 
@@ -66,42 +68,44 @@ namespace BoSSS.Solution.XdgTimestepping {
                             // cell 'j' is an empty cut-cell:
                             // check that corresponding matrix rows are zero
                             for(int iEq = 0; iEq < NoOfEq; iEq++) {
-                                int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
-                                for(int n = 0; n < N; n++) {
-                                    int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
-                                    int NoOfNonZeros = OpMatrix.GetNoOfNonZerosPerRow(iRow);
-                                    if(NoOfNonZeros > 0) {
-                                        
-                                        int[] colIdx = null;
-                                        double[] entries = null;
-                                        OpMatrix.GetRow(iRow, ref colIdx, ref entries);
-                                        double err = entries.Max();
-                                        
-                                        
-                                        if(CCvol[j] != 0.0) {
-                                            // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
-                                            // so be a little forgiving
+                                if(isXrow[iEq]) {
+                                    int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
+                                    for(int n = 0; n < N; n++) {
+                                        long iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n) + RowMapping.i0;
+                                        int NoOfNonZeros = OpMatrix.GetNoOfNonZerosPerRow(iRow);
+                                        if(NoOfNonZeros > 0) {
+
+                                            long[] colIdx = null;
+                                            double[] entries = null;
+                                            OpMatrix.GetRow(iRow, ref colIdx, ref entries);
+                                            double err = entries.Max();
 
 
-                                            if(err > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) {
+                                            if(CCvol[j] != 0.0) {
+                                                // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
+                                                // so be a little forgiving
+
+
+                                                if(err > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) {
+                                                    if(allErrors == null) {
+                                                        allErrors = new List<(int j, SpeciesId sid, int iEq, int n, double CelVol, double errVal)>();
+                                                    }
+
+                                                    allErrors.Add((j, SpcId, iEq, n, CCvol[j], err));
+
+                                                }
+
+
+
+                                            } else {
                                                 if(allErrors == null) {
                                                     allErrors = new List<(int j, SpeciesId sid, int iEq, int n, double CelVol, double errVal)>();
                                                 }
-
                                                 allErrors.Add((j, SpcId, iEq, n, CCvol[j], err));
-
                                             }
-
-
-
                                         } else {
-                                            if(allErrors == null) {
-                                                allErrors = new List<(int j, SpeciesId sid, int iEq, int n, double CelVol, double errVal)>();
-                                            }
-                                            allErrors.Add((j, SpcId, iEq, n, CCvol[j], err));
+                                            // everything is ok.
                                         }
-                                    } else {
-                                        // everything is ok.
                                     }
                                 }
                             }
@@ -148,6 +152,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             int NoOfEq = RowMapping.BasisS.Count;
+            bool[] isX = RowMapping.BasisS.Select(b => b is XDGBasis).ToArray();
 
             foreach( var SpcId in SpcToCheck) {
                 var spcMask = LsTrk.Regions.GetSpeciesMask(SpcId).GetBitMask();
@@ -165,24 +170,26 @@ namespace BoSSS.Solution.XdgTimestepping {
                             // cell 'j' is an empty cut-cell:
                             // check that corresponding vector entries are zero
                             for(int iEq = 0; iEq < NoOfEq; iEq++) {
-                                int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
-                                for(int n = 0; n < N; n++) {
-                                    int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n);
+                                if(isX[iEq]) {
+                                    int N = RowMapping.GetNumberOfModes(LsTrk, iEq, j, SpcId);
+                                    for(int n = 0; n < N; n++) {
+                                        int iRow = RowMapping.LocalUniqueCoordinateIndex(LsTrk, iEq, j, SpcId, n);
 
-                                    if(Vector[iRow] != 0) {
-                                        if(CCvol[j] != 0.0) {
-                                            // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
-                                            // so be a little forgiving
+                                        if(Vector[iRow] != 0) {
+                                            if(CCvol[j] != 0.0) {
+                                                // could be a cut-cell with negative quadrature weight sum (could happen with HMF)
+                                                // so be a little forgiving
 
-                                            if(Vector[iRow].Abs() > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) { 
-                                                throw new ArithmeticException($"Found non-zero row in matrix corresponding to an empty cut-cell.");
+                                                if(Vector[iRow].Abs() > Math.Sqrt(Math.Sqrt(BLAS.MachineEps + CCvol[j].Abs()))) {
+                                                    throw new ArithmeticException($"Found non-zero row in matrix corresponding to an empty cut-cell.");
+                                                }
+
+                                            } else {
+                                                throw new ArithmeticException("Found non-zero entry in vector corresponding to an empty cut-cell.");
                                             }
-
                                         } else {
-                                            throw new ArithmeticException("Found non-zero entry in vector corresponding to an empty cut-cell.");
-                                        }
-                                    } else {
 
+                                        }
                                     }
                                 }
                             }

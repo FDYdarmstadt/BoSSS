@@ -69,7 +69,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.SessionName = "RisingBubbleHeimann";
             C.ProjectDescription = "rising bubble";
 
-            C.LogValues = XRheology_Control.LoggingValues.RisingBubble;
+
 
             #endregion
 
@@ -389,9 +389,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ProjectDescription = "rising bubble";
             C.Tags.Add("benchmark setup");
 
-            C.LogValues = XRheology_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 30;
-
+           
             #endregion
 
 
@@ -711,8 +709,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ProjectName = "XNSE/Bubble";
             C.ProjectDescription = "rising bubble";
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            
             #endregion
 
 

@@ -346,7 +346,8 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="Residual"></param>
         protected virtual XdgBDFTimestepping CreateTimeStepper(IEnumerable<DGField> Unknowns, IEnumerable<DGField> Residual)
         {
-            LevelSetHandling lsh = LevelSetHandling.None;
+            LevelSetHandling lsh = LevelSetHandling.Coupled_Once;
+            //LevelSetHandling lsh = LevelSetHandling.None;
             SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
 
             if (this.Control.PhysicalParameters.IncludeConvection)
@@ -391,6 +392,7 @@ namespace BoSSS.Application.IBM_Solver {
                     f => f.Identification), this.ResidualContinuity.Identification),
                 Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit
             };
+           
             return m_BDF_Timestepper;
         }
 
@@ -612,21 +614,24 @@ namespace BoSSS.Application.IBM_Solver {
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
-                    int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
-                    int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
+                    long[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
+                    long[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                     CoordinateMapping Umap = this.Velocity.Mapping;
                     CoordinateMapping Pmap = this.Pressure.Mapping;
                     
                     var pGrad = new BlockMsrMatrix(Umap, Pmap);
                     var divVel = new BlockMsrMatrix(Pmap, Umap);
-                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(long[]), Pidx, default(long[]));
+                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(long[]), Uidx, default(long[]));
 
                     var pGradT = pGrad.Transpose();
                     var Err = divVel.CloneAs();
                     Err.Acc(+1.0, pGradT);
                     double ErrInfAbs = Err.InfNorm();
                     double denom = Math.Max(pGradT.InfNorm(), Math.Max(pGrad.InfNorm(), divVel.InfNorm()));
+                    //pGradT.SaveToTextFileSparseDebug("pGradT");du 
+                    //divVel.SaveToTextFileSparseDebug("divVel");
+
                     double ErrInfRel = ErrInfAbs / denom;
                     if (ErrInfRel >= 1e-8)
                         throw new ArithmeticException("Stokes discretization error: | div + grad^t |oo is high; absolute: " + ErrInfAbs + ", relative: " + ErrInfRel + " (denominator: " + denom + ")");
@@ -675,13 +680,17 @@ namespace BoSSS.Application.IBM_Solver {
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
 
-            //this.LevSet.ProjectField(X => this.Control.Ph(X, phystime + dt));
-            //this.LsTrk.UpdateTracker(incremental: true);
-
+            //Console.WriteLine("I N F O: Updating the Levelset");
+            if (this.Control.ForcedPhi !=null) {
+                this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            }
+            this.LsTrk.UpdateTracker(phystime + dt);
             //LevsetEvo(phystime, dt, null);
 
-            SmoothLevelSet();
-            LsTrk.UpdateTracker(0.0);
+            //SmoothLevelSet();
+            //LsTrk.UpdateTracker(0.0);
+
+
 
             return 0.0;
         }
@@ -1080,11 +1089,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// All fluid cell
         /// </param>
         protected void PerformLevelSetSmoothing(CellMask SmoothingDomain) {
+            
             const bool SetFarField = true;
 
-            
-
-            if (this.Control.LevelSetSmoothing) 
+            bool lsSmoothing = this.Control.LevelSetSmoothing.MPIOr();
+            if (lsSmoothing) 
                 {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // smoothing on: perform some kind of C0-projection
@@ -1111,7 +1120,8 @@ namespace BoSSS.Application.IBM_Solver {
                     LevSet.Clear(PosMask);
                     LevSet.AccConstant(+1, PosMask);
                }
-            } else {
+            }
+            else {
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // no smoothing (not recommended): copy DGLevSet -> LevSet
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1316,8 +1326,11 @@ namespace BoSSS.Application.IBM_Solver {
                 string[] fields_line2 = line2.Split('\t');
 
                 double dt = Convert.ToDouble(fields_line2[1]) - Convert.ToDouble(fields_line1[1]);
-            } catch (FileNotFoundException) {
-                Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+            } catch (Exception ex) {
+                if (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+                    Console.WriteLine("PhysicalData.txt could not be found! Assuming we start with timestep #0 ...");
+                else
+                    Console.WriteLine("An unexpected error occured. This might lead to bad behavior.");
             }
             //int idx_restartLine = Convert.ToInt32(time / dt + 1.0);
             //string restartLine = File.ReadLines(pathToPhysicalData).Skip(idx_restartLine - 1).Take(1).First();
@@ -1368,7 +1381,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Attention: SENSITIVE TO LEVEL INDICATOR
         /// </summary>
-        readonly bool debug = true;
+        readonly bool debug = false;
 
         /// <summary>
         /// Very primitive refinement indicator, works on a LevelSet criterion.
@@ -1426,7 +1439,8 @@ namespace BoSSS.Application.IBM_Solver {
                 bool AnyChange = gridRefinementController.ComputeGridChange(LevelIndicator, out List<int> CellsToRefineList, out List<int[]> Coarsening);
                 int NoOfCellsToRefine = 0;
                 int NoOfCellsToCoarsen = 0;
-                if (AnyChange) {
+
+                if (AnyChange.MPIOr()) {
                     int[] glb = (new int[] {
                     CellsToRefineList.Count,
                     Coarsening.Sum(L => L.Length),
@@ -1434,12 +1448,12 @@ namespace BoSSS.Application.IBM_Solver {
                     NoOfCellsToRefine = glb[0];
                     NoOfCellsToCoarsen = glb[1];
                 }
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 // Update Grid
                 // ===========
 
-                if (AnyChange) {
+                if (AnyChange.MPIOr()) {
 
                     Console.WriteLine("       Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
                     Console.WriteLine("       Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");

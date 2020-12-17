@@ -67,7 +67,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.PostprocessingModules.Add(new MovingContactLineLogging());
 
             #endregion
 
@@ -382,7 +383,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.PostprocessingModules.Add(new MovingContactLineLogging());
 
             #endregion
 
@@ -761,7 +763,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.PostprocessingModules.Add(new WaveLikeLogging() { LogPeriod = 10 });
 
             #endregion
 
@@ -977,7 +980,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = 1000;
             C.NoOfTimesteps = 30000;
             C.saveperiod = 10;
-            C.LogPeriod = 10;
+            //C.LogPeriod = 10;
 
             #endregion
 

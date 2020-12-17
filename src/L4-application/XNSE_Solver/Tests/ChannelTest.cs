@@ -36,7 +36,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// <summary>
     /// a periodic channel flow, with water on bottom and air on top
     /// </summary>
-    class ChannelTest : ITest {
+    class ChannelTest : IXNSETest {
 
         public bool Material {
             get {

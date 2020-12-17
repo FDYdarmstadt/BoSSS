@@ -136,14 +136,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             }
         }
 
-        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, int globalCellIndex) {
+        public static NodeSet GetLocalNodeSet(GridData gridData, double[] globalPoint, long globalCellIndex) {
             int D = 2;
+            int localCellIndex = gridData.CellPartitioning.Global2Local(globalCellIndex);
             MultidimensionalArray GlobalVerticesIn = MultidimensionalArray.CreateWrapper(globalPoint, 1, D);
             MultidimensionalArray LocalVerticesOut = MultidimensionalArray.CreateWrapper(new double[D], 1, D);
 
-            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, globalCellIndex, NewtonConvergence: null);
+            gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, localCellIndex, NewtonConvergence: null);
 
-            return new NodeSet(gridData.Cells.GetRefElement(globalCellIndex), LocalVerticesOut);
+            return new NodeSet(gridData.Cells.GetRefElement(localCellIndex), LocalVerticesOut);
         }
 
         public static double[] NormalizedGradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {
@@ -278,49 +279,6 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             return grid;
         }
-
-        //public static MultidimensionalArray SortPoints(GridData gridData, SinglePhaseField field, MultidimensionalArray points, bool byFlux = false) {
-        //    double[] sortedXCoords = new double[points.Lengths[0]];
-        //    double[] sortedYCoords = new double[points.Lengths[0]];
-        //    int keptEntries = 0;
-
-        //    for (int i = 0; i < points.Lengths[0]; i++) {
-        //        // Compute global cell index of the point
-        //        double[] currentPoint = points.ExtractSubArrayShallow(i, 0, -1).To1DArray();
-        //        gridData.LocatePoint(currentPoint, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess);
-
-        //        // Compute local node set
-        //        NodeSet nodeSet = GetLocalNodeSet(gridData, currentPoint, (int)GlobalIndex);
-
-        //        // Get local cell index of current point
-        //        int j0Grd = gridData.CellPartitioning.i0;
-        //        int jLocal = (int)(GlobalIndex - j0Grd);
-
-        //        // Calculate secondDerivative
-        //        double secondDerivative;
-        //        if (byFlux) {
-        //            secondDerivative = SecondDerivativeByFlux(field, jLocal, nodeSet,);
-        //        } else {
-        //            secondDerivative = SecondDerivative(field, jLocal, nodeSet);
-        //        }
-
-        //        // Select points where second derivative is larger than zero
-        //        if (secondDerivative > 0.0) {
-        //            sortedXCoords[keptEntries] = currentPoint[0];
-        //            sortedYCoords[keptEntries] = currentPoint[1];
-        //            keptEntries++;
-        //        }
-        //    }
-
-        //    // Resize final array
-        //    MultidimensionalArray result = MultidimensionalArray.Create(keptEntries, points.Lengths[1], points.Lengths[2]);
-        //    for (int i = 0; i < keptEntries; i++) {
-        //        result[i, 0, 0] = sortedXCoords[i];
-        //        result[i, 0, 1] = sortedYCoords[i];
-        //    }
-
-        //    return result;
-        //}
 
         /// <summary>
         /// Performs the patch recovery on a given DG field
