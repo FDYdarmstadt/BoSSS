@@ -345,29 +345,27 @@ namespace BoSSS.Application.XNSE_Solver {
                 int order = interfaceVelocity.Basis.Degree * interfaceVelocity.Basis.Degree + 2;
                 interfaceVelocity.Clear();
                 interfaceVelocity.ProjectField(1.0,
-                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                       int K = result.GetLength(1); // No nof Nodes
 
-                       MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
-                       MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
 
-                       for (int dd = 0; dd < D; dd++) {
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       }
+                    MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
 
-                       for (int j = 0; j < Len; j++) {
+                    for (int dd = 0; dd < D; dd++) {
+                        ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                    }
 
-                           for (int k = 0; k < K; k++) {     
-                               result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
-                           }
-                       }
-                   }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
+                    for (int j = 0; j < Len; j++) {
 
+                        for (int k = 0; k < K; k++) {     
+                            result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                        }
+                    }
+                }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
             }
-
         }
-
     }
 
     class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
