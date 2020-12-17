@@ -1965,7 +1965,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
             //C.LogPeriod = 2;
-            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 2, mode = EvaporationLogging.Mode.LineInterface });
+            //C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 2, mode = EvaporationLogging.Mode.LineInterface });
 
             return C;
         }
