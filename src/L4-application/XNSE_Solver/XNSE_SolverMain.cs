@@ -74,9 +74,11 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
 
         static void Main(string[] args) {
-            
-            InitMPI();
-            DeleteOldPlotFiles();
+
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric(0.1d,  true,SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0, 1, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
 
@@ -111,7 +113,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
             //return;
-            
+
             _Main(args, false, delegate () {
                 var p = new XNSFE();
                 return p;

@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double mu_B => 1.0;
 
-        public double Sigma => 0.0;
+        public double Sigma => 1.0;
 
         public double c_A => 1.0;
 
@@ -129,8 +129,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public Func<double[], double, double> GetPress(string species) {
             double dp = (qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
             switch (species) {
-                case "A": { return (X,t) => 1.0 + dp; }
-                case "B": { return (X, t) => 1.0; }
+                case "A": { return (X,t) => 0.0 + dp; }
+                case "B": { return (X, t) => 0.0; }
                 default: { throw new ArgumentException(); }
             }
         }

@@ -110,6 +110,7 @@
     <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />
+    <Compile Include="Tests\SteadyStateEvaporationTest.cs" />
     <Compile Include="WaveLikeLogging.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />

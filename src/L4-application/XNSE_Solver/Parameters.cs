@@ -373,6 +373,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
     }
 
+    /// <summary>
+    /// Update of Massflux Parameter for XNSFE;
+    /// Massflux is defined to be positive when pointing in LS normal direction, i.e.
+    /// mass flows from - phase to + phase.
+    /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
+    /// Then this procedure has to be changed if necessary
+    /// </summary>
     class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
@@ -444,9 +451,9 @@ namespace BoSSS.Application.XNSE_Solver {
                         for (int k = 0; k < K; k++) {
 
                             double qEvap = 0.0;
-                            //macro region
+                            //macro region                            
                             for (int dd = 0; dd < D; dd++) {
-                                qEvap += ((-kB) * GradTempB_Res[j, k, dd] - (-kA) * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                qEvap += ((-kA) * GradTempA_Res[j, k, dd] - (-kB) * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
                                 //qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
                             }
 

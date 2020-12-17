@@ -46,8 +46,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // from XNSFE_OperatorComponents
             //if (config.isTransport) {
-            //    //comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
-            //    //comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+            //    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF(d, D, lsTrk, thermParams, sigma));
+            //    AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
             //}
 
             //if (config.isMovingMesh) {
