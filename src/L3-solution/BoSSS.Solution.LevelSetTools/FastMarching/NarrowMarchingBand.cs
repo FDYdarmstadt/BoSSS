@@ -334,12 +334,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
                     if(PosBitMask[j]) {
-                        //ReinitPosBitmaskLocal[j] = true;
+                        //ReinitPosBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
                     if(NegBitMask[j]) {
-                        //ReinitNegBitmaskLocal[j] = true;
+                        //ReinitNegBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
@@ -350,6 +350,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
+
 
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);

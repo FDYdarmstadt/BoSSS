@@ -81,8 +81,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
 
-
-
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
@@ -96,8 +94,8 @@ namespace BoSSS.Application.XNSE_Solver {
             ////Tests.UnitTest.TestRayleighTaylorInstability();
             ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
 
-            Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
-                XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
+            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0d, false,
             //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
 
@@ -109,7 +107,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             _Main(args, false, delegate () {
-                var p = new XNSFE();
+                var p = new XNSE_SolverMain();
                 return p;
             });
         }

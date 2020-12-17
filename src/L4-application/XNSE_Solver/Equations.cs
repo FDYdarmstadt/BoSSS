@@ -45,20 +45,20 @@ namespace BoSSS.Application.XNSE_Solver {
             double sigma = physParams.Sigma;
 
             // from XNSFE_OperatorComponents
-            //if (config.isTransport) {
-            //    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF(d, D, lsTrk, thermParams, sigma));
-            //    AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
-            //}
-
-            //if (config.isMovingMesh) {
-            //    //comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, thermParams, sigma));
-            //}
+            if (config.isTransport) {
+                if (!config.isMovingMesh) {
+                    AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
+                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF(d, D, lsTrk, thermParams, sigma));
+                    AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                }
+            } else {
+                AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
+            }
 
             if (config.isViscous) {
                 AddComponent(new ViscosityAtLevelSet_FullySymmetric_withEvap(lsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
 
-            AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma));
         }
 
         public override string FirstSpeciesName => phaseA;
