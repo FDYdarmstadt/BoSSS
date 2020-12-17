@@ -93,8 +93,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             double time,
             double dt,
             double underRelax,
-            bool incremental)
-        {
+            bool incremental){
+            
             UpdateCurrentInterfaces(phaseInterface);
             LevelSet ls = phaseInterface.CGLevelSet;
             LevelSet lsBkUp = ls.CloneAs();
@@ -130,7 +130,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             {
                 dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
             }
-
+            AssertAllRequiredFieldsArePresent(lsMover.ParameterNames, DomainVarFields, ParameterVarFields);
+            AssertAllRequiredFieldsArePresent(lsMover.VariableNames, DomainVarFields, ParameterVarFields);
             lsMover.MovePhaseInterface(
                 phaseInterface,
                 time,
@@ -161,13 +162,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
             double time)
         {
-            foreach (ILevelSetParameter parameter in lsParameters)
-            {
+            foreach (ILevelSetParameter parameter in lsParameters) {
                 parameter.LevelSetParameterUpdate(
                     phaseInterface,
                     time,
                     DomainVarFields,
                     ParameterVarFields);
+            }
+        }
+
+        void AssertAllRequiredFieldsArePresent(IList<string> names, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if(names!= null) {
+                foreach (string name in names) {
+                    if (!(DomainVarFields.ContainsKey(name) || ParameterVarFields.ContainsKey(name))) {
+                        throw new Exception($"LevelSetUpdater is missing field with name {name}");
+                    }
+                }
             }
         }
     }
@@ -382,6 +392,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             UpdateParameters(DomainVarFields, InnerParameterFields, 0.0);
             //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "afterUpdateParametersInitial", 0.0, 2);
+
         }
 
         void InitializeParameters(

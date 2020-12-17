@@ -48,9 +48,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public FourierEvolver(FourrierLevelSet ls , FourierLevSetControl control, int curvatureDegree) {
+        public FourierEvolver(string interfaceName, FourrierLevelSet ls , FourierLevSetControl control, int curvatureDegree) {
             parameters = new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };
-            this.levelSetName = ls.Identification;
+            this.levelSetName = interfaceName;
 
             if (control == null)
                 throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");

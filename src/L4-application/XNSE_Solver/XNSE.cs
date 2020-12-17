@@ -212,8 +212,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourrierLevelSet ls = (FourrierLevelSet)lsUpdater.LevelSets["Phi"].DGLevelSet;
+                FourrierLevelSet ls = (FourrierLevelSet)lsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet;
                 var fourrier = new FourierEvolver(
+                    VariableNames.FluidInterface,
                     ls,
                     Control.FourierLevSetControl,
                     Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);

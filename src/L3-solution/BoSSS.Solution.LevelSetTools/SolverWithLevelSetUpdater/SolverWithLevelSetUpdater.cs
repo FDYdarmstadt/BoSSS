@@ -38,7 +38,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            return GetOperatorInstance(D, LsUpdater);
+            XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
+            return xOperator;
         }
 
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
