@@ -1774,9 +1774,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ThermalParameters.p_sat = pSat;
 
 
-            bool includeConv = false;
+            bool includeConv = true;
             C.PhysicalParameters.IncludeConvection = includeConv; 
-            C.ThermalParameters.IncludeConvection = false;
+            C.ThermalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
 
             #endregion
@@ -1787,11 +1787,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
             
             double L = 0.1;
+            bool periodic = false;
 
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, L, kelemR + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, L, kelemR + 1);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:false);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodic);
 
                 if (!steady) {
                     grd.EdgeTagNames.Add(1, "wall_ConstantHeatFlux_lower");
@@ -1800,19 +1801,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     grd.EdgeTagNames.Add(1, "pressure_outlet_ConstantTemperature_lower");
                     grd.EdgeTagNames.Add(2, "velocity_inlet_ZeroGradient_upper");
                 }
-                grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient");
+                if (!periodic)
+                    grd.EdgeTagNames.Add(3, "slipsymmetry_ZeroGradient");
 
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if(Math.Abs(X[1]) <= 1.0e-8)
-                        et = 1;
+                    if(Math.Abs(X[1]) <= 1.0e-8)   
+                        et = 1; 
                     if(Math.Abs(X[1] - L) <= 1.0e-8)
                         et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8 || Math.Abs(X[0] - L) <= 1.0e-8)
-                        et = 3;
+                    if (!periodic) {
+                        if (Math.Abs(X[0]) <= 1.0e-8 || Math.Abs(X[0] - L) <= 1.0e-8)
+                            et = 3;
+                    }
 
-                        return et;
+                    return et;
                 });
 
                 return grd;
@@ -1875,7 +1879,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.AddBoundaryValue("velocity_inlet_ZeroGradient_upper", "VelocityY#A", (X, t) => -0.1);
             }
 
-            C.AddBoundaryValue("slipsymmetry_ZeroGradient");
+            if (!periodic)
+                C.AddBoundaryValue("slipsymmetry_ZeroGradient");
 
             #endregion
 
@@ -1937,7 +1942,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = steady ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
