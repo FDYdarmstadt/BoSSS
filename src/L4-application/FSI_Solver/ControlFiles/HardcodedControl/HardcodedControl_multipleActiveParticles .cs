@@ -282,7 +282,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 25, double noOfParticles = 10) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 25, double noOfParticles = 12) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -294,6 +294,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
+            C.FullOutputToConsole = true;
             C.PhysicalParameters.IncludeConvection = false;
 
             // Particle Properties

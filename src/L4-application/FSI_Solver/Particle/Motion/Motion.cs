@@ -492,6 +492,8 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
                 Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
+                if (Angle[0] > 2 * Math.PI)
+                    Angle[0] -= 2 * Math.PI;
                 orientationVector = new Vector(Math.Cos(Angle[0]), Math.Sin(Angle[0]));
                 CollisionTimestep = 0;
             }
