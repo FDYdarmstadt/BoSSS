@@ -94,6 +94,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public DoNotTouchParameters dntParams;
 
+        /// <summary>
+        /// Fucking Gravity
+        /// </summary>
+        public bool isGravity {
+            get {
+                return true;
+            }
+        }
 
         /// <summary>
         /// Controls the domain variables that the operator should contain. <br/>

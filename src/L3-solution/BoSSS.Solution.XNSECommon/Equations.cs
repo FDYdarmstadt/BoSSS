@@ -169,11 +169,13 @@ namespace BoSSS.Solution.XNSECommon {
 
             // gravity
             // ================
-            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
-            string gravityOfSpecies = gravity + "#" + SpeciesName;
-            var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
-            AddComponent(gravityComponent);
-            AddParameter(gravityOfSpecies);
+            if(config.isGravity) {
+                string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+                string gravityOfSpecies = gravity + "#" + SpeciesName;
+                var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+                AddComponent(gravityComponent);
+                AddParameter(gravityOfSpecies);
+            }
         }
 
         public override string SpeciesName => speciesName;

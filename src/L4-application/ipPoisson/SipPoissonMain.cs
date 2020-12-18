@@ -680,7 +680,7 @@ namespace BoSSS.Application.SipPoisson {
                 return 0.0;
             }
         }
-
+        /*
         /// <summary>
         /// Solution of the system
         /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
@@ -755,6 +755,7 @@ namespace BoSSS.Application.SipPoisson {
                 ipSolver.Dispose();
             }
         }
+        */
 
         List<DGField> MGColoring = new List<DGField>();
 

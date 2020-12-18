@@ -245,7 +245,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// agglomeration (if applicable) should already be applied.
         /// </param>
         /// <param name="MassMatrix">
-        /// Mass matrix on the original grid. If null, the identity matrix is assumed. It is only required if the 
+        /// Mass matrix on the original grid. If null, the identity matrix is assumed. 
         /// </param>
         /// <param name="cobc">
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.
