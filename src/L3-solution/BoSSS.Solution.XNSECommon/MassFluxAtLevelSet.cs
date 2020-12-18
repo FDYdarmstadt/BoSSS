@@ -342,14 +342,18 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtLevelSet_withMassFlux(int _d, int _D, LevelSetTracker LsTrk, PhysicalParameters physicalParameters)
+        /// <param name="physicalParameters"></param>
+        /// <param name="_movingMesh"></param>
+        public MassFluxAtLevelSet_withMassFlux(int _d, int _D, LevelSetTracker LsTrk, PhysicalParameters physicalParameters, bool _movingMesh)
             : base(_D, LsTrk, physicalParameters) {
 
             this.m_d = _d;
+            this.movingMesh = _movingMesh;
             if (m_d >= m_D)
                 throw new ArgumentOutOfRangeException();
         }
 
+        bool movingMesh;
         int m_d;
 
         /// <summary>
@@ -373,8 +377,210 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = FlxNeg * vA - FlxPos * vB;
 
+            // moving-mesh-contribution
+            // ========================
+
+            if (movingMesh) {
+                double s = ComputeInterfaceNormalVelocity(ref cp);
+                Console.WriteLine("interface normal velocity = {0}", s);
+                double movingFlux;
+                if (s > 0) { // select DOWN-wind!
+                    movingFlux = (-s) * cp.Parameters_OUT[1 + m_d]; // uB[0];
+                } else {
+                    movingFlux = (-s) * cp.Parameters_IN[1 + m_d]; // uA[0];
+                }
+
+                Ret -= movingFlux * Normal[m_d] * 0.5 * (vA + vB);
+            }
+
             return Ret;
         }
+
+        private double ComputeInterfaceNormalVelocity(ref CommonParams cp) {
+
+            double M = MassFlux(cp);
+
+            double sNeg = 0.0;
+            for (int d = 0; d < m_D; d++)
+                sNeg += (cp.Parameters_IN[1 + d]) * cp.Normal[d];
+            sNeg -= (M / m_rhoA);
+
+            double sPos = 0.0;
+            for (int d = 0; d < m_D; d++)
+                sPos += (cp.Parameters_OUT[1 + d]) * cp.Normal[d];
+            sPos -= (M / m_rhoB);
+
+            double s = (m_rhoA * sNeg + m_rhoB * sPos) / (m_rhoA + m_rhoB);     // density averaged, corresponding to the mean evo velocity 
+
+            return s;
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0Vector(m_D));
+            }
+        }
+    }
+
+    public class ConvectionAtLevelSet_nonMaterialLLF_withMassFlux : MassFluxAtLevelSet {
+
+
+        public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(int _d, int _D, LevelSetTracker lsTrk, PhysicalParameters physicalParameters)
+            : base(_D, lsTrk, physicalParameters) {
+
+            this.m_d = _d;
+        }
+
+        int m_d;
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+
+            double M = MassFlux(cp);
+            if (M == 0.0)
+                return 0.0;
+
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = cp.Parameters_IN[1 + d];
+                VelocityMeanOut[d] = cp.Parameters_OUT[1 + d];
+
+            }
+
+            double LambdaIn;
+            double LambdaOut;
+
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+
+
+            double uJump = -M * ((1 / m_rhoA) - (1 / m_rhoB)) * cp.Normal[m_d];
+
+
+            double flx = Lambda * uJump * 0.8;
+
+            return flx * (m_rhoA * vA - m_rhoB * vB);
+        }
+
+
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
+    }
+
+    public class ConvectionAtLevelSet_Consistency_withMassFlux : MassFluxAtLevelSet {
+
+
+        public ConvectionAtLevelSet_Consistency_withMassFlux(int _d, int _D, LevelSetTracker lsTrk,
+            double vorZeichen, bool RescaleConti, PhysicalParameters physParams)
+            : base(_D, lsTrk, physParams) {
+
+            this.m_d = _d;
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if (RescaleConti) {
+                scaleA /= m_rhoA;
+                scaleB /= m_rhoB;
+            }
+
+        }
+
+        int m_d;
+
+        double scaleA;
+        double scaleB;
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+            double M = MassFlux(cp);
+
+            if (M == 0.0)
+                return 0.0;
+
+            double Ucentral = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                Ucentral += 0.5 * (cp.Parameters_IN[1 + d] + cp.Parameters_OUT[1 + d]) * cp.Normal[d];
+            }
+
+            double uAxN = Ucentral * (-M * (1 / m_rhoA) * cp.Normal[m_d]);
+            double uBxN = Ucentral * (-M * (1 / m_rhoB) * cp.Normal[m_d]);
+
+
+            uAxN += -M * (1 / m_rhoA) * 0.5 * (U_Neg[0] + U_Pos[0]);
+            uBxN += -M * (1 / m_rhoB) * 0.5 * (U_Neg[0] + U_Pos[0]);
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            uAxN_fict = uBxN;
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            uBxN_fict = uAxN;
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+            double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+
+            FlxNeg *= m_rhoA;
+            FlxPos *= m_rhoB;
+
+            double Ret = FlxNeg * vA - FlxPos * vB;
+
+            return Ret;
+        }
+
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Velocity_d(m_d) };
+            }
+        }
+
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0Vector(m_D));
+            }
+        }
+
+
     }
 
 }

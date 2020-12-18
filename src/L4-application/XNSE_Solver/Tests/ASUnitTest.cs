@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -658,11 +659,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         private static void XNSFESolverTest(IXNSFETest Tst, XNSE_Control C) {
 
-            if (C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping test of {C.CutCellQuadratureType} wor now...");
-                return;
-            }
-
             using (var solver = new XNSFE()) {
 
                 solver.Init(C);
@@ -685,16 +681,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
                 XHeatErrorEvaluator heatevaluator = new XHeatErrorEvaluator(solver);
                 if (Tst.CheckT) {
-                    double[] LastErrorsT = heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
-
-                    double[] ErrThreshT = Tst.AcceptableL2Error;
+                    LastErrors = LastErrors.Cat(heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C) );
 
                     // Last Error belongs to temperature
-                    for (int i = ErrThreshT.Length - 1; i < ErrThreshT.Length; i++) {
-                        Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrorsT[0]);
+                    for (int i = ErrThresh.Length - 1; i < ErrThresh.Length; i++) {
+                        Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
                     }
-                    for (int i = ErrThreshT.Length - 1; i < ErrThreshT.Length; i++)
-                        Assert.LessOrEqual(LastErrorsT[0], ErrThreshT[i]);
+                    for (int i = ErrThresh.Length - 1; i < ErrThresh.Length; i++)
+                        Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
                 }
 
                 //-------------------Evaluate Energy Error ---------------------------------------- 

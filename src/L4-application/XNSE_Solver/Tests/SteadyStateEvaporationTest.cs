@@ -33,7 +33,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double c_A => 1.0;
 
-        public double c_B => 0.001;
+        // has to be zero, because we do not want to include a convective contribution to heatflux and temperature profile
+        public double c_B => 0.0; 
 
         public double k_A => 1.0;
 
@@ -127,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPress(string species) {
-            double dp = (qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
+            double dp = -(qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
             switch (species) {
                 case "A": { return (X,t) => 0.0 + dp; }
                 case "B": { return (X, t) => 0.0; }

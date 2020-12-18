@@ -375,7 +375,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Massflux is defined to be positive when pointing in LS normal direction, i.e.
     /// mass flows from - phase to + phase.
     /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
-    /// Then this procedure has to be changed if necessary
     /// </summary>
     class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
 
@@ -388,7 +387,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public MassFluxExtension_Evaporation(XNSFE_OperatorConfiguration config) {
             this.config = config;
-            Update = MassFluxExtension_Evaporation_Update;
+            //Update = MassFluxExtension_Evaporation_Update; // Update only once per timestep for now, seems to give better convergence
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -469,95 +468,7 @@ namespace BoSSS.Application.XNSE_Solver {
             this.levelSet = levelSet;
             this.time = time;
 
-            //var thermalParams = config.getThermParams;
-            //double kA, kB;
-            //foreach (var spc in levelSet.Tracker.SpeciesNames) {
-            //    switch (spc) {
-            //        case "A": { kA = thermalParams.k_A; break; }
-            //        case "B": { kB = thermalParams.k_B; break; }
-            //        default: { throw new ArgumentException("unknown species"); }
-            //    }
-            //}
-            //var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
-            //SinglePhaseField MassFluxExtensionField = (SinglePhaseField)ParameterVarFields[paramName];
-            //SinglePhaseField MassFluxField = new SinglePhaseField(MassFluxExtensionField.Basis);
-            //int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
-
-            //XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
-
-            //int D = levelSet.Tracker.GridDat.SpatialDimension;
-            //MassFluxField.Clear();
-            //MassFluxField.ProjectField(1.0,
-            //    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-            //        int K = result.GetLength(1); // No nof Nodes
-                    
-
-            //        MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
-            //        MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
-
-            //        temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
-            //        temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
-
-            //        MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
-            //        MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
-                    
-            //        for (int dd = 0; dd < D; dd++) {
-            //            ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-            //            ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-            //        }
-                    
-
-            //        var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
-
-            //        for (int j = 0; j < Len; j++) {
-
-            //            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-            //            levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
-
-            //            for (int k = 0; k < K; k++) {
-
-            //            double qEvap = 0.0;
-            //            //macro region
-            //            for (int dd = 0; dd < D; dd++) {                                
-            //                    qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];                                
-            //            }
-
-            //            //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
-            //            double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
-            //            double mEvap = (config.prescribedMassflux != null) ? config.prescribedMassflux(globX, time) : qEvap /thermalParams.hVap; // mass flux
-
-            //            //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
-            //            result[j, k] = mEvap;
-            //            }
-            //        }
-            //    }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));     
-
-
-            
-
-            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
-            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
-            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
-            //int J = levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
-            //double[][] MassFluxMin = new double[1][];
-            //double[][] MassFluxMax = new double[1][];
-            //MassFluxMin[0] = new double[J];
-            //MassFluxMax[0] = new double[J];
-
-            //VectorField<SinglePhaseField> DGLevSetGradient =  new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
-            //DGLevSetGradient.Clear();
-            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
-            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { MassFluxExtensionField }, new SinglePhaseField[] { MassFluxField },
-            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
-
-            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
-            ////timestepnumber??
-            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { MassFluxExtensionField },
-            //    MassFluxMin, MassFluxMax, DGLevSetGradient, (int)time);
-
-            //MassFluxExtensionField.CheckForNanOrInf(true, true, true);
-
-            
+            MassFluxExtension_Evaporation_Update(DomainVarFields, ParameterVarFields);
         }
     }
 
