@@ -242,10 +242,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         private MultidimensionalArray ScaledReferenceGradient(NodeSet Node, int Cell)
         {
-            MultidimensionalArray rgradient = lsData.GetLevelSetReferenceGradients(Node, Cell, 1);
-            rgradient = rgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
-            return rgradient;
+            MultidimensionalArray lsgradient = lsData.GetLevelSetGradients(Node, Cell, 1);
+            lsgradient = lsgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
+            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+
+            double[] tmp_grad = lsgradient.Storage;
+            jacobian.MatVecMulInplace(1, tmp_grad);
+
+            return lsgradient;
         }
+
+        
 
         protected override QuadRule CreateZeroQuadrule()
         {
