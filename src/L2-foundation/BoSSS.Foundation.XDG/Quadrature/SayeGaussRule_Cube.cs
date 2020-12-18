@@ -276,7 +276,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             double[] tmp_grad = gradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad);
+            jacobian.MatVecMulInplace(1, tmp_grad, true);
             
             return gradient;
         }
@@ -441,20 +441,53 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double weight = X_weight;
 
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(node, cell, 1);
+            MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(node, cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
+            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1 , -1);
-
             //Scale weight
-            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
-            weight /= jacobian[heightDirection, heightDirection];
+            if (IsScalingMatrix(jacobian)) {
+                weight /= jacobian[heightDirection, heightDirection];
+            } else {
+                double j1;
+                double j2;
+                double j3;
+                if (heightDirection == 0) {
+                    j1 = jacobian[0, 0] * jacobian[0, 0];
+                    j2 = jacobian[1, 0] * jacobian[1, 0];
+                    j3 = jacobian[2, 0] * jacobian[2, 0];
+                } else if( heightDirection == 1) {
+                    j1 = jacobian[0, 1] * jacobian[0, 1];
+                    j2 = jacobian[1, 1] * jacobian[1, 1];
+                    j3 = jacobian[2, 1] * jacobian[2, 1];
+                } else {
+                    j1 = jacobian[0, 2] * jacobian[0, 2];
+                    j2 = jacobian[1, 2] * jacobian[1, 2];
+                    j3 = jacobian[2, 2] * jacobian[2, 2];
+                }
+                weight /= Math.Sqrt(j1 + j2 + j3);
+            }
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
             weightArr[0] = weight;
             return new SayeQuadRule(node, weightArr);
         }
+
+        bool IsScalingMatrix(MultidimensionalArray matrix) {
+            double offDiag = 0.0;
+            for(int i = 0; i < 3; ++i) {
+                for(int j = i + 1; j > 3; ++i) {
+                    offDiag += matrix[i, j];
+                    offDiag += matrix[j, i];
+                }
+            }
+            if(offDiag == 0.0)
+                return true;
+            else return false;
+        }
+
 
         public override double[] GetBoundaries(LinearSayeSpace<Cube> arg, int heightDirection)
         {

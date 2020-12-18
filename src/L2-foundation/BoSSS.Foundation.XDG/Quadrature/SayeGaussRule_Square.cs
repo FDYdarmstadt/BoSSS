@@ -242,19 +242,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         private MultidimensionalArray ScaledReferenceGradient(NodeSet Node, int Cell)
         {
-            MultidimensionalArray lsgradient = lsData.GetLevelSetGradients(Node, Cell, 1);
-            lsgradient = lsgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
+            MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
+            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
-            double[] tmp_grad = lsgradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad);
+            double[] tmp_grad = gradient.Storage;
+            jacobian.MatVecMulInplace(1, tmp_grad, true);
 
-            return lsgradient;
+            return gradient;
         }
-
-        
 
         protected override QuadRule CreateZeroQuadrule()
         {
@@ -370,12 +368,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             if (IsScalingMatrix(jacobian)) {
                 rweight /= jacobian[heightDirection, heightDirection];
             } else {
-                double jx = jacobian[heightDirection, heightDirection] * jacobian[heightDirection, heightDirection];
+                double jx;
                 double jy;
                 if(heightDirection == 0) {
+                    jx = jacobian[0, 0] * jacobian[0, 0];
                     jy = jacobian[1, 0] * jacobian[1, 0];
                 } else {
-                    jy = jacobian[0, 1] * jacobian[0, 1];
+                    jx = jacobian[0, 1] * jacobian[0, 1];
+                    jy = jacobian[1, 1] * jacobian[1, 1];
                 }
                 rweight /= Math.Sqrt(jx + jy);
             }
