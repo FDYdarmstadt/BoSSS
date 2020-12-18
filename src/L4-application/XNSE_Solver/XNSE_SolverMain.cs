@@ -76,11 +76,12 @@ namespace BoSSS.Application.XNSE_Solver {
             
             InitMPI();
             DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ASTestRayleighTaylorInstability();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
@@ -106,7 +107,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //    LevelSetHandling.Coupled_Once);
 
             //return;
-            throw new Exception("REmove me");
+            throw new Exception("Remove me");
 
             _Main(args, false, delegate () {
                 var p = new XNSFE();
