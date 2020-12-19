@@ -263,6 +263,7 @@ namespace BoSSS.Foundation.XDG {
         public DependentXTemporalOperator(XSpatialOperatorMk2 __owner) {
             owner = __owner;
             InternalRepresentation = new XSpatialOperatorMk2(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction, __owner.Species.ToArray());
+            InternalRepresentation.AgglomerationThreshold = __owner.AgglomerationThreshold;
             InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
             InternalRepresentation.m_UserDefinedValues = __owner.m_UserDefinedValues;
         }

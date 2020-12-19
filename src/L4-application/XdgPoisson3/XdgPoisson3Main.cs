@@ -171,6 +171,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             double MU_B = this.Control.MU_B;
 
             Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
+            Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
             Op.EquationComponents["c1"].Add(lap);      // Bulk form
@@ -478,7 +479,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Operator stability analysis
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
-            return this.Op.OperatorAnalysis(this.u.Mapping); 
+            return this.Op.OperatorAnalysis(this.u.Mapping, this.OpConfig); 
            
         }
                 

@@ -320,6 +320,7 @@ namespace BoSSS.Application.SipPoisson {
                 LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
                 var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
                 LapaceIp.EquationComponents["T"].Add(flux);
+                LapaceIp.IsLinear = true;
                 LapaceIp.Commit();
             }
         }

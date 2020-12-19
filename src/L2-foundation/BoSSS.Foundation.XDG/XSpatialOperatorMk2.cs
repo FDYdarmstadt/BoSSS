@@ -919,9 +919,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// ctor
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc,  IEnumerable<string> __Species)
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, __Species) {
         }
 
@@ -929,13 +929,13 @@ namespace BoSSS.Foundation.XDG {
         /// Almost empty constructor; Variable, Parameter, and Codomain/Equation names are specified by the 
         /// order in which equation components are added.
         /// </summary>
-        public XSpatialOperatorMk2(params string[] species)
+        public XSpatialOperatorMk2(double __AgglomerationThreshold, params string[] species)
             : this(new string[0], new string[0], new string[0], QuadOrderFunc.NonLinear(2), species) {
         }
 
 
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// ctor
         /// </summary>
         public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species) {
             m_DomainVar = new string[__DomainVar.Count];
@@ -1066,6 +1066,24 @@ namespace BoSSS.Foundation.XDG {
             #endregion
         }
 
+        double m_AgglomerationThreshold;
+
+        /// <summary>
+        /// Cell agglomeration threshold, see <see cref="MultiphaseCellAgglomerator"/>
+        /// </summary>
+        public double AgglomerationThreshold {
+            get {
+                return m_AgglomerationThreshold;
+            }
+            set {
+                if(IsCommited)
+                    throw new NotSupportedException("Not allowed to change the Agglomeration Threshold after operator is committed.");
+                if(value < 0 || value > 1.0)
+                    throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (got {value}).");
+                m_AgglomerationThreshold = value;
+            }
+        }
+
 
         /// <summary>
         /// finalizes the assembly of the operator;
@@ -1073,6 +1091,9 @@ namespace BoSSS.Foundation.XDG {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         public virtual void Commit() {
+             if(AgglomerationThreshold < 0 || AgglomerationThreshold > 1.0)
+                    throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (set as {AgglomerationThreshold}).");
+
             this.Verify();
 
             if(m_IsCommited)

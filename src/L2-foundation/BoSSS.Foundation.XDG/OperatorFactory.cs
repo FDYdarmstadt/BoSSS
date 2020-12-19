@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             coefficients.AddCoefficient(coefficient);
         }
 
-        public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder) {
+        public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder, double __AgglomerationThreshold) {
             int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
                 return quadOrder;
             }

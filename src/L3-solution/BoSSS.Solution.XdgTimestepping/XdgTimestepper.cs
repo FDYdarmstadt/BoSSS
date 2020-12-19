@@ -254,6 +254,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(LsTrk == null)
                 throw new ArgumentException("unable to get Level Set Tracker reference");
 
+            if(op.AgglomerationThreshold != _AgglomerationThreshold)
+                throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+
             bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
 
             SpeciesId[] spcToCompute = op.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();

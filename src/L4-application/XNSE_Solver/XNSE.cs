@@ -167,7 +167,7 @@ namespace BoSSS.Application.XNSE_Solver
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder(), this.Control.AgglomerationThreshold);
 
             //final settings
             XOP.FreeMeanValue[BoSSS.Solution.NSECommon.VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
