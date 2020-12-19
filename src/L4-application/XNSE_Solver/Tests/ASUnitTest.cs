@@ -446,8 +446,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var Tst = new ChannelTest(angle);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
 
             XNSESolverTest(Tst, C);
             if (deg == 2)
@@ -559,8 +557,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2);
-            C.ImmediatePlotPeriod = 1;
-            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             XNSFESolverTest(Tst, C);
         }
 
