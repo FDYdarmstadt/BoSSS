@@ -1557,11 +1557,13 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
                     }
 
+                    /*
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
+                    */
 
                     // Extended Multigrid Analysis
                     //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
@@ -1677,12 +1679,13 @@ namespace BoSSS.Solution {
                         ((kcycle)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations;
                     }
 
+                    /*
                     ((kcycle)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
-
+                    */
                     // Extended Multigrid Analysis
                     //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
 
@@ -1795,13 +1798,13 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     }
 
-
+                    /*
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
-
+                    */
 
                 }
                 SolverChain.Add(levelSolver);

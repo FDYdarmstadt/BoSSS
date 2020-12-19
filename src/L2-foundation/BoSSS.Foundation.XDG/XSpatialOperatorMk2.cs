@@ -1667,6 +1667,9 @@ namespace BoSSS.Foundation.XDG {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
+            if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
+                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
             foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {

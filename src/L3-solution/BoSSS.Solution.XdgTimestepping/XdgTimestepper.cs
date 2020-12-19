@@ -488,6 +488,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ArgumentException("Domain/Matrix column mapping mismatch.");
             }
 
+            if(Operator.IsLinear && Operator.LinearizationHint != LinearizationHint.AdHoc)
+                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
 
             if(XdgOperator != null) {
                 if(OpMtx != null) {

@@ -176,7 +176,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
             Op.EquationComponents["c1"].Add(lap);      // Bulk form
             Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
-
+            Op.EquationComponents["c1"].Add(new RHSSource(this.rhs));
             Op.IsLinear = true;
 
             Op.Commit();
@@ -343,8 +343,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             this.Op.Solve(this.u.Mapping, this.OpConfig,
                 nsc: this.Control.NonLinearSolver, lsc: this.Control.LinearSolver,
                 MultigridSequence: base.MultigridSequence, 
-                verbose: true);
+                verbose: true,
+                queryHandler: base.QueryHandler);
             
+
             /*
             Console.WriteLine("Steady solve ...");
 
@@ -426,6 +428,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             */
 
 
+
+
             if (this.Control.ExcactSolSupported) {
                 this.uErr.Clear();
                 this.uErr.Acc(+1.0, u);
@@ -480,7 +484,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
             return this.Op.OperatorAnalysis(this.u.Mapping, this.OpConfig); 
-           
         }
                 
 
@@ -611,7 +614,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             return RHSvec;
         }
         */
-
+        /*
         private ConvergenceObserver ActivateCObserver(MultigridOperator mop, BlockMsrMatrix Massmatrix, SolverFactory SF, List<Action<int, double[], double[], MultigridOperator>> Callback) {
             Console.WriteLine("===Convergence Observer activated===");
             //string AnalyseOutputpath = String.Join(@"\",this.Control.DbPath, this.CurrentSessionInfo.ID);
@@ -627,7 +630,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         private void WriteTrendToDatabase(ConvergenceObserver CO) {
             CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
         }
-
+        */
         /*
         private void ConsistencyTest() {
 
@@ -707,4 +710,37 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
     }
+
+     class RHSSource : IVolumeForm, IParameterHandling {
+
+        public RHSSource(DGField rhsSourceField) {
+            m_rhsSourceField = rhsSourceField;
+        }
+
+
+        DGField m_rhsSourceField;
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public IList<string> ArgumentOrdering => new string[0];
+
+        public IList<string> ParameterOrdering => new[] { "RHSsource" };
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
+            return new[] { m_rhsSourceField };
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
+            if(!object.ReferenceEquals(m_rhsSourceField,Parameters[0])) {
+                Parameters[0].Clear();
+                Parameters[0].Acc(1.0, m_rhsSourceField);
+            }
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double rhsVal = cpv.Parameters[0];
+            return -rhsVal * V;
+        }
+    }
+
 }

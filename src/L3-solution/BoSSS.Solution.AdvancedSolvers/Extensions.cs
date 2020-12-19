@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Queries;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
@@ -26,11 +27,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class MatrixAssembler {
 
-            public MatrixAssembler(ISpatialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence) {
+            public MatrixAssembler(ISpatialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence, QueryHandler __queryHandler) {
                 using(var tr = new FuncTrace()) {
                     // init
                     // ====
                     this.op = __op;
+                    this.queryHandler = __queryHandler;
                     NoOfVar = Solution.BasisS.Count;
                     SolMapping = Solution;
 
@@ -112,8 +114,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         AggBasisS = AggregationGridBasis.CreateSequence(MultigridSequence, Solution.BasisS);
                         AggBasisS.UpdateXdgAggregationBasis(Op_Agglomeration);
                     }
+
+                    if(queryHandler != null) {
+                        var BS00 = AggBasisS[0][0];
+                        int J = BS00.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                        int cntCutCellBlocks = 0;
+                        int cutCellDiagBlocks = 0;
+                        for(int j = 0; j < J; j++) {
+                            int[] Neigs = BS00.AggGrid.iLogicalCells.CellNeighbours[j];
+
+                            if(BS00.GetNoOfSpecies(j) > 1) {
+                                cutCellDiagBlocks++;
+
+                                foreach(int jN in Neigs) {
+                                    if(BS00.GetNoOfSpecies(jN) > 1)
+                                        cntCutCellBlocks++;
+                                }
+                            }
+                        }
+
+                        queryHandler.ValueQuery("NoOfCutCellBlocks", cntCutCellBlocks, true);
+                        queryHandler.ValueQuery("NoOfCutCellDiagBlocks", cutCellDiagBlocks, true);
+                    }
                 }
             }
+
+            public QueryHandler queryHandler;
 
             public int NoOfVar;
 
@@ -160,21 +186,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(!Solution.EqualsPartition(this.SolMapping))
                         throw new ApplicationException("something is weird.");
 
+                    if(op.IsLinear && op.LinearizationHint != LinearizationHint.AdHoc)
+                        throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
+
                     // assemble the linear system
                     // --------------------------
                     Console.WriteLine($"creating sparse system for {Solution.GlobalCount} DOF's ...");
                     Stopwatch stwAssi = new Stopwatch();
                     stwAssi.Start();
 
-
-
-
                     if(Linearization) {
                         using(new BlockTrace("MatrixAssembly", tr)) {
-
-
-                           
-
                             opMtx = new BlockMsrMatrix(Solution, Solution);
                             opAff = new double[Solution.LocalLength];
                             if(xop != null) {
@@ -198,35 +221,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
 
-
-                        using(new BlockTrace("Mass_Matrix_comp", tr)) {
-                            if(LsTrk != null) {
-
-
-                                var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
-                                MassMatrix = massFact.GetMassMatrix(Solution, NoOfVar.ForLoop(iVar => 1.0), false, spcIDs);
-
-                                Op_Agglomeration.ManipulateMatrixAndRHS(MassMatrix, default(double[]), Solution, Solution);
-                            } else {
-                                MassMatrix = null;
-                            }
-                        }
-
-
-
                         stwAssi.Stop();
                         if(verbose)
                             Console.WriteLine("done {0} sec.", stwAssi.Elapsed.TotalSeconds);
 
-                        if(verbose) {
+                        if(verbose || queryHandler != null) {
                             int minBlkSize = Solution.MaxTotalNoOfCoordinatesPerCell;
                             int maxBlkSize = Solution.MinTotalNoOfCoordinatesPerCell;
                             int NoOfMtxBlocks = 0;
-                            foreach(int[] Neigs in gdat.iLogicalCells.CellNeighbours) {
+                            int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
+                            for(int j = 0; j < J; j++) {
+                                int[] Neigs = gdat.iLogicalCells.CellNeighbours[j];
+                                
                                 NoOfMtxBlocks++; //               diagonal block
                                 NoOfMtxBlocks += Neigs.Length; // off-diagonal block
+
+                                
                             }
                             NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
+
+                            
 
                             opMtx.GetMemoryInfo(out long allc, out long used);
 
@@ -234,19 +248,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             double MtxStorage = allc / (1024 * 1024); // 12 bytes (double+int) per entry
 
-                            Console.WriteLine("   System size:                 {0}", Solution.TotalLength);
-                            Console.WriteLine("   No of blocks:                {0}", Solution.TotalNoOfBlocks);
-                            Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
-                            Console.WriteLine("   min DG coordinates per cell: {0}", minBlkSize);
-                            Console.WriteLine("   max DG coordinates per cell: {0}", maxBlkSize);
-                            Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
-                            Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
+                            if(verbose) {
+                                Console.WriteLine("   System size:                 {0}", Solution.TotalLength);
+                                Console.WriteLine("   No of blocks:                {0}", Solution.TotalNoOfBlocks);
+                                Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
+                                Console.WriteLine("   min DG coordinates per cell: {0}", minBlkSize);
+                                Console.WriteLine("   max DG coordinates per cell: {0}", maxBlkSize);
+                                Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
+                                Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
+                            }
 
-
-                            // base.QueryHandler.ValueQuery("MtxBlkSz", MtxBlockSize, true);
-                            // base.QueryHandler.ValueQuery("NNZMtx", MtxSize, true);
-                            // base.QueryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
-                            // base.QueryHandler.ValueQuery("MtxMB", MtxStorage, true);
+                            if(queryHandler != null) {
+                                queryHandler.ValueQuery("NNZMtx", MtxSize, true);
+                                queryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
+                                queryHandler.ValueQuery("MtxMB", MtxStorage, true);
+                                queryHandler.ValueQuery("NumberOfMatrixBlox", NoOfMtxBlocks, true); // the same data under two names, not to crash any worksheet.
+                            }
                         }
                     } else {
                         // +++++++++++++++
@@ -254,7 +271,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // +++++++++++++++
 
 
-                        throw new NotImplementedException("operator evaluation -- todo");
+                        opAff = new double[Solution.LocalLength];
+                        if(xop != null) {
+                            this.XDGevaluation(opAff);
+                        } else {
+                            this.DGevaluation(opAff);
+                        }
+
+                        opMtx = null;
+
+                    }
+
+                    // Assembly of mass matrix
+                    // -----------------------
+
+                    using(new BlockTrace("Mass_Matrix_comp", tr)) {
+                        if(LsTrk != null) {
+
+
+                            var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
+                            MassMatrix = massFact.GetMassMatrix(Solution, NoOfVar.ForLoop(iVar => 1.0), false, spcIDs);
+
+                            Op_Agglomeration.ManipulateMatrixAndRHS(MassMatrix, default(double[]), Solution, Solution);
+                        } else {
+                            MassMatrix = null;
+                        }
                     }
                 }
             }
@@ -315,7 +356,66 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             void DGMatrixAssembly(BlockMsrMatrix OpMtx, double[] OpAffine) {
-                throw new NotImplementedException("todo");
+                switch(op.LinearizationHint) {
+
+                    case LinearizationHint.AdHoc: {
+                        this.op.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+
+                        var mtxBuilder = op.GetMatrixBuilder(this.SolMapping, this.ParamFields, this.SolMapping);
+                        mtxBuilder.time = 0.0;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.FDJacobi: {
+                        var mtxBuilder = op.GetFDJacobianBuilder(this.SolMapping, this.ParamFields, this.SolMapping);
+                        mtxBuilder.time = 0.0;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+
+                    case LinearizationHint.GetJacobiOperator: {
+                        var JacXop = op.GetJacobiOperator(gdat.SpatialDimension);
+
+                        if(JacobiParameterVars == null)
+                            JacobiParameterVars = JacXop.InvokeParameterFactory(this.SolutionFields);
+                        JacXop.InvokeParameterUpdate(this.SolutionFields, JacobiParameterVars);
+
+                        var mtxBuilder = JacXop.GetMatrixBuilder(this.SolMapping, this.JacobiParameterVars, this.SolMapping);
+                        mtxBuilder.time = 0.0;
+                        mtxBuilder.MPITtransceive = true;
+                        mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                        return;
+                    }
+                }
+            }
+
+
+            void XDGevaluation(double[] OpAffine) {
+                this.xop.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+                var AgglomeratedCellLengthScales = this.Op_Agglomeration.CellLengthScales;
+
+                var eval = xop.GetEvaluatorEx(this.LsTrk, this.SolMapping, this.ParamFields, this.SolMapping);
+                eval.time = 0.0;
+
+                eval.MPITtransceive = true;
+                foreach(var kv in AgglomeratedCellLengthScales) {
+                    eval.CellLengthScales[kv.Key] = kv.Value;
+                }
+                eval.Evaluate(1.0, 0.0, OpAffine);
+            }
+
+
+            void DGevaluation(double[] OpAffine) {
+                this.op.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+               
+                var eval = op.GetEvaluatorEx(this.SolMapping, this.ParamFields, this.SolMapping);
+                eval.time = 0.0;
+
+                eval.MPITtransceive = true;
+                eval.Evaluate(1.0, 0.0, OpAffine);
             }
         }
 
@@ -349,7 +449,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="MgConfig">
         /// Provisional: will be integrated into the <see cref="ISpatialOperator"/> at some point.
         /// </param>
-        static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, MultigridOperator.ChangeOfBasisConfig[][] MgConfig, NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, AggregationGridData[] MultigridSequence = null, bool verbose = false) {
+        /// <param name="queryHandler">
+        /// if provided, logging of solver statistics to the unified query table used with the BoSSS database
+        /// </param>
+        static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, 
+            MultigridOperator.ChangeOfBasisConfig[][] MgConfig, 
+            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, 
+            AggregationGridData[] MultigridSequence = null, 
+            bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
 
                 // init
@@ -361,7 +468,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Console.WriteLine($"Trying to solve equation (starting at {DateTime.Now})...");
                 }
 
-                var G = new MatrixAssembler(op, Solution, MultigridSequence);
+                var G = new MatrixAssembler(op, Solution, MultigridSequence, queryHandler);
                 G.verbose = verbose;
 
                 if(verbose) {
@@ -396,6 +503,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ======
 
                 bool Converged = false;
+                int NoOfIterations = 0;
                 if(op.IsLinear) {
                     // +++++++++++++++++++++
                     // solve a linear system
@@ -455,6 +563,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         RHSvec.ScaleV(-1);
                         
                         MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
+
+                        NoOfIterations = solver.ThisLevelIterations;
                     }
                     solverIteration.Stop();
                     if(verbose) {
@@ -510,12 +620,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Console.WriteLine("Solver FAILED!");
                 }
 
+
+                if(G.queryHandler != null) {
+                    G.queryHandler.ValueQuery("minSolRunT", stw.Elapsed.TotalSeconds, true);
+                    G.queryHandler.ValueQuery("maxSolRunT", stw.Elapsed.TotalSeconds, true);
+                    G.queryHandler.ValueQuery("Conv", Converged ? 1.0 : 0.0, true);
+                    G.queryHandler.ValueQuery("NoIter", NoOfIterations, true);
+                    G.queryHandler.ValueQuery("NoOfCells", G.gdat.CellPartitioning.TotalLength, true);
+                    G.queryHandler.ValueQuery("DOFs", Solution.TotalLength, true);
+
+                    if(Solution.MaxTotalNoOfCoordinatesPerCell == Solution.MinTotalNoOfCoordinatesPerCell)
+                        G.queryHandler.ValueQuery("BlockSize", Solution.MaxTotalNoOfCoordinatesPerCell, true);
+                    else
+                        G.queryHandler.ValueQuery("BlockSize", -99, true);
+                    G.queryHandler.ValueQuery("maxBlkSize", Solution.MaxTotalNoOfCoordinatesPerCell, true);
+                    G.queryHandler.ValueQuery("minBlkSize", Solution.MinTotalNoOfCoordinatesPerCell, true);
+                }
             }
         }
-    
-    
-    
-    
+        
         /// <summary>
         /// Easy-to-use driver routine for operator analysis
         /// </summary>
@@ -528,7 +651,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <seealso cref="BoSSS.Solution.Application{T}.OperatorAnalysis"/>
         static public IDictionary<string,double> OperatorAnalysis(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
-            var G = new MatrixAssembler(op, Mapping, null);
+            var G = new MatrixAssembler(op, Mapping, null, null);
 
             G.AssembleMatrix(out var Op_Matrix, out var Op_Affine, out var MassMatrix, G.SolutionFields, true, out _);
 
