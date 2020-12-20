@@ -120,9 +120,10 @@ namespace BoSSS.Application.XNSE_Solver {
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder(), this.Control.AgglomerationThreshold);
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
             return XOP;

@@ -512,7 +512,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(verbose)
                         Console.WriteLine("Operator/PDE is linear.");
 
-                    
+                    G.verbose = verbose;
                     G.AssembleMatrix(out var opMtx, out double[] opAff, out var MassMatrix, G.SolutionFields, true, out _);
                    
 
@@ -522,8 +522,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     var solverSetup = new Stopwatch();
                     solverSetup.Start();
                     ISolverSmootherTemplate solver;
-
-                    
 
                     if(verbose)
                         Console.WriteLine("Setting up multigrid operator...");
