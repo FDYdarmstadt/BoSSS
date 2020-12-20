@@ -1041,8 +1041,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
-                if(m_CompositeBasis == null) {
+                if(m_CompositeBasis == null || m_CompositeBasis.Any(entry => entry == null)) {
                     SetupCompositeBasis(-1);
+
+                    for(int j = 0; j < m_CompositeBasis.Length; j++) {
+                        Debug.Assert(m_CompositeBasis[j] != null);
+                    }
                 }
                 return m_CompositeBasis;
             }
