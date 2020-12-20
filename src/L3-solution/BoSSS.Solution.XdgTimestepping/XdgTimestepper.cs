@@ -493,6 +493,14 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             if(XdgOperator != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+                // XDG Branch: still requires length-scale-hack
+                // (should be cleaned some-when in the future)
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+
+                //if(XdgOperator.AgglomerationThreshold <= 0)
+                //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+
                 if(OpMtx != null) {
                     // +++++++++++++++++++++++++++++
                     // Solver requires linearization
@@ -507,7 +515,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            foreach(var kv in AgglomeratedCellLengthScales) {
+                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                                 mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
                             }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -518,7 +526,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) {
+                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
                                 foreach(var kv in AgglomeratedCellLengthScales) {
                                     evn.CellLengthScales[kv.Key] = kv.Value;
                                 }
@@ -538,7 +546,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            foreach(var kv in AgglomeratedCellLengthScales) {
+                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                                 mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
                             }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -558,7 +566,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     eval.time = time;
 
                     eval.MPITtransceive = true;
-                    foreach(var kv in AgglomeratedCellLengthScales) {
+                    foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                         eval.CellLengthScales[kv.Key] = kv.Value;
                     }
                     eval.Evaluate(1.0, 0.0, OpAffine);
@@ -567,6 +575,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             } else if(DgOperator != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+                // DG Branch
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+
                 if(OpMtx != null) {
                     // +++++++++++++++++++++++++++++
                     // Solver requires linearization
