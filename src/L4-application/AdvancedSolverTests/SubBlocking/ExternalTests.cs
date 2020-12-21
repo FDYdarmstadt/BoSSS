@@ -347,8 +347,8 @@ namespace AdvancedSolverTests.SubBlocking
             }
 
             //Assert --- |Res_g| should be at least near to zero
-            Console.WriteLine("Residual is: " + Res_g.L2Norm());
-            Assert.IsTrue(Res_g.L2Norm() == 0.0);
+            Console.WriteLine("VectorCellwiseOperation: Residual is: " + Res_g.L2Norm());
+            Assert.Less(Res_g.L2Norm(), 1e-13); // not exactly zero, can depend on processor architecture
         }
 
         [Test]
@@ -403,7 +403,7 @@ namespace AdvancedSolverTests.SubBlocking
                 matlab.GetMatrix(infNorm, "n");
                 matlab.Execute();
             }
-            Console.WriteLine("Inf-Norm is: " + infNorm[rank, 0]);
+            Console.WriteLine("SubSelection: Inf-Norm is: " + infNorm[rank, 0]);
             Assert.IsTrue(infNorm[rank, 0] == 0.0);
         }
 
@@ -460,7 +460,7 @@ namespace AdvancedSolverTests.SubBlocking
             VecAB.AccV(fac, Vec);
 
             //Assert --- are extracted blocks and 
-            Console.WriteLine("L2 norm is " + VecAB.L2Norm());
+            Console.WriteLine("VectorSplitOperation_Op1: L2 norm is " + VecAB.L2Norm());
             Assert.IsTrue(VecAB.L2Norm() == 0.0, String.Format("L2Norm neq 0!"));
         }
 
@@ -519,7 +519,7 @@ namespace AdvancedSolverTests.SubBlocking
             test.AccV(fac, fullVec);
 
             //Assert --- are extracted blocks and 
-            Console.WriteLine("L2 norm is " + test.L2Norm());
+            Console.WriteLine("VectorSplitOperation_Op2: L2 norm is " + test.L2Norm());
             Assert.IsTrue(test.L2Norm() == 0.0, String.Format("L2Norm neq 0!"));
         }
 
