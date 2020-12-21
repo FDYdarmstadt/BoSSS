@@ -17,22 +17,21 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
-
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
         public int QuadOrder() {
             //QuadOrder
             int degU;
-            if (Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field)) {
+            if(Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field)) {
                 degU = field.Degree;
-            } else if (Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts field1)) {
+            } else if(Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts field1)) {
                 degU = field1.Degree;
             } else {
                 throw new Exception("Velocity not found!");
             }
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
-            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
@@ -41,9 +40,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected int VelocityDegree() {
             int pVel;
-            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
+            if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
                 pVel = v.Degree;
-            } else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1)) {
+            } else if(this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1)) {
                 pVel = v1.Degree;
             } else {
                 throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
@@ -155,6 +154,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
             return XOP;

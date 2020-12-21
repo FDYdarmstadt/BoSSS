@@ -950,8 +950,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="Cells">
         /// </param>
         /// <returns>
-        /// - key: MPI processor rank 
-        /// - value: 
+        /// - key: MPI processor rank (destination)
+        /// - value: a set of pairs, containing the global index and the respective cell data
         /// </returns>
         private Dictionary<int, List<Tuple<long, Cell[]>>> GetBoundaryCellsAndProcessToSend(Cell[][] Cells) {
             Dictionary<int, List<Tuple<long, Cell[]>>> boundaryCellsProcess = new Dictionary<int, List<Tuple<long, Cell[]>>>();
@@ -1101,6 +1101,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /*
         static private void TestCellIntersection(Cell A, Cell B) {
             Debug.Assert(A.TransformationParams.GetLength(1) == B.TransformationParams.GetLength(1));
 
@@ -1119,5 +1120,6 @@ namespace BoSSS.Foundation.Grid.Classic {
             if (!BBA.Overlap(BBB))
                 throw new ApplicationException("Internal error.");
         }
+        */
     }
 }

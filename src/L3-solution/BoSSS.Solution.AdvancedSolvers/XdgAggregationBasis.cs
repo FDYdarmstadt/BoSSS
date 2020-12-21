@@ -139,7 +139,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 AggCellMMb4Ortho.Clear();
                                 for(int k = 0; k < K; k++) { // loop over the base cells in the aggregate cell
                                     if(sim[iSpc_agg, k] >= 0) {
-                                        var ExPolMtx = base.CompositeBasis[jagg].ExtractSubArrayShallow(k, -1, -1);
+                                        
+                                        var ExPolMtx = base.GetCompositeBasis(jagg).ExtractSubArrayShallow(k, -1, -1);
                                         AggCellMMb4Ortho.Multiply(1.0, ExPolMtx, ExPolMtx, 1.0, "lm", "im", "il");
                                     }
                                 }

@@ -123,6 +123,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
             return XOP;

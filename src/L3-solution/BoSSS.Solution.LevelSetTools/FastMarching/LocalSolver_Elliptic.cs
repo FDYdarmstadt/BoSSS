@@ -311,7 +311,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
         /// - input and output for <paramref name="jCell"/>: an initial value for the iterative procedure, resp. on exit the result of the iteration.
         /// </param>
         /// <param name="gradPhi">
-        /// Auxillary variable to store the gradient of the level-set-field.
+        /// Axillary variable to store the gradient of the level-set-field.
         /// </param>
         /// <returns></returns>
         public bool LocalSolve(int jCell, BitArray AcceptedMask, SinglePhaseField Phi, VectorField<SinglePhaseField> gradPhi) {

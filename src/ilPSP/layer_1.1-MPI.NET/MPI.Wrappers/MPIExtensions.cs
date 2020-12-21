@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
+//using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MPI.Wrappers {
 
@@ -35,6 +37,52 @@ namespace MPI.Wrappers {
         static public T MPIBroadcast<T>(this T o, int root) {
             return MPIBroadcast(o, root, csMPI.Raw._COMM.WORLD);
         }
+
+        [Serializable]
+        class JsonContainer<T> {
+            public T PayLoad;
+        }
+
+        static JsonSerializer jsonFormatter {
+            get {
+                return new JsonSerializer() {
+                    NullValueHandling = NullValueHandling.Include,
+                    TypeNameHandling = TypeNameHandling.All,
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                    TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                };
+            }
+        }
+
+        static byte[] SerializeObject<T>(T o) {
+            int Size;
+            byte[] buffer;
+            using(var ms = new MemoryStream()) {
+                //_Formatter.Serialize(ms, o);
+                using(var w = new BsonWriter(ms)) {
+                    jsonFormatter.Serialize(w, new JsonContainer<T>() { PayLoad = o });
+                    Size = (int)ms.Position;
+                }
+                buffer = ms.GetBuffer();
+            }
+
+            if(Size <= 0)
+                throw new IOException("Error serializing object for MPI broadcast - size is 0");
+            Array.Resize(ref buffer, Size);
+            return buffer;
+        }
+
+        static T DeserializeObject<T>(byte[] buffer) {
+            using(var ms = new MemoryStream(buffer)) {
+                using(var w = new BsonReader(ms)) {
+                    var containerObj = (JsonContainer<T>)jsonFormatter.Deserialize(w, typeof(JsonContainer<T>));
+                    return containerObj.PayLoad;
+                }
+                
+            }
+        }
+
 
         /// <summary>
         /// broadcasts an object to all other processes in the 
@@ -59,7 +107,8 @@ namespace MPI.Wrappers {
             int MyRank;
             csMPI.Raw.Comm_Rank(comm, out MyRank);
 
-            IFormatter _Formatter = new BinaryFormatter();
+            //IFormatter _Formatter = new BinaryFormatter();
+            
 
             // -----------------------------------------------------
             // 1st phase: serialize object and broadcast object size 
@@ -69,14 +118,8 @@ namespace MPI.Wrappers {
             int Size = -1;
 
             if(root == MyRank) {
-                using(var ms = new MemoryStream()) {
-                    _Formatter.Serialize(ms, o);
-                    Size = (int)ms.Position;
-                    buffer = ms.GetBuffer();
-                }
-                if(Size <= 0)
-                    throw new IOException("Error serializing object for MPI broadcast - size is 0");
-                Array.Resize(ref buffer, Size);
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             }
 
             unsafe {
@@ -98,15 +141,11 @@ namespace MPI.Wrappers {
             }
 
             if(MyRank == root) {
-
                 return o;
             } else {
-                T r;
-                using(var ms = new MemoryStream(buffer)) {
-                    r = (T)_Formatter.Deserialize(ms);
-                    return r;
-                }
+                return DeserializeObject<T>(buffer);
             }
+            
         }
 
         /// <summary>
@@ -141,8 +180,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int MyRank);
             csMPI.Raw.Comm_Size(comm, out int MpiSize);
 
-            IFormatter _Formatter = new BinaryFormatter();
-
+           
             // -----------------------------------------------------
             // 1st phase: serialize object and gather object size 
             // -----------------------------------------------------
@@ -150,15 +188,8 @@ namespace MPI.Wrappers {
             byte[] buffer = null;
             int Size;
             if(root != MyRank) {
-                using(var ms = new MemoryStream()) {
-                    _Formatter.Serialize(ms, o);
-                    Size = (int)ms.Position;
-                    buffer = ms.GetBuffer();
-                }
-                if(Size <= 0)
-                    throw new IOException("Error serializing object for MPI broadcast - size is 0");
-                Array.Resize(ref buffer, Size);
-
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             } else {
                 buffer = new byte[0];
                 Size = 0;
@@ -178,15 +209,21 @@ namespace MPI.Wrappers {
 
             if(MyRank == root) {
                 T[] ret = new T[MpiSize];
-                using(var ms = new MemoryStream(rcvBuffer)) {
-                    for(int r = 0; r < MpiSize; r++) {
-                        if(r == MyRank) {
-                            ret[r] = o;
-                        } else {
-                            ret[r] = (T)_Formatter.Deserialize(ms);
-                        }
+
+                int i0 = 0;
+                for(int r = 0; r < MpiSize; r++) {
+                    int sz = Sizes[r];
+
+                    if(r == MyRank) {
+                        ret[r] = o;
+                    } else {
+                        byte[] subBuffer = new byte[sz];
+                        Array.Copy(rcvBuffer, i0, subBuffer, 0, sz);
+                        ret[r] = DeserializeObject<T>(subBuffer);
                     }
+                    i0 += sz;
                 }
+
                 return ret;
             } else {
                 return null;
@@ -199,7 +236,6 @@ namespace MPI.Wrappers {
         /// Gathers (serializeable) objects <paramref name="o"/> from each rank on all processors.
         /// </summary>
         /// <param name="o"></param>
-        /// <param name="comm"></param>
         /// <returns>
         /// an array of all objects on all ranks
         /// </returns>
@@ -219,7 +255,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int MyRank);
             csMPI.Raw.Comm_Size(comm, out int MpiSize);
 
-            IFormatter _Formatter = new BinaryFormatter();
+            //IFormatter _Formatter = new BinaryFormatter();
 
             // -----------------------------------------------------
             // 1st phase: serialize object and gather object size 
@@ -229,15 +265,9 @@ namespace MPI.Wrappers {
             int Size;
 
             using(var ms = new MemoryStream()) {
-                _Formatter.Serialize(ms, o);
-                Size = (int)ms.Position;
-                buffer = ms.GetBuffer();
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             }
-            if(Size <= 0)
-                throw new IOException("Error serializing object for MPI broadcast - size is 0");
-            Array.Resize(ref buffer, Size);
-
-
 
             int[] Sizes = Size.MPIAllGather(comm);
 
@@ -251,8 +281,15 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             T[] ret = new T[MpiSize];
             using(var ms = new MemoryStream(rcvBuffer)) {
+                int i0 = 0;
                 for(int r = 0; r < MpiSize; r++) {
-                    ret[r] = (T)_Formatter.Deserialize(ms);
+                    int sz = Sizes[r];
+
+                    byte[] subBuffer = new byte[sz];
+                    Array.Copy(rcvBuffer, i0, subBuffer, 0, sz);
+                    ret[r] = DeserializeObject<T>(subBuffer);
+
+                    i0 += sz;
                 }
             }
             return ret;

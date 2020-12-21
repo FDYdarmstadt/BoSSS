@@ -219,7 +219,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new [] { "B" },
                 __varnames: new[] { "u", "c1" });
-
+            Op.AgglomerationThreshold = this.THRESHOLD;
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)

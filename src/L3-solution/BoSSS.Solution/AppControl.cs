@@ -888,8 +888,6 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Activates tracing (record of method calls and returns) for selected namespaces, e.g. "BoSSS.Foundation,BoSSS.Solution".
         /// If not null and not empty, trace-files are written for every MPI rank.
-        /// The created trace files are zipped,
-        /// they can be viewed e.g. by 'gunzip -c trace.0.txt'.
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]

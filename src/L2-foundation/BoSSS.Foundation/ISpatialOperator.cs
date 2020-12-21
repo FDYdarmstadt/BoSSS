@@ -258,7 +258,18 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-       
+
+
+        /// <summary>
+        /// Evaluation of the <see cref="QuadOrderFunction"/> for a concrete basis
+        /// </summary>
+        /// <param name="CodomainBasis"></param>
+        /// <param name="ParameterBasis">
+        /// can be null
+        /// </param>
+        /// <param name="DomainBasis"></param>
+        int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis);
+
     }
 
     /// <summary>

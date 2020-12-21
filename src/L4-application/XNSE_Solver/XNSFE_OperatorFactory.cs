@@ -182,6 +182,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===============
 
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
+            m_XOp.AgglomerationThreshold = this.config.AgglomerationTreshold;
 
             // add Navier-Stokes components
             // ============================

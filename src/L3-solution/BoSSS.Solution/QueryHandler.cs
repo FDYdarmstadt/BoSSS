@@ -139,6 +139,12 @@ namespace BoSSS.Solution.Queries {
             QueryMap.Add(id, query);
         }
 
+        /// <summary>
+        /// Logging of a single value, without to much hussle
+        /// </summary>
+        /// <param name="name">Query name</param>
+        /// <param name="value">Value that should be logged</param>
+        /// <param name="OverWriteIfExistent"></param>
         public void ValueQuery(string name, double value, bool OverWriteIfExistent = false) {
             Query query = (app, t) => value;
             if (QueryMap.ContainsKey(name)) {
