@@ -42,7 +42,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         {
             this.m_HMForder = hMForder;
             this.levelSetName = levelSetName;
-            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
             parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
         }
 

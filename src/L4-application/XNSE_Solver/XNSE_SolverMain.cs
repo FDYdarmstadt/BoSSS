@@ -76,6 +76,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             InitMPI();
             DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(90.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
             //Tests.UnitTest.TranspiratingChannelTest(2, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric(0.1d,  true,SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0, 1, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
@@ -88,6 +90,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0, ViscosityMode.Standard, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.HeatConductivityTest(3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.HeatDecayTest(0.69711d, -130.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
             //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
             //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";

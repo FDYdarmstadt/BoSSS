@@ -272,7 +272,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
+            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             double[] tmp_grad = gradient.Storage;
@@ -441,8 +441,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double weight = X_weight;
 
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
-            MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(node, cell, 1);
-            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
+            MultidimensionalArray gradient = ReferenceGradient(node, cell);
             weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1 , -1);
@@ -450,23 +449,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             if (IsScalingMatrix(jacobian)) {
                 weight /= jacobian[heightDirection, heightDirection];
             } else {
-                double j1;
-                double j2;
-                double j3;
-                if (heightDirection == 0) {
-                    j1 = jacobian[0, 0] * jacobian[0, 0];
-                    j2 = jacobian[1, 0] * jacobian[1, 0];
-                    j3 = jacobian[2, 0] * jacobian[2, 0];
-                } else if( heightDirection == 1) {
-                    j1 = jacobian[0, 1] * jacobian[0, 1];
-                    j2 = jacobian[1, 1] * jacobian[1, 1];
-                    j3 = jacobian[2, 1] * jacobian[2, 1];
-                } else {
-                    j1 = jacobian[0, 2] * jacobian[0, 2];
-                    j2 = jacobian[1, 2] * jacobian[1, 2];
-                    j3 = jacobian[2, 2] * jacobian[2, 2];
-                }
-                weight /= Math.Sqrt(j1 + j2 + j3);
+                throw new NotImplementedException("To do");
             }
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);

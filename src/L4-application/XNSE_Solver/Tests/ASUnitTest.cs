@@ -177,8 +177,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             foreach (var Res in new[] { 1, 2, 3, 4 })
             {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, CutCellQuadratureType: CutCellQuadratureType);
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 2;
                 LaLa.Add(C);
             }
 
@@ -557,6 +555,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2);
+            C.ImmediatePlotPeriod = 1;
             XNSFESolverTest(Tst, C);
         }
 
@@ -901,6 +900,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Degree = tst.LevelsetPolynomialDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            C.FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+                Degree = tst.LevelsetPolynomialDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             // grid
             // ====
@@ -1023,6 +1026,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = tst.LevelsetPolynomialDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+                Degree = tst.LevelsetPolynomialDegree ,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
