@@ -555,7 +555,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2);
-            C.ImmediatePlotPeriod = 1;
             XNSFESolverTest(Tst, C);
         }
 

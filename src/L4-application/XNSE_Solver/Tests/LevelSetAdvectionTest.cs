@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt {
             get {
-                return 0.01;
+                return 0.001;
             }
         }
 

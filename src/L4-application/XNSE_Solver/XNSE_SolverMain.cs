@@ -74,9 +74,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 4, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(90.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
             //Tests.UnitTest.TranspiratingChannelTest(2, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric(0.1d,  true,SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
