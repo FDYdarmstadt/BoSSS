@@ -325,7 +325,7 @@ namespace BoSSS.Solution.LevelSetTools.Smoothing {
                     MatrixA, AffineA, OnlyAffine: false,
                     edgeQuadScheme: new EdgeQuadratureScheme(true, em),
                     volQuadScheme: new CellQuadratureScheme(true, CellMask.GetEmptyMask(em.GridData)));
-            MatrixA.CheckForNanOrInfM();
+            MatrixA.CheckForNanOrInfM(typeof(JumpPenalization) + ": ");
 
             //MsrMatrix MatrixB;
             //MatrixB = new MsrMatrix(outp_Result_Mapping, inp_LevSet_Mapping);

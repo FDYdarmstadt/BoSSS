@@ -46,7 +46,8 @@ namespace BoSSS.Foundation.XDG {
         bool m_IsLinear;
 
         /// <summary>
-        /// true, if the PDE defined by operator can entirely be solved by a linear solver
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver,
+        /// i.e. the Jacobian matrix, resp. the operator matrix does **not** depend on the linearization point.
         /// </summary>
         public bool IsLinear {
             get {

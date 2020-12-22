@@ -94,6 +94,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
+                Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
+
                 m_Mtx = Mtx;
             }
         }
@@ -219,6 +221,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
             using (var tr = new FuncTrace()) {
+                B.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", RHS on entry: ");
+
+
                 double[] Residual = this.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
@@ -229,6 +234,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     solver.Solve(X, B);
                     //Console.WriteLine("done.");
                 }
+                X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
                 
                 m_ThisLevelIterations++;
