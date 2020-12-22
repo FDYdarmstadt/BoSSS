@@ -80,18 +80,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
-    <Compile Include="CapillaryHeightLogging.cs" />
-    <Compile Include="ChannelFlowLogging.cs" />
+    <Compile Include="Logging\CapillaryHeightLogging.cs" />
+    <Compile Include="Logging\ChannelFlowLogging.cs" />
     <Compile Include="Coefficients.cs" />
-    <Compile Include="Dropletlike.cs" />
+    <Compile Include="Logging\Dropletlike.cs" />
     <Compile Include="Equations.cs" />
-    <Compile Include="EvaporationLogging.cs" />
-    <Compile Include="FourierLevelSetLogger.cs" />
-    <Compile Include="InterfacePointsLogger.cs" />
-    <Compile Include="L2ErrorLogger.cs" />
-    <Compile Include="MovingContactLineLogging.cs" />
+    <Compile Include="Logging\EvaporationLogging.cs" />
+    <Compile Include="Logging\FourierLevelSetLogger.cs" />
+    <Compile Include="Logging\InterfacePointsLogger.cs" />
+    <Compile Include="Logging\L2ErrorLogger.cs" />
+    <Compile Include="Logging\MovingContactLineLogging.cs" />
     <Compile Include="Parameters.cs" />
-    <Compile Include="RisingBubble2DBenchmarkQuantities.cs" />
+    <Compile Include="Logging\RisingBubble2DBenchmarkQuantities.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />
@@ -107,10 +107,16 @@
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
     <Compile Include="Tests\HeatTransportTest.cs" />
+    <Compile Include="Tests\LevelSetAdvectionTest.cs" />
+    <Compile Include="Tests\LevelSetContinuityTest.cs" />
+    <Compile Include="Tests\LevelSetInitializationTest.cs" />
+    <Compile Include="Tests\LevelSetReinitializationTest.cs" />
+    <Compile Include="Tests\LevelSetUnitTest.cs" />
     <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />
-    <Compile Include="WaveLikeLogging.cs" />
+    <Compile Include="Logging\WaveLikeLogging.cs" />
+    <Compile Include="Tests\SteadyStateEvaporationTest.cs" />
     <Compile Include="XBase_Solver.cs" />
     <Compile Include="XBase_Control.cs" />
     <Compile Include="XHeat.cs" />

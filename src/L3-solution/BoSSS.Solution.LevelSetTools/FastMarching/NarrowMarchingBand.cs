@@ -21,6 +21,7 @@ using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.LevelSetTools.Smoothing;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -227,7 +228,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             double dt, LevelSetTracker Tracker,
             SinglePhaseField OldLevSet, SinglePhaseField NewLevelSet, VectorField<SinglePhaseField> LevelSetGrad,
             ConventionalDGField[] Velocity, SinglePhaseField[] ExtVel, //DGField[] SourceParams,
-            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.None) //
+            int HMForder, int TimestepNo = 0, bool plotMarchingSteps = false, 
+            JumpPenalization.jumpPenalizationTerms penalization = JumpPenalization.jumpPenalizationTerms.Jump) //
         {
             GridData gdat = Tracker.GridDat;
             int D = gdat.SpatialDimension;
@@ -259,13 +261,10 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             SubGrid CCgrid = Tracker.Regions.GetCutCellSubgrid4LevSet(iLevSet);
             CellMask CC = CCgrid.VolumeMask;
             BitArray CCBitMask = CC.GetBitMask();
-            //BitArray CCBitMask = CC.GetBitMaskWithExternal();
             CellMask Pos = Tracker.Regions.GetLevelSetWing(iLevSet, +1.0).VolumeMask.Except(CC);
             CellMask Neg = Tracker.Regions.GetLevelSetWing(iLevSet, -1.0).VolumeMask.Except(CC);
             BitArray PosBitMask = Pos.GetBitMask();
             BitArray NegBitMask = Neg.GetBitMask();
-            //BitArray PosBitMask = Pos.GetBitMaskWithExternal();
-            //BitArray NegBitMask = Neg.GetBitMaskWithExternal();
 
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
@@ -314,9 +313,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
-
-            //BitArray ReinitPosBitmask = new BitArray(J);
-            //BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
@@ -338,12 +334,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
                     if(PosBitMask[j]) {
-                        //ReinitPosBitmaskLocal[j] = true;
+                        //ReinitPosBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
                     if(NegBitMask[j]) {
-                        //ReinitNegBitmaskLocal[j] = true;
+                        //ReinitNegBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
@@ -355,11 +351,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
-            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmaskLocal);
-            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmaskLocal);
+
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
+            BitArray KnownWithExt = Known.GetBitMaskWithExternal();
+            BitArray NEARwithExt = NEAR.GetBitMaskWithExternal();
 
             // perform Reinitialization
             // ------------------------
@@ -372,12 +369,13 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
-            marcher.AvgInit(NewLevelSet, Known.GetBitMaskWithExternal());
+            marcher.AvgInit(NewLevelSet, KnownWithExt);
 
             if (reinitialize) {
                 CellMask NegativeField = Tracker.Regions.GetSpeciesMask("A");
                 marcher.FirstOrderReinit(NewLevelSet, Known, NegativeField, Reinit);
                 NewLevelSet.MPIExchange();
+                marcher.UpdateAvg(NewLevelSet, NEARwithExt);
                 OldLevSet.Clear(Reinit);
                 OldLevSet.Acc(1.0, NewLevelSet, Reinit);
             }
@@ -440,7 +438,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
             // then, on the rest of the domain
-            marcher.ConstructExtension(NewLevelSet, NEAR.Except(CC), CC, ExtVel, ExtVelMin, ExtVelMax, LevelSetGrad, TimestepNo, (gdat.MpiSize > 1) ? false : plotMarchingSteps);
+            //marcher.ConstructExtension(NewLevelSet, NEAR.Except(CC), CC, ExtVel, ExtVelMin, ExtVelMax, LevelSetGrad, TimestepNo, (gdat.MpiSize > 1) ? false : plotMarchingSteps);
+            marcher.ConstructExtension2(NewLevelSet, NEAR.Except(CC), CC, ExtVel);
+
 
             // exchange information in external cells
             //for (int d = 0; d < D; d++) {
@@ -557,11 +557,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             //var TimeEvoOp = (new LevelSetEvoTerm_Vector()).Operator(2);
 
-
-            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), "Phi", "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY", "c1"); //"Src",
-            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector());
+            string[] ParamNames = ArrayTools.Cat(VariableNames.LevelSetGradient(D), VariableNames.ExtensionVelocity(D));
+            string[] varNames = ArrayTools.Cat(new string[] { "Phi" }, ParamNames, "c1");
+            SpatialOperator TimeEvoOp = new SpatialOperator(1, 2 * D, 1, QuadOrderFunc.NonLinear(2), varNames);
+            TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Vector(D));
             //TimeEvoOp.EquationComponents["c1"].Add(new LevelSetEvoTerm_Source());
-            TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm());
+            TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
             TimeEvoOp.Commit();
 
             RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.ExplicitEuler, TimeEvoOp,
@@ -569,7 +570,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
                 marcher.GradientUpdate(NEARgrid, LevelSet, LevelSetGrad);
-                //Console.WriteLine("marcher gradient update (ExplicitEuler)");
             };
 
             double dt_CFL = gdat.ComputeCFLTime(ExtVel.ToArray(), 10000, NEARgrid.VolumeMask);
@@ -591,7 +591,14 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         }
 
         class UpwindStabiForm : IEdgeForm {
-            
+
+            int D;
+
+            public UpwindStabiForm(int spatialDim) {
+                D = spatialDim;
+            }
+
+
             public TermActivationFlags BoundaryEdgeTerms {
                 get { return TermActivationFlags.None; }
             }
@@ -600,8 +607,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 get { return TermActivationFlags.UxV | TermActivationFlags.V; }
             }
 
+
             public double InnerEdgeForm(ref CommonParams inp, double[] PhiIn, double[] PhiOt, double[,] GradPhiIn, double[,] GradPhiOt, double vIn, double vOt, double[] Grad_vIn, double[] Grad_vOt) {
-                int D = inp.D;
+
                 double Disc = 0, FluxIn = 0, FluxOt = 0;
                  
                 for(int d = 0; d < D; d++) {
@@ -632,20 +640,26 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             public IList<string> ParameterOrdering {
                 get { 
-                    return new string[] { "ExtVelX", "ExtVelY" }; 
+                    return VariableNames.ExtensionVelocity(D); 
                 }
             }
         }
 
         class LevelSetEvoTerm_Vector : IVolumeForm {
 
+            int D;
+
+            public LevelSetEvoTerm_Vector(int spatialDim) {
+                D = spatialDim;
+            }
+
+
             public TermActivationFlags VolTerms {
                 get { return TermActivationFlags.V | TermActivationFlags.UxV; }
             }
 
             public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-                int D = cpv.D;
-                Debug.Assert(U.Length % 2 == 0);
+
                 double acc = 0;
                 for(int i = 0; i < D; i++) {
                     acc += cpv.Parameters[i] * cpv.Parameters[i + D];
@@ -660,8 +674,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             }
 
             public IList<string> ParameterOrdering {
-                get { 
-                    return new string[] { "dPhi_dx", "dPhi_dy", "ExtVelX", "ExtVelY" }; 
+                get {
+                    return ArrayTools.Cat(VariableNames.LevelSetGradient(D), VariableNames.ExtensionVelocity(D));
                 }
             }
         }

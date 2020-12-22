@@ -114,7 +114,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(base.SolverMain is XNSE_SolverMain oldSolver) {
                 return oldSolver.ConstructEvaporativeVelocity(oldSolver.GetMeanVelocityFromXDGField(EvoVelocity));
             } else if(base.SolverMain is XNSE newSolver) {
-                throw new NotImplementedException("your turn, Lauritz");
+                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.FluidInterface, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
+                IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
+
+                List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
+                for(int i = 0; i < 3; ++i) {
+                    
+                    if (parameters.TryGetValue(velocityName[i], out DGField velocityField)) {
+                        velocity.Add((ConventionalDGField)velocityField);
+                    }
+                }
+                return velocity.ToArray();
+                
             } else {
                 throw new NotSupportedException();
             }
@@ -150,7 +161,5 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             return EvapVelocMean;
         }
-
-
     }
 }

@@ -147,6 +147,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
         /// </summary>
         Func<double[], double, double> GetT(string species);
+
+        /// <summary>
+        /// Exact solution for total thermal energy.
+        /// </summary>
+        Func<double, double> GetE();
+
+        bool CheckT { get; }
+        bool CheckE { get; }
     }
 
     interface IXNSETest : ITest {
@@ -176,5 +184,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// surface tension
         /// </summary>
         double Sigma { get; }
+    }
+
+    interface IXNSFETest : IXNSETest, IXHeatTest {
+
     }
 }

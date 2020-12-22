@@ -107,8 +107,8 @@ namespace BoSSS.Solution.XheatCommon {
             if (m_hVap == 0.0)
                 return 0.0;
 
-            //if (MEvapIsPrescribd)
-            //    return prescrbMEvap * m_hVap;
+            if (MEvapIsPrescribd)
+                return prescrbMEvap * m_hVap;
 
             double qEvap = 0.0;
             if (evapMicroRegion[jCell]) {
@@ -150,11 +150,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             double sNeg = 0.0;
             for (int d = 0; d < m_D; d++)
-                sNeg += (paramsNeg[d] + (M / m_rhoA)) * N[d];
+                sNeg += (paramsNeg[m_D + 3 + d] - (M / m_rhoA)) * N[d];
 
             double sPos = 0.0;
             for (int d = 0; d < m_D; d++)
-                sPos += (paramsPos[d] + (M / m_rhoB)) * N[d];
+                sPos -= (paramsPos[m_D + 3 + d] + (M / m_rhoB)) * N[d];
 
             double s = (m_rhoA * sNeg + m_rhoB * sPos) / (m_rhoA + m_rhoB);     // density averaged, corresponding to the mean evo velocity 
 

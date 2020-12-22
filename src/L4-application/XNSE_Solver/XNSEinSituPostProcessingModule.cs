@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using System;
 using System.Collections.Generic;
@@ -113,8 +114,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     return oldSolver.KineticEnergy;
                 } else if(this.SolverMain is XNSE newSolver) {
 
-                    throw new NotImplementedException("your turn, Lauritz");
-                    
+                    var a =  newSolver.Timestepping.Parameters.First(t => t.Identification == BoSSS.Solution.NSECommon.VariableNames.KineticEnergy);
+                    return (XDGField) a;
                 } else {
                     throw new NotImplementedException();
                 }
@@ -129,7 +130,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(base.SolverMain is XNSE_SolverMain oldSolver) {
                     return oldSolver.Fourier_LevSet;
                 } else if(base.SolverMain is XNSE newSolver) {
-                    throw new NotImplementedException("your turn, Lauritz");
+                    if(newSolver.LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet is FourrierLevelSet fls) {
+                        return fls.Fourier_LevSet;
+                    } else {
+                        return null;
+                    }
                 } else {
                     throw new NotSupportedException();
                 }
