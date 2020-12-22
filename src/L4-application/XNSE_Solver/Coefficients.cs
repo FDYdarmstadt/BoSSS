@@ -96,28 +96,27 @@ namespace BoSSS.Application.XNSE_Solver {
             SlipLengths.Clear();
             //SlipLengths.AccConstant(-1.0);
             if (SlipArea != null) {
-                foreach (Chunk cnk in SlipArea) {
-                    for (int i = cnk.i0; i < cnk.JE; i++) {
-                        switch (config.dntParams.GNBC_SlipLength) {
-                            case NavierSlip_SlipLength.hmin_DG: {                                
-                                SlipLengths[i] = lstrk.GridDat.Cells.h_min[i] / (degU + 1);
-                                break;
-                            }
-                            case NavierSlip_SlipLength.hmin_Grid: {
-                                SlipLengths[i] = SlipLengths[i] = lstrk.GridDat.Cells.h_min[i];
-                                break;
-                            }
-                            case NavierSlip_SlipLength.Prescribed_SlipLength: {
-                                SlipLengths[i] = config.physParams.sliplength;
-                                break;
-                            }
-                            case NavierSlip_SlipLength.Prescribed_Beta: {
-                                SlipLengths[i] = -1.0;
-                                break;
-                            }
+                for(int i in SlipArea.ItemEnum) {
+                    switch(config.dntParams.GNBC_SlipLength) {
+                        case NavierSlip_SlipLength.hmin_DG: {
+                            SlipLengths[i] = lstrk.GridDat.Cells.h_min[i] / (degU + 1);
+                            break;
+                        }
+                        case NavierSlip_SlipLength.hmin_Grid: {
+                            SlipLengths[i] = SlipLengths[i] = lstrk.GridDat.Cells.h_min[i];
+                            break;
+                        }
+                        case NavierSlip_SlipLength.Prescribed_SlipLength: {
+                            SlipLengths[i] = config.physParams.sliplength;
+                            break;
+                        }
+                        case NavierSlip_SlipLength.Prescribed_Beta: {
+                            SlipLengths[i] = -1.0;
+                            break;
                         }
                     }
                 }
+                
             }
 
             var Ret = new (string, object)[1];

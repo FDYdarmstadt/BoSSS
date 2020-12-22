@@ -9,6 +9,7 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using ilPSP;
 using ilPSP.Utils;
 
 namespace BoSSS.Solution.XNSECommon {
@@ -91,6 +92,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ================
             if (config.isViscous && !(muSpc == 0.0)) {
                 //AddCoefficient("SlipLengths");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
