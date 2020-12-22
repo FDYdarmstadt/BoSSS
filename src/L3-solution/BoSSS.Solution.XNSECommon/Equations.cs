@@ -90,7 +90,7 @@ namespace BoSSS.Solution.XNSECommon {
             // viscous operator
             // ================
             if (config.isViscous && !(muSpc == 0.0)) {
-                AddCoefficient("SlipLengths");
+                //AddCoefficient("SlipLengths");
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
