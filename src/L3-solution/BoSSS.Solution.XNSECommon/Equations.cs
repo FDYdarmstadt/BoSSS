@@ -91,8 +91,8 @@ namespace BoSSS.Solution.XNSECommon {
             // viscous operator
             // ================
             if (config.isViscous && !(muSpc == 0.0)) {
-                //AddCoefficient("SlipLengths");
-                Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
+                AddCoefficient("SlipLengths");
+                //Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:

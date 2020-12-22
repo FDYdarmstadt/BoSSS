@@ -96,7 +96,7 @@ namespace BoSSS.Application.XNSE_Solver {
             SlipLengths.Clear();
             //SlipLengths.AccConstant(-1.0);
             if (SlipArea != null) {
-                for(int i in SlipArea.ItemEnum) {
+                foreach(int i in SlipArea.ItemEnum) {
                     switch(config.dntParams.GNBC_SlipLength) {
                         case NavierSlip_SlipLength.hmin_DG: {
                             SlipLengths[i] = lstrk.GridDat.Cells.h_min[i] / (degU + 1);
