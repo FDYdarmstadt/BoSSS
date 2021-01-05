@@ -3168,10 +3168,8 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// returns the size of the fixed timestep; if a variable timestep is set, this method throws
-        /// an exception.
+        /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        /// <returns></returns>
         public double GetFixedTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
@@ -3196,28 +3194,6 @@ namespace BoSSS.Solution {
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
-            wrt.WriteLine();
-            wrt.WriteLine("Common Suspects:");
-            wrt.WriteLine("================");
-
-            var R = Root;
-            List<MethodCallRecord> CommonSuspects = new List<MethodCallRecord>();
-            CommonSuspects.AddRange(R.FindChildren("*GridData*ctor*"));
-            CommonSuspects.AddRange(R.FindChildren("*MsrMatrix.Multiply*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*Evaluator*Evaluate*"));
-            CommonSuspects.AddRange(R.FindChildren("ilPSP.LinSolvers*Solve*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.XDG.XSpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("*MassMatrixFactory.ComputeMassMatrixBlocks*"));
-            CommonSuspects.AddRange(R.FindChildren("*Quadrature*Execute*"));
-            CommonSuspects.AddRange(R.FindChildren("integrand_evaluation"));
-            CommonSuspects.AddRange(R.FindChildren("quadrature"));
-            CommonSuspects.AddRange(R.FindChildren("saving_results"));
-
-
-            foreach (var mcr in CommonSuspects) {
-                wrt.WriteLine(mcr.GetMiniReport().ToString());
-            }
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");

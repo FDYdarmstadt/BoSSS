@@ -20,23 +20,21 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
+        /// <summary>
+        /// - 3x the velocity degree if convection is included
+        /// - 2x the velocity degree in the Stokes case
+        /// </summary>
         public int QuadOrder() {
             //QuadOrder
-            int degU;
-            if(Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts field)) {
-                degU = field.Degree;
-            } else if(Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts field1)) {
-                degU = field1.Degree;
-            } else {
-                throw new Exception("Velocity not found!");
-            }
+            int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                quadOrder *= 2;
+                quadOrder *= 2; // this looks funky
                 quadOrder += 1;
             }
             return quadOrder;
         }
+
 
         protected int VelocityDegree() {
             int pVel;
@@ -244,7 +242,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt={dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
