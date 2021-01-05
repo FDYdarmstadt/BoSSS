@@ -29,7 +29,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             eqSystem.AddEquation(equation);
         }
 
-        public void AddParameter(Parameter parameter) {
+        public void AddParameter(ParameterS parameter) {
             parameters.AddParameter(parameter);
         }
 

@@ -3194,6 +3194,7 @@ namespace BoSSS.Solution {
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
+            var R = Root;
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");

@@ -17,7 +17,19 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
+
+    /// <summary>
+    /// Multiphase-XDG-solver, with features:
+    /// - incompressible two-phase flows.
+    /// - solid immersed boundaries.
+    /// - three phase contact lines at the domain boundary
+    /// - three phase contact lines at the intersection of the immersed solid boundary 
+    /// </summary>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
+        
+        /// <summary>
+        /// 
+        /// </summary>
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
         /// <summary>
@@ -35,7 +47,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return quadOrder;
         }
 
-
+        /// <summary>
+        /// Usually, the term "DG order of the calculation" means the velocity degree.
+        /// </summary>
         protected int VelocityDegree() {
             int pVel;
             if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
@@ -222,6 +236,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 break;
 
                 default:
+                throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handeled.");
                 break;
             }
         }

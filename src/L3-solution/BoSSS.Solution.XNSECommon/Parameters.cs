@@ -15,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XNSECommon {
-    public class Velocity0 : Parameter {
+    public class Velocity0 : ParameterS {
         int D;
 
         public Velocity0(int D) {
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Velocity0Prescribed : Parameter {
+    public class Velocity0Prescribed : ParameterS {
         int degree;
 
         IDictionary<string, Func<double[], double>> initial;
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.XNSECommon {
 
     }
 
-    public class Velocity0Mean : Parameter, ILevelSetParameter {
+    public class Velocity0Mean : ParameterS, ILevelSetParameter {
         protected int D;
 
         protected int cutCellQuadOrder;
@@ -236,7 +236,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Gravity : Parameter {
+    public class Gravity : ParameterS {
         int degree;
 
         Func<double[], double> initial;
@@ -285,7 +285,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Normals : Parameter, ILevelSetParameter {
+    public class Normals : ParameterS, ILevelSetParameter {
         int D;
 
         int degree;
@@ -371,7 +371,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class BeltramiGradientAndCurvature : Parameter, ILevelSetParameter {
+    public class BeltramiGradientAndCurvature : ParameterS, ILevelSetParameter {
         DoNotTouchParameters AdvancedDiscretizationOptions;
 
         int m_HMForder;
@@ -442,7 +442,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class MaxSigma : Parameter, ILevelSetParameter {
+    public class MaxSigma : ParameterS, ILevelSetParameter {
         PhysicalParameters physParams;
 
         DoNotTouchParameters dntParams;

@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
         ScalarConvection,
 
         /// <summary>
-        /// The Level-Set is moved by an extension velocity idea using a PDE
+        /// The Level-Set is moved by an extension velocity idea using a PDE (cf. Utz et. al 2017, Utz and Kummer 2017)
         /// ReInitialization is done by fast marching, no ReInit on Cut Cells!
         /// -> TODO
         /// </summary>

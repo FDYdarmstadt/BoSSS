@@ -369,7 +369,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// mass flows from - phase to + phase.
     /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
     /// </summary>
-    class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
+    class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
         DualLevelSet levelSet;
@@ -465,7 +465,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class Temperature0 : Parameter {
+    class Temperature0 : ParameterS {
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0 };
 
         public override DelParameterFactory Factory => Temperature0Factory;
@@ -485,7 +485,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class HeatFlux0 : Parameter {
+    class HeatFlux0 : ParameterS {
 
         int D;
         string[] parameters;

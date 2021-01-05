@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
         /// <summary>
-        /// Control for various testing
+        /// Control for various testing/Florian 
         /// </summary>
         /// <param name="p"></param>
         /// <param name="kelem"></param>
@@ -51,7 +51,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Timestepsize, should be chosen as (1.0 / (double)kelem) / 16.0;
         /// </param>
         /// <returns></returns>
-        public static XNSE_Control RB(int p = 2, int kelem = 20, double dt = 3.125e-3, string _DbPath = null) {
+        public static XNSE_Control RB_fk(int p = 2, int kelem = 20, double dt = 3.125e-3, string _DbPath = null) {
+            //BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble.RB(p:1,kelem:10)
 
             XNSE_Control C = new XNSE_Control();
 
@@ -175,7 +176,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //int kelem = 160;
 
-            /*
+            
             C.GridFunc = delegate () {
                 double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
@@ -187,16 +188,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 grd.EdgeTagNames.Add(3, "freeslip_left");
                 grd.EdgeTagNames.Add(4, "freeslip_right");
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1]) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - ySize) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[0] - xSize) <= 1.0e-8)
-                        et = 4;
+                 grd.DefineEdgeTags(delegate (double[] X) {
+                    string et = null;
+                    if(Math.Abs(X[1]) <= 1.0e-8)
+                        et = "wall_lower";
+                    else if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        et = "wall_upper";
+                    else if(Math.Abs(X[0]) <= 1.0e-8)
+                        et = "freeslip_left";
+                    else if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = "freeslip_right";
+                    else
+                        throw new ArgumentException("unknown boundary region");
 
                     return et;
                 });
@@ -230,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 return grd;
             };
-            */
+            
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "VierProcSplit";
 
@@ -246,9 +249,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double radius = 0.25;
 
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
-            //Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
+            Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
 
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             Func<double, double> PeriodicFunc = x => radius;
 
@@ -259,8 +262,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
-            Guid restartID = new Guid("322f07e1-2ac3-4ed4-af8b-1c46ab7e55a0");
-            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 986);
+            //Guid restartID = new Guid("322f07e1-2ac3-4ed4-af8b-1c46ab7e55a0");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 986);
             //C.ReInitControl.PrintIterations = true; 
 
             #endregion
@@ -290,25 +293,25 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             //C.EnforceLevelSetConservation = true;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
+            //C.LinearSolver.NoOfMultigridLevels = 1;
+            //C.NonLinearSolver.MaxSolverIterations = 50;
+            //C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MinSolverIterations = 1;
+            //C.NonLinearSolver.MinSolverIterations = 1;
+            //C.LinearSolver.MinSolverIterations = 1;
             //C.Solver_MinIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-7;
-            C.LinearSolver.ConvergenceCriterion = 1e-7;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-7;
+            //C.LinearSolver.ConvergenceCriterion = 1e-7;
             //C.Solver_ConvergenceCriterion = 1e-7;
-            C.LevelSet_ConvergenceCriterion = 1e-6;
+            //C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
-            C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-            C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-            C.fullReInit = true;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = true;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
@@ -335,7 +338,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt/2.0;
             C.dtMin = dt/2.0;
             C.Endtime = 3;
-            C.NoOfTimesteps = 10000; // (int)(3 / dt);
+            C.NoOfTimesteps = 3;
             C.saveperiod = 1;
 
             #endregion
@@ -647,8 +650,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         /// <param name="setup"></param>
         /// <returns></returns>
-        public static XNSE_Control RB_ForWorksheet(int setup)
-        {
+        public static XNSE_Control RB_ForWorksheet(int setup) {
             XNSE_Control C = new XNSE_Control();
 
             // basic database options
@@ -670,37 +672,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int p = 2;
 
             // need to be set by user via setDGdegree() in worksheet
-            C.FieldOptions.Add("VelocityX", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("VelocityY", new FieldOpts()
-            {
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("GravityY", new FieldOpts()
-            {
+            C.FieldOptions.Add("GravityY", new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Pressure", new FieldOpts()
-            {
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
                 Degree = p - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("PhiDG", new FieldOpts()
-            {
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
                 Degree = p + 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Phi", new FieldOpts()
-            {
+            C.FieldOptions.Add("Phi", new FieldOpts() {
                 Degree = p + 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            C.FieldOptions.Add("Curvature", new FieldOpts()
-            {
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -715,25 +710,25 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // Physical Parameters
             // ===================
 
-            switch (setup) {
+            switch(setup) {
                 case 1:
-                    C.Tags.Add("Testcase 1");
-                    C.PhysicalParameters.rho_A = 100;
-                    C.PhysicalParameters.rho_B = 1000;
-                    C.PhysicalParameters.mu_A = 1;
-                    C.PhysicalParameters.mu_B = 10;
-                    C.PhysicalParameters.Sigma = 24.5;
-                    break;
+                C.Tags.Add("Testcase 1");
+                C.PhysicalParameters.rho_A = 100;
+                C.PhysicalParameters.rho_B = 1000;
+                C.PhysicalParameters.mu_A = 1;
+                C.PhysicalParameters.mu_B = 10;
+                C.PhysicalParameters.Sigma = 24.5;
+                break;
                 case 2:
-                    C.Tags.Add("Testcase 2");
-                    C.PhysicalParameters.rho_A = 1;
-                    C.PhysicalParameters.rho_B = 1000;
-                    C.PhysicalParameters.mu_A = 0.1;
-                    C.PhysicalParameters.mu_B = 10;
-                    C.PhysicalParameters.Sigma = 1.96;
-                    break;
+                C.Tags.Add("Testcase 2");
+                C.PhysicalParameters.rho_A = 1;
+                C.PhysicalParameters.rho_B = 1000;
+                C.PhysicalParameters.mu_A = 0.1;
+                C.PhysicalParameters.mu_B = 10;
+                C.PhysicalParameters.Sigma = 1.96;
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
 
             // need to be set during job creation 
@@ -821,7 +816,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            
+
             #endregion
 
 
@@ -970,21 +965,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
 
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                grd.EdgeTagNames.Add(3, "freeslip_left");
-                grd.EdgeTagNames.Add(4, "freeslip_right");
+                //grd.EdgeTagNames.Add(1, "wall_lower");
+                //grd.EdgeTagNames.Add(2, "wall_upper");
+                //grd.EdgeTagNames.Add(3, "freeslip_left");
+                //grd.EdgeTagNames.Add(4, "freeslip_right");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1]) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - ySize) <= 1.0e-8)
-                        et = 2;
-                    if (Math.Abs(X[0]) <= 1.0e-8)
-                        et = 3;
-                    if (Math.Abs(X[0] - xSize) <= 1.0e-8)
-                        et = 4;
+                    string et = null;
+                    if(Math.Abs(X[1]) <= 1.0e-8)
+                        et = "wall_lower";
+                    else if(Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        et = "wall_upper";
+                    else if(Math.Abs(X[0]) <= 1.0e-8)
+                        et = "freeslip_left";
+                    else if(Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = "freeslip_right";
+                    else
+                        throw new ArgumentException("unknown boundary region");
 
                     return et;
                 });

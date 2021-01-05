@@ -18,7 +18,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
     }
 
-    public class FourierEvolver : Parameter, ILevelSetParameter, ILevelSetEvolver {
+    public class FourierEvolver : ParameterS, ILevelSetParameter, ILevelSetEvolver {
         /// <summary>
         /// specialized timestepper (Runge-Kutta-based) for the evoultion of the Fourier-LS
         /// </summary>

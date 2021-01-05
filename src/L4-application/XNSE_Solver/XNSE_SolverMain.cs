@@ -117,10 +117,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //    LevelSetHandling.Coupled_Once);
 
             //return;
-            throw new Exception("Remove me");
+            //throw new Exception("Remove me");
 
             _Main(args, false, delegate () {
-                var p = new XNSFE();
+                var p = new XNSE();
                 return p;
             });
         }

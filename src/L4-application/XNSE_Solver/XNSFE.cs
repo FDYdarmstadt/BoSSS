@@ -14,6 +14,9 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
 
+    /// <summary>
+    /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
+    /// </summary>
     public class XNSFE : XNSE {
 
         private void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
