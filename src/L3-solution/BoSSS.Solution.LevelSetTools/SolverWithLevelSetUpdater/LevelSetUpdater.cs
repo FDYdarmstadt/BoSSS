@@ -8,9 +8,20 @@ using System;
 using System.Collections.Generic;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    
+    
+    /// <summary>
+    /// A pair of two DG-fields for level-set handling
+    /// - a (potentially) discontinuous (at cell boundaries) representation, <see cref="DGLevelSet"/>
+    /// - a continuous representation, <see cref="CGLevelSet"/>
+    /// </summary>
     public struct DualLevelSet {
+
         public string Identification;
 
+        /// <summary>
+        /// index within the level-set tracker 
+        /// </summary>
         public int LevelSetIndex;
 
         public LevelSet CGLevelSet;
@@ -171,8 +182,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
     }
 
+
+    /// <summary>
+    /// Driver class for level-set evolution; 
+    /// - can update more than one level-set at once
+    /// - handles the continuity projection
+    /// - intitializes a level-set-tracker, <see cref="Tracker"/>
+    /// </summary>
     public class LevelSetUpdater {
 
+        /// <summary>
+        /// initialized by the evolver
+        /// </summary>
         public LevelSetTracker Tracker;
 
         Dictionary<string, SingleLevelSetUpdater> lsUpdaters;

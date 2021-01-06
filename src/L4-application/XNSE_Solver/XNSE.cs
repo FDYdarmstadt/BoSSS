@@ -89,6 +89,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
                     break;
                 }
+                case LevelSetEvolution.StokesExtension: {
+                    //dsfs
+                    throw new NotImplementedException("todo");
+                    break;
+                }
                 case LevelSetEvolution.SplineLS: {
                     int nodeCount = 30;
                     Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
@@ -106,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
                 }
                 default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
             }
             return lsUpdater;
         }

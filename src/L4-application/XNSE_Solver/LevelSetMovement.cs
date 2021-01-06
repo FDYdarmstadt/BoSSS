@@ -94,7 +94,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Spline Level Set
         /// </summary>
-        SplineLS
+        SplineLS,
+
+
+        /// <summary>
+        /// an extension velocity computed from a Stokes equation
+        /// </summary>
+        StokesExtension
+
     }
 
     public class LevelSetMover {

@@ -308,7 +308,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
             //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
             //C.fullReInit = true;

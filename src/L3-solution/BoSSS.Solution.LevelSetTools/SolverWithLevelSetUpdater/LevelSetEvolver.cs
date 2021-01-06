@@ -12,6 +12,10 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    
+    /// <summary>
+    /// Used by the <see cref="Level"/>
+    /// </summary>
     public interface ILevelSetEvolver {
         IList<string> ParameterNames { get; }
 
@@ -26,6 +30,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
     }
 
+    /// <summary>
+    /// Driver class for the <see cref="NarrowMarchingBand.Evolve_Mk2"/>
+    /// </summary>
     public class FastMarchingEvolver : ILevelSetEvolver
     {
         SinglePhaseField[] extensionVelocity;
@@ -34,7 +41,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         IList<string> parameters;
 
-        string[] variables;
+        //string[] variables;
 
         string levelSetName;
 

@@ -11,41 +11,50 @@ using System.Collections.Generic;
 
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
-    public class SplineLevelSet : LevelSet
-    {
+    
+    
+    /// <summary>
+    /// Conversion of an explicit interface representation into a Level-Set 
+    /// - in a 2D setting;
+    /// - the internal spline represents the y-position in dependence of the x-coordinate.
+    /// </summary>
+    public class SplineLevelSet : LevelSet {
         double[] x;
 
         double[] y;
 
+        /// <summary>
+        /// the y-position of the interface in dependence of the x-coordinate
+        /// </summary>
         public CubicSpline Spline { get; private set; }
 
-        public SplineLevelSet(Basis basis, string name, int numberOfNodes) : base(basis, name)
-        {
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SplineLevelSet(Basis basis, string name, int numberOfNodes) : base(basis, name) {
             this.numberOfNodes = numberOfNodes;
             x = new double[numberOfNodes];
             y = new double[numberOfNodes];
             Nodes = MultidimensionalArray.Create(numberOfNodes, 2);
-            if (basis.GridDat is GridData grid) 
-            {
+            if(basis.GridDat is GridData grid) {
                 BoundingBox bbox = grid.LocalBoundingBox;
                 double left = bbox.Min[0];
                 double right = bbox.Max[0];
                 double increment = (right - left) / numberOfNodes;
 
                 left += increment / 2;
-                for(int i = 0; i < numberOfNodes; ++i)
-                {
+                for(int i = 0; i < numberOfNodes; ++i) {
                     Nodes[i, 0] = left + i * increment;
                 }
-            }
-            else
-            {
+            } else {
                 throw new NotImplementedException();
             }
         }
 
-        public SplineLevelSet(Func<double, double> initial, Basis basis, string name, int numberOfNodes) : this(basis, name, numberOfNodes)
-        {
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public SplineLevelSet(Func<double, double> initial, Basis basis, string name, int numberOfNodes) : this(basis, name, numberOfNodes) {
             Interpolate(initial);
         }
 
@@ -53,32 +62,25 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public MultidimensionalArray Nodes { get; private set; }
 
-        public void Interpolate(Func<double, double> initial, CellMask region = null)
-        {
-            for(int i = 0; i < numberOfNodes; ++i)
-            {
-                Nodes[i, 1] = initial(Nodes[i, 0]); 
+        public void Interpolate(Func<double, double> initial, CellMask region = null) {
+            for(int i = 0; i < numberOfNodes; ++i) {
+                Nodes[i, 1] = initial(Nodes[i, 0]);
             }
             Interpolate(region);
         }
 
-        public void Interpolate(MultidimensionalArray yValues, CellMask region = null)
-        {
-            if( yValues.Dimension != 1 || yValues.Length != numberOfNodes)
-            {
+        public void Interpolate(MultidimensionalArray yValues, CellMask region = null) {
+            if(yValues.Dimension != 1 || yValues.Length != numberOfNodes) {
                 throw new NotSupportedException();
             }
-            for(int i = 0; i < numberOfNodes; ++i)
-            {
+            for(int i = 0; i < numberOfNodes; ++i) {
                 Nodes[i, 1] = yValues[i];
             }
             Interpolate(region);
         }
 
-        public void Interpolate(CellMask region = null)
-        {
-            for (int i = 0; i < numberOfNodes; ++i)
-            {
+        public void Interpolate(CellMask region = null) {
+            for(int i = 0; i < numberOfNodes; ++i) {
                 x[i] = Nodes[i, 0];
                 y[i] = Nodes[i, 1];
             }
@@ -86,10 +88,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             EmbeddInLevelSet(Spline, this, region);
         }
 
-        static void EmbeddInLevelSet(CubicSpline spline, SinglePhaseField levelSet, CellMask region = null)
-        {
-            if(region == null)
-            {
+        static void EmbeddInLevelSet(CubicSpline spline, SinglePhaseField levelSet, CellMask region = null) {
+            if(region == null) {
                 region = CellMask.GetFullMask(levelSet.GridDat);
             }
             levelSet.Clear(region);
@@ -99,12 +99,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 new BoSSS.Foundation.Quadrature.CellQuadratureScheme(true, region));
         }
 
-        static ScalarFunction LevelSet(CubicSpline spline)
-        {
-            return (MultidimensionalArray nodes, MultidimensionalArray results) =>
-            {
-                for (int i = 0; i < nodes.Lengths[0]; ++i)
-                {
+        static ScalarFunction LevelSet(CubicSpline spline) {
+            return (MultidimensionalArray nodes, MultidimensionalArray results) => {
+                for(int i = 0; i < nodes.Lengths[0]; ++i) {
                     //phi(x,y) = position(x) - y
                     results[i] = spline.Interpolate(nodes[i, 0]);
                     results[i] -= nodes[i, 1];
@@ -114,16 +111,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
     }
 
-    public class SplineLevelSetEvolver : ILevelSetEvolver
-    {
+    public class SplineLevelSetEvolver : ILevelSetEvolver {
         SplineLevelSetTimeStepper timeStepper;
 
         IList<string> parameters;
 
         string levelSetName;
 
-        public SplineLevelSetEvolver(string levelSetName, GridData gridData)
-        {
+        public SplineLevelSetEvolver(string levelSetName, GridData gridData) {
             this.levelSetName = levelSetName;
             int D = gridData.SpatialDimension;
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -134,8 +129,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> VariableNames => new string[] { };
 
-        public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
+        public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             SplineLevelSet splineLs = levelSet.DGLevelSet as SplineLevelSet;
 
             SinglePhaseField[] meanVelocity = new SinglePhaseField[]
@@ -145,9 +139,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             };
 
             CellMask near = levelSet.Tracker.Regions.GetNearMask4LevSet(levelSet.LevelSetIndex, 1);
-            
+
             timeStepper.MoveLevelSet(dt, splineLs, meanVelocity, near);
-            
+
             CellMask posFar = levelSet.Tracker.Regions.GetLevelSetWing(levelSet.LevelSetIndex, +1).VolumeMask.Except(near);
             CellMask negFar = levelSet.Tracker.Regions.GetLevelSetWing(levelSet.LevelSetIndex, -1).VolumeMask.Except(near);
             splineLs.Clear(posFar);
@@ -157,14 +151,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
     }
 
-    class SplineLevelSetTimeStepper
-    {
+    class SplineLevelSetTimeStepper {
         MultidimensionalArray splineVelocity;
 
-        FieldEvaluation evaluator; 
+        FieldEvaluation evaluator;
 
-        public SplineLevelSetTimeStepper(GridData gridData)
-        {
+        public SplineLevelSetTimeStepper(GridData gridData) {
             evaluator = new FieldEvaluation(gridData);
         }
 
@@ -177,10 +169,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             evaluator.Evaluate(1.0, velocity, levelSet.Nodes, 0.0, splineVelocity);
 
             CubicSpline spline = levelSet.Spline;
-            for (int i = 0; i < levelSet.Nodes.GetLength(0); ++i)
-            {
+            for(int i = 0; i < levelSet.Nodes.GetLength(0); ++i) {
                 double x = levelSet.Nodes[i, 0];
-                double f = - splineVelocity[i, 0] * spline.Differentiate(x) + splineVelocity[i, 1];
+                double f = -splineVelocity[i, 0] * spline.Differentiate(x) + splineVelocity[i, 1];
                 levelSet.Nodes[i, 1] += dt * f;
             }
             levelSet.Interpolate(near);
