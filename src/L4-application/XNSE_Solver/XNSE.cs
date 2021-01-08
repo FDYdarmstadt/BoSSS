@@ -282,7 +282,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 plotFields = ArrayTools.Cat(plotFields, Timestepping.Parameters);
             }
             if (LsUpdater?.Parameters != null) {
-                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
+                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet, LsUpdater.InternalFields.Values);
             }
 
             Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);

@@ -27,7 +27,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// - used extensively in the thesis om M. Smuda, 2020
     /// - also described in the FDY Annual Report 2015, F. Kummer
     /// - in 2015/2016 the cell-wise solvers were re-formulated 
-    /// based upon the Reinitialization and Extension
+    ///   based upon the Reinitialization and Extension ideas from T. Utz
     /// - initial implementation from F Kummer, 2013 & 2014
     /// </remarks>
     public class FastMarchingEvolver : ILevelSetEvolver {
@@ -51,6 +51,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         public IList<string> ParameterNames => parameters;
+
+        /// <summary>
+        /// Provides access to the internally constructed extension velocity.
+        /// <see cref="ILevelSetEvolver.InternalFields"/>
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get {
+                var Ret = new Dictionary<string, DGField>();
+
+                if(extensionVelocity != null) {
+                    foreach(var f in extensionVelocity)
+                        Ret.Add(f.Identification, f);
+                }
+
+                return Ret;
+            }
+        }
+
 
         public void MovePhaseInterface(
             DualLevelSet phaseInterface,
@@ -81,7 +99,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
 
                 for(int d = 0; d < D; ++d) {
-                    extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity" + d);
+                    extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity[" + d + "]");
                 }
             }
             //Move LevelSet

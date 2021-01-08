@@ -1415,7 +1415,7 @@ namespace BoSSS.Foundation.XDG {
         /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
-        /// new width of near region;
+        /// new width of near region; if smaller than 0, unchanged
         /// </param>
         /// <param name="__LevSetAllowedMovement">
         /// new values for the allowed level-set movement.

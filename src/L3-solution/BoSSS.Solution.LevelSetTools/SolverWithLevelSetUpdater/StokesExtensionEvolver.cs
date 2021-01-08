@@ -56,6 +56,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
 
+        /// <summary>
+        /// Provides access to the internally constructed extension velocity.
+        /// <see cref="ILevelSetEvolver.InternalFields"/>
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get {
+                var Ret = new Dictionary<string, DGField>();
+
+                if(extensionVelocity != null) {
+                    foreach(var f in extensionVelocity)
+                        Ret.Add(f.Identification, f);
+                }
+
+                return Ret;
+            }
+        }
+
+
 
         private RungeKutta GetTimestepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
             var diffOp = new SpatialOperator(new string[] { "Phi" },
@@ -72,7 +90,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         }
 
-
+        SinglePhaseField[] extensionVelocity;
 
         /// <summary>
         /// 
@@ -90,12 +108,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
                 );
 
-            SinglePhaseField[] extVel = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtVel[{d}]"));
+            if(extensionVelocity == null) {
+                extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
+            } else {
+                foreach(var f in extensionVelocity)
+                    f.Clear();
+            }
 
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
-            ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extVel);
+            ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extensionVelocity);
 
-            var rk = GetTimestepper(levelSet.DGLevelSet, extVel);
+            var rk = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
             rk.Perform(dt);
 
         }

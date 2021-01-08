@@ -234,6 +234,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(lsTrk, mapping, VelocityAtInterface);
 
+            // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(new CoordinateVector(mapping), RHS);
 
         }

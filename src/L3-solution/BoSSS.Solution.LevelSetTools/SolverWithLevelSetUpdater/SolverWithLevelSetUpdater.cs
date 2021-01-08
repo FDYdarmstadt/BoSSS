@@ -51,11 +51,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return LsUpdater.Tracker;
         }
 
-        protected override void SetInitial() {
-            base.SetInitial();
-           
-        }
-
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
             for (int iVar = 0; iVar < domainFields.Length; iVar++) {
@@ -88,6 +83,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
+            
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
         }                    

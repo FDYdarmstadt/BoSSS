@@ -15,6 +15,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XNSECommon {
+
+    /// <summary>
+    /// Linearization point for the Lax-Friedrichs flux
+    /// </summary>
+    /// <remarks>
+    /// This is only for the ad-hoc linearization used by <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>;
+    /// the automatic differentiation of the Newton method will make this obsolete soon.
+    /// </remarks>
     public class Velocity0 : ParameterS {
         int D;
 
@@ -129,6 +137,10 @@ namespace BoSSS.Solution.XNSECommon {
 
     }
 
+    /// <summary>
+    /// Cell-wise mean value, required for the for the localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue along an edge.
+    /// </summary>
     public class Velocity0Mean : ParameterS, ILevelSetParameter {
         protected int D;
 
@@ -285,6 +297,12 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+
+    /// <summary>
+    /// Computation of normals from the level-set;
+    /// - computed normals are typically **not of unit length**, i.e. the vectors must be normalized before use!
+    /// - computed from broken derivatives, i.e. un-filtered
+    /// </summary>
     public class Normals : ParameterS, ILevelSetParameter {
         int D;
 

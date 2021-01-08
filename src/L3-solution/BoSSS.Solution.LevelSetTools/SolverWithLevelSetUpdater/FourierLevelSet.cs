@@ -72,6 +72,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        /// <summary>
+        /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get { return null; }
+        }
+
         public override DelParameterFactory Factory => ParameterFactory;
 
         public FourierEvolver(string interfaceName, FourierLevelSet ls , FourierLevSetControl control, int curvatureDegree) {
@@ -105,6 +112,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if(levelSet.Tracker.GridDat.SpatialDimension != 2)
+                throw new NotSupportedException("Only supported in 2D.");
+
             SinglePhaseField[] meanVelocity = new SinglePhaseField[]
             {
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],

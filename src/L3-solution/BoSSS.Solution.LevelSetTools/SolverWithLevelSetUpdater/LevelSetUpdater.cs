@@ -63,13 +63,25 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     }
 
     /// <summary>
-    /// Parameters for the level-set are typically the interface velocity and normals.
+    /// Update functionality for parameters fields 
+    /// - which are either required for the level-set evolution (cf. passed to <see cref="ILevelSetEvolver.MovePhaseInterface"/>)
+    /// - or required by the solver, e.g. interface normals and curvature.
     /// </summary>
     public interface ILevelSetParameter {
+
+        /// <summary>
+        /// Global/application-wide naming of the respective parameters, cf. <see cref="VariableNames"/>
+        /// </summary>
         IList<string> ParameterNames { get; }
 
+        /// <summary>
+        /// Allocation
+        /// </summary>
         (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
 
+        /// <summary>
+        /// update
+        /// </summary>
         void LevelSetParameterUpdate(
             DualLevelSet levelSet,
             double time,
@@ -91,7 +103,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// internal implementation
         /// </summary>
         class SingleLevelSetUpdater {
-            ILevelSetEvolver lsMover;
+            internal ILevelSetEvolver lsMover;
 
             ContinuityProjection enforcer;
 
@@ -236,7 +248,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        /// <summary>
+        /// Internal by-products, which can be used e.g. for the sake of logging and plotting;
+        /// cf. <see cref="ILevelSetEvolver.InternalFields"/>
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get {
+                var Ret = new Dictionary<string, DGField>();
 
+                foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
+                    var IP = updater.lsMover.InternalFields;
+                    if(IP != null) {
+                        foreach(var kv in IP) {
+                            Ret.Add(kv.Key, kv.Value);
+                        }
+                    }
+                }
+
+                return Ret;
+            }
+        }
 
 
         /// <summary>
@@ -385,6 +416,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return new SingleLevelSetUpdater(levelSet, enforcer1);
         }
 
+        /// <summary>
+        /// current (i.e. after latest update) values of level-set related parameter fields
+        /// </summary>
         public IReadOnlyDictionary<string, DGField> Parameters {
             get { return lsParameterFields; }
         }
@@ -417,6 +451,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        /// <summary>
+        /// Evolution of all level-sets, fits <see cref="XdgTimestepping.DelUpdateLevelset"/>.
+        /// </summary>
         public double UpdateLevelSets(
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
@@ -439,10 +476,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     incremental);
             }
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
-            UpdateParameters(DomainVarFields, InnerParameterFields, time + dt);
+            UpdateParameters(DomainVarFields, InnerParameterFields, time + dt); // update parameters after change of level-set.
             return residual;
         }
 
+        /// <summary>
+        /// Allocation
+        /// </summary>
         public void InitializeParameters(
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields,

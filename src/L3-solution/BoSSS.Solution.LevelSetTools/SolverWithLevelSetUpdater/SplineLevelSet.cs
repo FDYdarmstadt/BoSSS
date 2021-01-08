@@ -129,6 +129,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> VariableNames => new string[] { };
 
+        /// <summary>
+        /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get { return null; }
+        }
+
+
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             SplineLevelSet splineLs = levelSet.DGLevelSet as SplineLevelSet;
 

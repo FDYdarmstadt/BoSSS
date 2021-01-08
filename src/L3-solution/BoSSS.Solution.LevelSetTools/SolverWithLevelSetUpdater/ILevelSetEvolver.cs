@@ -21,10 +21,35 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// - original idea of Lauritz Beck, dec20;
     /// </remarks>
     public interface ILevelSetEvolver {
+
+
+        /// <summary>
+        /// Parameters upon which the level-set depends
+        /// </summary>
         IList<string> ParameterNames { get; }
 
+        /// <summary>
+        /// As is seems, not used at the moment
+        /// </summary>
         IList<string> VariableNames { get; }
 
+        /// <summary>
+        /// Internal by-products, which can be used e.g. for the sake of logging and plotting;
+        /// cf. <see cref="LevelSetUpdater.InternalFields"/>
+        /// </summary>
+        IDictionary<string, DGField> InternalFields { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="levelSet"></param>
+        /// <param name="time"></param>
+        /// <param name="dt"></param>
+        /// <param name="incremental"></param>
+        /// <param name="DomainVarFields">
+        /// sequence determined by <see cref="VariableNames"/> (maybe)
+        /// </param>
+        /// <param name="ParameterVarFields"></param>
         void MovePhaseInterface(
             DualLevelSet levelSet,
             double time,
