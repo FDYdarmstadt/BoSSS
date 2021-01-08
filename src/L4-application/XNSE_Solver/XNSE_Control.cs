@@ -610,27 +610,27 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// arithmetic mean
             /// </summary>
-            mean,
+            mean = 1,
 
             /// <summary>
-            /// density weighted average
+            /// density weighted average (recommended default value for most cases)
             /// </summary>
-            density,
+            density = 0,
 
             /// <summary>
             /// viscosity weighted average
             /// </summary>
-            viscosity,
+            viscosity = 2,
 
             /// <summary>
             /// only take velocity from phase A
             /// </summary>
-            phaseA,
+            phaseA = 3,
 
             /// <summary>
             /// only take velocity from phase B
             /// </summary>
-            phaseB
+            phaseB = 4
 
         }
 

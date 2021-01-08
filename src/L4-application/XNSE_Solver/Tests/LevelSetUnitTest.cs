@@ -30,6 +30,7 @@ using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 

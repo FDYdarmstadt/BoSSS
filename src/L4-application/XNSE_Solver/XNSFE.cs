@@ -4,6 +4,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
@@ -16,6 +17,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
+    /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
     /// </summary>
     public class XNSFE : XNSE {
 
@@ -91,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
                 var MassFluxExt = new MassFluxExtension_Evaporation(config);
                 opFactory.AddParameter(MassFluxExt);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, MassFluxExt);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
 
                 for (int d = 0; d < D; ++d)
                     opFactory.AddEquation(new InterfaceNSE_MassFlux("A", "B", D, d, lsUpdater.Tracker, config));
@@ -105,41 +107,41 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSetUpdater lsUpdater;
             //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
-            var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.FluidInterface, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+            var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
             switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier:
                 if (Control.EnforceLevelSetConservation) {
                     throw new NotSupportedException("mass conservation correction currently not supported");
                 }
-                FourrierLevelSet fourrierLevelSet = new FourrierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                 fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.FluidInterface);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                 break;
 
                 case LevelSetEvolution.FastMarching:
                 LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                 levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.FluidInterface);
-                var fastMarcher = new FastMarchingEvolver(VariableNames.FluidInterface, QuadOrder(), levelSet.GridDat.SpatialDimension);
-                lsUpdater.AddEvolver(VariableNames.FluidInterface, fastMarcher);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.LevelSetCG);
+                var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSet.GridDat.SpatialDimension);
+                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                 break;
 
                 case LevelSetEvolution.SplineLS:
                 int nodeCount = 30;
                 Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                 SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.FluidInterface);
-                var SplineEvolver = new SplineLevelSetEvolver(VariableNames.FluidInterface, (GridData)SplineLevelSet.GridDat);
-                lsUpdater.AddEvolver(VariableNames.FluidInterface, SplineEvolver);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
+                var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
+                lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                 break;
 
                 case LevelSetEvolution.None:
                 LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                 levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.FluidInterface);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
                 break;
 
                 default:

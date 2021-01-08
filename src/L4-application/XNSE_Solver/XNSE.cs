@@ -5,6 +5,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
@@ -21,10 +22,15 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// Multiphase-XDG-solver, with features:
     /// - incompressible two-phase flows.
-    /// - solid immersed boundaries.
+    /// - solid immersed boundaries (planned).
     /// - three phase contact lines at the domain boundary
     /// - three phase contact lines at the intersection of the immersed solid boundary 
     /// </summary>
+    /// <remarks>
+    /// Development history:
+    /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
+    /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
+    /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
         
         /// <summary>
@@ -33,10 +39,18 @@ namespace BoSSS.Application.XNSE_Solver {
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
         /// <summary>
-        /// - 3x the velocity degree if convection is included
+        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
         public int QuadOrder() {
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
+
             //QuadOrder
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
@@ -68,46 +82,61 @@ namespace BoSSS.Application.XNSE_Solver {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;    // need to change naming convention of old XNSE_Solver
 
             LevelSetUpdater lsUpdater;
-            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.FluidInterface, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+
+            // averaging at interface:
+            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+            
+            
             switch (Control.Option_LevelSetEvolution) {
                 case LevelSetEvolution.Fourier: {
                     if (Control.EnforceLevelSetConservation) {
                         throw new NotSupportedException("mass conservation correction currently not supported");
                     }
-                    FourrierLevelSet fourrierLevelSet = new FourrierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.FluidInterface);
-                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.FastMarching: {
                     LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     levelSetDG.ProjectField(Control.InitialValues_Evaluators["Phi"]); 
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.FluidInterface);
-                    var fastMarcher = new FastMarchingEvolver(VariableNames.FluidInterface, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
-                    lsUpdater.AddEvolver(VariableNames.FluidInterface, fastMarcher);
-                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                    var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
+                                        
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.StokesExtension: {
-                    //dsfs
-                    throw new NotImplementedException("todo");
+                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    levelSetDG.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    var sokesExtEvo = new StokesExtensionEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
+                        new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }),
+                        this.Control.AgglomerationThreshold);
+
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, sokesExtEvo);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.SplineLS: {
                     int nodeCount = 30;
                     Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                     SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.FluidInterface);
-                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.FluidInterface, (GridData)SplineLevelSet.GridDat);
-                    lsUpdater.AddEvolver(VariableNames.FluidInterface, SplineEvolver);
-                    lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, levelSetVelocity);
+                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
                 case LevelSetEvolution.None: {
                     LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                     levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.FluidInterface);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
                     break;
                 }
                 default:
@@ -202,21 +231,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
             }
 
-            lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, v0Mean);
-            lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, normalsParameter);
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
             switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
                 MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                 opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, maxSigmaParameter);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
                 BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsBGradient);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
                 BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsGradient);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
@@ -225,24 +254,24 @@ namespace BoSSS.Application.XNSE_Solver {
                 BeltramiGradientAndCurvature lsGradientAndCurvature =
                     FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
                 opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, lsGradientAndCurvature);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourrierLevelSet ls = (FourrierLevelSet)lsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet;
+                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
                 var fourrier = new FourierEvolver(
-                    VariableNames.FluidInterface,
+                    VariableNames.LevelSetCG,
                     ls,
                     Control.FourierLevSetControl,
                     Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, fourrier);
-                lsUpdater.AddEvolver(VariableNames.FluidInterface, fourrier);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourrier);
+                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourrier);
                 opFactory.AddParameter(fourrier);
                 break;
 
                 default:
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handeled.");
-                break;
+                
             }
         }
 
@@ -253,7 +282,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 plotFields = ArrayTools.Cat(plotFields, Timestepping.Parameters);
             }
             if (LsUpdater?.Parameters != null) {
-                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet);
+                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
             }
 
             Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);

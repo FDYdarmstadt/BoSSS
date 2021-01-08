@@ -43,12 +43,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         /// <summary>
         /// Control for various testing/Florian 
+        /// - jan2021: implementation of Stokes-Extension-Velocity
         /// </summary>
         /// <param name="p"></param>
         /// <param name="kelem"></param>
         /// <param name="_DbPath"></param>
         /// <param name="dt">
-        /// Timestepsize, should be chosen as (1.0 / (double)kelem) / 16.0;
+        /// size of time-step, should be chosen as <c>(1.0 / (double)kelem) / 16.0</c> 
         /// </param>
         /// <returns></returns>
         public static XNSE_Control RB_fk(int p = 2, int kelem = 20, double dt = 3.125e-3, string _DbPath = null) {
@@ -308,7 +309,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
             //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
             //C.fullReInit = true;

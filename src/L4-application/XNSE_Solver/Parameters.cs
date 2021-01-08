@@ -53,6 +53,16 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
+    /// <summary>
+    /// Computation of the fluid interface velocity for material interfaces:
+    /// Due to the discontinuous approximation at the interface, 
+    /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
+    /// the velocities of both phases do not match exactly in the discrete setting.
+    /// (The are equal in the continuous setting, however.)
+    /// 
+    /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
+    /// to obtain a single interface velocity.
+    /// </summary>
     class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
@@ -66,6 +76,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected PhysicalParameters physicalParameters;
 
+        /// <summary>
+        /// ctor.
+        /// </summary>
         public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters) {
             this.averagingMode = averagingMode;
             this.physicalParameters = physicalParameters;
@@ -74,30 +87,30 @@ namespace BoSSS.Application.XNSE_Solver {
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
         }
 
+        /// <summary>
+        /// averaging velocity at interface
+        /// </summary>
         public virtual void LevelSetParameterUpdate(
             DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            int D = levelSet.Tracker.GridDat.SpatialDimension;
+            
             //Mean Velocity
             XDGField[] EvoVelocity; // = new XDGField[]
             try {
-                EvoVelocity = new XDGField[] {
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-                };
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)]
+                    );
             } catch {
-                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = new XDGField[] {
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
-                };
+                Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                    );
             }
 
-
-            int D = EvoVelocity.Length;
-            DGField[] meanVelocity;
-
-            meanVelocity = new ConventionalDGField[D];
+            DGField[] meanVelocity = new ConventionalDGField[D];
 
             double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
             double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;

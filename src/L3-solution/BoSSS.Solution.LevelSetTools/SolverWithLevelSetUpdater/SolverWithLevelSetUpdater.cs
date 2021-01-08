@@ -3,6 +3,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,15 +46,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         protected override LevelSetTracker InstantiateTracker() {
-            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
-                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
-                    $"If you do not know how to remove this exception, you should better return now!");
-            }
+           
             LsUpdater = InstantiateLevelSetUpdater();
             return LsUpdater.Tracker;
+        }
+
+        protected override void SetInitial() {
+            base.SetInitial();
+           
         }
 
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
@@ -88,6 +88,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
+            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
         }                    
     }
 }

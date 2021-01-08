@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver {
     public class XHeat : SolverWithLevelSetUpdater<XNSE_Control> {
@@ -162,9 +163,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
                 break;
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourrierLevelSet ls = (FourrierLevelSet)lsUpdater.LevelSets["Phi"].DGLevelSet;
+                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets["Phi"].DGLevelSet;
                 var fourrier = new FourierEvolver(
-                    VariableNames.FluidInterface,
+                    VariableNames.LevelSetCG,
                     ls,
                     Control.FourierLevSetControl,
                     Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
@@ -186,7 +187,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(Control.EnforceLevelSetConservation) {
                     throw new NotSupportedException("mass conservation correction currently not supported");
                 }
-                FourrierLevelSet fourrierLevelSet = new FourrierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), "Phi");
+                FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), "Phi");
                 fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, "Phi");
                 lsUpdater.AddLevelSetParameter("Phi", new LevelSetVelocity("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
