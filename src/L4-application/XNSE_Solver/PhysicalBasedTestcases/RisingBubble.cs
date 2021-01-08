@@ -339,7 +339,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt/2.0;
             C.dtMin = dt/2.0;
             C.Endtime = 3;
-            C.NoOfTimesteps = 3;
+            C.NoOfTimesteps = 10000;
             C.saveperiod = 1;
 
             #endregion

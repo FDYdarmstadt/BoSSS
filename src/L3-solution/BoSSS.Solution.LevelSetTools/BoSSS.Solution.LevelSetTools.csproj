@@ -37,6 +37,8 @@
     <DocumentationFile>
     </DocumentationFile>
     <LangVersion>latest</LangVersion>
+    <WarningsAsErrors>1587</WarningsAsErrors>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
