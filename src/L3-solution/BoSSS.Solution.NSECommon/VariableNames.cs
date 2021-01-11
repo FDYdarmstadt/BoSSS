@@ -705,9 +705,9 @@ namespace BoSSS.Solution.NSECommon {
 
         static public string MassFluxExtension = "MassFluxExtension";
 
-        /// <summary>
-        /// variable name for the Gradient of the Temperature (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// variable name for the Gradient of the Temperature (linearization point)
+        ///// </summary>
         //static public string[] Temperature0Gradient(int D) {
         //    switch (D) {
         //        case 1: return new string[] { Temperature0Gradient0 };
@@ -716,7 +716,6 @@ namespace BoSSS.Solution.NSECommon {
         //        default: throw new NotSupportedException("unsupported number of species.");
         //    }
         //}
-
 
         ///// <summary>
         ///// for XNSE - continuous level set field (used level set tracker and quadrature) 
@@ -732,7 +731,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// variable name for the phase dividing interface
         /// </summary>
-        public const string LevelSetCG = "Interface";
+        public const string LevelSetCG = "Phi";
 
 
         /// <summary>

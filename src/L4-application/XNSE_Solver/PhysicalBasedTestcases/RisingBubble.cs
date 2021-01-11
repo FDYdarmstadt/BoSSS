@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -252,7 +253,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
             Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
 
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCG, PhiFunc);
 
             Func<double, double> PeriodicFunc = x => radius;
 

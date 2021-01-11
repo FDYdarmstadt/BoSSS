@@ -93,7 +93,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new NotSupportedException("mass conservation correction currently not supported");
                     }
                     FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
                     
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
@@ -101,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 case LevelSetEvolution.FastMarching: {
                     LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators["Phi"]); 
+                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]); 
                     var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
                                         
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
@@ -111,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 case LevelSetEvolution.StokesExtension: {
                     LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
                     var sokesExtEvo = new StokesExtensionEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
                         new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }),
                         this.Control.AgglomerationThreshold);
@@ -134,7 +134,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 case LevelSetEvolution.None: {
                     LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    levelSet1.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
                     
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
                     break;
@@ -142,6 +142,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 default:
                     throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
             }
+
+           
             return lsUpdater;
         }
 
@@ -259,14 +261,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
                 FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                var fourrier = new FourierEvolver(
+                var fourier = new FourierEvolver(
                     VariableNames.LevelSetCG,
                     ls,
                     Control.FourierLevSetControl,
                     Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourrier);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourrier);
-                opFactory.AddParameter(fourrier);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
+                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
+                opFactory.AddParameter(fourier);
                 break;
 
                 default:
@@ -278,11 +280,30 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
 
             DGField[] plotFields = this.m_RegisteredFields.ToArray();
+            void AddPltField(DGField f) {
+                bool add = true;
+                foreach(var ff in plotFields) {
+                    if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
+                        add = false;
+                        break;
+                    }
+                }
+                if(add) {
+                    f.AddToArray(ref plotFields);
+                }
+            }
+            void AddPltFields(IEnumerable<DGField> fs) {
+                foreach(var f in fs)
+                    AddPltField(f);
+            }
+
             if (Timestepping?.Parameters != null) {
-                plotFields = ArrayTools.Cat(plotFields, Timestepping.Parameters);
+                AddPltFields(Timestepping.Parameters);
             }
             if (LsUpdater?.Parameters != null) {
-                plotFields = ArrayTools.Cat(plotFields, LsUpdater.Parameters.Values, LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet, LsUpdater.InternalFields.Values);
+                AddPltFields(LsUpdater.Parameters.Values);
+                AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
+                AddPltFields(LsUpdater.InternalFields.Values);
             }
 
             Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
@@ -296,5 +317,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
+
+
     }
 }

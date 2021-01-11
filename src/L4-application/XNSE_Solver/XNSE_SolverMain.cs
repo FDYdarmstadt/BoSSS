@@ -118,11 +118,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //return;
             //throw new Exception("Remove me");
-
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
                 var p = new XNSE();
                 return p;
             });
+        }
+
+        static void KatastrophenPlot(DGField[] dGFields) {
+            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
         }
 
 

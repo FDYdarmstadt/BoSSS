@@ -46,7 +46,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         protected override LevelSetTracker InstantiateTracker() {
-           
             LsUpdater = InstantiateLevelSetUpdater();
             return LsUpdater.Tracker;
         }
@@ -84,8 +83,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
             
+            var pair = LsUpdater.LevelSets.First().Value;
+            var oldCoords1 = pair.DGLevelSet.CoordinateVector.ToArray();
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+            double dist1 = pair.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+            if(dist1 != 0)
+                throw new Exception("illegal modification of DG level-set");
+
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
+            double dist2 = pair.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+            if(dist2 != 0)
+                throw new Exception("illegal modification of DG level-set");
         }                    
     }
 }

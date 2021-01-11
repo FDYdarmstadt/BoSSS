@@ -1985,6 +1985,9 @@ namespace BoSSS.Solution {
         /// </remarks>
         public virtual void RunSolverMode() {
 
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
@@ -1992,7 +1995,6 @@ namespace BoSSS.Solution {
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
 
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
@@ -2012,16 +2014,6 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
-
-                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
-
-                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
-                if (this.RollingSave)
-                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
-
-
-
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 m_queryHandler.QueryResults.Clear();
@@ -2034,12 +2026,46 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
+                // ========================================================================
+                // initial value IO
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
+
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
+
+
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
+
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                    
                     if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                    if(initialRedist == true) {
+                        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                        if(this.RollingSave)
+                            rollingSavesTsi[0] = Tuple.Create(0, ts0);
+                    }
                 }
+
+
+                // =================================================================================
+                // Main/outmost time-stepping loop
+                // (in steady-state: only one iteration)
+                // =================================================================================
+
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
@@ -2116,9 +2142,10 @@ namespace BoSSS.Solution {
                     }
 
                    
-
-                    // Evaluate queries and write log file (either to session directory
-                    // or current directory)
+                    // =================================================================================
+                    // Evaluate queries and write log file 
+                    // (either to session directory or current directory)
+                    // =================================================================================
                     m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
                     foreach (var kv in m_queryHandler.QueryResults) {
                         QueryResultTable.LogValue(kv.Key, kv.Value);

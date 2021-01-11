@@ -97,7 +97,14 @@ namespace BoSSS.Foundation {
         }
 
 
-
+        /// <summary>
+        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="DGField">
+        /// input; unchanged on exit
+        /// </param>
+        /// <param name="mask"></param>
         public void ProjectDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
@@ -1155,7 +1162,7 @@ namespace BoSSS.Foundation {
         /// Accumulate this field to a DG Field
         /// </summary>
         /// <param name="alpha">Scaling factor</param>
-        /// <param name="DGField"></param>
+        /// <param name="DGField">output</param>
         /// <param name="mask"></param>
         public void AccToDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
             if (!DGField.Basis.Equals(this.m_Basis))

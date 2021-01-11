@@ -31,7 +31,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// Therefore, also **curvature in surface tension terms should be computed from the discontinuous representation**.
     /// In order to reduce the induced oscillations, the DG polynomial degree is typically higher than the degree of the DG representation.
     /// </remarks>
-    public struct DualLevelSet {
+    public class DualLevelSet {
 
         /// <summary>
         /// 
@@ -142,6 +142,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsParameters.Add(parameter);
             }
 
+            /*
+             * this method is HIGHLY problematic;
+             * there should never be a back-coupling form DG-Level-set to the DG-level-set
+             * 
             static void UpdateCurrentInterfaces(DualLevelSet phaseInterface) {
                 // what for? 
                 DualLevelSet combo = phaseInterface;
@@ -149,7 +153,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 combo.DGLevelSet.Clear();
                 combo.DGLevelSet.AccLaidBack(1.0, combo.CGLevelSet);
             }
-
+            */
 
             internal double UpdateLevelSet(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -159,7 +163,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double underRelax,
                 bool incremental) {
 
-                UpdateCurrentInterfaces(phaseInterface);
+                //UpdateCurrentInterfaces(phaseInterface);
                 LevelSet ls = phaseInterface.CGLevelSet;
                 LevelSet lsBkUp = ls.CloneAs();
 
