@@ -12,6 +12,7 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -92,10 +93,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     if (Control.EnforceLevelSetConservation) {
                         throw new NotSupportedException("mass conservation correction currently not supported");
                     }
-                    FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+                    FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    fourierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
                     
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourierLevelSet, VariableNames.LevelSetCG);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
@@ -146,6 +147,22 @@ namespace BoSSS.Application.XNSE_Solver {
            
             return lsUpdater;
         }
+
+        /// <summary>
+        /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
+        /// must be overridden, since it does not preform the continuity projection, see <see cref="DualLevelSet"/>,
+        /// but it may overwrite the continuous level set.
+        ///
+        /// This implementation, however, ensures continuity of the level-set at the cell boundaries.
+        /// </summary>
+        protected override void SetInitial() {
+            base.SetInitial(); // base implementation does not considers the DG/CG pair.
+
+            // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
+            var pair1 = LsUpdater.LevelSets[VariableNames.LevelSetCG];
+            pair1.DGLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+        }
+
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
             int pVel = VelocityDegree();

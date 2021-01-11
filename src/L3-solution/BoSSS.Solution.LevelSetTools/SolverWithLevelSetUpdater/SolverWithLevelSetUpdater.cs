@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using System;
@@ -14,16 +15,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         
         public LevelSetUpdater LsUpdater;
 
-        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig
-        {
-            get
-            {
+        protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
+            get {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++)
-                {
+                for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     AddMultigridConfigLevel(configsLevel);
@@ -34,6 +32,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        /// <summary>
+        /// Configuration of operator pre-pre-conditioning (not a typo), cf. <see cref="MultigridOperatorConfig"/>.
+        /// </summary>
         protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
 
         protected abstract LevelSetUpdater InstantiateLevelSetUpdater();
@@ -83,17 +84,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
             
-            var pair = LsUpdater.LevelSets.First().Value;
-            var oldCoords1 = pair.DGLevelSet.CoordinateVector.ToArray();
+            // enforce continuity
+            // ------------------
+            
+            var pair1 = LsUpdater.LevelSets.First().Value;
+            
+            var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
-            double dist1 = pair.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+            double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
             if(dist1 != 0)
-                throw new Exception("illegal modification of DG level-set");
+                throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
 
             UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
-            double dist2 = pair.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+            double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
             if(dist2 != 0)
-                throw new Exception("illegal modification of DG level-set");
-        }                    
+                throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
+        }
+
+
     }
 }

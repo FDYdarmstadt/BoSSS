@@ -43,8 +43,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
         /// <summary>
-        /// Control for various testing/Florian 
-        /// - jan2021: implementation of Stokes-Extension-Velocity
+        /// Control for various testing/Florian; **If you want to modify, create your own copy!**
+        /// - jan2021: used as a test for the implementation of Stokes-Extension-Velocity
         /// </summary>
         /// <param name="p"></param>
         /// <param name="kelem"></param>
@@ -340,7 +340,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt/2.0;
             C.dtMin = dt/2.0;
             C.Endtime = 3;
-            C.NoOfTimesteps = 10000;
+            C.NoOfTimesteps = 20;
             C.saveperiod = 1;
 
             #endregion

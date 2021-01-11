@@ -1813,8 +1813,7 @@ namespace BoSSS.Solution {
 
                 if(LsTrk != null) {
                     LsTrk.UpdateTracker(0.0);
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.PushStacks();
+                    LsTrk.UpdateTracker(0.0); // doppeltes Update hält besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)
@@ -2018,16 +2017,20 @@ namespace BoSSS.Solution {
 
                 m_queryHandler.QueryResults.Clear();
 
+
                 // sometimes, the operators depend on parameters,
                 // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
                 // resp. 'LoadRestart(..)'!!!
                 CreateEquationsAndSolvers(null);
                 tr.LogMemoryStat();
-
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
+                if(LsTrk != null)
+                    LsTrk.PushStacks();
+
+
                 // ========================================================================
-                // initial value IO
+                // initial value IO:
                 // (note: in some apps, the initial values might be tweaked in the 
                 // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
                 // "true" initial value)
