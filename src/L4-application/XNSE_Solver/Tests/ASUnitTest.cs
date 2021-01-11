@@ -35,7 +35,7 @@ using BoSSS.Solution.LevelSetTools;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// A collection of all-up NUnit tests for the XNSE solver.
+    /// A collection of all-up NUnit tests for the new XNSE solver (<see cref="XNSE"/>).
     /// </summary>
     [TestFixture]
     static public partial class ASUnitTest {

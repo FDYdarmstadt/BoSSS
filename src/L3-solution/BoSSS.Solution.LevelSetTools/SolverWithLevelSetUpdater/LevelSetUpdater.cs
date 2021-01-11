@@ -200,9 +200,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if(underRelax < 1.0) {
                     dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
                 }
-                AssertAllRequiredFieldsArePresent(lsMover.ParameterNames, DomainVarFields, ParameterVarFields);
-                AssertAllRequiredFieldsArePresent(lsMover.VariableNames, DomainVarFields, ParameterVarFields);
-                if(dt > 0) {
+                if(dt > 0 && lsMover != null) {
+                    AssertAllRequiredFieldsArePresent(lsMover.ParameterNames, DomainVarFields, ParameterVarFields);
+                    AssertAllRequiredFieldsArePresent(lsMover.VariableNames, DomainVarFields, ParameterVarFields);
+                    
                     lsMover.MovePhaseInterface(
                         phaseInterface,
                         time,
