@@ -194,7 +194,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public bool IncludeConvection => true;
 
-        public int LevelsetPolynomialDegree => 2;
+        public int LevelsetPolynomialDegree => 4;
 
         public double[] AcceptableL2Error => new double[] { 1.0e-7 };
 
