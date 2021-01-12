@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -189,10 +190,15 @@ namespace BoSSS.Solution.LevelSetTools {
         }
     }
 
-    ///<summary>
+    /// <summary>
     /// Smoothing based on ContinuousDGField 
     /// => Lagrange-Multiplier Approach
-    ///</summary>
+    /// </summary>
+    /// <remarks>
+    /// - Developed by Martin Smuda, described in his PhD thesis
+    /// - the main advantage of the continuity projection using <see cref="ContinuityProjectionCDG"/>
+    ///   is that it works with hanging nodes and in 3D.
+    /// </remarks>
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
@@ -201,15 +207,20 @@ namespace BoSSS.Solution.LevelSetTools {
         ConstrainedDGField CDGField;
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
-            CDGField.ProjectDGField(1.0, DGLevelSet, Domain);
-            LevelSet.Clear();
-            CDGField.AccToDGField(1.0, LevelSet);
+            if(Domain.NoOfItemsLocally.MPISum() > 0) {
+                CDGField.ProjectDGField(1.0, DGLevelSet, Domain);
+                LevelSet.Clear();
+                CDGField.AccToDGField(1.0, LevelSet);
+            } else {
+                LevelSet.Clear();
+                LevelSet.AccLaidBack(1.0, LevelSet);
+            }
         }
     }
 
-    ///<summary>
+    /// <summary>
     /// Does nothing => no enforcement of continuity  
-    ///</summary>
+    /// </summary>
     class NoProjection : IContinuityProjection {
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {

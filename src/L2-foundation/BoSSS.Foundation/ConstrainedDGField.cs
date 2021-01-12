@@ -30,6 +30,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation {
 
@@ -111,6 +112,9 @@ namespace BoSSS.Foundation {
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
+            }
+            if(mask.NoOfItemsLocally.MPISum() <= 0) {
+                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
 
             // hack

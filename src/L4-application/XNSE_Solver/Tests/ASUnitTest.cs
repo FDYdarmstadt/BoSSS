@@ -158,7 +158,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif
 
 
-#if !DEBUG        
+//#if !DEBUG        
         /// <summary>
         /// <see cref="SinglePhaseChannel"/>
         /// </summary>
@@ -183,7 +183,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
-#endif      
+//#endif      
 
         /// <summary>
         /// <see cref="BcTest_PressureOutlet"/>
