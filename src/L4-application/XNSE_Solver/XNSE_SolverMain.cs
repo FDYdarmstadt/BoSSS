@@ -74,10 +74,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.69711d, true, false);
-            //throw new Exception("Remove me");
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.UnitTest.TranspiratingChannelTest(2, 2, 0.1d, 0.0d, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            throw new Exception("Remove me");
             
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
