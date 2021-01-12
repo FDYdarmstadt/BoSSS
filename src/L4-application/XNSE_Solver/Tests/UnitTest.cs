@@ -585,6 +585,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new TranspiratingChannelTest(U2, periodicity, spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local); // surface tension plays no role in this test, so ignore it
+            C.ImmediatePlotPeriod = 1;
+
+
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
