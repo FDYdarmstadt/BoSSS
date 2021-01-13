@@ -331,7 +331,7 @@ namespace BoSSS.Application.XNSE_Solver {
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");          
+            Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
 

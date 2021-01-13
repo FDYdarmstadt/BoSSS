@@ -301,7 +301,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-
+        /*
         /// <summary>
         /// Droplet forced through a channel with sliding walls.
         /// - jan2021: used as a test for the implementation of Stokes-Extension-Velocity
@@ -482,7 +482,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return C;
 
         }
-
+        */
 
         /// <summary>
         /// specified control for benchmark testing
