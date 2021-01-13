@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -24,7 +25,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -36,8 +37,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.levelSetName = levelSetName;
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
+            this.m_grd = grd;
         }
 
+        IGridData m_grd;
         int SpatialDimension;
         double AgglomThreshold;
         int m_HMForder;

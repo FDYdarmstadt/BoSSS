@@ -34,7 +34,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         public SpeciesId NegativeSpecies => m_lsTrk.GetSpeciesId("A");
 
-        public TermActivationFlags LevelSetTerms => TermActivationFlags.GradUxV | TermActivationFlags.V;
+        public TermActivationFlags LevelSetTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
         public IList<string> ArgumentOrdering => new[] { VariableNames.Velocity_d(m_d) };
 
@@ -45,8 +45,12 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
-            Ret += (uA[0] - inp.Parameters_IN[0]) * (vA) * pnlty;
-            Ret += (uB[0] - inp.Parameters_OUT[0]) * (vB) * pnlty;
+            double uIn = inp.Parameters_IN[0];
+            double uOt = inp.Parameters_OUT[0];
+
+            
+            Ret += (uA[0] - uIn) * (vA) * pnlty;
+            Ret += (uB[0] - uOt) * (vB) * pnlty;
 
             return Ret;
         }

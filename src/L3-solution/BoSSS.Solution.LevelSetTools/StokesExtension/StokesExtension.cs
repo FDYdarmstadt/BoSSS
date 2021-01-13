@@ -60,16 +60,18 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
            
             {
+                // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
                     var visc = new swipViscosity_Term1(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
+                // Momentum, Pressure gradient:
                 for(int d = 0; d < D; d++) {
                     var PresDeriv = new PressureGradientLin_d(d, map);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(PresDeriv);
                 }
-                //opFactory.AddEquation(new Continuity(conf, D, spcN, LsTrk.GetSpeciesId(spcN), m_BcMap));
-
+                
+                // Continuity:
                 for(int d = 0; d < D; d++) {
                     var divVol = new Divergence_DerivativeSource(d, D);
                     var divEdg = new Divergence_DerivativeSource_Flux(d, map);
@@ -100,11 +102,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
 
-            /*
-            foreach(var kv in UserDefinedValues) {
-                r.UserDefinedValues[kv.Key] = kv.Value;
-            }
-            */
+            
+            //foreach(var kv in UserDefinedValues) {
+            //    r.UserDefinedValues[kv.Key] = kv.Value;
+            //}
+            
 
             r.HomotopyValue = 1.0;
 
@@ -160,10 +162,12 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 foreach(var s in m_LatestAgglom.SpeciesList)
                     builder.CellLengthScales[s] = m_LatestAgglom.CellLengthScales[s];
 
+               
                 builder.ComputeMatrix(opmtx, RHS);
             }
 
-            RHS.ScaleV(1.0);
+    
+            RHS.ScaleV(-1.0); // change from affine (lhs) to RHS
             return (opmtx, RHS);
         }
 
@@ -225,17 +229,38 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             var gDat = lsTrk.GridDat;
             int deg = ExtensionVelocity[0].Basis.Degree;
 
-
+            
             m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
             SinglePhaseField dummyPressure = new SinglePhaseField(new Basis(gDat, deg - 1), "DummyPressure");
 
-            CoordinateMapping mapping = new CoordinateMapping(ExtensionVelocity.Cat(dummyPressure));
+            CoordinateVector ExtenstionSolVec = new CoordinateVector(ExtensionVelocity.Cat(dummyPressure));
 
-            (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(lsTrk, mapping, VelocityAtInterface);
+            (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
             // should be replaced by something more sophisticated
-            OpMtx.Solve_Direct(new CoordinateVector(mapping), RHS);
+            OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+
+
+            var MomResX = new SinglePhaseField(ExtensionVelocity[0].Basis, "MomentumX");
+            var MomResY = new SinglePhaseField(ExtensionVelocity[1].Basis, "MomentumY");
+            var Conti = new SinglePhaseField(dummyPressure.Basis, "conti");
+
+
+            var ResMapping = new CoordinateVector(MomResX, MomResY, Conti);
+
+            ResMapping.Acc(1.0, RHS);
+            OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, ResMapping);
+
+
+            Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields.Cat(ResMapping.Fields), "FuckingExtension", 0.0, 2);
+
+
+
+
+            //ExtensionVelocity[0].Clear();
+            //ExtensionVelocity[1].Clear();
+            //ExtensionVelocity[1].AccConstant(1.0);
 
         }
 

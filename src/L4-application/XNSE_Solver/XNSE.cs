@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
                     var sokesExtEvo = new StokesExtensionEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
                         new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }),
-                        this.Control.AgglomerationThreshold);
+                        this.Control.AgglomerationThreshold, this.GridData);
 
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
                     lsUpdater.AddEvolver(VariableNames.LevelSetCG, sokesExtEvo);
@@ -330,8 +330,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //Update Calls
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            //Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
+            this.UpdateLevelset(this.CurrentState.Fields.ToArray(), phystime, dt, 1.0, false);
+
+
             Console.WriteLine($"done with time step {TimestepNo}");
+
+            if(TimestepNo >= 1)
+                base.TerminationKey = true;
+            
             return dt;
         }
 

@@ -142,18 +142,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsParameters.Add(parameter);
             }
 
-            /*
-             * this method is HIGHLY problematic;
-             * there should never be a back-coupling form DG-Level-set to the DG-level-set
-             * 
-            static void UpdateCurrentInterfaces(DualLevelSet phaseInterface) {
-                // what for? 
-                DualLevelSet combo = phaseInterface;
-                combo.CGLevelSet = (LevelSet)phaseInterface.Tracker.LevelSets[phaseInterface.LevelSetIndex];
-                combo.DGLevelSet.Clear();
-                combo.DGLevelSet.AccLaidBack(1.0, combo.CGLevelSet);
-            }
-            */
+           
 
             internal double UpdateLevelSet(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
