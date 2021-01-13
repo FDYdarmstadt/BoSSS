@@ -87,7 +87,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
                     break;
                 }
             }
-            Vector orientation = currentParticle.Motion.orientationVector;
+            double angle = currentParticle.Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && currentParticle.ActiveStress != 0 ? 1 : 0;
 
             // Level-set velocity

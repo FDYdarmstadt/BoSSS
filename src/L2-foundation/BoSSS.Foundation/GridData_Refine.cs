@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Cell[][] adaptedCells = new Cell[J][];
                 List<Cell> cellsInNewGrid = new List<Cell>();
 
-                // Create and exchange bitmasks
+                // Create and exchange bit-masks
                 // =========================
                 if (anyRefinement) {
                     CheckForDoubleEntryInEnumeration(cellsToRefine);
@@ -239,7 +239,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                 }
 
-                // fix neighborship
+                // fix neighbor-ship
                 // ================
                 byte[,] Edge2Face = Edges.FaceIndices;
                 int[,] Edge2Cell = Edges.CellIndices;
@@ -253,6 +253,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if(Edge2Cell.GetLength(0) != NoOfEdges)
                     throw new Exception("Edge2Cell to long");
 
+                //exchange cell data between processes
                 List<Tuple<int, Cell[]>> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
 
                 for (int iEdge = 0; iEdge < NoOfEdges; iEdge++) {
@@ -261,7 +262,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int iFace1 = Edge2Face[iEdge, 0];
                     int iFace2 = Edge2Face[iEdge, 1];
 
-                    if (localCellIndex2 < 0) {
+                    if (localCellIndex2 < 0) {// cell index smaller Zero -> boundary cell!
                         if ((cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1]) == false)
                             continue;
                         AdaptBoundaryCellFaces(adaptedCells, Edge2Face, iEdge, localCellIndex1);
@@ -273,21 +274,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                     RefElement Kref1 = Cells.GetRefElement(localCellIndex1);
                     RefElement Kref2 = Cells.GetRefElement(localCellIndex2);
 
-
                     Debug.Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
                     Debug.Assert((cellsToRefineBitmask[localCellIndex2] && cellsToCoarseBitmask[localCellIndex2]) == false);
 
-                    bool C1changed = cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1];
-                    bool C2changed = cellsToRefineBitmask[localCellIndex2] || cellsToCoarseBitmask[localCellIndex2];
+                    bool cell1Changed = cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1];
+                    bool cell2Changed = cellsToRefineBitmask[localCellIndex2] || cellsToCoarseBitmask[localCellIndex2];
 
-                    if ((C1changed || C2changed) == false)
+                    if ((cell1Changed || cell2Changed) == false)
                         continue;
 
                     Cell[] adaptedCells1 = new Cell[1];
                     Cell[] adaptedCells2 = new Cell[1];
 
                     bool periodicInverse1 = true;
-                    bool periodicInverse2 = false;
                     
                     int i0 = CellPartitioning.i0;
                     if (IsPartOfLocalCells(J, localCellIndex1) && IsPartOfLocalCells(J, localCellIndex2)) {
@@ -315,7 +314,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     else
                         throw new Exception("Error in refinement and coarsening algorithm: Both cells not on the current process");
 
-                    periodicInverse2 = !periodicInverse1;
+                    bool periodicInverse2 = !periodicInverse1;
+
                     CheckIfCellIsMissing(localCellIndex1, adaptedCells1, i0);
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
@@ -911,13 +911,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// Gets the cell data for all process boundary cells on the neighbouring process of the current process.
+        /// Gets the cell data for all process boundary cells on the neighboring process of the current process.
         /// </summary>
-        /// <param name="Cells">
+        /// <remarks>
+        /// Copies the entire cell data to the neighboring process in order to update neighboring information between cells at the process boundary.
+        /// </remarks>
+        /// <param name="AdaptedCells">
+        /// All adapted cells, i.e. every cell which was either refined or coarsened.
         /// </param>
-        private List<Tuple<int, Cell[]>> SerialExchangeCellData(Cell[][] Cells) {
+        private List<Tuple<int, Cell[]>> SerialExchangeCellData(Cell[][] AdaptedCells) {
             List<Tuple<int, Cell[]>> exchangedCellData = new List<Tuple<int, Cell[]>>();
-            Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(Cells);
+            Dictionary<int, List<Tuple<int, Cell[]>>> sendCellData = GetBoundaryCellsAndProcessToSend(AdaptedCells);
             IDictionary<int, List<Tuple<int, Cell[]>>> receiveCellData = SerialisationMessenger.ExchangeData(sendCellData);
 
             foreach (KeyValuePair<int, List<Tuple<int, Cell[]>>> kv in receiveCellData) {

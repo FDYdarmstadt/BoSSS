@@ -22,7 +22,6 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
@@ -40,6 +39,17 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
+    /// <summary>
+    /// Fluid Structure Interaction (FSI) Solver, features:
+    /// - Fluid-Particle interactions
+    /// - Incompressible fluid
+    /// - Rigid particles
+    /// - Arbitrary geometries
+    /// - Active particles
+    /// </summary>
+    /// <remarks>
+    /// Current maintainer: B. Deußen (deussen@fdy.tu-darmstadt.de), F. Kummer
+    /// </remarks>
     public class FSI_SolverMain : IBM_Solver.IBM_SolverMain {
 
         /// <summary>
@@ -50,11 +60,10 @@ namespace BoSSS.Application.FSI_Solver {
                 var p = new FSI_SolverMain();
                 return p;
             });
-
         }
 
         /// <summary>
-        /// Set the inital state of the simulation.
+        /// Set the initial state of the simulation.
         /// </summary>
         protected override void SetInitial() {
             if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
@@ -95,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
         /// <summary>
-        /// Methods dealing with colouring and level set
+        /// Methods dealing with coloring and level set
         /// </summary>
         private FSI_LevelSetUpdate levelSetUpdate;
 
@@ -115,7 +124,7 @@ namespace BoSSS.Application.FSI_Solver {
         private SinglePhaseField MPIProcessMarker;
 
         /// <summary>
-        /// Create the colour and level set distance field. 
+        /// Create the color and level set distance field. 
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
@@ -180,19 +189,19 @@ namespace BoSSS.Application.FSI_Solver {
         private bool StaticTimestep => ((FSI_Control)Control).staticTimestep;
 
         /// <summary>
-        /// The maximum timestep setted in the control file.
+        /// The maximum time-step set in the control file.
         /// </summary>
         [DataMember]
         private double DtMax => ((FSI_Control)Control).dtMax;
 
         /// <summary>
-        /// The maximum timestep setted in the control file.
+        /// The maximum time-step set in the control file.
         /// </summary>
         [DataMember]
         private double StartDt => ((FSI_Control)Control).dtMax / 10;
 
         /// <summary>
-        /// The maximum timestep setted in the control file.
+        /// The maximum time-step set in the control file.
         /// </summary>
         [DataMember]
         private double RestartDt => ((FSI_Control)Control).dtMax / 1000;
@@ -274,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver {
         private TextWriter logPhysicalDataParticles;
 
         /// <summary>
-        /// Creates Navier-Stokes and continuity eqution
+        /// Creates Navier-Stokes and continuity equation
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             if (IBM_Op != null)
@@ -405,7 +414,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         int bdforder = 0;
         /// <summary>
-        /// Creates the BDF-Timestepper
+        /// Creates the BDF-Time-stepper
         /// </summary>
         private void CreateTimestepper() {
             SpatialOperatorType SpatialOp = SpatialOperatorType.LinearTimeDependent;
@@ -513,8 +522,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Particle to Level-Set-Field 
+        /// Level-set update.
         /// </summary>
+        /// <remarks>
+        /// Updates the level-set of each particle based on a point-wise max-function: levelSetFunction(X) = max(levelSetFunction(X), CurrentParticleLevelSet(X)).
+        /// </remarks>
         /// <param name="phystime">
         /// The current time.
         /// </param>
@@ -536,7 +548,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                 DGLevSet.Current.Clear();
                 GlobalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, ParticleList);
-                levelSetUpdate.DetermineParticleColorOfGhostParticles(GlobalParticleColor, ParticleList);
                 int[] globalParticleColor = GlobalParticleColor.CloneAs();
 
                 for (int c = 0; c < globalParticleColor.Length; c++) {
@@ -598,7 +609,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Marks each process to see the partitoning in exported sessions.
+        /// Marks each process to see the partitioning in exported sessions.
         /// </summary>
         private void MarkEachMPIProcess() {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -759,13 +770,14 @@ namespace BoSSS.Application.FSI_Solver {
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
             if (Math.Abs(distance) < particleMaxLength) {
-                if (d1 == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
-                else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
-                ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
-                periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
-                return Overlapping;
+                return true;
+                //if (d1 == 0)
+                //    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
+                //else
+                //    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
+                //ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
+                //periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
+                //return Overlapping;
             }
             return false;
         }
@@ -847,16 +859,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// runs solver one step?!
         /// </summary>
         /// <param name="TimestepInt">
-        /// Timestep number
+        /// Time-step number
         /// </param>
         /// <param name="phystime">
         /// Physical time
         /// </param>
         /// <param name="dt">
-        /// Timestep size
+        /// Time-step size
         /// </param>
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
-            // init
+            // initialize
             ResLogger.TimeStep = TimestepInt;
             BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(bdforder);
             int S = m_TSCchain[0].S;
@@ -870,13 +882,13 @@ namespace BoSSS.Application.FSI_Solver {
                 }
                 initAddedDamping = false;
             }
-            // used later to check if there is exactly one push per timestep
+            // used later to check if there is exactly one push per time-step
             int OldPushCount = LsTrk.PushCount;
 
             // only particle motion & collisions, no flow solver
             // =================================================
             if (((FSI_Control)Control).pureDryCollisions) {
-                LsTrk.PushStacks(); // in other branches, called by the BDF timestepper
+                LsTrk.PushStacks(); // in other branches, called by the BDF time-stepper
                 DGLevSet.Push();
                 Auxillary.ParticleState_MPICheck(ParticleList, GridData, MPISize);
 
@@ -942,7 +954,7 @@ namespace BoSSS.Application.FSI_Solver {
                 Auxillary.PrintResultToConsole(ParticleList, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume, ((FSI_Control)Control).FullOutputToConsole);
                 LogPhysicalData(phystime, TimestepInt);
 
-                if (IsFullyCoupled) {// in other branches, called by the BDF timestepper
+                if (IsFullyCoupled) {// in other branches, called by the BDF time-stepper
                     LsTrk.IncreaseHistoryLength(S + 1);
                     LsTrk.PushStacks();
                 }
@@ -963,13 +975,13 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Update of added damping tensors and prediction of hydrdynamics.
+        /// Update of added damping tensors and prediction of hydrodynamics.
         /// </summary>
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
         /// <param name="TimestepInt">
-        /// #Timestep
+        /// #Time-step
         /// </param>
         internal void InitializeParticlePerIteration(List<Particle> Particles, int TimestepInt) {
             for (int p = 0; p < Particles.Count; p++) {
@@ -1034,7 +1046,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void CreatePhysicalDataLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "timestep", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
+                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
             }
         }
 
@@ -1059,17 +1071,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// A list of all particles
         /// </param>
         /// <param name="CellColor">
-        /// All cells on the current process with their specific colour
+        /// All cells on the current process with their specific color
         /// </param>
         /// <param name="dt">
-        /// Timestep
+        /// Time-step
         /// </param>
         private void CalculateCollision(List<Particle> Particles, double dt, bool DetermineOnlyOverlap = false) {
             foreach (Particle p in Particles) {
                 p.IsCollided = false;
             }
-            // Only particles with the same colour a close to each other, thus, we only test for collisions within those particles.
-            // Determine colour.
+            // Only particles with the same color a close to each other, thus, we only test for collisions within those particles.
+            // Determine color.
             // =================================================
             int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
             for (int i = 0; i < _GlobalParticleColor.Length; i++) {
@@ -1077,7 +1089,7 @@ namespace BoSSS.Application.FSI_Solver {
                 if (CurrentColor == 0)
                     continue;
                 int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
-                // Multiple particles with the same colour, trigger collision detection
+                // Multiple particles with the same color, trigger collision detection
                 // =================================================
                 if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
                     Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
@@ -1088,7 +1100,7 @@ namespace BoSSS.Application.FSI_Solver {
                     Collision.Calculate(ParticleList.ToArray());
                     //Collision.Calculate(currentParticles);
                 }
-                // Remove already examined particles/colours from array
+                // Remove already examined particles/colors from array
                 // =================================================
                 for (int j = 0; j < _GlobalParticleColor.Length; j++) {
                     if (_GlobalParticleColor[j] == CurrentColor)
@@ -1270,7 +1282,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         protected override void OnRestartTimestepInfo(TimestepInfo tsi) {
             FSI_TimestepInfo fTsi = (FSI_TimestepInfo)tsi;
-            // init particles
+            // initialize particles
             ParticleList = fTsi.Particles.ToList();
             UpdateLevelSetParticles(fTsi.PhysicalTime);
         }

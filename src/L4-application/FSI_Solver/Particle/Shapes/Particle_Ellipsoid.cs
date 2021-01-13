@@ -98,7 +98,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         public override double LevelSetFunction(double[] X) {
             double[] position = Motion.GetPosition(0);
-            Vector orientation = Motion.orientationVector;
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
                        -(((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
                        + 1.0;
@@ -115,7 +116,8 @@ namespace BoSSS.Application.FSI_Solver {
         /// tolerance length.
         /// </param>
         public override bool Contains(Vector point, double tolerance = 0) {
-            Vector orientation = new Vector(Motion.orientationVector);
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
@@ -136,7 +138,8 @@ namespace BoSSS.Application.FSI_Solver {
                 throw new ArithmeticException("The given vector has no length");
 
             Vector SupportPoint = new Vector(SpatialDim);
-            Vector orientation = Motion.orientationVector;
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = new Vector(Motion.GetPosition(0));
 
             double[,] rotMatrix = new double[2, 2];

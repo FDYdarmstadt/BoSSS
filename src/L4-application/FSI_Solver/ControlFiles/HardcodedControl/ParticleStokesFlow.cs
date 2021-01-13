@@ -28,11 +28,10 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetSaveOptions(@"D:\BoSSS_databases\2particleInteractions", 1);
 
             List<string> boundaryValues = new List<string> {
-                "Velocity_Inlet_left",
-                "Velocity_Inlet_right",
+                "Wall",
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2, lengthY: 5, cellsPerUnitLength: 12, periodicX: false, periodicY: true);
+            C.SetGrid(lengthX: 5, lengthY: 5, cellsPerUnitLength: 8, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
@@ -46,10 +45,10 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================   
             double particleDensity = 10;
             C.Particles = new List<Particle>();
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 0.4,0.2, new double[] { 0.0, 0.0 },45, 0, new double[] { 0, 0 }, 0));
-            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.1);
-            C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false );
+            C.Particles.Add(new Particle_superEllipsoid(motion, 0.4,0.2,4,new double[] { 0.0, 0.0 },45, 0, new double[] { 0, 0 }, 1));
+            //C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.1);
+            //C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.1);
             // Quadrature rules
             // =============================   
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;

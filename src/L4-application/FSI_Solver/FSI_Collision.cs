@@ -1,5 +1,5 @@
 ﻿/* =======================================================================
-Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -85,7 +85,6 @@ namespace FSI_Solver {
             MinDistance = minDistance;
             this.IsPeriodicBoundary = IsPeriodicBoundary;
             this.DetermineOnlyOverlap = DetermineOnlyOverlap;
-            this.DetermineOnlyOverlap = true;
         }
 
         private readonly FSI_Auxillary Aux = new FSI_Auxillary();
@@ -117,7 +116,7 @@ namespace FSI_Solver {
         public void Calculate(Particle[] particles) {
             Particles = particles;
             // Step 1
-            // Some var definintion
+            // Some var definition
             // =======================================================
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
@@ -127,7 +126,7 @@ namespace FSI_Solver {
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
-            while (AccumulatedCollisionTimestep < TimestepSize)// the collision needs to take place within the current timestep dt.
+            while (AccumulatedCollisionTimestep < TimestepSize)// the collision needs to take place within the current time-step dt.
             {
                 CreateCollisionArrarys(Particles.Length);
                 double globalMinimalDistance = double.MaxValue;
@@ -138,7 +137,7 @@ namespace FSI_Solver {
                 // -------------------------------------------------------
                 while (globalMinimalDistance > distanceThreshold) {
                     // Step 2.1.1
-                    // Move the particle with the current save timestep.
+                    // Move the particle with the current save time-step.
                     // -------------------------------------------------------
                     MoveParticlesWithSaveTimestep(Particles, saveTimestep);
                     saveTimestep = double.MaxValue;
@@ -169,7 +168,7 @@ namespace FSI_Solver {
                             if (temp_Overlapping) {
                                 if (DetermineOnlyOverlap)
                                     throw new Exception("Static particles overlap");
-                                double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
+                                double overlappingTimestep = -TimestepSize * 0.01; // reset time to find a particle state before they overlap.
                                 saveTimestep = 0;
                                 Particle[] overlappingParticles = new Particle[] { Particles[p0] };
                                 Console.WriteLine("Particle " + p0 + " and wall " + w + " overlap");
@@ -203,11 +202,14 @@ namespace FSI_Solver {
                             if (temp_Overlapping) {
                                 if (DetermineOnlyOverlap)
                                     throw new Exception("Static particles overlap");
-                                double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
-                                saveTimestep = 0;
-                                Particle[] overlappingParticles = new Particle[] { Particles[p0], Particles[p1] };
+                                //double overlappingTimestep = -TimestepSize * 0.01; // reset time to find a particle state before they overlap.
+                                //saveTimestep = 0;
+                                //Particle[] overlappingParticles = new Particle[] { Particles[p0], Particles[p1] };
                                 Console.WriteLine("Particle " + p0 + " and particle " + p1 + " overlap");
-                                MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
+                                //MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
+                                DistanceVector[p0][p1] = new Vector(Particles[p0].Motion.GetPosition(0) - Particles[p1].Motion.GetPosition(0));
+                                DistanceVector[p1][p0] = new Vector(Particles[p1].Motion.GetPosition(0) - Particles[p0].Motion.GetPosition(0));
+                                globalMinimalDistance = 0;
                             }
                         }
                     }
@@ -311,7 +313,7 @@ namespace FSI_Solver {
         }
 
         private void FindCollisionPartners(int particle, int potentialCollisionPartner, List<int> currentParticleCollidedWith, double distanceThreshold) {
-            if (DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) {
+            if ((DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) || Overlapping[particle][potentialCollisionPartner]) {
                 int insertAtIndex = currentParticleCollidedWith.Count();
                 for (int i = 1; i < currentParticleCollidedWith.Count(); i++) {
                     if (DistanceVector[particle][currentParticleCollidedWith[i]].Abs() > DistanceVector[particle][potentialCollisionPartner].Abs())
@@ -758,6 +760,7 @@ namespace FSI_Solver {
                 Overlapping[secondObjectID][particleID] = false;
                 Particles[secondObjectID].IsCollided = true;
             }
+            Console.WriteLine("Particle " + particleID + " and particle " + secondObjectID + " collided");
         }
 
         private Vector CalculateNormalAndTangentialVelocity(int particleID, Vector normalVector) {
