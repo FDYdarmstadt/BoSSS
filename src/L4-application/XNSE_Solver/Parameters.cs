@@ -351,16 +351,28 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray MassFlux = MultidimensionalArray.Create(Len, K);
 
                     for (int dd = 0; dd < D; dd++) {
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                     }
+                    ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
 
                     for (int j = 0; j < Len; j++) {
 
-                        for (int k = 0; k < K; k++) {     
-                            result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                        for (int k = 0; k < K; k++) {
+                            
+                            result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - 0.5 * MassFlux[j, k] * (1 / rhoA + 1 / rhoB); // calculate as modified rankine-hugoniot shock condition
+
+                            //if (rhoA != rhoB) {
+                            //    result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                            //} else if (Math.Abs(VelA[j, k, d] - VelB[j, k, d]) <= 1e-6) {
+                            //    double rho = 0.5 * (rhoA + rhoB);                             
+                            //    result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - MassFlux[j, k] / rho; // (relative) interface velocity depends solely on the mass flux
+                            //} else {
+                            //    throw new ApplicationException("unable to calculate Interface velocity");
+                            //}
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));

@@ -31,6 +31,9 @@ using BoSSS.Solution.XNSECommon;
 
 namespace BoSSS.Solution.XheatCommon {
 
+    /// <summary>
+    /// Base class for fluxes that need to incorporate the mass flux at the level set
+    /// </summary>
     public abstract class MassFluxAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         // for micro regions
@@ -116,7 +119,7 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
     /// <summary>
-    /// velocity jump penalty for the divergence operator, on the level set
+    /// velocity jump penalty for the divergence operator (continuity equation), on the level set
     /// </summary>
     public class DivergenceAtLevelSet_withMassFlux : MassFluxAtLevelSet {
 
@@ -184,7 +187,7 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
     /// <summary>
-    /// 
+    /// Correction terms at level set for a non material interface, for the viscous terms.
     /// </summary>
     public class ViscosityAtLevelSet_FullySymmetric_withMassFlux : MassFluxAtLevelSet {
 
@@ -384,12 +387,14 @@ namespace BoSSS.Solution.XheatCommon {
                 double s = ComputeInterfaceNormalVelocity(ref cp);
                 Console.WriteLine("interface normal velocity = {0}", s);
                 double movingFlux;
-                if (s > 0) { // select DOWN-wind!
-                    movingFlux = (-s) * cp.Parameters_OUT[1 + m_d]; // uB[0];
+                if (M < 0) { // select DOWN-wind! (sign of M is equal to relative interface velocity (-s + u * n))
+                    Console.WriteLine($"Velocity OUT: {cp.Parameters_OUT[1 + m_d]}");
+                    movingFlux = (-s) * m_rhoB * cp.Parameters_OUT[1 + m_d]; // uB[0];
                 } else {
-                    movingFlux = (-s) * cp.Parameters_IN[1 + m_d]; // uA[0];
+                    Console.WriteLine($"Velocity IN: {cp.Parameters_IN[1 + m_d]}");
+                    movingFlux = (-s) * m_rhoA * cp.Parameters_IN[1 + m_d]; // uA[0];
                 }
-
+                Console.WriteLine($"{Ret}   |   {movingFlux}");
                 Ret -= movingFlux * Normal[m_d] * 0.5 * (vA + vB);
             }
 
@@ -422,8 +427,10 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    /// <summary>
+    /// Mass flux correction for the LLF flux in the convection terms for non material interface (only in case of splitting)
+    /// </summary>
     public class ConvectionAtLevelSet_nonMaterialLLF_withMassFlux : MassFluxAtLevelSet {
-
 
         public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(int _d, int _D, LevelSetTracker lsTrk, PhysicalParameters physicalParameters)
             : base(_D, lsTrk, physicalParameters) {
@@ -478,6 +485,9 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    /// <summary>
+    /// Mass flux correction for the LLF flux (central part) in the convection terms for non material interface (only in case of splitting)
+    /// </summary>
     public class ConvectionAtLevelSet_Consistency_withMassFlux : MassFluxAtLevelSet {
 
 
@@ -582,5 +592,59 @@ namespace BoSSS.Solution.XheatCommon {
 
 
     }
+
+    /// <summary>
+    /// Mass flux correction for the convection terms and moving mesh terms for non material interface
+    /// </summary>
+    public class ConvectionAtLevelSet_MovingMesh_withMassFlux : MassFluxAtLevelSet {
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="physicalParameters"></param>
+        /// <param name="_movingMesh"></param>
+        public ConvectionAtLevelSet_MovingMesh_withMassFlux(int _d, int _D, LevelSetTracker LsTrk, PhysicalParameters physicalParameters)
+            : base(_D, LsTrk, physicalParameters) {
+
+            this.m_d = _d;
+            if (m_d >= m_D)
+                throw new ArgumentOutOfRangeException();
+        }
+
+        int m_d;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double[] Normal = cp.Normal;
+
+            double M = MassFlux(cp);
+            if (M == 0.0)
+                return 0.0;
+
+            // moving-mesh-contribution
+            // ========================
+            double Ret = 0.0;
+            double movingFlux;
+
+            movingFlux = M * 0.5 * (cp.Parameters_OUT[1 + m_d] + cp.Parameters_IN[1 + m_d]);
+            Ret = movingFlux * Normal[m_d] * (vA - vB);
+            
+
+            return Ret;
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0Vector(m_D));
+            }
+        }
+    }   
 
 }

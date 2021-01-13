@@ -101,11 +101,17 @@ namespace BoSSS.Application.XNSE_Solver {
             // from XNSFE_OperatorComponents
             if (config.isTransport) {
                 if (!config.isMovingMesh) {
+                    // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
+                    // for the moving mesh discretization this condition is already contained in the convective terms
+                    // therefore we only need these terms when using splitting...
                     AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
                     AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
                     AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, physParams));
+                } else {
+                    AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, lsTrk, physParams));
                 }
             } else {
+                //  ... and when the convective terms are turned off we still need the contribution below
                 AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
             }
 
