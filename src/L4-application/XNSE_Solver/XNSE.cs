@@ -330,16 +330,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //Update Calls
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
-            //Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-
-            this.UpdateLevelset(this.CurrentState.Fields.ToArray(), phystime, dt, 1.0, false);
-
-
-            Console.WriteLine($"done with time step {TimestepNo}");
-
-            if(TimestepNo >= 1)
-                base.TerminationKey = true;
-            
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with time step {TimestepNo}");          
             return dt;
         }
 

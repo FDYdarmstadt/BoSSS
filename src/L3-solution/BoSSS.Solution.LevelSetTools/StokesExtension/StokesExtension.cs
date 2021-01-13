@@ -141,6 +141,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             Op.AgglomerationThreshold = 0.0;
             Op.TemporalOperator = null;
             Op.IsLinear = true;
+            Op.FreeMeanValue[Op.DomainVar.Last()] = !this.map.DirichletPressureBoundary;
             Op.Commit();
 
             return Op;
@@ -240,29 +241,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
-
-
-            var MomResX = new SinglePhaseField(ExtensionVelocity[0].Basis, "MomentumX");
-            var MomResY = new SinglePhaseField(ExtensionVelocity[1].Basis, "MomentumY");
-            var Conti = new SinglePhaseField(dummyPressure.Basis, "conti");
-
-
-            var ResMapping = new CoordinateVector(MomResX, MomResY, Conti);
-
-            ResMapping.Acc(1.0, RHS);
-            OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, ResMapping);
-
-
-            Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields.Cat(ResMapping.Fields), "FuckingExtension", 0.0, 2);
-
-
-
-
-            //ExtensionVelocity[0].Clear();
-            //ExtensionVelocity[1].Clear();
-            //ExtensionVelocity[1].AccConstant(1.0);
-
         }
-
     }
 }
