@@ -558,7 +558,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             } else {
 
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 12), 2);
+                PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 12), 2);
 
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
 
@@ -583,7 +583,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
 
-                //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
+                PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 
                 ContinuityEnforcer = new ContinuityProjection(
                     ContBasis: this.LevSet.Basis,
