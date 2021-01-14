@@ -127,8 +127,8 @@ namespace BoSSS.Solution.LevelSetTools {
         /// Makes <paramref name="DGLevelSet"/> a continuous function <paramref name="LevelSet"/>,
         /// according to the Option from the initialization
         /// </summary>
-        /// <param name="DGLevelSet"></param>
-        /// <param name="LevelSet"></param>
+        /// <param name="DGLevelSet">input; may be discontinuous on cell boundaries</param>
+        /// <param name="LevelSet">output; should be continuous</param>
         /// <param name="Domain"></param>
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
@@ -204,11 +204,13 @@ namespace BoSSS.Solution.LevelSetTools {
         public ContinuityProjectionCDG(Basis myBasis) {
             CDGField = new ConstrainedDGField(myBasis);
         }
+        //Basis m_myBasis;
         ConstrainedDGField CDGField;
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             if(Domain.NoOfItemsLocally.MPISum() > 0) {
-                CDGField.ProjectDGField(1.0, DGLevelSet, Domain);
+                //CDGField = new ConstrainedDGField(m_myBasis); 
+                CDGField.ProjectDGField(DGLevelSet, Domain);
                 LevelSet.Clear();
                 CDGField.AccToDGField(1.0, LevelSet);
             } else {

@@ -89,48 +89,19 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            C.Tags.Add("Testcase 1");
-            C.PhysicalParameters.rho_A = 100;
-            C.PhysicalParameters.rho_B = 1000;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 10;
-            C.PhysicalParameters.Sigma = 24.5;
-
-
-            //C.Tags.Add("Testcase 1 - higher parameters");
-            //C.PhysicalParameters.rho_A = 1000;
-            //C.PhysicalParameters.rho_B = 10000;
-            //C.PhysicalParameters.mu_A = 10;
-            //C.PhysicalParameters.mu_B = 100;
-            //C.PhysicalParameters.Sigma = 245;
-
-            //C.Tags.Add("Testcase 2");
-            //C.PhysicalParameters.rho_A = 1;
-            //C.PhysicalParameters.rho_B = 1000;
-            //C.PhysicalParameters.mu_A = 0.1;
-            //C.PhysicalParameters.mu_B = 10;
-            //C.PhysicalParameters.Sigma = 1.96;
-
-            // Re = 3.5 ; Bo(Eo) = 1
-            //C.PhysicalParameters.rho_A = 1;
+            //C.Tags.Add("Testcase 1");
+            //C.PhysicalParameters.rho_A = 100;
             //C.PhysicalParameters.rho_B = 1000;
             //C.PhysicalParameters.mu_A = 1;
-            //C.PhysicalParameters.mu_B = 100;
-            //C.PhysicalParameters.Sigma = 245;
-
-            //// Re = 35 ; Bo(Eo) = 100
-            //C.PhysicalParameters.rho_A = 1;
-            //C.PhysicalParameters.rho_B = 1000;
-            //C.PhysicalParameters.mu_A = 0.1;
             //C.PhysicalParameters.mu_B = 10;
-            //C.PhysicalParameters.Sigma = 2.45;
-
-            //// Re = 70 ; Bo(Eo) = 10
-            //C.PhysicalParameters.rho_A = 1;
-            //C.PhysicalParameters.rho_B = 1000;
-            //C.PhysicalParameters.mu_A = 0.05;
-            //C.PhysicalParameters.mu_B = 5;
             //C.PhysicalParameters.Sigma = 24.5;
+
+            C.Tags.Add("Testcase 2");
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1000;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 10;
+            C.PhysicalParameters.Sigma = 1.96;
 
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -155,13 +126,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
 
-
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                grd.EdgeTagNames.Add(3, "freeslip_left");
-                grd.EdgeTagNames.Add(4, "freeslip_right");
-
-                 grd.DefineEdgeTags(delegate (double[] X) {
+                grd.DefineEdgeTags(delegate (double[] X) {
                     string et = null;
                     if(Math.Abs(X[1]) <= 1.0e-8)
                         et = "wall_lower";
@@ -228,11 +193,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             Func<double, double> PeriodicFunc = x => radius;
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
-
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
+            
+            C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
 
 
             //Guid restartID = new Guid("322f07e1-2ac3-4ed4-af8b-1c46ab7e55a0");
@@ -519,38 +482,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             // DG degrees
             // ==========
-            #region degrees
-
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("GravityY", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                Degree = p + 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p + 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-
-
-            #endregion
+            C.SetDGdegree(p);
 
 
             // Physical Parameters

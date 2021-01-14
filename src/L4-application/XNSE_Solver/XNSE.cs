@@ -324,7 +324,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 AddPltFields(LsUpdater.InternalFields.Values);
             }
 
-            Tecplot.PlotFields(plotFields, "XNSE_Solver" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

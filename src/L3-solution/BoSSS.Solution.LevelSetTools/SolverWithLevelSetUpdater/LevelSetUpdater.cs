@@ -214,8 +214,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
+
                 //enforcer.SetFarField(phaseInterface.DGLevelSet, Near1, PosFF);
+                double normB4 = phaseInterface.DGLevelSet.L2Norm();
+                double CGnormB4 = phaseInterface.CGLevelSet.L2Norm();
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+                double normAf = phaseInterface.DGLevelSet.L2Norm();
+                double CGnormAf = phaseInterface.CGLevelSet.L2Norm();
+
             }
 
             public void UpdateParameters(

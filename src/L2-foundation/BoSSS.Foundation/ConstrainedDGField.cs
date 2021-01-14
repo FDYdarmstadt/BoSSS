@@ -101,14 +101,14 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
         /// </summary>
-        /// <param name="alpha"></param>
         /// <param name="DGField">
         /// input; unchanged on exit
         /// </param>
         /// <param name="mask"></param>
-        public void ProjectDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
+        public void ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
+            this.Coordinates.Clear();
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
@@ -913,12 +913,12 @@ namespace BoSSS.Foundation {
 
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="basis"></param>
-        /// <returns></returns>
-        //private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name="basis"></param>
+        ///// <returns></returns>
+        ////private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
 
         //    int deg = basis.Degree;
         //    int D = basis.GridDat.SpatialDimension;
@@ -1000,12 +1000,6 @@ namespace BoSSS.Foundation {
         //}
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="vertAtEdge"></param>
-        /// <param name="CondAtVert"></param>
-        /// <returns></returns>
         private int NegotiateNumVCond(int vert, MultidimensionalArray CondAtVert, List<int> procsAtVert = null) {
 
 
@@ -1064,13 +1058,6 @@ namespace BoSSS.Foundation {
             return 0;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="vertAtEdge"></param>
-        /// <param name="CondIncidenceMatrix"></param>
-        /// <returns></returns>
-        //private int NegotiateNumECond(List<int> VertAtEdge, MultidimensionalArray CondIncidenceMatrix) {
         private int NegotiateNumECond(int m, int n, MultidimensionalArray CondIncidenceMatrix, List<int> procsAtVertm = null, List<int> procsAtVertn = null) {
 
             //int numECond = 0;
