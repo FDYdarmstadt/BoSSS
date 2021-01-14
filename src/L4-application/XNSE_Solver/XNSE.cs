@@ -296,6 +296,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
 
+
             DGField[] plotFields = this.m_RegisteredFields.ToArray();
             void AddPltField(DGField f) {
                 bool add = true;
