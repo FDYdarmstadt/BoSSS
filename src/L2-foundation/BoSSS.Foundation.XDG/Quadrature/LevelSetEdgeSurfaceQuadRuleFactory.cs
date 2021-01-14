@@ -152,11 +152,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 minOrder += 1;
             }
 
+            int RefCell = 0;
+            if (LevelSetData.GridDat.Cells.Cells2Edges.Distinct().Count() > 1) {
+                RefCell = LevelSetData.GridDat.Cells.Cells2Edges.FirstIndexWhere(
+                    edges => edges.Count() == LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces);
+            }
+
             baseRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
                 LevelSetData.GridDat,
                 RefElement,
                 new FixedRuleFactory<QuadRule>(RefElement.FaceRefElement.GetQuadratureRule(minOrder))).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(RefCell), MaskType.Geometrical), -1).
                 First().Rule;
         }
 
