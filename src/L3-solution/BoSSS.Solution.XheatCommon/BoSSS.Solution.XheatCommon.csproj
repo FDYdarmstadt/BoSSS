@@ -67,6 +67,7 @@
     <Compile Include="ThermalParameters.cs" />
     <Compile Include="ViscosityAtLevelSet_withEvaporation.cs" />
     <Compile Include="XheatUtils.cs" />
+    <Compile Include="XHeat_AtLevelSet.cs" />
     <Compile Include="XHeat_OperatorComponents.cs" />
   </ItemGroup>
   <ItemGroup>

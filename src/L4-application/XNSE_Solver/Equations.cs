@@ -206,4 +206,83 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override string CodomainName => codomainName;
     }
+
+    public class HeatInterface_MassFlux : SurfaceEquation {
+
+
+        string codomainName;
+        string phaseA, phaseB;
+        public HeatInterface_MassFlux(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            IXHeat_Configuration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.HeatEquation;
+            AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+
+
+        //Methode aus der XNSF_OperatorFactory
+        void AddInterfaceHeatEq(
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            IXHeat_Configuration config) {
+
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A * thermParams.c_A;
+            double LFFA = dntParams.LFFA;
+            double kA = thermParams.k_A;
+
+            double capB = thermParams.rho_B * thermParams.c_B;
+            double LFFB = dntParams.LFFB;
+            double kB = thermParams.k_B;
+
+            double Tsat = thermParams.T_sat;
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+                if (config.isMovingMesh) {
+                    AddComponent(new HeatConvectionAtLevelSet_MovingMesh_withMassflux(dimension, LsTrk, Tsat, config.getPhysParams, thermParams));
+                } else {
+                    AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat, physParams));
+                }
+            }
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+
+                double penalty = dntParams.PenaltySafety;
+
+                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+
+        }
+    }
 }

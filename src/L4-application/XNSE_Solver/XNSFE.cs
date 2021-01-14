@@ -90,6 +90,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddParameter(MassFluxExt);
                 lsUpdater.AddLevelSetParameter(VariableNames.FluidInterface, MassFluxExt);
 
+                opFactory.AddEquation(new HeatInterface_MassFlux("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
+
                 for (int d = 0; d < D; ++d)
                     opFactory.AddEquation(new InterfaceNSE_MassFlux("A", "B", D, d, lsUpdater.Tracker, config));
 
