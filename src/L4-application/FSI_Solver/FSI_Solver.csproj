@@ -115,6 +115,7 @@
     <Compile Include="Particle\Motion\Motion.cs" />
     <Compile Include="Particle\Shapes\Particle_Shell.cs" />
     <Compile Include="Particle\Shapes\Particle_Rectangle.cs" />
+    <Compile Include="Particle\Shapes\ParticleDummy.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_Pentagone.cs" />

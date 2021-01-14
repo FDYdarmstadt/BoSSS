@@ -47,6 +47,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             jFound += map.GridDat.CellPartitioning.i0;
 
             int jFoundGlob = jFound.MPIMax();
+            jFoundGlob = 0; //TEST
             return jFoundGlob;
         }
 

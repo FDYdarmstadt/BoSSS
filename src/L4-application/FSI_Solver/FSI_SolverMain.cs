@@ -289,7 +289,6 @@ namespace BoSSS.Application.FSI_Solver {
             if (IBM_Op != null)
                 return;
 
-
             // boundary conditions
             boundaryCondMap = new IncompressibleBoundaryCondMap(GridData, Control.BoundaryValues, PhysicsMode.Incompressible);
 
@@ -544,6 +543,10 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
+                for (int i = 0; i < noOfLocalCells; i++) {
+                    if (CellColor[i] != 0)
+                        CellColor[i] = 1;
+                }
                 SetColorDGField(CellColor);
 
                 DGLevSet.Current.Clear();
@@ -581,9 +584,9 @@ namespace BoSSS.Application.FSI_Solver {
 
             try {
                 LsTrk.UpdateTracker(phystime, __NearRegionWith: 2);
-            } catch (LevelSetCFLException e) {//hacky workaround
+            } catch (LevelSetCFLException e) {// when ghost particles are added at the opposing side of the domain, the CFL exception is thrown. However, due to periodicity this is OK. 
                 if (AddedGhostParticle)
-                    Console.WriteLine("Ghost particle added" + e);
+                    Console.WriteLine("Ghost particle added! I catched the exception (which is completely OK) " + e);
                 //else
                      //throw e;
                 AddedGhostParticle = false;
@@ -770,14 +773,14 @@ namespace BoSSS.Application.FSI_Solver {
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
             if (Math.Abs(distance) < particleMaxLength) {
-                return true;
-                //if (d1 == 0)
-                //    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
-                //else
-                //    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
-                //ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
-                //periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
-                //return Overlapping;
+                //return true;
+                if (d1 == 0)
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
+                else
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
+                ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
+                periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
+                return Overlapping;
             }
             return false;
         }

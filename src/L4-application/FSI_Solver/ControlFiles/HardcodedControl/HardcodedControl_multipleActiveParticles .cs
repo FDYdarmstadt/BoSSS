@@ -282,12 +282,12 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 4) {
+        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 4) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "62bbb746-c171-4123-b08b-bd6ae36570c1";
+            //string ID = "c32cd573-1910-4e61-a94d-1c0dcdd3949a";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             //C.IsRestart = true;
             // Fluid Properties
@@ -301,7 +301,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 110;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 3;
+            double nextParticleDistance = particleLength * 2.1;
             double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
@@ -310,10 +310,11 @@ namespace BoSSS.Application.FSI_Solver {
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 1/10;
-            C.CoefficientOfRestitution = 1;
-            
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.minDistanceThreshold = 1 / 10;
+            C.CoefficientOfRestitution = 0.1;
+            InitializeMotion dummyMotion = new InitializeMotion(C.gravity, 1, false, true, true);
+            C.Particles.Add(new ParticleDummy(dummyMotion, 1 / cellsPerUnitLength, new double[] { -0,0 }));//, new double[] { -domainLength / 2 + 1 / cellsPerUnitLength, -domainLength / 2 + 1 / cellsPerUnitLength }));
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
@@ -340,9 +341,9 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-2, int.MaxValue, true);
+            C.SetTimesteps(1e-1, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = true;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
@@ -359,7 +360,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
             C.fullyCoupledSplittingMaxIterations = 100;
 
-           
             return C;
         }
 
