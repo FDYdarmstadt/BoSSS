@@ -62,9 +62,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Cells2avoid = null;
             }
 
-            long jFound = -1;
-
-            long jFound = -1;
+            int jFound = -1;
             for (int j = 0; j < J; j++) {
                 if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                     jFound = j;
@@ -72,7 +70,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            jFound += map.GridDat.CellPartitioning.i0;
+            jFound += (int)map.GridDat.CellPartitioning.i0;
 
             long jFoundGlob = jFound.MPIMin();
             Console.WriteLine("Cell " + jFoundGlob + " is ref cell!");

@@ -827,8 +827,9 @@ namespace BoSSS.Solution {
                 }
             }
             return LocalDOF;
+            */
         }
-        */
+        
         
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
