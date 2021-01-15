@@ -433,13 +433,12 @@ namespace BoSSS.Application.FSI_Solver {
             MassMatrixShapeandDependence MassMatrixShape;
             switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.Coupled_Iterative:
-                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                 MassMatrixShape = MassMatrixShapeandDependence.IsTimeAndSolutionDependent;
                 break;
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
-                case LevelSetHandling.None:
+                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
                 MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                 break;
                 default:
