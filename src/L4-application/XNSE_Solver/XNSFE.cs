@@ -106,47 +106,60 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override LevelSetUpdater InstantiateLevelSetUpdater() {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSetUpdater lsUpdater;
+
+            // Main Difference to base implementation:
             //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
             var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
-            switch (Control.Option_LevelSetEvolution) {
-                case LevelSetEvolution.Fourier:
-                if (Control.EnforceLevelSetConservation) {
-                    throw new NotSupportedException("mass conservation correction currently not supported");
+           
+            
+            switch(Control.Option_LevelSetEvolution) {
+                case LevelSetEvolution.Fourier: {
+                    if(Control.EnforceLevelSetConservation) {
+                        throw new NotSupportedException("mass conservation correction currently not supported");
+                    }
+                    FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
+                    break;
                 }
-                FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                break;
+                case LevelSetEvolution.FastMarching: {
+                    LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSet.GridDat.SpatialDimension);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
+                    break;
+                }
+                case LevelSetEvolution.StokesExtension: {
 
-                case LevelSetEvolution.FastMarching:
-                LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.LevelSetCG);
-                var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSet.GridDat.SpatialDimension);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                break;
-
-                case LevelSetEvolution.SplineLS:
-                int nodeCount = 30;
-                Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
-                var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                break;
-
-                case LevelSetEvolution.None:
-                LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
-                break;
-
+                    throw new NotImplementedException("todo");
+                }
+                case LevelSetEvolution.SplineLS: {
+                    int nodeCount = 30;
+                    Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
+                    SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
+                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
+                    break;
+                }
+                case LevelSetEvolution.None: {
+                    LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
+                    
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
+                    break;
+                }
                 default:
                 throw new NotImplementedException();
             }
+            
             return lsUpdater;
         }
     }

@@ -108,7 +108,7 @@ namespace BoSSS.Foundation {
         public void ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
-            this.Coordinates.Clear();
+            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);

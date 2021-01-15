@@ -141,10 +141,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
                 }
                 default:
-                    throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
+                throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
             }
 
-           
             return lsUpdater;
         }
 

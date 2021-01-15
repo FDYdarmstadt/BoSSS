@@ -1567,7 +1567,8 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
-                    foreach (var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
+                    var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
+                    foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
                         int VecLen = t_j0_Len.Item2;
 
