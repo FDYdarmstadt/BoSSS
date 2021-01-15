@@ -21,7 +21,7 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HC_2ParticleInteraction : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control Main(double angle = 180, double verticalDistance = 0, double distance = 1.125, double halfAxis = 0.5, double aspectRatio = 0.5) {
+        public static FSI_Control Main(double angle = 45, double verticalDistance = -5, double distance = 0, double halfAxis = 0.5, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
 
             C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\2PI", 1);

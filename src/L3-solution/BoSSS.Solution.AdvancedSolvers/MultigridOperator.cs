@@ -27,18 +27,46 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using BoSSS.Foundation.XDG;
+using System.Collections;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public partial class MultigridOperator {
 
+        internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+            LevelSetTracker lsTrk = null;
+
+            foreach (Basis b in map.BasisS) {
+                if (b != null && b is XDGBasis xb) {
+                    if (lsTrk == null) {
+                        lsTrk = xb.Tracker;
+                    } else {
+                        if (!object.ReferenceEquals(lsTrk, xb.Tracker))
+                            throw new ArgumentException("Tracker mismatch.");
+                    }
+                }
+            }
+            return lsTrk;
+        }
+
         static int FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-            int jFound = -1;
-            for(int j = 0; j < J; j++) {
-                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1) {
+            LevelSetTracker lsTrk = GetTracker(map, bases);
+            BitArray Cells2avoid;
+            if (lsTrk != null) {
+                Cells2avoid = lsTrk.Regions.GetNearFieldMask(1).GetBitMask();
+                Console.WriteLine("Cells2avoid NOT null");
+            } else {
+                Cells2avoid = null;
+                Console.WriteLine("Cells2avoid null");
+            }
+
+            long jFound = -1;
+            for (int j = 0; j < J; j++) {
+                if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                     jFound = j;
                     break;
                 }
@@ -46,8 +74,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             jFound += map.GridDat.CellPartitioning.i0;
 
-            int jFoundGlob = jFound.MPIMax();
-            jFoundGlob = 0; //TEST
+            int jFoundGlob = ((int)jFound).MPIMax();
+            Console.WriteLine("Cell " + jFoundGlob + " is ref cell!");
             return jFoundGlob;
         }
 
@@ -65,9 +93,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void DefineReferenceIndices() {
             UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
             AggregationGridBasis[] bases = this.Mapping.AggBasis;
-            
 
-            if(map.BasisS.Count != bases.Length)
+
+            if (map.BasisS.Count != bases.Length)
                 throw new ArgumentException();
             if(bases.Length != FreeMeanValue.Length)
                 throw new ArgumentException(); 
@@ -75,7 +103,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(FreeMeanValue.Any() == false) {
                 return;
             }
-
+            var asd = bases[0].DGBasis;
             int L = bases.Length;
             m_ReferenceCell = FindReferencePointCell(map, bases);
             bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
@@ -279,7 +307,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (!MassMatrix.ColPartition.Equals(_ProblemMapping))
                     throw new ArgumentException("Column partitioning mismatch.");
             }
-
+            
             DefineReferenceIndices();
 
             if (this.LevelIndex == 0) {

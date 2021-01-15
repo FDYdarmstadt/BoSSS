@@ -37,7 +37,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="P">Pressure field</param>
         /// <param name="LevelSetTracker">The level set tracker</param>
         /// <param name="FluidViscosity">FLuid viscosity</param>
-        public ParticleHydrodynamicsIntegration(int SpatialDim, VectorField<SinglePhaseField> U, SinglePhaseField P, LevelSetTracker LevelSetTracker, double FluidViscosity) {
+        public ParticleHydrodynamicsIntegration(int SpatialDim, VectorField<XDGField> U, XDGField P, LevelSetTracker LevelSetTracker, double FluidViscosity) {
             this.SpatialDim = SpatialDim;
             RequiredOrder = U[0].Basis.Degree * 3 + 2;
             this.U = U.ToArray();
@@ -52,9 +52,9 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         private readonly int RequiredOrder;
         [DataMember]
-        private readonly SinglePhaseField[] U;
+        private readonly XDGField[] U;
         [DataMember]
-        private readonly ConventionalDGField P;
+        private readonly XDGField P;
         [DataMember]
         private readonly LevelSetTracker LevelSetTracker;
         [DataMember]

@@ -64,7 +64,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Pressure
         /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        public SinglePhaseField Pressure;
+        public XDGField Pressure;
 
         /// <summary>
         /// velocity
@@ -73,7 +73,7 @@ namespace BoSSS.Application.IBM_Solver {
             null,
             true, true,
             IOListOption.ControlFileDetermined)]
-        public VectorField<SinglePhaseField> Velocity;
+        public VectorField<XDGField> Velocity;
 
         /// <summary>
         /// Level-Set tracker
@@ -106,7 +106,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Residual of the continuity equation
         /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        public SinglePhaseField ResidualContinuity;
+        public XDGField ResidualContinuity;
 
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace BoSSS.Application.IBM_Solver {
             new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
             true, true,
             IOListOption.ControlFileDetermined)]
-        public VectorField<SinglePhaseField> ResidualMomentum;
+        public VectorField<XDGField> ResidualMomentum;
 
 
 
@@ -570,16 +570,16 @@ namespace BoSSS.Application.IBM_Solver {
             // Create Parameters fields
             DGField[] Params;
             {
-                var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-                SinglePhaseField[] U0_U0mean;
+                VectorField<XDGField> U0 = new VectorField<XDGField>(CurrentState.Take(D).Select(F => (XDGField)F).ToArray());
+                XDGField[] U0_U0mean;
                 if (this.U0MeanRequired) {
                     Basis U0meanBasis = new Basis(GridData, 0);
-                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
-                    U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
+                    VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
+                    U0_U0mean = ArrayTools.Cat(U0, U0mean);
                 } else {
-                    U0_U0mean = new SinglePhaseField[2 * D];
+                    U0_U0mean = new XDGField[2 * D];
                 }
-                Params = ArrayTools.Cat<DGField>(U0_U0mean);
+                Params = ArrayTools.Cat(U0_U0mean);
             }
 
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
@@ -759,9 +759,9 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 */
 
-                Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
-                //oldtorque = torque;
-                torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
+                //Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
+                ////oldtorque = torque;
+                //torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
                 /*
                 if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {

@@ -36,11 +36,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Include translation?
-        /// </summary>
-        internal override bool IncludeTranslation { get; } = false;
-
-        /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>

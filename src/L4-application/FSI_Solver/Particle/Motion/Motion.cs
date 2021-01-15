@@ -104,13 +104,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// Include rotation?
         /// </summary>
         [DataMember]
-        internal virtual bool IncludeRotation { get; } = true;
+        internal bool IncludeRotation = true;
 
         /// <summary>
         /// Include translation?
         /// </summary>
         [DataMember]
-        internal virtual bool IncludeTranslation { get; } = true;
+        internal bool IncludeTranslation = true;
 
         /// <summary>
         /// Use added damping?, for reference: Banks et.al. 2017

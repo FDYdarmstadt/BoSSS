@@ -57,7 +57,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         static void Main(string[] args) {
             _Main(args, false, delegate () {
-                var p = new FSI_SolverMain();
+                FSI_SolverMain p = new FSI_SolverMain();
                 return p;
             });
         }
@@ -73,18 +73,32 @@ namespace BoSSS.Application.FSI_Solver {
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
             UpdateLevelSetParticles(phystime: 0.0);
-            MarkEachMPIProcess();
             CreatePhysicalDataLogger();
             base.SetInitial();
         }
 
+        /// <summary>
+        /// Spatial dimension
+        /// </summary>
+        /// <remarks>
+        /// Currently hardcoded for 2D, because collision and particle solver is only implemented for two dimensions.
+        /// </remarks>
         private readonly int spatialDim = 2;
 
+        /// <summary>
+        /// Iteration counter for iteration between the particle and fluid solver.
+        /// </summary>
         private int iterationCounter = 0;
 
+        /// <summary>
+        /// If a dynamic time-step is used, this is the time-step size of the previous one.
+        /// </summary>
         [DataMember]
         private double oldTimestep;
 
+        /// <summary>
+        /// If added damping is used, the respective tensors need to be set only in the first time-step.
+        /// </summary>
         [DataMember]
         private bool initAddedDamping = true;
 
@@ -99,7 +113,7 @@ namespace BoSSS.Application.FSI_Solver {
         public IList<Particle> Particles => ParticleList;
 
         /// <summary>
-        /// An object with some additional methods
+        /// An object with some additional methods, e.g. NaN and infinity exceptions, writing to console, MPI state check
         /// </summary>
         readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
 
@@ -119,12 +133,7 @@ namespace BoSSS.Application.FSI_Solver {
         private SinglePhaseField LevelSetDistance;
 
         /// <summary>
-        /// Field to make the process partition visible in exported visit files
-        /// </summary>
-        private SinglePhaseField MPIProcessMarker;
-
-        /// <summary>
-        /// Create the color and level set distance field. 
+        /// Create all fields. Additional fields for the FSI-Solver are the particle color field and the level-set distance field.
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
@@ -136,10 +145,6 @@ namespace BoSSS.Application.FSI_Solver {
             LevelSetDistance = new SinglePhaseField(new Basis(GridData, 0), "LevelSetDistance");
             m_RegisteredFields.Add(LevelSetDistance);
             m_IOFields.Add(LevelSetDistance);
-
-            MPIProcessMarker = new SinglePhaseField(new Basis(GridData, 0), "ProcessColor");
-            m_RegisteredFields.Add(MPIProcessMarker);
-            m_IOFields.Add(MPIProcessMarker);
         }
 
         /// <summary>
@@ -155,7 +160,6 @@ namespace BoSSS.Application.FSI_Solver {
                     case LevelSetHandling.LieSplitting:
                     case LevelSetHandling.StrangSplitting:
                     case LevelSetHandling.FSI_LieSplittingFullyCoupled:
-                    case LevelSetHandling.None:
                     return false;
 
                     default:
@@ -165,13 +169,18 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
+        /// BDF order.
+        /// </summary>
+        private int bdforder = 0;
+
+        /// <summary>
         /// Array of all local cells with their specific color.
         /// </summary>
         [DataMember]
         private int[] CellColor = null;
 
         /// <summary>
-        /// Array of all particles with their specific color (global).
+        /// MPI-global array of all particles with their specific color.
         /// </summary>
         [DataMember]
         private int[] GlobalParticleColor = null;
@@ -195,16 +204,10 @@ namespace BoSSS.Application.FSI_Solver {
         private double DtMax => ((FSI_Control)Control).dtMax;
 
         /// <summary>
-        /// The maximum time-step set in the control file.
+        /// The starting time-step set in the control file. Only used in case of a dynamic time-step.
         /// </summary>
         [DataMember]
         private double StartDt => ((FSI_Control)Control).dtMax / 10;
-
-        /// <summary>
-        /// The maximum time-step set in the control file.
-        /// </summary>
-        [DataMember]
-        private double RestartDt => ((FSI_Control)Control).dtMax / 1000;
 
         /// <summary>
         /// MaxGridLength
@@ -219,7 +222,7 @@ namespace BoSSS.Application.FSI_Solver {
         private double RefinementLevel => ((FSI_Control)Control).RefinementLevel;
 
         /// <summary>
-        /// FluidDensity
+        /// Calculates the minimal grid length.
         /// </summary>
         private double GetMinGridLength() {
             if (RefinementLevel == 0)
@@ -266,14 +269,18 @@ namespace BoSSS.Application.FSI_Solver {
         private bool[] IsPeriodic => ((FSI_Control)Control).BoundaryIsPeriodic;
 
         /// <summary>
-        /// Array with two entries (2D). [0] true: x-Periodic, [1] true: y-Periodic
+        /// Fix the position of all particles in the control file.
         /// </summary>
         [DataMember]
         private bool FixPosition => ((FSI_Control)Control).fixPosition;
 
         /// <summary>
-        /// The position of the (horizontal and vertical) walls.
+        /// The position of the (horizontal and vertical) boundaries.
         /// </summary>
+        /// <remarks>
+        /// First entry: vertical [0] or horizontal [1]
+        /// Second entry: left/lower wall [0] or right/upper wall [1]
+        /// </remarks>
         [DataMember]
         private double[][] BoundaryCoordinates => ((FSI_Control)Control).BoundaryPositionPerDimension;
 
@@ -323,6 +330,8 @@ namespace BoSSS.Application.FSI_Solver {
                 __DomainVar: DomNameSelected, __ParameterVar: Params, __CoDomainVar: CodNameSelected,
                 QuadOrderFunc: (A, B, C) => HMForder,
                 __Species: FluidSpecies.Select(id => LsTrk.GetSpeciesName(id)));
+
+            IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
 
             // Momentum equation
             // =============================
@@ -411,7 +420,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             CreateTimestepper();
         }
-        int bdforder = 0;
+
         /// <summary>
         /// Creates the BDF-Time-stepper
         /// </summary>
@@ -480,7 +489,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Calls level set update depending on level set handling method.
         /// </summary>
         public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-
+            double forces_PResidual = 0;
             switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
                 case LevelSetHandling.None:
                 ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
@@ -488,9 +497,14 @@ namespace BoSSS.Application.FSI_Solver {
                 LsTrk.UpdateTracker(phystime + dt);
                 break;
 
-                case LevelSetHandling.Coupled_Iterative:
-                UpdateLevelSetParticles(phystime);
-                throw new NotImplementedException("Moving interface solver will be implemented in the near future");
+                case LevelSetHandling.Coupled_Iterative: {
+                    UpdateLevelSetParticles(phystime);
+                    int iterationCounter = 0;
+                    ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
+                    forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)Control).fullyCoupledSplittingMaxIterations); ;
+                    Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
+                    throw new NotImplementedException("Moving interface solver will be implemented in the near future");
+                }
 
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
@@ -501,21 +515,6 @@ namespace BoSSS.Application.FSI_Solver {
 
                 default:
                 throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
-            }
-
-            /// <summary>
-            /// Computes the Residual of the forces and torque acting from to fluid to the particle. Only for coupled iterative level set handling.
-            /// </summary>
-            double forces_PResidual;
-            if (((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                int iterationCounter = 0;
-                ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
-                forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)Control).fullyCoupledSplittingMaxIterations); ;
-                Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
-            }
-            // no iterative solver, no residual
-            else {
-                forces_PResidual = 0;
             }
             return forces_PResidual;
         }
@@ -609,16 +608,6 @@ namespace BoSSS.Application.FSI_Solver {
             ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(levelSetFunction, phystime);
             DGLevSet.Current.Clear(currentCells);
             DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: currentCells));
-        }
-
-        /// <summary>
-        /// Marks each process to see the partitioning in exported sessions.
-        /// </summary>
-        private void MarkEachMPIProcess() {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int j = 0; j < J; j++) {
-                MPIProcessMarker.SetMeanValue(j, MPIRank);
-            }
         }
 
         private void SetColorDGField(int[] coloredCells) {
@@ -1211,13 +1200,12 @@ namespace BoSSS.Application.FSI_Solver {
                     double torque = Convert.ToDouble(currentLineFields[11]);
                     currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), t);
                     currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], t);
-                    currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, RestartDt);
+                    currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, StartDt);
                 }
             }
             CellColor = null;
             UpdateLevelSetParticles(time);
             CreatePhysicalDataLogger();
-            MarkEachMPIProcess();
             ((FSI_Control)Control).IsRestart = false;
         }
 

@@ -65,12 +65,15 @@ namespace BoSSS.Application.FSI_Solver {
             ActiveStress = activeStress;
             Aux = new FSI_Auxillary();
 
-            motionInit.CheckInput();
-            Motion = motionInit.ParticleMotion;
-            Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
-            Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
-            particleDensity = Motion.Density;
-            MotionInitializer = motionInit;
+            if(motionInit != null) {
+                motionInit.CheckInput();
+                Motion = motionInit.ParticleMotion;
+                Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
+                Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
+                particleDensity = Motion.Density;
+                MotionInitializer = motionInit;
+            }
+            
         }
 
         [DataMember]

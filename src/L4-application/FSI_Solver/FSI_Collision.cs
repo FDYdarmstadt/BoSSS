@@ -48,7 +48,7 @@ namespace FSI_Solver {
         /// Reduced version of the collision model, used to check for periodic boundaries.
         /// </summary>
         /// <param name="gridLenghtscale">
-        /// Characteristic lenght of the grid.
+        /// Characteristic length of the grid.
         /// </param>
         public ParticleCollision(double gridLenghtscale) {
             CoefficientOfRestitution = 0;
@@ -60,7 +60,7 @@ namespace FSI_Solver {
         /// Constructor for the collision model.
         /// </summary>
         /// <param name="gridLenghtscale">
-        /// Characteristic lenght of the grid.
+        /// Characteristic length of the grid.
         /// </param>
         /// <param name="coefficientOfRestitution">
         /// Static coefficient of restitution

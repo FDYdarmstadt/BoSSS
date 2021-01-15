@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 using MPI.Wrappers;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -282,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 4) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -301,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 110;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 2.1;
+            double nextParticleDistance = particleLength * 2;
             double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
@@ -310,11 +311,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.hydrodynamicsConvergenceCriterion = 1e-1;
             C.minDistanceThreshold = 1 / 10;
             C.CoefficientOfRestitution = 0.1;
-            InitializeMotion dummyMotion = new InitializeMotion(C.gravity, 1, false, true, true);
-            C.Particles.Add(new ParticleDummy(dummyMotion, 1 / cellsPerUnitLength, new double[] { -0,0 }));//, new double[] { -domainLength / 2 + 1 / cellsPerUnitLength, -domainLength / 2 + 1 / cellsPerUnitLength }));
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
