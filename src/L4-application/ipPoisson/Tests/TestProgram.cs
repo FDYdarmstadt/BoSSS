@@ -87,7 +87,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 //    });
 
                 double err = (double)p.QueryHandler.QueryResults["SolL2err"];
-                double thres = 2.0e-3;
+                double thres = 2.5e-3;
 
                 Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
                 Assert.LessOrEqual(err, thres);

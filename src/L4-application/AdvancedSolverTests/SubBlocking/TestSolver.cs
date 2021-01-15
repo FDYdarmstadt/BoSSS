@@ -201,21 +201,20 @@ namespace AdvancedSolverTests {
 
             switch (m_Mshape) {
                 case MatrixShape.laplace:
-                    var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
                     int p = u1.Basis.Degree;
                     int D=this.GridData.SpatialDimension;
                     double penalty_base = (p + 1) * (p + D) / D;
                     double MU_A = 1;
                     double MU_B = 10;
                     
-                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1",lengthScales));      // Bulk form
-                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));   // coupling form
-                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));      // Bulk form
-                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));   // coupling form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));      // Bulk form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1", lengthScales));   // coupling form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));      // Bulk form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2", lengthScales));   // coupling form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
@@ -365,7 +364,7 @@ namespace AdvancedSolverTests {
         private double[] GetRHS(double[] OpAffine, BlockMsrMatrix M) {
             List<int> Rows2Keep = new List<int>();
             for (int iRow=0; iRow < M.RowPartitioning.LocalLength; iRow++) {
-                int Row = iRow + M.RowPartitioning.i0;
+                long Row = iRow + M.RowPartitioning.i0;
                 Debug.Assert(M.RowPartitioning.IsInLocalRange(Row));
                 if (M.GetNoOfNonZerosPerRow(Row) != 0) {
                     Rows2Keep.Add(iRow);
@@ -398,6 +397,7 @@ namespace AdvancedSolverTests {
 
             XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
+            mtxBuilder.CellLengthScales.AddRange(Agg.CellLengthScales);
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 
@@ -423,10 +423,10 @@ namespace AdvancedSolverTests {
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[1]);
             //LsTrk.GetSpeciesName(((XdgAggregationBasis)MGOp.Mapping.AggBasis[0]).UsedSpecies[0]);
 
-            int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
 
-            int nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
             Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
 

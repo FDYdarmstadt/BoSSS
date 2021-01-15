@@ -502,9 +502,9 @@ namespace BoSSS.Foundation.Grid {
             }
             Mtx.SpMV(1.0, X0, 0.0, Y0);
 
-            int i0Row = RowMap.i0;
-            int i0Col = ColMap.i0;
-            int iECol = ColMap.iE;
+            long i0Row = RowMap.i0;
+            long i0Col = ColMap.i0;
+            long iECol = ColMap.iE;
             double err = 0;
             for (int iTest = 0; iTest < NoOfTests; iTest++) {
                 double[] X1 = new double[ColMap.LocalLength];

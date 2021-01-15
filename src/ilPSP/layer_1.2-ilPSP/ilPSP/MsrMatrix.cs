@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using ilPSP.Tracing;
@@ -489,7 +490,7 @@ namespace ilPSP.LinSolvers {
                         if (row[j].m_ColIndex < 0)
                             break;
 
-                        s += row[j].Value * a[row[j].m_ColIndex];
+                        s += row[j].Value * a[checked((int)(row[j].m_ColIndex))]; // only for mii_size == 1!!!
                     }
                     s *= alpha;
                 }
@@ -507,17 +508,17 @@ namespace ilPSP.LinSolvers {
         /// <see cref="AccSubMatrixTo{V1,V2,V3,V4}"/>.
         /// </summary>
         public MsrMatrix GetSubMatrix<V1, V3>(V1 RowIndicesSource, V3 ColumnIndiceSource)
-            where V1 : IList<int>
-            where V3 : IList<int> //
+            where V1 : IList<long>
+            where V3 : IList<long> //
         {
             MsrMatrix res = new MsrMatrix(RowIndicesSource.Count, ColumnIndiceSource.Count, 1, 1);
             this.AccSubMatrixTo(
                 1.0,
                 res,
                 RowIndicesSource,
-                default(int[]),
+                default(long[]),
                 ColumnIndiceSource,
-                default(int[]));
+                default(long[]));
             return res;
         }
 
@@ -529,10 +530,10 @@ namespace ilPSP.LinSolvers {
         public void WriteSubMatrixTo<V1, V2, V3, V4>(MsrMatrix target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColumnInidcesTarget)
-            where V1 : IList<int>
-            where V2 : IList<int>
-            where V3 : IList<int>
-            where V4 : IList<int> {
+            where V1 : IList<long>
+            where V2 : IList<long>
+            where V3 : IList<long>
+            where V4 : IList<long> {
 
             target.Clear();
             this.AccSubMatrixTo(
@@ -574,10 +575,10 @@ namespace ilPSP.LinSolvers {
             double alpha, MsrMatrix Target,
             V1 RowIndicesSource, V2 RowIndicesTarget,
             V3 ColumnIndicesSource, V4 ColIndicesTarget)
-            where V1 : IList<int>
-            where V2 : IList<int>
-            where V3 : IList<int>
-            where V4 : IList<int> {
+            where V1 : IList<long>
+            where V2 : IList<long>
+            where V3 : IList<long>
+            where V4 : IList<long> {
             using(new FuncTrace()) {
 
                 //if (RowIndicesTarget != null)
@@ -624,46 +625,52 @@ namespace ilPSP.LinSolvers {
                 }
 
 
-                int j0Src = this.m_ColPartitioning.i0;
-                int j0Dst = Target.m_ColPartitioning.i0;
+                long j0Src = this.m_ColPartitioning.i0;
+                long j0Dst = Target.m_ColPartitioning.i0;
                 int JlocSrc = this.m_ColPartitioning.LocalLength;
-                int jESrc = this.m_ColPartitioning.iE;
+                long jESrc = this.m_ColPartitioning.iE;
                 Debug.Assert(jESrc - j0Src == JlocSrc);
-                int[] ColTrf  = null;
+                long[] ColTrf  = null;
 
                 if(ColumnIndicesSource != null || ColIndicesTarget != null) {
-                    ColTrf = new int[this.m_ColPartitioning.TotalLength];
+                    ColTrf = new long[this.m_ColPartitioning.TotalLength];
 
-                    int[] LocColTrf = new int[this.m_ColPartitioning.LocalLength];
-                    LocColTrf.SetAll(int.MinValue);
+                    long[] LocColTrf = new long[this.m_ColPartitioning.LocalLength];
+                    LocColTrf.SetAll(long.MinValue);
 
                     for(int j = 0; j < Q; j++) {
-                        int jColSrc = ColumnIndicesSource != null ? ColumnIndicesSource[j] : (j + j0Src); // source row index
+                        long jColSrc = ColumnIndicesSource != null ? ColumnIndicesSource[j] : (j + j0Src); // source row index
                         this.m_ColPartitioning.TestIfInLocalRange(jColSrc);
-                        int jColDst = (ColIndicesTarget != null) ? ColIndicesTarget[j] : (j + j0Dst); // destination row index
+                        long jColDst = (ColIndicesTarget != null) ? ColIndicesTarget[j] : (j + j0Dst); // destination row index
 
                         LocColTrf[jColSrc - j0Src] = jColDst;
                     }
 
                     unsafe {
-                        int[] i0s = this.m_ColPartitioning.GetI0s();
+                        int[] i0s = this.m_ColPartitioning.GetI0s().Select(ll => checked((int)ll)).ToArray();
                         Debug.Assert(i0s.Length == this.m_ColPartitioning.MpiSize + 1);
                         Debug.Assert(i0s[0] == 0);
                         int[] LL = new int[i0s.Length - 1];
                         for(int i = 0; i < LL.Length; i++) {
-                            LL[i] = i0s[i+1] - i0s[i];
+                            LL[i] = checked((int)(i0s[i+1] - i0s[i]));
                         }
                         
-                        fixed(int* pColTrf = ColTrf, pLocColTrf = LocColTrf, pi0s = i0s, pLL = LL) {
-                            csMPI.Raw.Allgatherv((IntPtr)pLocColTrf, LocColTrf.Length,
-                                csMPI.Raw._DATATYPE.INT,
-                                (IntPtr)pColTrf, (IntPtr)pLL, (IntPtr)pi0s,
-                                csMPI.Raw._DATATYPE.INT,
-                                this.m_ColPartitioning.MPI_Comm);
+                        fixed(int* pi0s = i0s, pLL = LL) {
+                            //void Allgatherv(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, IntPtr recvcounts, IntPtr displs, MPI_Datatype recvtype, MPI_Comm comm);
+                            fixed(long* pColTrf = ColTrf, pLocColTrf = LocColTrf) {
+                                csMPI.Raw.Allgatherv(
+                                    (IntPtr)pLocColTrf, // sendbuf
+                                    LocColTrf.Length, // sendcount
+                                    csMPI.Raw._DATATYPE.LONG_LONG_INT, // sendtype
+                                    (IntPtr)pColTrf, // recvbuf
+                                    (IntPtr)pLL, (IntPtr)pi0s, // recvcounts, displs
+                                    csMPI.Raw._DATATYPE.LONG_LONG_INT,
+                                    this.m_ColPartitioning.MPI_Comm);
+                            }
                         }
 
 #if DEBUG
-                        for(int j = j0Src; j < jESrc; j++) {
+                        for(long j = j0Src; j < jESrc; j++) {
                             Debug.Assert(ColTrf[j] == LocColTrf[j - j0Src]);
                         }
 #endif
@@ -676,21 +683,21 @@ namespace ilPSP.LinSolvers {
 
 
 
-                int i0Src = this.m_RowPartitioning.i0;
-                int i0Dst = Target.m_RowPartitioning.i0;
+                long i0Src = this.m_RowPartitioning.i0;
+                long i0Dst = Target.m_RowPartitioning.i0;
 
                 //int JE = ColumnIndicesSource != null ? ColumnIndicesSource.Count : this.ColPartition.TotalLength;
 
                 for(int i = 0; i < L; i++) { // loop over rows ...
-                    int iRowSrc = RowIndicesSource != null ? RowIndicesSource[i] : (i + i0Src); // source row index
+                    long iRowSrc = RowIndicesSource != null ? RowIndicesSource[i] : (i + i0Src); // source row index
                     this.m_RowPartitioning.TestIfInLocalRange(iRowSrc);
-                    int irowLoc = iRowSrc - i0Src;
+                    int irowLoc = this.m_RowPartitioning.Global2Local(iRowSrc);
                     TrimAndSortRow(irowLoc);
 
                     //int jMin, jMax;
                     //GetRowRange(irowLoc, out jMin, out jMax);
 
-                    int iRowDst = (RowIndicesTarget != null) ? RowIndicesTarget[i] : (i + i0Dst); // destination row index
+                    long iRowDst = (RowIndicesTarget != null) ? RowIndicesTarget[i] : (i + i0Dst); // destination row index
                     
 
                     MsrMatrix.MatrixEntry[] Row = this.GetRowShallow(iRowSrc);
@@ -701,7 +708,7 @@ namespace ilPSP.LinSolvers {
                             Target[iRowDst, Entry.ColIndex] += alpha * Entry.Value;
                         } else {
 
-                            int iColDest = ColTrf[Entry.m_ColIndex];
+                            long iColDest = ColTrf[Entry.m_ColIndex];
                             if(iColDest >= 0)
                                 Target[iRowDst, iColDest] += alpha * Entry.Value;
                            
@@ -744,8 +751,8 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         [Serializable]
         struct TransposeHelper {
-            public int Row;
-            public int Col;
+            public long Row;
+            public long Col;
             public double Val;
         }
 
@@ -1143,7 +1150,7 @@ namespace ilPSP.LinSolvers {
 
                                     double val = pe->Value;
                                     
-                                    int iColLoc = pe->ColIndex - j0;
+                                    long iColLoc = pe->ColIndex - j0;
                                     if (iColLoc >= 0 && iColLoc < K) {
                                         // row of Right matrix stored on this proc.
                                         // ++++++++++++++++++++++++++++++++++++++++
@@ -1173,7 +1180,7 @@ namespace ilPSP.LinSolvers {
                                                     // this is the merge loop
                                                     //
 
-                                                    int p_ee_col = p_ee->m_ColIndex;
+                                                    long p_ee_col = p_ee->m_ColIndex;
 
                                                     while (pResltBuffer->m_ColIndex < p_ee_col && ResultItems > 0) {
                                                         // 
@@ -1401,30 +1408,27 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         [Serializable]
         struct MultiplyHelper {
-            public int i;
-            public int j;
+            public long i;
+            public long j;
             public double val;
         }
 
         /// <summary>
         /// total number of columns (over all MPI processors)
         /// </summary>
-        public int NoOfCols {
+        public long NoOfCols {
             get {
-                return (int)m_ColPartitioning.TotalLength;
-                //return m_Size; 
+                return m_ColPartitioning.TotalLength;
             }
         }
 
         /// <summary>
         /// total number of rows (over all MPI processors)
         /// </summary>
-        public int NoOfRows {
+        public long NoOfRows {
             get {
                 long no = m_RowPartitioning.TotalLength;
-                if (no > int.MaxValue)
-                    throw new ApplicationException("64/32 bit index overflow");
-                return (int)no;
+                return no;
             }
         }
 
@@ -1444,13 +1448,13 @@ namespace ilPSP.LinSolvers {
             /// Attention: Setting this value may put the  
             /// owning <see cref="MsrMatrix"/> into a undefined state.
             /// </summary>
-            public int m_ColIndex;
+            public long m_ColIndex;
 
             /// <summary>
             /// column index (global coordinates) of this entry; negative value
             /// indicates a not-assigned entry;
             /// </summary>
-            public int ColIndex {
+            public long ColIndex {
                 get {
                     return m_ColIndex;
                 }
@@ -1468,7 +1472,7 @@ namespace ilPSP.LinSolvers {
             /// <param name="b"></param>
             /// <returns></returns>
             static internal int Compare(MatrixEntry a, MatrixEntry b) {
-                return a.m_ColIndex - b.m_ColIndex;
+                return (int) Math.Max(Math.Min(a.m_ColIndex - b.m_ColIndex, int.MaxValue), int.MinValue);
             }
         }
 
@@ -1494,10 +1498,9 @@ namespace ilPSP.LinSolvers {
         /// So, modifying the matrix (by operations like <see cref="ClearRow"/>) will also affect the 
         /// returned array; If this behavior is not desired, the returned array must be cloned;
         /// </returns>
-        public MatrixEntry[] GetRowShallow(int i) {
+        public MatrixEntry[] GetRowShallow(long _i) {
 
-            //int idiagcol = i;
-            i -= (int)m_RowPartitioning.i0;
+            int i = m_RowPartitioning.Global2Local(_i);
 
             TrimAndSortRow(i);
             if (m_Entries[i] == null)
@@ -1510,16 +1513,16 @@ namespace ilPSP.LinSolvers {
         /// sets row number <paramref name="i"/>;
         /// All previous entries in this row are overwritten;
         /// </summary>
-        /// <param name="i"> row index in global indices</param>
+        /// <param name="_i"> row index in global indices</param>
         /// <param name="row">
         /// </param>
-        public void SetRow(int i, params MatrixEntry[] row) {
+        public void SetRow(long _i, params MatrixEntry[] row) {
             // check arguments
-            i -= (int)m_RowPartitioning.i0;
+            int i = m_RowPartitioning.TransformIndexToLocal(_i);
             if (i < 0 || i >= m_RowPartitioning.LocalLength)
                 throw new IndexOutOfRangeException("invalid row index");
 
-            int J = this.NoOfCols;
+            long J = this.NoOfCols;
             foreach (MatrixEntry e in row)
                 if (e.m_ColIndex < 0 || e.m_ColIndex >= J)
                     throw new IndexOutOfRangeException("invalid column index");
@@ -1533,7 +1536,7 @@ namespace ilPSP.LinSolvers {
         /// sets row number <paramref name="i"/>;
         /// All previous entries in this row are overwritten;
         /// </summary>
-        /// <param name="i"> row index in global indices</param>
+        /// <param name="_i"> row index in global indices</param>
         /// <param name="col">
         /// Column indices.
         /// </param>
@@ -1544,9 +1547,9 @@ namespace ilPSP.LinSolvers {
         /// Number of entries which are actually used in <paramref name="col"/> rep. <paramref name="val"/>.
         /// If negative, the length of <paramref name="col"/>.
         /// </param>
-        public void SetRow(int i, int[] col, double[] val, int L = -1) {
+        public void SetRow(long _i, long[] col, double[] val, int L = -1) {
             // check arguments
-            i -= (int)m_RowPartitioning.i0;
+            int i = m_RowPartitioning.Global2Local(_i);
             if (i < 0 || i >= m_RowPartitioning.LocalLength)
                 throw new IndexOutOfRangeException("invalid row index");
 
@@ -1561,7 +1564,7 @@ namespace ilPSP.LinSolvers {
             }
             var row = m_Entries[i];
 
-            int J = this.NoOfCols;
+            long J = this.NoOfCols;
             for (int l = 0; l < L; l++) {
                 if (col[l] < 0 || col[l] >= J)
                     throw new IndexOutOfRangeException("invalid column index");
@@ -1622,7 +1625,7 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="i">local row index</param>
+        /// <param name="_i">local row index</param>
         /// <param name="j">local column index</param>
         /// <param name="allocate">if true, a new entry is allocated if there is
         /// actually no entry set for the specified column;</param>
@@ -1630,8 +1633,8 @@ namespace ilPSP.LinSolvers {
         /// the 2nd index into the <see cref="m_Entries"/>-field;
         /// negative value if no entry exists at position <paramref name="i"/>,<paramref name="j"/>;
         /// </returns>
-        int GetNewEntries2ndIndex(int i, int j, bool allocate) {
-            i -= (int)m_RowPartitioning.i0;
+        int GetNewEntries2ndIndex(long _i, long j, bool allocate) {
+            int i = m_RowPartitioning.Global2Local(_i);
 
             if (i < 0 || i >= m_Entries.Length)
                 throw new IndexOutOfRangeException("row index out of range " + i);
@@ -1692,9 +1695,9 @@ namespace ilPSP.LinSolvers {
         /// global (over all MPI processes) column index
         /// </param>
         /// <returns></returns>
-        public double this[int i, int j] {
+        public double this[long i, long j] {
             get {
-                long iLoc = i - m_RowPartitioning.i0;
+                long iLoc = m_RowPartitioning.Global2Local(i);
                 //if(i == last_i && m_Entries[i][last_ind].m_ColIndex == j) {
                 //    return m_Entries[iLoc][last_ind].Value;
                 //}
@@ -1732,6 +1735,23 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+             if (Block.Dimension != 2)
+                throw new ArgumentException();
+            int I = Block.NoOfRows;
+            int J = Block.NoOfCols;
+
+            for(int i = 0; i < I; i++)
+                for(int j = 0; j < J; j++)
+                    Block[i, j] = this[i0 + i, j0 + j];
+        }
+
+        /// <summary>
         /// Accumulates <paramref name="Block"/>*<paramref name="alpha"/> to this matrix,
         /// at the row/column offset <paramref name="i0"/> resp. <paramref name="j0"/>.
         /// </summary>
@@ -1739,7 +1759,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
             this.AccBlock(i0, j0, alpha, Block, 1.0);
         }
 
@@ -1751,7 +1771,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         /// <param name="beta">Scaling applied to this matrix before accumulation</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();
             int I = Block.NoOfRows;
@@ -1767,7 +1787,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="i">global (over all MPI processes) row index</param>
         /// <param name="j">global (over all MPI processes) column index</param>
-        public void AllocateEvenWhenZero(int i, int j) {
+        public void AllocateEvenWhenZero(long i, long j) {
             GetNewEntries2ndIndex(i, j, true);
         }
 
@@ -1787,7 +1807,7 @@ namespace ilPSP.LinSolvers {
             int locRes = 1;
 
             int L = this.m_Entries.Length;
-            int i0 = (int)this.RowPartitioning.i0;
+            long i0 = this.RowPartitioning.i0;
             for (int i = 0; i < L; i++) {
                 MatrixEntry[] rowthis = this.GetRowShallow(i0 + i);
                 MatrixEntry[] rowother = this.GetRowShallow(i0 + i);
@@ -1832,7 +1852,7 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// see <see cref="IMutableMatrix.GetValues"/>;
         /// </summary>
-        public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+        public double[] GetValues(long RowIndex, long[] ColumnIndices) {
             double[] ret = new double[ColumnIndices.Length];
             for (int i = 0; i < ret.Length; i++) {
                 ret[i] = this[RowIndex, ColumnIndices[i]];
@@ -1845,14 +1865,14 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// see <see cref="IMutableMatrix.SetValues"/>;
         /// </summary>
-        public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+        public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
             if(newValues.Length != ColumnIndices.Length) {
                 throw new ArgumentException("Mismatch in array length; column index array and value array must have the same length.");
             }
             int L = ColumnIndices.Length;
             MatrixEntry[] newRow = new MatrixEntry[L];
             this.RowPartitioning.TestIfInLocalRange(RowIndex);
-            int NoCols = this.ColPartition.TotalLength;
+            long NoCols = this.ColPartition.TotalLength;
             for(int i = 0; i < L; i++) {
                 if(ColumnIndices[i] < 0 || ColumnIndices[i] >= NoCols)
                     throw new ArgumentOutOfRangeException("Column index out of range.");
@@ -1879,14 +1899,14 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// see <see cref="ISparseMatrix.GetDiagonalElement"/>;
         /// </summary>
-        public double GetDiagonalElement(int row) {
+        public double GetDiagonalElement(long row) {
             return this[row, row];
         }
 
         /// <summary>
         /// see <see cref="ISparseMatrix.SetDiagonalElement"/>;
         /// </summary>
-        public void SetDiagonalElement(int row, double val) {
+        public void SetDiagonalElement(long row, double val) {
             this[row, row] = val;
         }
 
@@ -1897,7 +1917,7 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// see <see cref="IMutableMatrixEx.GetOccupiedColumnIndices"/>
         /// </summary>
-        public int GetOccupiedColumnIndices(int RowIndex, ref int[] ColumnIndices) {
+        public int GetOccupiedColumnIndices(long RowIndex, ref long[] ColumnIndices) {
             TrimAndSortRow(m_RowPartitioning.TransformIndexToLocal(RowIndex));
 
             MatrixEntry[] row = m_Entries[m_RowPartitioning.TransformIndexToLocal(RowIndex)];
@@ -1908,7 +1928,7 @@ namespace ilPSP.LinSolvers {
             }
 
             if (ColumnIndices == null || ColumnIndices.Length < nnz)
-                ColumnIndices = new int[nnz];
+                ColumnIndices = new long[nnz];
 
             int i;
             for (i = 0; i < nnz; i++) {
@@ -1929,7 +1949,7 @@ namespace ilPSP.LinSolvers {
         /// see <see cref="IMutableMatrixEx.GetOccupiedColumnIndices"/>;
         /// in contrast to <see cref="GetRowShallow"/>, the returned array is a non-shallow copy of the row;
         /// </summary>
-        public int GetRow(int RowIndex, ref int[] ColumnIndices, ref double[] Values) {
+        public int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values) {
             //MatrixEntry[] row = GetRowShallow(RowIndex);
             //return (MatrixEntry[])row.Clone();
             TrimAndSortRow(m_RowPartitioning.TransformIndexToLocal(RowIndex));
@@ -1943,7 +1963,7 @@ namespace ilPSP.LinSolvers {
 
 
             if (ColumnIndices == null || ColumnIndices.Length < nnz)
-                ColumnIndices = new int[nnz];
+                ColumnIndices = new long[nnz];
             if (Values == null || Values.Length < nnz)
                 Values = new double[nnz];
 
@@ -1987,29 +2007,5 @@ namespace ilPSP.LinSolvers {
                 }
             }
         }
-
-        /*
-        /// <summary>
-        /// Sets Diagonal Element to 1 
-        /// if the whole line of the matrix only contains zeros
-        /// This is only valid if 
-        /// the corresponding vector <paramref name="rhs"/>
-        /// is zero in this line.
-        /// </summary>
-        /// <param name="rhs">
-        /// Vector used for checks
-        /// </param>
-        public void FillDiagonalWithOnes(IList<double> rhs = null) {
-            int i0 = this.RowPartitioning.i0;
-            int L = this.RowPartitioning.LocalLength;
-            for (int l = 0; l < L; l++) {
-                if (this.GetNoOfNonZeros(l + i0) == 0) {
-                    if (rhs!=null && rhs[l] != 0.0)
-                        throw new ArithmeticException("No solution for given RHS.");
-                    this.SetDiagonalElement(l + i0, 1.0);
-                }
-            }
-        }
-        */
     }
 }

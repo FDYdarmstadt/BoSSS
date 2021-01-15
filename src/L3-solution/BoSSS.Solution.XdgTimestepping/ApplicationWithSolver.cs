@@ -3,6 +3,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -104,11 +105,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// intended for the initialization of additional DG fields, which are not 
-        /// either solution, residuals of parameters.
+        /// intended for the initialization of additional DG fields, which are not either solution or residuals;
+        /// An example would be e.g. parameters such as Gravity which are set through the control file.
         /// </summary>
         protected virtual void CreateAdditionalFields() {
-
+            
         }
 
 
@@ -118,14 +119,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected abstract IEnumerable<DGField> InstantiateSolutionFields();
 
-        /*
-        /// <summary>
-        /// (Optional) Override to instantiate parameters required by the operator
-        /// </summary>
-        protected virtual IEnumerable<DGField> InstantiateParameterFields() {
-            return new DGField[0];
-        }
-        */
+        
 
         /// <summary>
         /// Override to instantiate fields to store the solver residuals
@@ -193,6 +187,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
+        /// <summary>
+        /// call the solver
+        /// </summary>
         public void Solve(double phystime, double dt) {
             this.Timestepping.Solve(phystime, dt);
         }
@@ -212,8 +209,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // restore BDF time-stepper after grid redistribution (dynamic load balancing)
+                // restore time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                // currently, only supported for the BDF timestepper.
+                
                 Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
             }
         }
@@ -239,7 +239,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
+                // the last configuration entry will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[Degrees.Length];
@@ -272,8 +272,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
         }
 
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt);
+            return dt;
+        }
 
-        
+
         //protected override void SetInitial() {
         //    base.SetInitial();
         //}
@@ -286,12 +292,25 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() //
     {
 
-        ///// <summary>
-        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        ///// </summary>
-        //abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-        //    get;
-        //}
+        /// <summary>
+        /// Instantiation of fields according to the domain variable names in the spatial operator.
+        /// </summary>
+        protected override IEnumerable<DGField> InstantiateSolutionFields() {
+            var DomNames = this.Operator.DomainVar;
+            var ret = new DGField[DomNames.Count];
+            for(int i = 0; i < DomNames.Count; i++) {
+                string Name = DomNames[i];
+
+                var fopts = this.Control.FieldOptions.Where(kv => kv.Key.WildcardMatch(Name)).SingleOrDefault().Value;
+                if(fopts.Degree < 0) {
+                    throw new ApplicationException($"Missing specification of DG degree for field {Name} in control object.");
+                }
+
+                var xb = new XDGBasis(this.LsTrk, fopts.Degree);
+                ret[i] = new XDGField(xb, Name);
+            }
+            return ret;
+        }
 
         /// <summary>
         /// Callback-template for level-set updates.
@@ -370,6 +389,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_XOperator.IsCommited)
+                        throw new ApplicationException("Operator must be comitted by user.");
                 }
                 return m_XOperator;
             }
@@ -398,7 +419,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.AgglomerationThreshold,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                this.LsTrk);
 
             base.Timestepping = solver;
 
@@ -421,6 +443,27 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     abstract public class DgApplicationWithSolver<T> : ApplicationWithSolver<T>
          where T : AppControlSolver, new() {
+
+
+        /// <summary>
+        /// Instantiation of fields according to the domain variable names in the spatial operator.
+        /// </summary>
+        protected override IEnumerable<DGField> InstantiateSolutionFields() {
+            var DomNames = this.Operator.DomainVar;
+            var ret = new DGField[DomNames.Count];
+            for(int i = 0; i < DomNames.Count; i++) {
+                string Name = DomNames[i];
+
+                var fopts = this.Control.FieldOptions.Where(kv => kv.Key.WildcardMatch(Name)).SingleOrDefault().Value;
+                if(fopts.Degree < 0) {
+                    throw new ApplicationException($"Missing specification of DG degree for field {Name} in control object.");
+                }
+
+                var b = new Basis(this.GridData, fopts.Degree);
+                ret[i] = new SinglePhaseField(b, Name);
+            }
+            return ret;
+        }
 
 
         /// <summary>
@@ -468,6 +511,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_SOperator.IsCommited)
+                        throw new ApplicationException("Operator must be comitted by user.");
+
                 }
                 return m_SOperator;
             }

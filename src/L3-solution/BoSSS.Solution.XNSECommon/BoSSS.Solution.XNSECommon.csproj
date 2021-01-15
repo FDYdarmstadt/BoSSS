@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Solution.XNSECommon</RootNamespace>
     <AssemblyName>BoSSS.Solution.XNSECommon</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -35,7 +35,7 @@
     <DocumentationFile>bin\Release\BoSSS.Solution.XNSECommon.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=3.4.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+    <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
@@ -53,6 +53,9 @@
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
+    <Compile Include="MassFluxAtLevelSet.cs" />
+    <Compile Include="Parameters.cs" />
+    <Compile Include="ParameterSource.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />
     <Compile Include="ConvectionInSpeciesBulk_LLF.cs" />
     <Compile Include="PressureStabilizationAtLevelSet.cs" />
@@ -60,6 +63,7 @@
     <Compile Include="StressDivergenceInBulk.cs" />
     <Compile Include="StressDivergence_Cockburn.cs" />
     <Compile Include="StressDivergenceAtLevelSet.cs" />
+    <Compile Include="Equations.cs" />
     <Compile Include="XNSE_OperatorComponents.cs" />
     <Compile Include="PressureInSpeciesBulk.cs" />
     <Compile Include="SpeciesDivergence.cs" />
@@ -131,6 +135,10 @@
     <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>
       <Name>BoSSS.Solution.NSECommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
+      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
+      <Name>BoSSS.Solution.XdgTimestepping</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -570,12 +570,12 @@ NUnit.Framework.Assert.LessOrEqual(symDev\_Strng, 1.0e-8);
 /// which can then be used to extract sub-matrices from 
 /// \code{MtxPoisson\_Equal}, \code{MtxPoisson\_Mixed}, resp. 
 /// \code{MtxPoisson\_Strng}.
-int[] SigmaIdx\_Equal = EqualOrder.GetSubvectorIndices(true, 0,1); \newline 
-int[] uIdx\_Equal     = EqualOrder.GetSubvectorIndices(true, 2); \newline 
-int[] SigmaIdx\_Mixed = MixedOrder.GetSubvectorIndices(true, 0,1); \newline 
-int[] uIdx\_Mixed     = MixedOrder.GetSubvectorIndices(true, 2); \newline 
-int[] SigmaIdx\_Strng = StrngOrder.GetSubvectorIndices(true, 0,1); \newline 
-int[] uIdx\_Strng     = StrngOrder.GetSubvectorIndices(true, 2);
+long[] SigmaIdx\_Equal = EqualOrder.GetSubvectorIndices(true, 0,1); \newline 
+long[] uIdx\_Equal     = EqualOrder.GetSubvectorIndices(true, 2); \newline 
+long[] SigmaIdx\_Mixed = MixedOrder.GetSubvectorIndices(true, 0,1); \newline 
+long[] uIdx\_Mixed     = MixedOrder.GetSubvectorIndices(true, 2); \newline 
+long[] SigmaIdx\_Strng = StrngOrder.GetSubvectorIndices(true, 0,1); \newline 
+long[] uIdx\_Strng     = StrngOrder.GetSubvectorIndices(true, 2);
  }
 \BoSSSexe
 \BoSSScmd{

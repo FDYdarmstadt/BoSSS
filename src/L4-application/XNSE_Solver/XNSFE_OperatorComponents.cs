@@ -67,20 +67,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             if (config.isTransport) {
-                //comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
-                //comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                if (!config.isMovingMesh) {
+                    comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
+                    comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
+                    comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                } 
+            } else {
+                comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
             }
 
-            if (config.isMovingMesh) {
-                //comps.Add(new ConvectionAtLevelSet_MovingMesh(d, D, LsTrk, thermParams, sigma));
-            }
 
             if (config.isViscous) {
                 comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
-
-            comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma));
-
 
         }
 

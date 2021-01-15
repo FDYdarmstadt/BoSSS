@@ -556,6 +556,7 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
+                _inParams.GridDat = this.GridDat;
 
                 Debug.Assert(i0 == _inParams.e0);
                 Debug.Assert(Len == _inParams.Len);
@@ -661,6 +662,9 @@ namespace BoSSS.Foundation.XDG {
                 else
                     N = 0;
 
+                if(N <= 0)
+                    continue; // nothing to do for codomain/row variable 'gamma'
+
                 base.CustomTimers[2].Start();
 
                 // loop over domain variables/basis variables ...
@@ -676,13 +680,16 @@ namespace BoSSS.Foundation.XDG {
                     else
                         M = 0;
 
-                    Debug.Assert(NnonxDom[delta] == M);
                     Debug.Assert(NnonxCod[gamma] == N);
 
                     // Das Schleifenmonster: ---------------------------------------------
                     for (int cr = 0; cr < 2; cr++) {  // loop over neg/pos species, row...
                         for (int cc = 0; cc < 2; cc++) {  // loop over neg/pos species, column...
 
+                            if(M <= 0)
+                                continue; // nothing to do for domain/column variable 'delta'
+                            Debug.Assert(NnonxDom[delta] == M);
+                                                        
                             int[] extr0 = new int[] { 0, 0, 
                                 cr * N + offsetCod[gamma], // row
                                 cc * M + 1 + offsetDom[delta] }; // col
@@ -993,7 +1000,7 @@ namespace BoSSS.Foundation.XDG {
                     for(int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
                         SpeciesId rowSpc = spcS[cr];
                         int Row0 = m_RowMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
-                        int Row0_g = m_RowMap.i0 + Row0;
+                        long Row0_g = m_RowMap.i0 + Row0;
 
                         //_i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
                         _i0aff[1] = offsetRow[gamma] + RowNonxN[gamma] * cr;
@@ -1008,7 +1015,7 @@ namespace BoSSS.Foundation.XDG {
                                 for(int cc = 0; cc < 2; cc++) {
                                     SpeciesId colSpc = spcS[cc];
                                     int Col0 = m_ColMap.LocalUniqueCoordinateIndex(m_lsTrk, delta, jCell, colSpc, 0);
-                                    int Col0_g = m_ColMap.i0 + Col0;
+                                    long Col0_g = m_ColMap.i0 + Col0;
 
                                     //_i0[2] = offsetCol[delta] + ColXbSw[delta] * ColNonxN[delta] * cc + 1;
                                     _i0[2] = offsetCol[delta] + ColNonxN[delta] * cc + 1;

@@ -151,6 +151,7 @@ namespace BoSSS.Foundation.IO
                     {
                         vectorGuids[i] = dynamicDriver.SaveVector(vectorData[i], vectorType);
                     }
+
                 }
             }
             grid.SetVectorGuids(vectorGuids);

@@ -166,13 +166,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
             int D = this.GridData.SpatialDimension;
 
+            //int pPhiDG;
+            //if (this.Control.FieldOptions.TryGetValue(VariableNames.LevelSetDG, out FieldOpts phiDG)) {
+            //    pPhiDG = phiDG.Degree;
+            //} else if (this.Control.FieldOptions.TryGetValue("Phi", out FieldOpts phi)) {
+            //    pPhiDG = phi.Degree;
+            //} else {
+            //    throw new Exception("Degree for LevelSetDG not found");
+            //}
+
             this.DGLevSet = new ScalarFieldHistory<SinglePhaseField>(
-                      new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions["Phi"].Degree), "PhiDG"));
+                new SinglePhaseField(new Basis(this.GridData, this.Control.FieldOptions[VariableNames.LevelSetCG].Degree), VariableNames.LevelSetDG));
 
             if (this.Control.FieldOptions["PhiDG"].Degree >= 0 && this.Control.FieldOptions["PhiDG"].Degree != this.DGLevSet.Current.Basis.Degree) {
                 throw new ApplicationException("Specification of polynomial degree for 'PhiDG' is not supported, since it is induced by polynomial degree of 'Phi'.");
             }
-            
+
             // ===================================================================
             // Initialize ContinuityProjection (if needed, if not , Option: None)
             // ===================================================================
@@ -212,7 +221,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Information of the current Fourier Level-Set
         /// DFT_coeff
         /// </summary>
-        FourierLevSetBase Fourier_LevSet;
+        internal FourierLevSetBase Fourier_LevSet {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// specialized timestepper (Runge-Kutta-based) for the evoultion of the Fourier-LS
@@ -431,7 +443,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
             }
-
         }
 
         /// <summary>
@@ -477,6 +488,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // true, if the separate evolution steps should be plotted
                 bool plotUpdateSteps = false;
+                //Console.WriteLine("Warning! - plot update levelset steps");
 
 
                 int D = base.Grid.SpatialDimension;
@@ -516,7 +528,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
-
+                 
                 if (plotUpdateSteps)
                     Tecplot.PlotFields(new DGField[] { meanVelocity[0], meanVelocity[1], this.DGLevSet.Current }, "meanVelocity" + hack_TimestepIndex, hack_Phystime, 2);
 
@@ -601,12 +613,13 @@ namespace BoSSS.Application.XNSE_Solver {
                             bool _reInit = NarrowMarchingBand.Evolve_Mk2(
                              dt, this.LsTrk, DGLevSet_old, this.DGLevSet.Current, this.DGLevSetGradient,
                              meanVelocity, this.ExtensionVelocity.Current.ToArray(),
-                             this.m_HMForder, iTimestep, penalization: this.Control.FastMarchingPenaltyTerms);
+                             this.m_HMForder, iTimestep, plotMarchingSteps: false,
+                             penalization: this.Control.FastMarchingPenaltyTerms);
 
-                            if (_reInit) {
-                                Console.WriteLine("Performing ReInit");
-                                performReInit(true);
-                            }
+                            //if (_reInit) {
+                            //Console.WriteLine("Performing ReInit");
+                            //performReInit(false);
+                            //}
 
                             break;
                         }
@@ -759,6 +772,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region ensure continuity
 
+                //Console.WriteLine("MPI rank {0}: ensure continuity", this.GridData.MpiRank);
+
                 // make level set continuous
                 CellMask CC = LsTrk.Regions.GetCutCellMask4LevSet(0);
                 CellMask Near1 = LsTrk.Regions.GetNearMask4LevSet(0, 1);
@@ -767,7 +782,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #endregion
 
+                if (plotUpdateSteps)
+                    PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
+
                 #region update regions
+
+                //Console.WriteLine("MPI rank {0}: update regions", this.GridData.MpiRank);
 
                 for (int d = 0; d < D; d++)
                     this.XDGvelocity.Velocity[d].UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
@@ -784,12 +804,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 #region tracker update
 
+                //Console.WriteLine("MPI rank {0}: update tracker", this.GridData.MpiRank);
+
                 this.LsTrk.UpdateTracker(Phystime + dt, incremental: true);
 
                 #endregion
-
-                if (plotUpdateSteps)
-                    PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 3 }), 2);
 
 
                 // ===========================================================
@@ -835,6 +854,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 LsBkUp.Acc(-1.0, this.LevSet);
                 double LevSetResidual = LsBkUp.L2Norm(newCC.Union(oldCC));
 
+                //Console.WriteLine("MPI rank {0}: return DelUpdateLevelSet", this.GridData.MpiRank);
+
                 return LevSetResidual;
 
             }
@@ -846,7 +867,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         /// <param name="EvoVelocity"></param>
         /// <returns></returns>
-        private ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
+        internal ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
             int D = EvoVelocity.Length;
             ConventionalDGField[] meanVelocity;
 
@@ -927,7 +948,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         /// <param name="meanVelocity"></param>
         /// <returns></returns>
-        private ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] meanVelocity) {
+        internal ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] meanVelocity) {
 
             ComputeMassFluxField();
             if (this.hack_TimestepIndex > 1)
@@ -1035,10 +1056,8 @@ namespace BoSSS.Application.XNSE_Solver {
                                }
                                        //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
                                        double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
-                               double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) : qEvap / this.Control.ThermalParameters.hVap; // mass flux
+                                       double mEvap = (this.XOpConfig.prescribedMassflux != null) ? this.XOpConfig.prescribedMassflux(globX, hack_Phystime) : qEvap / this.Control.ThermalParameters.hVap; // mass flux
                                                                                                                                                                                                    //double mEvap = qEvap / this.Control.ThermalParameters.hVap;
-                                                                                                                                                                                                   //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
-                                                                                                                                                                                                   //Console.WriteLine("prescribedMassFlux = {0}", this.XOpConfig.prescribedMassflux(globX, hack_Phystime));
 
                                        double sNeg = VelA[j, k, d] + mEvap * (1 / rhoA) * Normals[j, k, d];
                                        //Console.WriteLine("sNeg = {0}", sNeg);
@@ -1054,30 +1073,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // check interface velocity (used for logging)
-            int p = evapVelocity[0].Basis.Degree;
-            SubGrid sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
-            NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(p * 2).Nodes).ToArray();
-
-            var cp = new ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
-            MultidimensionalArray[] VelocityEval = evapVelocity.Select(sf => cp.EvaluateAtCp(sf)).ToArray();
-            double nNodes = VelocityEval[0].Length;
-
-            if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationL) {
-                double evapVelY = VelocityEval[1].Sum() / nNodes;
-                EvapVelocMean = evapVelY;
-            }
-
-            if (this.Control.LogValues == XNSE_Control.LoggingValues.EvaporationC) {
-                EvapVelocMean = 0.0;
-                for (int s = 0; s < sgrd.GlobalNoOfCells; s++) {
-                    for (int n = 0; n < Nodes.Length; n++) {
-                        double velX = VelocityEval[0].To2DArray()[s, n];
-                        double velY = VelocityEval[1].To2DArray()[s, n];
-                        EvapVelocMean += Math.Sqrt(velX.Pow2() + velY.Pow2());
-                    }
-                }
-                EvapVelocMean /= nNodes;
-            }
+            
 
             //Console.WriteLine("meanEvapVelocity = {0}", EvapVelocMean);
 
@@ -1088,6 +1084,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+       
 
         /// <summary>
         /// perform ReInit ... 
@@ -1103,10 +1100,10 @@ namespace BoSSS.Application.XNSE_Solver {
             } else {
                 Console.WriteLine("customized fullReInit");
 
-                // first elliptic Reint on cut-cells
-                this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
-                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
-                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
+                //// first elliptic Reint on cut-cells
+                //this.Control.ReInitControl.Potential = ReInitPotential.BastingSingleWell;
+                //ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
+                //ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetCutCellSubGrid());
 
                 if (plotUpdateSteps)
                     PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 10 }), 2);
@@ -1155,11 +1152,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (plotUpdateSteps)
                     PlotCurrentState(hack_Phystime, new TimestepNumber(new int[] { hack_TimestepIndex, 11 }), 2);
 
-                // elliptic Reinit on whole narrow band
-                this.Control.ReInitControl.Potential = ReInitPotential.BastingDoubleWell;
-                //this.Control.ReInitControl.Upwinding = true;
-                ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
-                ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetNearFieldSubgrid(1));
+                //// elliptic Reinit on whole narrow band
+                //this.Control.ReInitControl.Potential = ReInitPotential.BastingDoubleWell;
+                ////this.Control.ReInitControl.Upwinding = true;
+                //ReInitPDE = new EllipticReInit(this.LsTrk, Control.ReInitControl, this.DGLevSet.Current);
+                //ReInitPDE.ReInitialize(Restriction: this.LsTrk.Regions.GetNearFieldSubgrid(1));
 
             }
 

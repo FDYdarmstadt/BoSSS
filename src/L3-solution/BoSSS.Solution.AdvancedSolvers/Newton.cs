@@ -83,12 +83,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public enum ApproxInvJacobianOptions {
 
             /// <summary>
-            /// Using a matrix-free GMRES implementation, optionally employing <see cref="Newton.linsolver"/> (typically not matrix-free) as a preconditioner.
+            /// Using a matrix-free GMRES implementation, <see cref="Newton.MatrixFreeGMRES"/>
             /// </summary>
             MatrixFreeGMRES = 1,
 
             /// <summary>
-            /// Using the solver <see cref="Newton.linsolver"/> for computing Newton corrections
+            /// Using the solver <see cref="NonlinearSolver.Precond"/> for computing Newton corrections
             /// </summary>
             ExternalSolver = 2
         }
@@ -189,8 +189,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 normHistory.Add(norm_CurRes);
 
 
-
-
                 // Main Loop
                 // =========
 
@@ -232,14 +230,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // take the (minimum) skyline to be immune against residual oscillations...
                 double[] NormHistorySkyline = new double[normHistory.Count];
                 NormHistorySkyline[0] = normHistory[0];
-                for(int i = 1; i < N; i++) {
+                for(int i = 1; i < normHistory.Count; i++) {
                     NormHistorySkyline[i] = Math.Min(NormHistorySkyline[i - 1], normHistory[i]);
                 }
 
 
                 double Avg = 0;
                 double Count = 0;
-                for(int i = i0; i < normHistory.Count -1; i++) { // look at the last 'N' residual norms...
+                for(int i = i0; i < normHistory.Count - 1; i++) { // look at the last 'N' residual norms...
                     double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i+1], double.Epsilon);
                     if(ResNormReductionFactor < 1)
                         ResNormReductionFactor = 1; // should never happen anyway due to skylining...
@@ -248,22 +246,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 return Avg / Count;
             }
-
-            /*
-            bool OscillatingResidual() {
-                const int SeqLen = 4;
-
-
-                int nextExpect = 0;
-                for(int i = normHistory.Count - 1; i >= SeqLen; i--) {
-                    double RedFactor1 = normHistory[i-1] / Math.Max(normHistory[i], double.Epsilon);
-                    if(RedFactor1 > 0) {
-                        nextExpect = 
-                    }
-                }
-            }
-            */
-
+          
             if(itc >= MinIter) {
                 // only terminate if we reached the minimum number of iterations
 
@@ -467,7 +450,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                         if(GoodForHomoIncrease || BadHomo) {
-
+                            // +++++++++++++++++++++++++
+                            // Update the homotopy value
+                            // +++++++++++++++++++++++++
 
                             Debug.Assert(AcceptedHomoSolutions.Count > 0);
 
@@ -1087,7 +1072,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double[] r = new double[n];
 
                     int Nloc = owner.CurrentLin.OperatorMatrix.RowPartitioning.LocalLength;
-                    int Ntot = owner.CurrentLin.OperatorMatrix.RowPartitioning.TotalLength;
+                    long Ntot = owner.CurrentLin.OperatorMatrix.RowPartitioning.TotalLength;
 
                     r = b;
 

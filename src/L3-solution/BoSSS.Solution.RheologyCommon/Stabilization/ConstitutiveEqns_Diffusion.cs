@@ -21,8 +21,7 @@ using System.Collections.Generic;
 namespace BoSSS.Solution.RheologyCommon {
     public class ConstitutiveEqns_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public ConstitutiveEqns_Diffusion(int order, int dimension, MultidimensionalArray cj, string variable) :
-        base((order + 1) * (order + dimension) / dimension, cj, variable) {
+        public ConstitutiveEqns_Diffusion(double orderOfone, string variable) : base(orderOfone, variable) {
         }
 
         public override double Nu(double[] x, double[] parameter, int jCell) {

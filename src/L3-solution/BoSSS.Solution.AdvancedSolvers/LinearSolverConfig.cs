@@ -61,9 +61,6 @@ namespace BoSSS.Solution.Control {
 
         //GMRES Solver with different experimental Preconditioner
 
-        exp_gmres_Schur = 24,
-        exp_gmres_localPrec = 25,
-        exp_gmres_Simple = 26,
         exp_gmres_AS = 27,
         exp_gmres_AS_MG = 30,
 

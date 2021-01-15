@@ -72,23 +72,24 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         // Main file
         //===========
-
         static void Main(string[] args) {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.BcTest_PressureOutletTest(
-            //    1, 0.0d,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //    SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, true);
-            //throw new Exception("remove me");
-
-
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //throw new Exception("Remove me");
+            
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
-                var p = new XNSE_SolverMain();
+                var p = new XNSE();
                 return p;
             });
         }
+
+        static void KatastrophenPlot(DGField[] dGFields) {
+            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+        }
+
 
         //=====================================
         // Field declaration and instantiation
@@ -141,7 +142,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Pressure
         /// </summary>
         //[InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        XDGField Pressure;
+        internal XDGField Pressure;
 
         /// <summary>
         /// Residual of the continuity equation
@@ -339,7 +340,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Current Velocity
         /// </summary>
-        XDGField[] CurrentVel {
+        public XDGField[] CurrentVel {
             get {
                 return this.XDGvelocity.Velocity.ToArray();
             }
@@ -349,7 +350,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// HMF order/degree which is used globally in this solver.
         /// </summary>
-        int m_HMForder;
+        internal int m_HMForder {
+            get;
+            private set;
+        }
 
 
 
@@ -479,7 +483,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                 && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
+                if (this.GridData.SpatialDimension == 3)
+                    Console.WriteLine($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
+                else
+                    throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
             }
 
             int degU = this.CurrentVel[0].Basis.Degree;
@@ -1253,7 +1262,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         updateSolutionParams.SetAll(true);
                         lockUpdate = true;
-
+                      
                         m_BDF_Timestepper.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
                     } else {
@@ -1524,7 +1533,11 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void SetInitial() {
             base.SetInitial();
 
+            this.LsTrk.PushStacks();
+
             this.InitLevelSet();
+
+            Tecplot.PlotFields(new DGField[] { this.DGLevSet.Current, this.LevSet, this.CurrentVel[0], this.CurrentVel[1] }, "futinger", 0.0, 3);
 
             this.CreateEquationsAndSolvers(null);
 
@@ -1538,7 +1551,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     BDFDelayedInitSetIntial);
             }
             
-            After_SetInitialOrLoadRestart(0.0, 0);
+            //After_SetInitialOrLoadRestart(0.0, 0);
 
         }
 
@@ -1573,7 +1586,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-
+        /*
         private void After_SetInitialOrLoadRestart(double PhysTime, int TimestepNo)
         {
 
@@ -1582,15 +1595,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // =============================================  
 
             if (this.Control.TestMode == true) {
-                LogQueryValue(PhysTime);
+                //LogQueryValue(PhysTime);
             } else {
                 if (this.Control.LogValues != XNSE_Control.LoggingValues.None && this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0) {
-                    InitLogFile(this.CurrentSessionInfo.ID);
-                    WriteLogLine(TimestepNo, PhysTime);
+                    //InitLogFile(this.CurrentSessionInfo.ID);
+                    //WriteLogLine(TimestepNo, PhysTime);
                 }
             }
         }
-
+        */
 
         protected override void LoadRestart(out double Time, out TimestepNumber TimestepNo) {
             base.LoadRestart(out Time, out TimestepNo);
@@ -1695,7 +1708,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     BDFDelayedInitLoadRestart );
             }
 
-            After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
+            //After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
 
         }
 
@@ -1725,9 +1738,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         CellMask NSbuffer;
 
-        /// <summary>
-        /// refinement indicator for a constant near band refinement
-        /// </summary>
+        ///// <summary>
+        ///// refinement indicator for a constant near band refinement
+        ///// </summary>
         //int LevelIndicator(int j, int CurrentLevel) {
 
         //    if(this.Control.BaseRefinementLevel == 0)
@@ -1908,9 +1921,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
 
-        /// <summary>
-        /// refinement indicator
-        /// </summary>
+        ///// <summary>
+        ///// refinement indicator
+        ///// </summary>
         //int LevelIndicator(int j, int CurrentLevel) {
 
         //    int minRefineLevelLS = 1;
@@ -2095,7 +2108,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
-                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                     // Update Grid
                     // ===========
@@ -2232,7 +2245,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //Debug/Test code for XDG database interaction
 
             if(tsi != null) {
-                // checking some neccessary reference-equalities BEFORE serialisation
+                // checking some necessary reference-equalities BEFORE serialization
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 LevelSet.LevelSetInitializer lsi_1 = (LevelSet.LevelSetInitializer)(tsi.FieldInitializers.Single(fi => fi.Identification == this.LevSet.Identification));
@@ -2252,7 +2265,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             if(tsi != null) {
-                // checking some neccessary equalities AFTER serialisation
+                // checking some necessary equalities AFTER serialization
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 
 

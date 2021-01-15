@@ -311,6 +311,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -327,6 +328,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -339,6 +341,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -462,9 +465,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Console.WriteLine("L2-err at t = {0}, Jump:      {1}", PhysTime, JmpL2Err);
 
             double uA_min, uA_max, uB_min, uB_max;
-            int dummy1, dummy2;
-            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("A"));
-            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("B"));
+            uNum_A.GetExtremalValues(out uA_min, out uA_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("A"));
+            uNum_B.GetExtremalValues(out uB_min, out uB_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("B"));
 
             base.QueryHandler.ValueQuery("uA_Min", uA_min);
             base.QueryHandler.ValueQuery("uA_Max", uA_max);

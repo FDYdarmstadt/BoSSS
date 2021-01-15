@@ -31,6 +31,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -61,9 +62,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.LogPeriod = 1;
-
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.LogPeriod = 1;
+            C.PostprocessingModules.Add(new MovingContactLineLogging());
             #endregion
 
 
@@ -330,8 +331,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.savetodb = true;
             C.ContinueOnIoError = false;
 
-            C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            C.PostprocessingModules.Add(new MovingContactLineLogging());
             #endregion
 
 
@@ -465,8 +466,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.NoOfTimesteps = 0; 
 
             C.saveperiod = 1;
-            C.LogPeriod = 1;
-
+            
             #endregion
 
             return C;

@@ -481,9 +481,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
             }
 
+            m_CurrentPhystime = phystime + dt;
+            
             return success;
         }
 
+        double m_CurrentPhystime;
 
         private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
             double ActualLevSetRelTime) {
@@ -615,7 +618,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
 
             abstractOp = base.AbstractOperator;
            
@@ -808,6 +811,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             // increase iteration counter         
             // --------------------------
             m_ImplStParams.m_IterationCounter++;
+        }
+
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public override double GetSimulationTime() {
+            return m_CurrentPhystime;
         }
 
 

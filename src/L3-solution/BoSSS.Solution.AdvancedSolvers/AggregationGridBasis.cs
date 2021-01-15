@@ -385,6 +385,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // check if aggregation is performed on a curved or affine linear grid
             if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
             {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+                
+                
                 if (agSeq.Length >= 2)
                 {
                     // directly compute the Injector for the coarsest level
@@ -416,7 +421,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             else
-            {       
+            {   
+                // ++++++++++++++++++
+                // linear cell branch
+                // ++++++++++++++++++
+                
+                
+
+
                 // level 1
                 if (agSeq.Length >= 2)
                 {
@@ -494,6 +506,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return ret;
             }
         }
+
 
         /// <summary>
         /// computes the injector for multigrid level 2 and higher 
@@ -901,7 +914,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             //Partitioning RowMap = new Partitioning(JAGG * NR);
-            int MpiOffset_row = rest.RowPartitioning.i0;
+            long MpiOffset_row = rest.RowPartitioning.i0;
             
             for(int jagg = 0; jagg < JAGG; jagg++) {
                 int[] agCl = agCls[jagg];
@@ -916,8 +929,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //for(int f = 0; f < NoFld; f++) { // loop over DG fields in mapping...
 
-                    int i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
-                    int i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
+                    long i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
+                    long i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
 
                     //rest.AccBlock(i0Row, i0Col, 1.0, Block);
                     for (int m = 0; m < M; m++) {
@@ -1013,6 +1026,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
        
         /// <summary>
+        /// **Note: the internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
+        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
         /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
         /// onto the DG space on the aggregate grid.
         /// - array index: aggregate cell index; 
@@ -1026,12 +1041,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
-                if(m_CompositeBasis == null) {
-                    SetupCompositeBasis();
+                if(m_CompositeBasis == null || m_CompositeBasis.Any(entry => entry == null)) {
+                    SetupCompositeBasis(-1);
+
+                    for(int j = 0; j < m_CompositeBasis.Length; j++) {
+                        Debug.Assert(m_CompositeBasis[j] != null);
+                    }
                 }
                 return m_CompositeBasis;
             }
         }
+
+        /// <summary>
+        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// onto the DG space on the aggregate grid.
+        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
+        /// making this more efficient if only s singe cell is required.**
+        /// </summary>
+        /// <param name="jAgg"></param>
+        /// <returns>
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 2nd index into <see cref="MultidimensionalArray"/>: row
+        /// - 3rd index into <see cref="MultidimensionalArray"/>: column
+        /// </returns>
+        public MultidimensionalArray GetCompositeBasis(int jAgg) {
+            if(m_CompositeBasis == null || m_CompositeBasis[jAgg] == null) {
+                SetupCompositeBasis(jAgg);
+            }
+            return m_CompositeBasis[jAgg];
+        }
+
+
         
         MultidimensionalArray CA(int _jAgg) {
             AggregationGridData ag = this.AggGrid;
@@ -1039,6 +1079,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int thisMgLevel = ag.MgLevel;
             int Np = this.DGBasis.Length;
 
+           
             var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
             for(int i = 0; i < compCell.Length; i++) {
                 for(int n = 0; n < Np; n++) {
@@ -1137,10 +1178,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultidimensionalArray[] m_CompositeBasis;
 
-        void SetupCompositeBasis() {
+        void SetupCompositeBasis(int _jAgg) {
             using(new FuncTrace()) {
 
-
+                if(_jAgg < 0)
+                    Console.WriteLine("Warning: you are using a Method which is known to scale bad (worse than linear) with the number-of-cells.");
 
                 Basis b = this.DGBasis;
                 AggregationGridData ag = this.AggGrid;
@@ -1149,10 +1191,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
 
                 int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
-                m_CompositeBasis = new MultidimensionalArray[JAGG];
+                if(_jAgg < 0 || m_CompositeBasis == null)
+                    m_CompositeBasis = new MultidimensionalArray[JAGG];
 
                 int totalMem = 0;
-                for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
+                int i0 = _jAgg > 0 ? _jAgg : 0;
+                int iE = _jAgg > 0 ? _jAgg + 1 : JAGG;
+                for(int jAgg = i0; jAgg < iE; jAgg++) { // loop over agglomerated cells...
+
+                    if(m_CompositeBasis[jAgg] != null)
+                        continue;
 
                     m_CompositeBasis[jAgg] = CA(jAgg);
                     totalMem += m_CompositeBasis[jAgg].Length * sizeof(double);

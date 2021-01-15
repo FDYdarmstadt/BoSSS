@@ -601,7 +601,7 @@ namespace BoSSS.Application.DerivativeTest {
                 cl.Type = ct;
                 cl.TransformationParams = nodesGlobal.CloneAs();
                 cl.TransformationParams.LockForever();
-                cl.NodeIndices = new int[] { R, r, (r + 1) % R };
+                cl.NodeIndices = new long[] { R, r, (r + 1) % R };
 
                 grd.Cells[r] = cl;
             }

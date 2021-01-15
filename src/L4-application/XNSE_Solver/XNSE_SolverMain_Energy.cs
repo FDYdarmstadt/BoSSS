@@ -95,7 +95,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// kinetic energy computed via <see cref="KineticEnergyBalanceOperator"/>
         /// </summary>
-        XDGField KineticEnergy;
+        internal XDGField KineticEnergy {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Residual of the kinetic energy balance
@@ -256,8 +259,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             this.m_HMForder_kinE = degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
 
-            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE, this.LsTrk.SpeciesNames);
-
+            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE,  this.LsTrk.SpeciesNames);
+            KineticEnergyOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
             // build the operator
             // ==================

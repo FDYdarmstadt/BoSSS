@@ -51,22 +51,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return lsTrk;
         }
 
-        static int FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+        static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
             LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
-            if (lsTrk != null) {
+            if(lsTrk != null) {
                 Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
-                Console.WriteLine("Cells2avoid NOT null");
             } else {
                 Cells2avoid = null;
-                Console.WriteLine("Cells2avoid null");
             }
 
             long jFound = -1;
+
+            long jFound = -1;
             for (int j = 0; j < J; j++) {
-                if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
+                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                     jFound = j;
                     break;
                 }
@@ -74,7 +74,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             jFound += map.GridDat.CellPartitioning.i0;
 
-            int jFoundGlob = ((int)jFound).MPIMin();
+            long jFoundGlob = jFound.MPIMin();
             Console.WriteLine("Cell " + jFoundGlob + " is ref cell!");
             return jFoundGlob;
         }
@@ -83,12 +83,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// global index
         /// cell in which the reference point is located
         /// </summary>
-        int m_ReferenceCell;
+        long m_ReferenceCell;
 
         /// <summary>
         /// Global Indices into <see cref="BaseGridProblemMapping"/>
         /// </summary>
-        int[] m_ReferenceIndices;
+        long[] m_ReferenceIndices;
 
         void DefineReferenceIndices() {
             UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(onthisProc) {
                 int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
 
-                m_ReferenceIndices = new int[L];
+                m_ReferenceIndices = new long[L];
                 for(int iVar = 0; iVar < L; iVar++) {
                     if(FreeMeanValue[iVar]) {
                         m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, 0);
@@ -173,11 +173,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// modifies a matrix 
         /// in order to fix the pressure at some reference point
         /// </summary>
-        public (int iRow, int jCol, double Val)[] SetPressureReferencePointMTX(IMutableMatrixEx Mtx) {
+        public (long iRow, long jCol, double Val)[] SetPressureReferencePointMTX(IMutableMatrixEx Mtx) {
             using (new FuncTrace()) {
                 
                 if(m_ReferenceIndices == null)
-                    return new (int iRow, int jCol, double Val)[0]; // nothing to do
+                    return new (long iRow, long jCol, double Val)[0]; // nothing to do
                 bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
 
 
@@ -189,18 +189,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // clear row
                 // ---------
 
-                var bkup = new List<(int, int, double)>();
+                var bkup = new List<(long, long, double)>();
 
                 if (onthisProc) {
 
                     for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
                         // clear RHS
                         if(m_ReferenceIndices[iVar] >= 0) {
-                            int iRowGl = m_ReferenceIndices[iVar];
+                            long iRowGl = m_ReferenceIndices[iVar];
 
                             // set matrix row to identity
 
-                            int[] ColIdx = Mtx.GetOccupiedColumnIndices(iRowGl);
+                            long[] ColIdx = Mtx.GetOccupiedColumnIndices(iRowGl);
                             foreach(int ci in ColIdx) {
                                 bkup.Add((iRowGl, ci, Mtx[iRowGl, ci]));
                                 Mtx[iRowGl, ci] = 0;
@@ -217,8 +217,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 {
                     for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
                         if(m_ReferenceIndices[iVar] >= 0) {
-                            int iRowGl = m_ReferenceIndices[iVar];
-                            for(int i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
+                            long iRowGl = m_ReferenceIndices[iVar];
+                            for(long i = Mtx.RowPartitioning.i0; i < Mtx.RowPartitioning.iE; i++) {
                                 
                                 if(i != iRowGl) {
                                     double a = Mtx[i, iRowGl];
@@ -274,7 +274,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// agglomeration (if applicable) should already be applied.
         /// </param>
         /// <param name="MassMatrix">
-        /// Mass matrix on the original grid. If null, the identity matrix is assumed. It is only required if the 
+        /// Mass matrix on the original grid. If null, the identity matrix is assumed. 
         /// </param>
         /// <param name="cobc">
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.
@@ -324,12 +324,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
                     
-                    OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(int[]), this.IndexIntoProblemMapping_Global, default(int[]));
+                    OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
 
                     if (MassMatrix != null) {
                         this.m_RawMassMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
                         BlockMsrMatrix MMR = MassMatrix;
-                        MMR.WriteSubMatrixTo(this.m_RawMassMatrix, this.IndexIntoProblemMapping_Global, default(int[]), this.IndexIntoProblemMapping_Global, default(int[]));
+                        MMR.WriteSubMatrixTo(this.m_RawMassMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
                     } else {
                         this.m_RawMassMatrix = null;
                     }
@@ -407,7 +407,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // compute change of basis
                 // =======================
-                int[] IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
+                long[] IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
 
               
 
@@ -440,7 +440,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.m_OperatorMatrix[iRow, iRow] = 1.0;
                     }
 #if DEBUG
-                for (int iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
+                for (long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
                     Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
                 }
 #endif
@@ -595,7 +595,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///  - index: compressed index at this multigrid level
         ///  - content: index into <see cref="BaseGridProblemMapping"/> (global)
         /// </summary>
-        int[] IndexIntoProblemMapping_Global;
+        long[] IndexIntoProblemMapping_Global;
 
 
         private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
@@ -674,10 +674,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
                 if (this.Mapping.ProblemMapping.MpiSize == 1) {
-                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local;
+                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
                 } else {
-                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.CloneAs();
-                    int i0Proc = this.Mapping.ProblemMapping.i0;
+                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
+                    long i0Proc = this.Mapping.ProblemMapping.i0;
                     int L = this.IndexIntoProblemMapping_Global.Length;
                     for (int i = 0; i < L; i++) {
                         this.IndexIntoProblemMapping_Global[i] += i0Proc;
@@ -686,7 +686,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 #if DEBUG
             if (IndexIntoProblemMapping_Local != null) {
-                int i0 = this.Mapping.ProblemMapping.i0;
+                long i0 = this.Mapping.ProblemMapping.i0;
                 int L = this.Mapping.ProblemMapping.LocalLength;
 
                 int[] UseCount = new int[L];

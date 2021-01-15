@@ -33,8 +33,8 @@ namespace BoSSS.Foundation.Grid {
         private readonly GridData CurrentGrid;
         private readonly Partitioning CellPartitioning;
         private readonly int LocalNumberOfCells;
-        private readonly int myI0;
-        private readonly int GlobalNumberOfCells;
+        private readonly long myI0;
+        private readonly long GlobalNumberOfCells;
         private readonly CellMask CutCells;
         private readonly BitArray CellsNotOK2Coarsen;
         private readonly bool EnsureHighestLevelAtPeriodicBoundary;
@@ -169,13 +169,13 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         private BitArray GetGlobalNearBand(int[][] globalCellNeighbourship) {
             if (CutCells == null)
-                return new BitArray(GlobalNumberOfCells);
+                return new BitArray(checked((int)GlobalNumberOfCells));
 
             BitArray localCutCells = CutCells.GetBitMask();
-            BitArray globalCutCells = new BitArray(GlobalNumberOfCells);
+            BitArray globalCutCells = new BitArray(checked((int)GlobalNumberOfCells));
             for (int j = 0; j < LocalNumberOfCells; j++) {
                 if (localCutCells[j]) {
-                    int globalIndex = j + myI0;
+                    int globalIndex = checked((int)(j + myI0));
                     globalCutCells[globalIndex] = true;
                     for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
                         globalCutCells[globalCellNeighbourship[globalIndex][i]] = true;
@@ -224,7 +224,7 @@ namespace BoSSS.Foundation.Grid {
             int levelSetMaxLevel = CellRefinementLevel.Max().MPIMax();
 
             for (int j = 0; j < LocalNumberOfCells; j++) {
-                int globalIndex = j + myI0;
+                int globalIndex = checked((int)(j + myI0));
                 if (CellRefinementLevel[j] > 0 && globalDesiredLevel[globalIndex] <= CellRefinementLevel[j])
                     globalDesiredLevel[globalIndex] = CellRefinementLevel[j];
 
@@ -332,7 +332,7 @@ namespace BoSSS.Foundation.Grid {
         /// The desired level of all global cells.
         /// </param>
         private List<int> GetCellsToRefine(int[] globalDesiredLevel) {
-            int i0 = CurrentGrid.CellPartitioning.i0;
+            long i0 = CurrentGrid.CellPartitioning.i0;
             List<int> cellToRefine = new List<int>();
             for (int j = 0; j < CurrentGrid.Cells.NoOfLocalUpdatedCells; j++) {
                 int ActualLevel_j = CurrentGrid.Cells.GetCell(j).RefinementLevel;
@@ -376,10 +376,10 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="cutCellsWithNeighbours"></param>
         private BitArray GetCellsOk2Coarsen(int[] globalDesiredLevel, int[][] globalCellNeigbourship, BitArray cutCellsWithNeighbours) {
-            BitArray oK2Coarsen = new BitArray(GlobalNumberOfCells);
+            BitArray oK2Coarsen = new BitArray(checked((int)GlobalNumberOfCells));
             int[] globalCurrentLevel = GetGlobalCurrentLevel();
 
-            for (int globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
+            for (long globalCellIndex = myI0; globalCellIndex < myI0 + LocalNumberOfCells; globalCellIndex++) {
                 int currentLevel = globalCurrentLevel[globalCellIndex];
 
                 int maxNeighbourDesiredLevel = 0;
@@ -392,8 +392,8 @@ namespace BoSSS.Foundation.Grid {
                         maxNeighbourCurrentLevel = neighbourCurrentLevel;
                 }
 
-                if (currentLevel > globalDesiredLevel[globalCellIndex] && currentLevel > maxNeighbourDesiredLevel && currentLevel > maxNeighbourCurrentLevel - 1 && !cutCellsWithNeighbours[globalCellIndex]) {
-                    oK2Coarsen[globalCellIndex] = true;
+                if (currentLevel > globalDesiredLevel[globalCellIndex] && currentLevel > maxNeighbourDesiredLevel && currentLevel > maxNeighbourCurrentLevel - 1 && !cutCellsWithNeighbours[checked((int)globalCellIndex)]) {
+                    oK2Coarsen[checked((int)globalCellIndex)] = true;
                 }
             }
 
@@ -413,10 +413,10 @@ namespace BoSSS.Foundation.Grid {
         /// Globalize cellsNotOk2Coarsen
         /// </summary>
         private BitArray GetGlobalCellsNotOK2Coarsen() {
-            BitArray globalCellsNotOK2Coarsen = new BitArray(GlobalNumberOfCells);
+            BitArray globalCellsNotOK2Coarsen = new BitArray(checked((int)GlobalNumberOfCells));
             for (int j = 0; j < LocalNumberOfCells; j++) {
                 if (CellsNotOK2Coarsen[j]) {
-                    int globalIndex = j + myI0;
+                    int globalIndex = checked((int)(j + myI0));
                     globalCellsNotOK2Coarsen[globalIndex] = true;
                 }
             }
@@ -437,8 +437,8 @@ namespace BoSSS.Foundation.Grid {
         private int[][] FindCoarseningClusters(BitArray oK2CoarsenGlobal) {
             int JE = CurrentGrid.Cells.Count;
             BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
-            for(int j = myI0; j < myI0 + LocalNumberOfCells; j++) {
-                oK2Coarsen[j - myI0] = oK2CoarsenGlobal[j];
+            for(long j = myI0; j < myI0 + LocalNumberOfCells; j++) {
+                oK2Coarsen[checked((int)(j - myI0))] = oK2CoarsenGlobal[checked((int)j)];
             }
             //int[][] cellNeighbours = currentGrid.Cells.CellNeighbours;
             List<Cell> temp = new List<Cell>();

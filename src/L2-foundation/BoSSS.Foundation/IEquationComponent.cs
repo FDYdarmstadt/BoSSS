@@ -1213,15 +1213,15 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="UxV">
-        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
-        ///            ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
-        ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
-        ///            see <see cref="IEquationComponent.ArgumentOrdering"/> <br/>
+        /// output: the values of \f$ {f}_{i \ j \ l}(\vec{x}) \f$:
+        /// - 1st index: edge index
+        /// - 2nd index: quadrature node
+        /// - 3rd index: in and out - coefficients with respect to trial function, i.e. index \f$ i \f$ 
+        ///              ('U': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
+        /// - 4th index: in and out - coefficients with respect to test function, i.e. index \f$ j \f$ 
+        ///              ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). 
+        /// - 5th index: correlates with argument ordering, i.e. index \f$ l \f$ , of trial function; 
+        ///              see <see cref="IEquationComponent.ArgumentOrdering"/>
         /// </param>
         void InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV);
     }
@@ -1563,7 +1563,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \oint_{\Gamma_{\mathrm{int}}} 
     ///              {f}^\mathrm{in} (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{in} 
     ///            + {f}^\mathrm{out}(\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) v^\mathrm{out} 
@@ -1572,9 +1572,9 @@ namespace BoSSS.Foundation {
     ///          \oint_{\partial \Omega} 
     ///              {f}_{0}(\vec{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
-    /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
+    /// $` U = (u_0, \ldots, u_{L-1} ) `$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
     /// </summary>
     public interface INonlinEdgeForm_V : IEdgeForm, INonlinInnerEdgeForm_V, INonlinBoundaryEdgeForm_V {
@@ -1585,22 +1585,22 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface INonlinInnerEdgeForm_V : IInnerEdgeForm {
         /// <summary>
-        /// the values of \f$ {f}^{*}(\ldots)\f$   on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
+        /// the values of \f$ {f}^{*}(\ldots) \f$ on interior edges on \f$ \Gamma_{\mathrm{int}}\f$ .
         /// </summary>
         /// <param name="efp"></param>
         /// <param name="fin">
-        /// output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :<br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
+        /// - output: the values of \f$ {f}^\mathrm{in}(\ldots)\f$ :
+        /// - 1st index: edge index
+        /// - 2nd index: quadrature node
         /// </param>
         /// <param name="fot">
-        /// output: the values of \f$ {f}^\mathrm{out}(\ldots)\f$ :<br/>
+        /// output: the values of \f$ {f}^\mathrm{out}(\ldots)\f$
         /// </param>
         /// <param name="Uin">
-        /// input: the values of \f$ U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
-        /// 2nd index: edge index<br/>
-        /// 3rd index: quadrature node<br/>
+        /// - input: the values of \f$ U^\mathrm{in}\f$ 
+        /// - 1st index: component index of \f$ U\f$
+        /// - 2nd index: edge index
+        /// - 3rd index: quadrature node
         /// </param>
         /// <param name="Uout">
         /// analog to <paramref name="Uin"/>, for 'out'-values.<br/>
@@ -1736,11 +1736,11 @@ namespace BoSSS.Foundation {
         /// 3rd index: quadrature node<br/>
         /// </param>
         /// <param name="GradUin">
-        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ <br/>
-        /// 1st index: component index of \f$ U\f$ <br/>
-        /// 2nd index: edge index<br/>
-        /// 3rd index: quadrature node<br/>
-        /// 4th index: spatial direction of derivative<br/>
+        /// input: the values of \f$ \nabla U^\mathrm{in}\f$ 
+        /// - 1st index: component index of \f$ U\f$ 
+        /// - 2nd index: edge index
+        /// - 3rd index: quadrature node
+        /// - 4th index: spatial direction of derivative
         /// </param>
         void NonlinBoundaryEdge_GradV(ref EdgeFormParams efp,
             MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin,

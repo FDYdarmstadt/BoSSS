@@ -153,6 +153,10 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void DefineMatrix(IMutableMatrixEx M) {
             if (m_OrgMatrix != null)
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
+            if(M.NoOfCols != M.NoOfRows)
+                    throw new ArgumentException("Expecting quadratic matrix.");
+            if(M.NoOfCols <= 0 || M.NoOfRows <= 0)
+                throw new ArgumentException("Matrix must have a non-zero size.");
             m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
             MpiComm = M.MPI_Comm;
@@ -515,7 +519,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 int[] Displ = new int[size];
                 for(int r = 0; r < size; r++) {
                     SendCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
-                    Displ[r] = m_OrgMatrix.RowPartitioning.GetI0Offest(r);
+                    Displ[r] = checked((int)(m_OrgMatrix.RowPartitioning.GetI0Offest(r)));
                 }
 
 

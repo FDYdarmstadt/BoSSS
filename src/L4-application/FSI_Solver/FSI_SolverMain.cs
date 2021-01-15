@@ -330,6 +330,7 @@ namespace BoSSS.Application.FSI_Solver {
                 __DomainVar: DomNameSelected, __ParameterVar: Params, __CoDomainVar: CodNameSelected,
                 QuadOrderFunc: (A, B, C) => HMForder,
                 __Species: FluidSpecies.Select(id => LsTrk.GetSpeciesName(id)));
+            IBM_Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
             IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
 

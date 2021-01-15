@@ -1,0 +1,170 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 20 instances of IDatabaseInfo {
+  0: { Session Count = 7; Grid Count = 7; Path = C:\bosss_db }
+  1: { Session Count = 4; Grid Count = 4; Path = D:\bosss_db_paper_revision_svi }
+  2: { Session Count = 10; Grid Count = 2; Path = D:\bosss_db_svi_video }
+  3: { Session Count = 8; Grid Count = 15; Path = H:\geisenhofer\bosss_db_ibmbowshock }
+  4: { Session Count = 61; Grid Count = 94; Path = H:\geisenhofer\bosss_db_bowshock }
+  5: { Session Count = 8; Grid Count = 18; Path = D:\bosss_db_XDGBowShock }
+  6: { Session Count = 9; Grid Count = 8; Path = D:\bosss_db_exchange }
+  7: { Session Count = 4; Grid Count = 6; Path = H:\geisenhofer\bosss_db_XDGBowShock }
+  8: { Session Count = 0; Grid Count = 0; Path = \\hpccluster\hpccluster-scratch\geisenhofer\bosss_db_TEST }
+  9: { Session Count = 0; Grid Count = 0; Path = H:\geisenhofer\bosss_db_TEST }
+  10: { Session Count = 1; Grid Count = 1; Path = D:\bosss_db_shockFinding }
+  11: { Session Count = 10; Grid Count = 10; Path = Z:\geisenhofer\bosss_db_xdgbowshock }
+  12: { Session Count = 1; Grid Count = 1; Path = H:\geisenhofer\TwoLs\LevelSetReconstruction\bosss_db_levelSetReconstruction }
+  13: { Session Count = 8; Grid Count = 8; Path = H:\geisenhofer\bosss_db_xdgbowshock_twols }
+  14: { Session Count = 26; Grid Count = 57; Path = H:\geisenhofer\bosss_db_xdggaussianbump }
+  15: { Session Count = 36; Grid Count = 47; Path = H:\geisenhofer\bosss_db_xdggaussianbumptwols }
+  16: { Session Count = 12; Grid Count = 22; Path = H:\geisenhofer\bosss_db_xdggaussianbump_dt }
+  17: { Session Count = 14; Grid Count = 20; Path = H:\geisenhofer\bosss_db_xdggaussianbumptwols_dt }
+  18: { Session Count = 9; Grid Count = 9; Path = S:\work\scratch\yp19ysog\bosss_db_xdggaussianbumptwols_dt }
+  19: { Session Count = 5; Grid Count = 6; Path = S:\work\scratch\yp19ysog\bosss_db_xdggaussianbump_dt }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+string WFlowName = "XDGGaussianBump_HPC";
+**************
+==============
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'XDGGaussianBump_HPC'.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+**************
+==============
+string dbPath      = @"E:\hpccluster-scratch\geisenhofer\bosss_db_xdggaussianbump_dt";
+string dbPathLocal = @"H:\geisenhofer\bosss_db_xdggaussianbump_dt";
+var myDb           = OpenOrCreateDatabase(dbPathLocal);
+**************
+==============
+**************
+==============
+var myAutoRunJob = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\geisenhofer\tmp", "dc2", ComputeNodes : new[]{"hpccluster"});
+**************
+==============
+**************
+==============
+//using CNS;
+using XDGShock;
+using BoSSS.Application.IBM_Solver;
+using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Solution.Timestepping;
+using System.Text;
+using System.Threading.Tasks;
+using ilPSP.Tracing;
+**************
+==============
+Type solver = typeof(XDGShock.Program);
+**************
+==============
+// Use the self-compiled BoSSSpad (release mode)
+solver.Assembly.Location;
+**************
+C:\BoSSS-experimental\public\src\L4-application\BoSSSpad\bin\Release\XDGShock.exe
+==============
+//------------------------------------------------
+//   Parameter study - Time to make changes 
+//------------------------------------------------
+int savePeriod = 1000;
+
+//int[] noOfCellsY = new int[]{ 16, 32, 64 };
+//int[] dgDegree   = new int[]{ 0, 1, 2, 3 };
+
+int[] noOfCellsY = new int[]{ 64 };
+int[] dgDegree   = new int[]{ 4 };
+
+double agg = 0.3;
+
+int lsDegree = 8;
+**************
+==============
+**************
+==============
+double CFLFrac = 0.3;
+**************
+==============
+**************
+==============
+Dictionary<int, double[]> dic = new Dictionary<int, double[]>();
+dic.Add(16, new double[]{0.01, 0.006, 0.003, 0.001, 0.002});
+dic.Add(32, new double[]{0.008, 0.004, 0.002, 0.0015, 0.001});
+dic.Add(64, new double[]{0.005, 0.001, 0.0005, 0.00035, 0.00025});
+dic.Add(128, new double[]{0.005/2, 0.001/2, 0.0005/2, 0.00035/2, 0.00025/2});
+**************
+==============
+**************
+==============
+int cores = 12;
+**************
+==============
+**************
+==============
+// Feed the machine
+for (int i = 0; i < noOfCellsY.Length; i++){
+    for (int j = 0; j < dgDegree.Length; j++){  
+       
+        double dtFixed = dic[noOfCellsY[i]][dgDegree[j]];
+        int noOfCellsX = 2 * noOfCellsY[i];  
+        
+        // ################
+        string StartupString = null;
+        string jobName       = null;
+        
+        if (CFLFrac > 0.0){
+            StartupString = string.Format("cs:XDGShock.TestCases.XDGGaussianBump(@\"{0}\", {1}, {2}, {3}, {4}, {5}, {6})",
+            dbPath, savePeriod, noOfCellsY[i], dgDegree[j], lsDegree, agg, CFLFrac);
+            
+            jobName = string.Format("XDGGaussianBump_p{0}_({1}x{2})_CFLFrac{3}_agg{4}",
+                dgDegree[j], noOfCellsX, noOfCellsY[i], CFLFrac, agg);                       
+        } else if (dtFixed > 0.0){
+            StartupString = string.Format("cs:XDGShock.TestCases.XDGGaussianBump(@\"{0}\", {1}, {2}, {3}, {4}, {5}, {6}, {7})",
+            dbPath, savePeriod, noOfCellsY[i], dgDegree[j], lsDegree, agg, 0.0, dtFixed);
+            
+            jobName = string.Format("XDGGaussianBump_p{0}_({1}x{2})_dtFixed{3}_agg{4}",
+                dgDegree[j], noOfCellsX, noOfCellsY[i], dtFixed, agg);
+        } else{
+            throw new NotSupportedException();        
+        }
+
+        var oneJob = new Job(jobName, solver);
+        oneJob.SetControlStatement(StartupString);
+        oneJob.NumberOfMPIProcs = cores;
+
+        oneJob.Activate(myAutoRunJob);
+        // ################
+        
+    }
+}
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\geisenhofer\tmp\XDGGaussianBump_HPC-XDGShock2020Jul30_100737
+copied 31 files.
+   copied 'amd64' runtime.
+deployment finished.
+
+==============
+WorkflowMgm.AllJobs;
+**************
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [XDGGaussianBump_p4_(128x64)_CFLFrac0.3_agg0.3, XDGGaussianBump_p4_(128x64)_CFLFrac0.3_agg0.3: PendingInExecutionQueue (MS HPC client dc2, @\\hpccluster\hpccluster-scratch\geisenhofer\tmp)]
+}
+==============
+//WorkflowMgm.BlockUntilAllJobsTerminate();
+**************
+==============
+**************
+==============

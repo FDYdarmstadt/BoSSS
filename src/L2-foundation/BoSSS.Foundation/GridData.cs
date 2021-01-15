@@ -1346,12 +1346,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // Exchange boundary-condition cells 
                 // =================================
                 {
-                    Dictionary<int, BCElement> BcCells = new Dictionary<int, BCElement>();
+                    Dictionary<long, BCElement> BcCells = new Dictionary<long, BCElement>();
 
-                    Dictionary<int, Dictionary<int, BCElement>> SendBcCells = new Dictionary<int, Dictionary<int, BCElement>>();
+                    Dictionary<int, Dictionary<long, BCElement>> SendBcCells = new Dictionary<int, Dictionary<long, BCElement>>();
 
                     int j_bc = 0;
-                    int jCellGlob = Jglob + BcCellPart.i0;
+                    long jCellGlob = Jglob + BcCellPart.i0;
                     foreach (var icn in BcCNglb) { // loop over all BcCell's on this processor
                         foreach (var cn in icn) {
                             long jVolCell = cn.Neighbour_GlobalIndex;
@@ -1361,9 +1361,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (R == MyRank) {
                                 BcCells.Add(jCellGlob, m_Grid.BcCells[j_bc]);
                             } else {
-                                Dictionary<int, BCElement> _BcCells;
+                                Dictionary<long, BCElement> _BcCells;
                                 if (!SendBcCells.TryGetValue(R, out _BcCells)) {
-                                    _BcCells = new Dictionary<int, BCElement>();
+                                    _BcCells = new Dictionary<long, BCElement>();
                                     SendBcCells.Add(R, _BcCells);
                                 }
 
@@ -1393,7 +1393,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// - key: global cell index of the boundary-condition cell. 
         /// - value: the boundary-condition cell.
         /// </summary>
-        internal Dictionary<int, BCElement> m_BcCells_tmp;
+        internal Dictionary<long, BCElement> m_BcCells_tmp;
 
         /// workaround for some mono bug in BinaryFormatter:
         /// It seems that the BinaryFormatter in mono has some problems

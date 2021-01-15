@@ -155,10 +155,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.Init();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_Kcycle_schwarz);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_softpcg_schwarz_directcoarse);
+            //BoSSS.Solution.Application.InitMPI();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //Assert.AreEqual(1, 2, "Remove Me!!");
@@ -171,94 +168,6 @@ namespace BoSSS.Application.SipPoisson {
 
             
 
-
-            /*
-            //Some performance testing - don't delete, I still need this!
-            //Florian
-
-
-            ilPSP.Environment.Bootstrap(
-                args,
-                GetBoSSSInstallDir(),
-                out bool _MustFinalizeMPI);
-            {
-                int rank, size;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-                if (rank == 0) {
-                    Console.WriteLine("BoSSS: Running with " + size + " MPI process(es)");
-                }
-            }
-
-
-            //MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("imn", "kma", "ikna"); // original sort
-            MultidimensionalArray.MultiplyProgram mp = MultidimensionalArray.MultiplyProgram.Compile("mni", "mka", "kani"); // re-sort for GEMM
-
-            int I = 1;
-            int D = 3;
-            int K = 343;
-            int N = 84;
-
-            Console.WriteLine("Complexity: " + (I*N*N*K*D));
-
-            //var R = MultidimensionalArray.Create(I, N, N); //    original sort
-            //var V = MultidimensionalArray.Create(K, N, D); //    original sort
-            //var Z = MultidimensionalArray.Create(I, K, N, D); // original sort
-            var R = MultidimensionalArray.Create(N, N, I); //    re-sort for GEMM
-            var V = MultidimensionalArray.Create(N, K, D); //    re-sort for GEMM
-            var Z = MultidimensionalArray.Create(K, D, N, I); // re-sort for GEMM
-
-            var rnd = new Random();
-
-            R.ApplyAll(delegate (int[] index, ref double entry) {
-                entry = rnd.NextDouble();
-            });
-
-            Stopwatch myDings = new Stopwatch();
-            Stopwatch blasDings = new Stopwatch();
-
-            int Ntests = 500000;
-
-            for (int l = 0; l < 2; l++) {
-                for (int i = 0; i < Ntests; i++) {
-
-                    if (l > 0)
-                        myDings.Start();
-                    R.Multiply(0.5, V, Z, 0.5, ref mp);
-                    //R.Multiply(0.5, V, Z, 0.5, "imn", "kma", "ikna");
-                    if (l > 0)
-                        myDings.Stop();
-
-                    if (l > 0)
-                        blasDings.Start();
-                    unsafe {
-                        fixed (double* pR = R.Storage, pV = V.Storage, pZ = Z.Storage) {
-                            BLAS.dgemm(
-                            //my_dgemm(
-                                'N', 'N', 
-                                N, N * I, K * D, 
-                                0.5, 
-                                pV, N, 
-                                pZ, K * D, 
-                                0.5, 
-                                pR, N);
-                        }
-                    }
-                    if (l > 0)
-                        blasDings.Stop();
-
-                    R.CheckForNanOrInf();
-                }
-            }
-
-            double MyDing = myDings.Elapsed.TotalSeconds / Ntests;
-            double BlasGing = blasDings.Elapsed.TotalSeconds / Ntests;
-
-            Console.WriteLine("BoSSS [sec]: " + MyDing);
-            Console.WriteLine("BLAS [sec]:  " + BlasGing + "   (" + (MyDing/BlasGing) + " faster)");
-
-            return;
-            */
 
 
             _Main(args, false, delegate () {
@@ -294,16 +203,16 @@ namespace BoSSS.Application.SipPoisson {
         ///// </summary>
         //SinglePhaseField TexactFine;
 
-        /// <summary>
-        /// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
-        /// </summary>
-        BlockMsrMatrix LaplaceMtx;
+        ///// <summary>
+        ///// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
+        ///// </summary>
+        //BlockMsrMatrix LaplaceMtx;
 
-        /// <summary>
-        /// Part of the RHS which contains e.g. boundary conditions; still on LHS, must be subtracted from RHS of the equation.
-        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
-        /// </summary>
-        double[] LaplaceAffine;
+        ///// <summary>
+        ///// Part of the RHS which contains e.g. boundary conditions; still on LHS, must be subtracted from RHS of the equation.
+        ///// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
+        ///// </summary>
+        //double[] LaplaceAffine;
 
         /// <summary>
         /// Spatial operator to assemble <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>.
@@ -315,43 +224,21 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="L"></param>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            using (FuncTrace tr = new FuncTrace()) {
+            using(FuncTrace tr = new FuncTrace()) {
 
                 // create operator
                 // ===============
-                {
-                    double D = this.GridData.SpatialDimension;
-                    double penalty_base = (T.Basis.Degree + 1) * (T.Basis.Degree + D) / D;
-                    double penalty_factor = base.Control.penalty_poisson;
-
-                    BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-
-                    LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
-
-                    MultidimensionalArray LengthScales;
-                    if (this.GridData is GridData) {
-                        LengthScales = ((GridData)GridData).Cells.cj;
-                    } else if (this.GridData is AggregationGridData) {
-                        LengthScales = ((AggregationGridData)GridData).AncestorGrid.Cells.cj;
-                    } else {
-                        throw new NotImplementedException();
-                    }
-
-                    var flux = new ipFlux(penalty_base * base.Control.penalty_poisson, LengthScales, PoissonBcMap);
-
-                    LapaceIp.EquationComponents["T"].Add(flux);
-
-                    LapaceIp.Commit();
-                }
-
-
-
-                //double condNo = LaplaceMtx.condest(BatchmodeConnector.Flavor.Octave);
-                //Console.WriteLine("condition number: {0:0.####E-00} ",condNo);
-
+                BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
+                LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
+                LapaceIp.EquationComponents["T"].Add(flux);
+                LapaceIp.EquationComponents["T"].Add(new RHSSource(this.RHS));
+                LapaceIp.IsLinear = true;
+                LapaceIp.Commit();
             }
         }
 
+        /*
         /// <summary>
         /// computes <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>
         /// </summary>
@@ -431,188 +318,93 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
             }
         }
-
-        /// <summary>
-        /// Ad-hoc performance measurement routines for <see cref="BlockMsrMatrix"/> operations
-        /// </summary>
-        void MatrixOpPerf() {
-            var M = LaplaceMtx;
-            var M2 = M.CloneAs();
-
-            double MatlabSpMMtime = 0.0, MatlabSpMVtime = 0.0;
-            /*
-            using (var MatlabRef = new BatchmodeConnector()) {
-                MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
-
-                MatlabRef.PutSparseMatrix(M, "M");
-                MatlabRef.Cmd("M2 = M;");
-
-                // bench SpMM
-                MatlabRef.Cmd("Mprod1 = M * M2;");
-                MatlabRef.Cmd("tic");
-                MatlabRef.Cmd("Mprod = M * M2;");
-                MatlabRef.Cmd("SpMMtime = toc;");
-
-                // bench SpMV
-                MatlabRef.Cmd("[L,I] = size(M);");
-                MatlabRef.Cmd("x = sin(1:L)';");
-                MatlabRef.Cmd("a1 = M*x;");
-                MatlabRef.Cmd("tic");
-                MatlabRef.Cmd("a = M*x;");
-                MatlabRef.Cmd("SpMVtime = toc;");
-
-                MatlabRef.Cmd("CheckRes = [0, 0, SpMVtime, SpMMtime];");
-                MatlabRef.Cmd("CheckRes");
-                MatlabRef.GetMatrix(CheckRes, "CheckRes");
-
-                MatlabRef.Execute();
-
-                MatlabSpMMtime = CheckRes[0, 3];
-                MatlabSpMVtime = CheckRes[0, 2];
-
-
-
-            }
-            */
-
-            //BlockMsrMatrix.Multiply(M, M2);
-
-
-            Stopwatch BoSSsSpMMtime = new Stopwatch();
-            BoSSsSpMMtime.Start();
-            //BlockMsrMatrix.Multiply(M, M2);
-            BoSSsSpMMtime.Stop();
-
-
-            double[] accu = new double[M.RowPartitioning.LocalLength];
-            double[] x = new double[M.ColPartition.LocalLength];
-            for (int i = 0; i < x.Length; i++) {
-                x[i] = Math.Sin(i);
-            }
-            M.SpMV(1.0, x, 0.0, accu);
-
-            Stopwatch BoSSsSpMVtime = new Stopwatch();
-            BoSSsSpMVtime.Start();
-            M.SpMV(1.0, x, 0.0, accu);
-            BoSSsSpMVtime.Stop();
-
-
-            Console.WriteLine("Matlab SpMM time: [sec]   " + MatlabSpMMtime);
-            Console.WriteLine("BoSSS  SpMM time: [sec]   " + BoSSsSpMMtime.Elapsed.TotalSeconds);
-
-            Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
-            Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
-
-            Console.WriteLine("    SpMV total      : [msec] " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV   sending  : [msec]    " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV   local    : [msec]    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV     inner  : [msec]        " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV   receive  : [msec]    " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV   external : [msec]    " + BlockMsrMatrix.SpMV_external.Elapsed.TotalMilliseconds);
-            Console.WriteLine("    SpMV     idx trf: [msec]        " + BlockMsrMatrix.SpMV_indextrans.Elapsed.TotalMilliseconds);
-
-
-            Console.WriteLine("entering infinte loop...");
-            while (true) ;
-            
-        }
-
-        /*
-        /// <summary>
-        /// Deprecated utility, writes matrices for spectral element method.
-        /// </summary>
-        public void WriteSEMMatrices() {
-            int kSEM; // nodes per edge
-
-            if (this.Grid.RefElements[0] is Triangle) {
-                kSEM = this.T.Basis.Degree + 1;
-            } else if (this.Grid.RefElements[0] is Square) {
-                switch (this.T.Basis.Degree) {
-                    case 2: kSEM = 2; break;
-                    case 3: kSEM = 2; break;
-                    case 4: kSEM = 3; break;
-                    case 5: kSEM = 3; break;
-                    case 6: kSEM = 4; break;
-                    default: throw new NotSupportedException();
-                }
-            } else {
-                throw new NotImplementedException();
-            }
-
-            SpecFemBasis SEM_basis = new SpecFemBasis((GridData)(this.GridData), kSEM);
-
-            SEM_basis.CellNodes[0].SaveToTextFile("NODES_SEM" + kSEM + ".txt");
-            SEM_basis.MassMatrix.SaveToTextFileSparse("MASS_SEM" + kSEM + ".txt");
-
-            var Mod2Nod = SEM_basis.GetModal2NodalOperator(this.T.Basis);
-            var Nod2Mod = SEM_basis.GetNodal2ModalOperator(this.T.Basis);
-
-            Mod2Nod.SaveToTextFileSparse("MODAL" + this.T.Basis.Degree + "_TO_NODAL" + kSEM + ".txt");
-            Nod2Mod.SaveToTextFileSparse("NODAL" + kSEM + "_TO_MODAL" + this.T.Basis.Degree + ".txt");
-
-            this.LaplaceMtx.SaveToTextFileSparse("OPERATOR" + this.T.Basis.Degree + ".txt");
-
-
-            {
-                var TEST = this.T.CloneAs();
-                TEST.Clear();
-                TEST.ProjectField((_2D)((x, y) => x * y));
-
-                int J = this.GridData.iGeomCells.Count;
-                int N = SEM_basis.NodesPerCell[0];
-                MultidimensionalArray TEST_at_NODES = MultidimensionalArray.Create(J, N);
-
-                TEST.Evaluate(0, J, SEM_basis.CellNodes[0], TEST_at_NODES);
-
-                double[] CompareAtNodes = new double[J * N];
-                Mod2Nod.SpMVpara(1.0, TEST.CoordinateVector, 0.0, CompareAtNodes);
-
-                double[] gretchen = TEST_at_NODES.ResizeShallow(J * N).To1DArray();
-
-                double fdist = GenericBlas.L2Dist(gretchen, CompareAtNodes);
-                Debug.Assert(fdist < 1.0e-8);
-
-                double[] bak = new double[TEST.Mapping.LocalLength];
-                Nod2Mod.SpMVpara(1.0, CompareAtNodes, 0.0, bak);
-
-                double hdist = GenericBlas.L2Dist(bak, TEST.CoordinateVector);
-                Debug.Assert(hdist < 1.0e-8);
-            }
-
-
-            var Scatter = SEM_basis.GetNodeScatterMatrix();
-
-            Scatter.SaveToTextFileSparse("SCATTER_SEM" + kSEM + ".txt");
-
-
-            {
-                var SEMTEST = new SpecFemField(SEM_basis);
-                var csem = SEMTEST.Coordinates;
-
-                Random r = new Random(666);
-                for (int i = 0; i < csem.GetLength(0); i++) {
-                    csem[i] = r.NextDouble();
-                }
-
-
-                var DG_TEST0 = new SinglePhaseField(SEMTEST.Basis.ContainingDGBasis);
-                var DG_TEST = this.T.CloneAs();
-                DG_TEST.Clear();
-                SEMTEST.AccToDGField(1.0, DG_TEST0);
-                DG_TEST.AccLaidBack(1.0, DG_TEST0);
-
-                double[] S2 = new double[Scatter.RowPartitioning.LocalLength];
-                double[] S3 = new double[DG_TEST.Mapping.LocalLength];
-
-                Scatter.SpMVpara(1.0, csem.To1DArray(), 0.0, S2);
-                Nod2Mod.SpMVpara(1.0, S2, 0.0, S3);
-
-                double gdist = GenericBlas.L2Dist(S3, DG_TEST.CoordinateVector);
-                Debug.Assert(gdist < 1.0e-8);
-            }
-        }
-
         */
+
+        ///// <summary>
+        ///// Ad-hoc performance measurement routines for <see cref="BlockMsrMatrix"/> operations
+        ///// </summary>
+        //void MatrixOpPerf() {
+        //    var M = LaplaceMtx;
+        //    var M2 = M.CloneAs();
+
+        //    double MatlabSpMMtime = 0.0, MatlabSpMVtime = 0.0;
+        //    /*
+        //    using (var MatlabRef = new BatchmodeConnector()) {
+        //        MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
+
+        //        MatlabRef.PutSparseMatrix(M, "M");
+        //        MatlabRef.Cmd("M2 = M;");
+
+        //        // bench SpMM
+        //        MatlabRef.Cmd("Mprod1 = M * M2;");
+        //        MatlabRef.Cmd("tic");
+        //        MatlabRef.Cmd("Mprod = M * M2;");
+        //        MatlabRef.Cmd("SpMMtime = toc;");
+
+        //        // bench SpMV
+        //        MatlabRef.Cmd("[L,I] = size(M);");
+        //        MatlabRef.Cmd("x = sin(1:L)';");
+        //        MatlabRef.Cmd("a1 = M*x;");
+        //        MatlabRef.Cmd("tic");
+        //        MatlabRef.Cmd("a = M*x;");
+        //        MatlabRef.Cmd("SpMVtime = toc;");
+
+        //        MatlabRef.Cmd("CheckRes = [0, 0, SpMVtime, SpMMtime];");
+        //        MatlabRef.Cmd("CheckRes");
+        //        MatlabRef.GetMatrix(CheckRes, "CheckRes");
+
+        //        MatlabRef.Execute();
+
+        //        MatlabSpMMtime = CheckRes[0, 3];
+        //        MatlabSpMVtime = CheckRes[0, 2];
+
+
+
+        //    }
+        //    */
+
+        //    //BlockMsrMatrix.Multiply(M, M2);
+
+
+        //    Stopwatch BoSSsSpMMtime = new Stopwatch();
+        //    BoSSsSpMMtime.Start();
+        //    //BlockMsrMatrix.Multiply(M, M2);
+        //    BoSSsSpMMtime.Stop();
+
+
+        //    double[] accu = new double[M.RowPartitioning.LocalLength];
+        //    double[] x = new double[M.ColPartition.LocalLength];
+        //    for (int i = 0; i < x.Length; i++) {
+        //        x[i] = Math.Sin(i);
+        //    }
+        //    M.SpMV(1.0, x, 0.0, accu);
+
+        //    Stopwatch BoSSsSpMVtime = new Stopwatch();
+        //    BoSSsSpMVtime.Start();
+        //    M.SpMV(1.0, x, 0.0, accu);
+        //    BoSSsSpMVtime.Stop();
+
+
+        //    Console.WriteLine("Matlab SpMM time: [sec]   " + MatlabSpMMtime);
+        //    Console.WriteLine("BoSSS  SpMM time: [sec]   " + BoSSsSpMMtime.Elapsed.TotalSeconds);
+
+        //    Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
+        //    Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
+
+        //    Console.WriteLine("    SpMV total      : [msec] " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV   sending  : [msec]    " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV   local    : [msec]    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV     inner  : [msec]        " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV   receive  : [msec]    " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV   external : [msec]    " + BlockMsrMatrix.SpMV_external.Elapsed.TotalMilliseconds);
+        //    Console.WriteLine("    SpMV     idx trf: [msec]        " + BlockMsrMatrix.SpMV_indextrans.Elapsed.TotalMilliseconds);
+
+
+        //    Console.WriteLine("entering infinte loop...");
+        //    while (true) ;
+            
+        //}
+
         /// <summary>
         /// control of mesh adaptation
         /// </summary>
@@ -639,7 +431,7 @@ namespace BoSSS.Application.SipPoisson {
                     //Error.AccLaidBack(-1.0, Tex);
                 }
 
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 double LocNormPow2 = this.ResiualKP1.CoordinateVector.L2NormPow2(); // norm of residual on this processor
                 double TotNormPow2 = LocNormPow2.MPISum(); //                          norm of residual over all processors
@@ -721,37 +513,7 @@ namespace BoSSS.Application.SipPoisson {
             
         }
 
-        /*
-        protected void GimmeKondnumber(MultigridOperator Mgop, out double[] condests, out int[] DOFs, out int[] Level) {
-            MultigridOperator Mgop_ptr = Mgop;
-
-            List<double> _condests = new List<double>();
-            List<int> _DOFs = new List<int>();
-            List<int> _Level = new List<int>();
-
-            while (Mgop_ptr != null) {
-                BatchmodeConnector bmc = new BatchmodeConnector();
-                //MultidimensionalArray cond = MultidimensionalArray.Create(1, 1);
-                MultidimensionalArray condest = MultidimensionalArray.Create(1, 1);
-
-                //bmc.PutSparseMatrix(Mgop_ptr.OperatorMatrix.ToMsrMatrix(), "Matrix_A");
-                //bmc.Cmd("m_condest=condest(Matrix_A)");
-                //bmc.GetMatrix(condest, "m_condest");
-                //bmc.Execute(false);
-
-                _condests.Add(condest[0, 0]);
-                _DOFs.Add(Mgop_ptr.Mapping.LocalLength.MPISum());
-                _Level.Add(Mgop_ptr.LevelIndex);
-
-                Mgop_ptr = Mgop_ptr.CoarserLevel;
-            }
-
-            condests = _condests.ToArray();
-            DOFs = _DOFs.ToArray();
-            Level = _Level.ToArray();
-        }
-        */
-
+        
         /// <summary>
         /// Single run of the solver
         /// </summary>
@@ -774,22 +536,25 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
-                // Update matrices
-                // ---------------
+                //// Update matrices
+                //// ---------------
 
-                UpdateMatrices();
+                //UpdateMatrices();
 
 
                 // call solver
                 // -----------
-                double mintime, maxtime;
-                bool converged;
-                int NoOfIterations;
+                //double mintime, maxtime;
+                //bool converged;
+                //int NoOfIterations;
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
-                ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
+                //ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
 
+                this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+
+                /*
                 Console.WriteLine("finished; " + NoOfIterations + " iterations.");
                 Console.WriteLine("converged? " + converged);
                 Console.WriteLine("Timespan: " + mintime + " to " + maxtime + " seconds");
@@ -802,7 +567,7 @@ namespace BoSSS.Application.SipPoisson {
                 base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength, true);
                 base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
                 base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
-
+                */
                 
 
                 if (base.Control.ExactSolution_provided) {
@@ -819,12 +584,12 @@ namespace BoSSS.Application.SipPoisson {
                 // evaluate residual
                 // =================
                 {
-                    this.ResiualKP1.Clear();
-                    if (this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
-                        this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
-                    }
+                    //this.ResiualKP1.Clear();
+                    //if (this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
+                    //    this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
+                    //}
 
-                    var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, null, ResiualKP1.Mapping);
+                    var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, new[] { RHS }, ResiualKP1.Mapping);
                     ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
                 }
 
@@ -832,81 +597,6 @@ namespace BoSSS.Application.SipPoisson {
                 // ======
 
                 return 0.0;
-            }
-        }
-
-        /// <summary>
-        /// Solution of the system
-        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
-        /// using a black-box solver
-        /// </summary>
-        private void ClassicSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
-
-            mintime = double.MaxValue;
-            maxtime = double.MinValue;
-            Converged = false;
-            NoOfIter = int.MaxValue;
-
-            for (int i = 0; i < base.Control.NoOfSolverRuns; i++) {
-
-                // create sparse solver
-                // --------------------
-                ISparseSolver ipSolver;
-                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
-
-                switch (solvercodes) {
-                    case LinearSolverCode.classic_pardiso:
-                        ipSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                            CacheFactorization = true,
-                            UseDoublePrecision = true
-                        };
-                        break;
-
-                    case LinearSolverCode.classic_mumps:
-                        ipSolver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                        break;
-
-                    case LinearSolverCode.classic_cg:
-                        ipSolver = new ilPSP.LinSolvers.monkey.CG() {
-                            MaxIterations = 1000000,
-                            Tolerance = 1.0e-10,
-                            DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda
-                        };
-                        break;
-
-                    default:
-                        throw new ArgumentException();
-                }
-                ipSolver.DefineMatrix(LaplaceMtx);
-
-                // call solver
-                // -----------
-
-                int NoOfSolverRuns = base.Control.NoOfSolverRuns;
-                T.Clear();
-
-                Console.WriteLine("RUN " + i + ": solving system...");
-
-                var RHSvec = RHS.CoordinateVector.ToArray();
-                //RHSvec.SaveToTextFile("DG" + this.T.Basis.Degree + "_RHS.txt");
-                BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
-
-                T.Clear();
-                var solRes = default(SolverResult);
-                solRes = ipSolver.Solve(T.CoordinateVector, RHSvec);
-                mintime = Math.Min(solRes.RunTime.TotalSeconds, mintime);
-                maxtime = Math.Max(solRes.RunTime.TotalSeconds, maxtime);
-
-                //T.CoordinatesAsVector.SaveToTextFile("DG" + this.T.Basis.Degree + "_SOLUTION.txt");
-
-                Converged = solRes.Converged;
-                NoOfIter = solRes.NoOfIterations;
-
-                Console.WriteLine("Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
-                Console.WriteLine("Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
-                Console.WriteLine("Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
-
-                ipSolver.Dispose();
             }
         }
 
@@ -939,25 +629,6 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /*
-        private string m_AnalyseOutputpath;
-
-        private string AnalyseOutputpath {
-            get {
-                return m_AnalyseOutputpath;
-            }
-            set {
-                if (!Directory.Exists(value))
-                {
-                    m_AnalyseOutputpath = String.Concat(Directory.GetCurrentDirectory(), @"\");
-                }
-                else
-                {
-                    m_AnalyseOutputpath = value;
-                }
-            }
-        }
-        */
-
         /// <summary>
         /// Solution of the system
         /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
@@ -1010,9 +681,8 @@ namespace BoSSS.Application.SipPoisson {
                     T.Clear();
                     T.AccLaidBack(1.0, Tex);
 
-                    
-                    ConvergenceObserver CO = null;
-                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte=new List<Action<int, double[], double[], MultigridOperator>>();
+
+                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte = new List<Action<int, double[], double[], MultigridOperator>>();
                     ItCallbacks_Kollekte.Add(CustomItCallback);
 
                     ////Check if output analysis path is set, if invalid change to current directory ...
@@ -1081,7 +751,7 @@ namespace BoSSS.Application.SipPoisson {
                 }
             }
         }
-
+        */
         /*
         private void DeletePreviousOutput() {
             DirectoryInfo Dinfo = new DirectoryInfo(AnalyseOutputpath);
@@ -1147,12 +817,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
             using(new FuncTrace()) {
-                var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(
-                    this.LaplaceMtx, this.LaplaceAffine,
-                    this.T.Mapping,
-                    this.MgConfig, this.LapaceIp);
-
-                return ana.GetNamedProperties();
+                return this.LapaceIp.OperatorAnalysis(this.T.Mapping, this.MgConfig); 
             }
         }
 
@@ -1181,8 +846,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     class ipFlux : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public ipFlux(double penalty_const, MultidimensionalArray cj, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, cj, "T") //
+        public ipFlux(double penalty_const, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+            : base(penalty_const, "T") //
         {
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap.bndFunction["T"];
@@ -1213,6 +878,41 @@ namespace BoSSS.Application.SipPoisson {
                 default:
                     throw new NotImplementedException();
             }
+        }
+    }
+
+    /// <summary>
+    /// source term on the RHS
+    /// </summary>
+    class RHSSource : IVolumeForm, IParameterHandling {
+
+        public RHSSource(DGField rhsSourceField) {
+            m_rhsSourceField = rhsSourceField;
+        }
+
+
+        DGField m_rhsSourceField;
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public IList<string> ArgumentOrdering => new string[0];
+
+        public IList<string> ParameterOrdering => new[] { "RHSsource" };
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
+            return new[] { m_rhsSourceField };
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
+            if(!object.ReferenceEquals(m_rhsSourceField,Parameters[0])) {
+                Parameters[0].Clear();
+                Parameters[0].Acc(1.0, m_rhsSourceField);
+            }
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double rhsVal = cpv.Parameters[0];
+            return -rhsVal * V; // actually, the RHS is added on the left, therefore minus!
         }
     }
 

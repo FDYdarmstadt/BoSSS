@@ -50,8 +50,7 @@ namespace CNS {
         static void Main(string[] args) {
 
             //Application.InitMPI(args);
-            ////CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
-            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSupersonicInletCondition1D();
             //Debug.Assert(false, "remove me");
             //return;
 
@@ -59,18 +58,6 @@ namespace CNS {
                 args,
                 false,
                 () => new Program());
-
-            //BoSSS.Foundation.Quadrature.NonLin.TempTimers.WriteStat();
-            //Console.WriteLine("   Total boundary edge flux: " + OptimizedHLLCFlux.Total.Elapsed.TotalSeconds);
-            //Console.WriteLine("      allocation:            " + OptimizedHLLCFlux.Alloc.Elapsed.TotalSeconds);
-            //Console.WriteLine("      loops:                 " + OptimizedHLLCFlux.Loops.Elapsed.TotalSeconds);
-            //Console.WriteLine("         state comp:         " + OptimizedHLLCFlux.State.Elapsed.TotalSeconds);
-            //Console.WriteLine("            SupersonicInlet:           " + OptimizedHLLCFlux.SupersonicInlet.Elapsed.TotalSeconds);
-            //Console.WriteLine("               DistanceToInitialShock: " + OptimizedHLLCFlux.DistanceToInitialShock.Elapsed.TotalSeconds);
-            //Console.WriteLine("               SmoothJump:             " + OptimizedHLLCFlux.SmoothJump.Elapsed.TotalSeconds);
-            //Console.WriteLine("            SupersonicOutlet:          " + OptimizedHLLCFlux.SupersonicOutlet.Elapsed.TotalSeconds);
-            //Console.WriteLine("            AdiabaticSlipWall:         " + OptimizedHLLCFlux.AdiabaticSlipWall.Elapsed.TotalSeconds);
-            //Console.WriteLine("      inner edge flux:       " + OptimizedHLLCFlux.Inner.Elapsed.TotalSeconds);
         }
     }
 
@@ -261,11 +248,6 @@ namespace CNS {
                     Console.Write("Starting time step #" + TimestepNo + "...");
                 }
 
-                //if (TimestepNo == 2) {
-                //    BoSSS.Foundation.Quadrature.NonLin.TempTimers.Reset();
-                //    OptimizedHLLCFlux.Reset();
-                //}
-
                 // Update shock-capturing variables before performing a time step
                 // as the time step constraints (could) depend on artificial viscosity.
                 // If not doing so, the artificial viscosity values from the previous
@@ -279,7 +261,7 @@ namespace CNS {
                 // the time stepper
                 TimeStepper.UpdateTimeInfo(new TimeInformation(TimestepNo, phystime, dt));
 
-                //#region Evaluate operator for testing
+                #region Evaluate operator for testing
                 //// Evaluate the operator
                 //CoordinateMapping mapping = new CoordinateMapping(WorkingSet.ConservativeVariables);
                 //double[] OpAffine = new double[mapping.LocalLength];
@@ -288,7 +270,6 @@ namespace CNS {
                 //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, WorkingSet.ParameterFields, mapping);
                 //ev.Evaluate(1.0, 0.0, OpAffine, null);
                 //OpAffine.SaveToTextFile(String.Format("ResidualVector_{0}.txt", TimestepNo));
-                //#endregion
 
                 //// Sample points
                 //int noOfPoints = 1000;
@@ -318,25 +299,18 @@ namespace CNS {
                 //    }
                 //    sw.Flush();
                 //}
+                #endregion
 
                 using (new BlockTrace("TimeStepper.Perform", ht)) {
-                    //Exception e = null;
-                    //try {
-                    //TimeStepper.CurrentState.SaveToTextFile("tsinp-lts.txt");
-                    //ilPSP.Environment.GlobalVec =  TimeStepper.CurrentState.ToArray();
-                    //double dist = ilPSP.Environment.CompareTo(TimeStepper.CurrentState);
                     dt = TimeStepper.Perform(dt);
                     //} catch (Exception ee) {
                     //    e = ee;
                     //}
                     //e.ExceptionBcast();
 
-
                     if (DatabaseDriver.MyRank == 0 && TimestepNo % printInterval == 0) {
                         if (TimestepNo % printInterval == 0) {
-                            Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);
-                            //Console.WriteLine(" done. PhysTime: {0}, dt: {1}, currentTime: {2}", phystime, dt, TimeStepper.Time);
-                        }
+                            Console.WriteLine(" done. PhysTime: {0:0.#######E-00}, dt: {1:0.#######E-00}", phystime, dt);                        }
                     }
 
                     IDictionary<string, double> residuals = residualLoggers.LogTimeStep(TimestepNo, dt, phystime);
@@ -349,9 +323,6 @@ namespace CNS {
                 if (Control.WriteLTSLog && TimeStepper is AdamsBashforthLTS) {
                     this.WriteLTSLog(dt);
                 }
-                //if (TimestepNo == 10)
-                //    ilPSP.Tracing.Tracer.Current.ResetRecursive();
-
 
                 //WorkingSet.ConservativeVariables[0].CoordinateVector.SaveToTextFile(String.Format("DensityCoordVec_{0}.txt", TimestepNo));
                 //for (int d = 0; d < 2; d++) {
@@ -407,7 +378,7 @@ namespace CNS {
                 WorkingSet.UpdateDerivedVariables(this, SpeciesMap.SubGrid.VolumeMask);
                 plotDriver.PlotFields("CNS-" + timestepNo, physTime, m_IOFields);
 
-                //#region Write residuals to text file
+                #region Write residuals to text file
                 // Sample points
                 //int noOfPoints = 16;
                 //double[] nodes = GenericBlas.Linspace(-1.8, -0.3, noOfPoints);
@@ -436,7 +407,7 @@ namespace CNS {
                 ////    }
                 ////    sw.Flush();
                 ////}
-                ////#endregion
+                #endregion
 
                 #region Write DG fields to text file
                 // Sample points

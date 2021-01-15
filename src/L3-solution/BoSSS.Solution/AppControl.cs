@@ -126,6 +126,7 @@ namespace BoSSS.Solution.Control {
             private set;
         }
 
+
         /// <summary>
         /// Adds an entry to <see cref="FieldOptions"/>.
         /// </summary>
@@ -887,8 +888,6 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Activates tracing (record of method calls and returns) for selected namespaces, e.g. "BoSSS.Foundation,BoSSS.Solution".
         /// If not null and not empty, trace-files are written for every MPI rank.
-        /// The created trace files are zipped,
-        /// they can be viewed e.g. by 'gunzip -c trace.0.txt'.
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]
@@ -999,6 +998,15 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public bool ContinueOnIoError = true;
+
+
+        /// <summary>
+        /// Computation-specific post-processing (e.g. drag computation or error against an exact solution)
+        /// which should be computed during the simulation
+        /// </summary>
+        [DataMember]
+        public List<InSituPostProcessingModule> PostprocessingModules = new List<InSituPostProcessingModule>();
+
 
         /// <summary>
         /// Used for control objects in work-flow management, 

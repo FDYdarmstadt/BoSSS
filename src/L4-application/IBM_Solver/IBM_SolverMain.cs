@@ -284,6 +284,7 @@ namespace BoSSS.Application.IBM_Solver {
                 IBM_Op = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder, 
                     FluidSpecies.Select(sId => LsTrk.GetSpeciesName(sId)));
+                IBM_Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
                 IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
 
@@ -614,15 +615,15 @@ namespace BoSSS.Application.IBM_Solver {
 
 #if DEBUG
                 if (DelComputeOperatorMatrix_CallCounter == 1) {
-                    int[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
-                    int[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
+                    long[] Uidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D.ForLoop(i => i));
+                    long[] Pidx = SaddlePointProblemMapping.GetSubvectorIndices(true, D);
                     CoordinateMapping Umap = this.Velocity.Mapping;
                     CoordinateMapping Pmap = this.Pressure.Mapping;
                     
                     var pGrad = new BlockMsrMatrix(Umap, Pmap);
                     var divVel = new BlockMsrMatrix(Pmap, Umap);
-                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(int[]), Pidx, default(int[]));
-                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(int[]), Uidx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, pGrad, Uidx, default(long[]), Pidx, default(long[]));
+                    OpMatrix.AccSubMatrixTo(1.0, divVel, Pidx, default(long[]), Uidx, default(long[]));
 
                     var pGradT = pGrad.Transpose();
                     var Err = divVel.CloneAs();
@@ -1467,7 +1468,7 @@ namespace BoSSS.Application.IBM_Solver {
                     NoOfCellsToRefine = glb[0];
                     NoOfCellsToCoarsen = glb[1];
                 }
-                int oldJ = this.GridData.CellPartitioning.TotalLength;
+                long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                 // Update Grid
                 // ===========

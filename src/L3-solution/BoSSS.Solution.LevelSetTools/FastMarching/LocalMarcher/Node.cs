@@ -28,11 +28,13 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         public LinkedList<Node> neighbors;
         double x_global;
         double y_global;
+        double[] pos_global;
         double phi;
 
         public Node(double X, double Y, double Phi) {
             X_local = X;
             Y_local = Y;
+            Pos_local = new double[] { X, Y };
             phi = Phi;
             neighbors = new LinkedList<Node>();
         }
@@ -40,6 +42,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         public void SetGlobalPosition(double X, double Y) {
             x_global = X;
             y_global = Y;
+            pos_global = new double[] { X, Y };
         }
 
         public double X_local {
@@ -62,8 +65,30 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             }
         }
 
+
+        public Node(double[] Pos, double Phi) {
+            Pos_local = Pos;
+            phi = Phi;
+            neighbors = new LinkedList<Node>();
+        }
+
+        public void SetGlobalPosition(double[] Pos) {
+            pos_global = Pos;
+        }
+
+        public double[] Pos_local {
+            get;
+        }
+
+        public double[] Pos_global {
+            get {
+                return pos_global;
+            }
+        }
+
+
         public double Phi {
-            set {
+            set { 
                 phi = value;
             }
             get {
@@ -128,6 +153,11 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         }
 
         public void Accept() {
+        }
+
+        public MarchingNodeStatus StatusTag {
+            get;
+            set;
         }
 
         #endregion

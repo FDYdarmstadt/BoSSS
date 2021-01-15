@@ -37,16 +37,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Implementation of the LinearDualValueFlux for Inner-Edges, based on <see cref="IEdgeForm"/>
         /// </summary>
-        /// <param name="inp"><see cref="IEdgeForm"/></param>
-        /// <param name="_uA"><see cref="IEdgeForm"/></param>
-        /// <param name="_uB"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_uA"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_uB"><see cref="IEdgeForm"/></param>
-        /// <param name="_vA"><see cref="IEdgeForm"/></param>
-        /// <param name="_vB"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_vA"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_vB"><see cref="IEdgeForm"/></param>
-        /// <returns></returns>
         public double InnerEdgeForm(ref CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Flx_InCell, Flx_OutCell;
             this.InnerEdgeFlux(ref inp, _uA, _uB, out Flx_InCell, out Flx_OutCell);
@@ -56,12 +46,6 @@ namespace BoSSS.Solution.Utils {
         /// <summary>
         /// Implementation of the LinearDualValueFlux for Border-Edges, based on <see cref="IEdgeForm"/>
         /// </summary>
-        /// <param name="inp"><see cref="IEdgeForm"/></param>
-        /// <param name="_uA"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_uA"><see cref="IEdgeForm"/></param>
-        /// <param name="_vA"><see cref="IEdgeForm"/></param>
-        /// <param name="_Grad_vA"><see cref="IEdgeForm"/></param>
-        /// <returns></returns>
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Flx_InCell;
             BorderEdgeFlux_(ref inp, _uA, out Flx_InCell);

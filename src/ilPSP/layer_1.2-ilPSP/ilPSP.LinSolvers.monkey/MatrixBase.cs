@@ -131,15 +131,15 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// number of rows, over all mpi processors
         /// </summary>
-        public int NoOfRows {
-            get { return (int)RowPartitioning.TotalLength; }
+        public long NoOfRows {
+            get { return RowPartitioning.TotalLength; }
         }
 
         /// <summary>
         /// number of columns, over all mpi processors
         /// </summary>
-        public int NoOfCols {
-            get { return (int)ColPartition.TotalLength; }
+        public long NoOfCols {
+            get { return ColPartition.TotalLength; }
         }
 
 
@@ -197,14 +197,14 @@ namespace ilPSP.LinSolvers.monkey {
             protected List<int> ColInd = new List<int>();
             protected List<int> RowStart = new List<int>();
             protected List<int> RowIndices = new List<int>();
-            protected List<int> GlobalColInd = new List<int>();
+            protected List<long> GlobalColInd = new List<long>();
 
             int m_RowInd = 0;
             int m_ColInd = -1;
 
             int m_Cnt = 0;
 
-            public void AddEntry(int __ColInd, int __GloablColInd, double val) {
+            public void AddEntry(int __ColInd, long __GloablColInd, double val) {
                 if (__ColInd <= m_ColInd)
                     throw new ArgumentException("rows must be specified from left to right (ascending column index).");
 
@@ -272,21 +272,21 @@ namespace ilPSP.LinSolvers.monkey {
             public double[] Val;
 
             /// <summary>
-            /// index: parallel with index of <see cref="Val"/>;<br/>
-            /// content: local (on this MPI process) column indices 
+            /// - index: parallel with index of <see cref="Val"/>;<br/>
+            /// - content: local (on this MPI process) column indices 
             /// </summary>
             public int[] ColInd;
 
             /// <summary>
-            /// index: parallel with index of <see cref="Val"/>;<br/>
-            /// content: global (over all MPI processors) column indices
+            /// - index: parallel with index of <see cref="Val"/>;<br/>
+            /// - content: global (over all MPI processors) column indices
             /// </summary>
-            public int[] GlobalColInd;
+            public long[] GlobalColInd;
 
             /// <summary>
-            /// index: parallel with <see cref="RowStart"/>;<br/>
-            /// content: entry [i] is a pointer into <see cref="Val"/> and <see cref="ColInd"/>
-            /// that denotes where row <see cref="rowInd"/>[i] starts;
+            /// - index: parallel with <see cref="RowStart"/>;<br/>
+            /// - content: entry [i] is a pointer into <see cref="Val"/> and <see cref="ColInd"/>
+            ///   that denotes where row <see cref="rowInd"/>[i] starts;
             /// </summary>
             public int[] RowStart;
 
@@ -311,13 +311,13 @@ namespace ilPSP.LinSolvers.monkey {
             // define Comm List
             // ================
             
-            SortedDictionary<int, List<int>> CommLists = new SortedDictionary<int, List<int>>();
+            SortedDictionary<int, List<long>> CommLists = new SortedDictionary<int, List<long>>();
             // keys: processor rank p
             // values: List of global indices, which processor p needs to send to this processor
 
             int Lr;
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
 
             int L = rp.LocalLength;
             int i0 = (int)rp.i0;
@@ -328,7 +328,7 @@ namespace ilPSP.LinSolvers.monkey {
                 Lr = M.GetOccupiedColumnIndices(iGlob, ref col);
 
                 for (int j = 0; j < Lr; j++) { // loop over all nonzero entries in row 'iGlob'
-                    int jGlob = col[j];
+                    long jGlob = col[j];
 
                     if (cp.i0 <= jGlob && jGlob < (cp.i0 + cp.LocalLength)) {
                         // Entry on current processor
@@ -338,9 +338,9 @@ namespace ilPSP.LinSolvers.monkey {
                         // Entry on Processor proc
 
                         if (!CommLists.ContainsKey(proc))
-                            CommLists.Add(proc, new List<int>());
+                            CommLists.Add(proc, new List<long>());
 
-                        List<int> CommList_proc = CommLists[proc];
+                        List<long> CommList_proc = CommLists[proc];
                         if (!CommList_proc.Contains(jGlob)) // a lot of room for optimization
                             CommList_proc.Add(jGlob);
                     }
@@ -350,7 +350,7 @@ namespace ilPSP.LinSolvers.monkey {
             // sort com list
             // =============
             {
-                foreach (List<int> cl in CommLists.Values)
+                foreach (List<long> cl in CommLists.Values)
                     cl.Sort();
             }
 
@@ -370,7 +370,7 @@ namespace ilPSP.LinSolvers.monkey {
 
 
                     for (int j = 0; j < Lr; j++) {
-                        int jGlob = col[j];
+                        long jGlob = col[j];
                         double Value = val[j];
 
                         bool bIsDiag = (iGlob == jGlob);
@@ -378,13 +378,13 @@ namespace ilPSP.LinSolvers.monkey {
                         if (cp.i0 <= jGlob && jGlob < (cp.i0 + cp.LocalLength)) {
                             // Entry on current processor
 
-                            intTmp.AddEntry(jGlob - (int)cp.i0, Value, bIsDiag);
+                            intTmp.AddEntry(checked((int)(jGlob - cp.i0)), Value, bIsDiag);
 
                         } else {
                             int proc = cp.FindProcess(jGlob);
                             // Entry on Processor proc
 
-                            List<int> CommList_proc = CommLists[proc];
+                            List<long> CommList_proc = CommLists[proc];
                             int jloc = CommList_proc.IndexOf(jGlob);
 
                             ExternalTmp et = extTmp[proc];
@@ -409,38 +409,40 @@ namespace ilPSP.LinSolvers.monkey {
             // send/receive & transform  Comm lists
             // ====================================
             {
-                SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
                 SortedDictionary<int, int[]> CommListsTo = new SortedDictionary<int, int[]>();
+                using(SerialisationMessenger sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD)) {
 
-                foreach (int proc in CommLists.Keys)
-                    sms.SetCommPath(proc);
-                sms.CommitCommPaths();
+                    foreach(int proc in CommLists.Keys)
+                        sms.SetCommPath(proc);
+                    sms.CommitCommPaths();
 
-                foreach (int proc in CommLists.Keys)
-                    sms.Transmit(proc, CommLists[proc].ToArray());
+                    foreach(int proc in CommLists.Keys)
+                        sms.Transmit(proc, CommLists[proc].ToArray());
 
-                int _proc;
-                int[] CommListReceived;
-                sms.GetNext(out _proc, out CommListReceived);
-                int Lcol = m_ColPart.LocalLength;
-                int i0col = (int)m_ColPart.i0;
-                while (CommListReceived != null) {
+                    int _proc;
+                    long[] gCommListReceived;
+                    int[] CommListReceived;
+                    sms.GetNext(out _proc, out gCommListReceived);
+                    int Lcol = m_ColPart.LocalLength;
+                    int i0col = (int)m_ColPart.i0;
+                    while(gCommListReceived != null) {
 
-                    // convert indices to local coordinates
-                    for (int i = 0; i < CommListReceived.Length; i++) {
-                        CommListReceived[i] -= i0col;
+                        // convert indices to local coordinates
+                        CommListReceived = new int[gCommListReceived.Length];
+                        for(int i = 0; i < CommListReceived.Length; i++) {
+                            CommListReceived[i] = (int)(gCommListReceived[i] - i0col);
 
-                        // check:
-                        if (CommListReceived[i] < 0 || CommListReceived[i] >= Lcol)
-                            throw new ApplicationException("internal error: something wrong with received Comm List.");
+                            // check:
+                            if(CommListReceived[i] < 0 || CommListReceived[i] >= Lcol)
+                                throw new IndexOutOfRangeException("internal error: something wrong with received Comm List.");
+                        }
+
+                        CommListsTo.Add(_proc, CommListReceived);
+
+                        sms.GetNext(out _proc, out gCommListReceived);
                     }
 
-                    CommListsTo.Add(_proc, CommListReceived);
-
-                    sms.GetNext(out _proc, out CommListReceived);
                 }
-
-                sms.Dispose();
 
                 m_SpmvCommPattern = new SpmvCommPattern();
                 m_SpmvCommPattern.ComLists = CommListsTo;
@@ -488,7 +490,7 @@ namespace ilPSP.LinSolvers.monkey {
             /// <remarks>
             /// <list type="bullet">
             ///   <item>keys <em>p</em>: ranks of processors to send data to</item>
-            ///   <item>values: the comm list for the processor <em>p</em></item>
+            ///   <item>values: the comm list for the processor <em>p</em>: local indices of entries which must be sent to processor <em>p</em></item>
             /// </list>
             /// If a distributed MSR matrix is multiplied by a distributed vector <em>v</em>
             /// (the matrix rows are distributed according to its row partition
@@ -671,7 +673,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <remarks>
         /// works only in unlocked matrix state (see <see cref="LockAbleObject.Lock"/>, <see cref="LockAbleObject.Unlock"/>);
         /// </remarks>
-        virtual public double GetDiagonalElement(int row) {
+        virtual public double GetDiagonalElement(long row) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
@@ -684,7 +686,7 @@ namespace ilPSP.LinSolvers.monkey {
             }
 
             if (m_DiagElementPointer[rloc] < 0) {
-                m_DiagElementPointer[rloc] = m_LocalMtx.GetEntryIndex(rloc, row - (int) m_ColPart.i0); // cache the pointer;
+                m_DiagElementPointer[rloc] = m_LocalMtx.GetEntryIndex(rloc, checked((int)(row - m_ColPart.i0))); // cache the pointer;
                                                                                          // altering diagonal elments is used very often (e.g. implicit euler),
                                                                                          // so a special optimization seems to be justified.
             }
@@ -692,7 +694,7 @@ namespace ilPSP.LinSolvers.monkey {
             if (m_DiagElementPointer[rloc] < 0)
                 // diag entry is eiter not present, or in some external matrix
                 // -- we assume this is a seldome case => let someone else do the job
-                return GetValues(row, new int[] { row })[0];
+                return GetValues(row, new long[] { row })[0];
                 
             else
                 return m_LocalMtx.Val[m_DiagElementPointer[rloc]];
@@ -706,7 +708,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <remarks>
         /// works only in unlocked matrix state (see <see cref="LockAbleObject.Lock"/>, <see cref="LockAbleObject.Unlock"/>);
         /// </remarks>
-        virtual public void SetDiagonalElement(int row, double val) {
+        virtual public void SetDiagonalElement(long row, double val) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
@@ -719,7 +721,7 @@ namespace ilPSP.LinSolvers.monkey {
             }
 
             if (m_DiagElementPointer[rloc] < 0) {
-                m_DiagElementPointer[rloc] = m_LocalMtx.GetEntryIndex(rloc, row - (int)m_ColPart.i0); // cache the pointer;
+                m_DiagElementPointer[rloc] = m_LocalMtx.GetEntryIndex(rloc, checked((int)(row - m_ColPart.i0))); // cache the pointer;
                                                                                            // altering diagonal elments is used very often (e.g. implicit euler),
                                                                                            // so a special optimization seems to be justified.
             }
@@ -727,7 +729,7 @@ namespace ilPSP.LinSolvers.monkey {
             if (m_DiagElementPointer[rloc] < 0)
                 // diag entry is eiter not present, or in some external matrix
                 // -- we assume this is a seldome case => let someone else do the job
-                SetValues(row, new int[] { row }, new double[] { val });
+                SetValues(row, new long[] { row }, new double[] { val });
             else
                 m_LocalMtx.Val[m_DiagElementPointer[rloc]] = val;
         }
@@ -739,14 +741,14 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// see <see cref="IMutableMatrixEx.GetOccupiedColumnIndices"/>
         /// </summary>
-        public int GetOccupiedColumnIndices(int RowIndex, ref int[] ret) {
+        public int GetOccupiedColumnIndices(long RowIndex, ref long[] ret) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
             m_helper.Update(RowIndex, m_LocalMtx, ExtMatrix, m_RowPart, (int)m_ColPart.i0);
 
             if(ret == null || ret.Length < m_helper.UsedLen)
-                ret = new int[m_helper.UsedLen];
+                ret = new long[m_helper.UsedLen];
             Array.Copy(m_helper.ColIndices, 0, ret, 0, m_helper.UsedLen);
             return m_helper.UsedLen;
         }
@@ -754,14 +756,14 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// see <see cref="IMutableMatrixEx.GetRow"/>
         /// </summary>
-        public int GetRow(int RowIndex, ref int[] retCol, ref double[] retVal) {
+        public int GetRow(long RowIndex, ref long[] retCol, ref double[] retVal) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
             m_helper.Update(RowIndex, m_LocalMtx, ExtMatrix, m_RowPart, (int)m_ColPart.i0);
 
             if (retCol == null || retCol.Length < m_helper.UsedLen)
-                retCol = new int[m_helper.UsedLen];
+                retCol = new long[m_helper.UsedLen];
             if (retVal == null || retVal.Length < m_helper.UsedLen)
                 retVal = new double[m_helper.UsedLen];
 
@@ -778,22 +780,22 @@ namespace ilPSP.LinSolvers.monkey {
         #region IMutuableMatrix Members
 
         /// <summary>
-        /// Helper sutructure, used mainly by the methods that are defined by the
+        /// Helper structure, used mainly by the methods that are defined by the
         /// <see cref="IMutableMatrixEx"/>-interface.
         /// </summary>
         struct Helper {
 
-            public int[] ColIndices;
+            public long[] ColIndices;
             public int[] PointersIntoVal;
             public double[] Values;
             public int row;
             public int UsedLen;
             public bool _1stUse; // if false, the structure is not initialized and 
-            public int MinCol;
-            public int MaxCol;
+            public long MinCol;
+            public long MaxCol;
             public int[] OwnerProcRank;
 
-            public void Update(int RowIndex, FormatBase m_LocalMtx, IDictionary<int, External> ExtMatrix, IPartitioning rowPart, int Col0) {
+            public void Update(long RowIndex, FormatBase m_LocalMtx, IDictionary<int, External> ExtMatrix, IPartitioning rowPart, long Col0) {
 
                 rowPart.TestIfInLocalRange(RowIndex);
                 int _row = rowPart.TransformIndexToLocal(RowIndex);
@@ -816,8 +818,8 @@ namespace ilPSP.LinSolvers.monkey {
                         // these matrices may have unused 'dummy' entries (to fill up memory)
 
                         for (int i = 0; i < UsedLen; i++) {
-                            int MtxCol = ColIndices[i];
-                            if (Array.IndexOf<int>(ColIndices, MtxCol, 0, i) >= 0) {
+                            long MtxCol = ColIndices[i];
+                            if (Array.IndexOf<long>(ColIndices, MtxCol, 0, i) >= 0) {
                                 // found a dummy
 
                                 UsedLen++;
@@ -882,7 +884,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// see <see cref="IMutableMatrix.GetValues"/>
         /// </summary>
-        public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+        public double[] GetValues(long RowIndex, long[] ColumnIndices) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
@@ -890,7 +892,7 @@ namespace ilPSP.LinSolvers.monkey {
             double[] ret = new double[ColumnIndices.Length];
 
             for (int i = 0; i < ret.Length; i++) {
-                int ptr = Array.IndexOf<int>(m_helper.ColIndices, ColumnIndices[i], 0, m_helper.UsedLen);
+                int ptr = Array.IndexOf<long>(m_helper.ColIndices, ColumnIndices[i], 0, m_helper.UsedLen);
                 if (ptr < 0) {
                     ret[i] = 0;
                 } else {
@@ -909,7 +911,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// see <see cref="IMutableMatrix.SetValues"/>
         /// </summary>
-        public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+        public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
             if (this.IsLocked)
                 throw new ApplicationException("object is locked, call illegal");
 
@@ -917,7 +919,7 @@ namespace ilPSP.LinSolvers.monkey {
 
 
             for (int i = 0; i < newValues.Length; i++) {
-                int ptr = Array.IndexOf<int>(m_helper.ColIndices, ColumnIndices[i], 0, m_helper.UsedLen);
+                int ptr = Array.IndexOf<long>(m_helper.ColIndices, ColumnIndices[i], 0, m_helper.UsedLen);
                 if (ptr < 0) {
                     throw new ArgumentException("entry (" + RowIndex + "," + ColumnIndices[i] + ") is not present in matrix (matrix does not support allocation of new entries);");
                 } else {
@@ -934,7 +936,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// set/get an arbitrary entry; setting an entry where no space is allocated will produce an excepion.
         /// </summary>
-        public double this[int i, int j] {
+        public double this[long i, long j] {
             get {
                 if (this.IsLocked)
                     throw new ApplicationException("object is locked, call illegal");
@@ -942,9 +944,9 @@ namespace ilPSP.LinSolvers.monkey {
                     return GetDiagonalElement(i); // may be faster
 
 
-                int ptr = this.m_LocalMtx.GetEntryIndex(i, j);
+                int ptr = this.m_LocalMtx.GetEntryIndex(m_RowPart.TransformIndexToLocal(i), m_ColPart.TransformIndexToLocal(j));
                 if (ptr < 0) {
-                    return GetValues(i, new int[] { j })[0];
+                    return GetValues(i, new long[] { j })[0];
                 } else {
                     return this.m_LocalMtx.Val[ptr];
                 }
@@ -956,9 +958,9 @@ namespace ilPSP.LinSolvers.monkey {
                 if (i == j)
                     SetDiagonalElement(i, value); // may be faster
 
-                int ptr = this.m_LocalMtx.GetEntryIndex(i, j);
+                int ptr = this.m_LocalMtx.GetEntryIndex(m_RowPart.TransformIndexToLocal(i), m_ColPart.TransformIndexToLocal(j));
                 if (ptr < 0) {
-                    SetValues(i, new int[] { j }, new double[] { value });
+                    SetValues(i, new long[] { j }, new double[] { value });
                 } else {
                     this.m_LocalMtx.Val[ptr] = value;
                 }
@@ -973,7 +975,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
             this.AccBlock(i0, j0, alpha, Block, 1.0);
         }
 
@@ -985,7 +987,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         /// <param param name="beta">pre-scaling</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();
             int I = Block.NoOfRows;
@@ -994,6 +996,23 @@ namespace ilPSP.LinSolvers.monkey {
             for (int i = 0; i < I; i++)
                 for (int j = 0; j < J; j++)
                     this[i0 + i, j0 + j] = this[i0 + i, j0 + j]*beta + alpha * Block[i, j];
+        }
+
+        /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+             if (Block.Dimension != 2)
+                throw new ArgumentException();
+            int I = Block.NoOfRows;
+            int J = Block.NoOfCols;
+
+            for(int i = 0; i < I; i++)
+                for(int j = 0; j < J; j++)
+                    Block[i, j] = this[i0 + i, j0 + j];
         }
 
         /// <summary>

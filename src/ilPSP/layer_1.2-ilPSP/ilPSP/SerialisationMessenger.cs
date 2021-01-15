@@ -280,7 +280,7 @@ namespace ilPSP.Utils {
             TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
         };
         
-        bool m_UseJson = false;
+        bool m_UseJson = true;
 
         /// <summary>
         /// Whether to use a JSON formatter or the binary formatter

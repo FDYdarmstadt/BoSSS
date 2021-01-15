@@ -114,7 +114,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Curvature", new FieldOpts() {
+            // the following variable names for the level set will replace the above ones in the new XNSE!
+            //FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            //FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+            //    Degree = LevSetDegree,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
+            FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
             });
@@ -350,6 +358,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool SkipSolveAndEvaluateResidual = false;
 
+        /*
         /// <summary>
         /// Data to be written in LogFile
         /// </summary>
@@ -421,9 +430,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [DataMember]
         public int LogPeriod = 1;
+        */
 
-        public bool WriteInterfaceP = false;
 
+        //public bool WriteInterfaceP = false;
+
+        /// <summary>
+        /// Seems to be unused...
+        /// </summary>
+        [DataMember]
         public bool TestMode = false;
 
 
@@ -468,7 +483,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// options for additional penalization terms for fast marching
         /// </summary>
         [DataMember]
-        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
         /// <summary>
         /// Options for the initialization of the Fourier Level-set
@@ -595,27 +610,27 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// arithmetic mean
             /// </summary>
-            mean,
+            mean = 1,
 
             /// <summary>
-            /// density weighted average
+            /// density weighted average (recommended default value for most cases)
             /// </summary>
-            density,
+            density = 0,
 
             /// <summary>
             /// viscosity weighted average
             /// </summary>
-            viscosity,
+            viscosity = 2,
 
             /// <summary>
             /// only take velocity from phase A
             /// </summary>
-            phaseA,
+            phaseA = 3,
 
             /// <summary>
             /// only take velocity from phase B
             /// </summary>
-            phaseB
+            phaseB = 4
 
         }
 
@@ -634,6 +649,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public Func<double[], double, double> Phi;
 
         /// <summary>
+        /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double, double> Phi0Initial;
+
+        /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>
         [NonSerialized]
@@ -646,6 +668,13 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionPressure;
+
+        /// <summary>
+        /// Exact solution, temperature, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
 
         /// <summary>
         /// Control Options for ReInit
@@ -662,7 +691,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// three-step reinitialization with preconditioning fast-marching
         /// </summary>
         [DataMember]
-        public bool fullReInit = true;
+        public bool fullReInit = false;
 
         /// <summary>
         /// switch for the computation of the coupled heat solver

@@ -147,7 +147,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             //To find corresponding nodes, the method looks up the edgenodes in the dictionary EdgeNodes using the position as the key.
             Node[] nodes = new Node[EdgeNode.GetLength(0)];
             for (int i = 0; i < EdgeNode.GetLength(0); ++i) {
-                Position edgeNodePosition = new Position(EdgeNode[i, 0], EdgeNode[i, 1]);
+                Position edgeNodePosition = new Position(EdgeNode.ExtractSubArrayShallow(i, -1).To1DArray());
                 //Find correspoding Node in Edgenodes and write into nodes,
                 if (!this.edgeNodes.TryGetValue(edgeNodePosition, out nodes[i])) {
                     throw new DataMisalignedException("Cannot align Edge with NodeGraph");

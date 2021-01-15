@@ -275,7 +275,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            public int i0Func(int jCell, int iVar) {
+            public long i0Func(int jCell, int iVar) {
                 if (VarIsXdg[iVar]) {
                     int iSpc = m_LsRegion.GetSpeciesIndex(this.m_spId, jCell);
                     return m_Map.GlobalUniqueCoordinateIndex(iVar, jCell, iSpc * NS[iVar]);
@@ -757,8 +757,18 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// 
+        /// Sometimes, this provides indeed a correct agglomeration graph.
+        /// If agglomeration fails -- which it does quite regularly -- unleash the <see cref="Katastrophenplot"/> to see the mess!
         /// </summary>
+        /// <remarks>
+        /// Cell agglomeration is used to handle two problems:
+        /// first, for the treatment of very small cut cells and, for temporally evolving interfaces, to 
+        /// ensure an equal topology of the (agglomerated) XDG cut-cell mesh for all involved temporal levels.
+        /// - the issue of small cut cells is described in the paper:
+        ///   _Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization; Kummer; IJNMF 109 (2), 2017_. 
+        /// - the agglomeration of _newborn_ and _decased_ cells is described in 
+        ///   the paper: _Time integration for extended discontinuous Galerkin methods with moving domains; Kummer, Müller, Utz; IJNMF 113 (5), 2018_.
+        /// </remarks>
         static public IEnumerable<Tuple<int, int>> FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, double AgglomerationThreshold,
             MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea,
             bool AgglomerateNewborn, bool AgglomerateDeceased, bool ExceptionOnFailedAgglomeration,
@@ -780,7 +790,7 @@ namespace BoSSS.Foundation.XDG {
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
                 int Jtot = grdDat.Cells.Count;
                 Partitioning CellPart = Tracker.GridDat.CellPartitioning;
-                int i0 = CellPart.i0;
+                long i0 = CellPart.i0;
                 var GidxExt = Tracker.GridDat.Parallel.GlobalIndicesExternalCells;
                 var GidxExt2Lidx = Tracker.GridDat.Parallel.Global2LocalIdx;
                 //double[] RefVolumes = grdDat.Grid.RefElements.Select(Kref => Kref.Volume).ToArray();

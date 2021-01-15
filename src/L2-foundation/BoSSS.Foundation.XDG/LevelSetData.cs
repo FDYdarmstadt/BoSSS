@@ -384,7 +384,7 @@ namespace BoSSS.Foundation.XDG {
                 {
                     int LocColors = ColorCounter - 1;
                     var ColorPart = new Partitioning(LocColors);
-                    int ColorOffset = ColorPart.i0;
+                    int ColorOffset = checked((int)(ColorPart.i0));
 
                     for (int j = 0; j < J; j++) {
                         if (ColorMap[j] != 0) {

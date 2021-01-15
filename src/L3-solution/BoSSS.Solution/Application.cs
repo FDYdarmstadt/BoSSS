@@ -326,6 +326,8 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine("User: " + System.Environment.UserName);
+
                     using (var stw = new StringWriter()) {
                         var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
                         int I = HostName.Count;
@@ -443,8 +445,12 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            int MPIrank = int.MinValue;
 #if DEBUG
             {
+
+                
 #else
             try {
 #endif
@@ -454,6 +460,7 @@ namespace BoSSS.Solution {
                 bool _MustFinalizeMPI = InitMPI(args);
                 ReadBatchModeConnectorConfig();
 
+                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
@@ -512,7 +519,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine();
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine(e.GetType().Name + ":");
+                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
                 Console.Error.WriteLine(e.Message);
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
@@ -616,21 +623,10 @@ namespace BoSSS.Solution {
                 // +++++++++++++++++++++
 
                 string JSON = File.ReadAllText(ControlFilePath);
-                object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
-                                                                 //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                                                                 //    var bf = new BinaryFormatter();
-                                                                 //    controlObj = bf.Deserialize(fs);
-                                                                 //}
+                object controlObj = AppControl.Deserialize(JSON);
 
                 ctrlV2 = controlObj as T;
-                //Debugger.Launch();
-                //if (controlObj is T) {
-                //    ctrlV2 = (T)controlObj;
-
-                //} else if (controlObj is IEnumerable<T>) {
-                //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-
-                //} 
+               
 
                 if (ctrlV2 == null) {
                     throw new ApplicationException(string.Format(
@@ -1277,13 +1273,15 @@ namespace BoSSS.Solution {
                 m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
-                //=============
+                // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
+
+                
 
                 // load queries from control file
                 //========================
@@ -1296,14 +1294,34 @@ namespace BoSSS.Solution {
                 }
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
-                //save session information
-                //========================
+                // logging
+                // ==================================
+                m_PostprocessingModules.Clear();
+                if(this.Control != null && this.Control.PostprocessingModules != null) {
+                    m_PostprocessingModules.AddRange(this.Control.PostprocessingModules);
+                }
+
+                // save session information
+                // ========================
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
             }
         }
+
+        List<InSituPostProcessingModule> m_PostprocessingModules = new List<InSituPostProcessingModule>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.PostprocessingModules"/>
+        /// </summary>
+        public IList<InSituPostProcessingModule> PostprocessingModules {
+            get {
+                return m_PostprocessingModules;
+            }
+        }
+
+
 
         /// <summary>
         /// Information about the currently active session.
@@ -1787,17 +1805,21 @@ namespace BoSSS.Solution {
                     }
 
                     if (!found) {
-                        throw new ApplicationException(
+                        Console.WriteLine("Warning: " +
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
                     }
                 }
 
+                if(LsTrk != null) {
+                    LsTrk.UpdateTracker(0.0);
+                    LsTrk.UpdateTracker(0.0); // doppeltes Update hält besser; 
+                }
+
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.PushStacks();
+
 
                     foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;
@@ -1928,7 +1950,7 @@ namespace BoSSS.Solution {
         protected Boolean TerminationKey = false;
 
         /// <summary>
-        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// If the current simulation has been restarted, <see cref="TimeStepNoRestart"/>
         /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
         /// </summary>
         protected TimestepNumber TimeStepNoRestart = null;
@@ -1962,6 +1984,9 @@ namespace BoSSS.Solution {
         /// </remarks>
         public virtual void RunSolverMode() {
 
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
@@ -1969,7 +1994,6 @@ namespace BoSSS.Solution {
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
 
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
@@ -1989,6 +2013,29 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                CreateEquationsAndSolvers(null);
+                tr.LogMemoryStat();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                if(LsTrk != null)
+                    LsTrk.PushStacks();
+
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
 
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
@@ -1998,30 +2045,42 @@ namespace BoSSS.Solution {
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
 
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                m_queryHandler.QueryResults.Clear();
-
-                // sometimes, the operators depend on parameters,
-                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
-                // resp. 'LoadRestart(..)'!!!
-                CreateEquationsAndSolvers(null);
-                tr.LogMemoryStat();
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                    
                     if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                    if(initialRedist == true) {
+                        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                        if(this.RollingSave)
+                            rollingSavesTsi[0] = Tuple.Create(0, ts0);
+                    }
                 }
+
+
+                // =================================================================================
+                // Main/outmost time-stepping loop
+                // (in steady-state: only one iteration)
+                // =================================================================================
+
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
                         ResetInitial();
                     }
+
+                    // setup of logging
+                    foreach( var l in PostprocessingModules) {
+                        l.Setup(this);
+                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
+                    }
+
 
                     bool RunLoop(int i) {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
@@ -2031,10 +2090,17 @@ namespace BoSSS.Solution {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
+
+                        
+                        foreach(var l in PostprocessingModules) {
+                            l.DriverTimestepPostProcessing(i, physTime);
+                        }
 
                         ITimestepInfo tsi = null;
 
@@ -2078,9 +2144,11 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
 
-
-                    // Evaluate queries and write log file (either to session directory
-                    // or current directory)
+                   
+                    // =================================================================================
+                    // Evaluate queries and write log file 
+                    // (either to session directory or current directory)
+                    // =================================================================================
                     m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
                     foreach (var kv in m_queryHandler.QueryResults) {
                         QueryResultTable.LogValue(kv.Key, kv.Value);
@@ -2623,6 +2691,8 @@ namespace BoSSS.Solution {
                 m_ResLogger.Close();
                 m_ResLogger = null;
             }
+
+
         }
 
         /// <summary>
@@ -3102,6 +3172,10 @@ namespace BoSSS.Solution {
                     Bye();
                     ProfilingLog();
 
+                    foreach( var l in PostprocessingModules) {
+                        l.Dispose();
+                    }
+
                     if (this.CurrentSessionInfo != null)
                         this.CurrentSessionInfo.Dispose();
                     if (DatabaseDriver != null) {
@@ -3124,10 +3198,8 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// returns the size of the fixed timestep; if a variable timestep is set, this method throws
-        /// an exception.
+        /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        /// <returns></returns>
         public double GetFixedTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
@@ -3152,28 +3224,7 @@ namespace BoSSS.Solution {
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
-            wrt.WriteLine();
-            wrt.WriteLine("Common Suspects:");
-            wrt.WriteLine("================");
-
             var R = Root;
-            List<MethodCallRecord> CommonSuspects = new List<MethodCallRecord>();
-            CommonSuspects.AddRange(R.FindChildren("*GridData*ctor*"));
-            CommonSuspects.AddRange(R.FindChildren("*MsrMatrix.Multiply*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*Evaluator*Evaluate*"));
-            CommonSuspects.AddRange(R.FindChildren("ilPSP.LinSolvers*Solve*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.XDG.XSpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("*MassMatrixFactory.ComputeMassMatrixBlocks*"));
-            CommonSuspects.AddRange(R.FindChildren("*Quadrature*Execute*"));
-            CommonSuspects.AddRange(R.FindChildren("integrand_evaluation"));
-            CommonSuspects.AddRange(R.FindChildren("quadrature"));
-            CommonSuspects.AddRange(R.FindChildren("saving_results"));
-
-
-            foreach (var mcr in CommonSuspects) {
-                wrt.WriteLine(mcr.GetMiniReport().ToString());
-            }
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");

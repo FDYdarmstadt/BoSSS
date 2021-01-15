@@ -154,7 +154,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
                 int Nloc = Matrix.RowPartitioning.LocalLength;
-                int Ntot = Matrix.RowPartitioning.TotalLength;
+                long Ntot = Matrix.RowPartitioning.TotalLength;
 
                 double[] r = new double[Nloc];
                 double[] z = new double[Nloc];

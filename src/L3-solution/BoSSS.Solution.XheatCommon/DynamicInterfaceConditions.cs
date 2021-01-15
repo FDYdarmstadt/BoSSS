@@ -41,16 +41,19 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermParams, double _sigma) 
+        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermParams, double _sigma, bool _movingMesh) 
             : base(_D, LsTrk, thermParams, _sigma) {
 
             this.m_d = _d;
             if (m_d >= m_D)
                 throw new ArgumentOutOfRangeException();
 
+            this.movingMesh = _movingMesh;
         }
 
         int m_d;
+
+        bool movingMesh;
 
 
         public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -81,16 +84,33 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = FlxNeg * vA - FlxPos * vB;
 
+
+            // moving-mesh-contribution
+            // ========================
+
+            if (movingMesh) {
+                double s = ComputeInterfaceNormalVelocity(cp.Parameters_IN, cp.Parameters_OUT, cp.Normal, cp.jCellIn);
+                //Console.WriteLine("interface normal velocity = {0}", s);
+                double movingFlux;
+                if (s > 0) { // select DOWN-wind!
+                    movingFlux = (-s) * cp.Parameters_OUT[m_D + 3 + m_d]; // uB[0];
+                } else {
+                    movingFlux = (-s) * cp.Parameters_IN[m_D + 3 + m_d]; // uA[0];
+                }
+
+                Ret -= movingFlux * Normal[m_d] * 0.5 * (vA + vB);
+            }
+
             return Ret;
         }
 
 
 
-        //public override IList<string> ParameterOrdering {
-        //    get {
-        //        return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.DisjoiningPressure);
-        //    }
-        //}
+        public override IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.HeatFlux0Vector(m_D), VariableNames.Temperature0, VariableNames.Curvature, VariableNames.MassFluxExtension, VariableNames.Velocity0Vector(m_D));
+            }
+        }
 
 
     }

@@ -1287,12 +1287,12 @@ namespace BoSSS.Application.XRheology_Solver {
                                     {
                                         int[] VelVarIdx = new int[] { 3, 4, 5 };
 
-                                        int[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
-                                        int[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        long[] USubMatrixIdx_Row = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
+                                        long[] USubMatrixIdx_Col = mgOp.Mapping.GetSubvectorIndices(VelVarIdx);
                                         int L = USubMatrixIdx_Row.Length;
 
                                         DiffMatrix = new MsrMatrix(L, L, 1, 1);
-                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(int[]), USubMatrixIdx_Col, default(int[]));
+                                        FullMatrix.WriteSubMatrixTo(DiffMatrix, USubMatrixIdx_Row, default(long[]), USubMatrixIdx_Col, default(long[]));
                                     }
 
                                     MultidimensionalArray ret = MultidimensionalArray.Create(1, 2);
@@ -1498,8 +1498,6 @@ namespace BoSSS.Application.XRheology_Solver {
                     BDFDelayedInitSetIntial);
             }
 
-            After_SetInitialOrLoadRestart(0.0, 0);
-
         }
 
         /// <summary>
@@ -1537,21 +1535,6 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-        private void After_SetInitialOrLoadRestart(double PhysTime, int TimestepNo) {
-
-            // =============================================
-            // LogFile initialization
-            // =============================================  
-
-            if (this.Control.TestMode == true) {
-                LogQueryValue(PhysTime);
-            } else {
-                if (this.Control.LogValues != XRheology_Control.LoggingValues.None && this.CurrentSessionInfo.ID != Guid.Empty && base.MPIRank == 0) {
-                    InitLogFile(this.CurrentSessionInfo.ID);
-                    WriteLogLine(TimestepNo, PhysTime);
-                }
-            }
-        }
 
         /// <summary>
         /// performs restart
@@ -1600,8 +1583,6 @@ namespace BoSSS.Application.XRheology_Solver {
                     // delegate for the initialization of previous timesteps from restart session
                     BDFDelayedInitLoadRestart);
             }
-
-            After_SetInitialOrLoadRestart(Time, TimestepNo.MajorNumber);
 
         }
 
@@ -2000,7 +1981,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         NoOfCellsToRefine = glb[0];
                         NoOfCellsToCoarsen = glb[1];
                     }
-                    int oldJ = this.GridData.CellPartitioning.TotalLength;
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
 
                     // Update Grid
                     // ===========
@@ -2232,28 +2213,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // IO for further external postprocessing/ Query handling for Testprogram
             // ======================================================================
 
-            if (this.Control.TestMode == true) {
-                LogQueryValue(phystime + dt);
-            } else {
-                if (Log != null && this.Control.LogValues != XRheology_Control.LoggingValues.None && base.MPIRank == 0 && (TimestepNo.MajorNumber % this.Control.LogPeriod == 0))
-                    try {
-                        WriteLogLine(TimestepNo, phystime + dt);
-                    } catch (Exception e) {
-                        Console.WriteLine("An error occured during WriteLogLine: '{0}'", e);
-                    }
-
-            }
-
-            //Console.WriteLine("Pause");
-
-            //=======================
-            //var jmpNorm = XNSEUtils.VelocityJumpNorm(this.XDGvelocity.Velocity, true, MomentFittingVariant, -1);
-            //Console.WriteLine("Velocity Jump Norm: " + jmpNorm);
-            //var jmpStressNorm = XNSEUtils.MomentumJumpNorm(this.XDGvelocity.Velocity, this.Pressure, this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, MomentFittingVariant, -1);
-            //Console.WriteLine("Stress Jump Norm [0]: " + jmpStressNorm[0]);
-            //Console.WriteLine("Stress Jump Norm [1]: " + jmpStressNorm[1]);
-            //PrintVelocityAtLevSet(TimestepNo.MajorNumber);
-
+         
         }
 
 
@@ -2619,265 +2579,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
         #region logging
 
-        ///// <summary>
-        ///// saves the vector Guid for the sample points 
-        ///// </summary>
-        //TextWriter Log_FourierLS;
 
-
-        /// <summary>
-        /// testcase specific LogFile
-        /// </summary>
-        TextWriter Log;
-
-        /// <summary>
-        /// saves interface points
-        /// </summary>
-        TextWriter LogInterfaceP;
-
-
-        /// <summary>
-        /// initializes the format of the Log File
-        /// </summary>
-        /// <param name="sessionID"></param>
-        public void InitLogFile(Guid sessionID) {
-
-            if (this.Control.WriteInterfaceP) {
-                LogInterfaceP = base.DatabaseDriver.FsDriver.GetNewLog("InterfaceP", sessionID);
-                string header = String.Format("{0}\t{1}\t{2}", "#timestep", "#time", "interfacePoints");
-                LogInterfaceP.WriteLine(header);
-                LogInterfaceP.Flush();
-            }
-
-            switch (this.Control.LogValues) {
-                case XRheology_Control.LoggingValues.Wavelike: {
-
-                        // File for physical data
-                        TextWriter setUpData = base.DatabaseDriver.FsDriver.GetNewLog("SetUpData", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", "lambda", "H0", "rho1", "rho2", "mu1", "mu2", "sigma", "g");
-                        setUpData.WriteLine(header);
-                        setUpData.Flush();
-                        string data = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}", this.Control.AdditionalParameters[1], this.Control.AdditionalParameters[2], this.Control.PhysicalParameters.rho_A, this.Control.PhysicalParameters.rho_B,
-                            this.Control.PhysicalParameters.mu_A, this.Control.PhysicalParameters.mu_B, this.Control.PhysicalParameters.Sigma, this.Control.AdditionalParameters[3]);
-                        setUpData.WriteLine(data);
-                        setUpData.Flush();
-
-
-                        // Log file for the interface height
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("Amplitude", sessionID);
-                        header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", "#timestep", "#time", "magnitude", "real", "imaginary");
-                        Log.WriteLine(header);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.RisingBubble: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("BenchmarkQuantities_RisingBubble", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "area", "center of mass - x", "center of mass - y", "circularity", "rise velocity");
-                        Log.WriteLine(header);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.MovingContactLine: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("ContactAngle", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "#time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle");
-                        Log.WriteLine(header);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.CapillaryHeight: {
-
-                        Log = base.DatabaseDriver.FsDriver.GetNewLog("CapillaryHeight", sessionID);
-                        string header = String.Format("{0}\t{1}\t{2}\t{3}", "#timestep", "#time", "capillary-height", "at-PositionX");
-                        Log.WriteLine(header);
-                        Log.Flush();
-
-                        break;
-                    }
-                default:
-                    throw new ArgumentException("No specified LogFormat");
-            }
-        }
-
-        /// <summary>
-        /// writes one line to the Log File
-        /// </summary>
-        public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
-
-            if (this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if (Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-                string logline = String.Format("{0}\t{1}", TimestepNo, phystime);
-                //for (int ip = 0; ip < interfaceP.Length; ip++) {
-                //    logline = logline + "\t" + interfaceP[ip].ToString();
-                //}
-                logline = logline + "\t" + String.Join("\t", interfaceP.Select(ip => ip.ToString()).ToArray());
-                LogInterfaceP.WriteLine(logline);
-                LogInterfaceP.Flush();
-            }
-
-            switch (this.Control.LogValues) {
-                case XRheology_Control.LoggingValues.Wavelike: {
-
-                        Complex DFT_k;
-                        int numP;
-                        if (Fourier_LevSet != null) {
-                            //amplitude = 2.0 * (Fourier_LevSet.DFT_coeff[1].Magnitude / Fourier_LevSet.current_samplP.Length);
-                            DFT_k = Fourier_LevSet.DFT_coeff[(int)this.Control.AdditionalParameters[0]];
-                            numP = Fourier_LevSet.current_samplP.Length;
-                        } else {
-                            MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                            Complex[] DFT_coeff = DiscreteFourierTransformation.TransformForward_nonequidistant(interP, this.Control.AdditionalParameters[1]);
-                            DFT_k = DFT_coeff[(int)this.Control.AdditionalParameters[0]];
-                            numP = interP.Lengths[0];
-                            //amplitude = -2.0 * DFT_coeff[1].Imaginary / (double)interP.Lengths[0];
-                            //amplitude = DiscreteFourierTransformation.SingleSidedPowerSpectrum(DFT_coeff)[1];
-                        }
-                        string logline = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", TimestepNo, phystime, 2.0 * DFT_k.Magnitude / numP, 2.0 * DFT_k.Real / numP, -2.0 * DFT_k.Imaginary / numP);
-                        Log.WriteLine(logline);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.RisingBubble: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, BmQ_RB[0], BmQ_RB[1], BmQ_RB[2], BmQ_RB[3], BmQ_RB[5]);
-                        Log.WriteLine(line);
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.MovingContactLine: {
-
-                        // contact angles at contact points
-                        //=================================
-
-                        List<double[]> contactPoints = new List<double[]>();
-                        List<double[]> contactVelocities = new List<double[]>();
-                        List<double> contactAngles = new List<double>();
-
-                        ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
-
-                        var Phi = (LevelSet)LsTrk.LevelSets[0];
-                        var LevelSetGradient = new VectorField<SinglePhaseField>(Grid.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
-                        LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
-                        SinglePhaseField[] Normals = LevelSetGradient.ToArray();
-
-                        XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-                        EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
-
-                        var QuadDom = SurfaceElement_Edge.Domain;
-                        var boundaryEdge = ((GridData)this.GridData).GetBoundaryEdgeMask().GetBitMask();
-                        var boundaryCutEdge = QuadDom.Intersect(new EdgeMask((GridData)this.GridData, boundaryEdge, MaskType.Geometrical));
-
-                        var factory = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(0, LsTrk.GridDat.Grid.RefElements[0]);
-                        SurfaceElement_Edge = new EdgeQuadratureScheme(factory, boundaryCutEdge);
-
-                        EdgeQuadrature.GetQuadrature(new int[] { 5 }, LsTrk.GridDat,
-                            SurfaceElement_Edge.Compile(LsTrk.GridDat, 0),
-                            delegate (int i0, int length, QuadRule QR, MultidimensionalArray EvalResult) {
-
-                                    // contact point
-                                    NodeSet Enode_l = QR.Nodes;
-                                int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                                NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
-                                NodeSet Vnode_g = Vnode_l.CloneAs();
-                                int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
-                                LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
-                                    //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
-
-                                    int D = Grid.SpatialDimension;
-                                for (int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, d] = Vnode_g[0, d];
-                                }
-
-                                    // contact line velocity
-                                    MultidimensionalArray U_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray U_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for (int d = 0; d < D; d++) {
-                                    (meanVelocity[d] as SinglePhaseField).EvaluateEdge(i0, length, QR.Nodes, U_IN.ExtractSubArrayShallow(-1, -1, d), U_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                for (int d = 0; d < D; d++) {
-                                    EvalResult[0, 0, 2 + d] = U_IN[0, 0, d];
-                                }
-
-                                    // contact angle
-                                    MultidimensionalArray normal_IN = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                MultidimensionalArray normal_OUT = MultidimensionalArray.Create(new int[] { 1, 1, D });
-                                for (int d = 0; d < D; d++) {
-                                    Normals[d].EvaluateEdge(i0, length, QR.Nodes, normal_IN.ExtractSubArrayShallow(-1, -1, d), normal_OUT.ExtractSubArrayShallow(-1, -1, d));
-                                }
-
-                                double theta_surf = Math.Atan2(normal_IN[0, 0, 1], normal_IN[0, 0, 0]);
-                                double theta_edge = Math.Atan2(LsTrk.GridDat.Edges.NormalsForAffine[i0, 1], LsTrk.GridDat.Edges.NormalsForAffine[i0, 0]);
-                                double theta = (theta_surf - theta_edge) * (180 / Math.PI);
-
-                                EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
-
-                                },
-                            delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                                int D = Grid.SpatialDimension;
-                                for (int i = 0; i < length; i++) {
-                                    if (ResultsOfIntegration[i, 2 * D] != 0.0) {
-                                        contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));
-                                        double[] cp = new double[D];
-                                        double[] cpV = new double[D];
-                                        for (int d = 0; d < D; d++) {
-                                            cp[d] = ResultsOfIntegration[i, d];
-                                            cpV[d] = ResultsOfIntegration[i, 2 + d];
-                                        }
-                                        contactPoints.Add(cp);
-                                        contactVelocities.Add(cpV);
-                                    }
-                                }
-                            }
-                        ).Execute();
-
-
-                        for (int p = 0; p < contactAngles.Count; p++) {
-                            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, phystime, contactPoints.ElementAt(p)[0], contactPoints.ElementAt(p)[1], contactVelocities.ElementAt(p)[0], contactVelocities.ElementAt(p)[1], contactAngles.ElementAt(p));
-                            Log.WriteLine(line);
-                        }
-                        Log.Flush();
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.CapillaryHeight: {
-
-                        MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-
-                        double h_min = double.MaxValue, x_pos = 0.0;
-                        for (int i = 0; i < InterfacePoints.Lengths[0]; i++) {
-                            if (InterfacePoints[i, 1] < h_min) {
-                                h_min = InterfacePoints[i, 1];
-                                x_pos = InterfacePoints[i, 0];
-                            }
-                        }
-
-                        string line = String.Format("{0}\t{1}\t{2}\t{3}", TimestepNo, phystime, h_min, x_pos);
-                        Log.WriteLine(line);
-                        Log.Flush();
-
-                        break;
-                    }
-                default:
-                    throw new ArgumentException("No specified LogFormat");
-            }
-
-        }
 
 
         /// <summary>
@@ -2887,65 +2589,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             base.QueryResultTable.LogValue("time", phystime);
 
-            if (this.Control.WriteInterfaceP) {
-                double[] interfaceP;
-                if (Fourier_LevSet != null) {
-                    interfaceP = Fourier_LevSet.current_interfaceP.To1DArray();
-                } else {
-                    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                    interfaceP = interP.ResizeShallow(interP.Length).To1DArray();
-                }
-
-                base.QueryResultTable.LogValue("interfaceP", interfaceP);
-
-            }
-
-            switch (this.Control.LogValues) {
-                case XRheology_Control.LoggingValues.Wavelike: {
-
-                        double amplitude;
-                        if (Fourier_LevSet != null) {
-                            amplitude = 2.0 * (Fourier_LevSet.DFT_coeff[1].Magnitude / Fourier_LevSet.current_samplP.Length);
-                        } else {
-                            MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
-                            Complex[] DFT_coeff = DiscreteFourierTransformation.TransformForward_nonequidistant(interP, this.Control.AdditionalParameters[1]);
-                            amplitude = -2.0 * DFT_coeff[1].Imaginary / (double)interP.Lengths[0];
-                            //amplitude = DiscreteFourierTransformation.SingleSidedPowerSpectrum(DFT_coeff)[1];
-                        }
-
-                        base.QueryResultTable.LogValue("amplitude", amplitude);
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.RisingBubble: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        base.QueryResultTable.LogValue("area", BmQ_RB[0]);
-                        base.QueryResultTable.LogValue("yCM", BmQ_RB[2]);
-                        base.QueryResultTable.LogValue("circ", BmQ_RB[3]);
-                        base.QueryResultTable.LogValue("riseV", BmQ_RB[5]);
-
-                        return;
-                    }
-                case XRheology_Control.LoggingValues.LinelikeLS: {
-                        break;
-                    }
-                case XRheology_Control.LoggingValues.CirclelikeLS: {
-
-                        double[] BmQ_RB = this.ComputeBenchmarkQuantities_RisingBubble();
-
-                        base.QueryResultTable.LogValue("area", BmQ_RB[0]);
-                        base.QueryResultTable.LogValue("xM", BmQ_RB[1]);
-                        base.QueryResultTable.LogValue("yM", BmQ_RB[2]);
-                        base.QueryResultTable.LogValue("circ", BmQ_RB[3]);
-                        base.QueryResultTable.LogValue("vM_x", BmQ_RB[4]);
-                        base.QueryResultTable.LogValue("vM_y", BmQ_RB[5]);
-
-                        break;
-                    }
-                default:
-                    return;
-            }
+            
 
         }
 
