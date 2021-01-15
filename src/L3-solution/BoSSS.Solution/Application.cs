@@ -1325,11 +1325,11 @@ namespace BoSSS.Solution {
                 }
 
                 // set master git commit
-                CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
-                //CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
-                //  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
-                //  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
-                //  .InformationalVersion;
+                //CurrentSessionInfo.MasterGitCommit = Properties.Resources.MasterGitCommit;
+                CurrentSessionInfo.MasterGitCommit = ((AssemblyInformationalVersionAttribute)
+                  (Assembly.GetAssembly(typeof(BoSSS.Solution.Application))
+                  .GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute), false)[0]))
+                  .InformationalVersion;
 
                 // set deploy directory path
                 string path = typeof(BoSSS.Solution.Application).Assembly.Location;

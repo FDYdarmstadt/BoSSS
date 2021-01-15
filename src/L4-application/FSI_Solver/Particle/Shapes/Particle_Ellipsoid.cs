@@ -143,10 +143,10 @@ namespace BoSSS.Application.FSI_Solver {
             Vector position = new Vector(Motion.GetPosition(0));
 
             double[,] rotMatrix = new double[2, 2];
-            rotMatrix[0, 0] = m_Length * orientation[0];
-            rotMatrix[0, 1] = -m_Thickness * orientation[1];
-            rotMatrix[1, 0] = m_Length * orientation[1];
-            rotMatrix[1, 1] = m_Thickness * orientation[0];
+            rotMatrix[0, 0] = m_Length * 1.1 * orientation[0];
+            rotMatrix[0, 1] = -m_Thickness * 1.3 * orientation[1];
+            rotMatrix[1, 0] = m_Length * 1.1 * orientation[1];
+            rotMatrix[1, 1] = m_Thickness * 1.3 * orientation[0];
             double[,] transposeRotMatrix = rotMatrix.CloneAs();
             transposeRotMatrix[0, 1] = rotMatrix[1, 0];
             transposeRotMatrix[1, 0] = rotMatrix[0, 1];

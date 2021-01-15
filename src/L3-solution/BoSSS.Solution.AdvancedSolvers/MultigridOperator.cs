@@ -35,7 +35,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     public partial class MultigridOperator {
 
-        internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+        internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map) {
             LevelSetTracker lsTrk = null;
 
             foreach (Basis b in map.BasisS) {
@@ -54,10 +54,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         static int FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-            LevelSetTracker lsTrk = GetTracker(map, bases);
+            LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
             if (lsTrk != null) {
-                Cells2avoid = lsTrk.Regions.GetNearFieldMask(1).GetBitMask();
+                Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
                 Console.WriteLine("Cells2avoid NOT null");
             } else {
                 Cells2avoid = null;
@@ -74,7 +74,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             jFound += map.GridDat.CellPartitioning.i0;
 
-            int jFoundGlob = ((int)jFound).MPIMax();
+            int jFoundGlob = ((int)jFound).MPIMin();
             Console.WriteLine("Cell " + jFoundGlob + " is ref cell!");
             return jFoundGlob;
         }

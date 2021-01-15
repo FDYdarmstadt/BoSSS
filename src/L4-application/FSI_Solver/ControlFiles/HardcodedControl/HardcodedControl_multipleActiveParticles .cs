@@ -283,12 +283,12 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 5) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 14, double noOfParticles = 5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "c32cd573-1910-4e61-a94d-1c0dcdd3949a";
+            //string ID = "c20723d0-690b-4e62-a2cc-712e6c5b931a";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             //C.IsRestart = true;
             // Fluid Properties
@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 110;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 2;
+            double nextParticleDistance = particleLength * 2.2;
             double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
@@ -312,7 +312,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 1 / 10;
+            C.minDistanceThreshold = 2 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 0.1;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
@@ -342,7 +342,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             C.SetTimesteps(1e-1, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LevelSetSmoothing = true;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
