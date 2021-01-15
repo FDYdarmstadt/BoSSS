@@ -32,6 +32,12 @@ using System.Linq;
 
 namespace BoSSS.Foundation.XDG {
 
+    /// <summary>
+    /// Cell agglomeration for a single species;
+    /// This class is responsible for applying a given agglomeration graph onto operator matrices and residual vectors,
+    /// see <see cref="ManipulateMatrixAndRHS{M, T}"/> and <see cref="ManipulateRHS{T}"/>.
+    /// The agglomeration graph itself is computed by <see cref="MultiphaseCellAgglomerator.FindAgglomeration"/>.
+    /// </summary>
     public class CellAgglomerator {
 
         /// <summary>
@@ -235,7 +241,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="g"></param>
         /// <param name="AgglomerationPairs">
-        /// Each tuple represents one agglomeartion operation:
+        /// Each tuple represents one agglomeration operation:
         ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.<br/>
         ///  - 2nd entry: target cell index, i.e. cell which will be enlarged due to agglomeration
         /// </param>
@@ -374,7 +380,7 @@ namespace BoSSS.Foundation.XDG {
 
                             AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
                         } catch (InvalidOperationException) {
-                            throw new ArgumentException("Found agglomeration pair which are not neighbour cells.");
+                            throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
                         }
                     }
                 }
@@ -428,6 +434,12 @@ namespace BoSSS.Foundation.XDG {
 
                         while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
                             if (CycleDetection[jTarget] == true) {
+                                // write Diagnostic output before killing the code.
+                                this.PlotAgglomerationPairs("GraphWithCycles-" + mpiRank + ".csv");
+                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0,J));
+                                CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
+                                localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
+                                // kill it
                                 throw new ArgumentException("Cycle in agglomeration graph.");
                             }
                             CycleDetection[jTarget] = true;
