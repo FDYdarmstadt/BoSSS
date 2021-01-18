@@ -141,22 +141,31 @@ namespace BoSSS.Solution.XNSECommon {
                     }
                     case ViscosityMode.Viscoelastic: {
                         //set species arguments
-                        double ReSpc, betaSpc;
+                        double ReSpc;
+                        //double betaSpc;
                         switch (spcName) {
-                            case "A": { ReSpc = physParams.reynolds_A; betaSpc = physParams.beta_a; break; }
-                            case "B": { ReSpc = physParams.reynolds_B; betaSpc = physParams.beta_b; break; }
+                            case "A": { 
+                                ReSpc = physParams.reynolds_A; 
+                                //betaSpc = ((PhysicalParametersRheology)physParams).beta_a; 
+                                break; 
+                            }
+                            case "B": { 
+                                ReSpc = physParams.reynolds_B; 
+                                //betaSpc = ((PhysicalParametersRheology)physParams).beta_b; 
+                                break; 
+                            }
                             default: throw new ArgumentException("Unknown species.");
                         }
 
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc2);
 
                         var div = new StressDivergenceInBulk(d, boundaryMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
@@ -312,8 +321,8 @@ namespace BoSSS.Solution.XNSECommon {
             //viscoelastic
             double reynoldsA = physParams.reynolds_A;
             double reynoldsB = physParams.reynolds_B;
-            double betaA = physParams.beta_a;
-            double betaB = physParams.beta_b;
+            double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+            double betaB = ((PhysicalParametersRheology)physParams).beta_b;
             double[] penalty1 = dntParams.Penalty1;
             double penalty2 = dntParams.Penalty2;
 

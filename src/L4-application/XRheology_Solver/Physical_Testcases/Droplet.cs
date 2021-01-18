@@ -144,14 +144,14 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.reynolds_B = 1.0;
             //C.PhysicalParameters.mu_A = 1;
             //C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 0.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 
             C.RaiseWeissenberg = true;
-            C.PhysicalParameters.Weissenberg_a = 0.2;// .3;
-            C.PhysicalParameters.Weissenberg_b = 0.5;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.2;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.5;
             C.WeissenbergIncrement = 0.1;
 
             //C.Tags.Add("La = 0.005");

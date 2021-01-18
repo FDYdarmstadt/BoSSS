@@ -66,7 +66,7 @@ namespace BoSSS.Solution.RheologyCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.getPhysParams;
+            PhysicalParametersRheology physParams = config.getPhysParams as PhysicalParametersRheology;
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
@@ -186,7 +186,7 @@ namespace BoSSS.Solution.RheologyCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.getPhysParams;
+            PhysicalParametersRheology physParams = config.getPhysParams as PhysicalParametersRheology;
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set components

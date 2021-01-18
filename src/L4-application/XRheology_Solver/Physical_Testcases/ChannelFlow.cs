@@ -126,12 +126,12 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 0.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
 
             C.RaiseWeissenberg = false;
-            C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
-            C.PhysicalParameters.Weissenberg_b = 0.0;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.0;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0.0;
@@ -258,10 +258,10 @@ namespace BoSSS.Application.XRheology_Solver {
             Func<double[], double, double> VelocityYfunction_B = (X, t) => 0;
             Func<double[], double, double> Pressurefunction_A = (X, t) => 2*L - 2 * X[0];
             Func<double[], double, double> Pressurefunction_B = (X, t) => 2 * L - 2 * X[0];
-            Func<double[], double, double> StressXXfunction_A = (X, t) => 2 * (1 - C.PhysicalParameters.beta_a) *((-2 * X[1]) * (-2 * X[1])); // WEISSENBERG IS MULTIPLIED IN BC IN FLUX! //2 * C.PhysicalParameters.Weissenberg_a * (1 - C.PhysicalParameters.beta_a) * ((-2 * X[1]) * (-2 * X[1]));
-            Func<double[], double, double> StressXXfunction_B = (X, t) => 2 * (1 - C.PhysicalParameters.beta_b) * ((-2 * X[1]) * (-2 * X[1]));
-            Func<double[], double, double> StressXYfunction_A = (X, t) => (1 - C.PhysicalParameters.beta_a) * (-2 * X[1]);
-            Func<double[], double, double> StressXYfunction_B = (X, t) => (1 - C.PhysicalParameters.beta_b) * (-2 * X[1]);
+            Func<double[], double, double> StressXXfunction_A = (X, t) => 2 * (1 - C.PhysicalParametersRheology.beta_a) *((-2 * X[1]) * (-2 * X[1])); // WEISSENBERG IS MULTIPLIED IN BC IN FLUX! //2 * C.PhysicalParameters.Weissenberg_a * (1 - C.PhysicalParameters.beta_a) * ((-2 * X[1]) * (-2 * X[1]));
+            Func<double[], double, double> StressXXfunction_B = (X, t) => 2 * (1 - C.PhysicalParametersRheology.beta_b) * ((-2 * X[1]) * (-2 * X[1]));
+            Func<double[], double, double> StressXYfunction_A = (X, t) => (1 - C.PhysicalParametersRheology.beta_a) * (-2 * X[1]);
+            Func<double[], double, double> StressXYfunction_B = (X, t) => (1 - C.PhysicalParametersRheology.beta_b) * (-2 * X[1]);
             Func<double[], double, double> StressYYfunction_A = (X, t) => (0.0);
             Func<double[], double, double> StressYYfunction_B = (X, t) => (0.0);
 
@@ -276,8 +276,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ExactSolutionPressure.Add("B", Pressurefunction_B);
 
             C.ExactSolutionStressXX = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X,t) * C.PhysicalParameters.Weissenberg_a);
-            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t) * C.PhysicalParameters.Weissenberg_b);
+            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X,t) * C.PhysicalParametersRheology.Weissenberg_a);
+            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t) * C.PhysicalParametersRheology.Weissenberg_b);
 
             C.ExactSolutionStressXY = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionStressXY.Add("A", StressXYfunction_A);

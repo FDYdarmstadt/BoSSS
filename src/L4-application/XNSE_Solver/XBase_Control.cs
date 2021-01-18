@@ -128,7 +128,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Viscosity, density and surface tension.
         /// </summary>
         [DataMember]
-        public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
+        public PhysicalParameters PhysicalParameters = new PhysicalParametersRheology() {
             Material = true,
             IncludeConvection = false,
             reynolds_A = 1.0,
@@ -143,6 +143,15 @@ namespace BoSSS.Application.XNSE_Solver {
             beta_a = 0.0,
             beta_b = 0.0
         };
+
+        /// <summary>
+        /// Just a cast of <see cref="PhysicalParameters"/>
+        /// </summary>
+        public PhysicalParametersRheology PhysicalParametersRheology {
+            get {
+                return (PhysicalParametersRheology)PhysicalParameters;
+            }
+        }
 
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>

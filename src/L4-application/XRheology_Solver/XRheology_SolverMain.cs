@@ -1155,16 +1155,16 @@ namespace BoSSS.Application.XRheology_Solver {
 
                            // currentWeissenberg = new double[] { 0.0, 0.0 };
 
-                            if (Control.PhysicalParameters.Weissenberg_a != 0.0 || Control.PhysicalParameters.Weissenberg_b != 0.0) {
+                            if (Control.PhysicalParametersRheology.Weissenberg_a != 0.0 || Control.PhysicalParametersRheology.Weissenberg_b != 0.0) {
 
                                 if (Control.WeissenbergIncrement != 0.0) {
                                     NoIncrementTimestep = 1;
-                                    if(Control.PhysicalParameters.Weissenberg_a > Control.PhysicalParameters.Weissenberg_b)
-                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
-                                    else if(Control.PhysicalParameters.Weissenberg_b > Control.PhysicalParameters.Weissenberg_a)
-                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_b / Control.WeissenbergIncrement);
-                                    else if (Control.PhysicalParameters.Weissenberg_b == Control.PhysicalParameters.Weissenberg_a)
-                                        NoIncrementTimestep = (int)(Control.PhysicalParameters.Weissenberg_a / Control.WeissenbergIncrement);
+                                    if(Control.PhysicalParametersRheology.Weissenberg_a > Control.PhysicalParametersRheology.Weissenberg_b)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParametersRheology.Weissenberg_a / Control.WeissenbergIncrement);
+                                    else if(Control.PhysicalParametersRheology.Weissenberg_b > Control.PhysicalParametersRheology.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParametersRheology.Weissenberg_b / Control.WeissenbergIncrement);
+                                    else if (Control.PhysicalParametersRheology.Weissenberg_b == Control.PhysicalParametersRheology.Weissenberg_a)
+                                        NoIncrementTimestep = (int)(Control.PhysicalParametersRheology.Weissenberg_a / Control.WeissenbergIncrement);
                                 } else {
                                     throw new ArgumentException("Raise Weissenberg is turned on, but WeissenbergIncrement is zero!");
                                 }
@@ -1216,14 +1216,14 @@ namespace BoSSS.Application.XRheology_Solver {
                                 //    PlotCurrentState(phystime, TimestepNo);
                                 //}
 
-                                if (currentWeissenberg[0] < Control.PhysicalParameters.Weissenberg_a) {
+                                if (currentWeissenberg[0] < Control.PhysicalParametersRheology.Weissenberg_a) {
                                     currentWeissenberg[0] = currentWeissenberg[0] + Control.WeissenbergIncrement;
                                     Console.WriteLine();
                                     Console.WriteLine("Raise Weissenberg number A to " + currentWeissenberg[0]);
                                     Console.WriteLine();
                                 }
 
-                                if (currentWeissenberg[1] < Control.PhysicalParameters.Weissenberg_b) {
+                                if (currentWeissenberg[1] < Control.PhysicalParametersRheology.Weissenberg_b) {
                                     currentWeissenberg[1] = currentWeissenberg[1] + Control.WeissenbergIncrement;
                                     Console.WriteLine();
                                     Console.WriteLine("Raise Weissenberg number B to " + currentWeissenberg[1]);
@@ -1234,8 +1234,8 @@ namespace BoSSS.Application.XRheology_Solver {
                         } else {
                             //current Weissenberg is set to the HIGHER value... DIRTY HACK AT THE MOMENT!
 
-                                currentWeissenberg[0] = Control.PhysicalParameters.Weissenberg_a;
-                                currentWeissenberg[1] = Control.PhysicalParameters.Weissenberg_b;
+                                currentWeissenberg[0] = Control.PhysicalParametersRheology.Weissenberg_a;
+                                currentWeissenberg[1] = Control.PhysicalParametersRheology.Weissenberg_b;
 
 
                             if (Control.UseArtificialDiffusion == true) {
