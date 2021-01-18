@@ -79,8 +79,11 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
+        /// <summary>
+        /// dirty hack...
+        /// </summary>
         protected override IncompressibleBoundaryCondMap GetBcMap() {
-            throw new NotImplementedException();
+            return new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
         }
 
 
