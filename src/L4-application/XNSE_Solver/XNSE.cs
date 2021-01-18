@@ -295,7 +295,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 break;
 
                 default:
-                throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handeled.");
+                throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
                 
             }
         }
