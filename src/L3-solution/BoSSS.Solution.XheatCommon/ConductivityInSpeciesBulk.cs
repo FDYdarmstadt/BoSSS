@@ -482,12 +482,12 @@ namespace BoSSS.Solution.XheatCommon {
         /// </summary>
         protected ThermalBcType[] EdgeTag2Type;
 
-        /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
-        ///  - 2nd index: edge tag
-        /// </summary>
-        //protected Func<double[], double, double>[][] fluxFunction;
+        ///// <summary>
+        ///// Dirichlet boundary values; <br/>
+        /////  - 1st index: spatial dimension <br/>
+        /////  - 2nd index: edge tag
+        ///// </summary>
+        ////protected Func<double[], double, double>[][] fluxFunction;
 
         /// <summary>
         /// Dirichlet boundary values; <br/>

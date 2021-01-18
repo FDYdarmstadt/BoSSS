@@ -39,11 +39,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
+        
+
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
-        public int QuadOrder() {
+        override public int QuadOrder() {
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
@@ -77,89 +79,39 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
-        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+        protected override IncompressibleBoundaryCondMap GetBcMap() {
+            throw new NotImplementedException();
+        }
 
-        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
-            int levelSetDegree = Control.FieldOptions["Phi"].Degree;    // need to change naming convention of old XNSE_Solver
 
-            LevelSetUpdater lsUpdater;
+        protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
+            if(iLevSet == 0) {
+                // +++++++++++++++++++
+                // the fluid interface 
+                // +++++++++++++++++++
 
-            // averaging at interface:
-            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
-            
-            
-            switch (Control.Option_LevelSetEvolution) {
-                case LevelSetEvolution.Fourier: {
-                    if (Control.EnforceLevelSetConservation) {
-                        throw new NotSupportedException("mass conservation correction currently not supported");
-                    }
-                    FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    fourierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourierLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.FastMarching: {
-                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]); 
-                    var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
-                                        
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.StokesExtension: {
-                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    var sokesExtEvo = new StokesExtensionEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
-                        new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }),
-                        this.Control.AgglomerationThreshold, this.GridData);
+                // averaging at interface:
+                ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                return levelSetVelocity;
+            } else if(iLevSet == 1) {
+                // +++++++++++++++++++++
+                // the immersed boundary
+                // +++++++++++++++++++++
 
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, sokesExtEvo);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.SplineLS: {
-                    int nodeCount = 30;
-                    Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                    SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.None: {
-                    LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSet1.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
-                    break;
-                }
-                default:
-                throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
+                throw new NotImplementedException("todo");
+
+            } else {
+                throw new ArgumentOutOfRangeException();
             }
-
-            return lsUpdater;
         }
 
         /// <summary>
-        /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
-        /// must be overridden, since it does not preform the continuity projection, see <see cref="DualLevelSet"/>,
-        /// but it may overwrite the continuous level set.
-        ///
-        /// This implementation, however, ensures continuity of the level-set at the cell boundaries.
+        /// 
         /// </summary>
-        protected override void SetInitial() {
-            base.SetInitial(); // base implementation does not considers the DG/CG pair.
-
-            // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
-            var pair1 = LsUpdater.LevelSets[VariableNames.LevelSetCG];
-            pair1.DGLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+        protected override int NoOfLevelSets {
+            get {
+                return 1;
+            }
         }
 
 
@@ -224,6 +176,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return XOP;
         }
 
+        /// <summary>
+        /// Setup of the incompressible two-phase Navier-Stokes equation
+        /// </summary>
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);

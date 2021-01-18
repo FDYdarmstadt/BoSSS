@@ -536,7 +536,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             public MultidimensionalArray PenaltyLengthScales
             {
-                get { return cj ; }
+                get { return cj; }
             }
 
 

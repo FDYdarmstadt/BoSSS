@@ -124,12 +124,14 @@ namespace BoSSS.Foundation {
         public IGridData GrdDat;
 
         /// <summary>
-        /// length scales for cells (e.g. for computing penalty parameters or local CFL numbers)
+        /// length scales for cells (e.g. for computing penalty parameters or local CFL numbers),
+        /// typically (in the DG case) the values from <see cref="Grid.Classic.GridData.CellData.CellLengthScale"/>
         /// </summary>
         public MultidimensionalArray CellLengthScales;
 
         /// <summary>
         /// length scales for edges (e.g. for computing penalty parameters)
+        /// typically (in the DG case) the values from <see cref="Grid.Classic.GridData.EdgeData.h_min_Edge"/>
         /// </summary>
         public MultidimensionalArray EdgeLengthScales;
 

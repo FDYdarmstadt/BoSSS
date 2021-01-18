@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        int QuadOrder() {
+        public override int QuadOrder() {
             //QuadOrder
             int degT;
             if(Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.Temperature, out FieldOpts field)) {
@@ -178,6 +178,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /*
         protected override LevelSetUpdater InstantiateLevelSetUpdater() {
             int levelSetDegree = Control.FieldOptions[VariableNames.LevelSetCG].Degree;
 
@@ -221,6 +222,22 @@ namespace BoSSS.Application.XNSE_Solver {
                 throw new NotImplementedException();
             }
             return lsUpdater;
+        }
+        */
+
+        protected override IncompressibleBoundaryCondMap GetBcMap() {
+            // required only for the stokes extension
+            throw new NotImplementedException();
+        }
+
+        protected override int NoOfLevelSets {
+            get {
+                return 1;
+            }
+        }
+
+        protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
+            return null; 
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

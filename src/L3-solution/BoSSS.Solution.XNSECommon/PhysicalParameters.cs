@@ -178,11 +178,11 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public bool Material;
 
-        /// <summary>
-        /// prescribed volume flux for testing. 
-        /// </summary>
-        //[DataMember]
-        //public double prescribedVolumeFlux = 0.0;
+        ///// <summary>
+        ///// prescribed volume flux for testing. 
+        ///// </summary>
+        ////[DataMember]
+        ////public double prescribedVolumeFlux = 0.0;
 
         /// <summary>
         /// Use the artificial surface force (usually only used in manufactured solutions)?

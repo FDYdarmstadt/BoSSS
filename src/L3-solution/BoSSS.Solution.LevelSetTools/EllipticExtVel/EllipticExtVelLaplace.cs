@@ -40,7 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     ///with the addition of an isotropic viscosity term \epsilon
     ///\div ((\epsilon I + \nabla \phi \otimes \nabla \phi ) \cdot \nabla u ) = 0
     /// </summary>
-    public abstract class EllipticExtVelForm : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IObserver<LevelSetTracker.LevelSetRegions>{
+    public abstract class EllipticExtVelForm : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IObserver<LevelSetTracker.LevelSetRegions> {
         /// <summary>
         /// CTOR
         /// </summary>

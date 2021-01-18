@@ -34,6 +34,7 @@ using BoSSS.Solution.LevelSetTools.EllipticExtension;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.Timestepping;
 using static BoSSS.Application.XNSE_Solver.XNSE_Control;
+using Newtonsoft.Json;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -48,6 +49,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// An explicit expression of the Level-set over time.
         /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
         public Func<double[], double, double> Phi;
 
         /// <summary>
@@ -57,13 +60,15 @@ namespace BoSSS.Application.XNSE_Solver {
         public FourierLevSetControl FourierLevSetControl;
 
         /// <summary>
-        /// Enforce the level-set to be globally conervativ, by adding a constant to the level-set field
+        /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
+        [DataMember]
         public bool EnforceLevelSetConservation = false;
 
         /// <summary>
         /// Control Options for ExtVel
         /// </summary>
+        [DataMember]
         public EllipticExtVelAlgoControl EllipticExtVelAlgoControl = new EllipticExtVelAlgoControl();
 
         /// <summary>
@@ -142,6 +147,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>
+        [DataMember]
         public InterfaceAveraging InterAverage = InterfaceAveraging.density;
 
         /// <summary>
@@ -165,116 +171,6 @@ namespace BoSSS.Application.XNSE_Solver {
             viscosity
 
         }
-
-
-
-        ///// <summary>
-        ///// See <see cref="TimesteppingScheme"/>
-        ///// </summary>
-        //[DataMember]
-        //public TimesteppingScheme TimeSteppingScheme = TimesteppingScheme.ImplicitEuler;
-
-
-        /*
-        /// <summary>
-        /// Timestepping schemes for the XdgTimestepper
-        /// Either implicit timestepping using Backward-Differentiation-Formulas (BDF) formulas by <see cref="XdgBDFTimestepping"/> 
-        /// or explicit/implicit using Runge-Kutta schemes <see cref="XdgRKTimestepping"/>
-        /// </summary>
-        public enum TimesteppingScheme {
-
-            ImplicitEuler = 1,
-
-            CrankNicolson = 2,
-
-            BDF2 = 3,
-
-            BDF3 = 4,
-
-            BDF4 = 5,
-
-            BDF5 = 6,
-
-            BDF6 = 7,
-
-            RK_ImplicitEuler = 201,
-
-            RK_CrankNicolson = 202
-        }
-        */
-
-
-        /*
-
-
-
-
-
-        /// <summary>
-        /// Data to be written in LogFile
-        /// </summary>
-        public enum LoggingValues {
-
-            /// <summary>
-            /// no data will be written
-            /// </summary>
-            None,
-
-            /// <summary>
-            /// for elemental test programm with line like interfaces
-            /// </summary>
-            LinelikeLS,
-
-            /// <summary>
-            /// for elemental test programm with circle like interfaces
-            /// </summary>
-            CirclelikeLS,
-
-            /// <summary>
-            /// for wavelike simulation as CapillaryWave, RT-Instability
-            /// interface height (interface points)
-            /// </summary>
-            Wavelike,
-
-            /// <summary>
-            /// for the benchmark quantities of the Rising Bubble testcase
-            /// </summary>
-            RisingBubble,
-
-            /// <summary>
-            /// contact points and corresponding contact angle
-            /// </summary>
-            MovingContactLine,
-
-            /// <summary>
-            /// height of a rising capillary in a tube
-            /// </summary>
-            CapillaryHeight,
-
-            /// <summary>
-            /// Evaporative mass flux and speed of displacement 
-            /// </summary>
-            Evaporation,
-
-            /// <summary>
-            ///  half-radii and drop deformation for an elliptic shapes drop
-            /// </summary>
-            DropDeformation
-        }
-        */
-
-
-        ///// <summary>
-        ///// See <see cref="LoggingValues"/>
-        ///// </summary>
-        //[DataMember]
-        //public LoggingValues LogValues = LoggingValues.None;
-
-        //[DataMember]
-        //public int LogPeriod = 1;
-
-      
-
 
     }
 }
