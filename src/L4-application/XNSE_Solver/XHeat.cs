@@ -243,7 +243,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
-            return null; 
+            return new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters); 
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

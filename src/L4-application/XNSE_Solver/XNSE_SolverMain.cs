@@ -74,10 +74,17 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            throw new Exception("Remove me");
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            //                                q: -50,
+            //                                deg: 3,
+            //                                AgglomerationTreshold: 0,
+            //                                SolverMode_performsolve: true,
+            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
             
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {

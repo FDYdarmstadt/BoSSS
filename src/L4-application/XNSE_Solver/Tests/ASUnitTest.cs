@@ -425,7 +425,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void BasicThreePhaseTest() {
             double R = 0.8;
             bool bConvection = true;
@@ -890,8 +890,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             // return
             // ======
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
             return C;
         }
 
