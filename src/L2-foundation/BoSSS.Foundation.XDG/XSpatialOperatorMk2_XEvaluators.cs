@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
 
                         foreach(var MtxBuilder in allBuilders) {
                             MtxBuilder.time = time;
-                            UpdateLevelSetCoefficients(MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
+                            UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
                             MtxBuilder.Execute();
 
 #if DEBUG
@@ -463,10 +463,9 @@ namespace BoSSS.Foundation.XDG {
                         // Note: this kind of deferred execution
                         // (first, collecting all integrators in a list and second, executing them in a separate loop)
                         // should prevent waiting for unevenly balanced level sets
-
                         foreach(var LsEval in necList) { 
                             LsEval.time = time;
-                            UpdateLevelSetCoefficients(LsEval.SpeciesA, LsEval.SpeciesB);
+                            UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                             LsEval.Execute();
 
 #if DEBUG
@@ -941,7 +940,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate"/> methods
             /// </summary>
-            protected void UpdateLevelSetCoefficients(SpeciesId spcA, SpeciesId spcB) {
+            protected void UpdateLevelSetCoefficients(int iLevSet, SpeciesId spcA, SpeciesId spcB) {
                 GetCoefficients(spcA, spcB, out var csA, out var csB);
 
 
@@ -959,6 +958,16 @@ namespace BoSSS.Foundation.XDG {
 
 
                             cs.Setup(this.m_lsTrk);
+                        }
+
+                        if(c is ILevelSetForm lsc) {
+                            // test if the component is actually relevant
+                            if(lsc.PositiveSpecies != spcB)
+                                continue;
+                            if(lsc.NegativeSpecies != spcA)
+                                continue;
+                            if(lsc.LevelSetIndex != iLevSet)
+                                continue;
                         }
 
                         if (c is ILevelSetEquationComponentCoefficient ce) {
