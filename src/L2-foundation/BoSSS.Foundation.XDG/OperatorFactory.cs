@@ -3,7 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Foundation.XDG.OperatorFactory {
-
+    /// <summary>
+    /// Factory to create a spatial operator.
+    /// Usage:
+    /// 1)  Create System by:
+    ///     Adding Equations 
+    ///     Adding Parameters
+    ///     Adding Coefficients
+    /// 2)  Create spatial operator by calling GetSpatialOperator 
+    /// </summary>
     public class OperatorFactory {
         SystemOfEquations eqSystem;
 
@@ -11,32 +19,60 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         CoefficientsList coefficients;
 
+        /// <summary>
+        /// Default constructor 
+        /// </summary>
         public OperatorFactory() {
             eqSystem = new SystemOfEquations();
             parameters = new ParameterList();
             coefficients = new CoefficientsList();
         }
 
+        /// <summary>
+        /// Add an spatial equation to this factory. 
+        /// </summary>
+        /// <param name="equation"></param>
         public void AddEquation(SpatialEquation equation) {
             eqSystem.AddEquation(equation);
         }
 
+        /// <summary>
+        /// Adds a surface equation to the factory.
+        /// </summary>
+        /// <param name="equation"></param>
         public void AddEquation(SurfaceEquation equation) {
             eqSystem.AddEquation(equation);
         }
 
+        /// <summary>
+        /// Adds a bulk equation to the factory.
+        /// </summary>
+        /// <param name="equation"></param>
         public void AddEquation(BulkEquation equation) {
             eqSystem.AddEquation(equation);
         }
 
+        /// <summary>
+        /// Add parameter to factory. Only parameters, that are present in at least one equation will be used.
+        /// </summary>
+        /// <param name="parameter"></param>
         public void AddParameter(ParameterS parameter) {
             parameters.AddParameter(parameter);
         }
 
+        /// <summary>
+        /// Add coefficient to factory. Only coefficients, that are present in at least one equation will be used.
+        /// </summary>
+        /// <param name="coefficient"></param>
         public void AddCoefficient(Coefficient coefficient) {
             coefficients.AddCoefficient(coefficient);
         }
 
+        /// <summary>
+        /// Creates Spatial operator
+        /// </summary>
+        /// <param name="quadOrder">Quadrature Order of regular cells</param>
+        /// <returns>Configured spatial operator. Not committed.</returns>
         public XSpatialOperatorMk2 GetSpatialOperator(int quadOrder) {
             int QuadOrderFunc(int[] DomvarDegs, int[] ParamDegs, int[] CodvarDegs) {
                 return quadOrder;
@@ -45,6 +81,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             return XOP;
         }
 
+        /// <summary>
+        /// Creates Spatial operator
+        /// </summary>
+        /// <param name="QuadOrderFunc">Function Mapping from Domain Variable Degrees, 
+        /// Parameter Degrees and CoDomain Variable Degrees to the Quadrature Order </param>
+        /// <returns>Configured spatial operator. Not committed.</returns>
         public XSpatialOperatorMk2 GetSpatialOperator(Func<int[], int[], int[], int> QuadOrderFunc) {
             var XOP = CreateSpatialOperator(QuadOrderFunc);
             AddEquationComponents(XOP);
