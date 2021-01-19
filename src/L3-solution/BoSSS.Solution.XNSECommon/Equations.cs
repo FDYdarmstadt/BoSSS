@@ -247,6 +247,9 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
+    /// <summary>
+    /// Continuity equation for the incompressible case, fluid interface terms
+    /// </summary>
     public class InterfaceContinuity : SurfaceEquation {
         string codomainName;
 
@@ -664,4 +667,48 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+
+
+
+     /// <summary>
+    /// Continuity equation for the incompressible case, (fluid/solid) immersed boundary
+    /// </summary>
+    public class ImersedBoundaryContinuity : SurfaceEquation {
+        string codomainName;
+
+        //Methode aus der XNSF_OperatorFactory
+        public ImersedBoundaryContinuity(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D, LevelSetTracker LsTrk) {
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            m_FirstSpeciesName = fluidPhase;
+            m_SecondSpeciesName = solidPhase;
+
+            // set components
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName);
+            
+            
+            AddComponent(divPen);
+        }
+
+        string m_FirstSpeciesName;
+        string m_SecondSpeciesName;
+
+        public override string FirstSpeciesName {
+            get {
+                return m_FirstSpeciesName;
+            }
+        }
+
+        public override string SecondSpeciesName {
+            get {
+                return m_SecondSpeciesName;
+            }
+        }
+
+        public override string CodomainName => codomainName;
+    }
 }

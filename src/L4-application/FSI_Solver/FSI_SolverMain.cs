@@ -440,10 +440,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
-                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 1,
-                        delegate (double[] X, double time) {
-                            throw new NotImplementedException("Currently not implemented for fixed motion");
-                        });
+                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 0, "A", "B");
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 } else {
                     var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,

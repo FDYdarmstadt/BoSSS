@@ -513,8 +513,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
 
             if (IBM_Op_config.continuity){
-                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                    delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 0, "A", "B");
                 IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
             }
         }

@@ -34,21 +34,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         LevelSetTracker m_LsTrk;
 
-        public DivergenceAtIB(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, Func<double[], double, double[]> getParticleParams) {
+        public DivergenceAtIB(int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies) {
             this.D = _D;
             this.m_LsTrk = lsTrk;
-            this.m_getParticleParams = getParticleParams;
+            this.LevelSetIndex = iLevSet;
+            this.PositiveSpecies = lsTrk.GetSpeciesId(SolidSpecies);
+            this.NegativeSpecies = lsTrk.GetSpeciesId(FluidSpc);
         }
 
         int D;
         
         double pRadius;
         
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
-        /// </summary>
-        Func<double[], double, double[]> m_getParticleParams;
+
 
         /// <summary>
         /// the penalty flux
@@ -61,15 +59,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
-            var parameters_P = m_getParticleParams(cp.X, cp.time);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
+            //var parameters_P = m_getParticleParams(cp.X, cp.time);
+            //double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+            //double wLevSet = parameters_P[2];
+            //pRadius = parameters_P[3];
 
             double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
-            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
+            //_uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
+            //_uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
 
             double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
           
@@ -83,26 +81,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             return FlxNeg * v_Neg;
         }
 
-        
-
-        /*
-        public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_Neg, double[] U_Pos) {
-            FlxNeg = 0;
-            FlxPos = 0;
-        }
-
-        public override void FluxPotential(out double G, double[] U) {
-            G = 0;
-        }
-
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
-            NuNeg = 1.0;
-            NuPos = 1.0;
-        }
-        */
-        
         public IList<string> ArgumentOrdering {
             get {
                 return VariableNames.VelocityVector(this.D);
@@ -116,17 +94,18 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
         public int LevelSetIndex {
-            get {
-                return 0;
-            }
+            get;
+            private set;
         }
 
         public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+            get;
+            private set;
         }
 
         public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+            get;
+            private set;
         }
 
         public TermActivationFlags LevelSetTerms {
