@@ -46,7 +46,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// control object for various testing
         /// </summary>
-        /// <returns></returns>
         public static XRheology_Control DropletInShearFlow_1 (int p = 2, int kelem = 8) {
 
             XRheology_Control C = new XRheology_Control();
@@ -291,7 +290,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.Penalty1[0] = 0;
             C.AdvancedDiscretizationOptions.Penalty1[1] = 0;
             //C.AdvancedDiscretizationOptions.PresPenalty2 = 0.0;
-            C.AdvancedDiscretizationOptions.UseWeightedAverages = true;
+            //C.AdvancedDiscretizationOptions.UseWeightedAverages = true;
 
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;

@@ -82,17 +82,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         /// <summary>
+        /// Species table for the initialization of the <see cref="LevelSetTracker"/>,
+        /// see <see cref="LevelSetTracker.SpeciesTable"/>.
+        /// Dimension of array must be equal to <see cref="NoOfLevelSets"/>.
+        /// </summary>
+        protected abstract Array SpeciesTable {
+            get;
+        }
+
+        /// <summary>
         /// Predefined level-set names; this can be overridden, but is not recommended.
         /// The recommended practice for an app is to 
         /// override <see cref="NoOfLevelSets"/>; then, default names for the level-set-fields are chosen.
         /// </summary>
         protected virtual (string ContLs, string DgLs)[] LevelSetNames {
             get {
-                if(NoOfLevelSets == 1) {
-                    return new[] { (VariableNames.LevelSetCG, VariableNames.LevelSetDG) };
-                } else {
-                    throw new NotImplementedException();
+                var ret = new ValueTuple<string, string>[NoOfLevelSets];
+                for(int i = 0; i < NoOfLevelSets; i++) {
+                    ret[i] = (VariableNames.LevelSetCGidx(i), VariableNames.LevelSetDGidx(i));
                 }
+                return ret;
             }
         }
 
@@ -183,8 +192,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             LevelSetUpdater lsUpdater;
             switch(NoOfLevelSets) {
                 case 1:
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, 
-                    new string[] { "A", "B" }, DGlevelSets[0], lsNames[0].ContLs);
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
+                    (string[]) this.SpeciesTable, DGlevelSets[0], lsNames[0].ContLs);
+                break;
+
+                case 2:
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
+                    (string[,]) this.SpeciesTable, DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs);
                 break;
 
                 default:

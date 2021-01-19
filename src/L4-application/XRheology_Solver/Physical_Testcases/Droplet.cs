@@ -384,7 +384,6 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
             C.InterAverage = XRheology_Control.InterfaceAveraging.viscosity;
 
 

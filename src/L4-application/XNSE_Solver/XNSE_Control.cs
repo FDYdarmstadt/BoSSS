@@ -67,17 +67,24 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// default: Symmetric_diag for velocity and IdMass for pressure block preconditioning,
-        /// if true Schur complement is used instead.
+        /// Activation of second level-set.
+        /// </summary>
+        [DataMember]
+        public bool UseImmersedBoundary = true;
+
+        /// <summary>
+        /// - default (false): preconditioning for velocity and pressure is determined by 
+        ///   <see cref="VelocityBlockPrecondMode"/> and <see cref="PressureBlockPrecondMode"/>, respectively;
+        /// - true: former options are ignored, Schur complement is used instead.
         /// </summary>
         [DataMember]
         public bool UseSchurBlockPrec = false;
 
         /// <summary>
-        /// Type of <see cref="XNSE_SolverMain"/>.
+        /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE_SolverMain);
+            return typeof(XNSE);
         }
 
         /// <summary>
@@ -248,11 +255,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool switchOffPlotting = false;
 
 
-        /// <summary>
-        /// Width of the narrow band.
-        /// </summary>
-        [DataMember]
-        public int LS_TrackerWidth = 1;
 
         /// <summary>
         /// different implementations for the level indicator 
@@ -265,7 +267,7 @@ namespace BoSSS.Application.XNSE_Solver {
             constantInterface,
 
             /// <summary>
-            /// additional refinement on cells in pashe A
+            /// additional refinement on cells in phase A
             /// </summary>
             PhaseARefined,
 
@@ -359,13 +361,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool SkipSolveAndEvaluateResidual = false;
-
-
-        /// <summary>
-        /// Seems to be unused...
-        /// </summary>
-        [DataMember]
-        public bool TestMode = false;
 
 
         /// <summary>
@@ -598,7 +593,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>
-        /// function for the disjoining pressure
+        /// Contact lines and thin-films: 
+        /// function for the disjoining pressure model
         /// </summary>
         [NonSerialized]
         [JsonIgnore]

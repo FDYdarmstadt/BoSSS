@@ -44,6 +44,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class BcTest_PressureOutlet : IXNSETest {
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+
         private int m_SpatialDimension;
 
         public BcTest_PressureOutlet(int _SpatialDimension) {

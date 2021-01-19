@@ -36,8 +36,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component, bool _weighted,
-            bool _staticInt = false) {
+        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component, bool _staticInt = false) {
             this.m_LsTrk = lstrk;
             this.muA = 1 / _reynoldsA;
             this.muB = 1 / _reynoldsB;
@@ -46,7 +45,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = lstrk.GridDat.SpatialDimension;
             this.staticInt = _staticInt;
-            this.weighted = _weighted;
         }
 
         double muA;
@@ -57,7 +55,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         int m_D;
 
         bool staticInt;
-        bool weighted;
 
         /// <summary>
         /// default-implementation
@@ -85,15 +82,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double wA;
             double wB;
             double wPenalty;
-            if (!weighted) {
-                wA = 0.5;
-                wB = 0.5;
-                wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
-            } else {
-                wA = muB / (muA + muB);
-                wB = muA / (muA + muB);
-                wPenalty = muA * muB / (muA + muB);
-            }
+            wA = 0.5;
+            wB = 0.5;
+            wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+            
 
             double res = 0;
 

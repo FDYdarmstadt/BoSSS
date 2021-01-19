@@ -38,6 +38,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class ChannelTest : IXNSETest {
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
         public bool Material {
             get {
                 return true;

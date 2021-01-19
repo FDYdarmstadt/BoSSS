@@ -708,6 +708,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
 
+            if(tst.TestImmersedBoundary)
+                throw new NotSupportedException("Immersed boundary is not supported for the old XNSE solver.");
+
             // database setup
             // ==============
 

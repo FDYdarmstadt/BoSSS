@@ -236,6 +236,12 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        protected override Array SpeciesTable {
+            get {
+                return new[] { "A", "B" };
+            }
+        }
+
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
             return null; 
         }

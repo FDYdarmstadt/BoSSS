@@ -421,6 +421,33 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverTest(Tst, C);
         }
 
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
+        /// </summary>
+        [Test]
+        public static void BasicThreePhaseTest() {
+            double R = 0.8;
+            bool bConvection = true;
+            bool bSteady = true;
+            int spatDim = 2;
+            int FlowSolverDegree = 2;
+            double AgglomerationTreshold = 0.3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            int GridResolution = 1;
+
+            var Tst = new BasicThreePhase(R, bConvection, bSteady, spatDim);
+
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
+            
+            XNSESolverTest(Tst, C);
+
+        } 
+
+
+
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
@@ -763,7 +790,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // DG degree
             // =========
 
-            //C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
             C.SetDGdegree(FlowSolverDegree);
 
             // grid
@@ -810,7 +836,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCG, tst.GetPhi().Convert_Xt2X(0.0));
 
             // advanced spatial discretization settings
             // ========================================
@@ -824,6 +850,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
             }
             C.CutCellQuadratureType = CutCellQuadratureType;
+            
+            // immersed boundary
+            // =================
+            
+            C.UseImmersedBoundary = tst.TestImmersedBoundary;
+            if(C.UseImmersedBoundary) {
+                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2().Convert_Xt2X(0.0));
+            }
 
             // timestepping and solver
             // =======================
@@ -853,9 +887,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
+
             // return
             // ======
-
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
             return C;
         }
 

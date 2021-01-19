@@ -37,14 +37,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// </summary>
     class LevelSetAdvectiontTest : IXNSETest {
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+
         public double Radius = 0.4;
         double Ux = 1;
 
         /// <summary>
-        /// cntr
+        /// ctor
         /// </summary>
-        /// <param name="spatDim"></param>
-        /// <param name="LevelSetDegree"></param>
         public LevelSetAdvectiontTest(int spatDim, int LevelSetDegree) {
             this.SpatialDimension = spatDim;
             this.LevelsetPolynomialDegree = LevelSetDegree;

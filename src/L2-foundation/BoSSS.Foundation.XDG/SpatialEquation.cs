@@ -78,8 +78,14 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
     public abstract class SurfaceEquation : SpatialEquation 
     {
+        /// <summary>
+        /// First/Negative species (with respect to level-set)
+        /// </summary>
         public abstract string FirstSpeciesName { get; }
 
+        /// <summary>
+        /// Second/Positive species (with respect to level-set)
+        /// </summary>
         public abstract string SecondSpeciesName { get; }
 
         public LinkedList<IEquationComponent> SurfaceComponents { get; private set; }

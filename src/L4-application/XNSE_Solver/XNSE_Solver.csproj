@@ -93,6 +93,7 @@
     <Compile Include="Logging\MovingContactLineLogging.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="Logging\RisingBubble2DBenchmarkQuantities.cs" />
+    <Compile Include="Tests\BasicThreePhase.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />

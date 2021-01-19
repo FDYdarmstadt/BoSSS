@@ -213,7 +213,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
             // viscous operator
             // ==================
-            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1, dntParams.UseWeightedAverages);
+            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1);
             comps.Add(viscosity);
 
         }
@@ -222,10 +222,10 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name = "XOp" ></ param >
-        /// < param name="config"></param>
-        /// <param name = "BcMap" ></ param >
-        /// < param name="LsTrk"></param>
+        /// <param name = "XOp" ></param>
+        /// <param name="config"></param>
+        /// <param name = "BcMap" ></param>
+        /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
         public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {

@@ -284,13 +284,13 @@ namespace BoSSS.Solution.XNSECommon {
                         break;
                     case ViscosityMode.FullySymmetric:
                         comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, 
-                            _freeSurface: dntParams.freeSurfaceFlow, _weighted: dntParams.UseWeightedAverages));
+                            _freeSurface: dntParams.freeSurfaceFlow));
                         break;
                     case ViscosityMode.Viscoelastic:
                         //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
 
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d, dntParams.UseWeightedAverages));
-                        comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d, dntParams.UseWeightedAverages));
+                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                        comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
 
                         break;
 

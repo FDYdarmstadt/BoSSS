@@ -13,6 +13,17 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.XNSE_Solver.Tests {
     class SteadyStateEvaporationTest : IXNSFETest {
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+
+
         double angle;
         AffineTrafo ROT;
 

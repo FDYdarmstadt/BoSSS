@@ -34,11 +34,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
         
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
-
+      
         
 
         /// <summary>
@@ -80,10 +76,18 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
+
+
+        /// <summary>
         /// dirty hack...
         /// </summary>
         protected override IncompressibleBoundaryCondMap GetBcMap() {
-            return new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+            if(boundaryMap == null)
+                boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+            return boundaryMap;
         }
 
 
@@ -101,7 +105,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 // the immersed boundary
                 // +++++++++++++++++++++
 
-                throw new NotImplementedException("todo");
+                //throw new NotImplementedException("todo");
+                return null;
 
             } else {
                 throw new ArgumentOutOfRangeException();
@@ -113,7 +118,28 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected override int NoOfLevelSets {
             get {
-                return 1;
+                if(Control.UseImmersedBoundary)
+                    return 2;
+                else 
+                    return 1;
+            }
+        }
+
+        /// <summary>
+        /// Either fluids A and B; or A, B and solid C.
+        /// </summary>
+        protected override Array SpeciesTable {
+            get {
+                if(Control.UseImmersedBoundary) {
+                    var r = new string[2, 2];
+                    r[0, 0] = "A";
+                    r[0, 1] = "C"; // solid
+                    r[1, 0] = "B";
+                    r[1, 1] = "C"; // also solid
+                    return r;
+                } else {
+                    return new[] { "A", "B" };
+                }
             }
         }
 
@@ -162,15 +188,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
-            boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-
+            
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
+            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
@@ -184,6 +209,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
+            GetBcMap();
+
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
@@ -249,10 +276,24 @@ namespace BoSSS.Application.XNSE_Solver {
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handeled.");
                 
             }
+
+            if(Control.UseImmersedBoundary)
+                DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+        }
+
+        /// <summary>
+        /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>
+        /// Override to customize.
+        /// </summary>
+        protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            for (int d = 0; d < D; ++d) {
+                //opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                //opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            }
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
 
             DGField[] plotFields = this.m_RegisteredFields.ToArray();
             void AddPltField(DGField f) {

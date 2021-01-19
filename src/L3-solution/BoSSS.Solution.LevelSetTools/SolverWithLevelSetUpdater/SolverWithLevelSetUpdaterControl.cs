@@ -70,6 +70,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [NonSerialized]
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
+
+
+        
+        /// <summary>
+        /// Width of the narrow band.
+        /// </summary>
+        [DataMember]
+        public int LS_TrackerWidth = 1;
     }
 
 

@@ -64,8 +64,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
-    /// Optional: coupled heat equation with evaporation
-    /// Optional: kinetic energy equation 
+    /// - Optional: coupled heat equation with evaporation
+    /// - Optional: kinetic energy equation 
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
@@ -74,10 +74,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //throw new Exception("Remove me");
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            throw new Exception("Remove me");
             
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {

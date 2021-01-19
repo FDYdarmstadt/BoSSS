@@ -27,6 +27,15 @@ using System.Collections.Generic;
 namespace BoSSS.Application.XNSE_Solver.Tests {
     class StaticDropletTest : IXNSETest {
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
         public int SpatialDimension {
             get {
                 return 2;
