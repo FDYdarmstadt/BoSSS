@@ -133,6 +133,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     switch(spc) {
                         case "A": rhoSpc = rho_A; muSpc = mu_A; break;
                         case "B": rhoSpc = rho_B; muSpc = mu_B; break;
+                        case "C": continue; // solid phase; ignore
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
 

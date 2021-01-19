@@ -294,6 +294,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
                     dgLevelSet, backgroundGrid, continuityMode);
+            cgLevelSet.Identification = interfaceName;
             cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
@@ -327,6 +328,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             for(int i = 0; i < 2; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1]);
@@ -360,6 +362,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2]);
@@ -394,6 +397,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2], cgLevelSets[3]);

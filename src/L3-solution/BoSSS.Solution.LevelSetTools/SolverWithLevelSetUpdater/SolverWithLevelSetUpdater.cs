@@ -139,7 +139,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
-                int levelSetDegree = Control.FieldOptions[VariableNames.LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
+                int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
                 
 
                 switch(Control.Option_LevelSetEvolution) {
@@ -159,8 +159,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.StokesExtension: {
-                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                        levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                        levelSetDG.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }

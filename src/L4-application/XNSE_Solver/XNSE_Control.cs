@@ -115,10 +115,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Phi", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
                 Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
