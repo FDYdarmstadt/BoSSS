@@ -1474,7 +1474,7 @@ namespace BoSSS.Foundation.XDG {
 
         #region SurfElement_quadSchemeProvider
         static EdgeQuadratureScheme DefaultSurfElementEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc);
+            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc, 0);
             return edgeScheme;
         }
 
@@ -1504,7 +1504,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         CellQuadratureScheme DefaultSurfElmCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc);
+            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc, 0);
             return volScheme;
         }
 

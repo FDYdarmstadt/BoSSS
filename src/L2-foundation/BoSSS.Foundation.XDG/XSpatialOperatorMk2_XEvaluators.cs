@@ -539,7 +539,7 @@ namespace BoSSS.Foundation.XDG {
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 SurfElmEval.MPITtransceive = false;

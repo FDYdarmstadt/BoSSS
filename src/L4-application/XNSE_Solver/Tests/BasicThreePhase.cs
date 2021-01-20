@@ -271,17 +271,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// dynamic viscosity, air
+        /// dynamic viscosity, air * 10 (must be sufficiently large for stable steady-state solution)
         /// </summary>
         public double mu_A {
-            get { return 17.1e-3; }
+            get { return 17.1e-3*10; }
         }
 
         /// <summary>
-        /// dynamic viscosity, water
+        /// dynamic viscosity, water * 10 (must be sufficiently large for stable steady-state solution)
         /// </summary>
         public double mu_B {
-            get { return 1.0; }
+            get { return 1.0*10; }
         }
 
         /// <summary>
@@ -316,11 +316,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             get { return 2; }
         }
 
+        /// <summary>
+        ///  tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
+        /// </summary>
         public double[] AcceptableL2Error {
             get { return (spatialDimension == 2) ? 
-                    new double[] { 1.0e-6, 1.0e-6, 1.0e-6 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-5 }; }
+                    new double[] { 1.0e-6, 1.0e-6, 5.0e-3 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 5.0e-3 }; }
         }
 
+        /// <summary>
+        /// tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
+        /// </summary>
         public double[] AcceptableResidual {
             get { return (spatialDimension == 2) ? 
                     new double[] { 2.0e-5, 2.0e-5, 2.0e-5 } : new double[] { 2.0e-5, 2.0e-5, 2.0e-5, 2.0e-5 }; }

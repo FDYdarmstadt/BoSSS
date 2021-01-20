@@ -163,9 +163,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// defines a nonlinear source term.
-    /// \f[ 
+    /// ```math 
     /// s(\vec{U},v) = \int_{\Omega} f(\vec{U}) v \ \mathrm{dV}
-    /// \f]
+    /// ```
     /// </summary>
     public interface INonlinearSource : IEquationComponent {
         
@@ -710,9 +710,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general _edge term_, i.e. a form
-    /// \f[ 
+    /// ```math 
     /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// \f]
+    /// ```
     /// </summary>
     public interface IInnerEdgeForm : IEquationComponent {
 
@@ -736,9 +736,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general _edge term_, i.e. a form
-    /// \f[ 
+    /// ```math 
     /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// \f]
+    /// ```
     /// </summary>
     public interface IBoundaryEdgeForm : IEquationComponent {
         /// <summary>
@@ -757,9 +757,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Defines a general complete _edge term_ consisting of boundary and internal component, i.e. a form
-    /// \f[ 
+    /// ```math 
     /// a(\vec{U},v) = \int_{\partial K} f(\vec{U}) g(v) n  \mathrm{dS} .
-    /// \f]
+    /// ```
     /// </summary>
     public interface IEdgeForm : IInnerEdgeForm, IBoundaryEdgeForm {
 
@@ -820,9 +820,9 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// defines a volume term.
-    /// \f[ 
+    /// ```math 
     /// a(\vec{U},v) = \int_{\Omega} f(\vec{U}) g(v)   \mathrm{dX}
-    /// \f]
+    /// ```
     /// </summary>
     public interface IVolumeForm : IEquationComponent {
 
@@ -892,11 +892,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
     ///              u_l  {f}_{l}(\vec{x}) v
     ///           \ \mathrm{dV}
-    /// \f].
+    /// ```.
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -919,11 +919,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
     ///               v \vec{f}_{l}(\vec{x}) \cdot \nabla u_l
     ///           \ \mathrm{dV}
-    /// \f].
+    /// ```.
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -949,11 +949,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
     ///               \nabla v \cdot \vec{f}_{l}(\vec{x}) u_l
     ///           \ \mathrm{dV}
-    /// \f].
+    /// ```.
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -979,11 +979,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \int_{\Gamma_{\mathrm{int}}} 
     ///              \nabla v^T \cdot \vec{\vec{f}}_{l}(\vec{x}) \cdot \nabla u_l
     ///           \ \mathrm{dV}
-    /// \f].
+    /// ```.
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1011,11 +1011,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(v) = \int_{\Gamma_{\mathrm{int}}} 
     ///              v \ f(\vec{x})
     ///           \ \mathrm{dV}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable).
     /// </summary>
     public interface IVolumeSource_V : IVolumeForm {
@@ -1035,11 +1035,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(v) = \int_{\Gamma_{\mathrm{int}}} 
     ///              \nabla v^T \cdot \vec{f}(\vec{x})
     ///           \ \mathrm{dV}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable).
     /// </summary>
     public interface IVolumeSource_GradV : IVolumeForm {
@@ -1062,11 +1062,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a non-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \int_{\Gamma_{\mathrm{int}}} 
     ///              u_l  {f}(\vec{x},U) v
     ///             \ \mathrm{dV}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$ denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1102,11 +1102,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a non-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \int_{\Gamma_{\mathrm{int}}} 
     ///              \nabla v^T \cdot \vec{f}(\vec{x},U,\nabla U)
     ///             \ \mathrm{dV}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1249,7 +1249,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
     ///              u^\mathrm{in}_l  {f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
     ///            + u^\mathrm{in}_l  {f}_{0 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
@@ -1260,7 +1260,7 @@ namespace BoSSS.Foundation {
     ///          \sum_{l} \oint_{\partial \Omega} 
     ///              u^\mathrm{in}_\gamma {f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1274,7 +1274,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
     ///              \nabla u^\mathrm{in}_l  \cdot \vec{f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
     ///            + \nabla u^\mathrm{in}_l  \cdot \vec{f}_{0 \ 1 \ l}(\vec{x}) v^\mathrm{out} 
@@ -1285,7 +1285,7 @@ namespace BoSSS.Foundation {
     ///          \sum_{l} \oint_{\partial \Omega} 
     ///              \nabla u^\mathrm{in}_\gamma \cdot \vec{f}_{0 \ 0 \ l}(\vec{x}) v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1339,7 +1339,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
     ///              u^\mathrm{in}_l  \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
     ///            + u^\mathrm{in}_l  \vec{f}_{0 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
@@ -1350,7 +1350,7 @@ namespace BoSSS.Foundation {
     ///          \sum_{l} \oint_{\partial \Omega} 
     ///              u^\mathrm{in}_\gamma \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1403,7 +1403,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a bi-linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \sum_{l} \oint_{\Gamma_{\mathrm{int}}} 
     ///              (u^\mathrm{in}_l)^T   \cdot \vec{\vec{f}}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
     ///            + (u^\mathrm{in}_l)^T   \cdot \vec{\vec{f}}_{0 \ 1 \ l}(\vec{x}) \cdot \nabla v^\mathrm{out} 
@@ -1414,7 +1414,7 @@ namespace BoSSS.Foundation {
     ///          \sum_{l} \oint_{\partial \Omega} 
     ///              u^\mathrm{in}_\gamma \vec{f}_{0 \ 0 \ l}(\vec{x}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} ) \f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).
@@ -1469,11 +1469,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(v) = 
     ///         \oint_{\Gamma_{\mathrm{int}}} f_{0}(\vec{x}) v^\mathrm{in} + f_{1}(\vec{x}) v^\mathrm{out}  \ \mathrm{dS}
     ///         + \oint_{\partial \Omega} f_{0}(\vec{x}) v^\mathrm{in}  \ \mathrm{dS}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function.
     /// </summary>
     public interface IEdgeSource_V : IEdgeForm, IInnerEdgeSource_V, IBoundaryEdgeSource_V {
@@ -1502,7 +1502,7 @@ namespace BoSSS.Foundation {
     /// </summary>
     public interface IBoundaryEdgeSource_V : IBoundaryEdgeForm {
         /// <summary>
-        /// the point-wise source term \f$ f_{0}(\vec{x})\f$  on boundary edges \f$ \partial \Omega\f$ .
+        /// the point-wise source term \f$ f_{0}(\vec{x}) \f$  on boundary edges \f$ \partial \Omega\f$ .
         /// </summary>
         /// <param name="efp">parameters on which  \f$ f\f$  may depend on.</param>
         /// <param name="V">
@@ -1516,12 +1516,12 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a linear form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(v) = \oint_{\Gamma_{\mathrm{int}}} 
     ///                     \vec{f}_{0}(\vec{x}) \cdot \nabla v^\mathrm{in} 
     ///                   + \vec{f}_{1}(\vec{x}) \cdot \nabla v^\mathrm{out} \ \mathrm{dS}
     ///           + \oint_{\partial \Omega} \vec{f}_{0}(\vec{x}) \cdot \nabla v^\mathrm{in} \ \mathrm{dS}
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function.
     /// </summary>
     public interface IEdgeSource_GradV : IEdgeForm, IInnerEdgeSource_GradV, IBoundaryEdgeSource_GradV {
@@ -1536,12 +1536,12 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="efp">parameters on which  \f$ \vec{f}\f$  may depend on.</param>
         /// <param name="GradV">
-        /// Output: the value of \f$ \vec{f}_{i}(\vec{x})\f$ , which will be multiplied with the test function gradient. <br/>
-        /// 1st index: edge index<br/>
-        /// 2nd index: quadrature node<br/>
-        /// 3rd index: in and out - coefficients with respect to test function, i.e. index \f$ i\f$ 
-        ///            ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell). <br/>
-        /// 4th index: spatial direction of test function ('V') gradient <br/>
+        /// Output: the value of \f$ \vec{f}_{i}(\vec{x})\f$ , which will be multiplied with the test function gradient.
+        /// - 1st index: edge index
+        /// - 2nd index: quadrature node
+        /// - 3rd index: in and out - coefficients with respect to test function, i.e. index \f$ i\f$ 
+        ///              ('V': index 0 corresponds to IN-cell, index 1 corresponds to OUT-cell).
+        /// - 4th index: spatial direction of test function ('V') gradient <br/>
         /// </param>
         void InternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV);
     }
@@ -1658,7 +1658,7 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// a form of the type
-    /// \f[ 
+    /// ```math 
     ///    a(U,v) = \oint_{\Gamma_{\mathrm{int}}} 
     ///              \vec{f}^\mathrm{in}  (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{in} 
     ///            + \vec{f}^\mathrm{out} (\vec{x}, U^\mathrm{in}, U^\mathrm{out}, \nabla U^\mathrm{in}, \nabla U^\mathrm{out}) \cdot \nabla v^\mathrm{out} 
@@ -1667,7 +1667,7 @@ namespace BoSSS.Foundation {
     ///          \oint_{\partial \Omega} 
     ///              \vec{f}^\mathrm{in}  (\vec{x}, U^\mathrm{in}, \nabla U^\mathrm{in}) \cdot \nabla v^\mathrm{in} 
     ///           \ \mathrm{dS}          
-    /// \f]
+    /// ```
     /// where <em>v</em> denotes the test function (corresponds to co-domain variable) and 
     /// \f$ U = (u_0, \ldots, u_{L-1} )\f$  denotes the trial functions (correspond to domain variable, defined by the 
     /// argument ordering <see cref="IEquationComponent.ArgumentOrdering"/>).

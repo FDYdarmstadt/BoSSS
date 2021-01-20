@@ -425,23 +425,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
         /// </summary>
-        //[Test]
-        public static void BasicThreePhaseTest() {
+        [Test]
+        public static void BasicThreePhaseTest(
+            [Values(true, false)] bool performsolve = false,
+            [Values(true, false)] bool bConvection = false,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
+#if DEBUG
+            [Values(2)] int spatDim = 2
+#else
+            [Values(3)] int spatDim = 2
+#endif
+            ) {
             double R = 0.8;
-            bool bConvection = false;
             bool bSteady = true;
-            int spatDim = 2;
             int FlowSolverDegree = 2;
             double AgglomerationTreshold = 0.3;
             ViscosityMode vmode = ViscosityMode.Standard;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+
             int GridResolution = 1;
 
             var Tst = new BasicThreePhase(R, bConvection, bSteady, spatDim);
 
             var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
+            C.SkipSolveAndEvaluateResidual = !performsolve;
             
+            
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            
+
             XNSESolverTest(Tst, C);
 
         } 
@@ -890,10 +904,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             // return
             // ======
-            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-            //C.ImmediatePlotPeriod = 1;
-            //C.SuperSampling = 3;
-            //C.SkipSolveAndEvaluateResidual = true;
             return C;
         }
 
