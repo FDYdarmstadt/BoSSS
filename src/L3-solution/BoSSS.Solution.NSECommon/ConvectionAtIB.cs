@@ -130,6 +130,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
                 double[] uLevSet_temp = new double[1];
                 inp.Parameters_OUT = new double[inp.D * 2];
 
+                if(this.m_d == 0)
+                    uLevSet_temp[0] = 1;
+                inp.Parameters_OUT[0] = 1;
+
 
                 double FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null);
                 if(FlxNeg.IsNaNorInf())

@@ -323,7 +323,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableResidual {
             get { return (spatialDimension == 2) ? 
-                    new double[] { 1.0e-5, 1.0e-5, 1.0e-5 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 }; }
+                    new double[] { 2.0e-5, 2.0e-5, 2.0e-5 } : new double[] { 2.0e-5, 2.0e-5, 2.0e-5, 2.0e-5 }; }
         }
 
         public int SpatialDimension {

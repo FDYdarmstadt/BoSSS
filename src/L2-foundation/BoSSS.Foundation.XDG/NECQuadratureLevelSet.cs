@@ -489,6 +489,7 @@ namespace BoSSS.Foundation.XDG {
                 _inParams.time = this.time;
                 _inParams.e0 = i0;
                 _inParams.Len = Len;
+                _inParams.GridDat = this.GridDat;
 
 
                 // clear summation buffers

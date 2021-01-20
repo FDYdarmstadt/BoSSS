@@ -206,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
             else
             {
-                CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+                CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
                 
@@ -748,7 +748,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Project Curvature From Hessian and Gradient
         /// </summary>
         /// <remarks>
-        /// see for clarification equations 3.6 (2D) and 4.2 (3D)
+        /// see for clarification equations 3.6 (2D) and 4.2 (3D):
         /// Goldman, Ron. “Curvature Formulas for Implicit Curves and Surfaces.”
         /// Computer Aided Geometric Design, Geometric Modelling and Differential Geometry, 22, no. 7 (October 2005): 632–58.
         /// doi:10.1016/j.cagd.2005.06.005

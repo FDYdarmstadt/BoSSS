@@ -145,6 +145,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double Ret = 0.0;
             
             double uAFict = 0;
+            if(component == 0)
+                uAFict = 1.0;
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict);     // symmetry term

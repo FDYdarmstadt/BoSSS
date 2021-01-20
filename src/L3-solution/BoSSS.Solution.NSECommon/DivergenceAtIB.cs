@@ -44,9 +44,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         int D;
         
-        double pRadius;
-        
-
 
         /// <summary>
         /// the penalty flux
@@ -64,7 +61,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             //double wLevSet = parameters_P[2];
             //pRadius = parameters_P[3];
 
-            double[] _uLevSet = new double[D];
+            double[] _uLevSet = new double[] { 1.0, 0 };
 
             //_uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
             //_uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
@@ -76,8 +73,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             uAxN_fict = uBxN;
 
             double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
-            //double FlxPos = 0;
-
             return FlxNeg * v_Neg;
         }
 

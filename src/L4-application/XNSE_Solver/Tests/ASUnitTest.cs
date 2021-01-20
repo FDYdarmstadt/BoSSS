@@ -428,14 +428,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         //[Test]
         public static void BasicThreePhaseTest() {
             double R = 0.8;
-            bool bConvection = true;
+            bool bConvection = false;
             bool bSteady = true;
             int spatDim = 2;
             int FlowSolverDegree = 2;
             double AgglomerationTreshold = 0.3;
             ViscosityMode vmode = ViscosityMode.Standard;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-            SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             int GridResolution = 1;
 
             var Tst = new BasicThreePhase(R, bConvection, bSteady, spatDim);
@@ -890,8 +890,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             // return
             // ======
+            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
             //C.ImmediatePlotPeriod = 1;
             //C.SuperSampling = 3;
+            //C.SkipSolveAndEvaluateResidual = true;
             return C;
         }
 

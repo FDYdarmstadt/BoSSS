@@ -33,9 +33,9 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
-        
-      
-        
+
+
+
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
@@ -87,6 +87,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
+
+        
 
         /// <summary>
         /// dirty hack...
