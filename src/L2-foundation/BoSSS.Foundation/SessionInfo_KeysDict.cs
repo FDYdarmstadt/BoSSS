@@ -74,11 +74,11 @@ namespace BoSSS.Foundation.IO {
                         object backAgain = formi.Deserialize(jRed, o.GetType());
 
                         if (!(o.Equals(backAgain))) {
-                            throw new ArgumentException("Value '" + o.ToString() + "' is not serializeable (not equal before and after serialization)");
+                            throw new ArgumentException($"Some value of type{o.GetType().Name} is not serializeable, i.e. not equal before and after serialization; Before: {o.ToString()}, After:{backAgain.ToString()}");
                         }
                     }
                 } catch (Exception e) {
-                    throw new ArgumentException("Value '" + o.ToString() + "' is not serializeable (during serialization or de-serialization, the following exception occured: " + e.GetType().Name + ", " + e.Message +")");
+                    throw new ArgumentException("Value '" + o.ToString() + "' is not serializeable (during serialization or de-serialization, the following exception occurred: " + e.GetType().Name + ", " + e.Message +")");
                 }
             }
             

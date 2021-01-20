@@ -643,7 +643,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             /// <summary>
-            /// If deployment terminated, the exit coede of the app; otherwise, null
+            /// If deployment terminated, the exit code of the app; otherwise, null
             /// </summary>
             public int? ExitCode {
                 get {
@@ -1316,7 +1316,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        int m_RetryCount = 1;
+        int m_RetryCount = 3;
 
         /// <summary>
         /// Number of times the job is submitted at maximum.

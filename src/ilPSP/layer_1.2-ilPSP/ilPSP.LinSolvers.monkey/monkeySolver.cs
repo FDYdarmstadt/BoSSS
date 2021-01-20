@@ -144,14 +144,21 @@ namespace ilPSP.LinSolvers.monkey {
         /// sets the matrix of the solver
         /// </summary>
         virtual public void DefineMatrix(IMutableMatrixEx _M) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
+                if(_M.NoOfCols != _M.NoOfRows)
+                    throw new ArgumentException("Expecting quadratic matrix.");
+                if(_M.NoOfCols <= 0 || _M.NoOfRows <= 0)
+                    throw new ArgumentException("Matrix must have a non-zero size.");
+                if(m_Matrix != null)
+                    throw new NotSupportedException("solver can only be initialized once");
+            
                 MsrMatrix M = _M as MsrMatrix;
-                if (M == null)
+                if(M == null)
                     // provisorium, geht sicher besser
                     M = _M.ToMsrMatrix();
 
 
-                if (M.RowPartitioning.TotalLength != M.NoOfCols)
+                if(M.RowPartitioning.TotalLength != M.NoOfCols)
                     throw new ArgumentException("Matrix has to be quadratic.", "_M");
                 m_Matrix = Device.CreateMatrix(M, m_MatrixType);
             }

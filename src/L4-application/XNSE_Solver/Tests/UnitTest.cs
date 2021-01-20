@@ -29,11 +29,12 @@ using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// A collection of all-up NUnit tests for the XNSE solver.
+    /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
     /// </summary>
     [TestFixture]
     static public partial class UnitTest {
@@ -584,6 +585,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new TranspiratingChannelTest(U2, periodicity, spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local); // surface tension plays no role in this test, so ignore it
+
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -617,13 +619,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             GenericTest(Tst, C);
         }
 
-        private static void GenericTest(ITest Tst, XNSE_Control C) {
-
-            if(Tst.SpatialDimension == 2 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping 2D test of {C.CutCellQuadratureType} for now...");
-                return;
-            }
-
+        private static void GenericTest(IXNSETest Tst, XNSE_Control C) {
             if (Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
@@ -685,13 +681,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        private static void ScalingTest(ITest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode) {
-
-            if (CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                Console.WriteLine($"Reminder: skipping test of {CutCellQuadratureType} for now...");
-                return;
-            }
-
+        private static void ScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode) {
 
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
@@ -710,7 +700,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        static XNSE_Control TstObj2CtrlObj(ITest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
+        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1) {

@@ -17,7 +17,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// <summary>
     /// Tests if the solver also works with no level-set in the domain
     /// </summary>
-    class SinglePhaseChannel : ITest {
+    class SinglePhaseChannel : IXNSETest {
 
         public bool Material {
             get {

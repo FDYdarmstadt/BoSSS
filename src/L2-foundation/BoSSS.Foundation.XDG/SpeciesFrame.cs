@@ -167,7 +167,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
 #if DEBUG
-            var _Frame2Full_Lookup = new int[L];
+            var _Frame2Full_Lookup = new long[L];
             for (int iLoc = 0; iLoc < L; iLoc++) { // loop over all indices of the frame...
                 int j, g, n;
                 FrameMap.LocalFieldCoordinateIndex(iLoc, out g, out j, out n);
@@ -180,13 +180,13 @@ namespace BoSSS.Foundation.XDG {
 
                 if (b_is_XDGbasis) {
                     if (iSpc < 0) {
-                        _Frame2Full_Lookup[iLoc] = int.MinValue;
+                        _Frame2Full_Lookup[iLoc] = long.MinValue;
                     } else {
                         int Nsep = xb.DOFperSpeciesPerCell;
-                        _Frame2Full_Lookup[iLoc] =  (int)(FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n));
+                        _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, iSpc * Nsep + n);
                     }
                 } else {
-                    _Frame2Full_Lookup[iLoc] = (int)(FullMap.GlobalUniqueCoordinateIndex(g, j, n));
+                    _Frame2Full_Lookup[iLoc] = FullMap.GlobalUniqueCoordinateIndex(g, j, n);
 
                 }
                 Debug.Assert(_Frame2Full_Lookup[iLoc] == Frame2Full_Lookup[iLoc]);

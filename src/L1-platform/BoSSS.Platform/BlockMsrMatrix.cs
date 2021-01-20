@@ -1429,6 +1429,7 @@ namespace ilPSP.LinSolvers {
 
         }
 
+      
         /// <summary>
         /// Extracts a block from this matrix and stores it into <paramref name="Block"/>.
         /// </summary>
@@ -2320,7 +2321,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public long UsedMemory {
             get {
-                GetMemoryInfo(out long Allocated, out long Used);
+                GetMemoryInfo(out _, out long Used);
                 return Used;
             }
         }
@@ -2328,6 +2329,12 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// Computes the amount of memory allocated resp. used by this matrix.
         /// </summary>
+        /// <param name="Allocated">
+        /// Allocated memory, in bytes
+        /// </param>
+        /// <param name="Used">
+        /// Actually used memory (always smaller or equal to <paramref name="Allocated"/>) memory.
+        /// </param>
         public void GetMemoryInfo(out long Allocated, out long Used) {
             Allocated = 0;
             foreach (var mbk in m_Membanks) {

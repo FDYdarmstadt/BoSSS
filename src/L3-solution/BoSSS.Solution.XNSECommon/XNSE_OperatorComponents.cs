@@ -634,6 +634,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         bool isContinuity { get; }
 
+        /// <summary>
+        /// Include a gravitation component
+        /// </summary>
+        bool isGravity { get; }
+
     }
 
 

@@ -664,7 +664,7 @@ namespace ilPSP.LinSolvers {
                                     csMPI.Raw._DATATYPE.LONG_LONG_INT, // sendtype
                                     (IntPtr)pColTrf, // recvbuf
                                     (IntPtr)pLL, (IntPtr)pi0s, // recvcounts, displs
-                                    csMPI.Raw._DATATYPE.INT,
+                                    csMPI.Raw._DATATYPE.LONG_LONG_INT,
                                     this.m_ColPartitioning.MPI_Comm);
                             }
                         }
@@ -1732,6 +1732,23 @@ namespace ilPSP.LinSolvers {
                     //last_ind = ind;
                 }
             }
+        }
+
+        /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+             if (Block.Dimension != 2)
+                throw new ArgumentException();
+            int I = Block.NoOfRows;
+            int J = Block.NoOfCols;
+
+            for(int i = 0; i < I; i++)
+                for(int j = 0; j < J; j++)
+                    Block[i, j] = this[i0 + i, j0 + j];
         }
 
         /// <summary>

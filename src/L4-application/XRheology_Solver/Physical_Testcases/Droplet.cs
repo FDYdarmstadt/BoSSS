@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XRheology_Solver {
 

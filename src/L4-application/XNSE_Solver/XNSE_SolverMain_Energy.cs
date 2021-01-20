@@ -259,8 +259,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             this.m_HMForder_kinE = degK * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
 
-            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE, this.LsTrk.SpeciesNames);
-
+            KineticEnergyOperator = new XSpatialOperatorMk2(DomName, Params, CodName, (A, B, C) => this.m_HMForder_kinE,  this.LsTrk.SpeciesNames);
+            KineticEnergyOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
             // build the operator
             // ==================

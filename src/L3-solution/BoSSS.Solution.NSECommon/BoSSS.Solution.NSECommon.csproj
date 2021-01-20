@@ -103,7 +103,6 @@
     <Compile Include="SolverUtils.cs" />
     <Compile Include="UpwindMomentumConvection.cs" />
     <Compile Include="VariableNames.cs" />
-    <Compile Include="Viscosity.cs" />
     <Compile Include="ViscosityAtIB.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -136,6 +135,7 @@
     <EmbeddedResource Include="Resource1.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resource1.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

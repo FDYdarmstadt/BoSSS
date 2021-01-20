@@ -85,7 +85,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
             }
 #if DEBUG
-            invDiag.CheckForNanOrInfM();
+            invDiag.CheckForNanOrInfM(typeof(BlockJacobi).Name + ", computing diagonal inverse: ");
 #endif
         }
 

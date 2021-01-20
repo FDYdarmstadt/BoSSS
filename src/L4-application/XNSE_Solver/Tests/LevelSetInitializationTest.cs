@@ -18,43 +18,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BoSSS.Foundation.Quadrature;
-
-namespace BoSSS.Foundation.XDG {
-    
-    
-    /*
-    /// <summary>
-    /// This class creates an caches,
-    /// 
-    /// </summary>
-    public class XdgOperatorQuadratureSet {
+using BoSSS.Foundation;
+using BoSSS.Solution.Utils;
+using BoSSS.Foundation.Grid;
+using BoSSS.Solution.Control;
+using System.Globalization;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Foundation.Grid.Classic;
+using ilPSP.Utils;
 
 
-        public XdgOperatorQuadratureSet(LevelSetTracker __lsTrk, int order, SpeciesId[] Species, double __agglomerationThreshold) {
-            
+namespace BoSSS.Application.XNSE_Solver.Tests {
 
-        }
-
-
-        /// <summary>
-        /// cell agglomeration object/only provided if requested at construction time
-        /// </summary>
-        public MultiphaseCellAgglomerator CellAgglomeration {
-            private set;
-            get;
-        }
-
-
-        ICompositeQuadRule<QuadRule> GetEdgeQuadRule(SpeciesId sp) {
-
-        }
-
-
-        ICompositeQuadRule<QuadRule> GetEdgeGhostScheme(SpeciesId sp) {
-
-        }
-
+    class LevelSetInitializationTest {
     }
-     */
+
 }

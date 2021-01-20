@@ -254,6 +254,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if(LsTrk == null)
                 throw new ArgumentException("unable to get Level Set Tracker reference");
 
+            if(op.AgglomerationThreshold != _AgglomerationThreshold)
+                throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+
             bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
 
             SpeciesId[] spcToCompute = op.Species.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
@@ -485,8 +488,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ArgumentException("Domain/Matrix column mapping mismatch.");
             }
 
+            if(Operator.IsLinear && Operator.LinearizationHint != LinearizationHint.AdHoc)
+                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
 
             if(XdgOperator != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+                // XDG Branch: still requires length-scale-hack
+                // (should be cleaned some-when in the future)
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+
+                //if(XdgOperator.AgglomerationThreshold <= 0)
+                //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+
                 if(OpMtx != null) {
                     // +++++++++++++++++++++++++++++
                     // Solver requires linearization
@@ -501,7 +515,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            foreach(var kv in AgglomeratedCellLengthScales) {
+                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                                 mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
                             }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -512,7 +526,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) {
+                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
                                 foreach(var kv in AgglomeratedCellLengthScales) {
                                     evn.CellLengthScales[kv.Key] = kv.Value;
                                 }
@@ -532,7 +546,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
                             mtxBuilder.MPITtransceive = true;
-                            foreach(var kv in AgglomeratedCellLengthScales) {
+                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                                 mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
                             }
                             mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -552,7 +566,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     eval.time = time;
 
                     eval.MPITtransceive = true;
-                    foreach(var kv in AgglomeratedCellLengthScales) {
+                    foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
                         eval.CellLengthScales[kv.Key] = kv.Value;
                     }
                     eval.Evaluate(1.0, 0.0, OpAffine);
@@ -561,6 +575,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             } else if(DgOperator != null) {
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+                // DG Branch
+                // +++++++++++++++++++++++++++++++++++++++++++++++
+
                 if(OpMtx != null) {
                     // +++++++++++++++++++++++++++++
                     // Solver requires linearization
@@ -618,6 +636,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+
+        /// <summary>
+        /// Intended For analysis purposes:
+        /// Returns the Jacobi matrix at the latest/current linearization point, **not** including any temporal derivative.
+        /// </summary>
+        public BlockMsrMatrix GetCurrentSpatialMatrix() {
+            var OpMtx = new BlockMsrMatrix(this.IterationResiduals, this.CurrentState);
+
+            ComputeOperatorMatrix(OpMtx, new double[OpMtx.RowPartitioning.LocalLength], this.CurrentState, this.CurrentState.Fields.ToArray(),
+                this.TimesteppingBase.GetAgglomeratedLengthScales(), this.TimesteppingBase.GetSimulationTime(), 1);
+
+            return OpMtx;
+        }
+        
+        /// <summary>
+        /// Intended For analysis purposes:
+        /// Returns the Jacobi matrix at the latest/current linearization point, **including** the temporal derivative
+        /// </summary>
+        public BlockMsrMatrix GetCurrentJacobiMatrix() {
+
+            this.TimesteppingBase.AssembleMatrixCallback(out var OpMtx, out _, out _, CurrentState.Fields.ToArray(), true, out _);
+
+            return OpMtx;
+        }
+
+
         /// <summary>
         /// the internal object
         /// </summary>
@@ -631,6 +675,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException("internal error");
             }
         }
+
+
 
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability

@@ -290,9 +290,9 @@ namespace BoSSS.Foundation.XDG {
 
 #if DEBUG
                             if(Matrix != null && OnlyAffine == false)
-                                Matrix.CheckForNanOrInfM();
+                                Matrix.CheckForNanOrInfM("Matrix assembly, after surface integration: ");
                             if(AffineOffset != null)
-                                GenericBlas.CheckForNanOrInfV(AffineOffset);
+                                GenericBlas.CheckForNanOrInfV(AffineOffset, messageprefix: "Affine vector assembly, after surface integration: ");
 #endif
 
                         }

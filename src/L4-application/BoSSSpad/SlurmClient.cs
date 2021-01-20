@@ -139,7 +139,7 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
 
-                    m_SSHConnection.Connect();
+                    //m_SSHConnection.Connect();
                 }
 
                 return m_SSHConnection;
@@ -250,7 +250,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
                     //using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T");
+                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
                         //int startindex = output.Result.IndexOf("\n");
                         //int endindex = output.Result.IndexOf("\n", startindex + 1);
                         int startindex = output.IndexOf("\n");
@@ -330,67 +330,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
-                
-                string jobId=SSHConnection.SubmitJob( DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
 
-
-                ////string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-                //// Converting script to unix format
-                ////string convertCmd = " dos2unix " + path + "\\batch.sh";
-
-                //// Submitting script to sbatch system
-                //string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/batch.sh";
-
-
-                //// Convert from Windows to Unix and submit job
-                //Console.WriteLine();
-                //String resultString;
-                //PlatformID CurrentSys = System.Environment.OSVersion.Platform;
-                //switch (CurrentSys) {
-                //    case PlatformID.Unix: {
-                //            Process cmd = new Process();
-                //            // cmd.StartInfo.FileName = "/bin/bash";
-                //            cmd.StartInfo.FileName = "bash";
-                //            cmd.StartInfo.RedirectStandardInput = true;
-                //            cmd.StartInfo.RedirectStandardOutput = true;
-                //            cmd.StartInfo.CreateNoWindow = true;
-                //            cmd.StartInfo.UseShellExecute = false;
-                //            cmd.Start();
-                //            cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
-                //            cmd.StandardInput.Flush();
-                //            cmd.StandardInput.Close();
-                //            cmd.WaitForExit();
-                //            resultString = cmd.StandardOutput.ReadToEnd();
-                //            break;
-                //        }
-                //    case PlatformID.Win32S:
-                //    case PlatformID.Win32Windows:
-                //    default: {
-                //            var result2 = SSHConnection.RunCommand(sbatchCmd);
-                //            resultString = result2.Result;
-                //            break;
-
-                //        }
-                //}
-
-                ////// Otherwise it didn't work because uploading speed at some clusters is too slow
-                ////if (result1.Error == "" || result2.Result == "") {
-                ////    Console.Write("Waiting for file transfer to finish");
-                ////    while (result1.Error == "" || result2.Result == "") {
-                ////        Console.Write(".");
-                ////        System.Threading.Thread.Sleep(10000);
-                ////        result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-                ////        result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
-                ////    }
-                ////    Console.WriteLine();
-                ////}
-
-                //// extract JobID
-                //String SearchString = "Submitted batch job ";
-                //String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
-                //    .ToString() // convert to string
-                //    .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
-                //Console.WriteLine(jobId);
+                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
+                if(jobId.IsEmptyOrWhite())
+                    throw new ApplicationException("missing job id return value from slurm command.");
 
                 return (jobId, null);
             }

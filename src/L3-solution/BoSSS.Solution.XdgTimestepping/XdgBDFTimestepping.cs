@@ -1008,7 +1008,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
             using (new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1161,14 +1161,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
-                /*
-                if (m_Stack_OpAffine[0] == null) {
-                    m_Stack_OpAffine[0] = new double[CurrentStateMapping.LocalLength];
-                } else {
-                    m_Stack_OpAffine[0].ClearEntries();
-                }
-                */
-
+                
                 // assemble matrix & affine part
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
                 Debug.Assert(OpAffine.L2Norm() == 0);
@@ -1248,14 +1241,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // For XDG & splitting, we have to evaluate the operator with 
                         // the _actual_ level set position, but 
                         // everything else (field state, etc.) from at the _old_ timestep.
-
-                        /*
-                        if(Linearization == false)
-                            throw new NotImplementedException();
-                        m_Stack_OpMatrix[0].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); //  
-                        RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[0]); //                     -theta0*b1 
-                        */
-
+                                                
                         double[] evalBuffer = new double[RHS.Length];
                         this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime, 1);
                         RHS.AccV(-Tsc.theta0, evalBuffer); // RHS -= -theta0*Op(u0) at current level-set
@@ -1302,8 +1288,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
                 }
 
-                //MiscExtensions.CheckGauss1stOrder(this.m_LsTrk, this.Config_CutCellQuadratureOrder);
-
                 // increase iteration counter         
                 // --------------------------
                 //OpMatrix.SaveToTextFileSparse("OpMatrix49e.txt");
@@ -1312,6 +1296,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public override double GetSimulationTime() {
+            return m_CurrentPhystime;
+        }
 
         bool CoupledIteration = true;
 
@@ -1724,18 +1714,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
 
-            /*
-            // ====================
-            // release end-of-stack
-            // ====================
-            int ie = m_Stack_OpMatrix.Length - 1;
-            Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
-            m_Stack_OpMatrix[ie] = null;
-            m_Stack_OpAffine[ie] = null;
-            //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
-            */
+            // ======
+            // return 
+            // ======
 
+            m_CurrentPhystime = phystime + dt;
             return success;
         }
 

@@ -272,11 +272,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
+            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             double[] tmp_grad = gradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad);
+            jacobian.MatVecMulInplace(1, tmp_grad, true);
             
             return gradient;
         }
@@ -441,20 +441,36 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double weight = X_weight;
 
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(node, cell, 1);
-            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
+            MultidimensionalArray gradient = ReferenceGradient(node, cell);
+            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1 , -1);
-
             //Scale weight
-            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
-            weight /= jacobian[heightDirection, heightDirection];
+            if (IsScalingMatrix(jacobian)) {
+                weight /= jacobian[heightDirection, heightDirection];
+            } else {
+                throw new NotImplementedException("To do");
+            }
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
             weightArr[0] = weight;
             return new SayeQuadRule(node, weightArr);
         }
+
+        bool IsScalingMatrix(MultidimensionalArray matrix) {
+            double offDiag = 0.0;
+            for(int i = 0; i < 3; ++i) {
+                for(int j = i + 1; j > 3; ++i) {
+                    offDiag += matrix[i, j];
+                    offDiag += matrix[j, i];
+                }
+            }
+            if(offDiag == 0.0)
+                return true;
+            else return false;
+        }
+
 
         public override double[] GetBoundaries(LinearSayeSpace<Cube> arg, int heightDirection)
         {

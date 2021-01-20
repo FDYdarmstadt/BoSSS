@@ -72,39 +72,24 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         // Main file
         //===========
-
         static void Main(string[] args) {
-
-
-            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
 
             //InitMPI();
             //DeleteOldPlotFiles();
-
-            ////Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0, true, 3);
-            ////Tests.UnitTest.MovingDropletTest(2, 1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d,
-            ////    ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
-            ////Tests.UnitTest.TranspiratingChannelTest(3, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
-            ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
-            ////Tests.UnitTest.TestRayleighTaylorInstability();
-            ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
-
-            ////Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
-            ////    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0d, false,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
-
-            //return;
-
-
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //throw new Exception("Remove me");
+            
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
-                var p = new XNSE_SolverMain();
+                var p = new XNSE();
                 return p;
             });
         }
+
+        static void KatastrophenPlot(DGField[] dGFields) {
+            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+        }
+
 
         //=====================================
         // Field declaration and instantiation
@@ -498,7 +483,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                 && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                if (this.GridData.SpatialDimension == 3)
+                    Console.WriteLine($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
+                else
+                    throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules {XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
                     $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; If you do not know how to remove this exception, you should better return now!");
             }
 
@@ -1544,7 +1533,11 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void SetInitial() {
             base.SetInitial();
 
+            this.LsTrk.PushStacks();
+
             this.InitLevelSet();
+
+            Tecplot.PlotFields(new DGField[] { this.DGLevSet.Current, this.LevSet, this.CurrentVel[0], this.CurrentVel[1] }, "futinger", 0.0, 3);
 
             this.CreateEquationsAndSolvers(null);
 

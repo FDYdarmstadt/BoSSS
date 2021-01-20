@@ -30,7 +30,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// The transpirating channel: this is a test for the convection operator;
     /// It is, however, only valid for equal fluid parameters in both phases.
     /// </summary>
-    public class TranspiratingChannelTest : ITest {
+    public class TranspiratingChannelTest : IXNSETest {
 
         public bool Material {
             get {

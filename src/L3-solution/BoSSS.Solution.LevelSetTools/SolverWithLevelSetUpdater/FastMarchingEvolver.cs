@@ -1,0 +1,122 @@
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.IO;
+using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using ilPSP;
+using ilPSP.Utils;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+    
+    
+
+    /// <summary>
+    /// Driver class for the <see cref="NarrowMarchingBand.Evolve_Mk2"/>
+    /// </summary>
+    /// <remarks>
+    /// In contrast to other methods, this should be reliable for general interface topologies
+    /// and it is also known to work for contact line setups.
+    /// The fast marching is a level-set evolution technique which 
+    /// Development history and literature:
+    /// - parallelized and extended to 3D by M. Smuda, Q4 2020.
+    /// - used extensively in the thesis om M. Smuda, 2020
+    /// - also described in the FDY Annual Report 2015, F. Kummer
+    /// - in 2015/2016 the cell-wise solvers were re-formulated 
+    ///   based upon the Reinitialization and Extension ideas from T. Utz
+    /// - initial implementation from F Kummer, 2013 & 2014
+    /// </remarks>
+    public class FastMarchingEvolver : ILevelSetEvolver {
+        SinglePhaseField[] extensionVelocity;
+
+        int m_HMForder;
+
+        IList<string> parameters;
+
+        //string[] variables;
+
+        string levelSetName;
+
+        public FastMarchingEvolver(string levelSetName, int hMForder, int D) {
+            this.m_HMForder = hMForder;
+            this.levelSetName = levelSetName;
+            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
+            parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
+        }
+
+        public IList<string> VariableNames => null;
+
+        public IList<string> ParameterNames => parameters;
+
+        /// <summary>
+        /// Provides access to the internally constructed extension velocity.
+        /// <see cref="ILevelSetEvolver.InternalFields"/>
+        /// </summary>
+        public IDictionary<string, DGField> InternalFields { 
+            get {
+                var Ret = new Dictionary<string, DGField>();
+
+                if(extensionVelocity != null) {
+                    foreach(var f in extensionVelocity)
+                        Ret.Add(f.Identification, f);
+                }
+
+                return Ret;
+            }
+        }
+
+
+        public void MovePhaseInterface(
+            DualLevelSet phaseInterface,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            int D = phaseInterface.Tracker.GridDat.SpatialDimension;
+
+
+            SinglePhaseField[] meanVelocity = D.ForLoop(
+                d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+                );
+
+            VectorField<SinglePhaseField> filtLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(
+                d => new SinglePhaseField(phaseInterface.DGLevelSet.Basis)
+                ));
+
+            if(extensionVelocity == null) {
+                extensionVelocity = new SinglePhaseField[D];
+                Basis basis;
+                try {
+                    basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                } catch {
+                    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                    basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
+                }
+
+                for(int d = 0; d < D; ++d) {
+                    extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity[" + d + "]");
+                }
+            }
+            //Move LevelSet
+            SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
+
+            //int TimestepNo = (int)(time / dt);
+            //TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+            //DGField[] plotFields = ArrayTools.Cat<DGField>(meanVelocity);
+            //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, time, 2);
+
+            NarrowMarchingBand.Evolve_Mk2(
+                dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
+                meanVelocity, extensionVelocity,
+                m_HMForder);
+
+            //tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
+            //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, 0.0, 2);
+        }
+    }
+}

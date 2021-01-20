@@ -623,21 +623,10 @@ namespace BoSSS.Solution {
                 // +++++++++++++++++++++
 
                 string JSON = File.ReadAllText(ControlFilePath);
-                object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
-                                                                 //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                                                                 //    var bf = new BinaryFormatter();
-                                                                 //    controlObj = bf.Deserialize(fs);
-                                                                 //}
+                object controlObj = AppControl.Deserialize(JSON);
 
                 ctrlV2 = controlObj as T;
-                //Debugger.Launch();
-                //if (controlObj is T) {
-                //    ctrlV2 = (T)controlObj;
-
-                //} else if (controlObj is IEnumerable<T>) {
-                //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-
-                //} 
+               
 
                 if (ctrlV2 == null) {
                     throw new ApplicationException(string.Format(
@@ -1824,8 +1813,7 @@ namespace BoSSS.Solution {
 
                 if(LsTrk != null) {
                     LsTrk.UpdateTracker(0.0);
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.PushStacks();
+                    LsTrk.UpdateTracker(0.0); // doppeltes Update hält besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)
@@ -1996,6 +1984,9 @@ namespace BoSSS.Solution {
         /// </remarks>
         public virtual void RunSolverMode() {
 
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
@@ -2003,7 +1994,6 @@ namespace BoSSS.Solution {
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
 
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
@@ -2023,6 +2013,29 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                CreateEquationsAndSolvers(null);
+                tr.LogMemoryStat();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                if(LsTrk != null)
+                    LsTrk.PushStacks();
+
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
 
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
@@ -2032,25 +2045,30 @@ namespace BoSSS.Solution {
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
 
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                m_queryHandler.QueryResults.Clear();
-
-                // sometimes, the operators depend on parameters,
-                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
-                // resp. 'LoadRestart(..)'!!!
-                CreateEquationsAndSolvers(null);
-                tr.LogMemoryStat();
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
                 bool initialRedist = false;
                 for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
                     initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                    
                     if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                    if(initialRedist == true) {
+                        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                        if(this.RollingSave)
+                            rollingSavesTsi[0] = Tuple.Create(0, ts0);
+                    }
                 }
+
+
+                // =================================================================================
+                // Main/outmost time-stepping loop
+                // (in steady-state: only one iteration)
+                // =================================================================================
+
                 {
 
                     if (this.Control != null && this.Control.AdaptiveMeshRefinement && this.Control.RestartInfo == null) {
@@ -2127,9 +2145,10 @@ namespace BoSSS.Solution {
                     }
 
                    
-
-                    // Evaluate queries and write log file (either to session directory
-                    // or current directory)
+                    // =================================================================================
+                    // Evaluate queries and write log file 
+                    // (either to session directory or current directory)
+                    // =================================================================================
                     m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
                     foreach (var kv in m_queryHandler.QueryResults) {
                         QueryResultTable.LogValue(kv.Key, kv.Value);
@@ -3179,10 +3198,8 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// returns the size of the fixed timestep; if a variable timestep is set, this method throws
-        /// an exception.
+        /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        /// <returns></returns>
         public double GetFixedTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
@@ -3207,28 +3224,7 @@ namespace BoSSS.Solution {
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
-            wrt.WriteLine();
-            wrt.WriteLine("Common Suspects:");
-            wrt.WriteLine("================");
-
             var R = Root;
-            List<MethodCallRecord> CommonSuspects = new List<MethodCallRecord>();
-            CommonSuspects.AddRange(R.FindChildren("*GridData*ctor*"));
-            CommonSuspects.AddRange(R.FindChildren("*MsrMatrix.Multiply*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*Evaluator*Evaluate*"));
-            CommonSuspects.AddRange(R.FindChildren("ilPSP.LinSolvers*Solve*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.XDG.XSpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("*MassMatrixFactory.ComputeMassMatrixBlocks*"));
-            CommonSuspects.AddRange(R.FindChildren("*Quadrature*Execute*"));
-            CommonSuspects.AddRange(R.FindChildren("integrand_evaluation"));
-            CommonSuspects.AddRange(R.FindChildren("quadrature"));
-            CommonSuspects.AddRange(R.FindChildren("saving_results"));
-
-
-            foreach (var mcr in CommonSuspects) {
-                wrt.WriteLine(mcr.GetMiniReport().ToString());
-            }
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");

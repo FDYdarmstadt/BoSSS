@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.TestCases;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -46,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 3, int kelem = 8, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -199,30 +200,33 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             } else {
 
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, H, kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
-                    double[] Znodes = GenericBlas.Linspace(0, L, 4 * kelem + 1);
+                    double[] Znodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
 
-                    grd.EdgeTagNames.Add(1, "velocity_inlet");
-                    grd.EdgeTagNames.Add(2, "pressure_outlet");
-                    grd.EdgeTagNames.Add(3, "wall_mantle");
+                    grd.EdgeTagNames.Add(1, "velocity_inlet_left");
+                    grd.EdgeTagNames.Add(2, "pressure_outlet_right");
+                    grd.EdgeTagNames.Add(3, "wall_lower");
+                    grd.EdgeTagNames.Add(4, "wall_upper");
+                    grd.EdgeTagNames.Add(5, "velocity_inlet_front");
+                    grd.EdgeTagNames.Add(6, "velocity_inlet_back");
 
                     grd.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
                         if (Math.Abs(X[0]) <= 1.0e-8)
-                            et = 3;
-                        if (Math.Abs(X[0] - H) <= 1.0e-8)
-                            et = 3;
+                            et = 1;
+                        if (Math.Abs(X[0] - L) <= 1.0e-8)
+                            et = 2;
                         if (Math.Abs(X[1]) <= 1.0e-8)
                             et = 3;
                         if (Math.Abs(X[1] - H) <= 1.0e-8)
-                            et = 3;
+                            et = 4;
                         if (Math.Abs(X[2]) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[2] - L) <= 1.0e-8)
-                            et = 2;
+                            et = 6;
+                        if (Math.Abs(X[2] - H) <= 1.0e-8)
+                            et = 5;
 
                         return et;
                     });
@@ -245,7 +249,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { H / 2.0, H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { (H / 2.0) + 0.04, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
             if (D == 2) {
@@ -262,15 +266,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-            double U = 0.125;
+            double U = 0.0;
 
-            if (D == 3) {
-                C.InitialValues_Evaluators.Add("VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
-                C.InitialValues_Evaluators.Add("VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+            //if (D == 3) {
+            //    C.InitialValues_Evaluators.Add("VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+            //    C.InitialValues_Evaluators.Add("VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+            //}
+
+            if (wallBC == 0) {
+                U = 0.125;
+                C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
+                C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
             }
-
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => (-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U);
 
             //C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
 
@@ -284,9 +291,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityX#A", X => 5.0);
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
-
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+            if (wallBC == 1) {
+                U = 0.1;
+                C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
+                C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
+            }
 
             ////C.InitialValues_Evaluators.Add("Pressure#A", X => 2.0 - X[0]);
 
@@ -326,38 +335,47 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             switch (wallBC) {
                 case 0:
-                    goto default;
+                goto default;
                 case 1:
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
-                    C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
-                    C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
-                    break;
+                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_lower", "VelocityX#B", X => U);
+                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_upper", "VelocityX#B", X => U);
+                break;
                 case 2:
-                    C.AddBoundaryValue("navierslip_linear_lower");
-                    C.AddBoundaryValue("navierslip_linear_upper");
-                    break;
+                C.AddBoundaryValue("navierslip_linear_lower");
+                C.AddBoundaryValue("navierslip_linear_upper");
+                break;
                 default:
-                    C.AddBoundaryValue("wall_lower");
-                    C.AddBoundaryValue("wall_upper");
-                    break;
+                C.AddBoundaryValue("wall_lower");
+                C.AddBoundaryValue("wall_upper");
+                break;
             }
 
-            
 
-            double T = 10;
+
+            //double T = 10;
 
             if (D == 3) {
-                C.AddBoundaryValue("wall_mantle");
-                C.AddBoundaryValue("velocity_inlet", "VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
-                C.AddBoundaryValue("velocity_inlet", "VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
-                C.AddBoundaryValue("pressure_outlet");
+                //C.AddBoundaryValue("wall_mantle");
+                //C.AddBoundaryValue("velocity_inlet", "VelocityZ#A", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+                //C.AddBoundaryValue("velocity_inlet", "VelocityZ#B", X => (-4.0 * U / H.Pow2()) * ((X[1] - H / 2.0).Pow2() + (X[1] - H / 2.0).Pow2()).Sqrt() + U);
+                //C.AddBoundaryValue("pressure_outlet");
+                C.AddBoundaryValue("velocity_inlet_front", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U));
+                C.AddBoundaryValue("velocity_inlet_front", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U));
+                C.AddBoundaryValue("velocity_inlet_back", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U));
+                C.AddBoundaryValue("velocity_inlet_back", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U));
             }
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+            if (wallBC == 0) {
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0*Math.PI*(t/T)));
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U)); // * Math.Sin(2.0 * Math.PI * (t / T)));
+            }
+
+            if (wallBC == 1) {
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => U);
+                C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => U);
+            }
 
             //C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#A", X => 1.0 * ((-4.0 * U / H.Pow2()) * (X[1] - H / 2.0).Pow2() + U).Pow2() / 2.0);
             ////C.AddBoundaryValue("velocity_inlet_left", "KineticEnergy#B", X => U.Pow2() / 2); 
@@ -424,17 +442,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ============
             #region time
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 5e-2;
+            double dt = 1e-2; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 2; // 500;
+            C.NoOfTimesteps = 200; // 500;
             C.saveperiod = 10;
 
             #endregion
@@ -922,48 +940,40 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ======================
             #region Fourier level-set
 
-            switch (lsEvo)
-            {
-                case LevelSetEvolution.Fourier:
-                    {
-                        switch (boundarySetup)
-                        {
-                            case 1:
-                                {
-                                    throw new ArgumentException("Fourier Level-Set not implemented in Line Movement Test");
-                                    break;
-                                }
-                            case 2:
-                                {
-                                    int numSp = 640;
-                                    double[] FourierP = new double[numSp];
-                                    double[] samplP = new double[numSp];
-                                    double[] center = new double[] { L / 4.0, H / 2.0 };
-                                    double radius = cLength;
-                                    for (int sp = 0; sp < numSp; sp++)
-                                    {
-                                        FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
-                                        samplP[sp] = radius;
-                                    }
-
-                                    C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem)
-                                    {
-                                        center = center,
-                                        FourierEvolve = Fourier_Evolution.MaterialPoints,
-                                        centerMove = CenterMovement.Reconstructed,
-                                    };
-
-                                    C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
-                                    break;
-                                }                               
-                            default:
-                                break;
-                               
+            switch (lsEvo) {
+                case LevelSetEvolution.Fourier: {
+                    switch (boundarySetup) {
+                        case 1: {
+                            throw new ArgumentException("Fourier Level-Set not implemented in Line Movement Test");
                         }
+                        case 2: {
+                            int numSp = 640;
+                            double[] FourierP = new double[numSp];
+                            double[] samplP = new double[numSp];
+                            double[] center = new double[] { L / 4.0, H / 2.0 };
+                            double radius = cLength;
+                            for (int sp = 0; sp < numSp; sp++) {
+                                FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+                                samplP[sp] = radius;
+                            }
+
+                            C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (double)kelem) {
+                                center = center,
+                                FourierEvolve = Fourier_Evolution.MaterialPoints,
+                                centerMove = CenterMovement.Reconstructed,
+                            };
+
+                            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Fourier;
+                            break;
+                        }
+                        default:
                         break;
+
                     }
-                default:
                     break;
+                }
+                default:
+                break;
             }
 
             #endregion
