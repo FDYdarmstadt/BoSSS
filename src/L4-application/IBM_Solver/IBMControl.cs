@@ -78,8 +78,8 @@ namespace BoSSS.Application.IBM_Solver {
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
             this.AddFieldOption("Pressure", k - 1);
-            this.AddFieldOption("PhiDG", Math.Max(2, k));
-            this.AddFieldOption("Phi", Math.Max(2, k) + 1);
+            this.AddFieldOption("PhiDG", Math.Max(8, k));
+            this.AddFieldOption("Phi", Math.Max(8, k) + 1);
         }
 
         public bool UseSchurBlockPrec = false;

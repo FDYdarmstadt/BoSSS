@@ -22,6 +22,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
@@ -56,10 +57,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+            //CellAgglomerator.CellAggKatastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
                 FSI_SolverMain p = new FSI_SolverMain();
                 return p;
             });
+        }
+
+        static void KatastrophenPlot(DGField[] dGFields) {
+            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 0);
         }
 
         /// <summary>
@@ -133,6 +139,11 @@ namespace BoSSS.Application.FSI_Solver {
         private SinglePhaseField LevelSetDistance;
 
         /// <summary>
+        /// Level set distance field. 
+        /// </summary>
+        private SinglePhaseField CellID;
+
+        /// <summary>
         /// Create all fields. Additional fields for the FSI-Solver are the particle color field and the level-set distance field.
         /// </summary>
         protected override void CreateFields() {
@@ -145,6 +156,10 @@ namespace BoSSS.Application.FSI_Solver {
             LevelSetDistance = new SinglePhaseField(new Basis(GridData, 0), "LevelSetDistance");
             m_RegisteredFields.Add(LevelSetDistance);
             m_IOFields.Add(LevelSetDistance);
+
+            CellID = new SinglePhaseField(new Basis(GridData, 0), "CellID");
+            m_RegisteredFields.Add(CellID);
+            m_IOFields.Add(CellID);
         }
 
         /// <summary>
@@ -534,7 +549,6 @@ namespace BoSSS.Application.FSI_Solver {
                 int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 CellMask allParticleMask = null;
                 CellMask coloredCellMask = null;
-
                 if (CellColor != null) {
                     DeleteParticlesOutsideOfDomain();
                     CreateGhostParticleAtPeriodicBoundary();
@@ -543,6 +557,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
                 for (int i = 0; i < noOfLocalCells; i++) {
+                    CellID.SetMeanValue(i, i);
                     if (CellColor[i] != 0)
                         CellColor[i] = 1;
                 }
@@ -560,16 +575,16 @@ namespace BoSSS.Application.FSI_Solver {
 
                         int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
                         double levelSetFunctionParticlesPerColor(double[] X, double t) {
-                            double levelSetFunction = -double.MaxValue;
+                            double levelSetFunction = int.MinValue;
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
-                                if (levelSetFunction < currentParticle.LevelSetFunction(X))
-                                    levelSetFunction = currentParticle.LevelSetFunction(X);
+                                if (levelSetFunction < currentParticle.LevelSetFunction(X, BoundaryCoordinates))
+                                    levelSetFunction = currentParticle.LevelSetFunction(X, BoundaryCoordinates);
                                 globalParticleColor[particlesOfCurrentColor[p]] = 0;
                             }
                             return levelSetFunction;
                         }
-                        SetLevelSet(levelSetFunctionParticlesPerColor, coloredCellMask, phystime);
+                        SetLevelSet(levelSetFunctionParticlesPerColor, CellMask.GetFullMask(GridData), phystime);
                     }
                 }
 
@@ -762,7 +777,6 @@ namespace BoSSS.Application.FSI_Solver {
             double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
             if (Math.Abs(distance) < particleMaxLength) {
-                //return true;
                 if (d1 == 0)
                     currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
                 else

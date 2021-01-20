@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // define counters to get the correct global id and vertex id
                 long noOfGlobalCells = oldGrid.NumberOfCells_l;
-                int globalCellIDOffsetLocalProcess = GetGlobalIdOffset(cellsToRefine);
+                long globalIDOffset = GetGlobalIdOffset(cellsToRefine, KrefS_SubdivLeaves);
                 long newVertexCounter = (oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1).MPIMax();
 
                 // all locally adapted cells (on this mpi process)
@@ -218,7 +218,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Cell[] refinedCells = new Cell[Leaves.Length];
 
                         for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) {
-                            Cell newCell = CreateRefinedCell(ref noOfGlobalCells, globalCellIDOffsetLocalProcess, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
+                            Cell newCell = CreateRefinedCell(ref noOfGlobalCells, globalIDOffset, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
                             refinedCells[iSubDiv] = newCell;
 
                             NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
@@ -512,16 +512,19 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Calculates the global id offset 
         /// </summary>
-        /// <param name="cellsToRefine">
+        /// <param name="CellsToRefine">
         /// </param>
-        private int GetGlobalIdOffset(IEnumerable<int> cellsToRefine) {
-            int globalIDOffset = 0;
-            int noOfRefinedCellsPerCell = 4;
-            int noOfNewCellsIDPerCell = noOfRefinedCellsPerCell - 1;
-            int sendOffset = cellsToRefine.Count();
-            int[] receiveOffset = sendOffset.MPIAllGatherO();
+        private long GetGlobalIdOffset(IEnumerable<int> CellsToRefine, RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves) {
+            long countLeaves = 0;
+            for (int j = 0; j < CellsToRefine.Count(); j++) {
+                int iKref = Cells.GetRefElementIndex(j);
+                countLeaves += KrefS_SubdivLeaves[iKref].Length - 1;
+            }
+            long sendOffset = countLeaves;
+            long[] receiveOffset = sendOffset.MPIAllGatherO();
+            long globalIDOffset = 0;
             for (int m = 0; m < MpiRank; m++) {
-                globalIDOffset += receiveOffset[m] * noOfNewCellsIDPerCell;
+                globalIDOffset += receiveOffset[m];
             }
             return globalIDOffset;
         }
@@ -725,7 +728,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         /// <param name="iSubDiv">
         /// </param>
-        private static Cell CreateRefinedCell(ref long GlobalIdCounter, int globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv) {
+        private static Cell CreateRefinedCell(ref long GlobalIdCounter, long globalIDOffset, int NewCoarseningClusterId, Cell oldCell, RefElement.SubdivisionTreeNode[] Leaves, int iSubDiv) {
             Cell newCell = new Cell {
                 Type = oldCell.Type,
                 RefinementLevel = oldCell.RefinementLevel + 1,

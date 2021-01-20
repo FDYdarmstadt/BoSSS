@@ -283,12 +283,12 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 14, double noOfParticles = 5) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "c20723d0-690b-4e62-a2cc-712e6c5b931a";
+            //string ID = "d217bfba-9d60-48aa-9a85-4d574c5cca5e";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             //C.IsRestart = true;
             // Fluid Properties
@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 110;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 2.2;
+            double nextParticleDistance = particleLength * 2;
             double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
@@ -344,14 +344,14 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LevelSetSmoothing = true;
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.verbose = false;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.UseSchurBlockPrec = false;
             C.LinearSolver.pMaxOfCoarseSolver = k;
-            C.LinearSolver.TargetBlockSize = 14000;
+            C.LinearSolver.TargetBlockSize = 10000;
 
             // Coupling Properties
             // =============================

@@ -72,7 +72,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             jFound += (int)map.GridDat.CellPartitioning.i0;
 
-            long jFoundGlob = jFound.MPIMin();
+            long jFoundGlob = jFound.MPIMax();
             Console.WriteLine("Cell " + jFoundGlob + " is ref cell!");
             return jFoundGlob;
         }

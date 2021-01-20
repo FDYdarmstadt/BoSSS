@@ -161,6 +161,13 @@ namespace BoSSS.Application.FSI_Solver {
         public abstract double LevelSetFunction(double[] X);
 
         /// <summary>
+        /// Level set function describing the particle.
+        /// </summary>   
+        public virtual double LevelSetFunction(double[] X, double[][] PeriodicBoundaryPosition) {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Circumference of the current particle.
         /// </summary>
         public abstract double Circumference { get; }

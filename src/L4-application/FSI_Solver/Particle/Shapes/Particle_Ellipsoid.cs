@@ -106,6 +106,39 @@ namespace BoSSS.Application.FSI_Solver {
             return r;
         }
 
+        public override double LevelSetFunction(double[] X, double[][] periodicBoundaryPosition) {
+            Vector position = Motion.GetPosition(0);
+            Vector originNeighbouringDomain;
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
+                        - (((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
+                        + 1.0;
+            for (int d = 0; d < 4; d++) {
+                switch (d) {
+                    case 0:
+                    originNeighbouringDomain = new Vector(2 * periodicBoundaryPosition[0][0], 0);
+                    break;
+                    case 1:
+                    originNeighbouringDomain = new Vector(2 * periodicBoundaryPosition[0][1], 0);
+                    break;
+                    case 2:
+                    originNeighbouringDomain = new Vector(0, 2 * periodicBoundaryPosition[1][0]);
+                    break;
+                    case 3:
+                    originNeighbouringDomain = new Vector(0, 2 * periodicBoundaryPosition[1][1]);
+                    break;
+                    default:
+                    throw new Exception("This is the impossible case");
+                }   
+                Vector positionsWithPeriodicity = originNeighbouringDomain + position;
+                r = Math.Max(r, -(((X[0] - positionsWithPeriodicity[0]) * orientation[0] + (X[1] - positionsWithPeriodicity[1]) * orientation[1]) / m_Length).Pow2()
+                       - (((X[0] - positionsWithPeriodicity[0]) * orientation[1] - (X[1] - positionsWithPeriodicity[1]) * orientation[0]) / m_Thickness).Pow2()
+                       + 1.0);
+            }
+            return r;
+        }
+
         /// <summary>
         /// Returns true if a point is withing the particle.
         /// </summary>
@@ -143,10 +176,10 @@ namespace BoSSS.Application.FSI_Solver {
             Vector position = new Vector(Motion.GetPosition(0));
 
             double[,] rotMatrix = new double[2, 2];
-            rotMatrix[0, 0] = m_Length * 1.2 * orientation[0];
-            rotMatrix[0, 1] = -m_Thickness * 1.3 * orientation[1];
-            rotMatrix[1, 0] = m_Length * 1.2 * orientation[1];
-            rotMatrix[1, 1] = m_Thickness * 1.3 * orientation[0];
+            rotMatrix[0, 0] = m_Length * 1 * orientation[0];
+            rotMatrix[0, 1] = -m_Thickness * 1 * orientation[1];
+            rotMatrix[1, 0] = m_Length * 1 * orientation[1];
+            rotMatrix[1, 1] = m_Thickness * 1 * orientation[0];
             double[,] transposeRotMatrix = rotMatrix.CloneAs();
             transposeRotMatrix[0, 1] = rotMatrix[1, 0];
             transposeRotMatrix[1, 0] = rotMatrix[0, 1];
