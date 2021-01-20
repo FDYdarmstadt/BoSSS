@@ -35,7 +35,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         LevelSetTracker m_LsTrk;
 
         public DivergenceAtIB(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, Func<double[], double, double[]> getParticleParams) {
+            double vorZeichen, Func<double[], double, ParticleParameters> getParticleParams) {
             this.D = _D;
             this.m_LsTrk = lsTrk;
             this.m_getParticleParams = getParticleParams;
@@ -48,7 +48,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
-        Func<double[], double, double[]> m_getParticleParams;
+        Func<double[], double, ParticleParameters> m_getParticleParams;
 
         /// <summary>
         /// the penalty flux
@@ -57,30 +57,49 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             return (UxN_in - UxN_out);
         }
 
-        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+        public double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            var parameters_P = m_getParticleParams(cp.X, cp.time);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
+            //double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            //BoSSS.Foundation.CommonParams inp = cp;
+            //var parameters_P = m_getParticleParams(inp.X, inp.time);
+            //double[] uLevSet = new double[] { parameters_P.PointVelocity[0], parameters_P.PointVelocity[1] };
+            ////double wLevSet = parameters_P[2];
+            ////pRadius = parameters_P[3];
 
-            double[] _uLevSet = new double[D];
+            //double[] _uLevSet = new double[D];
 
-            _uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
-            _uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
+            //_uLevSet[0] = uLevSet[0]; //+pRadius*wLevSet*-cp.Normal[1];
+            //_uLevSet[1] = uLevSet[1]; //+pRadius * wLevSet * cp.Normal[0];
 
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
-          
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict;
-            uAxN_fict = uBxN;
+            //double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
 
-            double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
-            //double FlxPos = 0;
+            //// transform from species B to A: we call this the "A-fictitious" value
+            //double uAxN_fict;
+            //uAxN_fict = uBxN;
 
-            return FlxNeg * v_Neg;
+            //double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
+            ////double FlxPos = 0;
+
+            //return FlxNeg * v_Neg;
+
+            Vector fluidVelocity = new Vector(U_Neg);
+            Vector pVelocity=new Vector(new double[D]);
+            double[] X;
+            switch (D) {
+                case 2:
+                    X = new double[] { inp.X.x,inp.X.y };
+                    pVelocity = new Vector(new double[]{m_getParticleParams(X, 0.0).PointVelocity[0],
+                        m_getParticleParams(X, 0.0).PointVelocity[1] });
+                    break;
+                case 3:
+                X = new double[] { inp.X.x, inp.X.y, inp.X.z };
+                pVelocity = m_getParticleParams(X, 0.0).PointVelocity;
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            return (pVelocity - fluidVelocity) * inp.Normal * v_Neg;
         }
 
         

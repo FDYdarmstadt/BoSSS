@@ -127,7 +127,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     PreSmoother.Init(op);
                 if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
                     PostSmoother.Init(op);
-
+#if TEST
+                try {
+                    op.OperatorMatrix.CheckForNanOrInfM();
+                } catch (Exception ex) {
+                    Console.WriteLine("Arithmetic exception in OperatorMatrix");
+                    Console.WriteLine(ex.Message);
+                    op.OperatorMatrix.SaveToTextFileSparse("A");
+                }
+                
+#endif
             }
         }
 
@@ -277,8 +286,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //double NormAfter = Mxx.MPI_L2Norm();
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
-
-                    double gamma = 1.0 / Mxx.MPI_L2Norm();
+                    double gamma = 0;
+                    if (Mxx.MPI_L2NormPow2(this.OpMatrix.MPI_Comm)!=0) // prohibits div by 0, if we got zero solution  
+                        gamma = 1.0 / Mxx.MPI_L2Norm();
                     //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
                     BLAS.dscal(L, gamma, Mxx, 1);
                     BLAS.dscal(L, gamma, X, 1);
@@ -432,6 +442,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         */
 
+        private void CatchThisExclamationmark(double[] Vector, string name, int position) {
+            double L2norm = Vector.L2Norm();
+            Console.WriteLine("Norm of {0} at {1}: {2}", name, position, L2norm);
+            try {
+                Vector.CheckForNanOrInfV();
+            } catch (Exception ex) {
+                Console.WriteLine("Arithmetic Exception in {0}, at {1}:",name,position);
+                Console.WriteLine(ex.Message);
+                Vector.SaveToTextFile(name+"_"+position);
+            }
+        }
 
         /// <summary>
         /// the multigrid iterations for a linear problem
@@ -489,8 +510,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Res0 = new double[L];
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, Res, L);
-                                
-               
+
+#if TEST
+                int pos=0;
+                CatchThisExclamationmark(Res,"Res", pos);
+                CatchThisExclamationmark(Sol0, "Sol", pos);
+                pos++;
+#endif
+
                 double iter0_resNorm = Res0.MPI_L2Norm();
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
@@ -525,8 +552,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double[] PreCorr = new double[L];
                         //var oldRl = rl.CloneAs();
                         PreSmoother.Solve(PreCorr, Res); // Vorglättung
-                                                        //if (Corr != null) // only for plotting/debugging
-                                                        //    Corr.SetV(PreCorr);
+                                                         //if (Corr != null) // only for plotting/debugging
+                                                         //    Corr.SetV(PreCorr);
 
                         //{
                         //    var checkPreCor = new double[L];
@@ -539,10 +566,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    }, new[] { "preSmoother", "debugSmoother", "diff" });
                         //}
 
-
+#if TEST
+                        CatchThisExclamationmark(Res, "Res", pos);
+                        CatchThisExclamationmark(X, "Sol", pos);
+                        pos++;
+#endif
 
                         //tmpX.SetV(X);
                         //tmpX.AccV(1.0, PreCorr);
+
                         SpecAnalysisSample(iIter, PreCorr, "smooth1");
 
                         // orthonormalization and residual minimization
@@ -550,6 +582,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //if (Xprev != null)
                         //    Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+
+#if TEST
+                        CatchThisExclamationmark(Res, "Res", pos);
+                        CatchThisExclamationmark(X, "Sol", pos);
+                        pos++;
+#endif
 
                         SpecAnalysisSample(iIter, X, "ortho1");
 
@@ -615,9 +653,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             AddSol(ref vl);
                             resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
 
+
+#if TEST
+                            CatchThisExclamationmark(Res, "Res", pos);
+                            CatchThisExclamationmark(X, "Sol", pos);
+                            pos++;
+#endif
                             //SpecAnalysisSample(iIter, X, "ortho2");
 
-                            
+
 
                         }
                     } // end of coarse-solver loop
@@ -659,6 +703,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
 
+
+#if TEST
+                        CatchThisExclamationmark(Res, "Res", pos);
+                        CatchThisExclamationmark(X, "Sol", pos);
+                        pos++;
+#endif
+
                         SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
                     
@@ -686,141 +737,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
             } // end of functrace
-        }
-
-        /// <summary>
-        /// the multigrid iterations for a linear problem (experimental version)
-        /// </summary>
-        /// <param name="_xl">on input, the initial guess; on exit, the result of the multigrid iteration</param>
-        /// <param name="_B">the right-hand-side of the problem</param>
-        public void Solve__experimento<U, V>(U _xl, V _B)
-            where U : IList<double>
-            where V : IList<double> //
-        {
-            using (new FuncTrace()) {
-                double[] B, X;
-                if (_B is double[])
-                    B = _B as double[];
-                else
-                    B = _B.ToArray();
-                if (_xl is double[])
-                    X = _xl as double[];
-                else
-                    X = _xl.ToArray();
-
-                //// clear history, makes a small difference on coarse levels, which one is better?
-                MxxHistory.Clear();
-                SolHistory.Clear();
-                
-                int L = X.Length;
-                int Lc;
-                if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
-                    Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
-                else
-                    Lc = -1;
-
-                double[] rlc = Lc > 0 ? new double[Lc] : null;
-
-                // Residual of initial solution guess
-                double[] Res = B;
-                if(X.MPI_L2Norm() > 0)
-                    OpMatrix.SpMV(-1.0, X, 1.0, Res);
-                double[] Res0 = Res.CloneAs();
-
-                // solution loop
-                double iter0_resNorm = Res.MPI_L2Norm();
-                double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, X, Res, this.m_MgOperator);
-
-                double[] TempRes = new double[L];
-                for (int iIter = 1; true; iIter++) {
-
-                    double[] PresCorr = new double[L]; // correction from pre-smoother
-                    double[] CrseCorr = this.CoarserLevelSolver != null ? new double[L] : null; // correction from coarse-solver
-                    double[] PstsCorr = new double[L]; // correction from post-smoother
-                    TempRes.SetV(Res);
-
-
-                    // pre-Smoother
-                    // ------------
-                    PreSmoother.Solve(PresCorr, TempRes);
-                    OpMatrix.SpMV(-1.0, PresCorr, 1.0, TempRes);
-
-                    // coarse grid correction
-                    // ----------------------
-
-                    if (this.CoarserLevelSolver != null) {
-                        if (CoarseOnLovwerLevel) {
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            // coarse grid solver defined on COARSER MESH LEVEL:
-                            // this solver must perform restriction and prolongation
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                            // restriction of residual
-                            this.m_MgOperator.CoarserLevel.Restrict(TempRes, rlc);
-
-                            // Berechnung der Grobgitterkorrektur
-                            double[] vlc = new double[Lc];
-                            for (int i = 0; i < m_omega; i++)
-                                this.CoarserLevelSolver.Solve(vlc, rlc);
-
-                            // Prolongation der Grobgitterkorrektur
-                            this.m_MgOperator.CoarserLevel.Prolongate(1.0, CrseCorr, 1.0, vlc);
-
-
-                        } else {
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            // coarse grid solver defined on the SAME MESH LEVEL:
-                            // performs (probably) its own restriction/prolongation
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                            // Berechnung der Grobgitterkorrektur
-                            this.CoarserLevelSolver.Solve(CrseCorr, TempRes);
-                        }
-
-                        OpMatrix.SpMV(-1.0, CrseCorr, 1.0, TempRes); 
-                    }
-
-                    // post-smoother
-                    // -------------
-
-                    PostSmoother.Solve(PstsCorr, TempRes);
-
-
-                    // orthonormalization and residual minimization
-                    // --------------------------------------------
-
-                   
-                    AddSol(ref PresCorr);
-                    MinimizeResidual(X, null, Res0, Res, 0);
-                    if(CrseCorr != null) {
-                        Debug.Assert(CoarserLevelSolver != null);
-                        AddSol(ref CrseCorr);
-                        MinimizeResidual(X, null, Res0, Res, 0);
-                    }
-                    AddSol(ref PstsCorr);
-                    resNorm = MinimizeResidual(X, null, Res0, Res, 0);
-
-
-                    // finalization
-                    // ------------
-
-                    this.ThisLevelIterations++;
-                    
-                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
-                    
-                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                        Converged = true;
-                        break;
-                    }
-                }
-
-                // solution copy
-                // =============
-                if (!ReferenceEquals(_xl, X)) {
-                    _xl.SetV(X);
-                }
-            }
         }
 
         private double[] cloneofX;
@@ -852,28 +768,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             set;
         }
-
-
-
-        /*
-        /// <summary>
-        /// Currently not used
-        /// </summary>
-        /// <param name="X"></param>
-        /// <param name="Sol0"></param>
-        /// <param name="rl"></param>
-        /// <param name="Res0"></param>
-        /// <param name="B"></param>
-        /// <param name="L"></param>
-        private void Restart(double[] X, double[] Sol0, double[] rl, double[] Res0, double[] B, int L) {
-            MxxHistory.Clear();
-            SolHistory.Clear();
-            Array.Copy(X, Sol0, L);
-            Residual(rl, X, B);
-            Array.Copy(rl, Res0, L);
-            Console.WriteLine("      restarted with residual = " + rl.L2Norm() + " on MG level " + m_MgOperator.LevelIndex);
-        }
-        */
 
 
         /// <summary>

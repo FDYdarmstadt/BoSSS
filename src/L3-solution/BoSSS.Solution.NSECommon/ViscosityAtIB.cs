@@ -33,7 +33,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         LevelSetTracker m_LsTrk;
 
         public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
-            Func<double[], double, double[]> getParticleParams) {
+            Func<double[], double, ParticleParameters> getParticleParams) {
 
             this.m_penalty = penalty;
             this.m_PenaltyFunc = _PenaltyFunc;
@@ -51,7 +51,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
         /// </summary>
-        Func<double[], double, double[]> m_getParticleParams;
+        Func<double[], double, ParticleParameters> m_getParticleParams;
 
         /// <summary>
         /// Viskosity in species A
@@ -86,9 +86,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             int D = N.Length;
 
             var parameters_P = m_getParticleParams(inp.X, inp.time);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
+            double[] uLevSet = new double[] { parameters_P.PointVelocity[0], parameters_P.PointVelocity[1] };
+            double wLevSet = parameters_P.AngularVelocity[2];
+            //pRadius = parameters_P[3];
 
 
             Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -105,33 +105,32 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             // Evaluate the complete velocity as a sum of translation and angular velocity
-            double uAFict;
+            //double uAFict;
             double Ret = 0.0;
 
 
-            // 3D for IBM_Solver
-            if (inp.X.Dim == 3) {
+            //// 3D for IBM_Solver
+            //if (inp.X.Dim == 3) {
                 
-                Ret -= Grad_uA_xN * (vA);                           // consistency term
-                Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
-                Ret += _penalty * (uA[component] - 0) * (vA); // penalty term
+            //    Ret -= Grad_uA_xN * (vA);                           // consistency term
+            //    Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
+            //    Ret += _penalty * (uA[component] - 0) * (vA); // penalty term
 
-                Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
-                return Ret * muA;
-            }
+            //    Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
+            //    return Ret * muA;
+            //}
 
+            //if (component == 0) {
+            //    uAFict = uLevSet[component]; //+ pRadius * wLevSet * -inp.Normal[1];
+            //} else {
+            //    uAFict = uLevSet[component]; //+ pRadius * wLevSet * inp.Normal[0];
+            //}
 
-
-            if (component == 0) {
-                uAFict = uLevSet[component] + pRadius * wLevSet * -inp.Normal[1];
-            } else {
-                uAFict = uLevSet[component] + pRadius * wLevSet * inp.Normal[0];
-            }
-
+            double[] uAFict = uLevSet;
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
-            Ret -= Grad_vA_xN * (uA[component] - uAFict);     // symmetry term
-            Ret += _penalty * (uA[component] - uAFict) * (vA); // penalty term
+            Ret -= Grad_vA_xN * (uA[component] - uAFict[component]);     // symmetry term
+            Ret += _penalty * (uA[component] - uAFict[component]) * (vA); // penalty term
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret * muA;

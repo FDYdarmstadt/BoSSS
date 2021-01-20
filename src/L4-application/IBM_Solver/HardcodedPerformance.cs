@@ -45,11 +45,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SpinningCube(string _DbPath = null, int k = 2, int cells_x = 150, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SpinningCube(string _DbPath = null, int k = 2, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
             
 
-            //C.DbPath = @"D:\trash_db";
+            C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -92,12 +92,14 @@ namespace BoSSS.Application.IBM_Solver {
                     C.GridFunc = delegate {
 
                         // x-direction
-                        var _xNodes = GenericBlas.Linspace(0, 3, cells_x + 1);
+                        double xMin=-1, yMin=-1, zMin=-1; 
+                        double xMax=1, yMax=1, zMax=1;
+                        var _xNodes = GenericBlas.Linspace(xMin, xMax, cells_x + 1);
                         //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                         // y-direction
-                        var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+                        var _yNodes = GenericBlas.Linspace(yMin, yMax, cells_yz + 1);
                         // z-direction
-                        var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
+                        var _zNodes = GenericBlas.Linspace(zMin, zMax, cells_yz + 1);
 
 
                         GridCommons grd;
@@ -123,31 +125,33 @@ namespace BoSSS.Application.IBM_Solver {
                             double x = X[0];
                             double y = X[1];
 
-                            if (Math.Abs(x - (0)) < 1.0e-6)
-                                // inlet
-                                return 1;
+                            //if (Math.Abs(x - (xMin)) < 1.0e-6)
+                            //    // inlet
+                            //    return 1;
 
-                            if (Math.Abs(x - (3)) < 1.0e-6)
-                                // outlet
-                                return 3;
+                            //if (Math.Abs(x - (xMax)) < 1.0e-6)
+                            //    // outlet
+                            //    return 3;
 
-                            if (Math.Abs(y - (-0.5)) < 1.0e-6)
-                                // left
-                                return 2;
+                            //if (Math.Abs(y - (yMin)) < 1.0e-6)
+                            //    // left
+                            //    return 2;
 
-                            if (Math.Abs(y - (0.5)) < 1.0e-6)
-                                // right
-                                return 2;
-                            if (SpaceDim == 3) {
-                                double z = X[2];
-                                if (Math.Abs(z - (-0.5)) < 1.0e-6)
-                                    // top
-                                    return 2;
+                            //if (Math.Abs(y - (yMax)) < 1.0e-6)
+                            //    // right
+                            //    return 2;
+                            //if (SpaceDim == 3) {
+                            //    double z = X[2];
+                            //    if (Math.Abs(z - (zMin)) < 1.0e-6)
+                            //        // top
+                            //        return 2;
 
-                                if (Math.Abs(z - (0.5)) < 1.0e-6)
-                                    // bottom
-                                    return 2;
-                            }
+                            //    if (Math.Abs(z - (zMax)) < 1.0e-6)
+                            //        // bottom
+                            //        return 2;
+                            //}
+                            return 2;
+
                             throw new ArgumentOutOfRangeException();
                         });
 
@@ -170,26 +174,37 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Func<double[],double,double> PhiFunc = delegate (double[] X, double t) {
                 
-                    int power = 10;
-                    double anglev = 1;
-                    double angle = (anglev * t) % (2 * Math.PI);
-                        double[] pos;
+                    int power = 2;
+                    double anglev = 0.1;
+                    anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
+
+                    C.AngularVelocity[2] = anglev;
+                    //double angle = -(anglev * t) % (2 * Math.PI);
+                    double angle = -(anglev * t) % (2*Math.PI);
+                    double[] pos;
 
                     switch (SpaceDim) {
                         case 2:
-                            pos = new double[] { 1, 0 };
-                            return -Math.Pow(((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)), power)
+                        pos = new double[] { 0, 0 };
+                        C.CenterofMass = pos;
+                        return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                         - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                        + Math.Pow(C.particleRadius, power);
-                    
+                        + Math.Pow(C.particleRadius, power))*100;
+                        //return -X[0] * X[0] - X[1] * X[1] + C.particleRadius * C.particleRadius;
+
+
                         case 3:
-                            pos = new double[] { 1, 0 , 0};
+                            pos = new double[] { 0, 0, 0};
+                            C.CenterofMass = pos;
                             return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                        - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                        - Math.Pow(X[2] - pos[2],power) + Math.Pow(C.particleRadius, power);
+                            - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                            - Math.Pow(X[2] - pos[2],power)
+                            + Math.Pow(C.particleRadius, power);
                         default:
                             throw new NotImplementedException();
                     }
+                    
+
                 };
 
 
@@ -213,30 +228,32 @@ namespace BoSSS.Application.IBM_Solver {
                     Console.WriteLine("...starting calculation of Cube3D");
                     break;
             }
-            
+
 
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.15;
+            C.particleRadius = 0.13;
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 0.0001 / 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.Material = true;
 
             // Boundary conditions
 
-            double Vmax = 1000;
-            
-            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
-            if (SpaceDim == 3) {
-                C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
-                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1- 4 * (X[2] * X[2]) - 4 * (X[1] * X[1])));
-            } else {
-                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1 - 4 * (X[1] * X[1])));
-            }
+            //double Vmax = 1000;
 
-               
+            //C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
+            //if (SpaceDim == 3) {
+            //    C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            //    C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 0);
+            //    //C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1 - 4 * (X[2] * X[2]) - 4 * (X[1] * X[1])));
+            //} else {
+            //    C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 0);
+            //    //C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1 - 4 * (X[1] * X[1])));
+            //}
+
             C.AddBoundaryValue("Wall");
-            C.AddBoundaryValue("Pressure_Outlet");
+            //C.AddBoundaryValue("Pressure_Outlet");
 
             C.OperatorMatrixAnalysis = false;
 
@@ -247,10 +264,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.MaxSolverIterations = 200;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             C.LinearSolver.verbose = true;
@@ -259,7 +276,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdaptiveMeshRefinement = true;
 
-            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             // Timestepping
             // ============
@@ -271,14 +288,14 @@ namespace BoSSS.Application.IBM_Solver {
             //}
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
-            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.BDF2;
-            double dt = 0.01;
-            C.dtFixed = dt;
+            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
+            double dt = 0.001;
+            //C.dtFixed = dt;
             //C.dtMax = dt;
             //C.dtMin = 0;
             //C.Endtime = 1000;
             //C.NoOfTimesteps = 10;
-            C.NoOfTimesteps = 100;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;

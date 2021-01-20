@@ -21,6 +21,7 @@ using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using System.Linq;
 using System.Runtime.Serialization;
+using ilPSP;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -225,6 +226,11 @@ namespace BoSSS.Application.IBM_Solver {
 
         public bool OperatorMatrixAnalysis = false;
 
+        [DataMember]
+        public double[] AngularVelocity = new double[]{0,0,0};
+
+        [DataMember]
+        public double[] CenterofMass = null;
 
         public override bool Equals(object obj) {
             if(!base.Equals(obj))

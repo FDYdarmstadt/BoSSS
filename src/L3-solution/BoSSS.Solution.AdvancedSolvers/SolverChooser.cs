@@ -1456,7 +1456,7 @@ namespace BoSSS.Solution {
                 double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 if(SizeFraction < 1 && iLevel == 0) {
-                    Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize}) exceeds local system size ({_LocalDOF[iLevel]});");
+                    Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize(iLevel)}) exceeds local system size ({_LocalDOF[iLevel]});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
@@ -1494,7 +1494,7 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = true,
+                        UsePMGinBlocks = false,
                         CoarseSolveOfCutcells = true,
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
                         //CoarseLowOrder = Math.Min(maxDG, 1 + iLevel*2),
