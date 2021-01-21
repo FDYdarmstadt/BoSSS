@@ -275,7 +275,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
 
-
+#endif
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
@@ -295,7 +295,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         
         }
-
+#if !DEBUG
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
