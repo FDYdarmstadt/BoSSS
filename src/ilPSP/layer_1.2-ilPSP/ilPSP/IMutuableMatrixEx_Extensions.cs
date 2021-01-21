@@ -239,18 +239,21 @@ namespace ilPSP.LinSolvers {
         /// checks all (nonzero) matrix entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public void CheckForNanOrInfM<T>(this T M)
+        static public void CheckForNanOrInfM<T>(this T M, string messageprefix = null)
             where T : IMutableMatrixEx //
         {
+            if(messageprefix == null)
+                messageprefix = "";
+
             long[] col = null;
             double[] val = null;
             for (long i = M.RowPartitioning.i0; i < M.RowPartitioning.iE; i++) {
                 int L = M.GetRow(i, ref col, ref val);
                 for (int l = 0; l < L; l++) {
                     if (double.IsInfinity(val[l]))
-                        throw new ArithmeticException("element (" + i + "," + col[l] + ") is infinity.");
+                        throw new ArithmeticException($"{messageprefix}element ({i},{col[l]}) is infinity.");
                     if (double.IsNaN(val[l]))
-                        throw new ArithmeticException("element (" + i + "," + col[l] + ") is NAN.");
+                        throw new ArithmeticException($"{messageprefix}element ({i},{col[l]}) is NAN.");
                 }
             }
         }

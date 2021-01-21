@@ -229,7 +229,20 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// Adaptation of user-defined values when a nonlinear solver moves along a homotopy path.
+        /// A functionality which can be used to help a nonlinear solver to solve for "difficult" coefficients,
+        /// e.g. high Reynolds numbers. The principal idea is to start at coefficient values which are 
+        /// "easy" to solve, e.g. a low Reynolds number, and successively increase the respective value 
+        /// until the target is reached. The solution with easier coefficients is then used as an 
+        /// initial guess for the solution of more difficult coefficients.
+        /// This family of solutions are points on the so-called homotopy path.
+        /// 
+        /// In order to support such a solver strategy, the user has to define the 
+        /// coefficient-update along a homotopy path; the path itself is parameterized from 0 to 1.
+        /// At this member, the user has to specify delegates which handle the update of the coefficients
+        /// at the homotopy path.
+        /// - the input value for the delegate is a value between 0 and 1 (both including). 
+        /// - 0 should map to the most easy coefficient value, 1 maps to the target coefficient value.
+        /// - in the body of the method, the respective scalars can be updated.
         /// </summary>
         ICollection<Action<double>> HomotopyUpdate {
             get;
@@ -258,7 +271,18 @@ namespace BoSSS.Foundation {
             get;
             set;
         }
-       
+
+
+        /// <summary>
+        /// Evaluation of the <see cref="QuadOrderFunction"/> for a concrete basis
+        /// </summary>
+        /// <param name="CodomainBasis"></param>
+        /// <param name="ParameterBasis">
+        /// can be null
+        /// </param>
+        /// <param name="DomainBasis"></param>
+        int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis);
+
     }
 
     /// <summary>

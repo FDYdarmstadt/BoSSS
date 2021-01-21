@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;

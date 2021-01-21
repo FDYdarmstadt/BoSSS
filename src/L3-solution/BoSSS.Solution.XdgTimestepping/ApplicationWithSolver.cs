@@ -209,8 +209,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // restore BDF time-stepper after grid redistribution (dynamic load balancing)
+                // restore time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                
+                // currently, only supported for the BDF timestepper.
+                
                 Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
             }
         }
@@ -236,7 +239,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
+                // the last configuration entry will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[Degrees.Length];
@@ -386,6 +389,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_XOperator.IsCommited)
+                        throw new ApplicationException("Operator must be comitted by user.");
                 }
                 return m_XOperator;
             }
@@ -506,6 +511,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_SOperator.IsCommited)
+                        throw new ApplicationException("Operator must be comitted by user.");
+
                 }
                 return m_SOperator;
             }

@@ -559,21 +559,7 @@ namespace BoSSS.Solution.NSECommon {
         /// z - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient2 = "TemperatureGradient[2]";
-
-        ///// <summary>
-        ///// x - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
-
-        ///// <summary>
-        ///// y - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
-
-        ///// <summary>
-        ///// z - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
+         
 
         /// <summary>
         /// variable name for the Gradient of the Temperature
@@ -583,7 +569,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 1: return new string[] { TemperatureGradient0 };
                 case 2: return new string[] { TemperatureGradient0, TemperatureGradient1 };
                 case 3: return new string[] { TemperatureGradient0, TemperatureGradient1, TemperatureGradient2 };
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -719,9 +705,9 @@ namespace BoSSS.Solution.NSECommon {
 
         static public string MassFluxExtension = "MassFluxExtension";
 
-        /// <summary>
-        /// variable name for the Gradient of the Temperature (linearization point)
-        /// </summary>
+        ///// <summary>
+        ///// variable name for the Gradient of the Temperature (linearization point)
+        ///// </summary>
         //static public string[] Temperature0Gradient(int D) {
         //    switch (D) {
         //        case 1: return new string[] { Temperature0Gradient0 };
@@ -731,17 +717,39 @@ namespace BoSSS.Solution.NSECommon {
         //    }
         //}
 
+        ///// <summary>
+        ///// for XNSE - continuous level set field (used level set tracker and quadrature) 
+        ///// The polynomial basis is one order higher than <see cref="LevelSetDG"/>
+        ///// </summary>
+        //public const string _LevelSetCG = "Phi";
+
+        /// <summary>
+        /// for XNSE - discontinuous level set field (used for level set evolution)
+        /// </summary>
+        public const string LevelSetDG = "PhiDG";
+
+        /// <summary>
+        /// variable name for the phase dividing interface
+        /// </summary>
+        public const string LevelSetCG = "Phi";
+
 
         /// <summary>
         /// variable name for a single Level Set
         /// </summary>
         public const string LevelSet = "LevelSet";
 
+        /// <summary>
+        /// convention for variable names of properties defined at the interface 
+        /// </summary>
         public static string AsLevelSetVariable(string levelSetName, string variable)
         {
             return variable + "#" + levelSetName;
         }
 
+        /// <summary>
+        /// convention for variable names of properties defined at the interface 
+        /// </summary>
         public static IList<string> AsLevelSetVariable(string levelSetName, IList<string> variables)
         {
             for (int i = 0; i < variables.Count; ++i)
@@ -774,7 +782,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 1: return new string[] { LevelSetGradient0 };
                 case 2: return new string[] { LevelSetGradient0, LevelSetGradient1 };
                 case 3: return new string[] { LevelSetGradient0, LevelSetGradient1, LevelSetGradient2 };
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -786,7 +794,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 0: return LevelSetGradient0;
                 case 1: return LevelSetGradient1;
                 case 2: return LevelSetGradient2;
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -937,6 +945,48 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for mean value of scalar (linearization point)
         /// </summary>
         public const string Phi0Mean = "Phi0Mean";
+
+
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityX = "ExtensionVelocityX";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityY = "ExtensionVelocityY";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityZ = "ExtensionVelocityZ";
+
+        /// <summary>
+        /// variable name of the extension velocity
+        /// </summary>
+        static public string[] ExtensionVelocity(int D) {
+            switch (D) {
+                case 1: return new string[] { ExtensionVelocityX };
+                case 2: return new string[] { ExtensionVelocityX, ExtensionVelocityY };
+                case 3: return new string[] { ExtensionVelocityX, ExtensionVelocityY, ExtensionVelocityZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the extension velocity 
+        /// </summary>
+        static public string ExtensionVelocityComponent(int d) {
+            switch (d) {
+                case 0: return ExtensionVelocityX;
+                case 1: return ExtensionVelocityY;
+                case 2: return ExtensionVelocityZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// variable name for the MassFraction of component 0

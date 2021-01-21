@@ -38,64 +38,6 @@ using BoSSS.Solution.XNSECommon;
 namespace BoSSS.Application.XNSE_Solver {
 
 
-    /// <summary>
-    /// options that control level-set evolution
-    /// </summary>
-    public enum LevelSetEvolution {
-
-        /// <summary>
-        /// turn level-set evolution off
-        /// </summary>
-        None,
-
-        /// <summary>
-        /// Prescribed level-set, the initial value is set every time.
-        /// </summary>
-        Prescribed,
-
-        /// <summary>
-        /// Prescribed level-set (wave-like) projecetd from imported amplitude values.
-        /// </summary>
-        PrescribedLSwave,
-
-        /// <summary>
-        /// evolution is described by an explicit Fourier representation
-        /// </summary>
-        Fourier,
-
-        /// <summary>
-        /// Extension velocity based fast marching algorithm.
-        /// </summary>
-        FastMarching,
-
-        /// <summary>
-        /// Level set evolution where the level set field is treated by a scalar convection.
-        /// </summary>
-        ScalarConvection,
-
-        /// <summary>
-        /// The Level-Set is moved by an extension velocity idea using a PDE
-        /// ReInitialization is done by fast marching, no ReInit on Cut Cells!
-        /// -> TODO
-        /// </summary>
-        ExtensionVelocity,
-
-        /// <summary>
-        /// Phasefield level set by Cahn Hilliard equation
-        /// </summary>
-        Phasefield,
-
-        /// <summary>
-        /// Level Set is moved by advected particles.
-        /// This Evloution features three subtypes <see cref="BoSSS.Application.SemiLagrangianLevelSetTestSuite.LagrangianMode"/>
-        /// </summary>
-        SemiLagrangianLevelSet,
-
-        /// <summary>
-        /// Spline Level Set
-        /// </summary>
-        SplineLS
-    }
 
     public class LevelSetMover {
 

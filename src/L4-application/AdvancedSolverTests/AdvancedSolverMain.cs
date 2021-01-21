@@ -41,6 +41,7 @@ namespace AdvancedSolverTests {
             //ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec,4);
             //ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
             //ExternalTests.VectorCellwiseOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
+            ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
             //ExternalTests.SubSelection(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             //ExternalTests.VectorSplitOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
             //AdvancedSolverTests.SubBlocking.LocalTests.CellBlockVectorOperations(XDGusage.all, 2, MatrixShape.diagonal_var_spec);
@@ -51,8 +52,8 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
             //AdvancedSolverTests.SubBlocking.ExternalTests.FastSubMatrixExtraction(XDGusage.none, 2, MatrixShape.laplace, 4);
-            AdvancedSolverTests.SubBlocking.ExternalTests.VectorSplitOperation_Op2(XDGusage.all, 2, MatrixShape.full_spec, 8);
-            AdvancedSolverTests.SubBlocking.ExternalTests.CompareVectorOps(XDGusage.all, 2, MatrixShape.full_spec, 8);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.VectorSplitOperation_Op2(XDGusage.all, 2, MatrixShape.full_spec, 8);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.CompareVectorOps(XDGusage.all, 2, MatrixShape.full_spec, 8);
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
 

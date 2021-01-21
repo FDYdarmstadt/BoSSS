@@ -287,10 +287,10 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             mtxBuilder.ComputeMatrix(OpMatrix_interface, OpAffine_interface);
 
 #if DEBUG
-            OpMatrix_bulk.CheckForNanOrInfM();
+            OpMatrix_bulk.CheckForNanOrInfM(typeof(Extender).Name + " (bulk) : ");
             OpAffine_bulk.CheckForNanOrInfV();
 
-            OpMatrix_interface.CheckForNanOrInfM();
+            OpMatrix_interface.CheckForNanOrInfM(typeof(Extender).Name + " (interface) : ");
             OpAffine_interface.CheckForNanOrInfV();
 #endif
 

@@ -24,7 +24,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 var levelSetSource = control.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource;
                 levelSetDegree = (levelSetSource == CurvatureAlgorithms.LevelSetSource.fromDG) ? lsOpts.Degree : lsOpts.Degree + 1;
             } else {
-                levelSetDegree = 1;
+                throw new Exception("Level set options not found in FieldOptions");
             }
 
             DoNotTouchParameters AdvancedDiscretizationOptions = control.AdvancedDiscretizationOptions;
@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (control.FieldOptions.TryGetValue(curvature, out FieldOpts opts)) {
                 curvatureDegree = opts.Degree;
             } else {
-                curvatureDegree = 1;
+                throw new Exception("Curvature options not found in FieldOptions");
             }
             
             string levelSet = levelSetName;
@@ -53,8 +53,17 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class LevelSetVelocity : ILevelSetParameter
-    {
+    /// <summary>
+    /// Computation of the fluid interface velocity for material interfaces:
+    /// Due to the discontinuous approximation at the interface, 
+    /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
+    /// the velocities of both phases do not match exactly in the discrete setting.
+    /// (The are equal in the continuous setting, however.)
+    /// 
+    /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
+    /// to obtain a single interface velocity.
+    /// </summary>
+    class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
         protected IList<string> parameters;
@@ -67,8 +76,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected PhysicalParameters physicalParameters;
 
-        public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters)
-        {
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters) {
             this.averagingMode = averagingMode;
             this.physicalParameters = physicalParameters;
             this.D = D;
@@ -76,33 +87,30 @@ namespace BoSSS.Application.XNSE_Solver {
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
         }
 
+        /// <summary>
+        /// averaging velocity at interface
+        /// </summary>
         public virtual void LevelSetParameterUpdate(
             DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            int D = levelSet.Tracker.GridDat.SpatialDimension;
+            
             //Mean Velocity
             XDGField[] EvoVelocity; // = new XDGField[]
             try {
-                EvoVelocity = new XDGField[]
-                {
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-                };
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)]
+                    );
             } catch {
-                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = new XDGField[]
-                {
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
-                };
+                Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                    );
             }
 
-
-            int D = EvoVelocity.Length;
-            DGField[] meanVelocity;
-
-            meanVelocity = new ConventionalDGField[D];
+            DGField[] meanVelocity = new ConventionalDGField[D];
 
             double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
             double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
@@ -113,70 +121,67 @@ namespace BoSSS.Application.XNSE_Solver {
             CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
             CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
 
-            for (int d = 0; d < D; d++)
-            {
-                Basis b = EvoVelocity[d].Basis.NonX_Basis;
+            for(int d = 0; d < D; d++) {
+                //Basis b = EvoVelocity[d].Basis.NonX_Basis;
                 meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                meanVelocity[d].Clear();
 
 
-                foreach (string spc in lsTrkr.SpeciesNames)
-                {
+                foreach(string spc in lsTrkr.SpeciesNames) {
                     double rhoSpc;
                     double muSpc;
-                    switch (spc)
-                    {
+                    switch(spc) {
                         case "A": rhoSpc = rho_A; muSpc = mu_A; break;
                         case "B": rhoSpc = rho_B; muSpc = mu_B; break;
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
 
                     double scale = 1.0;
-                    switch (averagingMode)
-                    {
-                        case XNSE_Control.InterfaceVelocityAveraging.mean:
-                            {
-                                scale = 0.5;
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.density:
-                            {
-                                scale = rhoSpc / (rho_A + rho_B);
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.viscosity:
-                            {
-                                scale = muSpc / (mu_A + mu_B);
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseA:
-                            {
-                                scale = (spc == "A") ? 1.0 : 0.0;
-                                break;
-                            }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseB:
-                            {
-                                scale = (spc == "B") ? 1.0 : 0.0;
-                                break;
-                            }
+                    switch(averagingMode) {
+                        case XNSE_Control.InterfaceVelocityAveraging.mean: {
+                            scale = 0.5;
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.density: {
+                            scale = rhoSpc / (rho_A + rho_B);
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.viscosity: {
+                            scale = muSpc / (mu_A + mu_B);
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseA: {
+                            scale = (spc == "A") ? 1.0 : 0.0;
+                            break;
+                        }
+                        case XNSE_Control.InterfaceVelocityAveraging.phaseB: {
+                            scale = (spc == "B") ? 1.0 : 0.0;
+                            break;
+                        }
                     }
 
                     meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
-                    switch (spc)
-                    {
+                    switch(spc) {
                         //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
-                        case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear); break;
-                        case "B": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear); break;
+                        case "A": {
+                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
+                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
+                            break;
+                        }
+                        case "B": {
+                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
+                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
+                            break;
+                        }
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
                 }
             }
         }
 
-        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
-        {
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocties = new (string, DGField)[D];
-            for (int d = 0; d < D; ++d)
-            {
+            for(int d = 0; d < D; ++d) {
                 Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
                 string paramName = ParameterNames[d];
                 DGField lsVelocity = new SinglePhaseField(basis, paramName);
@@ -348,32 +353,36 @@ namespace BoSSS.Application.XNSE_Solver {
                 int order = interfaceVelocity.Basis.Degree * interfaceVelocity.Basis.Degree + 2;
                 interfaceVelocity.Clear();
                 interfaceVelocity.ProjectField(1.0,
-                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-                       int K = result.GetLength(1); // No nof Nodes
 
-                       MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
-                       MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
 
-                       for (int dd = 0; dd < D; dd++) {
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                           ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       }
+                    MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
 
-                       for (int j = 0; j < Len; j++) {
+                    for (int dd = 0; dd < D; dd++) {
+                        ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                        ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                    }
 
-                           for (int k = 0; k < K; k++) {     
-                               result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
-                           }
-                       }
-                   }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
+                    for (int j = 0; j < Len; j++) {
 
+                        for (int k = 0; k < K; k++) {     
+                            result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                        }
+                    }
+                }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
             }
-
         }
-
     }
 
-    class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
+    /// <summary>
+    /// Update of Massflux Parameter for XNSFE;
+    /// Massflux is defined to be positive when pointing in LS normal direction, i.e.
+    /// mass flows from - phase to + phase.
+    /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
+    /// </summary>
+    class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
         DualLevelSet levelSet;
@@ -384,7 +393,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public MassFluxExtension_Evaporation(XNSFE_OperatorConfiguration config) {
             this.config = config;
-            Update = MassFluxExtension_Evaporation_Update;
+            //Update = MassFluxExtension_Evaporation_Update; // Update only once per timestep for now, seems to give better convergence
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -444,9 +453,9 @@ namespace BoSSS.Application.XNSE_Solver {
                         for (int k = 0; k < K; k++) {
 
                             double qEvap = 0.0;
-                            //macro region
+                            //macro region                            
                             for (int dd = 0; dd < D; dd++) {
-                                qEvap += ((-kB) * GradTempB_Res[j, k, dd] - (-kA) * GradTempA_Res[j, k, dd]) * Normals[j, k, dd];
+                                qEvap += ((-kA) * GradTempA_Res[j, k, dd] - (-kB) * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
                                 //qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
                             }
 
@@ -465,99 +474,11 @@ namespace BoSSS.Application.XNSE_Solver {
             this.levelSet = levelSet;
             this.time = time;
 
-            //var thermalParams = config.getThermParams;
-            //double kA, kB;
-            //foreach (var spc in levelSet.Tracker.SpeciesNames) {
-            //    switch (spc) {
-            //        case "A": { kA = thermalParams.k_A; break; }
-            //        case "B": { kB = thermalParams.k_B; break; }
-            //        default: { throw new ArgumentException("unknown species"); }
-            //    }
-            //}
-            //var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
-            //SinglePhaseField MassFluxExtensionField = (SinglePhaseField)ParameterVarFields[paramName];
-            //SinglePhaseField MassFluxField = new SinglePhaseField(MassFluxExtensionField.Basis);
-            //int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
-
-            //XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
-
-            //int D = levelSet.Tracker.GridDat.SpatialDimension;
-            //MassFluxField.Clear();
-            //MassFluxField.ProjectField(1.0,
-            //    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-            //        int K = result.GetLength(1); // No nof Nodes
-                    
-
-            //        MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
-            //        MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
-
-            //        temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
-            //        temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
-
-            //        MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
-            //        MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
-                    
-            //        for (int dd = 0; dd < D; dd++) {
-            //            ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-            //            ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-            //        }
-                    
-
-            //        var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
-
-            //        for (int j = 0; j < Len; j++) {
-
-            //            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-            //            levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
-
-            //            for (int k = 0; k < K; k++) {
-
-            //            double qEvap = 0.0;
-            //            //macro region
-            //            for (int dd = 0; dd < D; dd++) {                                
-            //                    qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];                                
-            //            }
-
-            //            //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
-            //            double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
-            //            double mEvap = (config.prescribedMassflux != null) ? config.prescribedMassflux(globX, time) : qEvap /thermalParams.hVap; // mass flux
-
-            //            //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
-            //            result[j, k] = mEvap;
-            //            }
-            //        }
-            //    }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));     
-
-
-            
-
-            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
-            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
-            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
-            //int J = levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
-            //double[][] MassFluxMin = new double[1][];
-            //double[][] MassFluxMax = new double[1][];
-            //MassFluxMin[0] = new double[J];
-            //MassFluxMax[0] = new double[J];
-
-            //VectorField<SinglePhaseField> DGLevSetGradient =  new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
-            //DGLevSetGradient.Clear();
-            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
-            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { MassFluxExtensionField }, new SinglePhaseField[] { MassFluxField },
-            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
-
-            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
-            ////timestepnumber??
-            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { MassFluxExtensionField },
-            //    MassFluxMin, MassFluxMax, DGLevSetGradient, (int)time);
-
-            //MassFluxExtensionField.CheckForNanOrInf(true, true, true);
-
-            
+            MassFluxExtension_Evaporation_Update(DomainVarFields, ParameterVarFields);
         }
     }
 
-    class Temperature0 : Parameter {
+    class Temperature0 : ParameterS {
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0 };
 
         public override DelParameterFactory Factory => Temperature0Factory;
@@ -577,7 +498,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class HeatFlux0 : Parameter {
+    class HeatFlux0 : ParameterS {
 
         int D;
         string[] parameters;

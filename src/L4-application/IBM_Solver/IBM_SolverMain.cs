@@ -284,6 +284,7 @@ namespace BoSSS.Application.IBM_Solver {
                 IBM_Op = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected,
                     (A, B, C) => this.HMForder, 
                     FluidSpecies.Select(sId => LsTrk.GetSpeciesName(sId)));
+                IBM_Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
                 IBM_Op.FreeMeanValue[VariableNames.Pressure] = !this.boundaryCondMap.DirichletPressureBoundary;
 

@@ -796,6 +796,7 @@ namespace BoSSS.Solution {
             return MGChangeOfBasis[tLevel][tVar].DegreeS[0];
         }
 
+        
         private int[] GetLocalDOF(int p=-1) {
             var MGChangeOfBasis = m_MGchangeofBasis;
             var MultigridBasis = m_MGBasis;
@@ -804,6 +805,9 @@ namespace BoSSS.Solution {
             int[] LocalDOF = new int[MGDepth];
             int D = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.ParentGrid.SpatialDimension;
 
+            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
+
+            /*
             for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
                 LocalDOF[iLevel] = 0;
                 int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -827,7 +831,9 @@ namespace BoSSS.Solution {
             }
 
             return LocalDOF;
+        */
         }
+        
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
             int NoOfLevels = MultigridBasis.Count();
@@ -1557,11 +1563,13 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
                     }
 
+                    /*
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
+                    */
 
                     // Extended Multigrid Analysis
                     //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
@@ -1677,12 +1685,13 @@ namespace BoSSS.Solution {
                         ((kcycle)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations;
                     }
 
+                    /*
                     ((kcycle)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
-
+                    */
                     // Extended Multigrid Analysis
                     //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
 
@@ -1795,13 +1804,13 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     }
 
-
+                    /*
                     ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
                         delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
                             double renorm = Res.MPI_L2Norm();
                             Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
                         };
-
+                    */
 
                 }
                 SolverChain.Add(levelSolver);

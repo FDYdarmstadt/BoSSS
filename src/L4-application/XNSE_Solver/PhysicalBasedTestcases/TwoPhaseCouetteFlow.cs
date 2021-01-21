@@ -31,6 +31,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 

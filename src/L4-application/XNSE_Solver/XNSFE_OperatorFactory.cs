@@ -182,6 +182,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===============
 
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
+            m_XOp.AgglomerationThreshold = this.config.AgglomerationTreshold;
 
             // add Navier-Stokes components
             // ============================
@@ -311,7 +312,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // linearization velocity:
             DGField[] U0_U0mean;
-            if (this.U0meanrequired) {
+            if (this.U0meanrequired || this.config.isEvaporation) {
                 XDGBasis U0meanBasis = new XDGBasis(this.LsTrk, 0);
                 VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
                 U0mean.Clear();

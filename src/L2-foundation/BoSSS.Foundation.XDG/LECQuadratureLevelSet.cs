@@ -662,6 +662,9 @@ namespace BoSSS.Foundation.XDG {
                 else
                     N = 0;
 
+                if(N <= 0)
+                    continue; // nothing to do for codomain/row variable 'gamma'
+
                 base.CustomTimers[2].Start();
 
                 // loop over domain variables/basis variables ...
@@ -677,13 +680,16 @@ namespace BoSSS.Foundation.XDG {
                     else
                         M = 0;
 
-                    Debug.Assert(NnonxDom[delta] == M);
                     Debug.Assert(NnonxCod[gamma] == N);
 
                     // Das Schleifenmonster: ---------------------------------------------
                     for (int cr = 0; cr < 2; cr++) {  // loop over neg/pos species, row...
                         for (int cc = 0; cc < 2; cc++) {  // loop over neg/pos species, column...
 
+                            if(M <= 0)
+                                continue; // nothing to do for domain/column variable 'delta'
+                            Debug.Assert(NnonxDom[delta] == M);
+                                                        
                             int[] extr0 = new int[] { 0, 0, 
                                 cr * N + offsetCod[gamma], // row
                                 cc * M + 1 + offsetDom[delta] }; // col
