@@ -114,7 +114,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(base.SolverMain is XNSE_SolverMain oldSolver) {
                 return oldSolver.ConstructEvaporativeVelocity(oldSolver.GetMeanVelocityFromXDGField(EvoVelocity));
             } else if(base.SolverMain is XNSE newSolver) {
-                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.FluidInterface, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
+                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
                 IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
 
                 List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);

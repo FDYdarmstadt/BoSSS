@@ -193,7 +193,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
 
-            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.FluidInterface].CGLevelSet;
+            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
             SinglePhaseField exactLevelSet = PhiDG.CloneAs();
             exactLevelSet.Clear();
             exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
@@ -214,7 +214,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeDGLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
 
-            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet;
+            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
             SinglePhaseField exactLevelSet = PhiDG.CloneAs();
             exactLevelSet.Clear();
             exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <returns></returns>
         public double ComputeDGLevelSetGradientError(CellMask cm) {
 
-            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet;
+            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
 
             int D = solver.GridData.SpatialDimension;
             var GradientPhiDG = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(PhiDG.Basis, "dPhiDG_dx[" + d + "]")));

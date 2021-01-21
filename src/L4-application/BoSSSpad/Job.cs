@@ -643,7 +643,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             /// <summary>
-            /// If deployment terminated, the exit coede of the app; otherwise, null
+            /// If deployment terminated, the exit code of the app; otherwise, null
             /// </summary>
             public int? ExitCode {
                 get {

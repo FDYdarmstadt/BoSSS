@@ -56,8 +56,17 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class LevelSetVelocity : ILevelSetParameter
-    {
+    /// <summary>
+    /// Computation of the fluid interface velocity for material interfaces:
+    /// Due to the discontinuous approximation at the interface, 
+    /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
+    /// the velocities of both phases do not match exactly in the discrete setting.
+    /// (The are equal in the continuous setting, however.)
+    /// 
+    /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
+    /// to obtain a single interface velocity.
+    /// </summary>
+    class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
         protected IList<string> parameters;
@@ -70,8 +79,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected PhysicalParameters physicalParameters;
 
-        public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters)
-        {
+        /// <summary>
+        /// ctor.
+        /// </summary>
+        public LevelSetVelocity(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters) {
             this.averagingMode = averagingMode;
             this.physicalParameters = physicalParameters;
             this.D = D;
@@ -79,31 +90,30 @@ namespace BoSSS.Application.XNSE_Solver {
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
         }
 
+        /// <summary>
+        /// averaging velocity at interface
+        /// </summary>
         public virtual void LevelSetParameterUpdate(
             DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields)
-        {
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            int D = levelSet.Tracker.GridDat.SpatialDimension;
+            
             //Mean Velocity
             XDGField[] EvoVelocity; // = new XDGField[]
             try {
-                EvoVelocity = new XDGField[] {
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX],
-                    (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityY],
-                };
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)]
+                    );
             } catch {
-                Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = new XDGField[] {
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X],
-                    (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0Y],
-                };
+                Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                EvoVelocity = D.ForLoop(
+                    d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                    );
             }
 
-
-            int D = EvoVelocity.Length;
-            DGField[] meanVelocity;
-
-            meanVelocity = new ConventionalDGField[D];
+            DGField[] meanVelocity = new ConventionalDGField[D];
 
             double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
             double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
@@ -114,23 +124,23 @@ namespace BoSSS.Application.XNSE_Solver {
             CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
             CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
 
-            for (int d = 0; d < D; d++) {
+            for(int d = 0; d < D; d++) {
                 //Basis b = EvoVelocity[d].Basis.NonX_Basis;
                 meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
                 meanVelocity[d].Clear();
 
 
-                foreach (string spc in lsTrkr.SpeciesNames) {
+                foreach(string spc in lsTrkr.SpeciesNames) {
                     double rhoSpc;
                     double muSpc;
-                    switch (spc) {
+                    switch(spc) {
                         case "A": rhoSpc = rho_A; muSpc = mu_A; break;
                         case "B": rhoSpc = rho_B; muSpc = mu_B; break;
                         default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
 
                     double scale = 1.0;
-                    switch (averagingMode) {
+                    switch(averagingMode) {
                         case XNSE_Control.InterfaceVelocityAveraging.mean: {
                             scale = 0.5;
                             break;
@@ -154,15 +164,15 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
 
                     meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
-                    switch (spc) {
+                    switch(spc) {
                         //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
                         case "A": {
-                            if (averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
+                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
                                 meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
                             break;
                         }
                         case "B": {
-                            if (averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
+                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
                                 meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
                             break;
                         }
@@ -172,11 +182,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
-        {
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocties = new (string, DGField)[D];
-            for (int d = 0; d < D; ++d)
-            {
+            for(int d = 0; d < D; ++d) {
                 Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
                 string paramName = ParameterNames[d];
                 DGField lsVelocity = new SinglePhaseField(basis, paramName);
@@ -391,7 +399,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// mass flows from - phase to + phase.
     /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
     /// </summary>
-    class MassFluxExtension_Evaporation : Parameter, ILevelSetParameter {
+    class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
         DualLevelSet levelSet;
@@ -514,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class Temperature0 : Parameter {
+    class Temperature0 : ParameterS {
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0 };
 
         public override DelParameterFactory Factory => Temperature0Factory;
@@ -534,7 +542,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
     }
 
-    class HeatFlux0 : Parameter {
+    class HeatFlux0 : ParameterS {
 
         int D;
         string[] parameters;

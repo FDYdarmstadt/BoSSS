@@ -130,7 +130,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(base.SolverMain is XNSE_SolverMain oldSolver) {
                     return oldSolver.Fourier_LevSet;
                 } else if(base.SolverMain is XNSE newSolver) {
-                    if(newSolver.LsUpdater.LevelSets[VariableNames.FluidInterface].DGLevelSet is FourrierLevelSet fls) {
+                    if(newSolver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet is FourierLevelSet fls) {
                         return fls.Fourier_LevSet;
                     } else {
                         return null;

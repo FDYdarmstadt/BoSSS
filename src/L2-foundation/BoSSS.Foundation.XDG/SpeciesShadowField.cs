@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public SpeciesShadowField(XDGField owner, SpeciesId specId) :
                 base(new Basis(owner.GridDat, owner.m_CCBasis.Degree),
-                     owner.Identification + "-" + owner.m_CCBasis.Tracker.GetSpeciesName(specId)) {
+                     owner.Identification + "#" + owner.m_CCBasis.Tracker.GetSpeciesName(specId)) {
                 m_Coordinates = new SpeciesCoordinates(owner, specId);
                 m_Owner = owner;
             }
