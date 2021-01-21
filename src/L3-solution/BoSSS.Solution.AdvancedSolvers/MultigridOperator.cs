@@ -57,7 +57,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
             if(lsTrk != null) {
-                Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
+                Cells2avoid = lsTrk.Regions.GetNearFieldMask(1).GetBitMask();
             } else {
                 Cells2avoid = null;
             }

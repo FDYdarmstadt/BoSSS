@@ -80,7 +80,7 @@ namespace BoSSS.Application.FSI_Solver {
         public bool IsMaster = true;
 
         [DataMember]
-        public int[] MasterGhostIDs = new int[4];
+        public int[] MasterDuplicateIDs = new int[4];
 
         public void SetMaster(Motion newMotionType) {
             newMotionType.TransferDataFromOtherParticle(Motion);
@@ -88,12 +88,12 @@ namespace BoSSS.Application.FSI_Solver {
             IsMaster = true;
         }
 
-        public void SetGhost() {
+        public void SetDuplicate() {
             IsMaster = false;
         }
 
-        public void SetGhostHierachy(int[] hierachy) {
-            MasterGhostIDs = hierachy.CloneAs();
+        public void SetDuplicateHierachy(int[] hierachy) {
+            MasterDuplicateIDs = hierachy.CloneAs();
         }
         
         [NonSerialized]

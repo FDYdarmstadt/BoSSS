@@ -520,7 +520,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        internal virtual void SetGhostPosition(Vector position) {
+        internal virtual void SetDuplicatePosition(Vector position) {
             using (new FuncTrace()) {
                 for (int h = 0; h < NumberOfHistoryEntries; h++) {
                     Position[h] = new Vector(position);

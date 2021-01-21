@@ -254,11 +254,11 @@ namespace FSI_Solver {
         private void TransferResultsToGhostParticles(int currentParticleID) {
             if (Particles.Length < currentParticleID)
                 throw new Exception("No particle with ID " + currentParticleID);
-            if (Particles[currentParticleID].MasterGhostIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
-                for (int k = 0; k < Particles[currentParticleID].MasterGhostIDs.Length; k++) {
-                    if(Particles[currentParticleID].MasterGhostIDs[k] - 1 != currentParticleID && Particles[currentParticleID].MasterGhostIDs[k] > 0) {
-                        Particles[Particles[currentParticleID].MasterGhostIDs[k] - 1].IsCollided = true;
-                        TemporaryVelocity[Particles[currentParticleID].MasterGhostIDs[k] - 1] = TemporaryVelocity[currentParticleID].CloneAs();
+            if (Particles[currentParticleID].MasterDuplicateIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
+                for (int k = 0; k < Particles[currentParticleID].MasterDuplicateIDs.Length; k++) {
+                    if(Particles[currentParticleID].MasterDuplicateIDs[k] - 1 != currentParticleID && Particles[currentParticleID].MasterDuplicateIDs[k] > 0) {
+                        Particles[Particles[currentParticleID].MasterDuplicateIDs[k] - 1].IsCollided = true;
+                        TemporaryVelocity[Particles[currentParticleID].MasterDuplicateIDs[k] - 1] = TemporaryVelocity[currentParticleID].CloneAs();
                     }
 
                 }

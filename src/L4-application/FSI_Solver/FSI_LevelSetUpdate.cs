@@ -117,7 +117,7 @@ namespace FSI_Solver {
         internal void DetermineParticleColorOfGhostParticles(int[] globalParticleColor, List<Particle> ParticleList) {
             for (int i = 0; i < globalParticleColor.Length; i++) {
                 if (globalParticleColor[i] == 0) {
-                    int masterID = ParticleList[i].MasterGhostIDs[0] - 1;
+                    int masterID = ParticleList[i].MasterDuplicateIDs[0] - 1;
                     globalParticleColor[i] = globalParticleColor[masterID];
                 }
             }

@@ -82,10 +82,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                     if (currentParticle.IsMaster) {
                         //Add forces and torque from ghost particles to master particles
-                        if (!currentParticle.MasterGhostIDs.IsNullOrEmpty()) {
-                            for (int g = 1; g < currentParticle.MasterGhostIDs.Length; g++) {
-                                int ghostOffset = (currentParticle.MasterGhostIDs[g] - 1) * (SpatialDimension + 1);
-                                if (currentParticle.MasterGhostIDs[g] >= 1) {
+                        if (!currentParticle.MasterDuplicateIDs.IsNullOrEmpty()) {
+                            for (int g = 1; g < currentParticle.MasterDuplicateIDs.Length; g++) {
+                                int ghostOffset = (currentParticle.MasterDuplicateIDs[g] - 1) * (SpatialDimension + 1);
+                                if (currentParticle.MasterDuplicateIDs[g] >= 1) {
                                     for (int d = 0; d < SpatialDimension; d++) {
                                         hydrodynamics[offset + d] += hydrodynamics[ghostOffset + d];
                                         hydrodynamics[ghostOffset + d] = 0;

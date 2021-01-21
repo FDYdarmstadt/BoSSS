@@ -57,15 +57,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
-            //CellAgglomerator.CellAggKatastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
                 FSI_SolverMain p = new FSI_SolverMain();
                 return p;
             });
-        }
-
-        static void KatastrophenPlot(DGField[] dGFields) {
-            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 0);
         }
 
         /// <summary>
@@ -75,9 +70,11 @@ namespace BoSSS.Application.FSI_Solver {
             if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
                 throw new NotImplementedException("Currently not implemented for fixed motion");
             }
+
             ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
+
             UpdateLevelSetParticles(phystime: 0.0);
             CreatePhysicalDataLogger();
             base.SetInitial();
@@ -305,7 +302,8 @@ namespace BoSSS.Application.FSI_Solver {
         private TextWriter logPhysicalDataParticles;
 
         /// <summary>
-        /// Creates Navier-Stokes and continuity equation
+        /// Creates Navier-Stokes and continuity equation. 
+        /// The nonlinear term is neglected, i.e. unsteady Stokes equation is solved, if <see cref="Control.PhysicalParameters.IncludeConvection"/> is false.
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             if (IBM_Op != null)
@@ -551,8 +549,8 @@ namespace BoSSS.Application.FSI_Solver {
                 CellMask coloredCellMask = null;
                 if (CellColor != null) {
                     DeleteParticlesOutsideOfDomain();
-                    CreateGhostParticleAtPeriodicBoundary();
-                    SwitchGhostAndMasterParticle();
+                    CreateDuplicateParticleAtPeriodicBoundary();
+                    SwitchDuplicateAndMasterParticle();
                 }
 
                 CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
@@ -599,11 +597,11 @@ namespace BoSSS.Application.FSI_Solver {
             try {
                 LsTrk.UpdateTracker(phystime, __NearRegionWith: 2);
             } catch (LevelSetCFLException e) {// when ghost particles are added at the opposing side of the domain, the CFL exception is thrown. However, due to periodicity this is OK. 
-                if (AddedGhostParticle)
+                if (AddedNewDuplicate)
                     Console.WriteLine("Ghost particle added! I catched the exception (which is completely OK) " + e);
                 //else
-                     //throw e;
-                AddedGhostParticle = false;
+                    //throw e;
+                AddedNewDuplicate = false;
             }
         }
 
@@ -625,6 +623,10 @@ namespace BoSSS.Application.FSI_Solver {
             DGLevSet.Current.ProjectField(1.0, Function, new CellQuadratureScheme(UseDefaultFactories: true, domain: currentCells));
         }
 
+        /// <summary>
+        /// Set DG field for the particle color.
+        /// </summary>
+        /// <param name="coloredCells"></param>
         private void SetColorDGField(int[] coloredCells) {
             ushort[] regionsCode = LsTrk.Regions.RegionsCode;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -634,94 +636,132 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void CreateGhostParticleAtPeriodicBoundary() {
+        /// <summary>
+        /// This method creates one to three duplicate particles at the other side of a periodic boundary,
+        /// which are an exact copy of the master particle. As long as the master particle exists,
+        /// i.e. is inside of the domain, the duplicates copy the behavior of the master. 
+        /// When the master has left the domain, one of the duplicates becomes the new master, <see cref="SwitchDuplicateAndMasterParticle()"/>.
+        /// </summary>
+        /// <remarks>
+        /// The particles do not "know" anything about the periodicity of the domain. 
+        /// Hence, a single particle would just leave the domain at one side of boundary and not appear again at the other side.
+        /// As simple and straightforward solution we copy each particle, which reaches the periodic boundary. 
+        /// 1 particle is created if the master is close to a single periodic boundary.
+        /// 2 particles are created if the master is close to two different periodic boundaries, i.e. at an edge of the domain.
+        /// 3 particles might be created in some circumstances if the particle has a certain position at the edge of the domain and appears in all four edges.
+        /// </remarks>
+        private void CreateDuplicateParticleAtPeriodicBoundary() {
+            if (spatialDim != 2)
+                throw new NotImplementedException("Periodic boundaries not implemented for more than 2D!");
+
             for (int p = 0; p < ParticleList.Count(); p++) {
                 Particle currentParticle = ParticleList[p];
-                List<Particle> ghostParticles = new List<Particle>();
-                int[] ghostHierachy = currentParticle.MasterGhostIDs.CloneAs();
-                if (!currentParticle.IsMaster)
+                if (!currentParticle.IsMaster)// Duplicates cannot own other duplicates.
                     continue;
+                List<Particle> duplicateParticles = new List<Particle>();
+                int[] duplicateHierachy = currentParticle.MasterDuplicateIDs.CloneAs();
                 Vector particlePosition = currentParticle.Motion.GetPosition();
                 int idOffset = 0;
-                for (int d1 = 0; d1 < spatialDim; d1++) { // which direction?
+
+                for (int d1 = 0; d1 < spatialDim; d1++) { // which direction: x or y?
                     if (!IsPeriodic[d1])
                         continue;
-                    for (int wallID = 0; wallID < spatialDim; wallID++) { // which wall?
-                        if (PeriodicOverlap(currentParticle, d1, wallID)) {
-                            ghostHierachy[0] = p + 1;
-                            Vector originNeighbouringDomain;
+                    for (int wallID = 0; wallID < spatialDim; wallID++) { // which wall left or right (x) and upper or lower (y)?
+                        if (ParticleHasReachedPeriodicBoundary(currentParticle, d1, wallID)) {
+                            duplicateHierachy[0] = p + 1;
+                            Vector originInVirtualNeighbouringDomain;
                             if (d1 == 0)
-                                originNeighbouringDomain = new Vector(2 * BoundaryCoordinates[0][1 - wallID], 0);
+                                originInVirtualNeighbouringDomain = new Vector(2 * BoundaryCoordinates[0][1 - wallID], 0);
                             else
-                                originNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID]);
-                            Particle ghostParticle;
-                            if (ghostHierachy[d1 + 1] == 0) {
-                                ghostHierachy[d1 + 1] = ParticleList.Count() + idOffset + 1;
-                                idOffset += 1;
-                                ghostParticle = currentParticle.CloneAs();
-                                ghostParticle.SetGhost();
-                                ghostParticle.Motion.SetGhostPosition(originNeighbouringDomain + particlePosition);
-                                ghostParticles.Add(ghostParticle.CloneAs());
-                                Console.WriteLine("Added ghost particle " + (ghostHierachy[d1 + 1] - 1));
+                                originInVirtualNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID]);
+
+                            Particle duplicateParticle;
+                            if (DuplicateExists(duplicateHierachy, d1 + 1)) {
+                                duplicateParticle = ParticleList[duplicateHierachy[d1 + 1] - 1];
                             } else {
-                                ghostParticle = ParticleList[ghostHierachy[d1 + 1] - 1];
+                                duplicateHierachy[d1 + 1] = ParticleList.Count() + idOffset + 1;
+                                idOffset += 1;
+                                duplicateParticle = currentParticle.CloneAs();
+                                duplicateParticle.SetDuplicate();
+                                duplicateParticle.Motion.SetDuplicatePosition(originInVirtualNeighbouringDomain + particlePosition);
+                                duplicateParticles.Add(duplicateParticle.CloneAs());
                             }
+
                             if (d1 == 0) {
-                                if (ghostHierachy[3] != 0)
-                                    continue;
-                                // test for periodic boundaries in y - direction for the newly created ghost
-                                for (int wallID2 = 0; wallID2 < spatialDim; wallID2++) {
-                                    if (PeriodicOverlap(ghostParticle, 1, wallID2)) {
-                                        originNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID2]);
-                                        ghostHierachy[3] = ParticleList.Count() + idOffset + 1;
-                                        idOffset += 1;
-                                        Particle ghostParticleOfGhostParticle = currentParticle.CloneAs();
-                                        ghostParticleOfGhostParticle.SetGhost();
-                                        ghostParticleOfGhostParticle.Motion.SetGhostPosition(originNeighbouringDomain + ghostParticle.Motion.GetPosition());
-                                        ghostParticles.Add(ghostParticleOfGhostParticle.CloneAs());
-                                        Console.WriteLine("Added ghost particle " + (ghostHierachy[3] - 1));
-                                        break;
+                                // For a duplicate in x-direction, test for periodic boundaries in y-direction for the newly created duplicate. 
+                                // Only necessary to check one time, hence, we use the x-direction.
+                                if (!DuplicateExists(duplicateHierachy, 3)) {
+                                    for (int wallID2 = 0; wallID2 < spatialDim; wallID2++) {
+                                        if (ParticleHasReachedPeriodicBoundary(duplicateParticle, 1, wallID2)) {
+                                            originInVirtualNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID2]);
+                                            duplicateHierachy[3] = ParticleList.Count() + idOffset + 1;
+                                            idOffset += 1;
+                                            Particle duplicateParticleOfDuplicateParticle = currentParticle.CloneAs();
+                                            duplicateParticleOfDuplicateParticle.SetDuplicate();
+                                            duplicateParticleOfDuplicateParticle.Motion.SetDuplicatePosition(originInVirtualNeighbouringDomain + duplicateParticle.Motion.GetPosition());
+                                            duplicateParticles.Add(duplicateParticleOfDuplicateParticle.CloneAs());
+                                            break;
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                if (ghostParticles.Count >= 1) {
-                    AddedGhostParticle = true;
-                    currentParticle.SetGhostHierachy(ghostHierachy);
-                    for (int p2 = 0; p2 < ghostParticles.Count(); p2++) {
-                        ghostParticles[p2].SetGhostHierachy(ghostHierachy);
+
+                if (duplicateParticles.Count >= 1) {
+                    AddedNewDuplicate = true;
+                    currentParticle.SetDuplicateHierachy(duplicateHierachy);
+                    for (int p2 = 0; p2 < duplicateParticles.Count(); p2++) {
+                        duplicateParticles[p2].SetDuplicateHierachy(duplicateHierachy);
                     }
-                    ParticleList.AddRange(ghostParticles);
+                    ParticleList.AddRange(duplicateParticles);
                 }
             }
         }
 
-        bool AddedGhostParticle = false;
-        private void SwitchGhostAndMasterParticle() {
+        /// <summary>
+        /// Test whether is duplicate particle exists or not.
+        /// </summary>
+        /// <param name="duplicateHierachy"></param>
+        /// <param name="hierachyPosition"></param>
+        /// <returns></returns>
+        private static bool DuplicateExists(int[] duplicateHierachy, int hierachyPosition) {
+            return duplicateHierachy[hierachyPosition] > 0;
+        }
+
+        /// <summary>
+        /// Needed to catch the CFL-exception in case of a new duplicate particle.
+        /// </summary>
+        bool AddedNewDuplicate = false;
+
+        /// <summary>
+        /// If the center of mass of a master particle has left the domain, one of its duplicates is chosen to be the new master.
+        /// The center of mass of the new master has to be inside of the domain.
+        /// </summary>
+        private void SwitchDuplicateAndMasterParticle() {
             for (int p = 0; p < ParticleList.Count(); p++) {
                 Particle currentParticle = ParticleList[p];
                 if (!currentParticle.IsMaster)
                     continue;
-                if (!IsInsideOfDomain(currentParticle)) {
+
+                if (!centerOfMassIsInsideOfDomain(currentParticle)) {
                     int oldMasterID = p + 1;
-                    int[] ghostHierachy = currentParticle.MasterGhostIDs;
-                    for (int g = 1; g < ghostHierachy.Length; g++) {
-                        if (ghostHierachy[g] <= 0)
-                            continue;
-                        Particle currentGhost = ParticleList[ghostHierachy[g] - 1];
-                        if (IsInsideOfDomain(currentGhost)) {
-                            int newMasterID = ghostHierachy[g];
-                            int[] newGhostHierachy = ghostHierachy.CloneAs();
-                            newGhostHierachy[0] = newMasterID;
-                            newGhostHierachy[g] = oldMasterID;
-                            currentGhost.SetMaster(currentParticle.Motion.CloneAs());
-                            currentParticle.SetGhost();
-                            for (int i = 0; i < ghostHierachy.Length; i++) {
-                                if (ghostHierachy[i] <= 0)
-                                    continue;
-                                ParticleList[ghostHierachy[i] - 1].MasterGhostIDs = newGhostHierachy.CloneAs();
+                    int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
+                    for (int j = 1; j < duplicateHierachy.Length; j++) {
+                        if (DuplicateExists(duplicateHierachy, j)) {
+                            Particle currentDuplicate = ParticleList[duplicateHierachy[j] - 1];
+                            if (centerOfMassIsInsideOfDomain(currentDuplicate)) {
+                                int newMasterID = duplicateHierachy[j];
+                                int[] newDuplicateHierachy = duplicateHierachy.CloneAs();
+                                newDuplicateHierachy[0] = newMasterID;
+                                newDuplicateHierachy[j] = oldMasterID;
+                                currentDuplicate.SetMaster(currentParticle.Motion.CloneAs());
+                                currentParticle.SetDuplicate();
+                                for (int i = 0; i < duplicateHierachy.Length; i++) {
+                                    if (DuplicateExists(duplicateHierachy, i))
+                                        ParticleList[duplicateHierachy[i] - 1].MasterDuplicateIDs = newDuplicateHierachy.CloneAs();
+                                }
                             }
                         }
                     }
@@ -729,6 +769,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// If a particle has left the domain entirely it is removed from the <see cref="ParticleList"/>.
+        /// </summary>
         private void DeleteParticlesOutsideOfDomain() {
             for (int p = 0; p < ParticleList.Count(); p++) {
                 for (int d = 0; d < spatialDim; d++) {
@@ -737,9 +780,9 @@ namespace BoSSS.Application.FSI_Solver {
                         Vector particlePosition = currentParticle.Motion.GetPosition();
                         double distance = particlePosition[d] - BoundaryCoordinates[d][wallID];
                         double particleMaxLength = currentParticle.GetLengthScales().Min();
-                        if (Math.Abs(distance) > particleMaxLength && !IsInsideOfDomain(currentParticle)) {
+                        if (Math.Abs(distance) > particleMaxLength && !centerOfMassIsInsideOfDomain(currentParticle)) {
                             if (!AnyOverlap(currentParticle)) {
-                                int[] ghostHierachy = currentParticle.MasterGhostIDs.CloneAs();
+                                int[] ghostHierachy = currentParticle.MasterDuplicateIDs.CloneAs();
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
                                     if (ghostHierachy[g] == p + 1) {
                                         ghostHierachy[g] = 0;
@@ -747,13 +790,13 @@ namespace BoSSS.Application.FSI_Solver {
                                 }
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
                                     if (ghostHierachy[g] > 0)
-                                        ParticleList[ghostHierachy[g] - 1].MasterGhostIDs = ghostHierachy.CloneAs();
+                                        ParticleList[ghostHierachy[g] - 1].MasterDuplicateIDs = ghostHierachy.CloneAs();
                                 }
                                 ParticleList.RemoveAt(p);
                                 if (p >= ParticleList.Count())// already the last particle, no further action needed!
                                     return;
                                 Particle lastParticle = ParticleList.Last();
-                                ghostHierachy = lastParticle.MasterGhostIDs.CloneAs();
+                                ghostHierachy = lastParticle.MasterDuplicateIDs.CloneAs();
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
                                     if (ghostHierachy[g] == ParticleList.Count() + 1) {
                                         ghostHierachy[g] = p + 1;
@@ -763,7 +806,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 ParticleList.RemoveAt(ParticleList.Count() - 1);
                                 for (int g = 0; g < ghostHierachy.Length; g++) {
                                     if (ghostHierachy[g] > 0)
-                                        ParticleList[ghostHierachy[g] - 1].MasterGhostIDs = ghostHierachy.CloneAs();
+                                        ParticleList[ghostHierachy[g] - 1].MasterDuplicateIDs = ghostHierachy.CloneAs();
                                 }
                             }
                         }
@@ -772,15 +815,15 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private bool PeriodicOverlap(Particle currentParticle, int d1, int d2) {
+        private bool ParticleHasReachedPeriodicBoundary(Particle currentParticle, int dimension, int wallID) {
             Vector particlePosition = currentParticle.Motion.GetPosition();
-            double distance = particlePosition[d1] - BoundaryCoordinates[d1][d2];
+            double distance = particlePosition[dimension] - BoundaryCoordinates[dimension][wallID];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
             if (Math.Abs(distance) < particleMaxLength) {
-                if (d1 == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d1][d2], particlePosition[1]);
+                if (dimension == 0)
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[dimension][wallID], particlePosition[1]);
                 else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d1][d2]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[dimension][wallID]);
                 ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                 periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
@@ -808,7 +851,7 @@ namespace BoSSS.Application.FSI_Solver {
             return false;
         }
 
-        private bool IsInsideOfDomain(Particle currentParticle) {
+        private bool centerOfMassIsInsideOfDomain(Particle currentParticle) {
             Vector position = currentParticle.Motion.GetPosition();
             for (int d = 0; d < spatialDim; d++) {
                 if (!IsPeriodic[d])
@@ -1021,9 +1064,9 @@ namespace BoSSS.Application.FSI_Solver {
                 if (p.IsMaster) {
                     p.Motion.UpdateParticleVelocity(dt);
 
-                    for (int g = 1; g < p.MasterGhostIDs.Length; g++) {
-                        if (p.MasterGhostIDs[g] >= 1) {
-                            Particle ghost = Particles[p.MasterGhostIDs[g] - 1];
+                    for (int g = 1; g < p.MasterDuplicateIDs.Length; g++) {
+                        if (p.MasterDuplicateIDs[g] >= 1) {
+                            Particle ghost = Particles[p.MasterDuplicateIDs[g] - 1];
                             if (ghost.IsMaster)
                                 throw new Exception("A ghost particle is considered to be a master, that can't be!");
                             ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
@@ -1076,43 +1119,47 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="Particles">
         /// A list of all particles
         /// </param>
-        /// <param name="CellColor">
-        /// All cells on the current process with their specific color
-        /// </param>
         /// <param name="dt">
         /// Time-step
+        /// </param>
+        /// <param name="DetermineOnlyOverlap">
+        /// Set true if you are only interested in overlapping particles and not the actual distance between different particles, e.g. as check for the initialization of static particles. 
         /// </param>
         private void CalculateCollision(List<Particle> Particles, double dt, bool DetermineOnlyOverlap = false) {
             foreach (Particle p in Particles) {
                 p.IsCollided = false;
             }
+            ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
+            Collision.Calculate(ParticleList.ToArray());
+
+            // The following (collision detection based on cell color might be  more efficient, however, it doesn't work with periodic boundaries.
             // Only particles with the same color a close to each other, thus, we only test for collisions within those particles.
             // Determine color.
             // =================================================
-            int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
-            for (int i = 0; i < _GlobalParticleColor.Length; i++) {
-                int CurrentColor = _GlobalParticleColor[i];
-                if (CurrentColor == 0)
-                    continue;
-                int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
-                // Multiple particles with the same color, trigger collision detection
-                // =================================================
-                if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-                    Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
-                    for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
-                        currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
-                    }
-                    ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
-                    Collision.Calculate(ParticleList.ToArray());
-                    //Collision.Calculate(currentParticles);
-                }
-                // Remove already examined particles/colors from array
-                // =================================================
-                for (int j = 0; j < _GlobalParticleColor.Length; j++) {
-                    if (_GlobalParticleColor[j] == CurrentColor)
-                        _GlobalParticleColor[j] = 0;
-                }
-            }
+            //int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
+            //for (int i = 0; i < _GlobalParticleColor.Length; i++) {
+            //    int CurrentColor = _GlobalParticleColor[i];
+            //    if (CurrentColor == 0)
+            //        continue;
+            //    int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
+            //    // Multiple particles with the same color, trigger collision detection
+            //    // =================================================
+            //    if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
+            //        Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
+            //        for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
+            //            currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
+            //        }
+            //        ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
+            //        Collision.Calculate(ParticleList.ToArray());
+            //        //Collision.Calculate(currentParticles);
+            //    }
+            //    // Remove already examined particles/colors from array
+            //    // =================================================
+            //    for (int j = 0; j < _GlobalParticleColor.Length; j++) {
+            //        if (_GlobalParticleColor[j] == CurrentColor)
+            //            _GlobalParticleColor[j] = 0;
+            //    }
+            //}
         }
 
         /// <summary>
