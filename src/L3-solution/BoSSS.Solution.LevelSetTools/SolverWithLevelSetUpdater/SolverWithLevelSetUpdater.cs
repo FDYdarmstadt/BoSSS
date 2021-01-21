@@ -148,7 +148,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         //    throw new NotSupportedException("mass conservation correction currently not supported");
                         //}
                         FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                        fourierLevelSet.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
+                        fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = fourierLevelSet;
                         break;
                     }
