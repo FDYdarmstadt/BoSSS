@@ -245,12 +245,7 @@ namespace BoSSS.Solution.XNSECommon {
             double muB = physParams.mu_B;
 
             //viscoelastic
-            double reynoldsA = physParams.reynolds_A;
-            double reynoldsB = physParams.reynolds_B;
-            double betaA = ((PhysicalParametersRheology)physParams).beta_a;
-            double betaB = ((PhysicalParametersRheology)physParams).beta_b;
-            double[] penalty1 = dntParams.Penalty1;
-            double penalty2 = dntParams.Penalty2;
+
 
 
             // set components
@@ -275,27 +270,34 @@ namespace BoSSS.Solution.XNSECommon {
             if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
 
                 double penalty = dntParams.PenaltySafety;
-                switch (dntParams.ViscosityMode) {
+                switch(dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
-                        break;
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
+                    break;
+
                     case ViscosityMode.TransposeTermMissing:
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
-                        break;
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
+                    break;
+
                     case ViscosityMode.FullySymmetric:
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, 
-                            _freeSurface: dntParams.freeSurfaceFlow));
-                        break;
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d,
+                        _freeSurface: dntParams.freeSurfaceFlow));
+                    break;
+
                     case ViscosityMode.Viscoelastic:
-                        //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
-
-                        comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
-                        comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
-
-                        break;
+                    //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
+                    double reynoldsA = physParams.reynolds_A;
+                    double reynoldsB = physParams.reynolds_B;
+                    double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+                    double betaB = ((PhysicalParametersRheology)physParams).beta_b;
+                    double[] penalty1 = dntParams.Penalty1;
+                    double penalty2 = dntParams.Penalty2;
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                    comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
+                    break;
 
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
             }
 
