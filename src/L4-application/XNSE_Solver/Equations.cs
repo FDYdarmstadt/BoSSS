@@ -113,9 +113,7 @@ namespace BoSSS.Application.XNSE_Solver {
             } else {
                 //  ... and when the convective terms are turned off we still need the contribution below
                 AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
-            }
-
-            
+            }           
 
             if (config.isViscous) {
                 AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));

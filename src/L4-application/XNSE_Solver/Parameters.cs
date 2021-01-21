@@ -14,6 +14,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver {
     static class FromControl {
@@ -359,11 +362,13 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                     ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
 
+                    var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
+
                     for (int j = 0; j < Len; j++) {
 
                         for (int k = 0; k < K; k++) {
                             
-                            result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - 0.5 * MassFlux[j, k] * (1 / rhoA + 1 / rhoB); // calculate as modified rankine-hugoniot shock condition
+                            result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - 0.5 * MassFlux[j, k] * (1 / rhoA + 1 / rhoB) * Normals[j, k, d]; // calculate as modified rankine-hugoniot shock condition
 
                             //if (rhoA != rhoB) {
                             //    result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
@@ -421,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
 
-            SinglePhaseField MassFluxField = (SinglePhaseField)ParameterVarFields[paramName];
+            SinglePhaseField MassFluxField = new SinglePhaseField(ParameterVarFields[paramName].Basis);
             int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
 
             XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
@@ -472,6 +477,33 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
+
+
+            // no extension
+            ParameterVarFields[paramName].Clear();
+            ParameterVarFields[paramName].Acc(1.0, MassFluxField);
+
+            //// extension
+            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
+            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
+            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
+            //int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
+            //double[][] MassFluxMin = new double[1][];
+            //double[][] MassFluxMax = new double[1][];
+            //MassFluxMin[0] = new double[J];
+            //MassFluxMax[0] = new double[J];
+
+            //VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d=> new SinglePhaseField(levelSet.DGLevelSet.Basis)));
+            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+
+            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
+            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
+
+            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
+            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
+            //    MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
+
+            ParameterVarFields[paramName].CheckForNanOrInf(true, true, true);
         }
 
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {

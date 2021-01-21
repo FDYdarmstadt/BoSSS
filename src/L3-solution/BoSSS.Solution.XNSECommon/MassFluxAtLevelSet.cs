@@ -590,7 +590,6 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
-
     }
 
     /// <summary>
@@ -634,7 +633,7 @@ namespace BoSSS.Solution.XheatCommon {
             double movingFlux;
 
             movingFlux = M * 0.5 * (cp.Parameters_OUT[1 + m_d] + cp.Parameters_IN[1 + m_d]);
-            Ret = movingFlux * Normal[m_d] * (vA - vB);
+            Ret = movingFlux * (vA - vB);
             
 
             return Ret;
