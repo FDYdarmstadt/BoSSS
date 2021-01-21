@@ -36,6 +36,10 @@ namespace LTSTests {
     /// </summary>
     public class Program : Application {
         static void Main(string[] args) {
+            LTSTests.NUnitTests.InitMPI();
+            LTSTests.NUnitTests.ALTS2order_dtCoarse();
+            throw new Exception("rmove me");
+
             Application._Main(args, true, delegate () {
                 return new Program();
             });
