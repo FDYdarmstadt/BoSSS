@@ -2243,7 +2243,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
@@ -2269,7 +2269,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 var metrics = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder);
 
                 XQuadSchemeHelper SchemeHelper = metrics.XQuadSchemeHelper;
-                EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
+                EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
 
                 var QuadDom = SurfaceElement_Edge.Domain;
                 var boundaryCutEdge = QuadDom.Intersect(this.GridData.GetBoundaryEdgeMask());

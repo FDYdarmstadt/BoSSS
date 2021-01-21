@@ -451,9 +451,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
             
             
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
             
 
             XNSESolverTest(Tst, C);

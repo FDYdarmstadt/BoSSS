@@ -493,7 +493,7 @@ namespace BoSSS.Application.IBM_Solver {
                     var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
                             d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
                             this.Control.PhysicalParameters.rho_A, false,
-                            0, "A", "B");
+                            0, "A", "B", false);
 
                     comps.Add(ConvIB); // immersed boundary component
                 }
@@ -507,13 +507,13 @@ namespace BoSSS.Application.IBM_Solver {
                     var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
                             this.Control.AdvancedDiscretizationOptions.PenaltySafety,
                             this.Control.PhysicalParameters.mu_A,
-                            0, "A", "B");
+                            0, "A", "B", false);
                     comps.Add(ViscLs); // immersed boundary component
                 }
             }
 
             if (IBM_Op_config.continuity){
-                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 0, "A", "B");
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 0, "A", "B", false);
                 IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
             }
         }
