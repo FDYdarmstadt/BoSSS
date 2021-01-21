@@ -58,7 +58,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         internal double omega = 1;
         [NonSerialized]
-        internal FSI_Auxillary Aux = new FSI_Auxillary();
+        internal FSIAuxillary Aux = new FSIAuxillary();
         [DataMember]
         private const int NumberOfHistoryEntries = 3;
         [DataMember]
@@ -260,7 +260,7 @@ namespace BoSSS.Application.FSI_Solver {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
-                Aux = new FSI_Auxillary();
+                Aux = new FSIAuxillary();
                 for (int i = 0; i < historyLength; i++) {
                     Position[i] = new Vector(initialPosition);
                     Angle[i] = initialAngle * 2 * Math.PI / 360;

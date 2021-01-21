@@ -87,7 +87,7 @@ namespace FSI_Solver {
             this.DetermineOnlyOverlap = DetermineOnlyOverlap;
         }
 
-        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        private readonly FSIAuxillary Aux = new FSIAuxillary();
 
         private void CreateCollisionArrarys(int noOfParticles) {
             AccumulatedLocalSaveTimestep = new double[noOfParticles][];

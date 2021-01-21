@@ -73,7 +73,7 @@ namespace BoSSS.Application.FSI_Solver {
         internal override void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
             using (new FuncTrace()) {
                 AddedDamping = new ParticleAddedDamping();
-                Aux = new FSI_Auxillary();
+                Aux = new FSIAuxillary();
                 AddedDampingTensor = AddedDamping.IntegrationOverLevelSet(particle, levelSetTracker, fluidViscosity, fluidDensity, dt, GetPosition(0));
                 Aux.TestArithmeticException(AddedDampingTensor, "particle added damping tensor");
             }

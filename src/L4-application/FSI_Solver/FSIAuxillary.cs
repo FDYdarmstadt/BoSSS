@@ -25,7 +25,7 @@ using System.Text;
 
 namespace FSI_Solver {
     [Serializable]
-    public class FSI_Auxillary {
+    public class FSIAuxillary {
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
         /// Use this method for onedimensional vars.

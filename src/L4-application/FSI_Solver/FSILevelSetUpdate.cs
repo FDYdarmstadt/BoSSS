@@ -28,9 +28,9 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace FSI_Solver {
-    internal class FSI_LevelSetUpdate {
+    internal class FSILevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(IGridData GridData, double MinGridLength) {
+        internal FSILevelSetUpdate(IGridData GridData, double MinGridLength) {
             this.GridData = GridData;
             this.MinGridLength = MinGridLength;
         }

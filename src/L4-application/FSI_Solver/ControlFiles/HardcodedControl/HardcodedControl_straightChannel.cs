@@ -50,7 +50,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.fullyCoupledSplittingMaxIterations = 100000;
             C.hydrodynamicsConvergenceCriterion = 1e-1;
 

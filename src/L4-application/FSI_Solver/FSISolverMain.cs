@@ -84,7 +84,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Spatial dimension
         /// </summary>
         /// <remarks>
-        /// Currently hardcoded for 2D, because collision and particle solver is only implemented for two dimensions.
+        /// Currently hard-coded for 2D, because collision and particle solver is only implemented for two dimensions.
         /// </remarks>
         private readonly int spatialDim = 2;
 
@@ -118,12 +118,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// An object with some additional methods, e.g. NaN and infinity exceptions, writing to console, MPI state check
         /// </summary>
-        readonly private FSI_Auxillary Auxillary = new FSI_Auxillary();
+        readonly private FSIAuxillary Auxillary = new FSIAuxillary();
 
         /// <summary>
         /// Methods dealing with coloring and level set
         /// </summary>
-        private FSI_LevelSetUpdate levelSetUpdate;
+        private FSILevelSetUpdate LevelSetUpdate;
 
         /// <summary>
         /// Particle color field. The level set is only defined on colored cells.
@@ -171,7 +171,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     case LevelSetHandling.LieSplitting:
                     case LevelSetHandling.StrangSplitting:
-                    case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                    case LevelSetHandling.FSILieSplittingFullyCoupled:
                     return false;
 
                     default:
@@ -183,7 +183,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// BDF order.
         /// </summary>
-        private int bdforder = 0;
+        private int BDFOrder = 0;
 
         /// <summary>
         /// Array of all local cells with their specific color.
@@ -201,7 +201,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Fully coupled LieSplitting?
         /// </summary>
         [DataMember]
-        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        private bool IsFullyCoupled => ((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled;
 
         /// <summary>
         /// Using static time-step or dynamic?
@@ -363,7 +363,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                         // Immersed boundary
                         // -----------------------------
-                        var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap, Particles.ToArray(), UseMovingMesh, GetMinGridLength());
+                        var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap, ParticleList.ToArray(), UseMovingMesh, GetMinGridLength());
                         comps.Add(convectionAtIB);
                     }
                 }
@@ -404,7 +404,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity, Particles.ToArray(), GetMinGridLength());
+                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity, ParticleList.ToArray(), GetMinGridLength());
                 comps.Add(viscousAtIB);
             }
 
@@ -416,7 +416,7 @@ namespace BoSSS.Application.FSI_Solver {
                 IBM_Op.EquationComponents["div"].Add(src);
                 IBM_Op.EquationComponents["div"].Add(flx);
             }
-            var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, Particles.ToArray(), GetMinGridLength());
+            var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, ParticleList.ToArray(), GetMinGridLength());
             IBM_Op.EquationComponents["div"].Add(divPen);
 
             // temporal operator
@@ -452,7 +452,7 @@ namespace BoSSS.Application.FSI_Solver {
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
-                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSILieSplittingFullyCoupled:
                 MassMatrixShape = MassMatrixShapeandDependence.IsTimeDependent;
                 break;
                 default:
@@ -468,7 +468,8 @@ namespace BoSSS.Application.FSI_Solver {
                 bdfOrder = Convert.ToInt32(this.Control.Timestepper_Scheme.ToString().Substring(3));
             else
                 throw new NotImplementedException("Only Crank-Nicolson, Implicit-Euler and BDFxxx are implemented.");
-            bdforder = bdfOrder;
+
+            BDFOrder = bdfOrder;
             m_BDF_Timestepper = new XdgBDFTimestepping(
                 Fields: ArrayTools.Cat(Velocity, Pressure),
                 __Parameters: IBM_Op.InvokeParameterFactory(ArrayTools.Cat(Velocity, Pressure)),
@@ -476,7 +477,7 @@ namespace BoSSS.Application.FSI_Solver {
                 LsTrk: LsTrk,
                 DelayInit: true,
                 _ComputeOperatorMatrix: DelComputeOperatorMatrix,
-                abstractOperator: this.IBM_Op,
+                abstractOperator: IBM_Op,
                 _UpdateLevelset: DelUpdateLevelset,
                 BDForder: bdfOrder,
                 _LevelSetHandling: ((FSI_Control)Control).Timestepper_LevelSetHandling,
@@ -521,7 +522,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 case LevelSetHandling.Coupled_Once:
                 case LevelSetHandling.LieSplitting:
-                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSILieSplittingFullyCoupled:
                 case LevelSetHandling.StrangSplitting:
                 UpdateLevelSetParticles(phystime);
                 break;
@@ -543,7 +544,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         private void UpdateLevelSetParticles(double phystime) {
             if (!IsFullyCoupled || iterationCounter <= 1) {
-                levelSetUpdate = new FSI_LevelSetUpdate(GridData, GetMinGridLength());
+                LevelSetUpdate = new FSILevelSetUpdate(GridData, GetMinGridLength());
                 int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 CellMask allParticleMask = null;
                 CellMask coloredCellMask = null;
@@ -553,7 +554,7 @@ namespace BoSSS.Application.FSI_Solver {
                     SwitchDuplicateAndMasterParticle();
                 }
 
-                CellColor = CellColor == null ? levelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : levelSetUpdate.UpdateColoring(LsTrk);
+                CellColor = CellColor == null ? LevelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : LevelSetUpdate.UpdateColoring(LsTrk);
                 for (int i = 0; i < noOfLocalCells; i++) {
                     CellID.SetMeanValue(i, i);
                     if (CellColor[i] != 0)
@@ -562,16 +563,16 @@ namespace BoSSS.Application.FSI_Solver {
                 SetColorDGField(CellColor);
 
                 DGLevSet.Current.Clear();
-                GlobalParticleColor = levelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, ParticleList);
+                GlobalParticleColor = LevelSetUpdate.DetermineGlobalParticleColor(GridData, CellColor, ParticleList);
                 int[] globalParticleColor = GlobalParticleColor.CloneAs();
 
                 for (int c = 0; c < globalParticleColor.Length; c++) {
                     int currentColor = globalParticleColor[c];
-                    if (levelSetUpdate.CurrentProcessContainsCurrentColor(CellColor, currentColor, noOfLocalCells)) {
-                        coloredCellMask = new CellMask(GridData, levelSetUpdate.CreateBitArrayFromColoredCells(CellColor, currentColor, noOfLocalCells));
+                    if (LevelSetUpdate.CurrentProcessContainsCurrentColor(CellColor, currentColor, noOfLocalCells)) {
+                        coloredCellMask = new CellMask(GridData, LevelSetUpdate.CreateBitArrayFromColoredCells(CellColor, currentColor, noOfLocalCells));
                         allParticleMask = allParticleMask == null ? coloredCellMask : allParticleMask.Union(coloredCellMask);
 
-                        int[] particlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
+                        int[] particlesOfCurrentColor = LevelSetUpdate.FindParticlesWithSameColor(globalParticleColor, currentColor);
                         double levelSetFunctionParticlesPerColor(double[] X, double t) {
                             double levelSetFunction = int.MinValue;
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
@@ -745,13 +746,13 @@ namespace BoSSS.Application.FSI_Solver {
                 if (!currentParticle.IsMaster)
                     continue;
 
-                if (!centerOfMassIsInsideOfDomain(currentParticle)) {
+                if (!CenterOfMassIsInsideOfDomain(currentParticle)) {
                     int oldMasterID = p + 1;
                     int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
                     for (int j = 1; j < duplicateHierachy.Length; j++) {
                         if (DuplicateExists(duplicateHierachy, j)) {
                             Particle currentDuplicate = ParticleList[duplicateHierachy[j] - 1];
-                            if (centerOfMassIsInsideOfDomain(currentDuplicate)) {
+                            if (CenterOfMassIsInsideOfDomain(currentDuplicate)) {
                                 int newMasterID = duplicateHierachy[j];
                                 int[] newDuplicateHierachy = duplicateHierachy.CloneAs();
                                 newDuplicateHierachy[0] = newMasterID;
@@ -780,33 +781,34 @@ namespace BoSSS.Application.FSI_Solver {
                         Vector particlePosition = currentParticle.Motion.GetPosition();
                         double distance = particlePosition[d] - BoundaryCoordinates[d][wallID];
                         double particleMaxLength = currentParticle.GetLengthScales().Min();
-                        if (Math.Abs(distance) > particleMaxLength && !centerOfMassIsInsideOfDomain(currentParticle)) {
-                            if (!AnyOverlap(currentParticle)) {
-                                int[] ghostHierachy = currentParticle.MasterDuplicateIDs.CloneAs();
-                                for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if (ghostHierachy[g] == p + 1) {
-                                        ghostHierachy[g] = 0;
+                        if (Math.Abs(distance) > particleMaxLength && !CenterOfMassIsInsideOfDomain(currentParticle)) {
+                            if (ParticleHasLeftTheDomain(currentParticle)) {
+                                int[] duplicateHierachy = currentParticle.MasterDuplicateIDs.CloneAs();
+                                for (int g = 0; g < duplicateHierachy.Length; g++) {
+                                    if (duplicateHierachy[g] == p + 1) {
+                                        duplicateHierachy[g] = 0;
                                     }
                                 }
-                                for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if (ghostHierachy[g] > 0)
-                                        ParticleList[ghostHierachy[g] - 1].MasterDuplicateIDs = ghostHierachy.CloneAs();
+                                for (int g = 0; g < duplicateHierachy.Length; g++) {
+                                    if (duplicateHierachy[g] > 0)
+                                        ParticleList[duplicateHierachy[g] - 1].MasterDuplicateIDs = duplicateHierachy.CloneAs();
                                 }
                                 ParticleList.RemoveAt(p);
                                 if (p >= ParticleList.Count())// already the last particle, no further action needed!
                                     return;
+                                // In order to keep the references in the duplicateHierachy correct, we replace the removed particle with the last particle.
                                 Particle lastParticle = ParticleList.Last();
-                                ghostHierachy = lastParticle.MasterDuplicateIDs.CloneAs();
-                                for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if (ghostHierachy[g] == ParticleList.Count() + 1) {
-                                        ghostHierachy[g] = p + 1;
+                                duplicateHierachy = lastParticle.MasterDuplicateIDs.CloneAs();
+                                for (int g = 0; g < duplicateHierachy.Length; g++) {
+                                    if (duplicateHierachy[g] == ParticleList.Count() + 1) {
+                                        duplicateHierachy[g] = p + 1;
                                     }
                                 }
                                 ParticleList.Insert(p, lastParticle);
                                 ParticleList.RemoveAt(ParticleList.Count() - 1);
-                                for (int g = 0; g < ghostHierachy.Length; g++) {
-                                    if (ghostHierachy[g] > 0)
-                                        ParticleList[ghostHierachy[g] - 1].MasterDuplicateIDs = ghostHierachy.CloneAs();
+                                for (int g = 0; g < duplicateHierachy.Length; g++) {
+                                    if (duplicateHierachy[g] > 0)
+                                        ParticleList[duplicateHierachy[g] - 1].MasterDuplicateIDs = duplicateHierachy.CloneAs();
                                 }
                             }
                         }
@@ -815,6 +817,13 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        /// <summary>
+        /// Check whether the particle <paramref name="currentParticle"/> has reached a periodic boundary.
+        /// </summary>
+        /// <param name="currentParticle"></param>
+        /// <param name="dimension"></param>
+        /// <param name="wallID"></param>
+        /// <returns></returns>
         private bool ParticleHasReachedPeriodicBoundary(Particle currentParticle, int dimension, int wallID) {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[dimension] - BoundaryCoordinates[dimension][wallID];
@@ -831,27 +840,34 @@ namespace BoSSS.Application.FSI_Solver {
             return false;
         }
 
-        private bool AnyOverlap(Particle currentParticle) {
-            double additionalWallThreshold = 0;
+        /// <summary>
+        /// Check whether the particle <paramref name="currentParticle"/> has left the domain.
+        /// </summary>
+        /// <param name="currentParticle"></param>
+        /// <returns></returns>
+        private bool ParticleHasLeftTheDomain(Particle currentParticle) {
             for (int d = 0; d < spatialDim; d++) {
                 for (int wallID = 0; wallID < spatialDim; wallID++) {
-                    if (wallID == 0)
-                        additionalWallThreshold *= -1;
                     Vector particlePosition = currentParticle.Motion.GetPosition();
                     if (d == 0)
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID] - additionalWallThreshold, particlePosition[1]);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID], particlePosition[1]);
                     else
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID] - additionalWallThreshold);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID]);
                     ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                     periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
-                        return true;
+                        return false;
                 }
             }
-            return false;
+            return true;
         }
 
-        private bool centerOfMassIsInsideOfDomain(Particle currentParticle) {
+        /// <summary>
+        /// Check whether the center of mass of the particle <paramref name="currentParticle"/> is inside of the domain.
+        /// </summary>
+        /// <param name="currentParticle"></param>
+        /// <returns></returns>
+        private bool CenterOfMassIsInsideOfDomain(Particle currentParticle) {
             Vector position = currentParticle.Motion.GetPosition();
             for (int d = 0; d < spatialDim; d++) {
                 if (!IsPeriodic[d])
@@ -868,6 +884,12 @@ namespace BoSSS.Application.FSI_Solver {
             return true;
         }
 
+        /// <summary>
+        /// Calculates the new time-step if dynamic time-stepping is used. Depends on the movement of the particles. 
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepInt"></param>
+        /// <returns></returns>
         private double CalculateTimeStepSize(double phystime, int TimestepInt) {
             double dt = DtMax;
             if (oldTimestep == 0)
@@ -919,7 +941,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected override double RunSolverOneStep(int TimestepInt, double phystime, double dt) {
             // initialize
             ResLogger.TimeStep = TimestepInt;
-            BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(bdforder);
+            BDFSchemeCoeffs[] m_TSCchain = BDFCommon.GetChain(BDFOrder);
             int S = m_TSCchain[0].S;
             dt = CalculateTimeStepSize(phystime, TimestepInt);
             if (initAddedDamping) {
@@ -1032,7 +1054,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="TimestepInt">
         /// #Time-step
         /// </param>
-        internal void InitializeParticlePerIteration(List<Particle> Particles, int TimestepInt) {
+        private void InitializeParticlePerIteration(List<Particle> Particles, int TimestepInt) {
             for (int p = 0; p < Particles.Count; p++) {
                 Particle currentParticle = Particles[p];
                 if (currentParticle.Motion.UseAddedDamping) {
@@ -1055,7 +1077,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="IterationCounter">
         /// No of iterations
         /// </param>
-        internal void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
+        private void CalculateParticleVelocity(List<Particle> Particles, double dt, int IterationCounter) {
             foreach (Particle p in Particles) {
                 if (IterationCounter == 0) {
                     p.Motion.SaveVelocityOfPreviousTimestep();

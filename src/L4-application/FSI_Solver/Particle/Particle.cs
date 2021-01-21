@@ -63,7 +63,7 @@ namespace BoSSS.Application.FSI_Solver {
         public Particle(InitializeMotion motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
-            Aux = new FSI_Auxillary();
+            Aux = new FSIAuxillary();
 
             if(motionInit != null) {
                 motionInit.CheckInput();
@@ -97,7 +97,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
         
         [NonSerialized]
-        protected FSI_Auxillary Aux;
+        protected FSIAuxillary Aux;
         [DataMember]
         private readonly double particleDensity;
 
@@ -227,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="RadialLength">
         /// </param>
         internal Vector CalculateRadialVector(Vector SurfacePoint) {
-            Aux = new FSI_Auxillary();
+            Aux = new FSIAuxillary();
             Vector RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
             if (RadialVector.L2Norm() == 0)
                 throw new ArithmeticException("The radial vector has no length. Surface point: " + SurfacePoint + " Position: " + Motion.GetPosition(0));

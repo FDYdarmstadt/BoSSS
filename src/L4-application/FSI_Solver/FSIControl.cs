@@ -294,7 +294,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
 
         /// <summary>
         /// All particles in the FSI
