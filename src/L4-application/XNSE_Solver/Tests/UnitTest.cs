@@ -225,6 +225,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
+#endif
 
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
@@ -255,7 +256,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
         }
-#endif
 
 
 #if !DEBUG        
