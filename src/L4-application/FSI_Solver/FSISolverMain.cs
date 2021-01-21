@@ -247,7 +247,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// Volume of the fluid domain
         /// </summary>
         [DataMember]
-        private double FluidDomainVolume => ((FSI_Control)Control).FluidDomainVolume;
+        private double DomainVolume => ((FSI_Control)Control).DomainVolume;
 
         /// <summary>
         /// FluidViscosity
@@ -577,8 +577,13 @@ namespace BoSSS.Application.FSI_Solver {
                             double levelSetFunction = int.MinValue;
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
-                                if (levelSetFunction < currentParticle.LevelSetFunction(X, BoundaryCoordinates))
-                                    levelSetFunction = currentParticle.LevelSetFunction(X, BoundaryCoordinates);
+                                if (IsPeriodic[0] || IsPeriodic[1]) {
+                                    if (levelSetFunction < currentParticle.LevelSetFunction(X, BoundaryCoordinates))
+                                        levelSetFunction = currentParticle.LevelSetFunction(X, BoundaryCoordinates);
+                                } else {
+                                    if (levelSetFunction < currentParticle.LevelSetFunction(X))
+                                        levelSetFunction = currentParticle.LevelSetFunction(X);
+                                }
                                 globalParticleColor[particlesOfCurrentColor[p]] = 0;
                             }
                             return levelSetFunction;
@@ -974,7 +979,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // print
                 // -------------------------------------------------
-                Auxillary.PrintResultToConsole(ParticleList, 0, 0, phystime, TimestepInt, ((FSI_Control)Control).FluidDomainVolume, ((FSI_Control)Control).FullOutputToConsole);
+                Auxillary.PrintResultToConsole(ParticleList, LsTrk, 0, 0, phystime, TimestepInt, DomainVolume, ((FSI_Control)Control).FullOutputToConsole);
                 LogPhysicalData(phystime, TimestepInt);
 
             }
@@ -1022,7 +1027,7 @@ namespace BoSSS.Application.FSI_Solver {
                     CalculateParticlePosition(dt);
                 }
 
-                Auxillary.PrintResultToConsole(ParticleList, FluidViscosity, FluidDensity, phystime, TimestepInt, FluidDomainVolume, ((FSI_Control)Control).FullOutputToConsole);
+                Auxillary.PrintResultToConsole(ParticleList, LsTrk, FluidViscosity, FluidDensity, phystime, TimestepInt, DomainVolume, ((FSI_Control)Control).FullOutputToConsole);
                 LogPhysicalData(phystime, TimestepInt);
 
                 if (IsFullyCoupled) {// in other branches, called by the BDF time-stepper

@@ -97,9 +97,9 @@
     <Compile Include="FluxesAtBoundary\FSI_DivergenceAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_PressureAtIB.cs" />
     <Compile Include="FluxesAtBoundary\FSI_ViscosityAtIB.cs" />
-    <Compile Include="FSI_Collision.cs" />
-    <Compile Include="FSI_TimestepInfo.cs" />
-    <Compile Include="FSI_LevelSetUpdate.cs" />
+    <Compile Include="FSICollision.cs" />
+    <Compile Include="FSITimestepInfo.cs" />
+    <Compile Include="FSILevelSetUpdate.cs" />
     <Compile Include="Particle\Motion\Motion.FixedWithVelocity.cs" />
     <Compile Include="Particle\ParticleHydrodynamics.cs" />
     <Compile Include="Particle\Motion\Motion.Wet.NoTranslation.cs" />
@@ -123,11 +123,11 @@
     <Compile Include="Particle\Shapes\Particle_Sphere.cs" />
     <Compile Include="Particle\Shapes\Particle_Hippopede.cs" />
     <Compile Include="Particle\Shapes\Particle_Ellipsoid.cs" />
-    <Compile Include="FSI_Control.cs" />
-    <Compile Include="FSI_SolverMain.cs" />
+    <Compile Include="FSIControl.cs" />
+    <Compile Include="FSISolverMain.cs" />
     <Compile Include="Particle\Particle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="FSI_Auxillary.cs" />
+    <Compile Include="FSIAuxillary.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">

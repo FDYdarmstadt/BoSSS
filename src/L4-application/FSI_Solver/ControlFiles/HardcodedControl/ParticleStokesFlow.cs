@@ -228,17 +228,15 @@ namespace BoSSS.Application.FSI_Solver {
             //C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\WetParticleCollision", 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
 
-            //List<string> boundaryValues = new List<string> {
-            //    "Wall_left",
-            //    "Wall_right",
-            //    "Wall_lower",
-            //    "Pressure_Outlet_upper"
-            //};
-            //C.SetBoundaries(boundaryValues);
-            C.SetAddaptiveMeshRefinement(4);
-            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 9, periodicX: true, periodicY: true);
+            List<string> boundaryValues = new List<string> {
+                "Pressure_Outlet"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetAddaptiveMeshRefinement(2);
+            C.SetGrid(lengthX: 2, lengthY: 2, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.hydrodynamicsConvergenceCriterion = 1e-3;
-            C.pureDryCollisions = false;
+            C.pureDryCollisions = true;
+            C.FullOutputToConsole = true;
 
             // Fluid Properties
             // =============================
@@ -253,8 +251,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Defining particles
             C.Particles = new List<Particle>();
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, false, 0);
-            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { -0.3, 0.0 }, 0, 0, new double[] { 1, 0 }));
-            C.Particles.Add(new Particle_Sphere(motion, 0.1, new double[] { 0.3, 0.0 }, 180, 0, new double[] { -1, 0 }));
+            C.Particles.Add(new Particle_Ellipsoid(motion,0.2, 0.1, new double[] { -0.3, 0.0 }, 0, 0, new double[] { 1, 0 }));
+            C.Particles.Add(new Particle_Ellipsoid(motion,0.2, 0.1, new double[] { 0.3, 0.0 }, 180, 0, new double[] { -1, 0 }, 1));
 
             // Quadrature rules
             // =============================   
@@ -288,7 +286,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-3, 5000, true);
+            C.SetTimesteps(1e-2, 5000, true);
 
             
 

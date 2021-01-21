@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Application.FSI_Solver;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using MPI.Wrappers;
 using System;
@@ -24,6 +26,9 @@ using System.Linq;
 using System.Text;
 
 namespace FSI_Solver {
+    /// <summary>
+    /// Helper class for the FSISolver. Contains additional methods for testing and console output.
+    /// </summary>
     [Serializable]
     public class FSIAuxillary {
         /// <summary>
@@ -141,15 +146,13 @@ namespace FSI_Solver {
         /// /// <param name="Finalresult"></param>
         /// <param name="MPIangularVelocity"></param>
         /// <param name="Force"></param>
-        internal void PrintResultToConsole(List<Particle> Particles, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, double FluidDomainVolume, bool FullOutputToConsole) {
+        internal void PrintResultToConsole(List<Particle> Particles, LevelSetTracker LsTrk, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, double FluidDomainVolume, bool FullOutputToConsole) {
             double[] TranslationalMomentum = new double[2] { 0, 0 };
             double RotationalMomentum = 0;
             double[] totalKE = new double[3] { 0, 0, 0 };
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
             double highestReNumber = 0;
             double[] ParticleStokesNumber = new double[Particles.Count()];
-            double volumeFraction = 0;
-
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
                 double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
@@ -164,10 +167,10 @@ namespace FSI_Solver {
                 if (ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] > highestReNumber)
                     highestReNumber = ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)];
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleStokesNumber(FluidViscosity, FluidDensity);
-                volumeFraction += CurrentParticle.Area;
             }
-
-            volumeFraction /= FluidDomainVolume;
+            double volumeFractionA = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"));
+            double volumeFractionB = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("B"));
+            double volumeFraction = volumeFractionB / (volumeFractionA + volumeFractionB);
 
             StringBuilder OutputBuilder = new StringBuilder();
 

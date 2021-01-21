@@ -68,7 +68,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Overall domain volume
         /// </summary>
-        public double FluidDomainVolume;
+        public double DomainVolume;
 
         /// <summary>
         /// The position of all boundaries, independent of boundary condition.
@@ -153,7 +153,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])
                 SetBoundaries(new List<string> { "Wall" });
             GridFunc = delegate {
-                FluidDomainVolume = lengthX * lengthY;
+                DomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 

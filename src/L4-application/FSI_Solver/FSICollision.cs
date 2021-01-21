@@ -736,27 +736,27 @@ namespace FSI_Solver {
             Particles[particleID].CalculateEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]);
             if (IsParticle(secondObjectID))
                 Particles[secondObjectID].CalculateEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]);
-            double collisionCoefficient = CalculateCollisionCoefficient(particleID, secondObjectID, normalVector);
+            double[] collisionCoefficient = CalculateCollisionCoefficient(particleID, secondObjectID, normalVector);
             Vector velocityP0 = CalculateNormalAndTangentialVelocity(particleID, normalVector);
             Vector radialVectorP0 = Particles[particleID].CalculateRadialVector(ClosestPoints[particleID][secondObjectID]);
             Vector tempVel0 = Particles[particleID].Motion.IncludeTranslation 
-                ? (velocityP0[0] + collisionCoefficient / Particles[particleID].Motion.ParticleMass) * normalVector + velocityP0[1] * tangentialVector 
+                ? (velocityP0[0] + collisionCoefficient[0] / Particles[particleID].Motion.ParticleMass) * normalVector + (velocityP0[1] + collisionCoefficient[1] / Particles[particleID].Motion.ParticleMass) * tangentialVector 
                 : new Vector(0, 0);
             TemporaryVelocity[particleID][0] = tempVel0[0];
             TemporaryVelocity[particleID][1] = tempVel0[1];
-            TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient / Particles[particleID].MomentOfInertia : 0;
+            TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient[0] / Particles[particleID].MomentOfInertia + (radialVectorP0[0] * tangentialVector[1] - radialVectorP0[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[particleID].MomentOfInertia : 0;
             Particles[particleID].IsCollided = true;
             Overlapping[particleID][secondObjectID] = false;
 
             if (IsParticle(secondObjectID)) {
                 Vector velocityP1 = CalculateNormalAndTangentialVelocity(secondObjectID, normalVector);
                 Vector tempVel1 = Particles[secondObjectID].Motion.IncludeTranslation
-                    ? (velocityP1[0] - collisionCoefficient / Particles[secondObjectID].Motion.ParticleMass) * normalVector + velocityP1[1] * tangentialVector
+                    ? (velocityP1[0] - collisionCoefficient[0] / Particles[secondObjectID].Motion.ParticleMass) * normalVector + (velocityP1[1] - collisionCoefficient[1] / Particles[secondObjectID].Motion.ParticleMass) * tangentialVector
                     : new Vector(0, 0);
                 Vector radialVectorP1 = Particles[secondObjectID].CalculateRadialVector(ClosestPoints[secondObjectID][particleID]);
                 TemporaryVelocity[secondObjectID][0] = tempVel1[0];
                 TemporaryVelocity[secondObjectID][1] = tempVel1[1];
-                TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient / Particles[secondObjectID].MomentOfInertia : 0;
+                TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient[0] / Particles[secondObjectID].MomentOfInertia - (radialVectorP1[0] * tangentialVector[1] - radialVectorP1[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[secondObjectID].MomentOfInertia : 0;
                 Overlapping[secondObjectID][particleID] = false;
                 Particles[secondObjectID].IsCollided = true;
             }
@@ -769,30 +769,39 @@ namespace FSI_Solver {
             return new Vector(velocity * normalVector, velocity * tangentialVector);
         }
 
-        private double CalculateCollisionCoefficient(int p0, int p1, Vector normalVector) {
+        private double[] CalculateCollisionCoefficient(int p0, int p1, Vector normalVector) {
+            Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
             Vector[] translationalVelocity = new Vector[2];
             translationalVelocity[0] = CalculateNormalAndTangentialVelocity(p0, normalVector);
             translationalVelocity[1] = new Vector(0, 0);
             double[] massReciprocal = new double[] { 0, 0 };
-            double[] momentOfInertiaReciprocal = new double[] { 0, 0 };
-            double[] eccentricity = new double[] { 0, 0 };
+            double[] normalMomentOfInertiaReciprocal = new double[] { 0, 0 };
+            double[] tangentialMomentOfInertiaReciprocal = new double[] { 0, 0 };
+            double[] normalEccentricity = new double[] { 0, 0 };
+            double[] tangentialEccentricity = new double[] { 0, 0 };
 
             massReciprocal[0] = Particles[p0].Motion.IncludeTranslation ? 1 / Particles[p0].Motion.ParticleMass : 0;
-            momentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
-            eccentricity[0] = Particles[p0].CalculateEccentricity(normalVector, ClosestPoints[p0][p1]);
+            normalMomentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
+            tangentialMomentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
+            normalEccentricity[0] = Particles[p0].CalculateEccentricity(normalVector, ClosestPoints[p0][p1]);
+            tangentialEccentricity[0] = Particles[p0].CalculateEccentricity(tangentialVector, ClosestPoints[p0][p1]);
 
             if (IsParticle(p1)) {
                 translationalVelocity[1] = CalculateNormalAndTangentialVelocity(p1, normalVector);
                 massReciprocal[1] = Particles[p1].Motion.IncludeTranslation ? 1 / Particles[p1].Motion.ParticleMass : 0;
-                momentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
-                eccentricity[1] = Particles[p1].CalculateEccentricity(normalVector, ClosestPoints[p1][p0]);
+                normalMomentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
+                tangentialMomentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
+                normalEccentricity[1] = Particles[p1].CalculateEccentricity(normalVector, ClosestPoints[p1][p0]);
+                tangentialEccentricity[1] = Particles[p1].CalculateEccentricity(tangentialVector, ClosestPoints[p1][p0]);
             }
-
-            double collisionCoefficient = -(1 + CoefficientOfRestitution) * ((translationalVelocity[0][0] - translationalVelocity[1][0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            double[] collisionCoefficient = new double[2];
+            collisionCoefficient[0] = -(1 + CoefficientOfRestitution) * ((translationalVelocity[0][0] - translationalVelocity[1][0]) / (massReciprocal[0] + massReciprocal[1] + normalMomentOfInertiaReciprocal[0] + normalMomentOfInertiaReciprocal[1]));
+            collisionCoefficient[1] = (translationalVelocity[0][1] - translationalVelocity[1][1]) / (massReciprocal[0] + massReciprocal[1] + tangentialMomentOfInertiaReciprocal[0] + tangentialMomentOfInertiaReciprocal[1]);
             double tempRotVelocity2 = 0;
             if (IsParticle(p1))
                 tempRotVelocity2 = TemporaryVelocity[p1][2];
-            collisionCoefficient -= (1 + CoefficientOfRestitution) * ((eccentricity[0] * TemporaryVelocity[p0][2] - eccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            collisionCoefficient[0] -= (1 + CoefficientOfRestitution) * ((normalEccentricity[0] * TemporaryVelocity[p0][2] - normalEccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + normalMomentOfInertiaReciprocal[0] + normalMomentOfInertiaReciprocal[1]));
+            collisionCoefficient[1] += (tangentialEccentricity[0] * TemporaryVelocity[p0][2] - tangentialEccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + tangentialMomentOfInertiaReciprocal[0] + tangentialMomentOfInertiaReciprocal[1]);
             return collisionCoefficient;
         }
 

@@ -39,7 +39,7 @@ namespace FSI_Solver {
         private readonly double MinGridLength;
 
         /// <summary>
-        /// Initialization of coloured cells based on particle geometry.
+        /// Initialization of colored cells based on particle geometry.
         /// </summary>
         internal int[] InitializeColoring(LevelSetTracker LsTrk, Particle[] Particles, double MaxGridLength) {
             int JE = GridData.iLogicalCells.NoOfExternalCells + GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -57,7 +57,7 @@ namespace FSI_Solver {
         }
 
         /// <summary>
-        /// Update of all coloured cells.
+        /// Update of all colored cells.
         /// </summary>
         internal int[] UpdateColoring(LevelSetTracker LsTrk) {
             int[] coloredCells = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
@@ -69,7 +69,7 @@ namespace FSI_Solver {
         }
 
         /// <summary>
-        /// searchs for all particles with the same color
+        /// Searches for all particles with the same color
         /// </summary>
         /// <param name="ParticleColor">
         /// a list of all particles with their specific color
