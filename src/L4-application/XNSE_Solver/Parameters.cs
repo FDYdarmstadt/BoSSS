@@ -196,8 +196,10 @@ namespace BoSSS.Application.XNSE_Solver {
     }
 
 
-
-    class FakeLevelSetVelocity :  ParameterS, ILevelSetParameter {
+    /// <summary>
+    /// Level set velocity, i.e. parameters with name <see cref="BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(string, IList{string})"/>
+    /// </summary>
+    class ExplicitLevelSetVelocity :  ParameterS, ILevelSetParameter {
 
         string[] m_ParameterNames;
 
@@ -210,13 +212,14 @@ namespace BoSSS.Application.XNSE_Solver {
         // delegate (string ParameterName, DGField ParamField)[] DelParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public FakeLevelSetVelocity(string levelSetName, int D) : base() {
+        public ExplicitLevelSetVelocity(string levelSetName, ScalarFunctionTimeDep[] components) : base() {
             m_ParameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
-            this.D = D;
-
+            this.D = components.Length;
+            m_components = components.CloneAs();
             
         }
 
+        ScalarFunctionTimeDep[] m_components;
         int D;
 
         public override DelPartialParameterUpdate Update {
@@ -225,7 +228,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        void InternalParameterUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(new FuncTrace()) {
 
                 DGField[] meanVelocity = new ConventionalDGField[D];
@@ -233,6 +236,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     //Basis b = EvoVelocity[d].Basis.NonX_Basis;
                     meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
                     meanVelocity[d].Clear();
+                    if(m_components[d] != null)
+                        meanVelocity[d].ProjectField(m_components[d].SetTime(t));
                 }
 
                 meanVelocity[0].AccConstant(1.0);
@@ -240,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            InternalParameterUpdate(DomainVarFields, ParameterVarFields);
+            InternalParameterUpdate(time, DomainVarFields, ParameterVarFields);
         }
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -625,7 +630,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             return heatflux0;
         }
-        private void HeatFlux0Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        private void HeatFlux0Update(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             var varname = BoSSS.Solution.NSECommon.VariableNames.Temperature;
             DGField temperaure = DomainVarFields[varname];
 

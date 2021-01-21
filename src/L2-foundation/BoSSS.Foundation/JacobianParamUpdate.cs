@@ -109,7 +109,7 @@ namespace BoSSS.Foundation {
         /// Parameter update function, 
         /// compatible with <see cref="DelPartialParameterUpdate"/>.
         /// </summary>
-        virtual public void PerformUpdate(IReadOnlyDictionary<string, DGField> _DomainVar, IReadOnlyDictionary<string, DGField> _ParameterVar) {
+        virtual public void PerformUpdate(double time, IReadOnlyDictionary<string, DGField> _DomainVar, IReadOnlyDictionary<string, DGField> _ParameterVar) {
             DGField[] __DomainVar = this.DomainVar.Select(name => _DomainVar[name]).ToArray();
             DGField[] __ParameterVar = this.JacobianParameterVars.Select(name => _ParameterVar[name]).ToArray();
 

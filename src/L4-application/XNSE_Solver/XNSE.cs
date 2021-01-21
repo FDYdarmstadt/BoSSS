@@ -101,20 +101,29 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
+            int D = GridData.SpatialDimension;
+            
             if(iLevSet == 0) {
                 // +++++++++++++++++++
                 // the fluid interface 
                 // +++++++++++++++++++
 
                 // averaging at interface:
-                ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, D, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
                 return levelSetVelocity;
             } else if(iLevSet == 1) {
                 // +++++++++++++++++++++
                 // the immersed boundary
                 // +++++++++++++++++++++
 
-                ILevelSetParameter levelSetVelocity = new FakeLevelSetVelocity(VariableNames.LevelSetCGidx(1), GridData.SpatialDimension);
+                string[] VelocityNames = VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(1), VariableNames.VelocityVector(D)).ToArray();
+                ScalarFunctionTimeDep[] VelFuncs = new ScalarFunctionTimeDep[D];
+                for(int d = 0; d < D; d++) {
+                    Control.InitialValues_EvaluatorsVec.TryGetValue(VelocityNames[d], out VelFuncs[d]);
+                }
+
+
+                ILevelSetParameter levelSetVelocity = new ExplicitLevelSetVelocity(VariableNames.LevelSetCGidx(1), VelFuncs);
                 return levelSetVelocity;
             } else {
                 throw new ArgumentOutOfRangeException();

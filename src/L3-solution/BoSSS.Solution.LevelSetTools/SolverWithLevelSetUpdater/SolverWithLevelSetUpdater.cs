@@ -157,7 +157,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                        levelSetDG.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
+                        //if(Control.InitialValues_EvaluatorsVec.ContainsKey(LevelSetCG))
+                        levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }

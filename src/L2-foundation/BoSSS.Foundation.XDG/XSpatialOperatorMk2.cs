@@ -296,9 +296,9 @@ namespace BoSSS.Foundation.XDG {
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
-                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
-                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (double time, IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(time, DomF.ToArray(), ParamF.ToArray());
                 };
 
             return new FDJacobianBuilder(xeval, ParamUpdate);

@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        void InternalParameterUpdate(IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             for (int d = 0; d < D; ++d) {
                 string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
                 DGField velocity = DomainVarFields[velocityname];
@@ -141,7 +141,7 @@ namespace BoSSS.Solution.XNSECommon {
         public Velocity0MeanPrescribed(int D, LevelSetTracker LsTrk, int cutCellQuadOrder) :
             base(D, LsTrk, cutCellQuadOrder) { }
 
-        protected override void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        protected override void Velocity0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             for (int d = 0; d < D; ++d) {
                 foreach (string speciesName in SpeciesNames) {
                     XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
@@ -228,7 +228,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-        protected virtual void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        protected virtual void Velocity0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using(new FuncTrace()) {
                 for(int d = 0; d < D; ++d) {
                     foreach(string speciesName in SpeciesNames) {

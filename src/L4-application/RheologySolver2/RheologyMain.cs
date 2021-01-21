@@ -896,7 +896,7 @@ namespace BoSSS.Application.Rheology {
             var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
             //this.ParameterUpdate(CurrentState, TmpParams);
             //JacParams.PerformUpdate(CurrentState, TmpParams);
-            JacobiOp.InvokeParameterUpdate(CurrentState, TmpParams);
+            JacobiOp.InvokeParameterUpdate(0.0, CurrentState, TmpParams);
             
             var JacobiDX = new BlockMsrMatrix(map);
             var AffineDX = new double[map.LocalLength];

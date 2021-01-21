@@ -200,6 +200,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public MultigridOperator.ChangeOfBasisConfig[][] MgConfig;
 
+            public double time;
+
             /// <summary>
             /// Implementation of <see cref="OperatorEvalOrLin"/>
             /// </summary>
@@ -332,7 +334,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 switch(xop.LinearizationHint) {
 
                     case LinearizationHint.AdHoc: {
-                        xop.InvokeParameterUpdate(this.SolutionFields, this.ParamFields.ToArray());
+                        xop.InvokeParameterUpdate(this.time, this.SolutionFields, this.ParamFields.ToArray());
 
                         var mtxBuilder = xop.GetMatrixBuilder(LsTrk, this.SolMapping, this.ParamFields, this.SolMapping);
                         mtxBuilder.time = 0.0;
@@ -363,7 +365,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(JacobiParameterVars == null)
                             JacobiParameterVars = JacXop.InvokeParameterFactory(this.SolutionFields);
 
-                        JacXop.InvokeParameterUpdate(this.SolutionFields, JacobiParameterVars);
+                        JacXop.InvokeParameterUpdate(this.time, this.SolutionFields, JacobiParameterVars);
 
                         var mtxBuilder = JacXop.GetMatrixBuilder(LsTrk, this.SolMapping, this.JacobiParameterVars, this.SolMapping);
                         mtxBuilder.time = 0.0;
@@ -381,7 +383,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 switch(op.LinearizationHint) {
 
                     case LinearizationHint.AdHoc: {
-                        this.op.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+                        this.op.InvokeParameterUpdate(this.time, this.SolutionFields, this.ParamFields);
 
                         var mtxBuilder = op.GetMatrixBuilder(this.SolMapping, this.ParamFields, this.SolMapping);
                         mtxBuilder.time = 0.0;
@@ -403,7 +405,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if(JacobiParameterVars == null)
                             JacobiParameterVars = JacXop.InvokeParameterFactory(this.SolutionFields);
-                        JacXop.InvokeParameterUpdate(this.SolutionFields, JacobiParameterVars);
+                        JacXop.InvokeParameterUpdate(this.time, this.SolutionFields, JacobiParameterVars);
 
                         var mtxBuilder = JacXop.GetMatrixBuilder(this.SolMapping, this.JacobiParameterVars, this.SolMapping);
                         mtxBuilder.time = 0.0;
@@ -415,7 +417,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             void XDGevaluation(double[] OpAffine) {
-                this.xop.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+                this.xop.InvokeParameterUpdate(this.time, this.SolutionFields, this.ParamFields);
                 var AgglomeratedCellLengthScales = this.Op_Agglomeration.CellLengthScales;
 
                 var eval = xop.GetEvaluatorEx(this.LsTrk, this.SolMapping, this.ParamFields, this.SolMapping);
@@ -429,7 +431,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             void DGevaluation(double[] OpAffine) {
-                this.op.InvokeParameterUpdate(this.SolutionFields, this.ParamFields);
+                this.op.InvokeParameterUpdate(this.time, this.SolutionFields, this.ParamFields);
                
                 var eval = op.GetEvaluatorEx(this.SolMapping, this.ParamFields, this.SolMapping);
                 eval.time = 0.0;

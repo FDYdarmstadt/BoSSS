@@ -849,7 +849,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCG, tst.GetPhi().Convert_Xt2X(0.0));
+            C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings
             // ========================================
@@ -869,7 +869,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             
             C.UseImmersedBoundary = tst.TestImmersedBoundary;
             if(C.UseImmersedBoundary) {
-                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2().Convert_Xt2X(0.0));
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2());
             }
 
             // timestepping and solver
