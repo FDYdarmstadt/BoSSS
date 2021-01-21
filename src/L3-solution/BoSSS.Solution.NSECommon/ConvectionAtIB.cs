@@ -28,7 +28,7 @@ using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class ConvectionAtIB : ILevelSetForm {
-        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies){
+        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter){
             m_LsTrk = LsTrk;
             m_D = _D;
             m_d = _d;
@@ -36,6 +36,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             //varMode = _varMode;
             fDensity = fluidDensity;
             m_UseMovingMesh = UseMovingMesh;
+            m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
 
             NegFlux = new LinearizedConvection(_D, _bcmap, _d);
             //NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, fluidDensity, 0, _LFFA, double.NaN, LsTrk);
@@ -47,6 +48,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         int m_iLevSet;
         string m_FluidSpc;
         string m_SolidSpecies;
+        bool m_UseLevelSetVelocityParameter;
 
         LevelSetTracker m_LsTrk;
         int m_D;
@@ -66,7 +68,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+                var ret = ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+                if(m_UseLevelSetVelocityParameter)
+                    ret = ret.Cat(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.VelocityVector(m_D)));
+                return ret;
             }
         }
      
@@ -126,13 +131,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
                 inp.Parameters_OUT[3] = 0;
                 */
 
-                double[] uLevSet_temp = new double[1];
-                inp.Parameters_OUT = new double[inp.D * 2];
+                double[] uLevSet;
+                if(m_UseLevelSetVelocityParameter) {
+                    uLevSet = inp.Parameters_IN.GetSubVector(m_D * 2, m_D);
+                } else {
+                    uLevSet = new double[m_D];
+                }
 
-                if(this.m_d == 0)
-                    uLevSet_temp[0] = 1;
-                inp.Parameters_OUT[0] = 1;
-                inp.Parameters_OUT[2] = 1;
+                double[] uLevSet_temp = new double[1];
+                uLevSet_temp[0] = uLevSet[m_d];
+                
+                inp.Parameters_OUT = new double[inp.D * 2];
+                Array.Copy(uLevSet, 0, inp.Parameters_OUT, 0, m_D);
+                Array.Copy(uLevSet, 0, inp.Parameters_OUT, m_D, m_D);
 
                 double FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null);
                 if(FlxNeg.IsNaNorInf())

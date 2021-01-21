@@ -68,6 +68,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
+        /// <summary>
+        /// Setup of the level-set system and the tracker
+        /// </summary>
         protected override LevelSetTracker InstantiateTracker() {
             LsUpdater = InstantiateLevelSetUpdater();
             return LsUpdater.Tracker;
@@ -114,16 +117,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         abstract protected ILevelSetParameter GetLevelSetVelocity(int iLevSet);
 
-
         /// <summary>
         /// boundary condition mapping, mainly required for the Stokes extension, where a velocity boundary condition is required.
         /// </summary>
         protected abstract IncompressibleBoundaryCondMap GetBcMap();
 
-
         /// <summary>
-        /// Sets up the level-set-system (fields for storing, evolution operators, ...) before
-        /// XDG-fields can be created.
+        /// Sets up the level-set-system (fields for storing, evolution operators, ...) before XDG-fields can be created.
         /// </summary>
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
             int D = this.Grid.SpatialDimension;
@@ -249,7 +249,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)))) {
                         throw new ApplicationException($"Parameter names for the level-set velocity provider for level-set #{iLevSet} ({LevelSetCG}) does not comply with convention.");
                     }
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
+                    lsUpdater.AddLevelSetParameter(LevelSetCG, levelSetVelocity);
                 }
 
             }

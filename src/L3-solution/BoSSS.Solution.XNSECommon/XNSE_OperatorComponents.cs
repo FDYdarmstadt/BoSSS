@@ -366,12 +366,12 @@ namespace BoSSS.Solution.XNSECommon {
 
                     if (dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                         IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(G);
+                        XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(G);
                         IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(H);
+                        XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(H);
                     } else {
                         IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, BcMap.EdgeTag2Type, BcMap, physParams.theta_e, physParams.betaL);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(isoSurfT);
+                        XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(isoSurfT);
                     }
                     NormalsRequired = true;
 
@@ -406,7 +406,7 @@ namespace BoSSS.Solution.XNSECommon {
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfDiv = new BoussinesqScriven_SurfaceVelocityDivergence(d, D, lamI_t * 0.5, penalty, BcMap.EdgeTag2Type, false);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDiv);
+                        XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(surfDiv);
 
                     }
 
@@ -416,11 +416,11 @@ namespace BoSSS.Solution.XNSECommon {
                         dntParams.SurfStressTensor == SurfaceSressTensor.FullBoussinesqScriven) {
 
                         var surfDeformRate = new BoussinesqScriven_SurfaceDeformationRate_GradU(d, D, muI * 0.5, penalty, false, dntParams.SurfStressTensor == SurfaceSressTensor.SemiImplicit);
-                        XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRate);
+                        XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(surfDeformRate);
 
                         if (dntParams.SurfStressTensor != SurfaceSressTensor.SemiImplicit) {
                             var surfDeformRateT = new BoussinesqScriven_SurfaceDeformationRate_GradUTranspose(d, D, muI * 0.5, penalty, false);
-                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(surfDeformRateT);
+                            XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(surfDeformRateT);
                         }
 
                     }
@@ -433,7 +433,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 switch(dntParams.STFstabilization) {
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDeformationRateLocal: {
-                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(new SurfaceDeformationRate_LocalStabilization(d, D, false));
+                            XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(new SurfaceDeformationRate_LocalStabilization(d, D, false));
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.GradUxGradV: {
@@ -441,11 +441,11 @@ namespace BoSSS.Solution.XNSECommon {
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence: {
-                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_SurfaceVelocityDivergence(d, D, 0.1));
+                            XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_SurfaceVelocityDivergence(d, D, 0.1));
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.EdgeDissipation: {
-                            XOp.SurfaceElementOperator.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_EdgeDissipation(d, D, sigma, 0.0));
+                            XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(new DynamicSurfaceTension_LB_EdgeDissipation(d, D, sigma, 0.0));
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.None:

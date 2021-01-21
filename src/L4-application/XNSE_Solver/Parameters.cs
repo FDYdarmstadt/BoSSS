@@ -14,6 +14,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using ilPSP.Tracing;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSE_Solver {
     static class FromControl {
@@ -94,87 +96,88 @@ namespace BoSSS.Application.XNSE_Solver {
             DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using(new FuncTrace()) {
+                int D = levelSet.Tracker.GridDat.SpatialDimension;
 
-            int D = levelSet.Tracker.GridDat.SpatialDimension;
-            
-            //Mean Velocity
-            XDGField[] EvoVelocity; // = new XDGField[]
-            try {
-                EvoVelocity = D.ForLoop(
-                    d => (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)]
-                    );
-            } catch {
-                Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                EvoVelocity = D.ForLoop(
-                    d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
-                    );
-            }
+                //Mean Velocity
+                XDGField[] EvoVelocity; // = new XDGField[]
+                try {
+                    EvoVelocity = D.ForLoop(
+                        d => (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)]
+                        );
+                } catch {
+                    Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                    EvoVelocity = D.ForLoop(
+                        d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                        );
+                }
 
-            DGField[] meanVelocity = new ConventionalDGField[D];
+                DGField[] meanVelocity = new ConventionalDGField[D];
 
-            double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
-            double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
-            LevelSetTracker lsTrkr = levelSet.Tracker;
-            CellMask CC = lsTrkr.Regions.GetCutCellMask4LevSet(0);
-            CellMask Neg = lsTrkr.Regions.GetLevelSetWing(0, -1).VolumeMask;
-            CellMask Pos = lsTrkr.Regions.GetLevelSetWing(0, +1).VolumeMask;
-            CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
-            CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
+                double rho_A = physicalParameters.rho_A, rho_B = physicalParameters.rho_B;
+                double mu_A = physicalParameters.mu_A, mu_B = physicalParameters.mu_B;
+                LevelSetTracker lsTrkr = levelSet.Tracker;
+                CellMask CC = lsTrkr.Regions.GetCutCellMask4LevSet(0);
+                CellMask Neg = lsTrkr.Regions.GetLevelSetWing(0, -1).VolumeMask;
+                CellMask Pos = lsTrkr.Regions.GetLevelSetWing(0, +1).VolumeMask;
+                CellMask posNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Neg);
+                CellMask negNear = lsTrkr.Regions.GetNearMask4LevSet(0, 1).Except(Pos);
 
-            for(int d = 0; d < D; d++) {
-                //Basis b = EvoVelocity[d].Basis.NonX_Basis;
-                meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
-                meanVelocity[d].Clear();
+                for(int d = 0; d < D; d++) {
+                    //Basis b = EvoVelocity[d].Basis.NonX_Basis;
+                    meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                    meanVelocity[d].Clear();
 
 
-                foreach(string spc in lsTrkr.SpeciesNames) {
-                    double rhoSpc;
-                    double muSpc;
-                    switch(spc) {
-                        case "A": rhoSpc = rho_A; muSpc = mu_A; break;
-                        case "B": rhoSpc = rho_B; muSpc = mu_B; break;
-                        case "C": continue; // solid phase; ignore
-                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
-                    }
-
-                    double scale = 1.0;
-                    switch(averagingMode) {
-                        case XNSE_Control.InterfaceVelocityAveraging.mean: {
-                            scale = 0.5;
-                            break;
+                    foreach(string spc in lsTrkr.SpeciesNames) {
+                        double rhoSpc;
+                        double muSpc;
+                        switch(spc) {
+                            case "A": rhoSpc = rho_A; muSpc = mu_A; break;
+                            case "B": rhoSpc = rho_B; muSpc = mu_B; break;
+                            case "C": continue; // solid phase; ignore
+                            default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                         }
-                        case XNSE_Control.InterfaceVelocityAveraging.density: {
-                            scale = rhoSpc / (rho_A + rho_B);
-                            break;
-                        }
-                        case XNSE_Control.InterfaceVelocityAveraging.viscosity: {
-                            scale = muSpc / (mu_A + mu_B);
-                            break;
-                        }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseA: {
-                            scale = (spc == "A") ? 1.0 : 0.0;
-                            break;
-                        }
-                        case XNSE_Control.InterfaceVelocityAveraging.phaseB: {
-                            scale = (spc == "B") ? 1.0 : 0.0;
-                            break;
-                        }
-                    }
 
-                    meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
-                    switch(spc) {
-                        //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
-                        case "A": {
-                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
-                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
-                            break;
+                        double scale = 1.0;
+                        switch(averagingMode) {
+                            case XNSE_Control.InterfaceVelocityAveraging.mean: {
+                                scale = 0.5;
+                                break;
+                            }
+                            case XNSE_Control.InterfaceVelocityAveraging.density: {
+                                scale = rhoSpc / (rho_A + rho_B);
+                                break;
+                            }
+                            case XNSE_Control.InterfaceVelocityAveraging.viscosity: {
+                                scale = muSpc / (mu_A + mu_B);
+                                break;
+                            }
+                            case XNSE_Control.InterfaceVelocityAveraging.phaseA: {
+                                scale = (spc == "A") ? 1.0 : 0.0;
+                                break;
+                            }
+                            case XNSE_Control.InterfaceVelocityAveraging.phaseB: {
+                                scale = (spc == "B") ? 1.0 : 0.0;
+                                break;
+                            }
                         }
-                        case "B": {
-                            if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
-                                meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
-                            break;
+
+                        meanVelocity[d].Acc(scale, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), CC);
+                        switch(spc) {
+                            //case "A": meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), Neg.Except(CC)); break;
+                            case "A": {
+                                if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseB)
+                                    meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), negNear);
+                                break;
+                            }
+                            case "B": {
+                                if(averagingMode != XNSE_Control.InterfaceVelocityAveraging.phaseA)
+                                    meanVelocity[d].Acc(1.0, ((XDGField)EvoVelocity[d]).GetSpeciesShadowField(spc), posNear);
+                                break;
+                            }
+                            default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                         }
-                        default: throw new NotSupportedException("Unknown species name '" + spc + "'");
                     }
                 }
             }
@@ -191,6 +194,70 @@ namespace BoSSS.Application.XNSE_Solver {
             return velocties;
         }
     }
+
+
+
+    class FakeLevelSetVelocity :  ParameterS, ILevelSetParameter {
+
+        string[] m_ParameterNames;
+
+        public override IList<string> ParameterNames {
+            get {
+                return m_ParameterNames;
+            }
+        }
+
+        // delegate (string ParameterName, DGField ParamField)[] DelParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public FakeLevelSetVelocity(string levelSetName, int D) : base() {
+            m_ParameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
+            this.D = D;
+
+            
+        }
+
+        int D;
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                return InternalParameterUpdate;
+            }
+        }
+
+        void InternalParameterUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using(new FuncTrace()) {
+
+                DGField[] meanVelocity = new ConventionalDGField[D];
+                for(int d = 0; d < D; d++) {
+                    //Basis b = EvoVelocity[d].Basis.NonX_Basis;
+                    meanVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                    meanVelocity[d].Clear();
+                }
+
+                meanVelocity[0].AccConstant(1.0);
+            }
+        }
+
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            InternalParameterUpdate(DomainVarFields, ParameterVarFields);
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var velocties = new (string, DGField)[D];
+            var bv = DomainVarFields[VariableNames.VelocityX].Basis;
+            var b = new Basis(bv.GridDat, bv.Degree);
+
+            for(int d = 0; d < D; ++d) {
+                string paramName = ParameterNames[d];
+                DGField lsVelocity = new SinglePhaseField(b, paramName);
+                velocties[d] = (paramName, lsVelocity);
+            }
+            return velocties;
+        }
+    }
+
+
 
     class LevelSetVelocityEvaporative : LevelSetVelocity {
 
@@ -521,11 +588,23 @@ namespace BoSSS.Application.XNSE_Solver {
                     case "B": { k_spc.Add(spc, thermParams.k_B); break; }
                     default: { throw new ArgumentException("Unknown species.");}                    
                 }
-            }     
-            if(config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                Update = HeatFlux0Update;
+            }
+            config_conductMode = config.conductMode;
+            //if(config.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+            //    Update = HeatFlux0Update;
         }
 
+        ConductivityInSpeciesBulk.ConductivityMode config_conductMode;
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                if(config_conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+                    return HeatFlux0Update;
+                else
+                    return null;
+
+            }
+        }
         (string, DGField)[] HeatFlux0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var heatflux0 = new (string, DGField)[D];
 

@@ -34,15 +34,17 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         LevelSetTracker m_LsTrk;
 
-        public DivergenceAtIB(int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public DivergenceAtIB(int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
             this.D = _D;
             this.m_LsTrk = lsTrk;
             this.LevelSetIndex = iLevSet;
             this.PositiveSpecies = lsTrk.GetSpeciesId(SolidSpecies);
             this.NegativeSpecies = lsTrk.GetSpeciesId(FluidSpc);
+            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
         }
 
         int D;
+        bool m_UseLevelSetVelocityParameter;
         
 
         /// <summary>
@@ -53,26 +55,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
         public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-            
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
-            //var parameters_P = m_getParticleParams(cp.X, cp.time);
-            //double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            //double wLevSet = parameters_P[2];
-            //pRadius = parameters_P[3];
+            double uBxN;
+            if(m_UseLevelSetVelocityParameter) {
+                uBxN = cp.Normal.InnerProd(cp.Parameters_IN);
+            } else {
+                uBxN = 0.0;
+            }
 
-            double[] _uLevSet = new double[] { 1.0, 0 };
-
-            //_uLevSet[0] = uLevSet[0]+pRadius*wLevSet*-cp.Normal[1];
-            //_uLevSet[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
-
-            double uBxN = GenericBlas.InnerProd(_uLevSet, cp.Normal);
-          
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict;
-            uAxN_fict = uBxN;
-
-            double FlxNeg = -DirichletFlux(uAxN, uAxN_fict); // flux on A-side
+            double FlxNeg = -DirichletFlux(uAxN, uBxN); // flux on A-side
             return FlxNeg * v_Neg;
         }
 
@@ -84,7 +76,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         public IList<string> ParameterOrdering {
             get {
-                return null;
+                if(m_UseLevelSetVelocityParameter)
+                    return VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(LevelSetIndex), VariableNames.VelocityVector(D));
+                else
+                    return null;
             }
         }
 

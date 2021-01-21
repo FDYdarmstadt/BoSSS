@@ -638,7 +638,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
-                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if (this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["sigmaMaxValue"] = sigmaMaxValue;
@@ -665,7 +665,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
-                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if (this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["sigmaMaxValue"] = sigmaMaxValue;

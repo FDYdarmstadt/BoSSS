@@ -562,6 +562,7 @@ namespace BoSSS.Solution.XNSECommon {
             AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
 
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
         }
 
 
@@ -598,7 +599,7 @@ namespace BoSSS.Solution.XNSECommon {
             if (physParams.IncludeConvection && config.isTransport) {
                  var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
                             d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
-                            m_iLevSet, m_fluidPhase, m_solidPhase);
+                            m_iLevSet, m_fluidPhase, m_solidPhase, true);
                 
                 AddComponent(ConvIB);
             }
@@ -625,8 +626,7 @@ namespace BoSSS.Solution.XNSECommon {
                 switch(dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
                     AddComponent(
-                         new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase));
+                         new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
                     break;
 
                     case ViscosityMode.TransposeTermMissing:
@@ -688,10 +688,10 @@ namespace BoSSS.Solution.XNSECommon {
             m_SecondSpeciesName = solidPhase;
 
             // set components
-            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName);
-            
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true);
             
             AddComponent(divPen);
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
         }
 
         string m_FirstSpeciesName;

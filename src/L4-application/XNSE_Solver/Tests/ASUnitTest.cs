@@ -428,7 +428,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void BasicThreePhaseTest(
             [Values(true, false)] bool performsolve = false,
-            [Values(true, false)] bool bConvection = false,
+            [Values(true, false)] bool bConvection = true,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
 #if DEBUG
             [Values(2)] int spatDim = 2

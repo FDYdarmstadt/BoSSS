@@ -75,12 +75,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         IList<string> ParameterNames { get; }
 
         /// <summary>
-        /// Allocation
+        /// Allocation; note that this methods signature **is designed to match** <see cref="DelParameterFactory"/>
         /// </summary>
         (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields);
 
         /// <summary>
-        /// update
+        /// update; 
         /// </summary>
         void LevelSetParameterUpdate(
             DualLevelSet levelSet,
@@ -134,7 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             public void AddLevelSetParameter(ILevelSetParameter parameter) {
-                //Check if already registered
+                // Check if already registered
                 foreach(ILevelSetParameter registeredParameter in lsParameters) {
                     foreach(string registeredName in registeredParameter.ParameterNames) {
                         foreach(string name in parameter.ParameterNames) {
@@ -518,7 +518,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             foreach(ILevelSetParameter parameter in parameters) {
                 LinkedList<string> notFound = new LinkedList<string>();
                 foreach(string pName in parameter.ParameterNames) {
-                    if(!ParameterVarFields.ContainsKey(pName)) {
+                    if(!ParameterVarFields.ContainsKey(pName) || ParameterVarFields[pName] == null) {
                         notFound.AddLast(pName);
                     }
                 }
@@ -549,6 +549,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return combination;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         void UpdateParameters(
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields,

@@ -602,7 +602,7 @@ namespace BoSSS.Solution.XNSECommon {
                 XSpatialOperatorMk2 op = new XSpatialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
                     var H = new SurfaceTension_LaplaceBeltrami_BndLine(d, 1.0, true);
-                    op.SurfaceElementOperator.EquationComponents[CodName[d]].Add(H);
+                    op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
                 }
                 op.Commit();
                                 
@@ -1219,8 +1219,8 @@ namespace BoSSS.Solution.XNSECommon {
                     var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
                     var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(line);
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(surface);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
                 }
                 
             } else {

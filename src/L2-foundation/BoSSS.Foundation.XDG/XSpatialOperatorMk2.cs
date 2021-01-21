@@ -171,8 +171,9 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Non-coupling surface terms; originally intended to implement the flux-form of the surface tension.
+        /// **Note: This only considers the 0-th level-set.**
         /// </summary>
-        public SpatialOperator SurfaceElementOperator {
+        public SpatialOperator SurfaceElementOperator_Ls0 {
             get;
             private set;
         }
@@ -985,7 +986,7 @@ namespace BoSSS.Foundation.XDG {
             
             GhostEdgesOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
-            SurfaceElementOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+            SurfaceElementOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
         }
 
@@ -1103,7 +1104,7 @@ namespace BoSSS.Foundation.XDG {
             m_IsCommited = true;
 
             GhostEdgesOperator.Commit();
-            SurfaceElementOperator.Commit();
+            SurfaceElementOperator_Ls0.Commit();
 
             // sync the variable names of slave operators:
             // -------------------------------------------
@@ -1134,7 +1135,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             GhostEdgesOperator = SyncSlaveOp(GhostEdgesOperator, "GhostEdgesOperator");
-            SurfaceElementOperator = SyncSlaveOp(SurfaceElementOperator, "SurfaceElementOperator");
+            SurfaceElementOperator_Ls0 = SyncSlaveOp(SurfaceElementOperator_Ls0, "SurfaceElementOperator");
 
 
 
@@ -1240,7 +1241,7 @@ namespace BoSSS.Foundation.XDG {
             foreach (var cdo in this.CodomainVar) {
                 allcomps.AddRange(this.EquationComponents[cdo]);
                 allcomps.AddRange(this.GhostEdgesOperator.EquationComponents[cdo]);
-                allcomps.AddRange(this.SurfaceElementOperator.EquationComponents[cdo]);
+                allcomps.AddRange(this.SurfaceElementOperator_Ls0.EquationComponents[cdo]);
             }
             TermActivationFlags extractTaf(IEquationComponent c) {
                 TermActivationFlags ret = default(TermActivationFlags);
@@ -1299,12 +1300,12 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                foreach (var eq in this.SurfaceElementOperator.EquationComponents[CodNmn]) {
+                foreach (var eq in this.SurfaceElementOperator_Ls0.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
                     foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
                         CheckCoeffUpd(eq, eqj);
-                        JacobianOp.SurfaceElementOperator.EquationComponents[CodNmn].Add(eqj);
+                        JacobianOp.SurfaceElementOperator_Ls0.EquationComponents[CodNmn].Add(eqj);
                     }
                 }
 
@@ -1482,7 +1483,7 @@ namespace BoSSS.Foundation.XDG {
         Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_SurfaceElementEdgeQuadraturSchemeProvider;
 
         /// <summary>
-        /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator"/>, see also <see cref="QuadOrderFunction"/>
+        /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator_Ls0"/>, see also <see cref="QuadOrderFunction"/>
         /// - 1st argument: current level-set tracker
         /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
         /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>

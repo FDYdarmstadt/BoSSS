@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
             this.m_penalty_base = penalty_base;
             this.m_LsTrk = t;
@@ -42,13 +42,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             this.m_iLevSet = iLevSet;
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
+            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
         }
         int m_iLevSet;
         string m_FluidSpc;
         string m_SolidSpecies;
         int component;
         int m_D;
-        double pRadius;
+        bool m_UseLevelSetVelocityParameter;
 
         /// <summary>
         /// Viskosity in species A
@@ -145,8 +146,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double Ret = 0.0;
             
             double uAFict = 0;
-            if(component == 0)
-                uAFict = 1.0;
+            if(m_UseLevelSetVelocityParameter) {
+                uAFict = inp.Parameters_IN[0];
+            }
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict);     // symmetry term
@@ -193,7 +195,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         }
         public IList<string> ParameterOrdering {
             get {
-                return null;
+                if(m_UseLevelSetVelocityParameter)
+                    return new[] { VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(component)) };
+                else
+                    return null;
             }
         }
 

@@ -269,6 +269,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     }
                 }
             }
+
             return parameterNames.ToArray();
         }
 

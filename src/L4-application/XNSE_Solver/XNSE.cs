@@ -114,9 +114,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 // the immersed boundary
                 // +++++++++++++++++++++
 
-                //throw new NotImplementedException("todo");
-                return null;
-
+                ILevelSetParameter levelSetVelocity = new FakeLevelSetVelocity(VariableNames.LevelSetCGidx(1), GridData.SpatialDimension);
+                return levelSetVelocity;
             } else {
                 throw new ArgumentOutOfRangeException();
             }
@@ -230,9 +229,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
-            opFactory.AddParameter(new Velocity0(D));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            opFactory.AddParameter(v0Mean);
+            if(config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(new Velocity0(D));
+                opFactory.AddParameter(v0Mean);
+            }
 
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
@@ -291,7 +292,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>
+        /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>;
         /// Override to customize.
         /// </summary>
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
@@ -303,6 +304,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             opFactory.AddEquation(new ImersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
             opFactory.AddEquation(new ImersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+
+            //throw new NotImplementedException("todo");
+            opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
