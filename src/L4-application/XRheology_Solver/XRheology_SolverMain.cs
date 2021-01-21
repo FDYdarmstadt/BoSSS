@@ -621,7 +621,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
 
                 if (this.Control.AdaptiveMeshRefinement && hack_TimestepIndex == 0) {
-                    base.SetInitial();
+                    base.SetInitial(0);
                     this.InitLevelSet();
                 }
 
@@ -1461,8 +1461,8 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
 
             this.InitLevelSet();
 

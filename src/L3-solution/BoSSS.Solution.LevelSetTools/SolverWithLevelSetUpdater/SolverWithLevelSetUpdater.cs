@@ -142,7 +142,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
                 
 
-                switch(Control.Option_LevelSetEvolution) {
+                switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         //if(Control.EnforceLevelSetConservation) {
                         //    throw new NotSupportedException("mass conservation correction currently not supported");
@@ -152,13 +152,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         DGlevelSets[iLevSet] = fourierLevelSet;
                         break;
                     }
-                    case LevelSetEvolution.FastMarching: {
-                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                        levelSetDG.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
-                        DGlevelSets[iLevSet] = levelSetDG;
-                        break;
-                    }
-                    case LevelSetEvolution.StokesExtension: {
+                    case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.FastMarching:
+                    case LevelSetEvolution.None: {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         levelSetDG.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
                         DGlevelSets[iLevSet] = levelSetDG;
@@ -169,12 +166,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                         SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
                         DGlevelSets[iLevSet] = SplineLevelSet;
-                        break;
-                    }
-                    case LevelSetEvolution.None: {
-                        LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                        levelSet1.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
-                        DGlevelSets[iLevSet] = levelSet1;
                         break;
                     }
                     default:
@@ -213,7 +204,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
                 // create evolver:
-                switch(Control.Option_LevelSetEvolution) {
+                switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         break;
                     }
@@ -233,6 +224,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         int nodeCount = 30;
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                         var SplineEvolver = new SplineLevelSetEvolver(LevelSetCG, (GridData)(this.GridData));
+                        break;
+                    }
+                    case LevelSetEvolution.Prescribed: {
+                        var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
                         break;
                     }
                     case LevelSetEvolution.None: {
@@ -276,15 +271,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         ///
         /// This implementation, however, ensures continuity of the level-set at the cell boundaries.
         /// </summary>
-        protected override void SetInitial() {
-            base.SetInitial(); // base implementation does not considers the DG/CG pair.
+        protected override void SetInitial(double t) {
+            base.SetInitial(t); // base implementation does not considers the DG/CG pair.
 
             foreach(var NamePair in this.LevelSetNames) {
                 string LevelSetCG = NamePair.ContLs;
                 
                 // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
                 var pair1 = LsUpdater.LevelSets[LevelSetCG];
-                pair1.DGLevelSet.ProjectField(Control.InitialValues_Evaluators[LevelSetCG]);
+                pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
             }
         }
 

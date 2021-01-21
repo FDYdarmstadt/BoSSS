@@ -181,7 +181,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Sets the multigrid coloring
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 #if !DEBUG
             //this will suppress exception prompts
             //Workaround to prevent disturbance while executing batch-client
@@ -191,7 +191,7 @@ namespace BoSSS.Application.SipPoisson {
             }
 #endif
 
-            base.SetInitial();
+            base.SetInitial(t);
 
             
 

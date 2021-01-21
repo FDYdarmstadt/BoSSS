@@ -188,7 +188,7 @@ namespace LTSTests {
             }
         }
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             u.ProjectField(Jump);
             double error = u.L2Error(Jump, 30);
             Console.WriteLine("L2Error:" + error);

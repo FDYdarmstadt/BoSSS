@@ -66,15 +66,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Set the inital state of the simulation.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
-            UpdateLevelSetParticles(phystime: 0.0);
+            UpdateLevelSetParticles(phystime: t);
             MarkEachMPIProcess();
             CreatePhysicalDataLogger();
             CreateResidualLogger();
-            base.SetInitial();
+            base.SetInitial(t);
         }
 
         private readonly int spatialDim = 2;

@@ -1537,8 +1537,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
 
             this.LsTrk.PushStacks();
 
@@ -1564,7 +1564,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void ResetInitial() {
-            base.SetInitial();
+            base.SetInitial(0.0);
 
             this.InitLevelSet();
 

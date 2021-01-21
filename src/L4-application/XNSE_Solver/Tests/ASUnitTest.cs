@@ -425,7 +425,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void BasicThreePhaseTest(
             [Values(true, false)] bool performsolve = false,
             [Values(true, false)] bool bConvection = true,

@@ -23,6 +23,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// ctor
         /// </summary>
         public SolverWithLevelSetUpdaterControl() {
+            
         }
 
 
@@ -39,10 +40,54 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
+        /// Evolution option for the first level-set (name <see cref="BoSSS.Solution.NSECommon.VariableNames.LevelSetCG"/>)
         /// See <see cref="LevelSetEvolution"/>.
         /// </summary>
         [DataMember]
         public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+
+        /// <summary>
+        /// Evolution option for the second level-set (name <see cref="BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx"/>(1))
+        /// See <see cref="LevelSetEvolution"/>.
+        /// </summary>
+        [DataMember]
+        public LevelSetEvolution Option_LevelSetEvolution2 = LevelSetEvolution.None;
+
+        /// <summary>
+        /// getting [<see cref="Option_LevelSetEvolution"/>, <see cref="Option_LevelSetEvolution2"/>][<paramref name="iLs"/>]
+        /// </summary>
+        public LevelSetEvolution Get_Option_LevelSetEvolution(int iLs) {
+            switch(iLs) {
+                case 0: return Option_LevelSetEvolution;
+                case 1: return Option_LevelSetEvolution2;
+                default: throw new IndexOutOfRangeException();
+            }    
+        }
+
+        /// <summary>
+        /// setting [<see cref="Option_LevelSetEvolution"/>, <see cref="Option_LevelSetEvolution2"/>][<paramref name="iLs"/>]
+        /// </summary>
+        public void Set_Option_LevelSetEvolution(int iLs, LevelSetEvolution val) {
+            switch(iLs) {
+                case 0: Option_LevelSetEvolution = val; break;
+                case 1: Option_LevelSetEvolution2 = val; break;
+                default: throw new IndexOutOfRangeException();
+            }    
+        }
+
+
+        [JsonIgnore]
+        override public _TimesteppingMode TimesteppingMode {
+            get {
+                return base.TimesteppingMode;
+            }
+            set {
+                if(value == _TimesteppingMode.Steady) {
+                    Option_LevelSetEvolution = LevelSetEvolution.None;
+                }
+                base.TimesteppingMode = value;
+            }
+        }
 
 
         /// <summary>
@@ -78,6 +123,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public int LS_TrackerWidth = 1;
+
+
+        
     }
 
 

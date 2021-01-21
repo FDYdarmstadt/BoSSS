@@ -78,9 +78,9 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
         }
 
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             Phi.ProjectField(test.GetLevelSet);
-            this.LsTrk.UpdateTracker(0.0);
+            this.LsTrk.UpdateTracker(t);
         }
 
         public static double[] GetTestRange() {

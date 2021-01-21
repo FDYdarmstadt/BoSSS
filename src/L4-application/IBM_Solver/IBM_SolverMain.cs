@@ -934,7 +934,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Setting initial values.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 
             if (true) {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
@@ -975,7 +975,7 @@ namespace BoSSS.Application.IBM_Solver {
             
             Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
-            base.SetInitial();
+            base.SetInitial(t);
 
             this.LevSet.GetExtremalValues(out double LevsetMin, out double LevsetMax);
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
