@@ -252,7 +252,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Particles = new List<Particle>();
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, false, 0);
             C.Particles.Add(new Particle_Ellipsoid(motion,0.2, 0.1, new double[] { -0.3, 0.0 }, 0, 0, new double[] { 1, 0 }));
-            C.Particles.Add(new Particle_Ellipsoid(motion,0.2, 0.1, new double[] { 0.3, 0.0 }, 180, 0, new double[] { -1, 0 }, 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion,0.2, 0.1, new double[] { 0.3, 0.0 }, 90, 0, new double[] { -1, 0 }, 1));
 
             // Quadrature rules
             // =============================   

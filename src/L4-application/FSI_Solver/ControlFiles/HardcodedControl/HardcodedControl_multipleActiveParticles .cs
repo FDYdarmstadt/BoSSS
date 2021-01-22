@@ -309,11 +309,11 @@ namespace BoSSS.Application.FSI_Solver {
             //};
             //C.SetBoundaries(boundaryValues);
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
+            C.SetGrid(domainLength + 1, domainLength + 1, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-6;
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
-            C.CoefficientOfRestitution = 0.75;
+            C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
@@ -342,9 +342,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
             C.SetTimesteps(1e-1, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.25;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.3;
             C.LevelSetSmoothing = true;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.verbose = false;
