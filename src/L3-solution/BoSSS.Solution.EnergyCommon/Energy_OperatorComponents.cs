@@ -87,16 +87,17 @@ namespace BoSSS.Solution.EnergyCommon {
                 if (laplaceKinE){
 
                     var kELap = new KineticEnergyLaplaceInSpeciesBulk(
-                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                        penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                        1.0,
                         BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
                     comps.Add(kELap);
 
-                    if (dntParams.UseGhostPenalties) {
-                        var kELapPenalty = new KineticEnergyLaplaceInSpeciesBulk(
-                            penalty, 0.0,
-                            BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
-                        XOp.GhostEdgesOperator.EquationComponents[CodName].Add(kELapPenalty);
-                    }
+                    //if (dntParams.UseGhostPenalties) {
+                    //    var kELapPenalty = new KineticEnergyLaplaceInSpeciesBulk(
+                    //        penalty, 0.0,
+                    //        BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
+                    //    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(kELapPenalty);
+                    //}
                 }
 
                 // Divergence of stress tensor

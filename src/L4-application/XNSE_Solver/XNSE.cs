@@ -31,6 +31,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Development history:
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
+    /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
 

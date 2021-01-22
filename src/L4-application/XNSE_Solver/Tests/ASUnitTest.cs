@@ -181,7 +181,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
 
@@ -456,6 +456,45 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         } 
 
 
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteTest(
+            [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+            ) {
+
+            int FlowSolverDegree = 2;
+            double AgglomerationTreshold = 0.3;
+            
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+
+            ViscosityMode vmode;
+            switch(modus) {
+                case TaylorCouette.Mode.Test2Phase: vmode = ViscosityMode.FullySymmetric; break;
+                case TaylorCouette.Mode.TestIBM: vmode = ViscosityMode.Standard; break; // for IBM, the FullySymmetric implementation is still missing
+                default: throw new ArgumentOutOfRangeException();
+            }
+
+            int GridResolution = 4;
+
+            var Tst = new TaylorCouette(modus);
+
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
+            C.SkipSolveAndEvaluateResidual = true;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            
+            
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
+            XNSESolverTest(Tst, C);
+
+        } 
+
+
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
@@ -611,8 +650,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
-                if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady)
-                    solver.OperatorAnalysis();
+                //if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady) // deavtivated by FK; has only value for a series of meshes, but not for a single calc.
+                //    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);

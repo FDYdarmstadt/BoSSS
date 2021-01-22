@@ -69,16 +69,17 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 var Visc = new ConductivityInSpeciesBulk(
-                    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                    penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                    1.0,
                     boundaryMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
 
                 AddComponent(Visc);
 
-                if (dntParams.UseGhostPenalties) {
-                    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, boundaryMap, D,
-                        spcName, spcId, thermParams.k_A, thermParams.k_B);
-                    AddGhostComponent(ViscPenalty);
-                }
+                //if (dntParams.UseGhostPenalties) {
+                //    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, boundaryMap, D,
+                //        spcName, spcId, thermParams.k_A, thermParams.k_B);
+                //    AddGhostComponent(ViscPenalty);
+                //}
             } else {
                 // Local DG add divergence term
                 AddComponent(new HeatFluxDivergenceInSpeciesBulk(D, boundaryMap, spcName, spcId));

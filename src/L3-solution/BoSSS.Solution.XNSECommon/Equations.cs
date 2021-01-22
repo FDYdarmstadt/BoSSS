@@ -101,44 +101,47 @@ namespace BoSSS.Solution.XNSECommon {
                     case ViscosityMode.TransposeTermMissing: {
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                            penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc1);
 
-                        if (dntParams.UseGhostPenalties) {
-                            if (dntParams.UseGhostPenalties) {
-                                var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                                    penalty, 0.0,
-                                    boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                                AddGhostComponent(Visc1Penalty);
-                            }
-                        }
+                        //if (dntParams.UseGhostPenalties) {
+                        //    if (dntParams.UseGhostPenalties) {
+                        //        var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
+                        //            penalty, 0.0,
+                        //            boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        //        AddGhostComponent(Visc1Penalty);
+                        //    }
+                        //}
 
                         break;
                     }
                     case ViscosityMode.FullySymmetric: {
                         // Bulk operator
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                            penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
-                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                            penalty, // dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc2);
 
 
-                        if (dntParams.UseGhostPenalties) {
-                            var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                                penalty, 0.0,
-                                boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                            var Visc2Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
-                                penalty, 0.0,
-                                boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                            AddGhostComponent(Visc1Penalty);
-                            AddGhostComponent(Visc2Penalty);
-                        }
+                        //if (dntParams.UseGhostPenalties) {
+                        //    var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
+                        //        penalty, 0.0,
+                        //        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        //    var Visc2Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
+                        //        penalty, 0.0,
+                        //        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        //    AddGhostComponent(Visc1Penalty);
+                        //    AddGhostComponent(Visc2Penalty);
+                        //}
                         break;
                     }
                     case ViscosityMode.Viscoelastic: {
@@ -161,12 +164,14 @@ namespace BoSSS.Solution.XNSECommon {
 
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
-                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                            penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
-                            dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                            penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc2);
 
@@ -233,9 +238,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             for (int d = 0; d < D; ++d) {
-                var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcName, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
+                var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcName, rhoSpc, -1, false);
                 AddComponent(src);
-                var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, dntParams.ContiSign, dntParams.RescaleConti);
+                var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, -1, false);
                 AddComponent(flx);
             }
         }
@@ -266,7 +271,7 @@ namespace BoSSS.Solution.XNSECommon {
             double rhoB = physParams.rho_B;
 
             // set components
-            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, isMaterialInterface, dntParams.ContiSign, dntParams.RescaleConti);
+            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, isMaterialInterface, -1, false);
             AddComponent(divPen);
         }
 
@@ -625,12 +630,9 @@ namespace BoSSS.Solution.XNSECommon {
                 double penalty = dntParams.PenaltySafety;
                 switch(dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
-                    AddComponent(
-                         new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
-                    break;
-
                     case ViscosityMode.TransposeTermMissing:
-                    throw new NotImplementedException("todo");
+                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                    break;
 
                     case ViscosityMode.FullySymmetric:
                     throw new NotImplementedException("todo");

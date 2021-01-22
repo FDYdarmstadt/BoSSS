@@ -224,7 +224,7 @@ namespace BoSSS.Solution.XNSECommon {
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
        
-        
+        /*
         /// <summary>
         /// Turn the use of ghost penalties on or off, see <br/>
         /// @article{massjung_unfitted_2012,
@@ -245,7 +245,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseGhostPenalties = false;
-
+        
         /// <summary>
         /// Continuity equation: work with div(-) resp. -div(-)
         /// </summary>
@@ -257,6 +257,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool RescaleConti = false;
+        */
 
         /// <summary>
         /// stabilization parameter for Local-Lax-Friedrichs flux, phase A
@@ -313,13 +314,6 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool SetSurfaceTensionMaxValue = false;
-
-
-        ///// <summary>
-        ///// Turn the use of weighted averages at the interface on or off
-        ///// </summary>
-        //[DataMember]
-        //public bool UseWeightedAverages = false;
 
         /// <summary>
         /// switch for free surface flows, thus slip is allowed at the interface
