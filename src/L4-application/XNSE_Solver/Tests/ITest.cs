@@ -194,6 +194,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Second level-set for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
         /// </summary>
         Func<double[], double, double> GetPhi2();
+
+        /// <summary>
+        /// Velocity for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
+        /// </summary>
+        Func<double[], double, double> GetPhi2U(int d);
     }
 
     interface IXNSFETest : IXNSETest, IXHeatTest {

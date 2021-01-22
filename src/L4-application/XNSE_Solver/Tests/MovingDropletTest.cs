@@ -46,6 +46,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
         }
 
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
+
         public MovingDropletTest(double R = 0.8, bool bConvection = true, bool bSteady = true, int spatDim = 2) {
             this.Radius = R;
             this.IncludeConvection = bConvection;

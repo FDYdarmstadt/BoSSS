@@ -751,7 +751,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public static string AsLevelSetVariable(string levelSetName, string variable)
         {
-            return variable + "#" + levelSetName;
+            return variable + "@" + levelSetName;
         }
 
         /// <summary>
@@ -761,7 +761,7 @@ namespace BoSSS.Solution.NSECommon {
         {
             for (int i = 0; i < variables.Count; ++i)
             {
-                variables[i] += "#" + levelSetName;
+                variables[i] += "@" + levelSetName;
             }
             return variables;
         }

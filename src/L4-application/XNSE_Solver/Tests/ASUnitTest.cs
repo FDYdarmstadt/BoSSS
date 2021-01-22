@@ -424,19 +424,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
         /// </summary>
-        //[Test]
+        [Test]
         public static void BasicThreePhaseTest(
+            [Values(true, false)] bool bSteady = false,
             [Values(true, false)] bool performsolve = false,
             [Values(true, false)] bool bConvection = true,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
-#if DEBUG
             [Values(2)] int spatDim = 2
-#else
-            [Values(3)] int spatDim = 2
-#endif
+//#if DEBUG
+//#else
+//            [Values(3)] int spatDim = 2
+//#endif
             ) {
             double R = 0.8;
-            bool bSteady = true;
             int FlowSolverDegree = 2;
             double AgglomerationTreshold = 0.3;
             ViscosityMode vmode = ViscosityMode.Standard;
@@ -813,8 +813,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // boundary conditions
             // ===================
 
-            foreach (var kv in tst.GetBoundaryConfig())
-            {
+            foreach(var kv in tst.GetBoundaryConfig()) {
                 C.BoundaryValues.Add(kv);
             }
 
@@ -834,19 +833,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach (var spc in new[] { "A", "B" })
-            {
+            foreach(var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for (int d = 0; d < D; d++)
-                {
+                for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                     C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+
             }
+            if(tst.TestImmersedBoundary) {
+                for(int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators_TimeDep.Add(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(1), VariableNames.Velocity_d(d)), tst.GetPhi2U(d));
+                }
+            }
+
 
             C.Phi = tst.GetPhi();
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
@@ -856,17 +860,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+            if(D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             } else {
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
             }
             C.CutCellQuadratureType = CutCellQuadratureType;
-            
+
             // immersed boundary
             // =================
-            
+
             C.UseImmersedBoundary = tst.TestImmersedBoundary;
             if(C.UseImmersedBoundary) {
                 C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2());
@@ -876,15 +880,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // =======================
 
 
-            if (tst.steady)
-            {
+            if(tst.steady) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.None;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            }
-            else
-            {
+            } else {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
@@ -903,6 +904,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             // return
             // ======
+            Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
             return C;
         }
 

@@ -213,8 +213,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public override DelParameterFactory Factory => ParameterFactory;
 
         public ExplicitLevelSetVelocity(string levelSetName, ScalarFunctionTimeDep[] components) : base() {
-            m_ParameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.D = components.Length;
+            m_ParameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             m_components = components.CloneAs();
             
         }
@@ -239,8 +239,6 @@ namespace BoSSS.Application.XNSE_Solver {
                     if(m_components[d] != null)
                         meanVelocity[d].ProjectField(m_components[d].SetTime(t));
                 }
-
-                meanVelocity[0].AccConstant(1.0);
             }
         }
 

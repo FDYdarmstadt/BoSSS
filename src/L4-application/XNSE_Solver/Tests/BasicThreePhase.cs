@@ -19,6 +19,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public bool TestImmersedBoundary => true;
 
+        public Func<double[], double, double> GetPhi2U(int d) {
+            if(d==0) {
+                return delegate (double[] X, double t) {
+                    return 1.0;
+                };
+            } else {
+                return (X, t) => 0.0;
+            }
+        }
 
         public BasicThreePhase(double R = 0.8, bool bConvection = true, bool bSteady = true, int spatDim = 2) {
             this.Radius = R;
@@ -302,6 +311,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public Func<double[],double> GetF(string species, int d) {
             return (X => 0.0);
         }
+
+        
 
         public bool Material {
             get { return true; }

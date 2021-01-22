@@ -75,7 +75,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }    
         }
 
-
+        /// <summary>
+        /// If set to <see cref="AppControl._TimesteppingMode.Steady"/>, turns of level-set evolution
+        /// </summary>
         [JsonIgnore]
         override public _TimesteppingMode TimesteppingMode {
             get {
@@ -84,6 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             set {
                 if(value == _TimesteppingMode.Steady) {
                     Option_LevelSetEvolution = LevelSetEvolution.None;
+                    Option_LevelSetEvolution2 = LevelSetEvolution.None;
                 }
                 base.TimesteppingMode = value;
             }
