@@ -477,12 +477,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 default: throw new ArgumentOutOfRangeException();
             }
 
-            int GridResolution = 4;
+            int GridResolution = 8;
 
             var Tst = new TaylorCouette(modus);
 
             var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
-            C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = false;
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             
             

@@ -287,11 +287,13 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             config.Add(outerWallTag, new AppControl.BoundaryValueCollection());
             if(TestImmersedBoundary) {
+                // IBM - outer boundary is still species A
                 config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", exS.UA1);
                 config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", exS.UA2);
             } else {
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", exS.UA1);
-                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", exS.UA2);
+                // 2-Phase-Interface within - outer boundary is species B
+                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#B", exS.UB1);
+                config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#B", exS.UB2);
             }
 
             return config;
