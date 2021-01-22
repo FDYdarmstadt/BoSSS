@@ -443,7 +443,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     posDef = false;
                 }
             }
-            res[1] = MPIEnviroment.Broadcast<bool>(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
+            res[1] = MPIExtensions.MPIBroadcast(posDef, 0, ilPSP.Environment.MPIEnv.Mpi_comm);
 
             Debug.Assert(res[0].MPIEquals(), "value does not match on procs");
             Debug.Assert(res[1].MPIEquals(), "value does not match on procs");

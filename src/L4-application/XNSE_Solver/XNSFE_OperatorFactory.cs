@@ -182,6 +182,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===============
 
             m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
+            m_XOp.AgglomerationThreshold = this.config.AgglomerationTreshold;
 
             // add Navier-Stokes components
             // ============================
@@ -637,7 +638,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
-                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if (this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["sigmaMaxValue"] = sigmaMaxValue;
@@ -664,7 +665,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
 
-                if (this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if (this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach (var kv in InterfaceLengths) {
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["sigmaMaxValue"] = sigmaMaxValue;

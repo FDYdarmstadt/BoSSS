@@ -223,15 +223,7 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
-        /*
-        /// <summary>
-        /// viscosity Implementation
-        /// H: SIP
-        /// SWIP: weighted
-        /// </summary>
-        [DataMember]
-        public ViscosityImplementation ViscosityImplementation = ViscosityImplementation.H;
-        */
+       
         
         /// <summary>
         /// Turn the use of ghost penalties on or off, see <br/>
@@ -323,11 +315,11 @@ namespace BoSSS.Solution.XNSECommon {
         public bool SetSurfaceTensionMaxValue = false;
 
 
-        /// <summary>
-        /// Turn the use of weighted averages at the interface on or off
-        /// </summary>
-        [DataMember]
-        public bool UseWeightedAverages = false;
+        ///// <summary>
+        ///// Turn the use of weighted averages at the interface on or off
+        ///// </summary>
+        //[DataMember]
+        //public bool UseWeightedAverages = false;
 
         /// <summary>
         /// switch for free surface flows, thus slip is allowed at the interface
@@ -421,34 +413,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public object Clone() {
-            var cl = new DoNotTouchParameters() {
-                CellAgglomerationThreshold = this.CellAgglomerationThreshold,
-                ContiSign = this.ContiSign,
-                RescaleConti = this.RescaleConti,
-                LFFA = this.LFFA,
-                LFFB = this.LFFB,
-                PenaltySafety = this.PenaltySafety,
-                SurfStressTensor = this.SurfStressTensor,
-                SST_isotropicMode = this.SST_isotropicMode,
-                STFstabilization = this.STFstabilization,
-                UseWeightedAverages = this.UseWeightedAverages,
-                freeSurfaceFlow = this.freeSurfaceFlow,
-                ViscosityMode = this.ViscosityMode,
-                //ViscosityImplementation = this.ViscosityImplementation,
-                UseGhostPenalties = this.UseGhostPenalties,
-                FilterConfiguration = this.FilterConfiguration,
-                GNBC_Localization = this.GNBC_Localization,
-                GNBC_SlipLength = this.GNBC_SlipLength,
-                //viscoelastic LDG Stuff:
-                ObjectiveParam = this.ObjectiveParam,
-                alpha = this.alpha,
-                Penalty1 = this.Penalty1,
-                Penalty2 = this.Penalty2,
-                PresPenalty1 = this.PresPenalty1,
-                PresPenalty2 = this.PresPenalty2,
-                StressPenalty = this.StressPenalty
-
-            };
+            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value types
             return cl;
         }
     }

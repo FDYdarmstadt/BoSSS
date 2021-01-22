@@ -197,8 +197,8 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u.ProjectField((x, y) => x);
             du_dx_Exact.ProjectField((x, y) => 1.0);
@@ -219,7 +219,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new [] { "B" },
                 __varnames: new[] { "u", "c1" });
-
+            Op.AgglomerationThreshold = this.THRESHOLD;
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)

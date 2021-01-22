@@ -53,7 +53,7 @@
     <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
     <Compile Include="OperatorFactory.cs" />
-    <Compile Include="ParameterList.cs" />
+    <Compile Include="ParameterS.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
     <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
@@ -123,17 +123,12 @@
     <Compile Include="XDGBasis_IO.cs" />
     <Compile Include="XDGField_GenericEval.cs" />
     <Compile Include="XDGField_IO.cs" />
-    <Compile Include="XdgOperatorQuadratureSet.cs" />
     <Compile Include="XDGSpaceMetrics.cs" />
     <Compile Include="XDGUtils.cs" />
     <Compile Include="Quadrature\XQuadFactoryHelper.cs" />
     <Compile Include="Quadrature\XQuadSchemeHelper.cs" />
     <Compile Include="XSpatialOperatorMk2_XEvaluators.cs" />
     <Compile Include="XOperatorFactoryBase.cs" />
-    <Compile Include="XSpatialOperator.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="XSpatialOperatorExtensions.cs" />
     <Compile Include="XSpatialOperatorMk2.cs" />
     <Compile Include="XTemporalOperator.cs" />
   </ItemGroup>

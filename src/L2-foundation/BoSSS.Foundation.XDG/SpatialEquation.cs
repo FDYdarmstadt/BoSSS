@@ -5,23 +5,49 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Foundation.XDG.OperatorFactory {
+    /// <summary>
+    /// Base class for all equations of the operator factory.
+    /// A spatial equation is an equation for one codomain. 
+    /// Implement this class, if you have a single phase equation. 
+    /// </summary>
     public abstract class SpatialEquation {
-
+        /// <summary>
+        /// Empty spatial equation.
+        /// </summary>
         public SpatialEquation() 
         {
             Components = new LinkedList<IEquationComponent>();
         }
 
+        /// <summary>
+        /// Equation components of this equation. All components belong to a single codomain.
+        /// /// </summary>
         public LinkedList<IEquationComponent> Components { get; set; }
 
+        /// <summary>
+        /// Single codomain name of this equation. A codomain a name for the row in a system of equations.
+        /// </summary>
         public abstract string CodomainName { get; }
 
+        /// <summary>
+        /// All names of variables in equation. Must match variables of components.
+        /// </summary>
         public string[] VariableNames { get; private set; }
 
+        /// <summary>
+        /// All names of parameters in equation. Must match parameters of components.
+        /// </summary>
         public string[] Parameters { get; private set; }
 
+        /// <summary>
+        /// All names of coefficients. Must match coefficients of components.
+        /// </summary>
         public string[] Coefficients { get; private set; }
 
+        /// <summary>
+        /// Add name of variable. Will only add, if name was not already added.
+        /// </summary>
+        /// <param name="names"></param>
         public void AddVariableNames(params string[] names)
         {
             if(VariableNames == null)
@@ -39,7 +65,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Add name of parameter. Will only add, if name was not already added.
+        /// </summary>
+        /// <param name="names"></param>
         public void AddParameter(params string[] names)
         {
             if (Parameters == null)
@@ -58,6 +88,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
+        /// <summary>
+        /// Add name of coefficient. Will only add, if name was not already added.
+        /// </summary>
+        /// <param name="names"></param>
         public void AddCoefficient(params string[] names) {
             if (Coefficients == null) {
                 Coefficients = names;
@@ -70,41 +104,89 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             }
         }
 
+        /// <summary>
+        /// Add component to this equation. The variable/parameter/coefficient names must be added separately.
+        /// </summary>
+        /// <param name="component">Equation component for this equation's codomain</param>
         public void AddComponent(IEquationComponent component) 
         {
             Components.AddLast(component);
         }
     }
 
+    /// <summary>
+    /// XDG Equations on a surface. 
+    /// Surface is between to species.
+    /// </summary>
     public abstract class SurfaceEquation : SpatialEquation 
     {
+        /// <summary>
+        /// First/Negative species (with respect to level-set)
+        /// Order not important.
+        /// </summary>
         public abstract string FirstSpeciesName { get; }
 
+        /// <summary>
+        /// Second/Positive species (with respect to level-set)
+        /// Order not important.
+        /// </summary>
         public abstract string SecondSpeciesName { get; }
 
+        /// <summary>
+        /// Specialized surface components that are part of a special spatial operator in the general spatial operator.
+        /// Generally, surface equations are also collected in <see cref="SpatialEquation.Components"/>.
+        /// </summary>
         public LinkedList<IEquationComponent> SurfaceComponents { get; private set; }
 
+        /// <summary>
+        /// Empty surface equation.
+        /// </summary>
         public SurfaceEquation() {
             SurfaceComponents = new LinkedList<IEquationComponent>();
         }
 
+        /// <summary>
+        /// Add Specialized surface components that will be part of a special spatial operator.
+        /// Generally, surface equations are also added via <see cref="SpatialEquation.AddComponent(IEquationComponent)"/>.
+        /// </summary>
+        /// <param name="surfaceComponent"> Specialized surface component </param>
         public void AddSurfaceComponent(IEquationComponent surfaceComponent) {
             SurfaceComponents.AddLast(surfaceComponent);
         }
     }
 
+    /// <summary>
+    /// XDG Equations for bulk phase.
+    /// </summary>
     public abstract class BulkEquation : SpatialEquation 
     {
+        /// <summary>
+        /// Name of species for which equation is valid.
+        /// </summary>
         public abstract string SpeciesName { get; }
 
+        /// <summary>
+        /// This is required, when the whole equation is scaled, e.g. by density. 
+        /// In time stepping, the respective entries of the mass matrix will be scaled by this factor.
+        /// </summary>
         public abstract double MassScale { get; }
 
+        /// <summary>
+        /// Special component of an extra ghost spatial operator.
+        /// </summary>
         public LinkedList<IEquationComponent> GhostComponents { get; private set; }
 
+        /// <summary>
+        /// Empty bulk equation.
+        /// </summary>
         public BulkEquation() {
             GhostComponents = new LinkedList<IEquationComponent>();
         }
 
+        /// <summary>
+        /// Add a specialized ghost component.
+        /// </summary>
+        /// <param name="ghostComponent"></param>
         public void AddGhostComponent(IEquationComponent ghostComponent) {
             GhostComponents.AddLast(ghostComponent);
         }
@@ -187,6 +269,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     }
                 }
             }
+
             return parameterNames.ToArray();
         }
 

@@ -7,6 +7,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,15 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XNSECommon {
-    public class Velocity0 : Parameter {
+
+    /// <summary>
+    /// Linearization point for the Lax-Friedrichs flux
+    /// </summary>
+    /// <remarks>
+    /// This is only for the ad-hoc linearization used by <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>;
+    /// the automatic differentiation of the Newton method will make this obsolete soon.
+    /// </remarks>
+    public class Velocity0 : ParameterS {
         int D;
 
         public Velocity0(int D) {
@@ -26,6 +35,12 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
 
+        /// <summary>
+        /// Returns the <see cref="BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector"/>
+        /// as a **shallow copy** of
+        /// <see cref="BoSSS.Solution.NSECommon.VariableNames.VelocityVector"/> (i.e. the domain var);
+        /// Thereby, the <see cref="Update"/> does not have to do anything.
+        /// </summary>
         (string, DGField)[] Velocity0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocity0 = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
@@ -36,9 +51,29 @@ namespace BoSSS.Solution.XNSECommon {
             }
             return velocity0;
         }
+
+
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            for (int d = 0; d < D; ++d) {
+                string velocityname = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
+                DGField velocity = DomainVarFields[velocityname];
+                
+                string paramName = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d];
+                DGField velocity0 = ParameterVarFields[paramName];
+
+                if(!object.ReferenceEquals(velocity, velocity0))
+                    throw new ApplicationException("Messed up parameter system; Velocit0 is supposed to be a shallow copy of domain var Velocity"); 
+            }
+        }
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                return InternalParameterUpdate;
+            }
+        }
     }
 
-    public class Velocity0Prescribed : Parameter {
+    public class Velocity0Prescribed : ParameterS {
         int degree;
 
         IDictionary<string, Func<double[], double>> initial;
@@ -106,7 +141,7 @@ namespace BoSSS.Solution.XNSECommon {
         public Velocity0MeanPrescribed(int D, LevelSetTracker LsTrk, int cutCellQuadOrder) :
             base(D, LsTrk, cutCellQuadOrder) { }
 
-        protected override void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        protected override void Velocity0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             for (int d = 0; d < D; ++d) {
                 foreach (string speciesName in SpeciesNames) {
                     XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
@@ -129,7 +164,11 @@ namespace BoSSS.Solution.XNSECommon {
 
     }
 
-    public class Velocity0Mean : Parameter, ILevelSetParameter {
+    /// <summary>
+    /// Cell-wise mean value, required for the for the localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue along an edge.
+    /// </summary>
+    public class Velocity0Mean : ParameterS, ILevelSetParameter {
         protected int D;
 
         protected int cutCellQuadOrder;
@@ -138,7 +177,6 @@ namespace BoSSS.Solution.XNSECommon {
 
         public Velocity0Mean(int D, LevelSetTracker LsTrk, int cutCellQuadOrder) {
             this.D = D;
-            Update = Velocity0MeanUpdate;
             this.cutCellQuadOrder = cutCellQuadOrder;
             this.LsTrk = LsTrk;
         }
@@ -184,23 +222,31 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-        protected virtual void Velocity0MeanUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            for (int d = 0; d < D; ++d) {
-                foreach (string speciesName in SpeciesNames) {
-                    XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
-                    DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
+        public override DelPartialParameterUpdate Update {
+            get {
+                return Velocity0MeanUpdate;
+            }
+        }
 
-                    XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
-                    DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
+        protected virtual void Velocity0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using(new FuncTrace()) {
+                for(int d = 0; d < D; ++d) {
+                    foreach(string speciesName in SpeciesNames) {
+                        XDGField paramMeanVelocity = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]];
+                        DGField speciesParam = paramMeanVelocity.GetSpeciesShadowField(speciesName);
 
-                    //Uncut
-                    speciesParam.SetMeanValueTo(speciesVelocity);
+                        XDGField velocity = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d]];
+                        DGField speciesVelocity = velocity.GetSpeciesShadowField(speciesName);
 
-                    //Cut
-                    CellMask cutCells = regions.GetSpeciesMask(speciesName);
-                    SpeciesId speciesId = speciesMap[speciesName];
-                    CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
-                    SetMeanValueToMeanOf(speciesParam, speciesVelocity, minvol, cutCellQuadOrder, scheme);
+                        //Uncut
+                        speciesParam.SetMeanValueTo(speciesVelocity);
+
+                        //Cut
+                        CellMask cutCells = regions.GetSpeciesMask(speciesName);
+                        SpeciesId speciesId = speciesMap[speciesName];
+                        CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
+                        SetMeanValueToMeanOf(speciesParam, speciesVelocity, minvol, cutCellQuadOrder, scheme);
+                    }
                 }
             }
         }
@@ -236,7 +282,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Gravity : Parameter {
+    public class Gravity : ParameterS {
         int degree;
 
         Func<double[], double> initial;
@@ -285,7 +331,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Normals : Parameter, ILevelSetParameter {
+
+    /// <summary>
+    /// Computation of normals from the level-set;
+    /// - computed normals are typically **not of unit length**, i.e. the vectors must be normalized before use!
+    /// - computed from broken derivatives, i.e. un-filtered
+    /// </summary>
+    public class Normals : ParameterS, ILevelSetParameter {
         int D;
 
         int degree;
@@ -371,7 +423,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class BeltramiGradientAndCurvature : Parameter, ILevelSetParameter {
+    public class BeltramiGradientAndCurvature : ParameterS, ILevelSetParameter {
         DoNotTouchParameters AdvancedDiscretizationOptions;
 
         int m_HMForder;
@@ -442,7 +494,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class MaxSigma : Parameter, ILevelSetParameter {
+    public class MaxSigma : ParameterS, ILevelSetParameter {
         PhysicalParameters physParams;
 
         DoNotTouchParameters dntParams;

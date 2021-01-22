@@ -25,12 +25,12 @@ using MPI.Wrappers;
 using NUnit.Framework;
 
 namespace BoSSS.Application.IBM_Solver {
-
-    [TestFixture]
+    /*
+    //[TestFixture]
     static class TestProgram {
 
 
-        [Test]
+        //[Test]
         public static void TestNSECylinder_stationary() {
 
             using (IBM_SolverMain p = new IBM_SolverMain()) {
@@ -62,7 +62,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        [Test]
+        //[Test]
         public static void TestChannel() {
 
 
@@ -84,7 +84,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        [Test]
+        //[Test]
         public static void TestChannel_MUMPS() {
 
             using (IBM_SolverMain p = new IBM_SolverMain()) {
@@ -106,7 +106,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        [Test]
+        //[Test]
         public static void TestChannel_periodic() {
 
             using (IBM_SolverMain p = new IBM_SolverMain()) {
@@ -126,6 +126,6 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
     }
-
+    */
 }
 

@@ -57,6 +57,8 @@ namespace BoSSS.Solution.XNSECommon {
         {
             string S0 = "#" + SpeciesNames[0];
 
+
+            // set boundary for 'VelocityX' from 'VelocityX#A'
             int D = f.SpatialDimension;
             for (int d = 0; d < D; d++) {
                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);

@@ -373,6 +373,26 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// implementation
+        /// </summary>
+        /// <param name="f">calling sequence: f(x,y,z,t)</param>
+        /// <returns></returns>
+        public static ScalarFunctionTimeDep Vectorize(this Func<double[], double, double> f) {
+            return (delegate(MultidimensionalArray inp, double time, MultidimensionalArray res) {
+                int D = inp.GetLength(1);
+                double[] X = new double[D];
+
+                for (int i = 0; i < inp.GetLength(0); i++) {
+                    for (int d = 0; d < D; d++)
+                        X[d] = inp[i, d];
+
+                    res[i] = f(X, time);
+                }
+            });
+        }
+
+        /// <summary>
         /// Vectorized 3D function (<see cref="ScalarFunction"/>) from a scalar implementation, with fixed time
         /// </summary>
         /// <param name="f">calling sequence: f(<paramref name="time"/>,x,y,z)</param>

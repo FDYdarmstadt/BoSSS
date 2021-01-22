@@ -50,8 +50,7 @@ namespace CNS {
         static void Main(string[] args) {
 
             //Application.InitMPI(args);
-            ////CNS.Tests.MovingIBMTests.PistonTests.MovingMeshIBMPiston1stOrderWithAgglomeration();
-            //CNS.Tests.ArtificialViscosity.ArtificialViscosityShockTubeTests.ToroTest1_ALTS1_3();
+            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSupersonicInletCondition1D();
             //Debug.Assert(false, "remove me");
             //return;
 
@@ -448,7 +447,7 @@ namespace CNS {
         /// <summary>
         /// Sets the initial conditions
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             using (var ht = new FuncTrace()) {
                 WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
             }

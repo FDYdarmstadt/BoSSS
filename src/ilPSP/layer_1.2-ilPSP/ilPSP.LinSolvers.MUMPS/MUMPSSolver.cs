@@ -107,6 +107,11 @@ namespace ilPSP.LinSolvers.MUMPS {
         public void DefineMatrix(IMutableMatrixEx M) {
             if(m_MumpsMatrix != null)
                 throw new NotSupportedException("solver can only be initialized once");
+            if(M.NoOfCols != M.NoOfRows)
+                throw new ArgumentException("Expecting quadratic matrix.");
+            if(M.NoOfCols <= 0 || M.NoOfRows <= 0)
+                throw new ArgumentException("Matrix must have a non-zero size.");
+
             this.MUMPS_csharp = new MUMPS_csharp(Parallelism);
             m_MumpsMatrix = new Matrix(M);
             m_OrgMatrix = M;

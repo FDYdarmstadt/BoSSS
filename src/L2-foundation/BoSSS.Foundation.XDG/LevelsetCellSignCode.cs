@@ -28,6 +28,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// 3adic representation of the <see cref="LevelsetSign"/> for all four level sets;
+        /// Therefore, this should be in the range of 0 to $` 3^4 - 1 = 80 `$.
         /// </summary>
         internal int lsSig;
 

@@ -644,12 +644,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return phiDist;
         }
 
-        void CompleteParameterUpdate(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
+        void CompleteParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)
         {
-            UpdateParameter();
+            UpdateParameter(t);
         }       
 
-        private void UpdateParameter()
+        private void UpdateParameter(double time)
         {
             int D = this.GridData.SpatialDimension;
             this.phi0.Clear();

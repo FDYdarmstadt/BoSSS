@@ -152,7 +152,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //|| (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 1.5 && X[2] > 0.0 && X[2] < 3.0));
             CellMask test = null;
 
-            cdgField.ProjectDGField(1.0, origin, test);
+            cdgField.ProjectDGField(origin, test);
             cdgField.AccToDGField(1.0, result);
 
             //specField.ProjectDGField(1.0, origin, test);

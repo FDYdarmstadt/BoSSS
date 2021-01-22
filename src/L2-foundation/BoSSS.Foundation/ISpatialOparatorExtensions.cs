@@ -110,10 +110,7 @@ namespace BoSSS.Foundation {
         /// and all <see cref="IParameterHandling.MyParameterUpdate"/> methods in the operators equation components 
         /// in order to allocate operator storage.
         /// </summary>
-        /// <param name="op"></param>
-        /// <param name="__DomainFields"></param>
-        /// <param name="__ParameterFields"></param>
-        public static void InvokeParameterUpdate(this ISpatialOperator op, DGField[] __DomainFields, DGField[] __ParameterFields) {
+        public static void InvokeParameterUpdate(this ISpatialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
 
             if (!op.IsCommited)
                 throw new NotSupportedException("not allowed before commit.");
@@ -137,7 +134,7 @@ namespace BoSSS.Foundation {
 
             // invoke update functions in the operator
             foreach (var PartialParameterUpdate in op.ParameterUpdates) {
-                PartialParameterUpdate(DomainVarsDict, ParameterVarsDict);
+                PartialParameterUpdate(time, DomainVarsDict, ParameterVarsDict);
             }
 
             // invoke update functions in the equation components

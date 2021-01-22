@@ -396,6 +396,15 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// Empty constructor; Variable, Parameter, and Codomain/Equation names are specified by the 
+        /// order in which equation components are added.
+        /// </summary>
+        public SpatialOperator()
+            : this(new string[0], new string[0], new string[0], QuadOrderFunc.NonLinear(2)) {
+        }
+
+
+        /// <summary>
         /// constructor; 
         /// </summary>
         /// <param name="__DomainVar">
@@ -453,9 +462,9 @@ namespace BoSSS.Foundation {
                 m_CodomainVar[i] = __CoDomainVar[i];
             }
 
-            m_EquationComonents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
+            m_EquationComponents = new SortedList<string, List<IEquationComponent>>(__CoDomainVar.Count);
             foreach(var f in __CoDomainVar) {
-                m_EquationComonents.Add(f, new List<IEquationComponent>());
+                m_EquationComponents.Add(f, new List<IEquationComponent>());
             }
             m_EquationComponentsHelper = new _EquationComponents(this);
             this.QuadOrderFunction = QuadOrderFunc;
@@ -471,23 +480,44 @@ namespace BoSSS.Foundation {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
-            foreach(var comps in m_EquationComonents.Values) {
+            if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
+                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
+            foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {
-                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
-                            throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                                + varname
-                                + "\", but this name is not a member of the domain variable list.");
+                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0) {
+                            //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
+                            //    + varname
+                            //    + "\", but this name is not a member of the domain variable list.");
+
+                            m_DomainVar = m_DomainVar.Cat(varname);
+
+                        }
                     }
 
                     if(c.ParameterOrdering != null) {
                         foreach(string varname in c.ParameterOrdering) {
-                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0)
-                                throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                    + varname
-                                    + "\", but this name is not a member of the parameter variable list.");
+                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
+                                //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
+                                //    + varname
+                                //    + "\", but this name is not a member of the parameter variable list.");
 
-                            if(c.ArgumentOrdering.Contains(varname))
+                                m_ParameterVar = m_ParameterVar.Cat(varname);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            foreach(var comps in m_EquationComponents.Values) {
+                foreach(IEquationComponent c in comps) {
+                    if(c.ParameterOrdering != null) {
+                        foreach(string varname in c.ParameterOrdering) {
+                            
+                            
+                            if(this.m_DomainVar.Contains(varname))
                                 throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
                                     + varname
                                     + "\" in parameter and argument list; this is not allowed.");
@@ -501,7 +531,7 @@ namespace BoSSS.Foundation {
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
-            /// Compute Quadrature Order
+            // Compute Quadrature Order
             int order;
             int[] DomainDegrees = DomainBasis.Select(f => f.Degree).ToArray();
             int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();
@@ -536,7 +566,7 @@ namespace BoSSS.Foundation {
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
             Verify();
 
-            var comps = m_EquationComonents[CodomVar];
+            var comps = m_EquationComponents[CodomVar];
             List<string> ret = new List<string>();
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 string varName = m_DomainVar[i];
@@ -559,7 +589,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// <see cref="EquationComponents"/>
         /// </summary>
-        SortedList<string, List<IEquationComponent>> m_EquationComonents;
+        SortedList<string, List<IEquationComponent>> m_EquationComponents;
 
         _EquationComponents m_EquationComponentsHelper;
 
@@ -590,7 +620,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public int TotalNoOfComponents {
             get {
-                return this.m_EquationComonents.Values.Sum(x => x.Count);
+                return this.m_EquationComponents.Values.Sum(x => x.Count);
             }
         }
 
@@ -627,8 +657,9 @@ namespace BoSSS.Foundation {
             SpatialOperator m_owner;
 
             /// <summary>
-            /// returns the collection of equation components for one variable in the 
-            /// codomain
+            /// Returns the collection of equation components for one variable in the codomain;
+            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="SpatialOperator.Commit"/>) a new 
+            /// equation/codomain name is appended.
             /// </summary>
             /// <param name="EqnName">
             /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
@@ -636,10 +667,15 @@ namespace BoSSS.Foundation {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if(m_owner.m_IsCommited)
-                        return m_owner.m_EquationComonents[EqnName].AsReadOnly();
-                    else
-                        return m_owner.m_EquationComonents[EqnName];
+                    if(m_owner.m_IsCommited) {
+                        return m_owner.m_EquationComponents[EqnName].AsReadOnly();
+                    } else {
+                        if(!m_owner.m_CodomainVar.Contains(EqnName)) {
+                            m_owner.m_CodomainVar = m_owner.m_CodomainVar.Cat(EqnName);
+                            m_owner.m_EquationComponents.Add(EqnName, new List<IEquationComponent>());
+                        }
+                        return m_owner.m_EquationComponents[EqnName];
+                    }
                 }
             }
 
@@ -650,7 +686,7 @@ namespace BoSSS.Foundation {
             /// </summary>
             /// <returns>An enumerator</returns>
             public IEnumerator<KeyValuePair<string, IEnumerable<IEquationComponent>>> GetEnumerator() {
-                return m_owner.m_EquationComonents.Select(
+                return m_owner.m_EquationComponents.Select(
                     x => new KeyValuePair<string, IEnumerable<IEquationComponent>>(
                         x.Key, x.Value.AsReadOnly())).GetEnumerator();
             }
@@ -1072,7 +1108,7 @@ namespace BoSSS.Foundation {
 
                 Debug.Assert(CodNames.Length == CodDGdeg.Length);
                 for(int iCod = 0; iCod < CodDGdeg.Length; iCod++) {
-                    var comps = m_Owner.m_EquationComonents[CodNames[iCod]];
+                    var comps = m_Owner.m_EquationComponents[CodNames[iCod]];
                     foreach(var c in comps) {
                         if(c is IEquationComponentCoefficient) {
                             var ce = c as IEquationComponentCoefficient;
@@ -1308,6 +1344,7 @@ namespace BoSSS.Foundation {
                 else
                     DomainFields = new CoordinateMapping(grdDat);
 
+                
 
                 if(owner.RequiresEdgeQuadrature) {
 
@@ -1628,9 +1665,9 @@ namespace BoSSS.Foundation {
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
-                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
-                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (double time, IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(time, DomF.ToArray(), ParamF.ToArray());
                 };
 
             return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, ParamUpdate);
@@ -1657,7 +1694,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public virtual FDJacobianBuilder GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
                 if(!IsCommited)
@@ -1689,7 +1726,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
+            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<double, IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
 
                 eps = 1.0;
                 while(1.0 + eps > 1.0) {
@@ -1710,7 +1747,7 @@ namespace BoSSS.Foundation {
                 //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
 
-            void EmptyParamUpdate(IEnumerable<DGField> F, IEnumerable<DGField> P) {
+            void EmptyParamUpdate(double t, IEnumerable<DGField> F, IEnumerable<DGField> P) {
                 // do nothing
             }
 
@@ -1815,7 +1852,7 @@ namespace BoSSS.Foundation {
                 private set;
             }
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 
             /// <summary>
             /// - 1st index: enumeration of color lists
@@ -2379,7 +2416,7 @@ namespace BoSSS.Foundation {
                 // ===============================
 
                 double[] F0 = new double[Lout];
-                DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
 #if DEBUG
                 CoordinateVector ParamsVec;
                 double[] ParamsVecBkup;
@@ -2470,7 +2507,7 @@ namespace BoSSS.Foundation {
                         // evaluate operator
                         // -------------------
                         EvalBuf.ClearEntries();
-                        DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                        DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
@@ -2612,7 +2649,7 @@ namespace BoSSS.Foundation {
                 // restore original state before return
                 // ====================================
                 U0.SetV(U0backup);
-                DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
 #if DEBUG
                 if (Eval.Parameters.Count > 0) {
                     double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();

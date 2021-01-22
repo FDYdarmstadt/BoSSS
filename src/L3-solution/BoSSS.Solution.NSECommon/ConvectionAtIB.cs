@@ -24,34 +24,36 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class ConvectionAtIB : ILevelSetForm {
-        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double,double[]> getParticleParams, double fluidDensity, bool UseMovingMesh){
+        public ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter){
             m_LsTrk = LsTrk;
             m_D = _D;
             m_d = _d;
             LFFA = _LFFA;
-            this.m_getParticleParams = getParticleParams;
             //varMode = _varMode;
             fDensity = fluidDensity;
             m_UseMovingMesh = UseMovingMesh;
+            m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
 
             NegFlux = new LinearizedConvection(_D, _bcmap, _d);
             //NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, fluidDensity, 0, _LFFA, double.NaN, LsTrk);
             //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
+            this.m_iLevSet = iLevSet;
+            this.m_SolidSpecies = SolidSpecies;
+            this.m_FluidSpc = FluidSpc;
         }
+        int m_iLevSet;
+        string m_FluidSpc;
+        string m_SolidSpecies;
+        bool m_UseLevelSetVelocityParameter;
 
         LevelSetTracker m_LsTrk;
         int m_D;
         int m_d;
 
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
-        /// </summary>
-        Func<double[], double,double[]> m_getParticleParams;
-
-        double pRadius;
         double fDensity;
         double LFFA;
         bool m_UseMovingMesh;
@@ -66,20 +68,29 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
         public IList<string> ParameterOrdering {
             get {
-                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+                var ret = ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+                if(m_UseLevelSetVelocityParameter)
+                    ret = ret.Cat(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.VelocityVector(m_D)));
+                return ret;
             }
         }
      
         public int LevelSetIndex {
-            get { return 0; }
+            get { return m_iLevSet; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
-        }
-
+        /// <summary>
+        /// Species ID of the solid
+        /// </summary>
         public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        }
+
+        /// <summary>
+        /// Species ID of the fluid; 
+        /// </summary>
+        public SpeciesId NegativeSpecies {
+            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -90,95 +101,56 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
        
 
-     
-        /*
-
-        // Flux over interface
-        public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
-
-            double[] _uLevSet = new double[2];
-
-            //_uLevSet[0] = (uLevSet[m_d])(cp.time, cp.x);
-
-            for (int d = 0; d < m_D; d++) {
-                _uLevSet[d] = (uLevSet[d])(cp.time);
-            }
-
-            double[] uLevSet_temp = new double[1];
-            uLevSet_temp[0] = (uLevSet[m_d])(cp.time);
-
-            BoSSS.Foundation.CommonParams inp; // = default(BoSSS.Foundation.InParams);
-            inp.Parameters_IN = cp.ParamsNeg;
-            inp.Normale = cp.n;
-            inp.iEdge = int.MinValue;
-            inp.GridDat = this.m_LsTrk.GridDat;
-            inp.X = cp.x;
-            inp.time = cp.time;
-            //inp.jCellIn = cp.jCell;
-            //inp.jCellOut = cp.jCell;
-
-            inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
-
-            //Outer values for Velocity and VelocityMean
-            for (int j = 0; j < m_D; j++) {
-                inp.Parameters_OUT[j] = (uLevSet[j])(cp.time);
-                // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-                inp.Parameters_OUT[m_D + j] = 0;
-            }
-
-            //FlxNeg = -this.NegFlux.IEF(ref inp, U_Neg, uLevSet_temp);
-
-            FlxNeg = 0;
-
-            FlxPos = 0;
-
-
-        }
-        */
-
         public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
 
-            BoSSS.Foundation.CommonParams inp = cp; // = default(BoSSS.Foundation.InParams);
-            //inp.Parameters_IN = cp.ParamsNeg;
-            //inp.Normal = cp.Normal;
-            //inp.iEdge = int.MinValue;
-            //inp.GridDat = this.m_LsTrk.GridDat;
-            //inp.X = cp.X;
-            //inp.time = cp.time;
-            //inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
-
-            var parameters_P = m_getParticleParams(inp.X, inp.time);
-            double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
-            double wLevSet = parameters_P[2];
-            pRadius = parameters_P[3];
-
-            double[] uLevSet_temp = new double[1];
-            if (m_d == 0) {
-                uLevSet_temp[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
-            } else { uLevSet_temp[0] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0]; }
-
-            //Outer values for Velocity and VelocityMean
-            inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
-            inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
-            // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-            inp.Parameters_OUT[2] = 0;
-            inp.Parameters_OUT[3] = 0;
 
 
-            double FlxNeg;
-            if (m_UseMovingMesh == true) {
-                FlxNeg = 0;
 
-                return FlxNeg;
+            if(m_UseMovingMesh == true) {
+                return 0.0;
+            } else {
+                BoSSS.Foundation.CommonParams inp = cp;
+
+                /*
+                double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+                double wLevSet = parameters_P[2];
+                pRadius = parameters_P[3];
+
+                double[] uLevSet_temp = new double[1];
+                if(m_d == 0) {
+                    uLevSet_temp[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
+                } else {
+                    uLevSet_temp[0] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
+                }
+
+                //Outer values for Velocity and VelocityMean
+                inp.Parameters_OUT[0] = uLevSet[0] + pRadius * wLevSet * -cp.Normal[1];
+                inp.Parameters_OUT[1] = uLevSet[1] + pRadius * wLevSet * cp.Normal[0];
+                // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
+                inp.Parameters_OUT[2] = 0;
+                inp.Parameters_OUT[3] = 0;
+                */
+
+                double[] uLevSet;
+                if(m_UseLevelSetVelocityParameter) {
+                    uLevSet = inp.Parameters_IN.GetSubVector(m_D * 2, m_D);
+                } else {
+                    uLevSet = new double[m_D];
+                }
+
+                double[] uLevSet_temp = new double[1];
+                uLevSet_temp[0] = uLevSet[m_d];
+                
+                inp.Parameters_OUT = new double[inp.D * 2];
+                Array.Copy(uLevSet, 0, inp.Parameters_OUT, 0, m_D);
+                Array.Copy(uLevSet, 0, inp.Parameters_OUT, m_D, m_D);
+
+                double FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null);
+                if(FlxNeg.IsNaNorInf())
+                    throw new ArithmeticException("NaN/Inf in immersed boundary convection");
+
+                return FlxNeg*fDensity;
             }
-
-            FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null);
-
-            //FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, Grad_uA, Grad_uB, v_Neg, v_Pos, Grad_vA, Grad_vB);
-
-            return FlxNeg;
         }
     
     

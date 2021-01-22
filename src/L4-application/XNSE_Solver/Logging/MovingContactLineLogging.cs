@@ -125,7 +125,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             if(base.SolverMain is XNSE_SolverMain oldSolver) {
                 return oldSolver.GetMeanVelocityFromXDGField(EvoVelocity);
             } else if(base.SolverMain is XNSE newSolver) {
-                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable("Phi", BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
+                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
                 IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
 
                 List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
@@ -157,7 +157,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
-            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"));
+            EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
 
             var gridDat = (GridData)this.SolverMain.GridData;
             var QuadDom = SurfaceElement_Edge.Domain;

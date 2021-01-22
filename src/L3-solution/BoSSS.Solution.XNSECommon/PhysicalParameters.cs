@@ -124,6 +124,83 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public double sliplength = 0.0;
 
+
+
+        /// <summary>
+        /// is the interface a material one or is it non-material?
+        /// </summary>
+        [DataMember]
+        public bool Material;
+
+
+        /// <summary>
+        /// Use the artificial surface force (usually only used in manufactured solutions)?
+        /// </summary>
+        [DataMember]
+        public bool useArtificialSurfaceForce = false;
+
+        /// <summary>
+        /// clone
+        /// </summary>
+        public virtual object Clone() {
+            var cl = (PhysicalParameters) MemberwiseClone(); // ok for this object, since it contains only value types
+            return cl;
+        }
+
+        /// <summary>
+        /// Constants for a water (species A)/air (species B) pair.
+        /// </summary>
+        public static PhysicalParameters WaterAir {
+            get {
+                PhysicalParameters C = new PhysicalParameters();
+                C.rho_A = 1000;
+                C.rho_B = 1.2;
+                C.mu_A = 1.0e-3;
+                C.mu_B = 17.1e-6;
+                C.Sigma = 72.75e-3;
+                return C;
+            }
+        }
+
+        /// <summary>
+        /// Constants for an air (species A)/water (species B) pair.
+        /// </summary>
+        public static PhysicalParameters AirWater {
+            get {
+                PhysicalParameters C = new PhysicalParameters();
+                C.rho_B = 1000;
+                C.rho_A = 1.2;
+                C.mu_B = 1.0e-3;
+                C.mu_A = 17.1e-6;
+                C.Sigma = 72.75e-3;
+                return C;
+            }
+        }
+
+
+        /// <summary>
+        /// All constants set to 1.0.
+        /// </summary>
+        public static PhysicalParameters AllOne {
+            get {
+                PhysicalParameters C = new PhysicalParameters();
+                C.rho_B = 1.0;
+                C.rho_A = 1.0;
+                C.mu_B = 1.0;
+                C.mu_A = 1.0;
+                C.Sigma = 1.0;
+                return C;
+            }
+        }
+    }
+
+
+
+
+    [DataContract]
+    [Serializable]
+    public class PhysicalParametersRheology : PhysicalParameters {
+
         /// <summary>
         /// viscoelastic dimensionless: ratio between relaxation time and retardation time (fluid A)
         /// </summary>
@@ -172,99 +249,13 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public bool Giesekus_b = false;
 
-        /// <summary>
-        /// is the interface a material one or is it non-material?
-        /// </summary>
-        [DataMember]
-        public bool Material;
-
-        /// <summary>
-        /// prescribed volume flux for testing. 
-        /// </summary>
-        //[DataMember]
-        //public double prescribedVolumeFlux = 0.0;
-
-        /// <summary>
-        /// Use the artificial surface force (usually only used in manufactured solutions)?
-        /// </summary>
-        [DataMember]
-        public bool useArtificialSurfaceForce = false;
 
         /// <summary>
         /// clone
         /// </summary>
-        public object Clone() {
-            var cl = new PhysicalParameters();
-            cl.IncludeConvection = this.IncludeConvection;
-            cl.rho_A = this.rho_A;
-            cl.rho_B = this.rho_B;
-            cl.mu_A = this.mu_A;
-            cl.mu_B = this.mu_B;
-            cl.reynolds_A = this.reynolds_A;
-            cl.reynolds_B = this.reynolds_B;
-            cl.Weissenberg_a = this.Weissenberg_a;
-            cl.Weissenberg_b = this.Weissenberg_b;
-            cl.Sigma = this.Sigma;
-            cl.pFree = this.pFree;
-            cl.mu_I = this.mu_I;
-            cl.lambda_I = this.lambda_I;
-            cl.betaS_A = this.betaS_A;
-            cl.betaS_B = this.betaS_B;
-            cl.betaL = this.betaL;
-            cl.theta_e = this.theta_e;
-            cl.sliplength = this.sliplength;
-            cl.beta_a = this.beta_a;
-            cl.beta_b = this.beta_b;
-            cl.Material = this.Material;
-            //cl.prescribedVolumeFlux = this.prescribedVolumeFlux;
-            cl.useArtificialSurfaceForce = this.useArtificialSurfaceForce;
+        public override object Clone() {
+            var cl = (PhysicalParameters) MemberwiseClone(); // ok for this object, since it contains only value types
             return cl;
-        }
-
-        /// <summary>
-        /// Constants for a water (species A)/air (species B) pair.
-        /// </summary>
-        public static PhysicalParameters WaterAir {
-            get {
-                PhysicalParameters C = new PhysicalParameters();
-                C.rho_A = 1000;
-                C.rho_B = 1.2;
-                C.mu_A = 1.0e-3;
-                C.mu_B = 17.1e-6;
-                C.Sigma = 72.75e-3;
-                return C;
-            }
-        }
-
-        /// <summary>
-        /// Constants for an air (species A)/water (species B) pair.
-        /// </summary>
-        public static PhysicalParameters AirWater {
-            get {
-                PhysicalParameters C = new PhysicalParameters();
-                C.rho_B = 1000;
-                C.rho_A = 1.2;
-                C.mu_B = 1.0e-3;
-                C.mu_A = 17.1e-6;
-                C.Sigma = 72.75e-3;
-                return C;
-            }
-        }
-
-
-        /// <summary>
-        /// All constants set to 1.0.
-        /// </summary>
-        public static PhysicalParameters AllOne {
-            get {
-                PhysicalParameters C = new PhysicalParameters();
-                C.rho_B = 1.0;
-                C.rho_A = 1.0;
-                C.mu_B = 1.0;
-                C.mu_A = 1.0;
-                C.Sigma = 1.0;
-                return C;
-            }
         }
     }
 }

@@ -120,7 +120,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         /// <summary>
         /// Setting initial value.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             TestData.ProjectField(TestDataFunc);
             DelUpdateLevelset(new DGField[] { uX }, 0.0, 0.0, 1.0, false);
 

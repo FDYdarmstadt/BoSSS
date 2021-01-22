@@ -275,7 +275,7 @@ namespace BoSSS.Foundation.Grid {
                 Debug.Assert(Current_L2G == null || iPart < Current_L2G.Length);
                 Debug.Assert(Current_L2G == null || iPart >= 0);
 
-                int i0;
+                int i0; // start index of chunk to find...
                 if (Current_L2G == null) {
                     i0 = Current_jLog; // logical and geometrical cell indices are identical.
                 } else {
@@ -303,6 +303,11 @@ namespace BoSSS.Foundation.Grid {
                         break;
 
                     if (Current_L2G == null) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // branch for standard grids, where geometrical and logical cells are identical
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                         if (iE < Current_Chunk.JE) {
                             Current_jLog++;
                             // nop
@@ -313,10 +318,18 @@ namespace BoSSS.Foundation.Grid {
                                 Current_jLog = Current_Chunk.i0;
                                 Debug.Assert(Current_Chunk.i0 > iE, "strange overlap of chunks");
 
-                                if (Current_Chunk.i0 - iE > 0)
+                                if(Current_Chunk.i0 - iE > 0) {
                                     // unable to concat chunks
-                                    break;
-
+                                    if(i0 == iE) {
+                                        // chunk is still empty
+                                        i0 = Current_Chunk.i0;
+                                        iE = i0;
+                                        continue;
+                                    } else {
+                                        // close chunk
+                                        break;
+                                    }
+                                }
                             } else {
                                 // end of cell mask reached; not possible to advance any further
                                 reachedEnd = true;
@@ -325,9 +338,12 @@ namespace BoSSS.Foundation.Grid {
 
                         }
                     } else {
+                        // +++++++++++++++++++++++++++++++
+                        // branch for real aggregate grids
+                        // +++++++++++++++++++++++++++++++
 
-
-                        throw new NotImplementedException("todo");
+                        // hehe
+                        throw new NotImplementedException("todo"); 
                     }
 
                     iE++;

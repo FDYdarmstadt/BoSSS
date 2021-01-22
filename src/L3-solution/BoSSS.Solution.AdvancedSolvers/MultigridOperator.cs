@@ -27,18 +27,44 @@ using BoSSS.Platform.Utils;
 using BoSSS.Foundation;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using BoSSS.Foundation.XDG;
+using System.Collections;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public partial class MultigridOperator {
 
+        internal static LevelSetTracker GetTracker(IEnumerable<Basis> dom) {
+            LevelSetTracker lsTrk = null;
+
+            foreach(Basis b in dom) {
+                if(b != null && b is XDGBasis xb) {
+                    if(lsTrk == null) {
+                        lsTrk = xb.Tracker;
+                    } else {
+                        if(!object.ReferenceEquals(lsTrk, xb.Tracker))
+                            throw new ArgumentException("Tracker mismatch.");
+                    }
+                }
+            }
+            return lsTrk;
+        }
+
         static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
+            LevelSetTracker lsTrk = GetTracker(map.BasisS);
+            BitArray Cells2avoid;
+            if(lsTrk != null) {
+                Cells2avoid = lsTrk.Regions.GetNearFieldMask(0).GetBitMask();
+            } else {
+                Cells2avoid = null;
+            }
+
             long jFound = -1;
             for(int j = 0; j < J; j++) {
-                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1) {
+                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                     jFound = j;
                     break;
                 }
@@ -245,7 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// agglomeration (if applicable) should already be applied.
         /// </param>
         /// <param name="MassMatrix">
-        /// Mass matrix on the original grid. If null, the identity matrix is assumed. It is only required if the 
+        /// Mass matrix on the original grid. If null, the identity matrix is assumed. 
         /// </param>
         /// <param name="cobc">
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.

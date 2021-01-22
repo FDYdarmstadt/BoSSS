@@ -83,12 +83,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public enum ApproxInvJacobianOptions {
 
             /// <summary>
-            /// Using a matrix-free GMRES implementation, optionally employing <see cref="Newton.linsolver"/> (typically not matrix-free) as a preconditioner.
+            /// Using a matrix-free GMRES implementation, <see cref="Newton.MatrixFreeGMRES"/>
             /// </summary>
             MatrixFreeGMRES = 1,
 
             /// <summary>
-            /// Using the solver <see cref="Newton.linsolver"/> for computing Newton corrections
+            /// Using the solver <see cref="NonlinearSolver.Precond"/> for computing Newton corrections
             /// </summary>
             ExternalSolver = 2
         }
@@ -187,8 +187,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double fnorminit = norm_CurRes;
                 List<double> normHistory = new List<double>();
                 normHistory.Add(norm_CurRes);
-
-
 
 
                 // Main Loop

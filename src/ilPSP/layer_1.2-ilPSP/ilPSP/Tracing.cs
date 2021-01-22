@@ -335,9 +335,11 @@ namespace ilPSP.Tracing {
 
 
         /// <summary>
-        /// writes information about system memory usage to trace file
+        /// writes information about system memory usage to trace file;
+        /// This seems to have a severe performance impact on server OS, therefore deactivated (fk,21dec20)
         /// </summary>
         public void LogMemoryStat() {
+            /*
             if(!Tracer.InstrumentationSwitch)
                 return;
 
@@ -404,7 +406,7 @@ namespace ilPSP.Tracing {
                 }
                 Info(s);
             }
-
+            */
         }
 
         /*

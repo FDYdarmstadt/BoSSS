@@ -743,22 +743,31 @@ namespace ilPSP.Utils {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public void CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true)
-            where T: IEnumerable<double>
+        static public void CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
+            where T: IEnumerable<double> //
         {
+            if(messageprefix == null)
+                messageprefix = "";
+
             int cnt = 0;
             foreach (double a in v) {
                 
                 if (CheckForNan)
                     if (double.IsNaN(a)) {
-                        if (ExceptionIfFound)
-                            throw new ArithmeticException("NaN found at " + cnt + "-th entry.");
+                        if(ExceptionIfFound) {
+                            throw new ArithmeticException($"{messageprefix}: NaN found at {cnt}-th entry.");
+                        } else {
+                            Console.Error.WriteLine($"{messageprefix}: NaN found at {cnt}-th entry.");
+                        }
                     }
 
                 if (CheckForInf)
                     if (double.IsInfinity(a)) {
-                        if (ExceptionIfFound)
-                            throw new ArithmeticException("Inf found at " + cnt + "-th entry.");
+                        if(ExceptionIfFound) {
+                            throw new ArithmeticException($"{messageprefix}: Inf found at {cnt}-th entry.");
+                        } else {
+                            Console.Error.WriteLine($"{messageprefix}: Inf found at {cnt}-th entry.");
+                        }
                     }
 
                 cnt++;

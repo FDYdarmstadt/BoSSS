@@ -89,7 +89,10 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// index of the level set to evaluate
         /// </summary>
-        int m_LevSetIdx;
+        internal int m_LevSetIdx {
+            get;
+            private set;
+        }
 
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
@@ -486,6 +489,7 @@ namespace BoSSS.Foundation.XDG {
                 _inParams.time = this.time;
                 _inParams.e0 = i0;
                 _inParams.Len = Len;
+                _inParams.GridDat = this.GridDat;
 
 
                 // clear summation buffers

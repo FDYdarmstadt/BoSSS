@@ -29,11 +29,13 @@ using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
+using ilPSP.Utils;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// A collection of all-up NUnit tests for the XNSE solver.
+    /// A collection of all-up NUnit tests for the new XNSE solver (<see cref="XNSE"/>).
     /// </summary>
     [TestFixture]
     static public partial class ASUnitTest {
@@ -176,8 +178,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             foreach (var Res in new[] { 1, 2, 3, 4 })
             {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, GridResolution: Res, SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, CutCellQuadratureType: CutCellQuadratureType);
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 2;
                 LaLa.Add(C);
             }
 
@@ -274,7 +274,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             MovingDropletTest(deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
         }
-
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
@@ -421,6 +420,43 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverTest(Tst, C);
         }
 
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.BasicThreePhase"/>
+        /// </summary>
+        [Test]
+        public static void BasicThreePhaseTest(
+            [Values(true, false)] bool bSteady = false,
+            [Values(true, false)] bool performsolve = false,
+            [Values(true, false)] bool bConvection = true,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
+            [Values(2)] int spatDim = 2
+            ) {
+            double R = 0.8;
+            int FlowSolverDegree = 2;
+            double AgglomerationTreshold = 0.3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+
+            int GridResolution = 1;
+
+            var Tst = new BasicThreePhase(R, bConvection, bSteady, spatDim);
+
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
+            C.SkipSolveAndEvaluateResidual = !performsolve;
+            
+            
+            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
+            
+
+            XNSESolverTest(Tst, C);
+
+        } 
+
+
+
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
@@ -512,6 +548,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
+
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
             var Tst = new HeatConductivityTest();
@@ -521,20 +558,43 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// Simple Heatconductivity and convection Test 
+        /// Simple Heatconductivity Test to ensure Energy conservation of Heat equation
         /// </summary>
         [Test]
-        public static void HeatTransportTest() {
+        public static void HeatDecayTest(
+            [Values(0.69711, 0.70611, 0.70711, 0.70811, 0.71711, 0.75468, 0.80226, 0.83984, 0.84884, 0.84984, 0.85084, 0.8598)] double r,
+            [Values(-130, -50, 0.0, 10, 167)] double q,
+            [Values(3)] int deg,
+            [Values(0)] double AgglomerationTreshold,
+            [Values(true)] bool SolverMode_performsolve,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
+            ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
+            var Tst = new HeatDecayTest(r, q);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 3);
+            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
+            XHeatSolverTest(Tst, C);
         }
 
         /// <summary>
-        /// Simple pure Heatconductivity Test to ensure Maximumprinciple of Heat equation
+        /// Simple Test for Evaporation of a straight interface
         /// </summary>
         [Test]
-        public static void HeatDecayTest() {
+        public static void SteadyStateEvaporationTest(
+            [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
+            [Values(3)] int deg,
+            [Values(0)] double AgglomerationTreshold,
+            [Values(true)] bool SolverMode_performsolve,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
+            ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
+            var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, 2);
+            XNSFESolverTest(Tst, C);
         }
+
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
             if (Tst.SpatialDimension == 3)
@@ -551,7 +611,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
-                solver.OperatorAnalysis();
+                if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady)
+                    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
@@ -590,15 +651,89 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.RunSolverMode();
                 solver.OperatorAnalysis();
 
-                //-------------------Evaluate Error ---------------------------------------- 
+                //-------------------Evaluate Temperature Error ---------------------------------------- 
                 XHeatErrorEvaluator evaluator = new XHeatErrorEvaluator(solver);
-                double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                if (Tst.CheckT) {                    
+                    double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+
+                    double[] ErrThresh = Tst.AcceptableL2Error;
+                    if (LastErrors.Length != ErrThresh.Length)
+                        throw new ApplicationException();
+                    for (int i = 0; i < ErrThresh.Length; i++) {
+                        Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                    }
+                    for (int i = 0; i < ErrThresh.Length; i++)
+                        Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+                }
+
+                //-------------------Evaluate Energy Error ---------------------------------------- 
+                if (Tst.CheckE) {
+                    double LastErrors = evaluator.ComputeEnergyError(Tst.GetE(), Tst.dt);
+
+                    double ErrThresh = Tst.AcceptableL2Error[0];   
+                    
+                    Console.WriteLine("relative error, '{0}': \t{1}", "total thermal Energy", LastErrors);
+
+                    // less than one promille
+                    Assert.LessOrEqual(LastErrors, 1e-3);
+                }
+
+                double[] ResThresh = Tst.AcceptableResidual;
+                double[] ResNorms = new double[ResThresh.Length];
+                if (solver.CurrentResidual.Fields.Count != ResThresh.Length)
+                    throw new ApplicationException();
+                for (int i = 0; i < ResNorms.Length; i++) {
+                    ResNorms[i] = solver.CurrentResidual.Fields[i].L2Norm();
+                    Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+                }
+
+                for (int i = 0; i < ResNorms.Length; i++)
+                    Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
+                
+            }
+        }
+        private static void XNSFESolverTest(IXNSFETest Tst, XNSE_Control C) {
+
+            using (var solver = new XNSFE()) {
+
+                solver.Init(C);
+                solver.RunSolverMode();
+                solver.OperatorAnalysis();
+
+                //-------------------Evaluate Flow Error ---------------------------------------- 
+                XNSEErrorEvaluator flowevaluator = new XNSEErrorEvaluator(solver);
+                double[] LastErrors = flowevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
-                if (LastErrors.Length != ErrThresh.Length)
+                if (LastErrors.Length != ErrThresh.Length - 1) // Last Error thershold is for temperature
                     throw new ApplicationException();
-                for (int i = 0; i < ErrThresh.Length; i++) {
+                for (int i = 0; i < ErrThresh.Length - 1; i++) {
                     Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                }
+                for (int i = 0; i < LastErrors.Length; i++)
+                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+
+                //-------------------Evaluate Temperature Error ---------------------------------------- 
+                XHeatErrorEvaluator heatevaluator = new XHeatErrorEvaluator(solver);
+                if (Tst.CheckT) {
+                    LastErrors = LastErrors.Cat(heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C) );
+
+                    // Last Error belongs to temperature
+                    for (int i = ErrThresh.Length - 1; i < ErrThresh.Length; i++) {
+                        Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                    }
+                    for (int i = ErrThresh.Length - 1; i < ErrThresh.Length; i++)
+                        Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+                }
+
+                //-------------------Evaluate Energy Error ---------------------------------------- 
+                if (Tst.CheckE) {
+                    double LastError = heatevaluator.ComputeEnergyError(Tst.GetE(), Tst.dt);
+
+                    Console.WriteLine("relative error, '{0}': \t{1}", "total thermal Energy", LastErrors);
+
+                    // less than one promille
+                    Assert.LessOrEqual(LastError, 1e-3);
                 }
 
                 double[] ResThresh = Tst.AcceptableResidual;
@@ -615,6 +750,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 for (int i = 0; i < ResNorms.Length; i++)
                     Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
+
             }
         }
 
@@ -664,7 +800,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // DG degree
             // =========
 
-            //C.SetFieldOptions(FlowSolverDegree, tst.LevelsetPolynomialDegree);
             C.SetDGdegree(FlowSolverDegree);
 
             // grid
@@ -675,8 +810,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // boundary conditions
             // ===================
 
-            foreach (var kv in tst.GetBoundaryConfig())
-            {
+            foreach(var kv in tst.GetBoundaryConfig()) {
                 C.BoundaryValues.Add(kv);
             }
 
@@ -696,29 +830,34 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach (var spc in new[] { "A", "B" })
-            {
+            foreach(var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for (int d = 0; d < D; d++)
-                {
+                for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                     C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+
+            }
+            if(tst.TestImmersedBoundary) {
+                for(int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators_TimeDep.Add(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(1), VariableNames.Velocity_d(d)), tst.GetPhi2U(d));
+                }
             }
 
+
             C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
+            C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
 
             // advanced spatial discretization settings
             // ========================================
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+            if(D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             } else {
@@ -726,19 +865,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
             C.CutCellQuadratureType = CutCellQuadratureType;
 
+            // immersed boundary
+            // =================
+
+            C.UseImmersedBoundary = tst.TestImmersedBoundary;
+            if(C.UseImmersedBoundary) {
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2());
+            }
+
             // timestepping and solver
             // =======================
 
 
-            if (tst.steady)
-            {
+            if(tst.steady) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.None;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            }
-            else
-            {
+            } else {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
@@ -754,9 +898,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
+
             // return
             // ======
-
+            Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
             return C;
         }
 
@@ -798,6 +943,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = tst.LevelsetPolynomialDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
                 Degree = tst.LevelsetPolynomialDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -861,8 +1010,153 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             } else {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
-                C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
-                C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+                C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+                C.NoOfTimesteps = 1;
+                C.dtFixed = tst.dt;
+            }
+
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.LinearSolver.ConvergenceCriterion = 1e-9;
+            //C.Solver_ConvergenceCriterion = 1e-9;
+
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+
+            // return
+            // ======
+
+            return C;
+        }
+
+        static AS_XHeat_Control TstObj2CtrlObj(IXNSFETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            SurfaceStressTensor_IsotropicMode SurfTensionMode,
+            int GridResolution = 1) {
+            AS_XHeat_Control C = new AS_XHeat_Control();
+            int D = tst.SpatialDimension;
+
+
+            // database setup
+            // ==============
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSFE/" + tst.GetType().Name;
+            C.ProjectDescription = "Test";
+
+            // DG degree
+            // =========
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = FlowSolverDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = FlowSolverDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = FlowSolverDegree - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Temperature", new FieldOpts() {
+                Degree = FlowSolverDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("HeatFlux*", new FieldOpts() {
+                Degree = FlowSolverDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = tst.LevelsetPolynomialDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+                Degree = tst.LevelsetPolynomialDegree ,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            // grid
+            // ====
+
+            C.GridFunc = () => tst.CreateGrid(GridResolution);
+
+            // boundary conditions
+            // ===================
+
+            foreach (var kv in tst.GetBoundaryConfig()) {
+                C.BoundaryValues.Add(kv);
+            }
+
+            // Physical parameters
+            // ====================
+
+            C.ThermalParameters.rho_A = tst.rho_A;
+            C.ThermalParameters.rho_B = tst.rho_B;
+            C.ThermalParameters.c_A = tst.c_A;
+            C.ThermalParameters.c_B = tst.c_B;
+            C.ThermalParameters.k_A = tst.k_A;
+            C.ThermalParameters.k_B = tst.k_B;
+            C.ThermalParameters.hVap = tst.h_vap;
+            C.ThermalParameters.T_sat = tst.T_sat;
+            C.ThermalParameters.IncludeConvection = tst.IncludeConvection;
+
+
+            C.PhysicalParameters.rho_A = tst.rho_A;
+            C.PhysicalParameters.rho_B = tst.rho_B;
+            C.PhysicalParameters.mu_A = tst.mu_A;
+            C.PhysicalParameters.mu_B = tst.mu_B;
+            C.PhysicalParameters.Sigma = tst.Sigma;
+            C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
+            // initial values and exact solution
+            // =================================
+
+            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
+            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+
+            foreach (var spc in new[] { "A", "B" }) {
+                C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
+                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
+
+                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
+                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+
+                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
+                for (int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
+                }
+            }
+
+            C.Phi = tst.GetPhi();
+            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
+
+            // advanced spatial discretization settings
+            // ========================================
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            C.CutCellQuadratureType = CutCellQuadratureType;
+
+            // timestepping and solver
+            // =======================
+
+
+            if (tst.steady) {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+                C.Option_LevelSetEvolution = LevelSetEvolution.None;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+                C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
                 C.NoOfTimesteps = 1;
                 C.dtFixed = tst.dt;

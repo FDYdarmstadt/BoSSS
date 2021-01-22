@@ -37,11 +37,17 @@
     <DocumentationFile>
     </DocumentationFile>
     <LangVersion>latest</LangVersion>
+    <WarningsAsErrors>1587</WarningsAsErrors>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MathNet.Numerics">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
@@ -105,8 +111,10 @@
     <Compile Include="Advection\ScalarVelocityAdvection.cs" />
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
-    <Compile Include="SolverWithLevelSetUpdater\FourrierLevelSet.cs" />
-    <Compile Include="SolverWithLevelSetUpdater\LevelSetEvolver.cs" />
+    <Compile Include="LevelSetEvolution.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\FourierLevelSet.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\ILevelSetEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\FastMarchingEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetUpdater.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBoundaryType.cs" />
@@ -122,7 +130,13 @@
     <Compile Include="SemiLagrangianLevelSet\SemiLagrangianLevelSetMethod.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\PrescribedEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdaterControl.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />
+    <Compile Include="StokesExtension\InteriorVelocityBoundary.cs" />
+    <Compile Include="StokesExtension\ScalarTransport.cs" />
+    <Compile Include="StokesExtension\StokesExtension.cs" />
     <Compile Include="TestCases\Flower.cs" />
     <Compile Include="TestCases\RotationFieldClipped.cs" />
     <Compile Include="TestCases\Torus.cs" />

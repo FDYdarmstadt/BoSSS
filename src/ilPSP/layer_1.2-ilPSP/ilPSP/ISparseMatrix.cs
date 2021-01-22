@@ -185,6 +185,14 @@ namespace ilPSP.LinSolvers {
         /// <param name="Block">Block to add.</param>
         /// <param name="beta">Scaling applied to this matrix before accumulation</param>
         void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta);
+
+        /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        void ReadBlock(long i0, long j0, MultidimensionalArray Block);
     }
 
     /// <summary>
@@ -228,6 +236,9 @@ namespace ilPSP.LinSolvers {
         /// Number of entries used in <paramref name="ColumnIndices"/> and <paramref name="Values"/>.
         /// </returns>
         int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values);
+
+       
+
 
         /// <summary>
         /// Sets all entries to 0.0; 

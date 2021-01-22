@@ -815,97 +815,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             //AggregationGridData[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
-
-                //if (m_PrivateBalancingInfo == null)
-                //    throw new NotSupportedException();
-
-                //base.m_LsTrk = LsTrk;
-
-                //if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
-                //    throw new ArgumentException();
-                //if (IterationResiduals.Count() != m_PrivateBalancingInfo.NoOfFields)
-                //    throw new ArgumentException();
-
-                // restore solution stack
-                //m_Stack_u = new CoordinateVector[m_PrivateBalancingInfo.m_Stack_u.Length];
                 m_Stack_u[0] = new CoordinateVector(Fields.ToArray());
-                //for (int s = 1; s < m_Stack_u.Length; s++) {
-                //    m_Stack_u[s] = new CoordinateVector(Fields.Select(dgf => dgf.CloneAs()).ToArray());
-                //}
 
-                //base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
-
-                //for (int i = 0; i < m_Stack_u.Length; i++) {
-                //    if (m_PrivateBalancingInfo.m_Stack_u[i]) {
-                //        DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
-                //        for (int iF = 0; iF < _Fields.Length; iF++) {
-                //            _Fields[iF].Clear();
-                //            //L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
-                //        }
-                //    }
-                //}
-
-                // restore mass matrix
-                //m_Stack_MassMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_MassMatrix.Length];
-                //for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
-                //    if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
-                //        m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                //        //L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
-                //        m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
-                //            .MassMatrixFactory
-                //            .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
-                //    }
-                //}
-
-
-                // Agglomerator
-                //if (m_PrivateBalancingInfo.m_Agglomeration) {
-                //    double[] oldAggTrsh = m_PrivateBalancingInfo.m_Agglomeration_oldTrsh;
-                //    if (oldAggTrsh != null && oldAggTrsh.Length <= 0) {
-                //        oldAggTrsh = null;
-                //    }
-
-                //    m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
-                //        __AgglomerationTreshold: base.Config_AgglomerationThreshold,
-                //        AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
-                //        ExceptionOnFailedAgglomeration: true,
-                //        oldTs__AgglomerationTreshold: oldAggTrsh);
-
-                //}
-
-                // restore operator matrix
-                //m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
-                //m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
-                //for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
-
-                //    if (!m_PrivateBalancingInfo.m_Stack_Operator[i])
-                //        continue;
-
-                //    m_Stack_OpMatrix[i] = new BlockMsrMatrix(CurrentStateMapping);
-                //    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
-                //    this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
-                //        m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
-                //}
-
-                // finished
-                //m_PrivateBalancingInfo = null;
-                //base.MultigridSequence = _MultigridSequence;
                 InitMultigrid(Fields.ToArray(), this.useX);
-
-                // in case of steady level set the xdgAggBasis need to be updated
-                //if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                //    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                //    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
-                //    base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
-
-                //    // matrix used for precond (must be agglomerated)
-                //    if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
-                //        MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
-                //        m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                //        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
-                //    }
-                //}
-
             }
         }
 
@@ -1010,7 +922,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
             using (new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1163,14 +1075,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
-                /*
-                if (m_Stack_OpAffine[0] == null) {
-                    m_Stack_OpAffine[0] = new double[CurrentStateMapping.LocalLength];
-                } else {
-                    m_Stack_OpAffine[0].ClearEntries();
-                }
-                */
-
+                
                 // assemble matrix & affine part
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
                 Debug.Assert(OpAffine.L2Norm() == 0);
@@ -1250,14 +1155,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // For XDG & splitting, we have to evaluate the operator with 
                         // the _actual_ level set position, but 
                         // everything else (field state, etc.) from at the _old_ timestep.
-
-                        /*
-                        if(Linearization == false)
-                            throw new NotImplementedException();
-                        m_Stack_OpMatrix[0].SpMV(-Tsc.theta0, m_Stack_u[1], 1.0, RHS); //  
-                        RHS.AccV(-Tsc.theta0, m_Stack_OpAffine[0]); //                     -theta0*b1 
-                        */
-
+                                                
                         double[] evalBuffer = new double[RHS.Length];
                         this.ComputeOperatorMatrix(null, evalBuffer, m_Stack_u[1].Mapping, m_Stack_u[1].Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime, 1);
                         RHS.AccV(-Tsc.theta0, evalBuffer); // RHS -= -theta0*Op(u0) at current level-set
@@ -1304,8 +1202,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
                 }
 
-                //MiscExtensions.CheckGauss1stOrder(this.m_LsTrk, this.Config_CutCellQuadratureOrder);
-
                 // increase iteration counter         
                 // --------------------------
                 //OpMatrix.SaveToTextFileSparse("OpMatrix49e.txt");
@@ -1314,6 +1210,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public override double GetSimulationTime() {
+            return m_CurrentPhystime;
+        }
 
         bool CoupledIteration = true;
 
@@ -1726,18 +1628,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_CurrentAgglomeration == null);
             }
 
-            /*
-            // ====================
-            // release end-of-stack
-            // ====================
-            int ie = m_Stack_OpMatrix.Length - 1;
-            Debug.Assert(m_Stack_OpMatrix.Length == m_Stack_OpAffine.Length);
-            //Debug.Assert((m_Stack_OpMatrix[ie] == null) == (m_Stack_OpAffine[ie] == null));
-            m_Stack_OpMatrix[ie] = null;
-            m_Stack_OpAffine[ie] = null;
-            //m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
-            */
+            // ======
+            // return 
+            // ======
 
+            m_CurrentPhystime = phystime + dt;
             return success;
         }
 

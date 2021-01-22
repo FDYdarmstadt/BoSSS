@@ -319,13 +319,13 @@ namespace BoSSS.Foundation.XDG {
         ///  - 2nd index: <em>SIGN</em>: <see cref="LevelsetCellSignCode.lsSig"/>;
         /// Content: true, if species with given <em>ID</em> is contained in a cell with level set sign code <em>SIGN</em>;
         /// </summary>
-        bool[][] m_GhostTable;
+        bool[,] m_GhostTable;
 
         /// <summary>
         /// initializes <see cref="m_GhostTable"/>
         /// </summary>
         void ComputeGhostTable() {
-            m_GhostTable = new bool[this.m_SpeciesNames.Count][];
+            m_GhostTable = new bool[this.m_SpeciesNames.Count,81];
             int NoOfLevSets = this.NoOfLevelSets;
 
             foreach (String specNmn in this.m_SpeciesNames) {
@@ -333,7 +333,6 @@ namespace BoSSS.Foundation.XDG {
                 LevelSetSignCode[] speciesCodes = GetLevelSetSignCodes(specNmn);
 
                 bool[] Table = new bool[81];
-                m_GhostTable[specId.cntnt - ___SpeciesIDOffest] = Table;
 
                 LevelsetCellSignCode cd;
                 for (cd.lsSig = 0; cd.lsSig < 81; cd.lsSig++) {
@@ -343,6 +342,7 @@ namespace BoSSS.Foundation.XDG {
                             Table[cd.lsSig] = true;
                     }
                 }
+                m_GhostTable.SetRow(specId.cntnt - ___SpeciesIDOffest, Table);
             }
         }
 
@@ -361,7 +361,7 @@ namespace BoSSS.Foundation.XDG {
         /// for the species;
         /// </returns>
         public bool ContainesSpecies(SpeciesId id, LevelsetCellSignCode cd) {
-            return m_GhostTable[id.cntnt - ___SpeciesIDOffest][cd.lsSig];
+            return m_GhostTable[id.cntnt - ___SpeciesIDOffest, cd.lsSig];
         }
 
 
@@ -581,13 +581,13 @@ namespace BoSSS.Foundation.XDG {
         Array m_SpeciesTable;
 
         /// <summary>
-        /// Gets a copy of the species table, a multidimensional string-array.<br/>
+        /// Gets a copy of the species table, a multidimensional string-array.
+        /// 
         /// The species table defines, which species corresponds with 
         /// which combination of level set - signs.
         /// </summary>
         /// <remarks>
-        /// The rank (number of dimensions) of this array is equal to the number of 
-        /// level-sets (<see cref="LevelSets"/>).
+        /// The rank (number of dimensions) of this array is equal to the number of level-sets (<see cref="LevelSets"/>).
         /// Valid indices are only 0 and 1, 0 corresponds to a negative sign an 1 to the positive sign.
         /// E.g. if there are two level sets <em>G</em><sub>1</sub> and <em>G</em><sub>1</sub>
         /// and for some point in space, their sign is -1 and 1, than the species 
@@ -1415,7 +1415,7 @@ namespace BoSSS.Foundation.XDG {
         /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
-        /// new width of near region;
+        /// new width of near region; if smaller than 0, unchanged
         /// </param>
         /// <param name="__LevSetAllowedMovement">
         /// new values for the allowed level-set movement.
@@ -1567,7 +1567,8 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
-                    foreach (var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
+                    var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
+                    foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
                         int VecLen = t_j0_Len.Item2;
 

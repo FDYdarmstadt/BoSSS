@@ -84,7 +84,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             codomainName = EquationNames.MomentumEquationComponent(d);
             AddInterfaceNSE_MassFlux(dimension, d, LsTrk, config);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             if (config.prescribedMassflux != null)
                 AddCoefficient("PrescribedMassFlux");
 
@@ -95,11 +98,22 @@ namespace BoSSS.Application.XNSE_Solver {
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
-            if (config.isViscous) {
-                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));
+            // from XNSFE_OperatorComponents
+            if (config.isTransport) {
+                if (!config.isMovingMesh) {
+                    AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
+                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
+                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, physParams));
+                }
+            } else {
+                AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
             }
 
-            AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams));
+            
+
+            if (config.isViscous) {
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));
+            }            
         }
 
         public override string FirstSpeciesName => phaseA;

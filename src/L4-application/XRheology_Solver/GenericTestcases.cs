@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.TestCases;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -118,14 +119,14 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===================
             #region physics
 
-            C.PhysicalParameters.reynolds_A = 1.0;
-            C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.reynolds_A = 1.0;
+            C.PhysicalParametersRheology.reynolds_B = 1.0;
+            C.PhysicalParametersRheology.beta_a = 0.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
 
             C.RaiseWeissenberg = false;
-            C.PhysicalParameters.Weissenberg_a = 1.0;
-            C.PhysicalParameters.Weissenberg_b = 1.0;
+            C.PhysicalParametersRheology.Weissenberg_a = 1.0;
+            C.PhysicalParametersRheology.Weissenberg_b = 1.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0.0;
@@ -415,16 +416,16 @@ namespace BoSSS.Application.XRheology_Solver {
             // ===================
             #region physics
 
-            C.PhysicalParameters.reynolds_A = 1.0;
-            C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.Weissenberg_a = 0.0;
-            C.PhysicalParameters.Weissenberg_b = 0.0;
-            C.PhysicalParameters.beta_a = 1.0;
-            C.PhysicalParameters.beta_b = 1.0;
+            C.PhysicalParametersRheology.reynolds_A = 1.0;
+            C.PhysicalParametersRheology.reynolds_B = 1.0;
+            C.PhysicalParametersRheology.rho_A = 1;
+            C.PhysicalParametersRheology.rho_B = 1;
+            C.PhysicalParametersRheology.mu_A = 1;
+            C.PhysicalParametersRheology.mu_B = 1;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.0;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 1.0;
+            C.PhysicalParametersRheology.beta_b = 1.0;
             double sigma = 0.0;
             C.PhysicalParameters.Sigma = sigma;
 
@@ -496,13 +497,13 @@ namespace BoSSS.Application.XRheology_Solver {
             Func<double[], double, double> Pres_A_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]); //2 * X[0];
             Func<double[], double, double> Pres_B_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Sin(X[1]); //2 * X[0]; 
 
-            Func<double[], double, double> StressXX_A_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
-            Func<double[], double, double> StressXY_A_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
-            Func<double[], double, double> StressYY_A_Func = (X, t) => 2 * (1 - C.PhysicalParameters.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXX_A_Func = (X, t) => -2 * (1 - C.PhysicalParametersRheology.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXY_A_Func = (X, t) => -2 * (1 - C.PhysicalParametersRheology.beta_a) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
+            Func<double[], double, double> StressYY_A_Func = (X, t) => 2 * (1 - C.PhysicalParametersRheology.beta_a) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
 
-            Func<double[], double, double> StressXX_B_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
-            Func<double[], double, double> StressXY_B_Func = (X, t) => -2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
-            Func<double[], double, double> StressYY_B_Func = (X, t) => 2 * (1 - C.PhysicalParameters.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXX_B_Func = (X, t) => -2 * (1 - C.PhysicalParametersRheology.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            Func<double[], double, double> StressXY_B_Func = (X, t) => -2 * (1 - C.PhysicalParametersRheology.beta_b) * Math.Exp(X[0]) * (Math.Cos(X[1]) - X[1] * Math.Sin(X[1]));
+            Func<double[], double, double> StressYY_B_Func = (X, t) => 2 * (1 - C.PhysicalParametersRheology.beta_b) * Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
 
             Func<double[], double, double> GravityX_A_Func = (X, t) => -1 / C.PhysicalParameters.reynolds_A * Math.Exp(X[0]) * (Math.Exp(X[0]) * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.reynolds_A - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_A * X[1] * X[1] - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_A - 2 * Math.Sin(X[1]) * C.PhysicalParameters.reynolds_A + 2 * Math.Sin(X[1]));
             Func<double[], double, double> GravityY_A_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Cos(X[1]) * ((C.PhysicalParameters.reynolds_A - 1) / C.PhysicalParameters.reynolds_A);
@@ -510,21 +511,21 @@ namespace BoSSS.Application.XRheology_Solver {
             Func<double[], double, double> GravityX_B_Func = (X, t) => -1 / C.PhysicalParameters.reynolds_B * Math.Exp(X[0]) * (Math.Exp(X[0]) * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.reynolds_B - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_B * X[1] * X[1] - Math.Exp(X[0]) * C.PhysicalParameters.reynolds_B - 2 * Math.Sin(X[1]) * C.PhysicalParameters.reynolds_B + 2 * Math.Sin(X[1]));
             Func<double[], double, double> GravityY_B_Func = (X, t) => 2 * Math.Exp(X[0]) * Math.Cos(X[1]) * ((C.PhysicalParameters.reynolds_B - 1) / C.PhysicalParameters.reynolds_B);
 
-            Func<double[], double, double> GravityXX_A_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_a * X[1] * C.PhysicalParameters.Weissenberg_a
-                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParameters.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParameters.beta_a - 1);
-            Func<double[], double, double> GravityXY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParameters.beta_a - 1) * C.PhysicalParameters.Weissenberg_a * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1]
+            Func<double[], double, double> GravityXX_A_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParametersRheology.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParametersRheology.beta_a * X[1] * C.PhysicalParametersRheology.Weissenberg_a
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParametersRheology.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParametersRheology.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParametersRheology.beta_a - 1);
+            Func<double[], double, double> GravityXY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParametersRheology.beta_a - 1) * C.PhysicalParametersRheology.Weissenberg_a * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1]
                 + 3 * Math.Cos(X[1]) * Math.Sin(X[1]) + X[1]);
-            Func<double[], double, double> GravityYY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_a * X[1]
-                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParameters.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1])
-                + 3 * X[1] * X[1] - 3 * C.PhysicalParameters.beta_a + 3);
+            Func<double[], double, double> GravityYY_A_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParametersRheology.Weissenberg_a * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParametersRheology.beta_a * X[1]
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParametersRheology.beta_a + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParametersRheology.beta_a * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1])
+                + 3 * X[1] * X[1] - 3 * C.PhysicalParametersRheology.beta_a + 3);
 
-            Func<double[], double, double> GravityXX_B_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_b * X[1] * C.PhysicalParameters.Weissenberg_b
-                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParameters.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParameters.beta_b - 1);
-            Func<double[], double, double> GravityXY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParameters.beta_b - 1) * C.PhysicalParameters.Weissenberg_b * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1]
+            Func<double[], double, double> GravityXX_B_Func = (X, t) => 2 * Math.Exp(2 * X[0]) * C.PhysicalParametersRheology.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParametersRheology.beta_b * X[1] * C.PhysicalParametersRheology.Weissenberg_b
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParametersRheology.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] + C.PhysicalParametersRheology.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1]) - X[1] * X[1] + C.PhysicalParametersRheology.beta_b - 1);
+            Func<double[], double, double> GravityXY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * (C.PhysicalParametersRheology.beta_b - 1) * C.PhysicalParametersRheology.Weissenberg_b * (2 * Math.Pow(Math.Cos(X[1]), 2) * X[1]
                 + 3 * Math.Cos(X[1]) * Math.Sin(X[1]) + X[1]);
-            Func<double[], double, double> GravityYY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParameters.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParameters.beta_b * X[1]
-                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParameters.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParameters.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1])
-                + 3 * X[1] * X[1] - 3 * C.PhysicalParameters.beta_b + 3);
+            Func<double[], double, double> GravityYY_B_Func = (X, t) => -2 * Math.Exp(2 * X[0]) * C.PhysicalParametersRheology.Weissenberg_b * (-2 * Math.Cos(X[1]) * Math.Sin(X[1]) * C.PhysicalParametersRheology.beta_b * X[1]
+                + 3 * Math.Cos(X[1]) * Math.Cos(X[1]) * C.PhysicalParametersRheology.beta_b + 2 * Math.Cos(X[1]) * Math.Sin(X[1]) * X[1] - 3 * C.PhysicalParametersRheology.beta_b * X[1] * X[1] - 3 * Math.Cos(X[1]) * Math.Cos(X[1])
+                + 3 * X[1] * X[1] - 3 * C.PhysicalParametersRheology.beta_b + 3);
 
             #endregion
 

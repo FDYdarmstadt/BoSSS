@@ -93,16 +93,12 @@ namespace BoSSS.Solution.NSECommon {
         /// as a function of the level-set.
         /// Only available for <see cref="ViscosityOption.VariableViscosity"/> and <see cref="ViscosityOption.VariableViscosityDimensionless"/>.
         /// </param>
-        protected swipViscosityBase(
-                                    double _penaltyBase,
+        protected swipViscosityBase(double _penaltyBase,
                                     int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
-            //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null) {
             this.m_penalty_base = _penaltyBase;
-            //this.m_ComputePenalty = ComputePenalty;
             this.m_iComp = iComp;
             this.m_D = D;
-            //this.cj = PenaltyLengthScales;
             velFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_d(d)]);
             EdgeTag2Type = bcmap.EdgeTag2Type;
             this.m_PhysicsMode = bcmap.PhysMode;
@@ -314,7 +310,7 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
-            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty_base));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
             double µ = penaltySizeFactor * m_penalty * m_penalty_base;
@@ -895,11 +891,6 @@ namespace BoSSS.Solution.NSECommon {
                     f[l, k] += this.BoundaryEdgeForm(ref cpv, _U_in, _GradU_in, _V_in, _GradV_in);
                 }
             }
-
- 
-
-
-
         }
     }
 

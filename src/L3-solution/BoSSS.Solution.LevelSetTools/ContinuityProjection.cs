@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -126,8 +127,8 @@ namespace BoSSS.Solution.LevelSetTools {
         /// Makes <paramref name="DGLevelSet"/> a continuous function <paramref name="LevelSet"/>,
         /// according to the Option from the initialization
         /// </summary>
-        /// <param name="DGLevelSet"></param>
-        /// <param name="LevelSet"></param>
+        /// <param name="DGLevelSet">input; may be discontinuous on cell boundaries</param>
+        /// <param name="LevelSet">output; should be continuous</param>
         /// <param name="Domain"></param>
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
@@ -189,27 +190,39 @@ namespace BoSSS.Solution.LevelSetTools {
         }
     }
 
-    ///<summary>
+    /// <summary>
     /// Smoothing based on ContinuousDGField 
     /// => Lagrange-Multiplier Approach
-    ///</summary>
+    /// </summary>
+    /// <remarks>
+    /// - Developed by Martin Smuda, described in his PhD thesis
+    /// - the main advantage of the continuity projection using <see cref="ContinuityProjectionCDG"/>
+    ///   is that it works with hanging nodes and in 3D.
+    /// </remarks>
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
             CDGField = new ConstrainedDGField(myBasis);
         }
+        //Basis m_myBasis;
         ConstrainedDGField CDGField;
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
-            CDGField.ProjectDGField(1.0, DGLevelSet, Domain);
-            LevelSet.Clear();
-            CDGField.AccToDGField(1.0, LevelSet);
+            if(Domain.NoOfItemsLocally.MPISum() > 0) {
+                //CDGField = new ConstrainedDGField(m_myBasis); 
+                CDGField.ProjectDGField(DGLevelSet, Domain);
+                LevelSet.Clear();
+                CDGField.AccToDGField(1.0, LevelSet);
+            } else {
+                LevelSet.Clear();
+                LevelSet.AccLaidBack(1.0, LevelSet);
+            }
         }
     }
 
-    ///<summary>
+    /// <summary>
     /// Does nothing => no enforcement of continuity  
-    ///</summary>
+    /// </summary>
     class NoProjection : IContinuityProjection {
 
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {

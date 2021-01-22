@@ -69,6 +69,7 @@
     <Compile Include="AggregationGridBasis.cs" />
     <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="BlockJacobi.cs" />
+    <Compile Include="UniSolver.cs" />
     <Compile Include="GenericKcycle.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConditionNumberScalingTest.cs" />

@@ -20,6 +20,9 @@ namespace BoSSS.Foundation {
     /// - key: variable name as defined by the operator (<see cref="ISpatialOperator.ParameterVar"/>)
     /// - value: DG field to store the respective state
     /// </param>
+    /// <param name="phystime">
+    /// physical timestamp
+    /// </param>
     /// <remarks>
     /// Note:
     /// 1. Alternatively, equation components which implement <see cref="IParameterHandling"/> can be used.
@@ -27,7 +30,7 @@ namespace BoSSS.Foundation {
     ///    put the update of all parameter fields for the operator into one big piece of spaghetti code.
     ///    Hence, it can be split among different handlers.
     /// </remarks>
-    public delegate void DelPartialParameterUpdate(IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields);
+    public delegate void DelPartialParameterUpdate(double phystime, IReadOnlyDictionary<string,DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields);
 
 
     /// <summary>

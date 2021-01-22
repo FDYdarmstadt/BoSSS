@@ -170,8 +170,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             */
         }
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
             
             this.CreateEquationsAndSolvers(null);
 
@@ -183,7 +183,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 if (base.Timestepping.m_RK_Timestepper != null)
                     throw new NotSupportedException();
                 
-                base.Timestepping.m_BDF_Timestepper.MultiInit(0.0, 0, this.Control.GetFixedTimestep(),
+                base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
                     delegate (int TimestepIndex, double Time, DGField[] St) {
 
                         Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
@@ -311,6 +311,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -327,6 +328,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -339,6 +341,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;

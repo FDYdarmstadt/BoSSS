@@ -333,7 +333,7 @@ namespace BoSSS.Application.ipViscosity {
 
 
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             int D = this.GridData.SpatialDimension;
 
             var sol = this.solution;

@@ -64,8 +64,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
-    /// Optional: coupled heat equation with evaporation
-    /// Optional: kinetic energy equation 
+    /// - Optional: coupled heat equation with evaporation
+    /// - Optional: kinetic energy equation 
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
@@ -73,42 +73,31 @@ namespace BoSSS.Application.XNSE_Solver {
         // Main file
         //===========
         static void Main(string[] args) {
-            
+
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            //                                q: -50,
+            //                                deg: 3,
+            //                                AgglomerationTreshold: 0,
+            //                                SolverMode_performsolve: true,
+            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
 
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(2, 0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(0.01, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711, true, false);
-
-            //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
-            //BatchmodeConnector.MatlabExecuteable = @"C:\Octave\Octave-5.2.0\mingw64\bin\octave-cli.exe";
-
-            ////Tests.UnitTest.BcTest_PressureOutletTest(1, 0.0, true, 3);
-            ////Tests.UnitTest.MovingDropletTest(2, 1, 0.1d, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 0.8d,
-            ////    ViscosityMode.FullySymmetric, true, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            ////Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d); // 1.0471975511966d);
-            //Tests.UnitTest.TranspiratingChannelTest(2, 2, 0.1d, 0.1d, ViscosityMode.Standard, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            ////Tests.UnitTest.PolynomialTestForConvectionTest(3, 0.0d, false, 3);
-            ////Tests.UnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric);
-            ////Tests.UnitTest.TestRayleighTaylorInstability();
-            ////Tests.UnitTest.ScalingStaticDropletTest(4, ViscosityMode.FullySymmetric);
-
-            //Tests.ASUnitTest.ViscosityJumpTest(2, 4, 0.1d, ViscosityMode.FullySymmetric,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //Tests.ASUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0d, false,
-            //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
-
-
-            //Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 3, LevelSetEvolution.FastMarching,
-            //    LevelSetHandling.Coupled_Once);
-
-            //return;
-
-
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
-                var p = new XNSE_SolverMain();
+                var p = new XNSE();
                 return p;
             });
+        }
+
+        static void KatastrophenPlot(DGField[] dGFields) {
+            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
         }
 
 
@@ -1551,10 +1540,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
+
+            this.LsTrk.PushStacks();
 
             this.InitLevelSet();
+
+            Tecplot.PlotFields(new DGField[] { this.DGLevSet.Current, this.LevSet, this.CurrentVel[0], this.CurrentVel[1] }, "futinger", 0.0, 3);
 
             this.CreateEquationsAndSolvers(null);
 
@@ -1574,7 +1567,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void ResetInitial() {
-            base.SetInitial();
+            base.SetInitial(0.0);
 
             this.InitLevelSet();
 

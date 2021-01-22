@@ -71,7 +71,11 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <param name="M"></param>
         public void DefineMatrix(IMutableMatrixEx M) {
             if (m_Matrix != null)
-                throw new ApplicationException("matrix is allready defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
+                throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
+            if(M.NoOfCols != M.NoOfRows)
+                throw new ArgumentException("Expecting quadratic matrix.");
+            if(M.NoOfCols <= 0 || M.NoOfRows <= 0)
+                throw new ArgumentException("Matrix must have a non-zero size.");
 
             m_Matrix = new IJMatrix(M);
             //m_Unknowns = new IJVector(M.RowPartiton);

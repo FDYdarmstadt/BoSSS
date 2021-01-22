@@ -29,11 +29,12 @@ using System.Collections.Generic;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// A collection of all-up NUnit tests for the XNSE solver.
+    /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
     /// </summary>
     [TestFixture]
     static public partial class UnitTest {
@@ -224,6 +225,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
         }
 
+#endif
 
         /// <summary>
         /// <see cref="ViscosityJumpTest"/>
@@ -254,7 +256,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
         }
-#endif
 
 
 #if !DEBUG        
@@ -584,6 +585,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new TranspiratingChannelTest(U2, periodicity, spatialDimension);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local); // surface tension plays no role in this test, so ignore it
+
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -705,6 +707,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
+
+            if(tst.TestImmersedBoundary)
+                throw new NotSupportedException("Immersed boundary is not supported for the old XNSE solver.");
 
             // database setup
             // ==============

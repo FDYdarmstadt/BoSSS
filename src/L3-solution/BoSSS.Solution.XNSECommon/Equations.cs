@@ -9,9 +9,14 @@ using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using ilPSP;
 using ilPSP.Utils;
 
 namespace BoSSS.Solution.XNSECommon {
+
+    /// <summary>
+    /// Incompressible, constant density momentum equation in the bulk
+    /// </summary>
     public class NavierStokes : BulkEquation {
         string speciesName;
 
@@ -23,6 +28,19 @@ namespace BoSSS.Solution.XNSECommon {
 
         double rho;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="d">
+        /// Momentum component index
+        /// </param>
+        /// <param name="LsTrk"></param>
+        /// <param name="D">
+        /// Spatial dimension
+        /// </param>
+        /// <param name="boundaryMap"></param>
+        /// <param name="config"></param>
         public NavierStokes(
             string spcName,
             int d,
@@ -35,6 +53,10 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
             this.d = d;
             this.D = D;
+            if(D != 2 && D != 3)
+                throw new ArgumentOutOfRangeException("only supported for 2D and 3D");
+            if(d < 0 || d >= D)
+                throw new ArgumentOutOfRangeException();
 
             SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
@@ -58,6 +80,8 @@ namespace BoSSS.Solution.XNSECommon {
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
             }
+            
+
 
             // pressure gradient
             // =================
@@ -70,6 +94,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ================
             if (config.isViscous && !(muSpc == 0.0)) {
                 AddCoefficient("SlipLengths");
+                //Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
@@ -118,22 +143,31 @@ namespace BoSSS.Solution.XNSECommon {
                     }
                     case ViscosityMode.Viscoelastic: {
                         //set species arguments
-                        double ReSpc, betaSpc;
+                        double ReSpc;
+                        //double betaSpc;
                         switch (spcName) {
-                            case "A": { ReSpc = physParams.reynolds_A; betaSpc = physParams.beta_a; break; }
-                            case "B": { ReSpc = physParams.reynolds_B; betaSpc = physParams.beta_b; break; }
+                            case "A": { 
+                                ReSpc = physParams.reynolds_A; 
+                                //betaSpc = ((PhysicalParametersRheology)physParams).beta_a; 
+                                break; 
+                            }
+                            case "B": { 
+                                ReSpc = physParams.reynolds_B; 
+                                //betaSpc = ((PhysicalParametersRheology)physParams).beta_b; 
+                                break; 
+                            }
                             default: throw new ArgumentException("Unknown species.");
                         }
 
                         // Bulk operator:
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc1);
 
                         var Visc2 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
                             dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
-                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / physParams.beta_a, physParams.reynolds_B / physParams.beta_b);
+                            boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         AddComponent(Visc2);
 
                         var div = new StressDivergenceInBulk(d, boundaryMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
@@ -148,11 +182,13 @@ namespace BoSSS.Solution.XNSECommon {
 
             // gravity
             // ================
-            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
-            string gravityOfSpecies = gravity + "#" + SpeciesName;
-            var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
-            AddComponent(gravityComponent);
-            AddParameter(gravityOfSpecies);
+            if(config.isGravity) {
+                string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+                string gravityOfSpecies = gravity + "#" + SpeciesName;
+                var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+                AddComponent(gravityComponent);
+                AddParameter(gravityOfSpecies);
+            }
         }
 
         public override string SpeciesName => speciesName;
@@ -162,6 +198,10 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
+
+    /// <summary>
+    /// Continuity equation for the incompressible case, for constant density in the bulk.
+    /// </summary>
     public class Continuity : BulkEquation {
         //Methode aus der XNSF_OperatorFactory
         string speciesName;
@@ -207,6 +247,9 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
+    /// <summary>
+    /// Continuity equation for the incompressible case, fluid interface terms
+    /// </summary>
     public class InterfaceContinuity : SurfaceEquation {
         string codomainName;
 
@@ -235,7 +278,7 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
-    /// Incompressible, Newtonian momentum equation, interface part
+    /// Incompressible, Newtonian momentum equation, (fluid/fluid) interface part
     /// </summary>
     public class NSEInterface : SurfaceEquation {
         string codomainName;
@@ -283,17 +326,22 @@ namespace BoSSS.Solution.XNSECommon {
             //viscoelastic
             double reynoldsA = physParams.reynolds_A;
             double reynoldsB = physParams.reynolds_B;
-            double betaA = physParams.beta_a;
-            double betaB = physParams.beta_b;
             double[] penalty1 = dntParams.Penalty1;
             double penalty2 = dntParams.Penalty2;
 
+            
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);
                 AddComponent(conv);
             }
+            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+                // if Moving mesh, we need the interface transport term somehow
+
+                throw new NotImplementedException("Something missing here.");
+            }
+
 
             // pressure gradient
             // =================
@@ -315,26 +363,29 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d, dntParams.UseWeightedAverages));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
-
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d, dntParams.UseWeightedAverages));
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d, dntParams.UseWeightedAverages));
-
+                    double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+                    double betaB = ((PhysicalParametersRheology)physParams).beta_b;
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                     break;
 
                     default:
                     throw new NotImplementedException();
                 }
             }
+            
+
         }
 
     }
 
     /// <summary>
-    /// 
+    /// Implementation of surface tension forces in the Momentum equation,
+    /// to be used in conjunction with <see cref="NSEInterface"/>
     /// </summary>
     public class NSESurfaceTensionForce : SurfaceEquation {
         string codomainName;
@@ -480,5 +531,184 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
 
 
+    }
+
+    /// <summary>
+    /// Incompressible, Newtonian momentum equation, (fluid/solid) immersed boundary
+    /// </summary>
+    public class NSEimmersedBoundary : SurfaceEquation {
+        string m_codomainName;
+        string m_fluidPhase;
+        string m_solidPhase;
+        int m_iLevSet;
+
+        //Methode aus der XNSF_OperatorFactory
+        public NSEimmersedBoundary(
+            string fluidPhase,
+            string solidPhase,
+            int iLevSet,
+            int d,
+            int D,
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            INSE_Configuration config,
+            bool isMovingMesh) : base() //
+        {
+
+            m_fluidPhase = fluidPhase;
+            m_solidPhase = solidPhase;
+            m_iLevSet = iLevSet;
+            m_codomainName = EquationNames.MomentumEquationComponent(d);
+            AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
+
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
+        }
+
+
+        void AddInterfaceNSE(
+            int D,
+            int d,
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            INSE_Configuration config,
+            bool isMovingMesh) {
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double rho, LFF, mu;
+            switch(this.m_fluidPhase) {
+                case "A":
+                rho = physParams.rho_A;
+                LFF = dntParams.LFFA;
+                mu = physParams.mu_A;
+                break;
+
+                case "B":
+                rho = physParams.rho_B;
+                LFF = dntParams.LFFB;
+                mu = physParams.mu_B;
+                break;
+
+                default: throw new NotSupportedException($"Unknown fluid species: {this.m_fluidPhase}");
+            }
+
+            // convective operator
+            // ===================
+            if (physParams.IncludeConvection && config.isTransport) {
+                 var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                            d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
+                            m_iLevSet, m_fluidPhase, m_solidPhase, true);
+                
+                AddComponent(ConvIB);
+            }
+            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+                // if Moving mesh, we need the interface transport term somehow
+
+                throw new NotImplementedException("Something missing here.");
+            }
+
+
+            // pressure gradient
+            // =================
+            if (config.isPressureGradient) {
+                
+                var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk, m_iLevSet, m_fluidPhase, m_solidPhase);
+                AddComponent(presLs);
+            }
+
+            // viscous operator
+            // ================
+            if (config.isViscous && (mu != 0.0)) {
+
+                double penalty = dntParams.PenaltySafety;
+                switch(dntParams.ViscosityMode) {
+                    case ViscosityMode.Standard:
+                    AddComponent(
+                         new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                    break;
+
+                    case ViscosityMode.TransposeTermMissing:
+                    throw new NotImplementedException("todo");
+
+                    case ViscosityMode.FullySymmetric:
+                    throw new NotImplementedException("todo");
+
+                    case ViscosityMode.Viscoelastic:
+                    //double reynoldsA = physParams.reynolds_A;
+                    //double reynoldsB = physParams.reynolds_B;
+                    //double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+                    //double betaB = ((PhysicalParametersRheology)physParams).beta_b;
+                    //double[] penalty1 = dntParams.Penalty1;
+                    //double penalty2 = dntParams.Penalty2;
+                    throw new NotImplementedException("todo");
+
+                    default:
+                    throw new NotImplementedException();
+                }
+            }
+           
+
+        }
+
+        public override string FirstSpeciesName {
+            get { return m_fluidPhase; }
+        }
+
+        public override string SecondSpeciesName {
+            get { return m_solidPhase; }
+        }
+
+        public override string CodomainName {
+            get {
+                return m_codomainName;
+            }
+        }
+    }
+
+
+
+
+     /// <summary>
+    /// Continuity equation for the incompressible case, (fluid/solid) immersed boundary
+    /// </summary>
+    public class ImersedBoundaryContinuity : SurfaceEquation {
+        string codomainName;
+
+        //Methode aus der XNSF_OperatorFactory
+        public ImersedBoundaryContinuity(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D, LevelSetTracker LsTrk) {
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            m_FirstSpeciesName = fluidPhase;
+            m_SecondSpeciesName = solidPhase;
+
+            // set components
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true);
+            
+            AddComponent(divPen);
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
+        }
+
+        string m_FirstSpeciesName;
+        string m_SecondSpeciesName;
+
+        public override string FirstSpeciesName {
+            get {
+                return m_FirstSpeciesName;
+            }
+        }
+
+        public override string SecondSpeciesName {
+            get {
+                return m_SecondSpeciesName;
+            }
+        }
+
+        public override string CodomainName => codomainName;
     }
 }

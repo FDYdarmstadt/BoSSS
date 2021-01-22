@@ -88,7 +88,7 @@ namespace BoSSS.Solution.Control {
             this.BoundaryValues = new Dictionary<string, BoundaryValueCollection>(new InvariantCultureIgnoreCase_Comparer());
             this.BoundaryValueChanges = new Dictionary<string, string>(new InvariantCultureIgnoreCase_Comparer());
             this.Tags = new List<string>();
-            this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)>();
+            this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
             this.NoOfMultigridLevels = 0;
         }
@@ -249,8 +249,8 @@ namespace BoSSS.Solution.Control {
             Dictionary<string, IBoundaryAndInitialData> m_BoundaryValues;
 
             /// <summary>
-            /// Steady-state or instationary boundary values.
-            /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
+            /// Steady-state or temporally dependent boundary values.
+            /// - key: a name for the boundary value, e.g. 'VelocityX'
             /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
             /// </summary>
             /// <remarks>
@@ -273,7 +273,7 @@ namespace BoSSS.Solution.Control {
             }
 
             /// <summary>
-            /// Steady-state or instationary boundary values.
+            /// Steady-state or temporally dependent boundary values.
             /// - key: a name for the boundary value, e.g. 'VelocityX'<br/>
             /// - value: some function that maps a space coordinate to some function value, i.e.  \f$ (\vec{x},t) \mapsto f(\vec{x},t)\f$ 
             /// </summary>
@@ -330,7 +330,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
-        /// <param name="value">Function of the boundary condition</param>
+        /// <param name="value">Function of the boundary condition (space- and time-dependent)</param>
         public void AddBoundaryValue(string EdgeTagName, string fieldname, Func<double[], double, double> value) {
             if(!this.BoundaryValues.ContainsKey(EdgeTagName))
                 this.BoundaryValues.Add(EdgeTagName, new BoundaryValueCollection());
@@ -348,7 +348,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         /// <param name="EdgeTagName">Name of the boundary condition</param>
         /// <param name="fieldname">Name of the field for which the boundary condition is valid</param>
-        /// <param name="value">Function of the boundary condition</param>
+        /// <param name="value">Function of the boundary condition (only space-dependent)</param>
         public void AddBoundaryValue(string EdgeTagName, string fieldname, Func<double[], double> value) {
             AddBoundaryValue(EdgeTagName, fieldname, (X, t) => value(X));
         }
@@ -394,15 +394,18 @@ namespace BoSSS.Solution.Control {
         }
 
         [NonSerialized]
-        Dictionary<string, (ScalarFunction vec, Func<double[],double> scalar)> m_InitialValues_Evaluators;
+        Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[],double,double> scalar)> m_InitialValues_Evaluators;
 
         abstract class ProxyDictBase<R> : IDictionary<string, R> {
-            internal Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)> home;
-
+            internal Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)> home;
             
-
-            abstract protected R Ex((ScalarFunction, Func<double[], double>) tt);
-            abstract protected (ScalarFunction, Func<double[], double>) Pk(R r);
+            /// <summary>
+            /// extracts the desired member 
+            /// </summary>
+            abstract protected R Ex((ScalarFunctionTimeDep, Func<double[], double, double>) tt);
+            
+            
+            abstract protected (ScalarFunctionTimeDep, Func<double[], double, double>) Pk(R r);
 
 
             public R this[string key] {
@@ -478,49 +481,62 @@ namespace BoSSS.Solution.Control {
         }
 
 
-        class ProxyDict_ScalarFunction : ProxyDictBase<ScalarFunction> {
-            protected override ScalarFunction Ex((ScalarFunction, Func<double[], double>) tt) {
+        class ProxyDict_ScalarFunction : ProxyDictBase<ScalarFunctionTimeDep> {
+            protected override ScalarFunctionTimeDep Ex((ScalarFunctionTimeDep, Func<double[], double, double>) tt) {
                 return tt.Item1;
             }
 
-            static Func<double[], double> Unvectorize(ScalarFunction v) {
-                Func<double[], double> f = delegate (double[] X) {
+            static Func<double[], double, double> Unvectorize(ScalarFunctionTimeDep v) {
+                Func<double[], double, double> f = delegate (double[] X, double time) {
                     MultidimensionalArray inp = MultidimensionalArray.CreateWrapper(X, 1, X.Length);
                     MultidimensionalArray ret = MultidimensionalArray.Create(1);
-                    v(inp, ret);
+                    v(inp, time, ret);
                     return ret[0];
                 };
                 return f;
             }
 
-            protected override (ScalarFunction, Func<double[], double>) Pk(ScalarFunction r) {
+            protected override (ScalarFunctionTimeDep, Func<double[], double, double>) Pk(ScalarFunctionTimeDep r) {
                 return (r, Unvectorize(r));
             }
         }
 
-        class ProxyDict_Func : ProxyDictBase<Func<double[],double>> {
-            protected override Func<double[],double> Ex((ScalarFunction, Func<double[], double>) tt) {
+        class ProxyDict_Func_TimeDep : ProxyDictBase<Func<double[],double,double>> {
+            protected override Func<double[], double, double> Ex((ScalarFunctionTimeDep, Func<double[], double, double>) tt) {
                 return tt.Item2;
             }
 
 
-            protected override (ScalarFunction, Func<double[], double>) Pk(Func<double[],double> r) {
+            protected override (ScalarFunctionTimeDep, Func<double[], double, double>) Pk(Func<double[],double,double> r) {
                 return (r.Vectorize(), r);
             }
         }
 
+        class ProxyDict_Func : ProxyDictBase<Func<double[],double>> {
+            protected override Func<double[], double> Ex((ScalarFunctionTimeDep, Func<double[], double, double>) tt) {
+                return X => tt.Item2(X, 0.0);
+            }
+
+            protected override (ScalarFunctionTimeDep, Func<double[], double, double>) Pk(Func<double[],double> r) {
+                Func<double[], double, double> rTime = (X, t) => r(X);
+                
+                return (rTime.Vectorize(), rTime);
+            }
+        }
+
+
         void Sync__InitialValues_Evaluators() {
             if(m_InitialValues_Evaluators == null)
-                m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunction vec, Func<double[], double> scalar)>();
+                m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
 
             foreach(string name in InitialValues.Keys) {
                 if(!m_InitialValues_Evaluators.ContainsKey(name)) {
 
                     var vv = InitialValues[name];
 
-                    m_InitialValues_Evaluators.Add(name, new ValueTuple<ScalarFunction, Func<double[], double>>(
-                        (MultidimensionalArray X, MultidimensionalArray R) => vv.Evaluate(X, 0.0, R),
-                        (double[] X) => vv.Evaluate(X, 0.0)));
+                    m_InitialValues_Evaluators.Add(name, new ValueTuple<ScalarFunctionTimeDep, Func<double[], double, double>>(
+                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.Evaluate(X, time, R),
+                        (double[] X, double time) => vv.Evaluate(X, time)));
                 }
             }
         }
@@ -536,15 +552,16 @@ namespace BoSSS.Solution.Control {
         /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
         /// </remarks>
         [JsonIgnore]
-        public IDictionary<string, ScalarFunction> InitialValues_EvaluatorsVec {
+        public IDictionary<string, ScalarFunctionTimeDep> InitialValues_EvaluatorsVec {
             get {
                 Sync__InitialValues_Evaluators();
                 return new ProxyDict_ScalarFunction() { home = m_InitialValues_Evaluators };
             }
         }
 
+
         /// <summary>
-        /// Initial values which are set at the start of the simulation.
+        /// Initial values, or parameters which do not depend on time.
         /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
         /// - value: data or mathematical expression which is projected at application startup.
         /// </summary>
@@ -556,7 +573,30 @@ namespace BoSSS.Solution.Control {
         public IDictionary<string, Func<double[],double>> InitialValues_Evaluators {
             get {
                 Sync__InitialValues_Evaluators();
-                return new ProxyDict_Func() { home = m_InitialValues_Evaluators };
+                return new ProxyDict_Func() {
+                    home = m_InitialValues_Evaluators 
+                };
+            }
+        }
+
+
+        /// <summary>
+        /// Initial values (for startup), 
+        /// or temporally dependent parameters.
+        /// - key: identification of the DG field, see <see cref="BoSSS.Foundation.DGField.Identification"/>.
+        /// - value: data or mathematical expression which is projected at application startup.
+        /// </summary>
+        /// <remarks>
+        /// Adding delegates directly to this dictionary is possible for backward compatibility reasons,
+        /// although this limits some functionality - e.g. the control object is usually not serializeable anymore.
+        /// </remarks>
+        [JsonIgnore]
+        public IDictionary<string, Func<double[],double,double>> InitialValues_Evaluators_TimeDep {
+            get {
+                Sync__InitialValues_Evaluators();
+                return new ProxyDict_Func_TimeDep() {
+                    home = m_InitialValues_Evaluators 
+                };
             }
         }
 
@@ -888,8 +928,6 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Activates tracing (record of method calls and returns) for selected namespaces, e.g. "BoSSS.Foundation,BoSSS.Solution".
         /// If not null and not empty, trace-files are written for every MPI rank.
-        /// The created trace files are zipped,
-        /// they can be viewed e.g. by 'gunzip -c trace.0.txt'.
         /// </summary>
         /// <seealso cref="BoSSS.Foundation.IO.IDatabaseDriver.InitTraceFile(SessionInfo)"/>
         [DataMember]

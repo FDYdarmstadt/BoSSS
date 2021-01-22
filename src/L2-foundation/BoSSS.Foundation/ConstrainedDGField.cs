@@ -30,6 +30,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation {
 
@@ -97,14 +98,23 @@ namespace BoSSS.Foundation {
         }
 
 
-
-        public void ProjectDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
+        /// <summary>
+        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// </summary>
+        /// <param name="DGField">
+        /// input; unchanged on exit
+        /// </param>
+        /// <param name="mask"></param>
+        public void ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
             this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
+            }
+            if(mask.NoOfItemsLocally.MPISum() <= 0) {
+                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
 
             // hack
@@ -909,12 +919,12 @@ namespace BoSSS.Foundation {
 
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="basis"></param>
-        /// <returns></returns>
-        //private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <param name="basis"></param>
+        ///// <returns></returns>
+        ////private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
 
         //    int deg = basis.Degree;
         //    int D = basis.GridDat.SpatialDimension;
@@ -996,12 +1006,6 @@ namespace BoSSS.Foundation {
         //}
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="vertAtEdge"></param>
-        /// <param name="CondAtVert"></param>
-        /// <returns></returns>
         private int NegotiateNumVCond(int vert, MultidimensionalArray CondAtVert, List<int> procsAtVert = null) {
 
 
@@ -1060,13 +1064,6 @@ namespace BoSSS.Foundation {
             return 0;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="vertAtEdge"></param>
-        /// <param name="CondIncidenceMatrix"></param>
-        /// <returns></returns>
-        //private int NegotiateNumECond(List<int> VertAtEdge, MultidimensionalArray CondIncidenceMatrix) {
         private int NegotiateNumECond(int m, int n, MultidimensionalArray CondIncidenceMatrix, List<int> procsAtVertm = null, List<int> procsAtVertn = null) {
 
             //int numECond = 0;
@@ -1162,7 +1159,7 @@ namespace BoSSS.Foundation {
         /// Accumulate this field to a DG Field
         /// </summary>
         /// <param name="alpha">Scaling factor</param>
-        /// <param name="DGField"></param>
+        /// <param name="DGField">output</param>
         /// <param name="mask"></param>
         public void AccToDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
             if (!DGField.Basis.Equals(this.m_Basis))

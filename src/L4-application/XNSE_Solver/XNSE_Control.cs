@@ -36,6 +36,7 @@ using BoSSS.Solution.Timestepping;
 using Newtonsoft.Json;
 using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -45,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     [DataContract]
     [Serializable]
-    public class XNSE_Control : AppControlSolver {
+    public class XNSE_Control : SolverWithLevelSetUpdaterControl {
 
         /// <summary>
         /// Ctor.
@@ -66,17 +67,24 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// default: Symmetric_diag for velocity and IdMass for pressure block preconditioning,
-        /// if true Schur complement is used instead.
+        /// Activation of second level-set.
+        /// </summary>
+        [DataMember]
+        public bool UseImmersedBoundary = false;
+
+        /// <summary>
+        /// - default (false): preconditioning for velocity and pressure is determined by 
+        ///   <see cref="VelocityBlockPrecondMode"/> and <see cref="PressureBlockPrecondMode"/>, respectively;
+        /// - true: former options are ignored, Schur complement is used instead.
         /// </summary>
         [DataMember]
         public bool UseSchurBlockPrec = false;
 
         /// <summary>
-        /// Type of <see cref="XNSE_SolverMain"/>.
+        /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE_SolverMain);
+            return typeof(XNSE);
         }
 
         /// <summary>
@@ -107,10 +115,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("PhiDG", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            FieldOptions.Add("Phi", new FieldOpts() {
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = LevSetDegree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
                 Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
@@ -247,11 +262,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool switchOffPlotting = false;
 
 
-        /// <summary>
-        /// Width of the narrow band.
-        /// </summary>
-        [DataMember]
-        public int LS_TrackerWidth = 1;
 
         /// <summary>
         /// different implementations for the level indicator 
@@ -264,7 +274,7 @@ namespace BoSSS.Application.XNSE_Solver {
             constantInterface,
 
             /// <summary>
-            /// additional refinement on cells in pashe A
+            /// additional refinement on cells in phase A
             /// </summary>
             PhaseARefined,
 
@@ -356,90 +366,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// solver is turned of and residual of initial value/exact solution is evaluated, used to 
         /// test the consistency of the implementation.
         /// </summary>
+        [DataMember]
         public bool SkipSolveAndEvaluateResidual = false;
-
-        /*
-        /// <summary>
-        /// Data to be written in LogFile
-        /// </summary>
-        public enum LoggingValues {
-
-            /// <summary>
-            /// no data will be written
-            /// </summary>
-            None,
-
-            /// <summary>
-            /// for elemental test programm with line like interfaces
-            /// </summary>
-            LinelikeLS,
-
-            /// <summary>
-            /// for elemental test programm with circle like interfaces
-            /// </summary>
-            CirclelikeLS,
-
-            /// <summary>
-            /// for wavelike simulation as CapillaryWave, RT-Instability
-            /// interface height (interface points)
-            /// </summary>
-            Wavelike,
-
-            /// <summary>
-            /// for droplet simulations
-            /// semi-major/minor aixs, circularity, area
-            /// </summary>
-            Dropletlike,
-
-            /// <summary>
-            /// for the benchmark quantities of the Rising Bubble testcase
-            /// </summary>
-            RisingBubble,
-
-            /// <summary>
-            /// contact points and corresponding contact angle
-            /// </summary>
-            MovingContactLine,
-
-            /// <summary>
-            /// height of a rising capillary in a tube
-            /// </summary>
-            CapillaryHeight,
-
-            /// <summary>
-            /// Evaporative mass flux and speed of displacement (Line interface)
-            /// </summary>
-            EvaporationL,
-
-            /// <summary>
-            /// Evaporative mass flux and speed of displacement (circle interface)
-            /// </summary>
-            EvaporationC,
-
-            /// <summary>
-            /// Channel flow type testcases
-            /// </summary>
-            ChannelFlow
-        }
-
-        /// <summary>
-        /// See <see cref="LoggingValues"/>
-        /// </summary>
-        [DataMember]
-        public LoggingValues LogValues = LoggingValues.None;
-
-        [DataMember]
-        public int LogPeriod = 1;
-        */
-
-
-        //public bool WriteInterfaceP = false;
-
-        /// <summary>
-        /// Seems to be unused...
-        /// </summary>
-        [DataMember]
-        public bool TestMode = false;
 
 
         /// <summary>
@@ -453,50 +381,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public int incrementTimesteps = 1;
 
-        /// <summary>
-        /// See <see cref="LevelSetHandling"/>
-        /// </summary>
-        [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-
-        /// <summary>
-        /// underrelaxation of the level set movement in case of coupled iterative
-        /// </summary>
-        public double LSunderrelax = 1.0;
-
-        //[DataMember]
-        //public bool useFiltLevSetGradientForEvolution = false;
-
-        /// <summary>
-        /// See <see cref="LevelSetEvolution"/>.
-        /// </summary>
-        [DataMember]
-        public LevelSetEvolution Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-
-        ///// <summary>
-        ///// switch for additional penalization terms for fast marching
-        ///// </summary>
-        //[DataMember]
-        //public bool FastMarchingPenalization = false;
-
-        /// <summary>
-        /// options for additional penalization terms for fast marching
-        /// </summary>
-        [DataMember]
-        public Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-
-        /// <summary>
-        /// Options for the initialization of the Fourier Level-set
-        /// </summary>
-        [DataMember]
-        public FourierLevSetControl FourierLevSetControl;
-
-        /// <summary>
-        /// Options for the initialization of the Phasefield Level-set
-        /// </summary>
-        [DataMember]
-        public PhasefieldControl PhasefieldControl;
-
+       
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>
@@ -517,9 +402,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public double LevelSet_ConvergenceCriterion = 1.0e-6;
 
 
-        ///// <summary>
-        ///// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        ///// </summary>
+        /// <summary>
+        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
+        /// </summary>
         [DataMember]
         public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
@@ -610,27 +495,27 @@ namespace BoSSS.Application.XNSE_Solver {
             /// <summary>
             /// arithmetic mean
             /// </summary>
-            mean,
+            mean = 1,
 
             /// <summary>
-            /// density weighted average
+            /// density weighted average (recommended default value for most cases)
             /// </summary>
-            density,
+            density = 0,
 
             /// <summary>
             /// viscosity weighted average
             /// </summary>
-            viscosity,
+            viscosity = 2,
 
             /// <summary>
             /// only take velocity from phase A
             /// </summary>
-            phaseA,
+            phaseA = 3,
 
             /// <summary>
             /// only take velocity from phase B
             /// </summary>
-            phaseB
+            phaseB = 4
 
         }
 
@@ -648,12 +533,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [JsonIgnore]
         public Func<double[], double, double> Phi;
 
-        /// <summary>
-        /// An explicit expression (y = f(x)) of the initial 0 Level-set. Used for <see cref="SplineLevelSet"/>
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public Func<double, double> Phi0Initial;
+       
 
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
@@ -720,14 +600,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode conductMode = ConductivityInSpeciesBulk.ConductivityMode.SIP;
 
         /// <summary>
-        /// Block-Precondition for the Temperature-block
-        /// </summary>
-        //[DataMember]
-        //public MultigridOperator.Mode TemperatureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-
-
-        /// <summary>
-        /// function for the disjoining pressure
+        /// Contact lines and thin-films: 
+        /// function for the disjoining pressure model
         /// </summary>
         [NonSerialized]
         [JsonIgnore]

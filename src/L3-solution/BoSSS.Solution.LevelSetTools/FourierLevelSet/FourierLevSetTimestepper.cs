@@ -74,8 +74,6 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// 
         /// </summary>
         TVD3
-
-
     }
 
     /// <summary>
@@ -92,10 +90,23 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// <param name="current_FLSproperty"></param>
     public delegate void DelEvolveFourier(ref double[] current_FLSproperty);
 
-
     /// <summary>
-    /// base class for all Fourier Timesteppers. implements standard Explicit Euler scheme
+    /// Base class for all Fourier Timesteppers, implements standard Explicit Euler scheme;
     /// </summary>
+    /// <remarks>
+    /// The idea is to describe an interface explicitly by means of Fourier series.
+    /// This explicit representation is then converted into an implicit one and projected 
+    /// onto a DG field -- from this point on, it is handled as any interface representation
+    /// for the XDG method.
+    /// Obviously, this is only possible for simple topologies, e.g. height in dependence of x-coordinate (e.g. layers of fluids)
+    /// or radius in dependence of angel (2D bubbles and droplets).
+    /// 
+    /// The motivation behind the Fourier level-set is to be a very high accurate reference; 
+    /// Since the representation is infinitely differentiable, the curvature can be computed up to machine accuracy,
+    /// ruling out any artificial oscillations from in-precise derivatives.
+    /// - Developed and maintained by Martin Smuda mainly through 2016 to 2020
+    /// - Also used in Master/Bachelor thesis of J. Triebwasser and O. Yotov.
+    /// </remarks>
     public class FourierLevSetTimestepper {
 
 

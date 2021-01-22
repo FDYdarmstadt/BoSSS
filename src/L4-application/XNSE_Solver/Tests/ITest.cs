@@ -147,6 +147,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
         /// </summary>
         Func<double[], double, double> GetT(string species);
+
+        /// <summary>
+        /// Exact solution for total thermal energy.
+        /// </summary>
+        Func<double, double> GetE();
+
+        bool CheckT { get; }
+        bool CheckE { get; }
     }
 
     interface IXNSETest : ITest {
@@ -176,5 +184,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// surface tension
         /// </summary>
         double Sigma { get; }
+
+        /// <summary>
+        /// <see cref="XNSE_Control.UseImmersedBoundary"/>
+        /// </summary>
+        bool TestImmersedBoundary { get; }
+
+        /// <summary>
+        /// Second level-set for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
+        /// </summary>
+        Func<double[], double, double> GetPhi2();
+
+        /// <summary>
+        /// Velocity for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
+        /// </summary>
+        Func<double[], double, double> GetPhi2U(int d);
+    }
+
+    interface IXNSFETest : IXNSETest, IXHeatTest {
+
     }
 }

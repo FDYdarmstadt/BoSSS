@@ -94,6 +94,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public DoNotTouchParameters dntParams;
 
+        /// <summary>
+        /// Fucking Gravity
+        /// </summary>
+        public bool isGravity {
+            get {
+                return true;
+            }
+        }
 
         /// <summary>
         /// Controls the domain variables that the operator should contain. <br/>
@@ -256,6 +264,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public XNSFE_OperatorConfiguration(XNSE_Control control) 
             : base(control) {
 
+            AgglomerationTreshold = control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
+
             thermParams = control.ThermalParameters;
 
             solveEnergy = control.solveKineticEnergyEquation;
@@ -283,18 +293,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
             CodBlocks.SetAll(true);
             DomBlocks.SetAll(true);
-
         }
 
+        /// <summary>
+        /// taken from <see cref="DoNotTouchParameters.CellAgglomerationThreshold"/>
+        /// </summary>
+        public double AgglomerationTreshold;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ThermalParameters thermParams;
-
 
         /// <summary>
         /// include kinetic energy equation
         /// </summary>
         public bool solveEnergy;
-
 
         /// <summary>
         /// true if the heat equation is solved via the auxiliary heat flux formulation

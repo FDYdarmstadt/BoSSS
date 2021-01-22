@@ -105,10 +105,10 @@ namespace BoSSS.Application.XdgPoisson3 {
         VectorField<XDGField> GradientU;
 #pragma warning restore 649
 
-        BlockMsrMatrix Op_Matrix;
-        double[] Op_Affine;
-        MultiphaseCellAgglomerator Op_Agglomeration;
-        MassMatrixFactory Op_mass;
+        //BlockMsrMatrix Op_Matrix;
+        //double[] Op_Affine;
+        //MultiphaseCellAgglomerator Op_Agglomeration;
+        //MassMatrixFactory Op_mass;
 
         /*
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
@@ -119,7 +119,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
         */
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             //this will suppress exception prompts
             //Workaround to prevent distrubance while executing batchclient
             if (this.Control.SuppressExceptionPrompt) {
@@ -128,10 +128,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
            
-            base.SetInitial();
-            this.LsTrk.UpdateTracker(0.0);
-            base.SetInitial();
-            this.LsTrk.UpdateTracker(0.0);
+            base.SetInitial(t);
+            this.LsTrk.UpdateTracker(t);
+            base.SetInitial(t);
+            this.LsTrk.UpdateTracker(t);
 
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {
@@ -150,9 +150,37 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            AssembleMatrix(this.Control.MU_A, this.Control.MU_B, out Op_Matrix, out Op_Affine, out Op_Agglomeration, out Op_mass);
-            Console.WriteLine("Matrix norm: {0}", Op_Matrix.InfNorm());
-            Console.WriteLine("Symm. diff: {0}", Op_Matrix.SymmetryDeviation());
+
+            if(L != null)
+                throw new NotSupportedException();
+
+
+            // create operator
+            // ===============
+
+            if(this.Control.SetDefaultDiriBndCnd) {
+                this.Control.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
+                this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
+            }
+
+            double penalty_multiplyer = base.Control.penalty_multiplyer;
+
+            int order = this.u.Basis.Degree * 2;
+
+            double MU_A = this.Control.MU_A;
+            double MU_B = this.Control.MU_B;
+
+            Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
+            Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
+            var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
+            Op.EquationComponents["c1"].Add(lap);      // Bulk form
+            Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
+            Op.EquationComponents["c1"].Add(new RHSSource(this.rhs));
+            Op.IsLinear = true;
+
+            Op.Commit();
+
         }
         /*
         protected void BlockTest() {
@@ -206,27 +234,10 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         XSpatialOperatorMk2 Op;
 
+        /*
         private void AssembleMatrix(double MU_A, double MU_B, out BlockMsrMatrix M, out double[] b, out MultiphaseCellAgglomerator agg, out MassMatrixFactory massFact) {
             using (var tr = new FuncTrace()) {
-                // create operator
-                // ===============
-
-                if (this.Control.SetDefaultDiriBndCnd) {
-                    this.Control.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
-                    this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
-                }
-
-                double penalty_multiplyer = base.Control.penalty_multiplyer;
-
-                int order = this.u.Basis.Degree * 2;
-
-                Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
-                var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
-                var lap = new XLaplace_Bulk(this.LsTrk, penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
-                Op.EquationComponents["c1"].Add(lap);      // Bulk form
-                Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_multiplyer, this.Control.ViscosityMode));   // coupling form
-
-                Op.Commit();
+                
 
                 // create agglomeration
                 // ====================
@@ -320,11 +331,23 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
 
+        */
+
         SinglePhaseField[] MGColoring;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             base.TerminationKey = true;
             dt = 1.0;
+
+
+            this.Op.Solve(this.u.Mapping, this.OpConfig,
+                nsc: this.Control.NonLinearSolver, lsc: this.Control.LinearSolver,
+                MultigridSequence: base.MultigridSequence, 
+                verbose: true,
+                queryHandler: base.QueryHandler);
+            
+
+            /*
             Console.WriteLine("Steady solve ...");
 
            
@@ -402,6 +425,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.QueryHandler.ValueQuery("maxMultigridlvl", MaxMlevel, true);
 
             Console.WriteLine("done.");
+            */
+
+
+
 
             if (this.Control.ExcactSolSupported) {
                 this.uErr.Clear();
@@ -456,19 +483,9 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Operator stability analysis
         /// </summary>
         override public IDictionary<string,double> OperatorAnalysis() {
-            
-            var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.LsTrk, 
-                this.Op_Matrix, this.Op_Affine, 
-                this.u.Mapping, Op_Agglomeration, 
-                this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()), 
-                this.OpConfig, this.Op);
-
-            Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV() }, "stencilCn", 0.0, 1);
-
-            return ana.GetNamedProperties();
+            return this.Op.OperatorAnalysis(this.u.Mapping, this.OpConfig); 
         }
-
-        
+                
 
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
             get {
@@ -500,6 +517,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
         }
 
+        /*
         private void ExperimentalSolver(out double mintime, out double maxtime, out bool Converged, out int NoOfIter, out long DOFs, out MultigridOperator MultigridOp) {
             using (var tr = new FuncTrace()) {
                 mintime = double.MaxValue;
@@ -550,35 +568,11 @@ namespace BoSSS.Application.XdgPoisson3 {
 #endif
                 SF.GenerateLinear(out exsolver, XAggB, OpConfig,Callbacks);
 
-                //var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.LsTrk,
-                //this.Op_Matrix, this.Op_Affine,
-                //this.u.Mapping, Op_Agglomeration,
-                //this.Op_mass.GetMassMatrix(this.u.Mapping, new double[] { 1.0 }, false, this.LsTrk.SpeciesIdS.ToArray()),
-                //this.OpConfig, this.Op);
-                ////double condnum = ana.CondNumMUMPS();
-                //double condnum = MultigridOp.OperatorMatrix.ToFullMatrixOnProc0().Cond();
-                //base.QueryHandler.ValueQuery("OpAnalysis:" + "CondNum", condnum, false);
-                //Console.WriteLine("Condnum: " + condnum);
 
                 using (new BlockTrace("Solver_Init", tr)) {
                     exsolver.Init(MultigridOp);
                 }
-                /*
-                string filename = "XdgPoisson" + this.Grid.SpatialDimension + "p" + this.u.Basis.Degree + "R" + this.Grid.CellPartitioning.TotalLength;
-                MultigridOp.OperatorMatrix.SaveToTextFileSparse(filename + ".txt");
-                RHSvec.SaveToTextFile(filename + "_rhs.txt");
-
-                var uEx = this.u.CloneAs();
-                Op_Agglomeration.ClearAgglomerated(uEx.Mapping);
-                var CO = new ConvergenceObserver(MultigridOp, MassMatrix, uEx.CoordinateVector.ToArray());
-                uEx = null;
-                CO.TecplotOut = "PoissonConvergence";
-                //CO.PlotDecomposition(this.u.CoordinateVector.ToArray());
-
-                if (exsolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)exsolver).IterationCallback = CO.IterationCallback;
-                }
-                //*/
+                
                 XDGField u2 = u.CloneAs();
                 using (new BlockTrace("Solver_Run", tr)) {
                     // use solver (on XDG-field 'u2').
@@ -607,29 +601,9 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             }
         }
-
-        ISparseSolver ReferenceSolver;
-        private void ReferenceSolve() {
-            double[] RHSvec;
-            if (ReferenceSolver == null) {
-
-                ReferenceSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-
-                var EqSys = this.Op_Matrix.ToMsrMatrix();
-                for (long iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
-                    if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
-                        EqSys[iRow, iRow] = 1.0;
-                }
-                ReferenceSolver.DefineMatrix(EqSys);
-            }
-
-            RHSvec = GetRHS();
-            ReferenceSolver.Solve(this.u.CoordinateVector, RHSvec);
-
-            this.Op_Agglomeration.Extrapolate(this.u.Mapping);
-
-        }
-
+        */
+        
+        /*
         private double[] GetRHS() {
             double[] RHSvec;
             BlockMsrMatrix MassMatrix;
@@ -639,7 +613,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             MassMatrix.SpMV(1.0, this.rhs.CoordinateVector, 1.0, RHSvec);
             return RHSvec;
         }
-
+        */
+        /*
         private ConvergenceObserver ActivateCObserver(MultigridOperator mop, BlockMsrMatrix Massmatrix, SolverFactory SF, List<Action<int, double[], double[], MultigridOperator>> Callback) {
             Console.WriteLine("===Convergence Observer activated===");
             //string AnalyseOutputpath = String.Join(@"\",this.Control.DbPath, this.CurrentSessionInfo.ID);
@@ -655,7 +630,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         private void WriteTrendToDatabase(ConvergenceObserver CO) {
             CO.WriteTrendToSession(base.DatabaseDriver.FsDriver, this.CurrentSessionInfo);
         }
-
+        */
+        /*
         private void ConsistencyTest() {
 
             // consistency test on the original matrix
@@ -696,38 +672,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             MultigridOp.TransformRhsInto(RHSvec, mgRhsVec, false);
 
             MgConsistencyTestRec(MultigridOp, mgSolVec, mgRhsVec);
-
-            // 
-            /*
-            {
-                int Jagg1 = MgSeq[1].NoOfAggregateCells;
-                MultigridOperator MgOp0 = MultigridOp;
-                MultigridOperator MgOp1 = MultigridOp.CoarserLevel;
-                MultigridMapping Map0 = MgOp0.Mapping;
-                MultigridMapping Map1 = MgOp1.Mapping;
-
-
-                double[] V0 = new double[MgOp0.Mapping.LocalLength];
-                double[] V1 = new double[MgOp1.Mapping.LocalLength];
-
-                for(int j = 0; j < Jagg1; j++) {
-                    int idx = Map1.LocalUniqueIndex(0, j, 0);
-                    V1[idx] = j;
-                }
-
-                MgOp1.Prolongate(1.0, V0, 0.0, V1);
-
-                XDGField Marker = new XDGField(this.u.Basis, "Tracker");
-
-                MgOp0.TransformSolFrom(Marker.CoordinatesAsVector, V0);
-                this.Op_Agglomeration.Extrapolate(Marker.CoordinatesAsVector, Marker.Mapping);
-
-                Tecplot.PlotFields(new DGField[] { Marker }, "Tracker", "Tracker", 0.0, 5);
-
-            }
-             */
         }
-
+        */
         private static void MgConsistencyTestRec(MultigridOperator mgOp, double[] mgSolVec, double[] mgRhsVec) {
 
             double[] mgResidual = mgRhsVec.CloneAs();
@@ -764,4 +710,37 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
 
     }
+
+     class RHSSource : IVolumeForm, IParameterHandling {
+
+        public RHSSource(DGField rhsSourceField) {
+            m_rhsSourceField = rhsSourceField;
+        }
+
+
+        DGField m_rhsSourceField;
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public IList<string> ArgumentOrdering => new string[0];
+
+        public IList<string> ParameterOrdering => new[] { "RHSsource" };
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments) {
+            return new[] { m_rhsSourceField };
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
+            if(!object.ReferenceEquals(m_rhsSourceField,Parameters[0])) {
+                Parameters[0].Clear();
+                Parameters[0].Acc(1.0, m_rhsSourceField);
+            }
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double rhsVal = cpv.Parameters[0];
+            return -rhsVal * V;
+        }
+    }
+
 }
