@@ -231,9 +231,9 @@ namespace FSI_Solver {
                             for (int j = 0; j < ParticleCollidedWith[currentParticleID].Count(); j++) {
                                 int secondObjectID = ParticleCollidedWith[currentParticleID][j];
                                 ComputeMomentumBalanceCollision(currentParticleID, secondObjectID, distanceThreshold);
-                                TransferResultsToGhostParticles(currentParticleID);
+                                TransferResultsToDuplicateParticles(currentParticleID);
                                 if(IsParticle(secondObjectID))
-                                    TransferResultsToGhostParticles(secondObjectID);
+                                    TransferResultsToDuplicateParticles(secondObjectID);
                             }
                         }
                     }
@@ -251,7 +251,7 @@ namespace FSI_Solver {
             }
         }
 
-        private void TransferResultsToGhostParticles(int currentParticleID) {
+        private void TransferResultsToDuplicateParticles(int currentParticleID) {
             if (Particles.Length < currentParticleID)
                 throw new Exception("No particle with ID " + currentParticleID);
             if (Particles[currentParticleID].MasterDuplicateIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
@@ -349,8 +349,15 @@ namespace FSI_Solver {
         private void MoveParticlesWithSaveTimestep(Particle[] particles, double dynamicTimestep) {
             for (int p = 0; p < particles.Length; p++) {
                 Particle currentParticle = particles[p];
+                int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
                 if (dynamicTimestep != 0) {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
+                    for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
+                        if(duplicateHierachy[p1] > 0) {
+                            Particle currentDuplicate = particles[duplicateHierachy[p1] - 1];
+                            currentDuplicate.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
+                        }
+                    }
                 }
             }
         }

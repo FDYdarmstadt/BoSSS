@@ -89,13 +89,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="globalCellNeighbourship">
         /// </param>
-        static private BitArray GetGlobalNearBand(CellMask levelSetCells, UnsetteledCoordinateMapping map) {
+        static private BitArray GetGlobalNearBand(BitArray levelSetCells, UnsetteledCoordinateMapping map) {
             long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(map);
-            BitArray localCutCells = levelSetCells.GetBitMask();
             BitArray globalCutCells = new BitArray(checked((int)map.GridDat.CellPartitioning.TotalLength));
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < J; j++) {
-                if (localCutCells[j]) {
+                if (levelSetCells[j]) {
                     int globalIndex = checked((int)(j + map.GridDat.CellPartitioning.i0));
                     globalCutCells[globalIndex] = true;
                     for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
@@ -115,31 +114,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
+            int neighborSearchDepth = 5;
             int jFound = -1;
-            if (lsTrk != null) {
-                CellMask cells2avoid = lsTrk.Regions.GetNearFieldMask(2);
-                //for (int i = 0; i < levelSetDistance - 2; i++) {
-                //    cells2avoid = cells2avoid.Union(cells2avoid.AllNeighbourCells());
-                //}
-                //Cells2avoid = cells2avoid.GetBitMask();
-                Cells2avoid = GetGlobalNearBand(cells2avoid, map);
-            } else {
-                Cells2avoid = null;
-            }
-            for (int j = 0; j < J; j++) {
-                if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j + (int)map.GridDat.CellPartitioning.i0] == false)) {
-                    jFound = j;
-                    break;
+            bool foundACell = false;
+            while (!foundACell) {
+                if (lsTrk != null) {
+                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
+                    for (int i = 0; i < neighborSearchDepth; i++) {
+                        Cells2avoid = GetGlobalNearBand(Cells2avoid, map);
+                    }
+                } else {
+                    Cells2avoid = null;
                 }
+                for (int j = 0; j < J; j++) {
+                    if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j + (int)map.GridDat.CellPartitioning.i0] == false)) {
+                        jFound = j;
+                        break;
+                    }
+                }
+                foundACell = jFound.MPIMax() >= 0;
+                neighborSearchDepth -= 1;
+                if (neighborSearchDepth < 0)
+                    throw new Exception("No pressure reference cell found");
             }
-            bool foundACell = jFound.MPIMax() >= 0;
-            if (!foundACell)
-                throw new Exception("No pressure reference cell found");
+            
 
             jFound += (int)map.GridDat.CellPartitioning.i0;
 
             long jFoundGlob = jFound.MPIMax();
-            Console.WriteLine("Cell " + jFoundGlob + " is ref cell.");
+            Console.WriteLine("Cell " + jFoundGlob + " is ref cell. NeighbourSearchDepth: " + (neighborSearchDepth + 1));
             return jFoundGlob;
         }
 

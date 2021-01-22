@@ -288,9 +288,9 @@ namespace BoSSS.Application.FSI_Solver {
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "ca26149d-fdd9-4136-9fd3-dc6484bfa378";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            //C.IsRestart = true;
+            string ID = "17c7db23-9eec-4881-824d-966ad434f283";
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 190);
+            C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -309,7 +309,7 @@ namespace BoSSS.Application.FSI_Solver {
             //};
             //C.SetBoundaries(boundaryValues);
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
-            C.SetGrid(domainLength + 1, domainLength + 1, cellsPerUnitLength, true, true);
+            C.SetGrid(domainLength + 2, domainLength + 2, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-6;
             C.minDistanceThreshold = 2 / cellsPerUnitLength;

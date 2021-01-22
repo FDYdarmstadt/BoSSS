@@ -1023,6 +1023,7 @@ namespace BoSSS.Application.FSI_Solver {
                 }
 
                 CalculateCollision(ParticleList, dt, FixPosition);
+                CheckDuplicateParticles();
                 if (!FixPosition) {
                     CalculateParticlePosition(dt);
                 }
@@ -1043,6 +1044,18 @@ namespace BoSSS.Application.FSI_Solver {
             }
             ResLogger.NextTimestep(false);
             return dt;
+        }
+
+        private void CheckDuplicateParticles() {
+            for(int p = 0; p < ParticleList.Count(); p++) {
+                int[] duplicateHierachy = ParticleList[p].MasterDuplicateIDs;
+                for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
+                    if(duplicateHierachy[p1] > 0) {
+                        if (ParticleList[p].Motion.GetTranslationalVelocity(0).Abs() != ParticleList[duplicateHierachy[p1] - 1].Motion.GetTranslationalVelocity(0).Abs())
+                            throw new Exception("Duplicate particles with unequal velocity, that cant be! Particle " + p + " and " + (duplicateHierachy[p1] - 1));
+                    }
+                }
+            }
         }
 
         private void CalculateParticleForcesAndTorque(ParticleHydrodynamics AllParticleHydrodynamics) {
