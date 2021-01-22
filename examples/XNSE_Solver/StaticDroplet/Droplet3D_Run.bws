@@ -4,11 +4,10 @@ restart
   BoSSSpad C# interpreter
   _______________________
 
-Opening existing database '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB'.
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = D:\local\local_test_db2 }
-  1: { Session Count = 753; Grid Count = 20967; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB }
+  0: { Session Count = 3; Grid Count = 5; Path = D:\local\local_test_db2 }
+  1: { Session Count = 0; Grid Count = 2; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -25,24 +24,25 @@ List of 3 instances of BatchProcessorClient {
   2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
 }
 ==============
-ExecutionQueues[0].AllowedDatabases;
+int exeQ = 1;
+**************
+==============
+ExecutionQueues[exeQ].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 1; Path = D:\local\local_test_db2 }
+  0: { Session Count = 0; Grid Count = 2; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 ==============
-var myBatch = ExecutionQueues[0];
+var myBatch = ExecutionQueues[exeQ];
 **************
 ==============
-var myDb = ExecutionQueues[0].AllowedDatabases[0];
+var myDb = ExecutionQueues[exeQ].AllowedDatabases[0];
 **************
 ==============
 **************
 ==============
-MiniBatchProcessor.Server.StartIfNotRunning(false);
+//MiniBatchProcessor.Server.StartIfNotRunning(false);
 **************
-Mini batch processor is already running.
-False
 ==============
 **************
 ==============
@@ -55,7 +55,11 @@ Project name is set to 'Droplet3D'.
 ==============
 // Testcase setup
 // ==============
-double radius = 0.2; 
+double L      = 1.0;
+double radius = 0.21; 
+double a      = 1.25 * radius;
+double b      = 0.8 * radius;
+double c      = 0.8 * radius;
 **************
 ==============
 **************
@@ -66,8 +70,7 @@ double radius = 0.2;
 **************
 ==============
 var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{8};
-int[] NoProc;
+int[] kelemSeq = new int[]{16};
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -76,26 +79,26 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     
     GridCommons grd;
 
-    double[] xNodes = GenericBlas.Linspace(-1.0/2.0, 1.0/2.0, kelem + 1);
-    double[] yNodes = GenericBlas.Linspace(-1.0/2.0, 1.0/2.0, kelem + 1);  
-    double[] zNodes = GenericBlas.Linspace(-1.0/2.0, 1.0/2.0, kelem + 1);    
+    double[] xNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);  
+    double[] zNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);    
     grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
 
     grd.EdgeTagNames.Add(1, "wall");
  
     grd.DefineEdgeTags(delegate (double[] X) {
         byte et = 0;
-            if (Math.Abs(X[1] + 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[1] + L/2.0) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[1] - 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[1] - L/2.0) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[0] + 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[0] + L/2.0) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[0] - 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[0] - L/2.0) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[2] + 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[2] + L/2.0) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[2] - 1.0/2.0) <= 1.0e-8)
+            if (Math.Abs(X[2] - L/2.0) <= 1.0e-8)
                 et = 1;
             return et;
     });
@@ -108,7 +111,7 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid (5f4f9f25-5587-4b77-b736-07bc480b904c) is already present in the database -- the grid will not be saved.
+An equivalent grid (aa4d0c60-603d-453f-af2f-62c3338e45f4) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -118,7 +121,8 @@ An equivalent grid (5f4f9f25-5587-4b77-b736-07bc480b904c) is already present in 
 // ======================
 **************
 ==============
-int[] degS = new int[] { 2 };
+int[] degS = new int[] { 3 };
+int NoProc = 4;
 **************
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -142,23 +146,30 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.AddBoundaryValue("wall");
 
 
-    string r_str = (radius).ToString();
-    C.AddInitialValue("Phi", "X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - "+r_str, false);  
+    //string r_str = (radius).ToString();
+    string a_str = (a).ToString();
+    string b_str = (b).ToString();
+    string c_str = (c).ToString();
+    C.AddInitialValue("Phi", "X => ((X[0]/"+a_str+").Pow2() + (X[1]/"+b_str+").Pow2() + (X[2]/"+c_str+").Pow2()) - 1", false); 
+   
+    C.InitSignedDistance = true; 
     
-    C.PhysicalParameters.rho_A = 1.0;
-    C.PhysicalParameters.rho_B = 1.0;
+    C.PhysicalParameters.rho_A = 1.0e4;
+    C.PhysicalParameters.rho_B = 1.0e4;
     C.PhysicalParameters.mu_A  = 1.0;
     C.PhysicalParameters.mu_B  = 1.0;
-    C.PhysicalParameters.Sigma = 0.0;
+    C.PhysicalParameters.Sigma = 0.1;
+    
+    C.PhysicalParameters.IncludeConvection = false;
 
     
-    C.dtMin         = 5e-2;
-    C.dtMax         = 5e-2;
-    C.NoOfTimesteps = 1;
+    C.dtMin         = 0.2;
+    C.dtMax         = 0.2;
+    C.NoOfTimesteps = 5000;
     
     C.AdaptiveMeshRefinement = false;
     C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
-    C.BaseRefinementLevel    = 2;
+    C.BaseRefinementLevel    = 3;
   
 
     C.LSContiProjectionMethod                         = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -174,9 +185,11 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     //C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
     C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Once;
     
-    C.saveperiod = 1;
+    C.saveperiod = 5;
     
-    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_test3";
+    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_test_NoProc"+NoProc;
+    
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
     
     //controls[iDeg,iGrd] = C;
     controls.Add(C);
@@ -192,7 +205,7 @@ controls.Count;
 ==============
 controls.ElementAt(0).SessionName
 **************
-Droplet3D_k2_mesh0_test3
+Droplet3D_k3_mesh0_test_NoProc2
 ==============
 **************
 ==============
@@ -204,19 +217,14 @@ LastError
 using System.Threading;
 **************
 ==============
-bool run      = false;
-bool parallel = false;
+bool run = true;
 **************
 ==============
-//int j = 0;
 foreach(var cntrl in controls) {
     var job = cntrl.GetJob();
     if(run) {
         Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
-        //if(parallel) {
-        //    job.NumberOfMPIProcs = procPerCntrl.ElementAt(j);
-        //    j++;
-        //}
+        job.NumberOfMPIProcs = NoProc;
         job.Activate(myBatch);
     } else {
         Console.WriteLine("Status Session: {0}", cntrl.SessionName);
@@ -225,31 +233,27 @@ foreach(var cntrl in controls) {
     }
 }
 **************
-Status Session: Droplet3D_k2_mesh0_test3
-Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
-Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
-Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
-Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
-Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
-Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
-Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
-FailedOrCanceled
+Submitting Session: Droplet3D_k3_mesh0_test_NoProc2
+Deploying job Droplet3D_k3_mesh0_test_NoProc2 ... 
+Submitting job with the following database info: 
+Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Jan16_192700
+copied 31 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
 
 ==============
 **************
+==============
+//databases.Pick(1).Sessions.Pick(0).Delete()
+**************
+Session: Droplet3D  Droplet3D_k3_mesh0_test_4proc*  01/16/2021 19:17:37 cdca957d...
+Do you really want to delete this session? [y/n]: Session cdca957d-e45a-488c-92bf-5b307c578715 deleted.
+
 ==============
 **************
 ==============

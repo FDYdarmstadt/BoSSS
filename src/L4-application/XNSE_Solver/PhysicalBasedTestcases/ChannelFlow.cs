@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 2, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -145,7 +145,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 1;
+            double L = 2;
             double H = 1;
 
             if (D == 2) {
@@ -199,7 +199,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             } else {
 
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 1 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     double[] Znodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
@@ -426,7 +426,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.BaseRefinementLevel = 2;
             C.RefinementLevel = 2;
