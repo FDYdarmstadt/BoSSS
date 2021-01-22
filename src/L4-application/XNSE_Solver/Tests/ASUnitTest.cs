@@ -431,10 +431,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(true, false)] bool bConvection = true,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
             [Values(2)] int spatDim = 2
-//#if DEBUG
-//#else
-//            [Values(3)] int spatDim = 2
-//#endif
             ) {
             double R = 0.8;
             int FlowSolverDegree = 2;
@@ -615,7 +611,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
-                solver.OperatorAnalysis();
+                if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady)
+                    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
