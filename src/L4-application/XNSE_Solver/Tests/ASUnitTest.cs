@@ -31,6 +31,7 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Utils;
 using BoSSS.Solution.LevelSetTools;
+using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -453,19 +454,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             XNSESolverTest(Tst, C);
 
-        } 
+        }
 
 
+#if !DEBUG
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
         [Test]
-        public static void TaylorCouetteTest(
+        public static void TaylorCouetteConvergenceTest(
+            [Values(2, 3)] int FlowSolverDegree = 2,
             [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
             ) {
 
-            int FlowSolverDegree = 2;
             double AgglomerationTreshold = 0.3;
             
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
@@ -477,23 +479,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 default: throw new ArgumentOutOfRangeException();
             }
 
-            int GridResolution = 8;
+            int[] GridResolutionS = new int[] { 2, 4, 8 };
 
             var Tst = new TaylorCouette(modus);
 
-            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
-            C.SkipSolveAndEvaluateResidual = false;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            
-            
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            var CS = new XNSE_Control[GridResolutionS.Length];
+            for(int i = 0; i < GridResolutionS.Length; i++) {
+                var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolutionS[i]);
+                C.SkipSolveAndEvaluateResidual = false;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                C.NonLinearSolver.ConvergenceCriterion = 1e-11;
+                CS[i] = C;
 
-            XNSESolverTest(Tst, C);
+                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
+                //XNSESolverTest(Tst, C);
+                //break;
+            }
 
-        } 
-
+            XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
+        }
+#endif
 
 
         /// <summary>
@@ -682,6 +689,101 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
             }
         }
+
+
+        private static void XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution, double[] ExpectedSlopes) {
+            int D = Tst.SpatialDimension;
+            int NoOfMeshes = CS.Length;
+
+            double[] hS = new double[NoOfMeshes];
+            MultidimensionalArray errorS = null;
+            string[] Names = null;
+
+            if(useExactSolution) {
+
+                if(NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                for(int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    using(var solver = new XNSE()) {
+
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+                        XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                        double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        double[] ErrThresh = Tst.AcceptableL2Error;
+
+                        if(k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                            Names = new string[LastErrors.Length];
+                            if(ExpectedSlopes.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if(LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if(LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+                        for(int i = 0; i < ErrThresh.Length; i++) {
+                            Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                            Names[i] = solver.Operator.DomainVar[i];
+                        }
+
+                        errorS.SetRow(k, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+
+                    }
+
+                }
+            } else {
+                if(NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+                throw new NotImplementedException("todo");
+            }
+
+            double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+                double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+                double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
+                double xAvg = xValues.Average();
+                double yAvg = yValues.Average();
+
+                double v1 = 0.0;
+                double v2 = 0.0;
+
+                for(int i = 0; i < yValues.Length; i++) {
+                    v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
+                    v2 += Math.Pow(xValues[i] - xAvg, 2);
+                }
+
+                double a = v1 / v2;
+                double b = yAvg - a * xAvg;
+
+                return a;
+            }
+
+
+            for(int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+
+                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+            }
+
+            for(int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                Assert.GreaterOrEqual(slope, ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+        }
+
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSE_Control C) {
             using (var solver = new XHeat()) {
