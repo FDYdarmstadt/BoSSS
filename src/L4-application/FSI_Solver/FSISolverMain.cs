@@ -689,8 +689,9 @@ namespace BoSSS.Application.FSI_Solver {
                                 idOffset += 1;
                                 duplicateParticle = currentParticle.CloneAs();
                                 duplicateParticle.SetDuplicate();
-                                duplicateParticle.Motion.SetDuplicatePosition(originInVirtualNeighbouringDomain + particlePosition);
-                                duplicateParticles.Add(duplicateParticle.CloneAs());
+                                duplicateParticle.Motion.SetDistanceToMaster(originInVirtualNeighbouringDomain);
+                                duplicateParticle.Motion.SetDuplicatePosition(particlePosition);
+                                duplicateParticles.Add(duplicateParticle);
                             }
 
                             if (d1 == 0) {
@@ -704,8 +705,9 @@ namespace BoSSS.Application.FSI_Solver {
                                             idOffset += 1;
                                             Particle duplicateParticleOfDuplicateParticle = currentParticle.CloneAs();
                                             duplicateParticleOfDuplicateParticle.SetDuplicate();
-                                            duplicateParticleOfDuplicateParticle.Motion.SetDuplicatePosition(originInVirtualNeighbouringDomain + duplicateParticle.Motion.GetPosition());
-                                            duplicateParticles.Add(duplicateParticleOfDuplicateParticle.CloneAs());
+                                            duplicateParticle.Motion.SetDistanceToMaster(originInVirtualNeighbouringDomain);
+                                            duplicateParticleOfDuplicateParticle.Motion.SetDuplicatePosition(duplicateParticle.Motion.GetPosition());
+                                            duplicateParticles.Add(duplicateParticleOfDuplicateParticle);
                                             break;
                                         }
                                     }
@@ -762,6 +764,8 @@ namespace BoSSS.Application.FSI_Solver {
                                 int[] newDuplicateHierachy = duplicateHierachy.CloneAs();
                                 newDuplicateHierachy[0] = newMasterID;
                                 newDuplicateHierachy[j] = oldMasterID;
+                                Vector distanceToOldMaster = currentDuplicate.Motion.GetDistanceToMaster();
+                                currentParticle.Motion.SetDistanceToMaster(new Vector(-distanceToOldMaster[0], -distanceToOldMaster[1]));
                                 currentDuplicate.SetMaster(currentParticle.Motion.CloneAs());
                                 currentParticle.SetDuplicate();
                                 for (int i = 0; i < duplicateHierachy.Length; i++) {
@@ -1053,6 +1057,8 @@ namespace BoSSS.Application.FSI_Solver {
                     if(duplicateHierachy[p1] > 0) {
                         if (ParticleList[p].Motion.GetTranslationalVelocity(0).Abs() != ParticleList[duplicateHierachy[p1] - 1].Motion.GetTranslationalVelocity(0).Abs())
                             throw new Exception("Duplicate particles with unequal velocity, that cant be! Particle " + p + " and " + (duplicateHierachy[p1] - 1));
+                        if (ParticleList[p].Motion.GetAngle(0) - ParticleList[duplicateHierachy[p1] - 1].Motion.GetAngle(0) > 1e-6)
+                            throw new Exception("Duplicate particles with unequal angle, that cant be! Particle " + p + " and " + (duplicateHierachy[p1] - 1));
                     }
                 }
             }
@@ -1106,10 +1112,10 @@ namespace BoSSS.Application.FSI_Solver {
 
                     for (int g = 1; g < p.MasterDuplicateIDs.Length; g++) {
                         if (p.MasterDuplicateIDs[g] >= 1) {
-                            Particle ghost = Particles[p.MasterDuplicateIDs[g] - 1];
-                            if (ghost.IsMaster)
+                            Particle duplicateParticle = Particles[p.MasterDuplicateIDs[g] - 1];
+                            if (duplicateParticle.IsMaster)
                                 throw new Exception("A ghost particle is considered to be a master, that can't be!");
-                            ghost.Motion.CopyNewVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
+                            duplicateParticle.Motion.SetDuplicateVelocity(p.Motion.GetTranslationalVelocity(), p.Motion.GetRotationalVelocity());
                         }
                     }
                 }
@@ -1124,8 +1130,21 @@ namespace BoSSS.Application.FSI_Solver {
         /// </param>
         private void CalculateParticlePosition(double dt) {
             for (int p = 0; p < ParticleList.Count; p++) {
+
                 Particle particle = ParticleList[p];
-                particle.Motion.UpdateParticlePositionAndAngle(dt);
+                if (particle.IsMaster) {
+                    particle.Motion.UpdateParticlePositionAndAngle(dt);
+                    for (int g = 1; g < particle.MasterDuplicateIDs.Length; g++) {
+                        if (particle.MasterDuplicateIDs[g] >= 1) {
+                            Particle duplicateParticle = Particles[particle.MasterDuplicateIDs[g] - 1];
+                            if (duplicateParticle.IsMaster)
+                                throw new Exception("A ghost particle is considered to be a master, that can't be!");
+                            duplicateParticle.Motion.SetDuplicateAngle(particle.Motion.GetAngle());
+                            Console.WriteLine("Position");
+                            duplicateParticle.Motion.SetDuplicatePosition(particle.Motion.GetPosition());
+                        }
+                    }
+                }
             }
         }
                 

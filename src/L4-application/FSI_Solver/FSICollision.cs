@@ -168,11 +168,10 @@ namespace FSI_Solver {
                             if (temp_Overlapping) {
                                 if (DetermineOnlyOverlap)
                                     throw new Exception("Static particles overlap");
-                                double overlappingTimestep = -TimestepSize * 0.01; // reset time to find a particle state before they overlap.
-                                saveTimestep = 0;
-                                Particle[] overlappingParticles = new Particle[] { Particles[p0] };
                                 Console.WriteLine("Particle " + p0 + " and wall " + w + " overlap");
-                                MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
+                                DistanceVector[p0][w] = new Vector(Particles[p0].Motion.GetPosition(0));
+                                DistanceVector[w][p0] = new Vector(-Particles[p0].Motion.GetPosition(0)[0], -Particles[p0].Motion.GetPosition(0)[1]);
+                                globalMinimalDistance = 0;
                             }
                         }
 
@@ -202,11 +201,7 @@ namespace FSI_Solver {
                             if (temp_Overlapping) {
                                 if (DetermineOnlyOverlap)
                                     throw new Exception("Static particles overlap");
-                                //double overlappingTimestep = -TimestepSize * 0.01; // reset time to find a particle state before they overlap.
-                                //saveTimestep = 0;
-                                //Particle[] overlappingParticles = new Particle[] { Particles[p0], Particles[p1] };
                                 Console.WriteLine("Particle " + p0 + " and particle " + p1 + " overlap");
-                                //MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
                                 DistanceVector[p0][p1] = new Vector(Particles[p0].Motion.GetPosition(0) - Particles[p1].Motion.GetPosition(0));
                                 DistanceVector[p1][p0] = new Vector(Particles[p1].Motion.GetPosition(0) - Particles[p0].Motion.GetPosition(0));
                                 globalMinimalDistance = 0;
@@ -350,12 +345,13 @@ namespace FSI_Solver {
             for (int p = 0; p < particles.Length; p++) {
                 Particle currentParticle = particles[p];
                 int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
-                if (dynamicTimestep != 0) {
+                if (dynamicTimestep != 0 && currentParticle.IsMaster) {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
                     for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
-                        if(duplicateHierachy[p1] > 0) {
+                        if(duplicateHierachy[p1] > 0 && !particles[duplicateHierachy[p1] - 1].IsMaster) {
                             Particle currentDuplicate = particles[duplicateHierachy[p1] - 1];
-                            currentDuplicate.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
+                            currentDuplicate.Motion.SetDuplicatePosition(currentParticle.Motion.GetPosition(0));
+                            currentDuplicate.Motion.SetDuplicateAngle(currentParticle.Motion.GetAngle(0));
                         }
                     }
                 }

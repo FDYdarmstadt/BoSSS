@@ -93,6 +93,8 @@ namespace BoSSS.Application.FSI_Solver {
         public double MaxParticleLengthScale;
         [DataMember]
         internal double[,] AddedDampingTensor = new double[6, 6];
+        [DataMember]
+        public Vector DistanceToMaster;
 
         /// <summary>
         /// Mass of the current particle.
@@ -122,11 +124,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the position of the particle.
         /// </summary>
         /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetPosition(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Position[historyPosition];
         }
 
@@ -134,11 +136,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the angle of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetAngle(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Angle[historyPosition];
         }
 
@@ -146,11 +148,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the translational velocity of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetTranslationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalVelocity[historyPosition];
         }
 
@@ -158,11 +160,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the rotational velocity of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetRotationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalVelocity[historyPosition];
         }
 
@@ -170,11 +172,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the translational acceleration of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetTranslationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalAcceleration[historyPosition];
         }
 
@@ -182,11 +184,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the rotational acceleration of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetRotationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalAcceleration[historyPosition];
         }
 
@@ -194,11 +196,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the force acting on the particle in the current time step.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for 4 timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for 4 time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetHydrodynamicForces(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicForces[historyPosition];
         }
 
@@ -206,16 +208,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the torque acting on the particle in the current time step.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetHydrodynamicTorque(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicTorque[historyPosition];
         }
 
         /// <summary>
-        /// Saves position and angle of the last timestep.
+        /// Saves position and angle of the last time-step.
         /// </summary>
         public void SavePositionAndAngleOfPreviousTimestep() {
             using (new FuncTrace()) {
@@ -225,7 +227,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Saves translational and rotational velocities of the last timestep.
+        /// Saves translational and rotational velocities of the last time-step.
         /// </summary>
         public void SaveVelocityOfPreviousTimestep() {
             using (new FuncTrace()) {
@@ -237,7 +239,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Saves force and torque of the previous timestep.
+        /// Saves force and torque of the previous time-step.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousTimestep() {
             using (new FuncTrace()) {
@@ -468,7 +470,7 @@ namespace BoSSS.Application.FSI_Solver {
         public void SetParticleMomentOfInertia(double moment) => MomentOfInertia = moment;
 
         /// <summary>
-        /// Sets the collision timestep.
+        /// Sets the collision time-step.
         /// </summary>
         /// <param name="collisionTimestep">
         /// The physical time consumend by the collision procedure.
@@ -486,7 +488,7 @@ namespace BoSSS.Application.FSI_Solver {
                     CollisionTimestep = 0;
                 SavePositionAndAngleOfPreviousTimestep();
                 if (CollisionTimestep > dt) {
-                    throw new Exception("Collision timestep: " + CollisionTimestep);
+                    throw new Exception("Collision time-step: " + CollisionTimestep);
                 }
                 Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
                 Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
@@ -520,19 +522,21 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
+        internal void SetDistanceToMaster(Vector distanceToMaster) => DistanceToMaster = new Vector(distanceToMaster);
+
+        internal Vector GetDistanceToMaster() => DistanceToMaster;
+
         internal virtual void SetDuplicatePosition(Vector position) {
-            using (new FuncTrace()) {
-                for (int h = 0; h < NumberOfHistoryEntries; h++) {
-                    Position[h] = new Vector(position);
-                }
-            }
+            Position[0] = new Vector(DistanceToMaster + position);
         }
 
-        internal virtual void CopyNewVelocity(Vector translational, double rotational) {
-            using (new FuncTrace()) {
-                TranslationalVelocity[0] = new Vector(translational);
-                RotationalVelocity[0] = rotational;
-            }
+        internal virtual void SetDuplicateAngle(double angle) {
+            Angle[0] = angle;
+        }
+
+        internal virtual void SetDuplicateVelocity(Vector translational, double rotational) {
+            TranslationalVelocity[0] = new Vector(translational);
+            RotationalVelocity[0] = rotational;
         }
 
         internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
@@ -552,11 +556,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Predicts the hydrodynamics at the beginning of the iteration loop in each timestep.
+        /// Predicts the hydrodynamics at the beginning of the iteration loop in each time-step.
         /// </summary>
         /// <param name="activeStress"></param>
         /// <param name="timestepID">
-        /// The timestep ID. Used to distinguish between the first timestep and all other steps.
+        /// The time-step ID. Used to distinguish between the first time-step and all other steps.
         /// </param>
         internal virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double fluidDensity, double dt) {
             using (new FuncTrace()) {
@@ -644,7 +648,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate the new translational velocity of the particle.
         /// </summary>
-        /// <param name="dt">Timestep</param>
+        /// <param name="dt">Time-step</param>
         protected virtual Vector CalculateTranslationalVelocity(double dt) {
             using (new FuncTrace()) {
                 Vector translationalVelocity = TranslationalVelocity[1] + (TranslationalAcceleration[0] + 4 * TranslationalAcceleration[1] + TranslationalAcceleration[2]) * dt / 3;
@@ -656,7 +660,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Calculate the new angular velocity of the particle.
         /// </summary>
-        /// <param name="dt">Timestep</param>
+        /// <param name="dt">Time-step</param>
         protected virtual double CalculateAngularVelocity(double dt) {
             using (new FuncTrace()) {
                 double rotationalVelocity = RotationalVelocity[1] + (RotationalAcceleration[0] + 4 * RotationalAcceleration[1] + RotationalAcceleration[2]) * dt / 3;

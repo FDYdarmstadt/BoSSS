@@ -117,7 +117,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int neighborSearchDepth = 5;
             int jFound = -1;
             bool foundACell = false;
-            while (!foundACell) {
+            //Debugger.Launch();
+            while (!foundACell && neighborSearchDepth >= 0) {
                 if (lsTrk != null) {
                     Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
                     for (int i = 0; i < neighborSearchDepth; i++) {
@@ -134,8 +135,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 foundACell = jFound.MPIMax() >= 0;
                 neighborSearchDepth -= 1;
-                if (neighborSearchDepth < 0)
-                    throw new Exception("No pressure reference cell found");
             }
             
 
