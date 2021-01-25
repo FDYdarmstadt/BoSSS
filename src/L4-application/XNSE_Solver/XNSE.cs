@@ -31,11 +31,15 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Development history:
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
+    /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
+    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
+    ///   has approximately degree <= n * p + (p - 1)
+    ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
+    ///   This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
+    ///   When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
-
-
-
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
@@ -54,13 +58,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                //Saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-                //We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
-                //Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
-                //has approximately degree <= n * p + (p - 1)
-                //This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
-                //This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
-                //When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
+                //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
             }
