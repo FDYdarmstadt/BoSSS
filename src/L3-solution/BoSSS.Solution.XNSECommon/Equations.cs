@@ -672,14 +672,14 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
-     /// <summary>
+    /// <summary>
     /// Continuity equation for the incompressible case, (fluid/solid) immersed boundary
     /// </summary>
-    public class ImersedBoundaryContinuity : SurfaceEquation {
+    public class ImmersedBoundaryContinuity : SurfaceEquation {
         string codomainName;
 
         //Methode aus der XNSF_OperatorFactory
-        public ImersedBoundaryContinuity(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D, LevelSetTracker LsTrk) {
+        public ImmersedBoundaryContinuity(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D, LevelSetTracker LsTrk) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 

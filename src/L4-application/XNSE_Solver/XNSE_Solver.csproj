@@ -109,6 +109,7 @@
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
     <Compile Include="Tests\HeatTransportTest.cs" />
+    <Compile Include="Tests\IBMChannel.cs" />
     <Compile Include="Tests\LevelSetAdvectionTest.cs" />
     <Compile Include="Tests\LevelSetContinuityTest.cs" />
     <Compile Include="Tests\LevelSetInitializationTest.cs" />

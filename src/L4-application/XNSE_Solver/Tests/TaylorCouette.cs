@@ -39,12 +39,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public TaylorCouette(Mode m) {
 
             double Ra = double.NaN, Ri = double.NaN, Rm = double.NaN;
+            double rhoA, rhoB, muA, muB, sigma;
+
             switch(m) {
                 case Mode.Test2Phase:
                 Ra = 2; // größer Inkreis
                 Ri = Math.Sqrt(2) / 2; // kleinster Inkreis im Gebiet
                 Rm = 0.5 * (Ra + Ri); ; // in the middle
                 this.TestImmersedBoundary = false;
+                rhoA = 0.1;
+                rhoB = 1.3;
+                muA = 0.1;
+                muB = 0.2;
+                sigma = 0.9;
                 break;
 
                 case Mode.TestIBM:
@@ -52,19 +59,26 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Rm = Math.Sqrt(2 * 2 + 2 * 2) + 0.5; // ausserhalb
                 Ra = Rm + 1; // noch weiter draußen
                 this.TestImmersedBoundary = true;
+                rhoA = 0.1;
+                rhoB = 0.1;
+                muA = 0.1;
+                muB = 0.1;
+                sigma = 0.0;
                 break;
+
+                default: throw new ArgumentOutOfRangeException();
             }
-            exS = new ExactSol(Ri, Rm, Ra);
+            exS = new ExactSol(Ri, Rm, Ra, rhoA, rhoB, muA, muB, sigma);
 
 
         }
 
 
-        public double mu_A => ExactSol.muA;
+        public double mu_A => exS.muA;
 
-        public double mu_B => ExactSol.muB;
+        public double mu_B => exS.muB;
 
-        public double Sigma => ExactSol.sigma;
+        public double Sigma => exS.sigma;
 
         public bool TestImmersedBoundary {
             get;
@@ -77,9 +91,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt => throw new NotImplementedException();
 
-        public double rho_A => ExactSol.rhoA;
+        public double rho_A => exS.rhoA;
 
-        public double rho_B => ExactSol.rhoB;
+        public double rho_B => exS.rhoB;
 
         public bool Material => true;
 
@@ -98,11 +112,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         class ExactSol {
             public const double Ui = 2; // inner radius tangential speed
             public const double Ua = 1; // outer radius tangential speed
-            public const double rhoA = 0.1;
-            public const double rhoB = 1.3;
-            public const double muA = 0.1;
-            public const double muB = 0.2;
-            public const double sigma = 0.9;
+            
+            public double rhoA;
+            public double rhoB;
+            public double muA;
+            public double muB;
+            public double sigma;
 
             public double Ri = Math.Sqrt(2) / 2;
             
@@ -110,10 +125,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             public double Rm; //  = (Ri + Ra) / 2;
 
-            public ExactSol(double _Ri, double _Rm, double _Ra) {
+            public ExactSol(double _Ri, double _Rm, double _Ra, double _rhoA, double _rhoB, double _muA, double _muB, double _sigma) {
                 this.Rm = _Rm;
                 this.Ra = _Ra;
                 this.Ri = _Ri;
+                this.rhoA = _rhoA;
+                this.rhoB = _rhoB;
+                this.muA = _muA;
+                this.muB = _muB;
+                this.sigma = _sigma;
 
                 _C1A = (Ra.Pow2() * Ri * Ui * muA - Ra.Pow2() * Ri * Ui * muB + Ra * Rm.Pow2() * Ua * muB - Ri * Rm.Pow2() * Ui * muA) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA);
                 _C1B = (Ra * Ri.Pow2() * Ua * muA - Ra * Ri.Pow2() * Ua * muB + Ra * Rm.Pow2() * Ua * muB - Ri * Rm.Pow2() * Ui * muA) / (Ra.Pow2() * Ri.Pow2() * muA - Ra.Pow2() * Ri.Pow2() * muB + Ra.Pow2() * Rm.Pow2() * muB - Ri.Pow2() * Rm.Pow2() * muA);
@@ -180,7 +200,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             double _C1A, _C1B, _C2A, _C2B, _C3A, _C3B;
 
             /// <summary>
-            /// velocity, phase A, radial coordinates
+            /// tangential velocity, phase A, radial coordinates
             /// </summary>
             public double vA(double r) {
                 return _C1A * r + _C2A / r;
@@ -258,8 +278,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             double[] Ynodes = GenericBlas.Linspace(-2, 2, 8 * Resolution + 1);
             var cutOut = new BoundingBox(new double[] { -0.5, -0.5 }, new double[] { +0.5, +0.5 });
             var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, CutOuts: cutOut);
-            grd.EdgeTagNames.Add(1, innerWallTag);
-            grd.EdgeTagNames.Add(2, outerWallTag);
 
             grd.DefineEdgeTags(delegate (double[] X) {
                 byte et = 0;
@@ -341,8 +359,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetU(string species, int d) {
-            new ValueTuple<string, int>("A", 0);
-
+            
             switch(d) {
                 case 0:
                 switch(species) {
