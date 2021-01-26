@@ -256,76 +256,10 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
             GetBcMap();
-
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
-            for (int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
-                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
-            }
-            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
-            Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if(config.physParams.IncludeConvection && config.isTransport) {
-                opFactory.AddParameter(new Velocity0(D));
-                opFactory.AddParameter(v0Mean);
-            }
-
-            Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
-            opFactory.AddParameter(normalsParameter);
-
-            if (config.isContinuity) {
-                opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-                opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
-            }
-
-            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
-            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
-            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
-                break;
-
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
-                break;
-
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                BeltramiGradientAndCurvature lsGradientAndCurvature =
-                    FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
-                opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
-                break;
-
-                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                var fourier = new FourierEvolver(
-                    VariableNames.LevelSetCG,
-                    ls,
-                    Control.FourierLevSetControl,
-                    Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
-                opFactory.AddParameter(fourier);
-                break;
-
-                default:
-                throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
-                
-            }
-
-            if(Control.UseImmersedBoundary)
+            ISystem xNSE = new XNSESystem(D, quadOrder, config, Control, boundaryMap);
+            xNSE.DefineSystem(opFactory, lsUpdater);
+            if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
         }
 
