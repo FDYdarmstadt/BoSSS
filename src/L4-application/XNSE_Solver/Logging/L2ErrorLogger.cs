@@ -44,8 +44,14 @@ namespace BoSSS.Application.XNSE_Solver {
             int D = this.SolverMain.GridData.SpatialDimension;
             double[] Ret = new double[D + 1];
 
-            var slv = (this.SolverMain as BoSSS.Application.XNSE_Solver.XNSE);
-            var fluidSpecies = slv.XOperator.Species.ToArray();
+            string[] fluidSpecies;
+            if(this.SolverMain is BoSSS.Application.XNSE_Solver.XNSE newSolver) {
+                fluidSpecies = newSolver.XOperator.Species.ToArray();
+            } else if(this.SolverMain is XNSE_Solver.XNSE_SolverMain oldSolver) {
+                fluidSpecies = new[] { "A", "B" };
+            } else {
+                throw new NotImplementedException("missing some cast here");
+            }
 
 
             if (this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)

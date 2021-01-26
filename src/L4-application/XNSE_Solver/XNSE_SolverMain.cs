@@ -75,6 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest();
