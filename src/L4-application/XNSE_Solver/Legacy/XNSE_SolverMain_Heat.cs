@@ -57,8 +57,9 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows; 

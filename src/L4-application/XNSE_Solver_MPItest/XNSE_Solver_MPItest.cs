@@ -30,6 +30,7 @@ using ilPSP;
 using System.Diagnostics;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver {
 

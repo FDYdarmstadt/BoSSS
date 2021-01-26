@@ -41,6 +41,37 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
 
+        //===========
+        // Main file
+        //===========
+        static void Main(string[] args) {
+
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            //                                q: -50,
+            //                                deg: 3,
+            //                                AgglomerationTreshold: 0,
+            //                                SolverMode_performsolve: true,
+            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
+
+            void KatastrophenPlot(DGField[] dGFields) {
+                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+            }
+
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            _Main(args, false, delegate () {
+                var p = new XNSE();
+                return p;
+            });
+        }
+
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
         /// - 2x the velocity degree in the Stokes case

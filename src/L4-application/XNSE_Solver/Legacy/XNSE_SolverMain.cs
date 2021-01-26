@@ -59,8 +59,9 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
@@ -68,38 +69,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - Optional: kinetic energy equation 
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
-
-        //===========
-        // Main file
-        //===========
-        static void Main(string[] args) {
-
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
-            //                                q: -50,
-            //                                deg: 3,
-            //                                AgglomerationTreshold: 0,
-            //                                SolverMode_performsolve: true,
-            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //throw new Exception("Remove me");
-
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });
-        }
-
-        static void KatastrophenPlot(DGField[] dGFields) {
-            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-        }
-
 
         //=====================================
         // Field declaration and instantiation
