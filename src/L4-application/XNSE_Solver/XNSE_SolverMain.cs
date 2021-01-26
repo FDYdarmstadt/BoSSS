@@ -74,12 +74,12 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest();
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            throw new Exception("Remove me");
+            //throw new Exception("Remove me");
 
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
