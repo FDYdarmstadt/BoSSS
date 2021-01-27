@@ -65,6 +65,7 @@
     <Compile Include="StressDivergence_Cockburn.cs" />
     <Compile Include="StressDivergenceAtLevelSet.cs" />
     <Compile Include="Equations.cs" />
+    <Compile Include="Systems.cs" />
     <Compile Include="XNSE_OperatorComponents.cs" />
     <Compile Include="PressureInSpeciesBulk.cs" />
     <Compile Include="SpeciesDivergence.cs" />
