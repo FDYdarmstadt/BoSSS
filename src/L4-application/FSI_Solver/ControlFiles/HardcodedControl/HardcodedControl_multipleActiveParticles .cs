@@ -297,7 +297,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.FullOutputToConsole = false;
             C.PhysicalParameters.IncludeConvection = false;
-            C.pureDryCollisions = true;
+            C.pureDryCollisions = false;
 
             // Particle Properties
             // =============================
@@ -315,7 +315,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.hydrodynamicsConvergenceCriterion = 1e-8;
             C.minDistanceThreshold = 1 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, true, false, false, 0);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
             Random insertParticle = new Random();
