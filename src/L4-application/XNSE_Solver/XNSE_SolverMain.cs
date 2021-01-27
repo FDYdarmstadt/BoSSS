@@ -91,7 +91,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
-                var p = new XNSE();
+                var p = new XNSE_SolverMain();
                 return p;
             });
         }
@@ -1814,7 +1814,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //    return DesiredLevel_j;
 
         //}
-        bool flag = true;
 
         int LevelIndicator(int j, int CurrentLevel) {
 

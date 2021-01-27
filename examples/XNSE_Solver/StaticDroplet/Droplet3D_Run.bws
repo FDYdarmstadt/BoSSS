@@ -7,7 +7,7 @@ restart
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
   0: { Session Count = 3; Grid Count = 5; Path = D:\local\local_test_db2 }
-  1: { Session Count = 0; Grid Count = 2; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  1: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -30,7 +30,7 @@ int exeQ = 1;
 ExecutionQueues[exeQ].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 2; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 ==============
 var myBatch = ExecutionQueues[exeQ];
@@ -70,7 +70,7 @@ double c      = 0.8 * radius;
 **************
 ==============
 var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{16};
+int[] kelemSeq = new int[]{32};
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -111,7 +111,6 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid (aa4d0c60-603d-453f-af2f-62c3338e45f4) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -122,7 +121,7 @@ An equivalent grid (aa4d0c60-603d-453f-af2f-62c3338e45f4) is already present in 
 **************
 ==============
 int[] degS = new int[] { 3 };
-int NoProc = 4;
+int NoProc = 8;
 **************
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -150,9 +149,9 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     string a_str = (a).ToString();
     string b_str = (b).ToString();
     string c_str = (c).ToString();
-    C.AddInitialValue("Phi", "X => ((X[0]/"+a_str+").Pow2() + (X[1]/"+b_str+").Pow2() + (X[2]/"+c_str+").Pow2()) - 1", false); 
+    C.AddInitialValue("Phi", "X => ((X[0]/"+a_str+").Pow2() + (X[1]/"+b_str+").Pow2() + (X[2]/"+c_str+").Pow2()).Sqrt() - 1", false); 
    
-    C.InitSignedDistance = true; 
+    //C.InitSignedDistance = true; 
     
     C.PhysicalParameters.rho_A = 1.0e4;
     C.PhysicalParameters.rho_B = 1.0e4;
@@ -205,7 +204,7 @@ controls.Count;
 ==============
 controls.ElementAt(0).SessionName
 **************
-Droplet3D_k3_mesh0_test_NoProc2
+Droplet3D_k3_mesh0_test_NoProc8
 ==============
 **************
 ==============
@@ -233,13 +232,13 @@ foreach(var cntrl in controls) {
     }
 }
 **************
-Submitting Session: Droplet3D_k3_mesh0_test_NoProc2
-Deploying job Droplet3D_k3_mesh0_test_NoProc2 ... 
+Submitting Session: Droplet3D_k3_mesh0_test_NoProc8
+Deploying job Droplet3D_k3_mesh0_test_NoProc8 ... 
 Submitting job with the following database info: 
 Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
 No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Jan16_192700
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Jan16_201224
 copied 31 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -249,11 +248,16 @@ deployment finished.
 ==============
 **************
 ==============
-//databases.Pick(1).Sessions.Pick(0).Delete()
+databases.Pick(0).Sessions
 **************
-Session: Droplet3D  Droplet3D_k3_mesh0_test_4proc*  01/16/2021 19:17:37 cdca957d...
-Do you really want to delete this session? [y/n]: Session cdca957d-e45a-488c-92bf-5b307c578715 deleted.
-
+List of 3 instances of ISessionInfo {
+  0: OscillatingDroplet3D	SetupTest	01/15/2021 13:58:42	fcda5435...
+  1: Droplet3D	Droplet3D_k2_mesh0_test3*	01/14/2021 12:37:08	eb3da8db...
+  2: Droplet3D	Droplet3D_k2_mesh0_test2*	01/14/2021 12:32:28	57fd38d7...
+}
+==============
+databases.Pick(0).Sessions.Pick(0).OpenSessionDirectory()
+**************
 ==============
 **************
 ==============
