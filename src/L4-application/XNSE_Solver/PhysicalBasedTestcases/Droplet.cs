@@ -376,11 +376,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
-            //C.InterAverage = XNSE_Control.InterfaceAveraging.viscosity;
-
-
-            //C.SessionName = "SD_meshStudy_Hysing_mesh" + kelem + "_Fourier";
 
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {

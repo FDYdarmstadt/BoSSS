@@ -172,8 +172,8 @@ namespace AdvancedSolverTests {
         }
 
 
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u1.ProjectField((x, y) => x);
             u2.ProjectField((x, y) => x);

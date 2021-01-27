@@ -64,7 +64,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         abstract internal void CreateTrackerHack();
 
         /// <summary>
-        /// 
+        /// Called on startup and 
+        /// also called after grid adaptation/MPI redistribution
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
@@ -86,22 +87,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 base.RegisterField(f);
             }
 
-            // parameters:
-            /*
-            var paramFields = InstantiateParameterFields();
-            if(paramFields == null || paramFields.Count() <= 0) {
-                CurrentParameters = new CoordinateMapping(this.GridData);
-            } else {
-                CurrentParameters = new CoordinateMapping(paramFields.ToArray());
-                foreach(var f in paramFields) {
-                    base.RegisterField(f);
-                }
-            }
-            */
             CreateAdditionalFields();
-
-
-
         }
 
         /// <summary>

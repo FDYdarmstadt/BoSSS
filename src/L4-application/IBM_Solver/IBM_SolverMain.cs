@@ -486,41 +486,34 @@ namespace BoSSS.Application.IBM_Solver {
         protected virtual void AddInterfaceEquationComponentsToIBMOp(NSEOperatorConfiguration IBM_Op_config, string[] CodName)
         {
             int D = this.GridData.SpatialDimension;
-            for (int d = 0; d < D; d++){
+            for (int d = 0; d < D; d++) { // loop over codomain variables
                 var comps = IBM_Op.EquationComponents[CodName[d]];
 
                 if (IBM_Op_config.convection){
                     var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
                             d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; }, this.Control.PhysicalParameters.rho_A, false);
-                    //var ConvIB = new ConvectionAtIB(LsTrk, d, D, Control.PhysicalParameters.rho_A, false);
+                            this.Control.PhysicalParameters.rho_A, false,
+                            0, "A", "B", false);
 
                     comps.Add(ConvIB); // immersed boundary component
                 }
 
                 if (IBM_Op_config.PressureGradient){
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk, 0, "A", "B");
                     comps.Add(presLs); // immersed boundary component
                 }
 
                 if (IBM_Op_config.Viscous){
-                    double _D = D;
-                    double penalty_mul = this.Control.AdvancedDiscretizationOptions.PenaltySafety;
-                    int degU = this.Velocity[0].Basis.Degree;
-                    double _p = degU;
-                    double penalty_base = (_p + 1) * (_p + _D) / D;
-                    double penalty = penalty_base * penalty_mul;
                     var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, this.ComputePenaltyIB,
-                            this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
-                            delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
+                            this.Control.AdvancedDiscretizationOptions.PenaltySafety,
+                            this.Control.PhysicalParameters.mu_A,
+                            0, "A", "B", false);
                     comps.Add(ViscLs); // immersed boundary component
                 }
             }
 
             if (IBM_Op_config.continuity){
-                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                    delegate (double[] X, double time) { return new double[] { 0.0, 0.0, 0.0, 0.0 }; });
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 0, "A", "B", false);
                 IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
             }
         }
@@ -582,8 +575,6 @@ namespace BoSSS.Application.IBM_Solver {
                 }
                 Params = ArrayTools.Cat(U0_U0mean);
             }
-
-            m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
 
             // create matrix and affine vector:
             if (OpMatrix != null) {
@@ -650,33 +641,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             }
 
-            m_LenScales = null;
-
-
             if (OpMatrix != null)
                 OpMatrix.CheckForNanOrInfM();
             OpAffine.CheckForNanOrInfV();
-
-
-            /*
-            // Set Pressure Reference Point
-            if (!this.boundaryCondMap.DirichletPressureBoundary) {
-                if (OpMatrix != null) {
-                    IBMSolverUtils.SetPressureReferencePoint(
-                        CurrentSolution.Mapping,
-                        this.GridData.SpatialDimension,
-                        this.LsTrk,
-                        OpMatrix, OpAffine);
-                    //OpMatrix.SaveToTextFileSparse("OpMatrix_3D");
-                } else {
-                    IBMSolverUtils.SetPressureReferencePointResidual(
-                        new CoordinateVector(CurrentState),
-                        this.GridData.SpatialDimension,
-                        this.LsTrk,
-                        OpAffine);
-                }
-            }
-            */
         }
 
         public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
@@ -814,6 +781,7 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
+        /*
         MultidimensionalArray m_LenScales;
 
 
@@ -839,7 +807,7 @@ namespace BoSSS.Application.IBM_Solver {
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;
         }
-
+        */
 
         /// <summary>
         /// Computes average velocity in case of Navier-Stokes Equations
@@ -966,7 +934,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Setting initial values.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 
             if (true) {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
@@ -1007,7 +975,7 @@ namespace BoSSS.Application.IBM_Solver {
             
             Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
-            base.SetInitial();
+            base.SetInitial(t);
 
             this.LevSet.GetExtremalValues(out double LevsetMin, out double LevsetMax);
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {

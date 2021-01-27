@@ -261,6 +261,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        
+
         /// <summary>
         /// the surface tension force has no effect due to the flat interface 
         /// </summary>
@@ -315,5 +317,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
     }
 }

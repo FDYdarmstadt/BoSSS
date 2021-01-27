@@ -1,56 +1,35 @@
-﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
+﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Utils;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using BoSSS.Foundation;
-using BoSSS.Solution.Utils;
-using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Control;
-using System.Globalization;
-using BoSSS.Solution.NSECommon;
-//using BoSSS.Solution.Utils.Formula;
-using BoSSS.Foundation.Grid.Classic;
-using ilPSP.Utils;
+using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-
+    
     /// <summary>
-    /// Basic test for surface tension and convective terms: a drop
-    /// 'moving' in a constant velocity field, i.e.
-    /// \f$ \vec{u}(t,\vec{x}) = (1,0)^T\f$ .
+    /// Elementary test for the three-phase (Fluid, Fluid, Solid) capabilities of <see cref="XNSE"/> with two level-sets.
     /// </summary>
-    class MovingDropletTest : IXNSETest {
+    class BasicThreePhase : IXNSETest {
 
-        public bool TestImmersedBoundary => false;
-
-        /// <summary>
-        /// nix
-        /// </summary>
-        public Func<double[], double, double> GetPhi2() {
-            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
-        }
+        public bool TestImmersedBoundary => true;
 
         public Func<double[], double, double> GetPhi2U(int d) {
-            throw new NotImplementedException();
+            if(d==0) {
+                return delegate (double[] X, double t) {
+                    return 1.0;
+                };
+            } else {
+                return (X, t) => 0.0;
+            }
         }
 
-        public MovingDropletTest(double R = 0.8, bool bConvection = true, bool bSteady = true, int spatDim = 2) {
+        public BasicThreePhase(double R = 0.8, bool bConvection = true, bool bSteady = true, int spatDim = 2) {
             this.Radius = R;
             this.IncludeConvection = bConvection;
             this.steady = bSteady;
@@ -80,9 +59,26 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-                
             }; 
         }
+
+
+
+        /// <summary>
+        /// Second Level-Set
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            return delegate (double[] X, double time) {
+
+                double x = X[0], y = X[1];
+                double x0 = -1.45;
+                x0 += time * Ux;
+
+                return -x + x0;
+            }; 
+        }
+
+
 
         public bool IncludeConvection {
             get;
@@ -266,41 +262,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-        /*
-        public double rho_A {
-            get {
-                return 0.3;
-            }
-        }
-
-        public double rho_B {
-            get {
-                return 10.0;
-            }
-        }
-
-        public double mu_A {
-            get {
-                return 0.2;
-            }
-        }
-
-        public double mu_B {
-            get {
-                return 1;
-            }
-        }
-
-
-         /// <summary>
-        /// surface tension
-        /// </summary>
-        public double Sigma {
-            get { return 0.5; }
-        }
-
-        //     */
-
+        
 
 
         /// <summary>
@@ -318,17 +280,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// dynamic viscosity, air
+        /// dynamic viscosity, air * 10 (must be sufficiently large for stable steady-state solution)
         /// </summary>
         public double mu_A {
-            get { return 17.1e-3; }
+            get { return 17.1e-3*10; }
         }
 
         /// <summary>
-        /// dynamic viscosity, water
+        /// dynamic viscosity, water * 10 (must be sufficiently large for stable steady-state solution)
         /// </summary>
         public double mu_B {
-            get { return 1.0; }
+            get { return 1.0*10; }
         }
 
         /// <summary>
@@ -350,6 +312,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return (X => 0.0);
         }
 
+        
+
         public bool Material {
             get { return true; }
         }
@@ -363,14 +327,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             get { return 2; }
         }
 
+        /// <summary>
+        ///  tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
+        /// </summary>
         public double[] AcceptableL2Error {
             get { return (spatialDimension == 2) ? 
-                    new double[] { 1.0e-6, 1.0e-6, 1.0e-6 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-5 }; }
+                    new double[] { 1.0e-6, 1.0e-6, 5.0e-3 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 5.0e-3 }; }
         }
 
+        /// <summary>
+        /// tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
+        /// </summary>
         public double[] AcceptableResidual {
             get { return (spatialDimension == 2) ? 
-                    new double[] { 1.0e-5, 1.0e-5, 1.0e-5 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 }; }
+                    new double[] { 2.0e-5, 2.0e-5, 2.0e-5 } : new double[] { 2.0e-5, 2.0e-5, 2.0e-5, 2.0e-5 }; }
         }
 
         public int SpatialDimension {
@@ -379,6 +349,5 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-        
     }
 }

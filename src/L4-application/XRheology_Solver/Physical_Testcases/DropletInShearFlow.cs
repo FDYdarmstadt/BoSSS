@@ -46,7 +46,6 @@ namespace BoSSS.Application.XRheology_Solver {
         /// <summary>
         /// control object for various testing
         /// </summary>
-        /// <returns></returns>
         public static XRheology_Control DropletInShearFlow_1 (int p = 2, int kelem = 8) {
 
             XRheology_Control C = new XRheology_Control();
@@ -115,12 +114,12 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.beta_a = 1.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 1.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
 
             C.RaiseWeissenberg = false;
-            C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
-            C.PhysicalParameters.Weissenberg_b = 0.0;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.0;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0.0;
@@ -217,8 +216,8 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ExactSolutionPressure.Add("B", Pressurefunction_B);
 
             C.ExactSolutionStressXX = new Dictionary<string, Func<double[], double, double>>();
-            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X,t) * C.PhysicalParameters.Weissenberg_a);
-            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t) * C.PhysicalParameters.Weissenberg_b);
+            C.ExactSolutionStressXX.Add("A", (X, t) => StressXXfunction_A(X,t) * C.PhysicalParametersRheology.Weissenberg_a);
+            C.ExactSolutionStressXX.Add("B", (X, t) => StressXXfunction_B(X, t) * C.PhysicalParametersRheology.Weissenberg_b);
 
             C.ExactSolutionStressXY = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionStressXY.Add("A", StressXYfunction_A);
@@ -291,7 +290,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.Penalty1[0] = 0;
             C.AdvancedDiscretizationOptions.Penalty1[1] = 0;
             //C.AdvancedDiscretizationOptions.PresPenalty2 = 0.0;
-            C.AdvancedDiscretizationOptions.UseWeightedAverages = true;
+            //C.AdvancedDiscretizationOptions.UseWeightedAverages = true;
 
             C.OperatorMatrixAnalysis = false;
             C.SkipSolveAndEvaluateResidual = false;

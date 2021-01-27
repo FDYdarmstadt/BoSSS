@@ -97,13 +97,13 @@ namespace BoSSS.Foundation.XDG {
             /// creates a matrix builder
             /// </summary>
             protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params, DGField[] DomFld) {
-                Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
+                Debug.Assert(m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator, this.m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator_Ls0, this.m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params, CodomFrame.FrameMap);
                 SurfElmBuilder.MPITtransceive = false;
@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
 
                         foreach(var MtxBuilder in allBuilders) {
                             MtxBuilder.time = time;
-                            UpdateLevelSetCoefficients(MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
+                            UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
                             MtxBuilder.Execute();
 
 #if DEBUG
@@ -463,10 +463,9 @@ namespace BoSSS.Foundation.XDG {
                         // Note: this kind of deferred execution
                         // (first, collecting all integrators in a list and second, executing them in a separate loop)
                         // should prevent waiting for unevenly balanced level sets
-
                         foreach(var LsEval in necList) { 
                             LsEval.time = time;
-                            UpdateLevelSetCoefficients(LsEval.SpeciesA, LsEval.SpeciesB);
+                            UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
                             LsEval.Execute();
 
 #if DEBUG
@@ -534,13 +533,13 @@ namespace BoSSS.Foundation.XDG {
             /// creates an evaluator
             /// </summary>
             protected override void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld) {
-                Debug.Assert(m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0);
+                Debug.Assert(m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
 
                 CellLengthScales.TryGetValue(SpeciesId, out var cls);
                 EdgeLengthScales.TryGetValue(SpeciesId, out var els);
 
-                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.GhostEdgesOperator, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.SurfaceElementOperator_Ls0, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
 
                 var SurfElmEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
                 SurfElmEval.MPITtransceive = false;
@@ -711,7 +710,7 @@ namespace BoSSS.Foundation.XDG {
                             ctorGhostSpeciesIntegrator(SpeciesId, quadOrder, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
-                        if (m_Xowner.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                        if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
@@ -869,7 +868,7 @@ namespace BoSSS.Foundation.XDG {
             abstract protected void ctorGhostSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
-            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator"/>
+            /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
@@ -941,7 +940,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// calls all <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate"/> methods
             /// </summary>
-            protected void UpdateLevelSetCoefficients(SpeciesId spcA, SpeciesId spcB) {
+            protected void UpdateLevelSetCoefficients(int iLevSet, SpeciesId spcA, SpeciesId spcB) {
                 GetCoefficients(spcA, spcB, out var csA, out var csB);
 
 
@@ -959,6 +958,16 @@ namespace BoSSS.Foundation.XDG {
 
 
                             cs.Setup(this.m_lsTrk);
+                        }
+
+                        if(c is ILevelSetForm lsc) {
+                            // test if the component is actually relevant
+                            if(lsc.PositiveSpecies != spcB)
+                                continue;
+                            if(lsc.NegativeSpecies != spcA)
+                                continue;
+                            if(lsc.LevelSetIndex != iLevSet)
+                                continue;
                         }
 
                         if (c is ILevelSetEquationComponentCoefficient ce) {

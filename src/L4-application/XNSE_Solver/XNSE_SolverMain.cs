@@ -64,8 +64,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
-    /// Optional: coupled heat equation with evaporation
-    /// Optional: kinetic energy equation 
+    /// - Optional: coupled heat equation with evaporation
+    /// - Optional: kinetic energy equation 
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
@@ -75,10 +75,13 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
             //throw new Exception("Remove me");
-            
+
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
                 var p = new XNSE();
@@ -1530,8 +1533,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
 
             this.LsTrk.PushStacks();
 
@@ -1557,7 +1560,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void ResetInitial() {
-            base.SetInitial();
+            base.SetInitial(0.0);
 
             this.InitLevelSet();
 

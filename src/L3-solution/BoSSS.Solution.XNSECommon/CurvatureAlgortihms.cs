@@ -206,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
             else
             {
-                CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+                CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
                 
@@ -602,7 +602,7 @@ namespace BoSSS.Solution.XNSECommon {
                 XSpatialOperatorMk2 op = new XSpatialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
                     var H = new SurfaceTension_LaplaceBeltrami_BndLine(d, 1.0, true);
-                    op.SurfaceElementOperator.EquationComponents[CodName[d]].Add(H);
+                    op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
                 }
                 op.Commit();
                                 
@@ -748,7 +748,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Project Curvature From Hessian and Gradient
         /// </summary>
         /// <remarks>
-        /// see for clarification equations 3.6 (2D) and 4.2 (3D)
+        /// see for clarification equations 3.6 (2D) and 4.2 (3D):
         /// Goldman, Ron. “Curvature Formulas for Implicit Curves and Surfaces.”
         /// Computer Aided Geometric Design, Geometric Modelling and Differential Geometry, 22, no. 7 (October 2005): 632–58.
         /// doi:10.1016/j.cagd.2005.06.005
@@ -1219,8 +1219,8 @@ namespace BoSSS.Solution.XNSECommon {
                     var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
                     var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(line);
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(surface);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
                 }
                 
             } else {
@@ -1447,7 +1447,7 @@ namespace BoSSS.Solution.XNSECommon {
             */
 
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCellsGrid.VolumeMask);
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"));
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"), 0);
             
             // =============================
             // compute force vector in cell.

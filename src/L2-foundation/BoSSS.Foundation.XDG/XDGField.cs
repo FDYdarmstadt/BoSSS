@@ -649,15 +649,11 @@ namespace BoSSS.Foundation.XDG {
 
         void AutoExtrapolateSpecies(SpeciesId Id, SubGrid oldSpeciesSubGrid) {
             LevelSetTracker LsTrk = m_CCBasis.Tracker;
-            SubGrid NearBand = m_CCBasis.Tracker.Regions.GetNearFieldSubgrid4LevSet(0, m_CCBasis.Tracker.NearRegionWidth);
-            if (m_CCBasis.Tracker.LevelSets.Count > 1)
-                // instead of LevelSetTracker.GetNearFieldSubgrid4LevSet(..)
-                // we would need some LevelSetTracker.GetNearFieldSpeciesBorder(...)
-                throw new NotSupportedException("Auto extrapolate currently not implemented for more than 1 level set");
-
+            CellMask allNearMask = m_CCBasis.Tracker.Regions.GetNearFieldMask(m_CCBasis.Tracker.NearRegionWidth);
+            
             var SpeciesField = this.GetSpeciesShadowField(Id);
 
-            CellMask ExtrapolateTo = NearBand.VolumeMask.Intersect(LsTrk.Regions.GetSpeciesSubGrid(Id).VolumeMask);
+            CellMask ExtrapolateTo = allNearMask.Intersect(LsTrk.Regions.GetSpeciesMask(Id));
             CellMask ExtrapolateFrom = oldSpeciesSubGrid.VolumeMask;
 
             SpeciesField.CellExtrapolation(ExtrapolateTo, ExtrapolateFrom);

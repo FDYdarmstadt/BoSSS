@@ -310,7 +310,7 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
-            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty_base));
             Debug.Assert(!double.IsInfinity(m_penalty));
 
             double µ = penaltySizeFactor * m_penalty * m_penalty_base;

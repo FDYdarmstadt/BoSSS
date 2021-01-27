@@ -152,8 +152,8 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// Setting initial value.
         /// </summary>
-        protected override void SetInitial() {
-            this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
+        protected override void SetInitial(double t) {
+            this.DelUpdateLevelset(null, t, 0.0, 0.0, false);
         }
 
         /// <summary>
