@@ -114,21 +114,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
-            int neighborSearchDepth = 5;
+            int neighborSearchDepth = 2;
             int jFound = -1;
             bool foundACell = false;
             //Debugger.Launch();
             while (!foundACell && neighborSearchDepth >= 0) {
                 if (lsTrk != null) {
-                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(2).GetBitMask();
-                    for (int i = 0; i < neighborSearchDepth; i++) {
-                        Cells2avoid = GetGlobalNearBand(Cells2avoid, map);
+                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(2, neighborSearchDepth)).GetBitMask();
+                    for (int i = 0; i < neighborSearchDepth - 2; i++) {
+                        if (neighborSearchDepth - 2 > 0)
+                            Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
                     }
                 } else {
                     Cells2avoid = null;
                 }
                 for (int j = 0; j < J; j++) {
-                    if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j + (int)map.GridDat.CellPartitioning.i0] == false)) {
+                    if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                         jFound = j;
                         break;
                     }

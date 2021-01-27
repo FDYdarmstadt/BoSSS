@@ -34,7 +34,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //Build Integrand
             //----------------------------------------------------------------------
-            SayeRecursion(fullSpace);
+            int recursionLevel = 0;
+            SayeRecursion(fullSpace, recursionLevel);
 
             //Evaluate Integrand
             //----------------------------------------------------------------------

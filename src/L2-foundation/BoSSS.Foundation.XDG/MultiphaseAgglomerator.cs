@@ -1096,7 +1096,7 @@ namespace BoSSS.Foundation.XDG {
                             if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
                                 // boundary edge, no neighbour for agglomeration
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
-                                //continue;
+                                continue;
                             }
                             //passed1[e] = true;
                             //isAggCandidate[e] = AggCandidates[jCellNeigh];

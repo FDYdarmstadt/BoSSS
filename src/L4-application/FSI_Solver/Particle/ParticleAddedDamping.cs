@@ -39,7 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
         internal double[,] IntegrationOverLevelSet(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt, double[] currentPosition) {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;
-            int RequiredOrder = 2;
+            int RequiredOrder = 4;
             for (int DampingTensorID = 0; DampingTensorID < 4; DampingTensorID++) {
                 for (int d1 = 0; d1 < 3; d1++) {
                     for (int d2 = 0; d2 < 3; d2++) {

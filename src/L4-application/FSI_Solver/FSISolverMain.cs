@@ -70,8 +70,8 @@ namespace BoSSS.Application.FSI_Solver {
             if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
                 throw new NotImplementedException("Currently not implemented for fixed motion");
             }
-
-            ParticleList = ((FSI_Control)this.Control).Particles;
+            if(!((FSI_Control)this.Control).IsRestart)
+                ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
 
@@ -108,6 +108,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// A list for all particles
         /// </summary>
+        [DataMember]
         private List<Particle> ParticleList;
 
         /// <summary>
@@ -672,14 +673,14 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int d1 = 0; d1 < spatialDim; d1++) { // which direction: x or y?
                     if (!IsPeriodic[d1])
                         continue;
-                    for (int wallID = 0; wallID < spatialDim; wallID++) { // which wall left or right (x) and upper or lower (y)?
-                        if (ParticleHasReachedPeriodicBoundary(currentParticle, d1, wallID)) {
+                    for (int wallID1 = 0; wallID1 < spatialDim; wallID1++) { // which wall left or right (x) and upper or lower (y)?
+                        if (ParticleHasReachedPeriodicBoundary(currentParticle, d1, wallID1)) {
                             duplicateHierachy[0] = p + 1;
                             Vector originInVirtualNeighbouringDomain;
                             if (d1 == 0)
-                                originInVirtualNeighbouringDomain = new Vector(2 * BoundaryCoordinates[0][1 - wallID], 0);
+                                originInVirtualNeighbouringDomain = new Vector(2 * BoundaryCoordinates[0][1 - wallID1], 0);
                             else
-                                originInVirtualNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID]);
+                                originInVirtualNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID1]);
 
                             Particle duplicateParticle;
                             if (DuplicateExists(duplicateHierachy, d1 + 1)) {
@@ -691,6 +692,7 @@ namespace BoSSS.Application.FSI_Solver {
                                 duplicateParticle.SetDuplicate();
                                 duplicateParticle.Motion.SetDistanceToMaster(originInVirtualNeighbouringDomain);
                                 duplicateParticle.Motion.SetDuplicatePosition(particlePosition);
+                                Console.WriteLine("ADDPosition " + currentParticle.Motion.GetPosition() + " duplicate " + (duplicateHierachy[d1 + 1] - 1) + " master " + p);
                                 duplicateParticles.Add(duplicateParticle);
                             }
 
@@ -700,13 +702,14 @@ namespace BoSSS.Application.FSI_Solver {
                                 if (!DuplicateExists(duplicateHierachy, 3)) {
                                     for (int wallID2 = 0; wallID2 < spatialDim; wallID2++) {
                                         if (ParticleHasReachedPeriodicBoundary(duplicateParticle, 1, wallID2)) {
-                                            originInVirtualNeighbouringDomain = new Vector(0, 2 * BoundaryCoordinates[1][1 - wallID2]);
+                                            originInVirtualNeighbouringDomain = new Vector(2 * BoundaryCoordinates[0][1 - wallID1], 2 * BoundaryCoordinates[1][1 - wallID2]);
                                             duplicateHierachy[3] = ParticleList.Count() + idOffset + 1;
                                             idOffset += 1;
                                             Particle duplicateParticleOfDuplicateParticle = currentParticle.CloneAs();
                                             duplicateParticleOfDuplicateParticle.SetDuplicate();
-                                            duplicateParticle.Motion.SetDistanceToMaster(originInVirtualNeighbouringDomain);
-                                            duplicateParticleOfDuplicateParticle.Motion.SetDuplicatePosition(duplicateParticle.Motion.GetPosition());
+                                            duplicateParticleOfDuplicateParticle.Motion.SetDistanceToMaster(originInVirtualNeighbouringDomain);
+                                            duplicateParticleOfDuplicateParticle.Motion.SetDuplicatePosition(particlePosition);
+                                            Console.WriteLine("ADDPosition " + currentParticle.Motion.GetPosition() + " duplicate " + (duplicateHierachy[3] - 1) + " master " + p);
                                             duplicateParticles.Add(duplicateParticleOfDuplicateParticle);
                                             break;
                                         }
@@ -765,8 +768,9 @@ namespace BoSSS.Application.FSI_Solver {
                                 newDuplicateHierachy[0] = newMasterID;
                                 newDuplicateHierachy[j] = oldMasterID;
                                 Vector distanceToOldMaster = currentDuplicate.Motion.GetDistanceToMaster();
-                                currentParticle.Motion.SetDistanceToMaster(new Vector(-distanceToOldMaster[0], -distanceToOldMaster[1]));
                                 currentDuplicate.SetMaster(currentParticle.Motion.CloneAs());
+                                Console.WriteLine("disttoold " + distanceToOldMaster);
+                                currentParticle.Motion.SetDistanceToMaster(new Vector(-distanceToOldMaster[0], -distanceToOldMaster[1]));
                                 currentParticle.SetDuplicate();
                                 for (int i = 0; i < duplicateHierachy.Length; i++) {
                                     if (DuplicateExists(duplicateHierachy, i))
@@ -837,11 +841,14 @@ namespace BoSSS.Application.FSI_Solver {
             Vector particlePosition = currentParticle.Motion.GetPosition();
             double distance = particlePosition[dimension] - BoundaryCoordinates[dimension][wallID];
             double particleMaxLength = currentParticle.GetLengthScales().Max();
+            double additionalThreshold = GetMinGridLength() * Math.Sqrt(2);
+            if (wallID == 1)
+                additionalThreshold *= -1;
             if (Math.Abs(distance) < particleMaxLength) {
                 if (dimension == 0)
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[dimension][wallID], particlePosition[1]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[dimension][wallID] + additionalThreshold, particlePosition[1]);
                 else
-                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[dimension][wallID]);
+                    currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[dimension][wallID] + additionalThreshold);
                 ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                 periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                 return Overlapping;
@@ -857,11 +864,14 @@ namespace BoSSS.Application.FSI_Solver {
         private bool ParticleHasLeftTheDomain(Particle currentParticle) {
             for (int d = 0; d < spatialDim; d++) {
                 for (int wallID = 0; wallID < spatialDim; wallID++) {
+                    double additionalThreshold = GetMinGridLength() * Math.Sqrt(2);
+                    if (wallID == 1)
+                        additionalThreshold *= -1;
                     Vector particlePosition = currentParticle.Motion.GetPosition();
                     if (d == 0)
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID], particlePosition[1]);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(BoundaryCoordinates[d][wallID] + additionalThreshold, particlePosition[1]);
                     else
-                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID]);
+                        currentParticle.ClosestPointOnOtherObjectToThis = new Vector(particlePosition[0], BoundaryCoordinates[d][wallID] + additionalThreshold);
                     ParticleCollision periodicCollision = new ParticleCollision(GetMinGridLength());
                     periodicCollision.CalculateMinimumDistance(currentParticle, out Vector _, out Vector _, out bool Overlapping);
                     if (Overlapping)
@@ -1140,7 +1150,8 @@ namespace BoSSS.Application.FSI_Solver {
                             if (duplicateParticle.IsMaster)
                                 throw new Exception("A ghost particle is considered to be a master, that can't be!");
                             duplicateParticle.Motion.SetDuplicateAngle(particle.Motion.GetAngle());
-                            Console.WriteLine("Position");
+                            Console.WriteLine("Position " + particle.Motion.GetPosition()+ " duplicate " + (particle.MasterDuplicateIDs[g] - 1) +" master " +p);
+                            Console.WriteLine("distance " + duplicateParticle.Motion.GetDistanceToMaster());
                             duplicateParticle.Motion.SetDuplicatePosition(particle.Motion.GetPosition());
                         }
                     }
@@ -1154,7 +1165,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void CreatePhysicalDataLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
+                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T","duplicateDistanceX","duplicateDistanceY"));
             }
         }
 
@@ -1166,7 +1177,7 @@ namespace BoSSS.Application.FSI_Solver {
         private void LogPhysicalData(double phystime, int timestepNo) {
             if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                 for (int p = 0; p < ParticleList.Count(); p++) {
-                    logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", timestepNo, p, phystime, ParticleList[p].Motion.GetPosition(0)[0], ParticleList[p].Motion.GetPosition(0)[1], ParticleList[p].Motion.GetAngle(0), ParticleList[p].Motion.GetTranslationalVelocity(0)[0], ParticleList[p].Motion.GetTranslationalVelocity(0)[1], ParticleList[p].Motion.GetRotationalVelocity(0), ParticleList[p].Motion.GetHydrodynamicForces(0)[0], ParticleList[p].Motion.GetHydrodynamicForces(0)[1], ParticleList[p].Motion.GetHydrodynamicTorque(0)));
+                    logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13}", timestepNo, p, phystime, ParticleList[p].Motion.GetPosition(0)[0], ParticleList[p].Motion.GetPosition(0)[1], ParticleList[p].Motion.GetAngle(0), ParticleList[p].Motion.GetTranslationalVelocity(0)[0], ParticleList[p].Motion.GetTranslationalVelocity(0)[1], ParticleList[p].Motion.GetRotationalVelocity(0), ParticleList[p].Motion.GetHydrodynamicForces(0)[0], ParticleList[p].Motion.GetHydrodynamicForces(0)[1], ParticleList[p].Motion.GetHydrodynamicTorque(0), ParticleList[p].Motion.GetDistanceToMaster()[0], ParticleList[p].Motion.GetDistanceToMaster()[1]));
                     logPhysicalDataParticles.Flush();
                 }
             }
@@ -1281,7 +1292,7 @@ namespace BoSSS.Application.FSI_Solver {
         public override void PostRestart(double time, TimestepNumber timestep) {
             if (!((FSI_Control)Control).IsRestart)
                 return;
-
+            initAddedDamping = false;
             IFileSystemDriver fsDriver = this.DatabaseDriver.FsDriver;
             string pathToOldSessionDir = Path.Combine(fsDriver.BasePath, "sessions", this.CurrentSessionInfo.RestartedFrom.ToString());
             string pathToPhysicalData = MPIRank == 0 ? Path.Combine(pathToOldSessionDir, "PhysicalData.txt") : "";
@@ -1308,6 +1319,7 @@ namespace BoSSS.Application.FSI_Solver {
                     double[] position = new double[2];
                     double[] translationalVelocity = new double[2];
                     double[] force = new double[2];
+                    double[] duplicateDistance = new double[2];
                     double[] physicalData = currentLineFields.Select(eachElement => Convert.ToDouble(eachElement)).ToArray();
                     position[0] = Convert.ToDouble(currentLineFields[3]);
                     position[1] = Convert.ToDouble(currentLineFields[4]);
@@ -1318,6 +1330,9 @@ namespace BoSSS.Application.FSI_Solver {
                     translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
                     double angularVelocity = Convert.ToDouble(currentLineFields[8]);
                     double torque = Convert.ToDouble(currentLineFields[11]);
+                    duplicateDistance[0] = Convert.ToDouble(currentLineFields[12]);
+                    duplicateDistance[1] = Convert.ToDouble(currentLineFields[13]);
+                    currentParticle.Motion.SetDistanceToMaster(new Vector(duplicateDistance));
                     currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), t);
                     currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], t);
                     currentParticle.Motion.InitializeParticleForceAndTorque(new double[] { physicalData[9], physicalData[10] }, physicalData[11], t, StartDt);

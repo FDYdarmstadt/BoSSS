@@ -94,7 +94,7 @@ namespace BoSSS.Application.FSI_Solver {
         [DataMember]
         internal double[,] AddedDampingTensor = new double[6, 6];
         [DataMember]
-        public Vector DistanceToMaster;
+        public Vector DistanceToMaster = new Vector(0, 0);
 
         /// <summary>
         /// Mass of the current particle.
@@ -522,11 +522,17 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        internal void SetDistanceToMaster(Vector distanceToMaster) => DistanceToMaster = new Vector(distanceToMaster);
+        internal void SetDistanceToMaster(Vector distanceToMaster) {
+            Aux.TestArithmeticException(DistanceToMaster, "DistanceToMaster");
+            DistanceToMaster = new Vector(distanceToMaster);
+        }
 
         internal Vector GetDistanceToMaster() => DistanceToMaster;
 
         internal virtual void SetDuplicatePosition(Vector position) {
+            Aux.TestArithmeticException(DistanceToMaster, "DistanceToMaster");
+            Console.WriteLine("Dist " + DistanceToMaster[0]);
+            Console.WriteLine("pos " + position);
             Position[0] = new Vector(DistanceToMaster + position);
         }
 

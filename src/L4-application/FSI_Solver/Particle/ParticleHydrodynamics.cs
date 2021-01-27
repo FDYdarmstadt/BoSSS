@@ -175,7 +175,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int d = 0; d < variable.Length; d++) {
                     if (variable[d] == 0)//ghost Particle
                         continue;
-                    returnVariable[d] = 0.9 * variable[d] + (1 - 0.9) * m_ForcesAndTorquePreviousIteration[1][d];
+                    returnVariable[d] = 0.001 * variable[d] + (1 - 0.001) * m_ForcesAndTorquePreviousIteration[1][d];
                 }
                 return returnVariable;
             }
