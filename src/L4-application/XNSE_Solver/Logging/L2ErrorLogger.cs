@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver {
             string[] fluidSpecies;
             if(this.SolverMain is BoSSS.Application.XNSE_Solver.XNSE newSolver) {
                 fluidSpecies = newSolver.XOperator.Species.ToArray();
-            } else if(this.SolverMain is XNSE_Solver.XNSE_SolverMain oldSolver) {
+            } else if(this.SolverMain is XNSE_Solver.Legacy.XNSE_SolverMain oldSolver) {
                 fluidSpecies = new[] { "A", "B" };
             } else {
                 throw new NotImplementedException("missing some cast here");
