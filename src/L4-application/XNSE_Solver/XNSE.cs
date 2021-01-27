@@ -126,7 +126,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
 
         
