@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="CellAgglomerator.cs" />
     <Compile Include="CoefficientsList.cs" />
+    <Compile Include="Quadrature\MultiLevelSetID.cs" />
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
@@ -60,7 +61,6 @@
     <Compile Include="Quadrature\CellEdgeBoundaryQuadratureScheme.cs" />
     <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureSchemes.cs" />
     <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureFactory.cs" />
-    <Compile Include="Quadrature\CombinedLevelSetQuadratureFactory.cs" />
     <Compile Include="Quadrature\CutCellQuadRuleFactory.cs" />
     <Compile Include="Quadrature\CutLineOnEdgeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\DivergenceFreeBasis3D.cs" />
@@ -96,7 +96,6 @@
     <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Square.cs" />
     <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
-    <Compile Include="Quadrature\CombinedLevelSetData.cs" />
     <Compile Include="ReducedRegionCode.cs" />
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
     <Compile Include="Quadrature\SimplexSubdivisionTree.cs" />

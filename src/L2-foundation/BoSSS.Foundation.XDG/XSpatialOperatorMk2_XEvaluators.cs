@@ -755,82 +755,81 @@ namespace BoSSS.Foundation.XDG {
                                     // loop over level-sets
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                        if (SchemeHelper.IsSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
+                                            var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
+                                            var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
-                                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
+                                            Chunk c = IntegrationDom.FirstOrDefault();
+                                            if (c.Len > 0) {
+                                                Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
+                                                int jtest = c.i0;
 
-                                        Chunk c = IntegrationDom.FirstOrDefault();
-                                        if(c.Len > 0) {
-                                            Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
-                                            int jtest = c.i0;
+                                                LevelsetCellSignCode csc = lsTrk.RegionsHistory[__TrackerHistoryIndex].GetCellSignCode(jtest);
 
-                                            LevelsetCellSignCode csc = lsTrk.RegionsHistory[__TrackerHistoryIndex].GetCellSignCode(jtest);
+                                                if (!(csc.GetSign(iLevSet) == LevelsetSign.Both))
+                                                    throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
 
-                                            if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
-                                                throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
-
-                                            var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
-                                            var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
-
-
-                                            bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
-                                            bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
-                                            bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
-                                            bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
-
-                                            if(SpeciesA_inPos == SpeciesA_inNeg) {
-                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                            }
-                                            if(SpeciesB_inPos == SpeciesB_inNeg) {
-                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                            }
+                                                var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
+                                                var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
 
 
-                                            if(SpeciesA_inNeg && SpeciesB_inPos) {
-                                                // nothing to do
+                                                bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
+                                                bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
+                                                bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
+                                                bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
 
-                                                if(SpeciesA_inPos == true) {
+                                                if (SpeciesA_inPos == SpeciesA_inNeg) {
                                                     throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
                                                 }
-                                                if(SpeciesB_inNeg == true) {
-                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                                }
-                                            } else if(SpeciesA_inPos && SpeciesB_inNeg) {
-                                                // flip species
-                                                
-                                                if(SpeciesA_inNeg == true) {
-                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                                }
-                                                if(SpeciesB_inPos == true) {
+                                                if (SpeciesB_inPos == SpeciesB_inNeg) {
                                                     throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
                                                 }
 
-                                                SpeciesId tmp = SpeciesA;
-                                                SpeciesA = SpeciesB;
-                                                SpeciesB = tmp;
+
+                                                if (SpeciesA_inNeg && SpeciesB_inPos) {
+                                                    // nothing to do
+
+                                                    if (SpeciesA_inPos == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                    if (SpeciesB_inNeg == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                } else if (SpeciesA_inPos && SpeciesB_inNeg) {
+                                                    // flip species
+
+                                                    if (SpeciesA_inNeg == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                    if (SpeciesB_inPos == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+
+                                                    SpeciesId tmp = SpeciesA;
+                                                    SpeciesA = SpeciesB;
+                                                    SpeciesB = tmp;
 
 
-                                            } else {
-                                                throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
+                                                } else {
+                                                    throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
+                                                }
                                             }
-                                        }
+                                            ICompositeQuadRule<QuadRule> rule;
+                                            using (new BlockTrace("QuadRule-compilation", tr)) {
+                                                CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
+                                                rule = SurfIntegration.Compile(GridData, quadOrder);
 
-                                        
-                                        ICompositeQuadRule<QuadRule> rule;
-                                        using (new BlockTrace("QuadRule-compilation", tr)) {
-                                            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                                            rule = SurfIntegration.Compile(GridData, quadOrder);
-
-                                            if (ruleDiagnosis) {
-                                                rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
-                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                if (ruleDiagnosis) {
+                                                    rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
+                                                    rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                }
                                             }
+
+                                            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
+
+                                            CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
+                                            ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                         }
-
-                                        LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
-
-                                        CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
-                                        ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                     }
                                 }
                             }
