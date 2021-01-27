@@ -70,7 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (((FSI_Control)Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
                 throw new NotImplementedException("Currently not implemented for fixed motion");
             }
-            if(!((FSI_Control)this.Control).IsRestart)
+            if (!((FSI_Control)this.Control).IsRestart)
                 ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
@@ -404,22 +404,8 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
-
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity, ParticleList.ToArray(), GetMinGridLength());
-                        penalty, FluidViscosity, delegate (Vector X) {
-                            throw new NotImplementedException("Currently not implemented for fixed motion");
-                        });
-                    comps.Add(viscousAtIB);
-                } else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, FluidViscosity,
-                        delegate (Vector X) {
-                            return CreateCouplingAtParticleBoundary(X);
-                        }
-                     );
-                    comps.Add(viscousAtIB); // immersed boundary component
-                }
+                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, FluidViscosity, ParticleList.ToArray(), GetMinGridLength());
+                comps.Add(viscousAtIB); // immersed boundary component
             }
 
             // Continuum equation
@@ -433,7 +419,6 @@ namespace BoSSS.Application.FSI_Solver {
             var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, ParticleList.ToArray(), GetMinGridLength());
             IBM_Op.EquationComponents["div"].Add(divPen);
 
-                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 0, "A", "B", false);
             // temporal operator
             // =================
             var tempOp = new ConstantXTemporalOperator(IBM_Op, 0.0);

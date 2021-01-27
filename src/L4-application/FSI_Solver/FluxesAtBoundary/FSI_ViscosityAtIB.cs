@@ -30,9 +30,8 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
     public class FSI_ViscosityAtIB : ILevelSetForm, ILevelSetEquationComponentCoefficient {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity, Particle[] allParticles, double minGridLength) {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, double fluidViscosity, Func<Vector, FSI_ParameterAtIB> getParticleParams) {
-            Penalty = penalty;
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, double fluidViscosity, Particle[] allParticles, double minGridLength) {
+            m_penalty = penalty;
             LsTrk = levelSetTracker;
             FluidViscosity = fluidViscosity;
             Component = currentDim;
@@ -47,10 +46,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         private readonly LevelSetTracker LsTrk;
         private readonly Particle[] AllParticles;
         private readonly double FluidViscosity;
-        private readonly double Penalty;
-        private readonly Func<double, int, double> PenaltyFunction;
-
-        private readonly double m_penalty; // safty factor
+        private readonly double m_penalty; // safety factor
         double m_penalty_degree; // DG degree scaling
         MultidimensionalArray NegLengthScaleS;
 
@@ -90,9 +86,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             return scaledPenalty;
 
         }
-
-
-
 
         private enum BoundaryConditionType {
             passive = 0,
@@ -148,7 +141,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             if (dim == 3) {
                 returnValue -= Grad_uA_xN * (vA);                                                    // consistency term
                 returnValue -= Grad_vA_xN * (uA[Component] - 0);                                     // symmetry term
-                returnValue += penaltyFactor * (uA[Component] - 0) * (vA);                           // penalty term
+                returnValue += _penalty * (uA[Component] - 0) * (vA);                           // penalty term
                 Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
                 return returnValue * FluidViscosity;
             }
@@ -165,7 +158,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                         returnValue -= FluidViscosity * Grad_uA[Component, d] * vA * normalVector[d];
                         returnValue -= FluidViscosity * Grad_vA[d] * (uA[Component] - uAFict[Component]) * normalVector[d];
                     }
-                    returnValue += FluidViscosity * (uA[Component] - uAFict[Component]) * vA * penaltyFactor;
+                    returnValue += FluidViscosity * (uA[Component] - uAFict[Component]) * vA * _penalty;
                     break;
                 }
 
@@ -179,7 +172,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                             returnValue -= FluidViscosity * (Grad_vA[dD] * normalVector[dD]) * (normalVector[dN] * uA[dN] - normalVector[dN] * uAFict[dN]) * normalVector[Component];
                         }
                         // penalty term
-                        returnValue += FluidViscosity * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * normalVector[Component] * vA * penaltyFactor;
+                        returnValue += FluidViscosity * inp.Normal[dN] * (uA[dN] - uAFict[dN]) * normalVector[Component] * vA * _penalty;
                     }
                     // tangential direction, active part
                     double[,] P = new double[dim, dim];
