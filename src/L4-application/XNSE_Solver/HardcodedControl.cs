@@ -337,6 +337,10 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
+        /// <summary>
+        /// See publication, Section 6.3:
+        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+        /// </summary>
         public static XNSE_Control TaylorCouette(string _DbPath = null, int k = 3, int sizeFactor = 4) {
             XNSE_Control C = new XNSE_Control();
 
@@ -479,7 +483,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.InitialValues_Evaluators.Add("Phi",
-                (X => X.L2NormPow2() - Rm.Pow2())  // signed-distance form
+                (X => X.L2NormPow2() - Rm.Pow2())  // quadratic form
                 );
 
             C.InitialValues_Evaluators.Add("VelocityX#A", x => UA1(x, 0));
@@ -497,7 +501,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
@@ -892,7 +895,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -1319,7 +1321,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -1519,7 +1520,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
             #endregion
@@ -3872,7 +3872,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
@@ -4076,7 +4075,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -4258,7 +4256,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;

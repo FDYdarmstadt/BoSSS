@@ -25,6 +25,7 @@ namespace AdvancedSolverTests {
 
         public static void Test() {
             Console.WriteLine("wer hat den output eingestellt: " + ilPSP.Environment.StdoutOnlyOnRank0);
+            AdvancedSolverTests.SubBlocking.LocalTests.MapConsistencyTest(XDGusage.none, 2);
             //SubBlockTests.LocalIndexTest(XDGusage.all,2);
             //SubBlockTests.ExternalIndexTest(XDGusage.all, 2);
             //SubBlockTests.MapConsistencyTest(XDGusage.all, 2);
@@ -41,7 +42,7 @@ namespace AdvancedSolverTests {
             //ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec,4);
             //ExternalTests.SubBlockExtraction(XDGusage.all, 2, MatrixShape.laplace, 4);
             //ExternalTests.VectorCellwiseOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
-            ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
+            //ExternalTests.VectorCellwiseOperation(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
             //ExternalTests.SubSelection(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             //ExternalTests.VectorSplitOperation(XDGusage.all, 2, MatrixShape.diagonal_var_spec, 4);
             //AdvancedSolverTests.SubBlocking.LocalTests.CellBlockVectorOperations(XDGusage.all, 2, MatrixShape.diagonal_var_spec);

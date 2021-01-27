@@ -31,6 +31,8 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Utils;
 using BoSSS.Solution.LevelSetTools;
+using System.Linq;
+using BoSSS.Foundation;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -181,7 +183,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
 
@@ -453,7 +455,84 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             XNSESolverTest(Tst, C);
 
-        } 
+        }
+
+
+#if !DEBUG
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest(
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+            ) {
+
+            double AgglomerationTreshold = 0.3;
+            
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            ViscosityMode vmode;
+            switch(modus) {
+                case TaylorCouette.Mode.Test2Phase: vmode = ViscosityMode.FullySymmetric; break;
+                case TaylorCouette.Mode.TestIBM: vmode = ViscosityMode.Standard; break; // for IBM, the FullySymmetric implementation is still missing
+                default: throw new ArgumentOutOfRangeException();
+            }
+
+            int[] GridResolutionS = new int[] { 2, 4, 8, 16 };
+
+            var Tst = new TaylorCouette(modus);
+
+            var CS = new XNSE_Control[GridResolutionS.Length];
+            for(int i = 0; i < GridResolutionS.Length; i++) {
+                var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, vmode, SurfTensionMode: stm, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolutionS[i]);
+                C.SkipSolveAndEvaluateResidual = false;
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+                C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+                CS[i] = C;
+
+                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
+                //C.SkipSolveAndEvaluateResidual = true;
+                //XNSESolverTest(Tst, C);
+                //break;
+            }
+
+            XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
+        }
+#endif
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void IBMChannelTest(
+            [Values(1, 2, 3)] int FlowSolverDegree = 2,
+            [Values(0, 30 * Math.PI / 180, 40 * Math.PI / 180, 45 * Math.PI / 180, 60 * Math.PI / 180, Math.PI / 2)] double angle = 0.0
+            ) {
+
+            double AgglomerationTreshold = 0.3;
+
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+
+            int GridResolution = 1;
+
+            var Tst = new IBMChannel(30 * Math.PI / 180, true);
+
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, ViscosityMode.Standard, SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution);
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-11;
+
+            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            C.SkipSolveAndEvaluateResidual = true;
+            XNSESolverTest(Tst, C);
+
+        }
 
 
 
@@ -611,8 +690,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 solver.Init(C);
                 solver.RunSolverMode();
-                if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady)
-                    solver.OperatorAnalysis();
+                //if(C.TimesteppingMode == AppControl._TimesteppingMode.Steady) // deavtivated by FK; has only value for a series of meshes, but not for a single calc.
+                //    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
                 XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
@@ -643,6 +722,136 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
             }
         }
+
+
+        private static void XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution, double[] ExpectedSlopes) {
+            int D = Tst.SpatialDimension;
+            int NoOfMeshes = CS.Length;
+
+            double[] hS = new double[NoOfMeshes];
+            MultidimensionalArray errorS = null;
+            string[] Names = null;
+
+            XNSE[] solvers = new XNSE[NoOfMeshes];
+            if(useExactSolution) {
+
+                if(NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                for(int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSE()) {
+                    var solver = new XNSE();
+                    solvers[k] = solver;
+                    { 
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+                        XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                        double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        double[] ErrThresh = Tst.AcceptableL2Error;
+
+
+                        if(k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                            Names = new string[LastErrors.Length];
+                            if(ExpectedSlopes.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if(LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if(LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+                        for(int i = 0; i < ErrThresh.Length; i++) {
+                            Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                            Names[i] = solver.Operator.DomainVar[i];
+                        }
+
+                        errorS.SetRow(k, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+
+                        // test code start ----------------------------  
+                        /*{
+                            var press = solver.CurrentState.Fields[2];
+                            var presEx = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "ExactPressure");
+                            ScalarFunction presExFunc = Tst.GetPress("A").Vectorize(0.0);                            
+                            presEx.GetSpeciesShadowField("A").ProjectField(presExFunc);
+                            var err = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "Error");
+                            err.AccLaidBack(1.0, presEx);
+                            err.AccLaidBack(-1.0, press);
+
+                            int order = 19;// presEx.Basis.Degree * 2 + 1;
+
+                            var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+                            SpeciesId spId = solver.LsTrk.GetSpeciesId("A");
+                            var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
+                            var rule = scheme.Compile(solver.GridData, order);
+
+                            double mean = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a, rule);
+                            double vol = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => 1.0, rule);
+                            mean = mean / vol;
+                            Console.WriteLine("Comparison mean val: " + mean);
+                            err.GetSpeciesShadowField("A").AccConstant(-mean);
+
+                            double errNorm = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a.Pow2(), rule).Sqrt();
+                            Console.WriteLine("Comparison Error norm: " + errNorm);
+                            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { press, presEx, err }, "Pressure-" + k, 0.0, 4);
+                        }*/
+                        // ------------------------- test code end
+                    }
+
+                }
+            } else {
+                if(NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+                throw new NotImplementedException("todo");
+            }
+
+
+            //hS = hS.Take(hS.Length - 1).ToArray();
+
+            double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+                double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+                double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
+                double xAvg = xValues.Average();
+                double yAvg = yValues.Average();
+
+                double v1 = 0.0;
+                double v2 = 0.0;
+
+                for(int i = 0; i < yValues.Length; i++) {
+                    v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
+                    v2 += Math.Pow(xValues[i] - xAvg, 2);
+                }
+
+                double a = v1 / v2;
+                double b = yAvg - a * xAvg;
+
+                return a;
+            }
+
+
+            for(int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+
+                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+            }
+
+            for(int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+        }
+
 
         private static void XHeatSolverTest(IXHeatTest Tst, XNSE_Control C) {
             using (var solver = new XHeat()) {

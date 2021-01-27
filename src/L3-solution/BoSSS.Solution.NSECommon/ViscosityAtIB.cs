@@ -28,6 +28,9 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
+    /// <summary>
+    /// Viscosity at an immersed boundary;
+    /// </summary>
     public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
@@ -193,6 +196,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
                 return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV;
             }
         }
+
         public IList<string> ParameterOrdering {
             get {
                 if(m_UseLevelSetVelocityParameter)

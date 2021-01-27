@@ -148,6 +148,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         //    throw new NotSupportedException("mass conservation correction currently not supported");
                         //}
                         FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                        fourierLevelSet.Clear();
                         fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = fourierLevelSet;
                         break;
@@ -158,6 +159,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.None: {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         //if(Control.InitialValues_EvaluatorsVec.ContainsKey(LevelSetCG))
+                        levelSetDG.Clear();
                         levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
@@ -280,6 +282,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 
                 // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
                 var pair1 = LsUpdater.LevelSets[LevelSetCG];
+                pair1.DGLevelSet.Clear();
                 pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
             }
         }

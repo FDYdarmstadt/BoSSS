@@ -19,9 +19,7 @@ namespace BoSSS.Solution {
     /// </summary>
     [Serializable]
     public abstract class InSituPostProcessingModule : IDisposable { 
-    //public abstract class InSituPostProcessingModule<S,C> : IDisposable 
-    //    where C : Control.AppControl, new()
-    //    where S : Application<C> //
+
     
 
         /// <summary>
