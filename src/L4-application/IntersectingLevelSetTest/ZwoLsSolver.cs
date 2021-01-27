@@ -29,49 +29,44 @@ using ilPSP.Utils;
 using NUnit.Framework;
 using System;
 
-namespace IntersectingLevelSetTest
-{
+namespace IntersectingLevelSetTest {
+
     /// <summary>
     /// This guy tests the basic functionality of the XDG framework
     /// if more than one level-set is involved.
     /// </summary>
-    class ZwoLsSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new()
-    {
-
+    internal class ZwoLsSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
         internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-        protected override IGrid CreateOrLoadGrid()
-        {
+        protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
             var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 4), GenericBlas.Linspace(-1, 1, 4));
             return grd;
         }
 
-        public override void Init(BoSSS.Solution.Control.AppControl control)
-        {
+        public override void Init(BoSSS.Solution.Control.AppControl control) {
             base.Init(control);
         }
 
-        LevelSet Phi0;
+        private LevelSet Phi0;
 
-        LevelSet Phi1;
+        private LevelSet Phi1;
 
-        SinglePhaseField u;
+        private SinglePhaseField u;
 
-        SinglePhaseField du_dx;
+        private SinglePhaseField du_dx;
 
-        SinglePhaseField du_dx_Exact;
+        private SinglePhaseField du_dx_Exact;
 
-        SinglePhaseField ERR;
+        private SinglePhaseField ERR;
 
-        XDGField XERR;
+        private XDGField XERR;
 
-        SinglePhaseField Amarker;
-        SinglePhaseField Bmarker;
-        SinglePhaseField Cmarker;
+        private SinglePhaseField Amarker;
+        private SinglePhaseField Bmarker;
+        private SinglePhaseField Cmarker;
 
-        protected override void CreateFields()
-        {
+        protected override void CreateFields() {
             Phi0 = new LevelSet(new Basis(this.GridData, 3), "Phi_0");
             Phi1 = new LevelSet(new Basis(this.GridData, 3), "Phi_1");
 
@@ -110,39 +105,33 @@ namespace IntersectingLevelSetTest
         /// </summary>
         internal int DEGREE = 1;
 
-        void LsUpdate(double t)
-        {
+        private void LsUpdate(double t) {
             double offset = t;
 
             Console.WriteLine("LSUpdate t = " + t);
 
-            double phi0(double x, double y)
-            {
-                return (y > 0) ? Math.Sqrt(x.Pow2() + (y - 0.1).Pow2()) - 1.3 : 1 ;
+            double phi0(double x, double y) {
+                return (y > 0) ? Math.Sqrt(x.Pow2() + (y - 0.1).Pow2()) - 1.3 : 1;
             }
 
-            double phi1(double x, double y)
-            {
-                return (0.01 * t * x) -(y);
+            double phi1(double x, double y) {
+                return (0.01 * t * x) - (y);
             }
 
-            double phi2(double x, double y) 
-            {
+            double phi2(double x, double y) {
                 return (x);
             }
 
-            double phi3(double x, double y)
-            {
-                return (x - (0.1 *t) * y);
+            double phi3(double x, double y) {
+                return (x - (0.1 * t) * y);
             }
 
-
             Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1); 
-            
-            LsTrk.UpdateTracker();
+            Phi1.ProjectField(phi1);
+
+            LsTrk.UpdateTracker(t);
             LsTrk.PushStacks();
-            
+
             Amarker.Clear();
             Bmarker.Clear();
             Cmarker.Clear();
@@ -151,29 +140,26 @@ namespace IntersectingLevelSetTest
             Cmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("C").VolumeMask);
         }
 
-        protected override void SetInitial()
-        {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u.ProjectField((x, y) => x);
             du_dx_Exact.ProjectField((x, y) => 1.0);
         }
 
-        XSpatialOperatorMk2 Op;
+        private XSpatialOperatorMk2 Op;
 
-        int QuadOrder {
+        private int QuadOrder {
             get {
                 return this.DEGREE * 2 + 2;
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
-        {
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             Op = new XSpatialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new[] { "B" },
                 __varnames: new[] { "u", "c1" });
-
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
@@ -184,13 +170,11 @@ namespace IntersectingLevelSetTest
             Op.Commit();
         }
 
-        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt)
-        {
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
             //phystime = 1.8;
             LsUpdate(phystime);
-
 
             // operator-matrix assemblieren
             MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
@@ -207,7 +191,6 @@ namespace IntersectingLevelSetTest
             // Mass matrix/Inverse Mass matrix
             var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
             var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: false);
-
 
             // test that operator depends only on B-species values
             double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
@@ -234,31 +217,22 @@ namespace IntersectingLevelSetTest
             double xL2Err = XERR.L2Norm();
             Console.WriteLine("L2 Error (in XDG space): " + xL2Err);
 
-            
-
             // check error
             double ErrorThreshold = 1.0e-1;
             if (this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
-
             bool IsPassed = (L2Err <= ErrorThreshold || xL2Err <= ErrorThreshold);
-            if (IsPassed)
-            {
+            if (IsPassed) {
                 Console.WriteLine("Test PASSED");
-            }
-            else
-            {
+            } else {
                 Console.WriteLine("Test FAILED: check errors.");
                 //PlotCurrentState(phystime, TimestepNo, 3);
             }
 
-            if (TimestepNo > 1)
-            {
+            if (TimestepNo > 1) {
                 //Assert.LessOrEqual(xL2Err, ErrorThreshold, "XDG L2 error of computing du_dx");
             }
-
-
 
             // return/Ende
             base.NoOfTimesteps = 20;
@@ -267,8 +241,7 @@ namespace IntersectingLevelSetTest
             return dt;
         }
 
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0)
-        {
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             string filename = "ZwoLsTest." + timestepNo;
             Tecplot.PlotFields(new DGField[] { u, du_dx, Phi0, Phi1, Amarker, Bmarker, Cmarker, du_dx_Exact, ERR, XERR }, filename, 0, superSampling);
         }
