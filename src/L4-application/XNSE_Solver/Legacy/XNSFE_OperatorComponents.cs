@@ -70,7 +70,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                 if (!config.isMovingMesh) {
                     comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
                     comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
-                    comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                    comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, -1, false, thermParams, sigma));
                 } 
             } else {
                 comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
@@ -123,7 +123,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, config.getPhysParams.Sigma);
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, -1, false, thermParams, config.getPhysParams.Sigma);
             comps.Add(divEvap);
 
         }

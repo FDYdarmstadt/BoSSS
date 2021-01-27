@@ -23,7 +23,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 
-namespace BoSSS.Solution.NSECommon.Operator.Pressure{
+namespace BoSSS.Solution.NSECommon.Operator.Pressure { 
+    
+    
     public class PressureFormAtIB : ILevelSetForm, ISupportsJacobianComponent {
         public PressureFormAtIB(int _d, int _D, LevelSetTracker LsTrk, int iLevSet, string FluidSpc, string SolidSpecies) {
             m_d = _d;

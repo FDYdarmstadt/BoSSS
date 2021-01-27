@@ -33,12 +33,30 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
         /// </summary>
         public abstract double[] ComputeL2Error(double time, XNSE_Control control);
+
+
+        /// <summary>
+        /// number of cells in the grid/mesh
+        /// </summary>
+        public double GetGridCells() {
+            return solver.GridData.CellPartitioning.TotalLength;
+        }
+
+        /// <summary>
+        /// characteristic grid/mesh length scale
+        /// </summary>
+        public double GetGrid_h() {
+            return ((Foundation.Grid.Classic.GridData)(solver.GridData)).Cells.h_minGlobal;
+        }
     }
 
     /// <summary>
     /// error evaluator for XNSE-based tests 
     /// computes error for: velocity, pressure 
     /// </summary>
+    /// <remarks>
+    /// Seems redundant with <see cref="L2ErrorLogger"/>
+    /// </remarks>
     class XNSEErrorEvaluator : ErrorEvaluator {
 
         public XNSEErrorEvaluator(XNSE solver) : base(solver){
@@ -99,31 +117,36 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         {
             int D = solver.GridData.SpatialDimension;
             var FluidSpecies = exactPressure.Keys.ToArray();
+
+            string pressureName = VariableNames.Pressure;
+            XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
+
             int order = 0;
             if (solver.LsTrk.GetCachedOrders().Count > 0) {
                 order = solver.LsTrk.GetCachedOrders().Max();
             } else {
                 order = 1;
             }
+            //order = Math.Max(pressure.Basis.Degree * 2, order);
+            Console.WriteLine("pressure error with order " + order);
 
             var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
             // pass 1: mean value of pressure difference
-            
             double DiffInt = 0;
+            double Volume = 0;
             foreach (var spc in FluidSpecies)
             {
 
                 SpeciesId spId = solver.LsTrk.GetSpeciesId(spc);
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                 var rule = scheme.Compile(solver.GridData, order);
-
-                string pressureName = VariableNames.Pressure;
-                XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
+               
                 DiffInt += pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
+                Volume += pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => 1.0, rule);
             }
-            double Volume2 = (new SubGrid(CellMask.GetFullMask(solver.GridData))).Volume;
-            double PressureDiffMean = DiffInt / Volume2;
-
+            double PressureDiffMean = DiffInt / Volume;
+            Console.WriteLine("Mean Pressure diff: " + PressureDiffMean);
 
             double L2Error = 0;
             Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
@@ -135,8 +158,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests
                 var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                 var rule = scheme.Compile(solver.GridData, order);
 
-                string pressureName = VariableNames.Pressure;
-                XDGField pressure = (XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == pressureName);
                 double IdV = pressure.GetSpeciesShadowField(spc).LxError(exactPressure[spc].Vectorize(time), (X, a, b) => (a - b - PressureDiffMean).Pow2(), rule);
                 L2Error += IdV;
                 L2Error_Species.Add(spc, IdV.Sqrt());
