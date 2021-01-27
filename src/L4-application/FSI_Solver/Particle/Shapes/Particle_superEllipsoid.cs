@@ -102,11 +102,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
             double alpha = -(Motion.GetAngle(0));
             double r;
-            r = -Math.Pow(((X[0] - Motion.GetPosition(0)[0]) * Math.Cos(alpha) - (X[1] - Motion.GetPosition(0)[1]) * Math.Sin(alpha)) / m_Length, m_Exponent)
-                -Math.Pow(((X[0] - Motion.GetPosition(0)[0]) * Math.Sin(alpha) + (X[1] - Motion.GetPosition(0)[1]) * Math.Cos(alpha)) / m_Thickness, m_Exponent)
+            r = -Math.Pow(((X[0] - Postion[0]) * Math.Cos(alpha) - (X[1] - Postion[1]) * Math.Sin(alpha)) / m_Length, m_Exponent)
+                -Math.Pow(((X[0] - Postion[0]) * Math.Sin(alpha) + (X[1] - Postion[1]) * Math.Cos(alpha)) / m_Thickness, m_Exponent)
                 + 1;
             if (double.IsNaN(r) || double.IsInfinity(r))
                 throw new ArithmeticException();
@@ -122,10 +122,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
             Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
-            Vector distancePointToPosition = point - Motion.GetPosition(0);
+            Vector distancePointToPosition = point - Position;
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
             double Superellipsoid = Math.Pow(distancePointToPosition * orientation / a, m_Exponent) + Math.Pow(distancePointToPosition * normalOrientation / b, m_Exponent);

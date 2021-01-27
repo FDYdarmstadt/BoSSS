@@ -74,6 +74,13 @@ namespace BoSSS.Application.FSI_Solver {
                 ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
+            for(int d = 0; d < spatialDim; d++) {
+                if (IsPeriodic[d]) {
+                    for(int p = 0; p < ParticleList.Count(); p++) {
+                        ParticleList[p].Motion.SetPeriodicBoundaryPosition(BoundaryCoordinates[d], d);
+                    }
+                }
+            }
             UpdateLevelSetParticles(phystime: t);
             CreatePhysicalDataLogger();
             base.SetInitial(t);
@@ -548,11 +555,11 @@ namespace BoSSS.Application.FSI_Solver {
                 int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 CellMask allParticleMask = null;
                 CellMask coloredCellMask = null;
-                if (CellColor != null) {
-                    DeleteParticlesOutsideOfDomain();
-                    CreateDuplicateParticleAtPeriodicBoundary();
-                    SwitchDuplicateAndMasterParticle();
-                }
+                //if (CellColor != null) {
+                //    DeleteParticlesOutsideOfDomain();
+                //    CreateDuplicateParticleAtPeriodicBoundary();
+                //    SwitchDuplicateAndMasterParticle();
+                //}
 
                 CellColor = CellColor == null ? LevelSetUpdate.InitializeColoring(LsTrk, ParticleList.ToArray(), MaxGridLength) : LevelSetUpdate.UpdateColoring(LsTrk);
                 for (int i = 0; i < noOfLocalCells; i++) {
@@ -577,13 +584,8 @@ namespace BoSSS.Application.FSI_Solver {
                             double levelSetFunction = int.MinValue;
                             for (int p = 0; p < particlesOfCurrentColor.Length; p++) {
                                 Particle currentParticle = ParticleList[particlesOfCurrentColor[p]];
-                                if (IsPeriodic[0] || IsPeriodic[1]) {
-                                    if (levelSetFunction < currentParticle.LevelSetFunction(X, BoundaryCoordinates))
-                                        levelSetFunction = currentParticle.LevelSetFunction(X, BoundaryCoordinates);
-                                } else {
-                                    if (levelSetFunction < currentParticle.LevelSetFunction(X))
-                                        levelSetFunction = currentParticle.LevelSetFunction(X);
-                                }
+                                if (levelSetFunction < currentParticle.LevelSetFunction(X, MaxGridLength))
+                                    levelSetFunction = currentParticle.LevelSetFunction(X, MaxGridLength);
                                 globalParticleColor[particlesOfCurrentColor[p]] = 0;
                             }
                             return levelSetFunction;
@@ -1198,37 +1200,33 @@ namespace BoSSS.Application.FSI_Solver {
             foreach (Particle p in Particles) {
                 p.IsCollided = false;
             }
-            ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
-            Collision.Calculate(ParticleList.ToArray());
+            //ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
+            //Collision.Calculate(ParticleList.ToArray());
 
-            // The following (collision detection based on cell color might be  more efficient, however, it doesn't work with periodic boundaries.
-            // Only particles with the same color a close to each other, thus, we only test for collisions within those particles.
-            // Determine color.
-            // =================================================
-            //int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
-            //for (int i = 0; i < _GlobalParticleColor.Length; i++) {
-            //    int CurrentColor = _GlobalParticleColor[i];
-            //    if (CurrentColor == 0)
-            //        continue;
-            //    int[] ParticlesOfCurrentColor = levelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
-            //    // Multiple particles with the same color, trigger collision detection
-            //    // =================================================
-            //    if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
-            //        Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
-            //        for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
-            //            currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
-            //        }
-            //        ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
-            //        Collision.Calculate(ParticleList.ToArray());
-            //        //Collision.Calculate(currentParticles);
-            //    }
-            //    // Remove already examined particles/colors from array
-            //    // =================================================
-            //    for (int j = 0; j < _GlobalParticleColor.Length; j++) {
-            //        if (_GlobalParticleColor[j] == CurrentColor)
-            //            _GlobalParticleColor[j] = 0;
-            //    }
-            //}
+            int[] _GlobalParticleColor = GlobalParticleColor.CloneAs();
+            for (int i = 0; i < _GlobalParticleColor.Length; i++) {
+                int CurrentColor = _GlobalParticleColor[i];
+                if (CurrentColor == 0)
+                    continue;
+                int[] ParticlesOfCurrentColor = LevelSetUpdate.FindParticlesWithSameColor(_GlobalParticleColor, CurrentColor);
+                // Multiple particles with the same color, trigger collision detection
+                // =================================================
+                if (ParticlesOfCurrentColor.Length >= 1 && CurrentColor != 0) {
+                    Particle[] currentParticles = new Particle[ParticlesOfCurrentColor.Length];
+                    for (int j = 0; j < ParticlesOfCurrentColor.Length; j++) {
+                        currentParticles[j] = ParticleList[ParticlesOfCurrentColor[j]];
+                    }
+                    ParticleCollision Collision = new ParticleCollision(GetMinGridLength(), ((FSI_Control)Control).CoefficientOfRestitution, dt, ((FSI_Control)Control).WallPositionPerDimension, ((FSI_Control)Control).BoundaryIsPeriodic, MinimalDistanceForCollision, DetermineOnlyOverlap);
+                    //Collision.Calculate(ParticleList.ToArray());
+                    Collision.Calculate(currentParticles);
+                }
+                // Remove already examined particles/colors from array
+                // =================================================
+                for (int j = 0; j < _GlobalParticleColor.Length; j++) {
+                    if (_GlobalParticleColor[j] == CurrentColor)
+                        _GlobalParticleColor[j] = 0;
+                }
+            }
         }
 
         /// <summary>

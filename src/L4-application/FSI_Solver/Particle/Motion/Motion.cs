@@ -55,7 +55,78 @@ namespace BoSSS.Application.FSI_Solver {
                 RotationalAcceleration.Add(new double());
                 HydrodynamicTorque.Add(new double());
             }
+            PeriodicBoundaryPosition = new double[SpatialDim][];
         }
+
+        /// <summary>
+        /// First index: The spatial direction of the periodic boundary.
+        /// Second index: The ID of the periodic boundary. Left and lower boundary has ID=0, right and upper boundary ID=1.
+        /// </summary>
+        [DataMember]
+        private readonly double[][] PeriodicBoundaryPosition;
+
+        /// <summary>
+        /// The origin of the virtual domain at the periodic boundary.
+        /// </summary>
+        [DataMember]
+        public List<Vector> OriginInVirtualPeriodicDomain = new List<Vector>();
+
+        public void SetPeriodicBoundaryPosition(double[] periodicBoundaryPosition, int dimension) {
+            Aux = new FSIAuxillary();
+            if (!PeriodicBoundaryPosition[dimension].IsNullOrEmpty())
+                throw new Exception("Overwrite of periodic boundaries during a simulation is not allowed.");
+            Aux.TestArithmeticException(periodicBoundaryPosition, ("periodic boundary position, dimension " + dimension));
+            PeriodicBoundaryPosition[dimension] = periodicBoundaryPosition.CloneAs();
+
+            switch (dimension) {
+                case 0:
+                xPeriodic = true;
+                for (int d = 0; d < PeriodicBoundaryPosition[dimension].Length; d++) {
+                    OriginInVirtualPeriodicDomain.Add(new Vector(2 * PeriodicBoundaryPosition[0][d], 0));
+                }
+                break;
+                case 1:
+                yPeriodic = true;
+                for (int d = 0; d < PeriodicBoundaryPosition[dimension].Length; d++) {
+                    OriginInVirtualPeriodicDomain.Add(new Vector(0, 2 * PeriodicBoundaryPosition[1][d]));
+                }
+                break;
+            }
+
+            if(xPeriodic && yPeriodic) {
+                for(int d1 = 0; d1 < 2; d1++) {
+                    for(int d2 = 0; d2 < 2; d2++) {
+                        OriginInVirtualPeriodicDomain.Add(new Vector(OriginInVirtualPeriodicDomain[d1][0], OriginInVirtualPeriodicDomain[2 + d2][1]));
+                    }
+                }
+            }
+        }
+
+        private bool xPeriodic = false;
+        private bool yPeriodic = false;
+
+        public double[][] GetPeriodicBoundaryPosition() => PeriodicBoundaryPosition;
+
+        public bool IsInsideOfPeriodicDomain(Vector Point, double Tolerance) {
+            for (int d = 0; d < PeriodicBoundaryPosition.Length; d++) {
+                if (!PeriodicBoundaryPosition[d].IsNullOrEmpty()) {
+                    Vector wallNormal = new Vector(1 - d, d);
+                    for (int wallID = 0; wallID < PeriodicBoundaryPosition[d].Length; wallID++) {
+                        double tolerance = Tolerance;
+                        if (wallID == 1) {
+                            tolerance = Tolerance * (-1);
+                            wallNormal *= -1;
+                        }
+                        double wallWithTolerance = PeriodicBoundaryPosition[d][wallID] - tolerance;
+                        Vector wallToPoint = d == 0 ? new Vector(Point[0] - (wallWithTolerance), Point[1]) : new Vector(Point[0], Point[1] - (wallWithTolerance));
+                        if (wallNormal * wallToPoint < 0)
+                            return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         internal double omega = 1;
         [NonSerialized]
         internal FSIAuxillary Aux = new FSIAuxillary();
@@ -495,6 +566,16 @@ namespace BoSSS.Application.FSI_Solver {
                 if (Angle[0] > 2 * Math.PI)
                     Angle[0] -= 2 * Math.PI;
                 CollisionTimestep = 0;
+                if(!IsInsideOfPeriodicDomain(Position[0], 0)) {
+                    for(int i = 0; i < OriginInVirtualPeriodicDomain.Count(); i++) {
+                        if(IsInsideOfPeriodicDomain(Position[0] + OriginInVirtualPeriodicDomain[i], 0)) {
+                            for(int h = 0; h < Position.Count(); h++) {
+                                Position[h] = new Vector(Position[h] + OriginInVirtualPeriodicDomain[i]);
+                            }
+                            break;
+                        }
+                    }
+                }
             }
         }
 
@@ -505,6 +586,16 @@ namespace BoSSS.Application.FSI_Solver {
         internal void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
             using (new FuncTrace()) {
                 Position[0] = CalculateParticlePositionDuringCollision(collisionDynamicTimestep);
+                //if (!IsInsideOfPeriodicDomain(Position[0], 0)) {
+                //    for (int i = 0; i < OriginInVirtualPeriodicDomain.Count(); i++) {
+                //        if (IsInsideOfPeriodicDomain(Position[0] + OriginInVirtualPeriodicDomain[i], 0)) {
+                //            for (int h = 0; h < Position.Count(); h++) {
+                //                Position[h] = new Vector(Position[h] + OriginInVirtualPeriodicDomain[i]);
+                //            }
+                //            break;
+                //        }
+                //    }
+                //}
                 Angle[0] = CalculateParticleAngleDuringCollision(collisionDynamicTimestep);
             }
         }

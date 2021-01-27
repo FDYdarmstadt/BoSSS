@@ -96,46 +96,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
-            double[] position = Motion.GetPosition(0);
-            double angle = Motion.GetAngle(0);
-            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
-            double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
-                       -(((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
-                       + 1.0;
-            return r;
-        }
-
-        public override double LevelSetFunction(double[] X, double[][] periodicBoundaryPosition) {
-            Vector position = Motion.GetPosition(0);
-            Vector originNeighbouringDomain;
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
+            Vector position = Postion;
             double angle = Motion.GetAngle(0);
             Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
                         - (((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
                         + 1.0;
-            for (int d = 0; d < 4; d++) {
-                switch (d) {
-                    case 0:
-                    originNeighbouringDomain = new Vector(2 * periodicBoundaryPosition[0][0], 0);
-                    break;
-                    case 1:
-                    originNeighbouringDomain = new Vector(2 * periodicBoundaryPosition[0][1], 0);
-                    break;
-                    case 2:
-                    originNeighbouringDomain = new Vector(0, 2 * periodicBoundaryPosition[1][0]);
-                    break;
-                    case 3:
-                    originNeighbouringDomain = new Vector(0, 2 * periodicBoundaryPosition[1][1]);
-                    break;
-                    default:
-                    throw new Exception("This is the impossible case");
-                }   
-                Vector positionsWithPeriodicity = originNeighbouringDomain + position;
-                r = Math.Max(r, -(((X[0] - positionsWithPeriodicity[0]) * orientation[0] + (X[1] - positionsWithPeriodicity[1]) * orientation[1]) / m_Length).Pow2()
-                       - (((X[0] - positionsWithPeriodicity[0]) * orientation[1] - (X[1] - positionsWithPeriodicity[1]) * orientation[0]) / m_Thickness).Pow2()
-                       + 1.0);
-            }
             return r;
         }
 
@@ -148,7 +115,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             double angle = Motion.GetAngle(0);
             Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = Motion.GetPosition(0);
@@ -164,7 +131,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
             Aux = new FSIAuxillary();
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
@@ -173,7 +140,7 @@ namespace BoSSS.Application.FSI_Solver {
             Vector SupportPoint = new Vector(SpatialDim);
             double angle = Motion.GetAngle(0);
             Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
-            Vector position = new Vector(Motion.GetPosition(0));
+            Vector position = new Vector(Position);
 
             double[,] rotMatrix = new double[2, 2];
             rotMatrix[0, 0] = (m_Length) * orientation[0];

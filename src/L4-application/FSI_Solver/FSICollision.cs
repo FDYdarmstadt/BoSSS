@@ -19,6 +19,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace FSI_Solver {
@@ -226,9 +227,9 @@ namespace FSI_Solver {
                             for (int j = 0; j < ParticleCollidedWith[currentParticleID].Count(); j++) {
                                 int secondObjectID = ParticleCollidedWith[currentParticleID][j];
                                 ComputeMomentumBalanceCollision(currentParticleID, secondObjectID, distanceThreshold);
-                                TransferResultsToDuplicateParticles(currentParticleID);
-                                if(IsParticle(secondObjectID))
-                                    TransferResultsToDuplicateParticles(secondObjectID);
+                                //TransferResultsToDuplicateParticles(currentParticleID);
+                                //if(IsParticle(secondObjectID))
+                                //    TransferResultsToDuplicateParticles(secondObjectID);
                             }
                         }
                     }
@@ -347,13 +348,13 @@ namespace FSI_Solver {
                 int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
                 if (dynamicTimestep != 0 && currentParticle.IsMaster) {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
-                    for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
-                        if(duplicateHierachy[p1] > 0 && !particles[duplicateHierachy[p1] - 1].IsMaster) {
-                            Particle currentDuplicate = particles[duplicateHierachy[p1] - 1];
-                            currentDuplicate.Motion.SetDuplicatePosition(currentParticle.Motion.GetPosition(0));
-                            currentDuplicate.Motion.SetDuplicateAngle(currentParticle.Motion.GetAngle(0));
-                        }
-                    }
+                    //for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
+                    //    if(duplicateHierachy[p1] > 0 && !particles[duplicateHierachy[p1] - 1].IsMaster) {
+                    //        Particle currentDuplicate = particles[duplicateHierachy[p1] - 1];
+                    //        currentDuplicate.Motion.SetDuplicatePosition(currentParticle.Motion.GetPosition(0));
+                    //        currentDuplicate.Motion.SetDuplicateAngle(currentParticle.Motion.GetAngle(0));
+                    //    }
+                    //}
                 }
             }
         }
@@ -442,127 +443,124 @@ namespace FSI_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         private void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-            // Step 1
-            // Initialize the algorithm with the particle position
-            // =======================================================
+            int NoOfPeriodicBdny0 = Particle0.Motion.OriginInVirtualPeriodicDomain.Count();
+            int NoOfPeriodicBdny1 = Particle1 == null ? 0 : Particle1.Motion.OriginInVirtualPeriodicDomain.Count();
             int spatialDim = Particle0.Motion.GetPosition(0).Dim;
-            Vector[] positionVectors = new Vector[2];
-            positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0));
-            positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis : Particle1.Motion.GetPosition(0));
-            Vector supportVector = positionVectors[0] - positionVectors[1];
-            if (supportVector.Abs() == 0)
-                supportVector = new Vector(1, 0);
-            Aux.TestArithmeticException(supportVector, "support vector");
-
-            // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
-            List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
-
-            closestPoints = new Vector[2];
-            closestPoints[0] = new Vector(spatialDim);
-            closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 1000;
-
-            // Step 2
-            // Start the iteration
-            // =======================================================
-            for (int i = 0; i <= maxNoOfIterations; i++) {
-                Vector negativeSupportVector = new Vector(-supportVector[0], -supportVector[1]);
-                negativeSupportVector -= supportVector;
-
-                // Calculate the support point of the two particles, 
-                // which are the closest points if the algorithm is finished.
-                // -------------------------------------------------------
-                CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out closestPoints[0]);
-                // Particle-Particle collision
-                if (Particle1 != null) {
-                    CalculateSupportPoint(Particle1, SubParticleID1, supportVector, out closestPoints[1]);
-                }
-                // Particle-wall collision
-                else {
-                    closestPoints[1] = new Vector(spatialDim);
-                    if (positionVectors[0][0] == positionVectors[1][0])
-                        closestPoints[1] = new Vector(closestPoints[0][0], positionVectors[1][1]);
-                    else
-                        closestPoints[1] = new Vector(positionVectors[1][0], closestPoints[0][1]);
-                }
-                Aux.TestArithmeticException(closestPoints[0], "closest point on particle 0");
-                Aux.TestArithmeticException(closestPoints[1], "closest point on particle 1");
-
-                // The current support point can be found by forming 
-                // the difference of the support points on the two particles
-                // -------------------------------------------------------
-                Vector supportPoint = closestPoints[0] - closestPoints[1];
-                Aux.TestArithmeticException(supportPoint, "support point");
-
-                // If the condition is true
-                // we have found the closest points!
-                // -------------------------------------------------------
-                if (((supportVector * negativeSupportVector) - (supportPoint * negativeSupportVector)) >= -1e-12 && i > 1)
-                    break;
-
-                // Add new support point to simplex
-                // -------------------------------------------------------
-                Simplex.Insert(0, new Vector(supportPoint));
-
-                // Calculation the new vector v with the distance
-                // algorithm
-                // -------------------------------------------------------
-                supportVector = DistanceAlgorithm(Simplex, out Overlapping);
-
-                // End algorithm if the two objects are overlapping.
-                // -------------------------------------------------------
-                if (Overlapping)
-                    break;
-
-                // Could not find the closest points... crash!
-                // -------------------------------------------------------
-                if (i == maxNoOfIterations)
-                    throw new Exception("No convergence in GJK-algorithm, reached iteration #" + i);
+            DistanceVec = new Vector(spatialDim);
+            closestPoints = new Vector[2];
+            Vector supportVector = new Vector(spatialDim);
+            Vector[] temp_closestPoints = new Vector[2];
+            for (int i = 0; i < DistanceVec.Count(); i++) {
+                DistanceVec[i] = int.MaxValue;
             }
+            Debug.Assert(NoOfPeriodicBdny0 == NoOfPeriodicBdny1);
+            for (int d1 = 0; d1 < NoOfPeriodicBdny0 + 1; d1++) {
+                for (int d2 = 0; d2 < NoOfPeriodicBdny1 + 1; d2++) {
+                    // Step 1
+                    // Initialize the algorithm with the particle position
+                    // =======================================================
+                    Vector[] positionVectors = new Vector[2];
+                    positionVectors[0] = d1 == NoOfPeriodicBdny0
+                        ? new Vector(Particle0.Motion.GetPosition(0))
+                        : new Vector(Particle0.Motion.GetPosition(0) + Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
+                    if (Particle1 == null)
+                        positionVectors[1] = Particle0.ClosestPointOnOtherObjectToThis;
+                    else positionVectors[1] = d2 == NoOfPeriodicBdny0
+                        ? Particle1.Motion.GetPosition(0)
+                        : Particle1.Motion.GetPosition(0) + Particle1.Motion.OriginInVirtualPeriodicDomain[d2];
+                    
+                    supportVector = positionVectors[0] - positionVectors[1];
+                    if (d1 == d2 && d1 != NoOfPeriodicBdny0)
+                        continue;
+                    if (Particle1 == null) {
+                        if (supportVector.Abs() > 1.5 * Particle0.GetLengthScales().Max() && d1 != NoOfPeriodicBdny0)
+                            continue;
+                    } else if (supportVector.Abs() > 1.5 * (Particle0.GetLengthScales().Max() + Particle1.GetLengthScales().Max()) && (d1 != NoOfPeriodicBdny0 || d2 != NoOfPeriodicBdny1))
+                        continue;
 
+                    if (supportVector.Abs() == 0)
+                        supportVector = new Vector(1, 0);
+                    Aux.TestArithmeticException(supportVector, "support vector");
+
+                    // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
+                    List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
+
+                    temp_closestPoints[0] = new Vector(spatialDim);
+                    temp_closestPoints[1] = new Vector(spatialDim);
+                    int maxNoOfIterations = 1000;
+
+                    // Step 2
+                    // Start the iteration
+                    // =======================================================
+                    for (int i = 0; i <= maxNoOfIterations; i++) {
+                        Vector negativeSupportVector = new Vector(-supportVector[0], -supportVector[1]);
+                        negativeSupportVector -= supportVector;
+
+                        // Calculate the support point of the two particles, 
+                        // which are the closest points if the algorithm is finished.
+                        // -------------------------------------------------------
+                        temp_closestPoints[0] = Particle0.GetSupportPoint(negativeSupportVector, positionVectors[0], SubParticleID0);
+                        // Particle-Particle collision
+                        if (Particle1 != null) {
+                            temp_closestPoints[1] = Particle1.GetSupportPoint(supportVector, positionVectors[1], SubParticleID1);
+                        }
+                        // Particle-wall collision
+                        else {
+                            if (positionVectors[0][0] == positionVectors[1][0])
+                                temp_closestPoints[1] = new Vector(temp_closestPoints[0][0], positionVectors[1][1]);
+                            else
+                                temp_closestPoints[1] = new Vector(positionVectors[1][0], temp_closestPoints[0][1]);
+                        }
+
+                        // The current support point can be found by forming 
+                        // the difference of the support points on the two particles
+                        // -------------------------------------------------------
+                        Vector supportPoint = temp_closestPoints[0] - temp_closestPoints[1];
+                        Aux.TestArithmeticException(supportPoint, "support point");
+                        if (d1 < NoOfPeriodicBdny0)
+                            temp_closestPoints[0] = new Vector(temp_closestPoints[0] - Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
+                        if (d2 < NoOfPeriodicBdny1)
+                            temp_closestPoints[1] = new Vector(temp_closestPoints[1] - Particle1.Motion.OriginInVirtualPeriodicDomain[d2]);
+
+                        // If the condition is true
+                        // we have found the closest points!
+                        // -------------------------------------------------------
+                        if (((supportVector * negativeSupportVector) - (supportPoint * negativeSupportVector)) >= -1e-12 && i > 1)
+                            break;
+
+                        // Add new support point to simplex
+                        // -------------------------------------------------------
+                        Simplex.Insert(0, new Vector(supportPoint));
+
+                        // Calculation the new vector v with the distance
+                        // algorithm
+                        // -------------------------------------------------------
+                        supportVector = DistanceAlgorithm(Simplex, out Overlapping);
+
+                        
+
+                        // End algorithm if the two objects are overlapping.
+                        // -------------------------------------------------------
+                        if (Overlapping)
+                            break;
+
+                        // Could not find the closest points... crash!
+                        // -------------------------------------------------------
+                        if (i > maxNoOfIterations)
+                            throw new Exception("No convergence in GJK-algorithm, reached iteration #" + i);
+                    }
+                    if (supportVector.Abs() < DistanceVec.Abs()) {
+                        DistanceVec = new Vector(supportVector);
+                        closestPoints[0] = new Vector(temp_closestPoints[0]);
+                        closestPoints[1] = new Vector(temp_closestPoints[1]);
+                    }
+                }
+            }
             // Step 3
             // Return min distance and distance vector.
             // =======================================================
-            DistanceVec = new Vector(supportVector);
-        }
-
-        private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector supportPoint) {
-            int spatialDim = particle.Motion.GetPosition(0).Dim;
-            supportPoint = new Vector(spatialDim);
-            // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-                supportPoint = particle.GetSupportPoint(supportVector, SubParticleID);
-            }
-            // Interpolated binary search in all other cases.
-            else {
-                double angle = particle.Motion.GetAngle(0);
-                Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
-                double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
-                double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
-                double L = searchStartAngle - Math.PI;
-                double R = searchStartAngle + Math.PI;
-                while (L < R && Math.Abs(L-R) > 1e-15) {
-                    searchStartAngle = (L + R) / 2;
-                    double dAngle = 1e-8;
-                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
-                    Vector RightNeighbour = new Vector(spatialDim);
-                    Vector LeftNeighbour = new Vector(spatialDim);
-                    for (int d = 0; d < spatialDim; d++) {
-                        supportPoint[d] = SurfacePoints[1, d];
-                        LeftNeighbour[d] = SurfacePoints[0, d];
-                        RightNeighbour[d] = SurfacePoints[2, d];
-                    }
-                    if ((supportPoint * supportVector) > (RightNeighbour * supportVector) && (supportPoint * supportVector) > (LeftNeighbour * supportVector))
-                        break; // The current temp_supportPoint is the actual support point.
-                    else if ((RightNeighbour * supportVector) > (LeftNeighbour * supportVector))
-                        L = searchStartAngle; // Search on the right side of the current point.
-                    else
-                        R = searchStartAngle; // Search on the left side.
-                }
-                Vector position = new Vector(particle.Motion.GetPosition(0));
-                supportPoint.Acc(position);
-            }
+            
         }
 
         private Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {

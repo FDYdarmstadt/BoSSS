@@ -444,16 +444,12 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(jTarget, jTarget);
                             if (CycleDetection[jTarget] == true) {
                                 FailedViz.SetMeanValue(jTarget, -jTarget);
-                                exception = true;// Cell 123 tries to agg. with cell 321 and reverse...
-                                //throw new ArgumentException("Cycle in agglomeration graph.");
+                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
                                 CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
                                 localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
                                 // kill it
                                 throw new ArgumentException("Cycle in agglomeration graph.");
                             }
-                            CellAggKatastrophenplot?.Invoke(new DGField[] { FailedViz });
-                            if (exception)
-                                throw new ArgumentException("Cycle in agglomeration graph. jTarget " + jTarget + " jSource " + jSource);
                             CycleDetection[jTarget] = true;
                             int nextPair = Cells2Aggpairs[jTarget];
 
