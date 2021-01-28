@@ -283,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 2) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 7) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -302,7 +302,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 100;
-            double activeStress = 0;
+            double activeStress = 1;
             double nextParticleDistance = particleLength * 2.1;
             double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
@@ -314,7 +314,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-8;
             C.minDistanceThreshold = 1 / cellsPerUnitLength;
-            C.CoefficientOfRestitution = 1;
+            C.CoefficientOfRestitution = 0.25;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
@@ -332,7 +332,7 @@ namespace BoSSS.Application.FSI_Solver {
                         temp_angle = temp_angle.MPIBroadcast(0);
                         temp_angle2 = temp_angle2.MPIBroadcast(0);
                         double angle2 = temp_angle * 180 + temp_angle2 * Math.Pow(-1, i * j);
-                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, angle2, activeStress, new double[] { Math.Cos(angle2), Math.Sin(angle2)}));
+                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, angle2, activeStress, new double[] { 0,0}));
                     }
                     i += 1;
                 }
