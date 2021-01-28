@@ -123,7 +123,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
                         //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };

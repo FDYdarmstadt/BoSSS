@@ -35,7 +35,7 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
 
 

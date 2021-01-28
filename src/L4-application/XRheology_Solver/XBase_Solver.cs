@@ -52,6 +52,7 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver {
 
