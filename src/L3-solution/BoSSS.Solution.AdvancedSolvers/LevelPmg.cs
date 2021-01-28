@@ -22,6 +22,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public bool UseDiagonalPmg = true;
 
+        public bool EqualOrder = false;
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -117,7 +119,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1);
+            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder? CoarseLowOrder : CoarseLowOrder - 1);
             DGlowSelect.ModeSelector(lowFilter);
 
             if (AssignXdGCellsToLowBlocks)
@@ -128,7 +130,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (UseHiOrderSmoothing) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? CoarseLowOrder : CoarseLowOrder - 1);
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? CoarseLowOrder : CoarseLowOrder - 1);
                 DGhighSelect.ModeSelector(highFilter);
 
                 if (AssignXdGCellsToLowBlocks)

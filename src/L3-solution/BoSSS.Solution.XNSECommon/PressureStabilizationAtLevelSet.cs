@@ -64,6 +64,7 @@ namespace BoSSS.Solution.NSECommon {
             double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
 
             double h_max = Math.Max(NegCellLengthScale, PosCellLengthScale);
+            //double h_max = NegCellLengthScale;
             double penalty = PressureStabilizationFactor * h_max;
             Flx_InCell = penalty * (UA[0] * ReynoldsA - UB[0] * ReynoldsB);
             Flx_OutCell = -Flx_InCell;

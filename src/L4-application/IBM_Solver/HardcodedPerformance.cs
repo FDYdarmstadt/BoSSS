@@ -45,7 +45,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SpinningCube(string _DbPath = null, int k = 2, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SpinningCube(string _DbPath = null, int k =4, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
             
 
@@ -176,7 +176,7 @@ namespace BoSSS.Application.IBM_Solver {
                 
                     int power = 2;
                     double anglev = 0.1;
-                    anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
+                    //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
 
                     C.AngularVelocity[2] = anglev;
                     //double angle = -(anglev * t) % (2 * Math.PI);
@@ -267,6 +267,11 @@ namespace BoSSS.Application.IBM_Solver {
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.NonLinearSolver.MaxSolverIterations = 50;
+
+            C.EqualOrder = false;
+            C.PressureStabilizationFactor = 1;  
+            C.LinearSolver.pMaxOfCoarseSolver = k;
+
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
@@ -274,7 +279,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
@@ -289,13 +294,13 @@ namespace BoSSS.Application.IBM_Solver {
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 0.001;
+            //double dt = 0.001;
             //C.dtFixed = dt;
             //C.dtMax = dt;
             //C.dtMin = 0;
             //C.Endtime = 1000;
             //C.NoOfTimesteps = 10;
-            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;

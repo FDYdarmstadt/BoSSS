@@ -449,9 +449,10 @@ namespace BoSSS.Application.IBM_Solver {
                     IBM_Op.EquationComponents["div"].Add(src);
                     IBM_Op.EquationComponents["div"].Add(flx);
 
-
-                    //var presStab = new PressureStabilization(1, this.GridData.Edges.h_max_Edge, 1 / this.Control.PhysicalParameters.mu_A);
-                    //IBM_Op.EquationComponents["div"].Add(presStab);
+                    if (this.Control.EqualOrder) {
+                        var presStab = new PressureStabilization(this.Control.PressureStabilizationFactor, 1 / this.Control.PhysicalParameters.mu_A);
+                        IBM_Op.EquationComponents["div"].Add(presStab);
+                    }
                 }
 
 
@@ -555,7 +556,11 @@ namespace BoSSS.Application.IBM_Solver {
             if (IBM_Op_config.continuity){
                 var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
                     ParameterFunction);
-                IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component 
+                IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component
+                if (this.Control.EqualOrder) {
+                    var pst = new PressureStabilizationAtLevelSet(LsTrk, this.Control.PressureStabilizationFactor, 1 / this.Control.PhysicalParameters.mu_A, 0.0);
+                    IBM_Op.EquationComponents["div"].Add(pst); // pressure stabilization
+                }
             }
         }
 
@@ -794,8 +799,8 @@ namespace BoSSS.Application.IBM_Solver {
                 // ===============================
                 this.ComputeL2Error();
 
-                var Basis = new Basis(this.GridData, 2);
-                Grad_p = new VectorField<SinglePhaseField>(2, Basis, "grad_p", SinglePhaseField.Factory);
+                var Basis = new Basis(this.GridData, Pressure.Basis.Degree);
+                Grad_p = new VectorField<SinglePhaseField>(this.Grid.SpatialDimension, Basis, "grad_p", SinglePhaseField.Factory);
 
                 Debug.Assert(!Grad_p.IsNullOrEmpty());
                 Debug.Assert(Grad_p.GridDat != null);

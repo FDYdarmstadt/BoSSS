@@ -49,6 +49,8 @@ namespace BoSSS.Application.IBM_Solver {
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //public NonLinearSolverCodes NonlinearSolve = NonLinearSolverCodes.Picard;
         }
 
+        public double PressureStabilizationFactor = 1;
+
         /// <summary>
         /// Type of <see cref="IBM_SolverMain"/>.
         /// </summary>
@@ -78,10 +80,15 @@ namespace BoSSS.Application.IBM_Solver {
 
             base.FieldOptions.Clear();
             this.AddFieldOption("Velocity*", k);
-            this.AddFieldOption("Pressure", k - 1);
+            if(!this.EqualOrder)
+                this.AddFieldOption("Pressure", k-1);
+            else
+                this.AddFieldOption("Pressure", k);
             this.AddFieldOption("PhiDG", Math.Max(2, k));
             this.AddFieldOption("Phi", Math.Max(2, k) + 1);
         }
+
+        public bool EqualOrder = false;
 
         /// <summary>
         /// Block-Preconditiond for the velocity-components of the saddel-point system

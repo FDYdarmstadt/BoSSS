@@ -425,7 +425,6 @@ namespace BoSSS.Solution {
                         },
                         CoarseSolver = new DirectSolver() {
                             WhichSolver = DirectSolver._whichSolver.MUMPS,    //PARDISO
-                            LinConfig = lc
                         },
 
                         Overlap = 1
@@ -448,7 +447,6 @@ namespace BoSSS.Solution {
                         },
                         CoarseSolver = new DirectSolver() {
                             WhichSolver = DirectSolver._whichSolver.MUMPS,
-                            LinConfig = lc
                         },
                         Overlap = 1
                     };
@@ -606,7 +604,6 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                 templinearSolve = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    LinConfig = lc
                 };
                 break;
 
@@ -614,7 +611,6 @@ namespace BoSSS.Solution {
                 templinearSolve = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.PARDISO,
                     SolverVersion = Parallelism.OMP,
-                    LinConfig = lc
                 };
                 break;
 
@@ -1029,14 +1025,12 @@ namespace BoSSS.Solution {
                 switch (D) {
                     case 1:
                         tempsolve = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS,
-                            LinConfig = lc
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
                         };
                         break;
                     case 2:
                         tempsolve = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS,
-                            LinConfig = lc
+                            WhichSolver = DirectSolver._whichSolver.MUMPS
                         };
                         break;
                     case 3:
@@ -1064,7 +1058,6 @@ namespace BoSSS.Solution {
                         } else {
                             tempsolve = new DirectSolver() {
                                 WhichSolver = DirectSolver._whichSolver.MUMPS,
-                                LinConfig = lc
                             };
                         }
                         break;
@@ -1095,7 +1088,6 @@ namespace BoSSS.Solution {
             } else {
                 solver = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    LinConfig = lc
                 };
             }
             return solver;
@@ -1503,7 +1495,7 @@ namespace BoSSS.Solution {
                         UsePMGinBlocks = false,
                         CoarseSolveOfCutcells = true,
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
-                        //CoarseLowOrder = Math.Min(maxDG, 1 + iLevel*2),
+                        //CoarseLowOrder = Math.Min(maxDG, 1 + iLevel),
                         //CoarseLowOrder = Math.Max(1,maxDG - iLevel)
                     };
 

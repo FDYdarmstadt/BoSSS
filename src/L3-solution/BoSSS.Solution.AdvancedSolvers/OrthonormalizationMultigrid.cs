@@ -41,6 +41,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
+        ///// <summary>
+        /////  Individual configuration of <see cref="OrthonormalizationMultigrid"/>
+        ///// </summary>
+        //public class myConfig : ConfigBase {
+        //    /// <summary>
+        //    /// config cctor of <see cref="OrthonormalizationMultigrid"/>
+        //    /// </summary>
+        //    public myConfig() {
+        int MaxKrylovDim = int.MaxValue;
+        //    }
+            /// <summary>
+            /// No restriction and prolongation on coarsest grid
+            /// </summary>
+            public bool CoarseOnLovwerLevel = true;
+            
+            /// <summary>
+            /// W-cycle
+            /// </summary>
+            public int m_omega = 1;
+
+        //    /// <summary>
+        //    /// ~
+        //    /// </summary>
+        //    /// <returns></returns>
+        //    public override ISolverSmootherTemplate GetInstance() {
+        //        return new OrthonormalizationMultigrid();
+        //    }
+        //}
+
+        //myConfig m_config;
+        
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public ConfigBase Config {
+        //    get {
+        //        if (m_config == null)
+        //            m_config = new myConfig();
+        //        return m_config;
+        //    }
+        //}
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -78,7 +120,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_MgOperator;
 
 
-        bool CoarseOnLovwerLevel = true;
+        
 
         /// <summary>
         /// defines the problem matrix
@@ -168,15 +210,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PostSmoother;
         
         
-        /// <summary>
-        /// W-cycle
-        /// </summary>
-        public int m_omega = 1;
         
-        /// <summary>
-        /// 
-        /// </summary>
-        public int MaxKrylovDim = int.MaxValue;
 
         //public bool SpectralAnalysis;
         /// <summary>

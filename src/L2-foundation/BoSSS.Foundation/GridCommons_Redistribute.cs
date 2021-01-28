@@ -896,8 +896,10 @@ namespace BoSSS.Foundation.Grid.Classic {
             return BB;
         }
 
+
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit>nBit*nDim).
+        /// Note: The identification of barycenter only works for rectangular-shaped cells.
         /// </summary>
         public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement=false) {
 #if DEBUG
@@ -923,7 +925,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for (int j = 0; j < J; j++) {
                     Cell Cj = this.Cells[j];
                     int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                    //Compute Barycenter
+                    //Compute Barycenter of rectangular cells
                     for (int d = 0; d < D; d++) {
                         double center = 0;
                         for (int k = 0; k < NoOfNodes; k++) {
@@ -932,7 +934,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
                         double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 64 / D);
-                        //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
                         centerTrf = Math.Round(centerTrf);
                         if (centerTrf < 0)
                             centerTrf = 0;

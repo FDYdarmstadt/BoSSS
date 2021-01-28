@@ -414,6 +414,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 if (!this.UseLB2 && !this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH -C avx2");
+                } else {
+                    sw.WriteLine("#SBATCH -C avx");
                 }
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 

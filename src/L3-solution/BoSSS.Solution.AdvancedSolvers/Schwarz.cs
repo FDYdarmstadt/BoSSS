@@ -374,6 +374,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultigridOperator m_MgOp;
 
+        public bool EqualOrder = false;
+
         /// <summary>
         /// turn P-multigrid for block solvers on/off
         /// </summary>
@@ -580,12 +582,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //generate selector instructions
                         var lowSel = new SubBlockSelector(op.Mapping);
                         lowSel.CellSelector(bc.ToList(), false);
-                        lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D ? pLow : pLow - 1));
+                        lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? pLow : pLow - 1));
                         if(CoarseSolveOfCutcells) 
                             ModifyLowSelector(lowSel, op);
                         var HiSel = new SubBlockSelector(op.Mapping);
                         HiSel.CellSelector(bc.ToList(), false);
-                        HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D ? pLow : pLow - 1));
+                        HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? pLow : pLow - 1));
                         if(CoarseSolveOfCutcells) 
                             ModifyHighSelector(HiSel, op);
 

@@ -69,6 +69,7 @@
     <Compile Include="AggregationGridBasis.cs" />
     <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="BlockJacobi.cs" />
+    <Compile Include="ISmootherTemplate.cs" />
     <Compile Include="UniSolver.cs" />
     <Compile Include="GenericKcycle.cs" />
     <Compile Include="ClassicMultigrid.cs" />
@@ -94,7 +95,6 @@
     <Compile Include="OrthonormalizationScheme.cs" />
     <Compile Include="FlexGMRES.cs" />
     <Compile Include="GenericRestriction.cs" />
-    <Compile Include="ISmootherTemplate.cs" />
     <Compile Include="Jacobi.cs" />
     <Compile Include="MultigridMapping.cs" />
     <Compile Include="MultigridOperator.cs" />

@@ -543,8 +543,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 8;
-            int blocksize = 10;
+            int Res = 10;
+            int blocksize = 10000;
 
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
