@@ -192,6 +192,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         }
     }
 
+    /// <summary>
+    /// Accumulation of equations
+    /// Finds the names of all required parameters and coefficients
+    /// </summary>
     class SystemOfEquations 
     {
         public LinkedList<SpatialEquation> SpatialEquations;
@@ -200,6 +204,9 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public LinkedList<BulkEquation> BulkEquations;
 
+        /// <summary>
+        /// Create empty System
+        /// </summary>
         public SystemOfEquations() {
             InterfaceEquations = new LinkedList<SurfaceEquation>();
             BulkEquations = new LinkedList<BulkEquation>();

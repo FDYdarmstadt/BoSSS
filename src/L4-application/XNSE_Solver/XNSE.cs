@@ -31,12 +31,48 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Development history:
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
+    /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
+    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
+    ///   has approximately degree <= n * p + (p - 1)
+    ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
+    ///   This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
+    ///   When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
     /// </remarks>
+    /// 
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
 
+        //===========
+        // Main file
+        //===========
+        static void Main(string[] args) {
 
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            //                                q: -50,
+            //                                deg: 3,
+            //                                AgglomerationTreshold: 0,
+            //                                SolverMode_performsolve: true,
+            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
 
+            void KatastrophenPlot(DGField[] dGFields) {
+                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+            }
+
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            _Main(args, false, delegate () {
+                var p = new XNSE();
+                return p;
+            });
+        }
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
@@ -65,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                
+                //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
             }
@@ -90,7 +126,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// 
         /// </summary>
-        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
 
         
@@ -244,7 +280,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if(config.physParams.IncludeConvection && config.isTransport) {
+            if (config.physParams.IncludeConvection && config.isTransport) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -298,10 +334,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 default:
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
-                
+
             }
 
-            if(Control.UseImmersedBoundary)
+            if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
         }
 
@@ -363,7 +399,5 @@ namespace BoSSS.Application.XNSE_Solver {
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
-
-
     }
 }

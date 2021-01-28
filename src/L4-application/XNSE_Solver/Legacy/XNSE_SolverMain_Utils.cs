@@ -39,8 +39,9 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using NUnit.Framework;
 using MPI.Wrappers;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows; 

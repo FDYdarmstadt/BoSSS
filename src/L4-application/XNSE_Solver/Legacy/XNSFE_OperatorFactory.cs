@@ -36,8 +36,9 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.XheatCommon;
 using System.Collections;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// class for defining the equation components of the XNSFE_Operator (extended Navier-Stokes-Fourier equations) 

@@ -26,9 +26,9 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XheatCommon;
+using BoSSS.Application.XNSE_Solver;
 
-
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
     public static partial class XOperatorComponentsFactory {
 
         //==============================================================

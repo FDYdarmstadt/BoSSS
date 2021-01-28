@@ -59,8 +59,9 @@ using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Application.SemiLagrangianLevelSetTestSuite;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows; 
