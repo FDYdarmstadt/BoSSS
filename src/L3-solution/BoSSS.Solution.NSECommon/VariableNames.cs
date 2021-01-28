@@ -704,24 +704,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         static public string MassFluxExtension = "MassFluxExtension";
-
-        ///// <summary>
-        ///// variable name for the Gradient of the Temperature (linearization point)
-        ///// </summary>
-        //static public string[] Temperature0Gradient(int D) {
-        //    switch (D) {
-        //        case 1: return new string[] { Temperature0Gradient0 };
-        //        case 2: return new string[] { Temperature0Gradient0, Temperature0Gradient1 };
-        //        case 3: return new string[] { Temperature0Gradient0, Temperature0Gradient1, Temperature0Gradient2 };
-        //        default: throw new NotSupportedException("unsupported number of species.");
-        //    }
-        //}
-
-        ///// <summary>
-        ///// for XNSE - continuous level set field (used level set tracker and quadrature) 
-        ///// The polynomial basis is one order higher than <see cref="LevelSetDG"/>
-        ///// </summary>
-        //public const string _LevelSetCG = "Phi";
+               
 
         /// <summary>
         /// for XNSE - discontinuous level set field (used for level set evolution)
@@ -732,6 +715,30 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for the phase dividing interface
         /// </summary>
         public const string LevelSetCG = "Phi";
+
+        /// <summary>
+        /// level-set names if more than one level-set is used.
+        /// </summary>
+        static public string LevelSetDGidx(int iLevSet) {
+            if(iLevSet < 0 || iLevSet >= 4)
+                throw new ArgumentOutOfRangeException("Invalid level-set index: " + iLevSet);
+            if(iLevSet == 0)
+                return LevelSetDG;
+            else
+                return $"Phi{iLevSet+1}DG";
+        }
+
+        /// <summary>
+        /// level-set names if more than one level-set is used.
+        /// </summary>
+        static public string LevelSetCGidx(int iLevSet) {
+            if(iLevSet < 0 || iLevSet >= 4)
+                throw new ArgumentOutOfRangeException("Invalid level-set index: " + iLevSet);
+            if(iLevSet == 0)
+                return LevelSetCG;
+            else
+                return $"Phi{iLevSet+1}";
+        }
 
 
         /// <summary>
@@ -744,7 +751,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public static string AsLevelSetVariable(string levelSetName, string variable)
         {
-            return variable + "#" + levelSetName;
+            return variable + "@" + levelSetName;
         }
 
         /// <summary>
@@ -754,7 +761,7 @@ namespace BoSSS.Solution.NSECommon {
         {
             for (int i = 0; i < variables.Count; ++i)
             {
-                variables[i] += "#" + levelSetName;
+                variables[i] += "@" + levelSetName;
             }
             return variables;
         }

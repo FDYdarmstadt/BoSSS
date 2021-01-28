@@ -119,7 +119,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         }
         */
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             //this will suppress exception prompts
             //Workaround to prevent distrubance while executing batchclient
             if (this.Control.SuppressExceptionPrompt) {
@@ -128,10 +128,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
 
            
-            base.SetInitial();
-            this.LsTrk.UpdateTracker(0.0);
-            base.SetInitial();
-            this.LsTrk.UpdateTracker(0.0);
+            base.SetInitial(t);
+            this.LsTrk.UpdateTracker(t);
+            base.SetInitial(t);
+            this.LsTrk.UpdateTracker(t);
 
             this.MGColoring = new SinglePhaseField[base.MultigridSequence.Length];
             for (int iLevel = 0; iLevel < base.MultigridSequence.Length; iLevel++) {

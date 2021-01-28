@@ -510,7 +510,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     switch(XdgOperator.LinearizationHint) {
 
                         case LinearizationHint.AdHoc: {
-                            this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
+                            this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
@@ -541,7 +541,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                             if(JacobiParameterVars == null)
                                 JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
 
-                            op.InvokeParameterUpdate(__CurrentState, JacobiParameterVars);
+                            op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
                             var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
                             mtxBuilder.time = time;
@@ -560,7 +560,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                    
 
-                    this.XdgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
+                    this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                     var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                     eval.time = time;
@@ -588,7 +588,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     switch(DgOperator.LinearizationHint) {
 
                         case LinearizationHint.AdHoc: {
-                            this.DgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
+                            this.DgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
                             mtxBuilder.time = time;
@@ -610,7 +610,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                             if(JacobiParameterVars == null)
                                 JacobiParameterVars = op.InvokeParameterFactory(__CurrentState);
-                            op.InvokeParameterUpdate(__CurrentState, JacobiParameterVars);
+                            op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
                             var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
                             mtxBuilder.time = time;
@@ -624,7 +624,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // only operator evaluation
                     // ++++++++++++++++++++++++
 
-                    this.DgOperator.InvokeParameterUpdate(__CurrentState, this.Parameters.ToArray());
+                    this.DgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                     var eval = DgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
                     eval.time = time;

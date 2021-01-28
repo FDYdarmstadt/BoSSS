@@ -53,7 +53,7 @@
     <Compile Include="NECQuadratureLevelSet.cs" />
     <Compile Include="NonlinearLevelSetFormVectorizer.cs" />
     <Compile Include="OperatorFactory.cs" />
-    <Compile Include="ParameterList.cs" />
+    <Compile Include="ParameterS.cs" />
     <Compile Include="Quadrature\AdaptiveSubdivisionStrategy.cs" />
     <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />

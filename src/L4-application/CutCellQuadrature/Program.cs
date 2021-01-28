@@ -210,7 +210,7 @@ namespace CutCellQuadrature {
             m_IOFields.Add(SinglePhaseField);
         }
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
         }
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {

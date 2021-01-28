@@ -96,15 +96,20 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
+        private static readonly object padlock = new object();
+
+
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);
             
 
             //if (Tracer.Current != null) {
             MethodCallRecord mcr;
-            if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
-                mcr = new MethodCallRecord(Tracer.Current, _name);
-                Tracer.Current.Calls.Add(_name, mcr);
+            lock(padlock) {
+                if(!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
+                    mcr = new MethodCallRecord(Tracer.Current, _name);
+                    Tracer.Current.Calls.Add(_name, mcr);
+                }
             }
             Tracer.Current = mcr;
             mcr.CallCount++;

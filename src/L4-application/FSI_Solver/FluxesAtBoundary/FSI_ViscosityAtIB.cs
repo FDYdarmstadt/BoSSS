@@ -23,13 +23,13 @@ using ilPSP.Utils;
 using BoSSS.Platform.LinAlg;
 using FSI_Solver;
 using ilPSP;
+using System.Linq;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class FSI_ViscosityAtIB : ILevelSetForm {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, Func<double, int, double> penaltyFunction, double fluidViscosity, Func<Vector, FSI_ParameterAtIB> getParticleParams) {
+    public class FSI_ViscosityAtIB : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, double fluidViscosity, Func<Vector, FSI_ParameterAtIB> getParticleParams) {
             m_penalty = penalty;
-            m_PenaltyFunc = penaltyFunction;
             m_LsTrk = levelSetTracker;
             muA = fluidViscosity;
             component = currentDim;
@@ -50,8 +50,50 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// Viscosity in species A
         /// </summary>
         private readonly double muA;
-        private readonly double m_penalty;
-        private readonly Func<double, int, double> m_PenaltyFunc;
+        private readonly double m_penalty; // safty factor
+        double m_penalty_degree; // DG degree scaling
+        MultidimensionalArray NegLengthScaleS;
+
+        /// <summary>
+        /// <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate"/>;
+        /// basic adjustment of factors for penalty computation
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            double _D = csA.GrdDat.SpatialDimension;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty_degree = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            NegLengthScaleS = csA.CellLengthScales;
+        }
+        
+        /// <summary>
+        /// computation of penalty parameter according to: $` \mathrm{SafetyFactor} \cdot k^2 / h `$
+        /// </summary>
+        double Penalty(int jCellIn) {
+
+            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
+
+            double penaltySizeFactor = penaltySizeFactor_A;
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(m_penalty_degree));
+
+            double scaledPenalty = penaltySizeFactor * m_penalty_degree * m_penalty;
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+            return scaledPenalty;
+
+        }
+
+
+
+
         private enum BoundaryConditionType {
             passive = 0,
             active = 1
@@ -62,7 +104,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             int dim = inp.Normal.Dim;
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
+            double _penalty = Penalty(inp.jCellIn);
 
             // Particle parameters
             // =====================

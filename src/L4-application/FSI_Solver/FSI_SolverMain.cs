@@ -66,15 +66,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <summary>
         /// Set the inital state of the simulation.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             ParticleList = ((FSI_Control)this.Control).Particles;
             if (ParticleList.IsNullOrEmpty())
                 throw new Exception("Define at least on particle");
-            UpdateLevelSetParticles(phystime: 0.0);
+            UpdateLevelSetParticles(phystime: t);
             MarkEachMPIProcess();
             CreatePhysicalDataLogger();
             CreateResidualLogger();
-            base.SetInitial();
+            base.SetInitial(t);
         }
 
         private readonly int spatialDim = 2;
@@ -414,12 +414,12 @@ namespace BoSSS.Application.FSI_Solver {
                 if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
                     var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk,
-                        penalty, this.ComputePenaltyIB, FluidViscosity, delegate (Vector X) {
+                        penalty, FluidViscosity, delegate (Vector X) {
                             throw new NotImplementedException("Currently not implemented for fixed motion");
                         });
                     comps.Add(viscousAtIB);
                 } else {
-                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, ComputePenaltyIB, FluidViscosity,
+                    var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, FluidViscosity,
                         delegate (Vector X) {
                             return CreateCouplingAtParticleBoundary(X);
                         }
@@ -440,10 +440,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 if(((FSI_Control)this.Control).Timestepper_LevelSetHandling == LevelSetHandling.None) {
 
-                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 1,
-                        delegate (double[] X, double time) {
-                            throw new NotImplementedException("Currently not implemented for fixed motion");
-                        });
+                    var divPen = new Solution.NSECommon.Operator.Continuity.DivergenceAtIB(spatialDim, LsTrk, 0, "A", "B", false);
                     IBM_Op.EquationComponents["div"].Add(divPen);  // immersed boundary component
                 } else {
                     var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk,

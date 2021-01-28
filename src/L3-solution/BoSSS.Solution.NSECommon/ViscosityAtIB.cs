@@ -28,41 +28,89 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
-    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent {
+    /// <summary>
+    /// Viscosity at an immersed boundary;
+    /// </summary>
+    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
-            Func<double[], double, ParticleParameters> getParticleParams) {
+        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
-            this.m_penalty = penalty;
-            this.m_PenaltyFunc = _PenaltyFunc;
+            this.m_penalty_base = penalty_base;
             this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
-            this.m_getParticleParams = getParticleParams;
             this.m_D = _D;
+            this.m_iLevSet = iLevSet;
+            this.m_SolidSpecies = SolidSpecies;
+            this.m_FluidSpc = FluidSpc;
+            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
         }
-
+        int m_iLevSet;
+        string m_FluidSpc;
+        string m_SolidSpecies;
         int component;
         int m_D;
-        double pRadius;
-
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
-        /// </summary>
-        Func<double[], double, ParticleParameters> m_getParticleParams;
+        bool m_UseLevelSetVelocityParameter;
 
         /// <summary>
         /// Viskosity in species A
         /// </summary>
         double muA;
 
-        double m_penalty;
+        /// <summary>
+        /// safety factor
+        /// </summary>
+        double m_penalty_base;
 
-        
+        /// <summary>
+        /// degree and spatial dimension
+        /// </summary>
+        double m_penalty_degree;
 
-        Func<double, int, double> m_PenaltyFunc;
+
+        /// <summary>
+        /// length scale for negative species
+        /// </summary>
+        MultidimensionalArray NegLengthScaleS;
+
+        /// <summary>
+        /// <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate"/>
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            double _D = csA.GrdDat.SpatialDimension;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty_degree = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            NegLengthScaleS = csA.CellLengthScales;
+        }
+
+
+        /// <summary>
+        /// computation of penalty parameter according to: $` \mathrm{SafetyFactor} \cdot k^2 / h `$
+        /// </summary>
+        protected double Penalty(int jCellIn) {
+
+            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
+
+            double penaltySizeFactor = penaltySizeFactor_A;
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(m_penalty_degree));
+
+            double scaledPenalty = penaltySizeFactor * m_penalty_degree * m_penalty_base;
+            if(scaledPenalty.IsNaNorInf())
+                throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
+            return scaledPenalty;
+
+        }
 
         /// <summary>
         /// default-implementation
@@ -74,20 +122,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double[] N = inp.Normal;
 
 
-            //Debug.Assert(!double.IsNaN(inp.PosCellLengthScale));
-            //double hCutCellMin = Math.Min(inp.PosCellLengthScale, inp.NegCellLengthScale);
-            //double hCutCellMin = inp.NegCellLengthScale; // for IBM, there is no positive species!
-            //if (hCutCellMin <= 1.0e-10 * hCellMin)
-            //    // very small cell -- clippling
-            //    hCutCellMin = hCellMin;
-            //double _penalty = penalty(hCutCellMin);
-            double _penalty = m_PenaltyFunc(m_penalty, inp.jCellIn);
+            double _penalty = Penalty(inp.jCellIn);
 
             int D = N.Length;
 
-            var parameters_P = m_getParticleParams(inp.X, inp.time);
-            double[] uLevSet = new double[] { parameters_P.PointVelocity[0], parameters_P.PointVelocity[1] };
-            double wLevSet = parameters_P.AngularVelocity[2];
+            //var parameters_P = m_getParticleParams(inp.X, inp.time);
+            //double[] uLevSet = new double[] { parameters_P[0], parameters_P[1] };
+            //double wLevSet = parameters_P[2];
             //pRadius = parameters_P[3];
 
 
@@ -105,32 +146,16 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             // Evaluate the complete velocity as a sum of translation and angular velocity
-            //double uAFict;
             double Ret = 0.0;
-
-
-            //// 3D for IBM_Solver
-            //if (inp.X.Dim == 3) {
-                
-            //    Ret -= Grad_uA_xN * (vA);                           // consistency term
-            //    Ret -= Grad_vA_xN * (uA[component] - 0);     // symmetry term
-            //    Ret += _penalty * (uA[component] - 0) * (vA); // penalty term
-
-            //    Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
-            //    return Ret * muA;
-            //}
-
-            //if (component == 0) {
-            //    uAFict = uLevSet[component]; //+ pRadius * wLevSet * -inp.Normal[1];
-            //} else {
-            //    uAFict = uLevSet[component]; //+ pRadius * wLevSet * inp.Normal[0];
-            //}
-
-            double[] uAFict = uLevSet;
+            
+            double uAFict = 0;
+            if(m_UseLevelSetVelocityParameter) {
+                uAFict = inp.Parameters_IN[0];
+            }
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
-            Ret -= Grad_vA_xN * (uA[component] - uAFict[component]);     // symmetry term
-            Ret += _penalty * (uA[component] - uAFict[component]) * (vA); // penalty term
+            Ret -= Grad_vA_xN * (uA[component] - uAFict);     // symmetry term
+            Ret += _penalty * (uA[component] - uAFict) * (vA); // penalty term
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret * muA;
@@ -142,19 +167,25 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
         public int LevelSetIndex {
-            get { return 0; }
+            get { return m_iLevSet; }
         }
 
         public IList<string> ArgumentOrdering {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
     
+        /// <summary>
+        /// Species ID of the solid
+        /// </summary>
         public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
         }
 
+        /// <summary>
+        /// Species ID of the fluid; 
+        /// </summary>
         public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
         }
 
         /// <summary>
@@ -166,10 +197,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             }
         }
 
-        
         public IList<string> ParameterOrdering {
             get {
-                return null;
+                if(m_UseLevelSetVelocityParameter)
+                    return new[] { VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(component)) };
+                else
+                    return null;
             }
         }
 
@@ -182,294 +215,5 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
     }
 
-    /*
-    
-    public class ViscosityAtIB2 
-    {
-
-        public ViscosityAtIB2(int _d, int _D, LevelSetTracker t, double penalty,
-            double _Re, Func<double, double>[] _uLevSet)
-            : base(t)
-        {
-            m_penalty = penalty;
-            this.Re = _Re;
-            this.m_d = _d;
-            this.uLevSet = _uLevSet;
-            this.m_D = _D;
-        }
-
-        int m_d;
-        int m_D;
-
-        Func<double, double>[] uLevSet;
-
-        /// <summary>
-        /// Reynolds in species A
-        /// </summary>
-        double Re;
-
-        double m_penalty;
-
-        /// <summary>
-        /// penalty param
-        /// </summary>
-        double penalty(double hmin)
-        {
-            double µ = m_penalty / hmin;
-            Debug.Assert(!(double.IsNaN(µ) || double.IsInfinity(µ)));
-            return µ;
-        }
-
-        public override void DerivativVar_NodeFunc(ref Linear2ndDerivativeCouplingFlux.CommonParams inp)
-        {
-        }
-
-
-        public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_A, double[] U_B, double[,] GradU_A, double[,] GradU_B)
-        {
-
-            int D = GradU_A.GetLength(1);
-            Debug.Assert(D == this.m_D);
-            int _d = m_d;//T.d;
-                         //T.PassParams(cp, U_A, U_B, GradU_A, GradU_B);
-
-            // Extract values from parameters
-            // ==============================
-
-            unsafe
-            {
-                fixed (double* pGradU_A = GradU_A, pGradU_B = GradU_B, pN = cp.n)
-                {
-
-                    // u
-                    Debug.Assert(GradU_A.GetLength(0) == this.ArgumentOrdering.Count);
-                    Debug.Assert(GradU_B.GetLength(0) == this.ArgumentOrdering.Count);
-
-                    double uA = U_A[_d];
-                    double uB = U_B[_d];
-
-
-                    //// interface velocity
-                    //double s = cp.ParamsPos[D];
-                    //Debug.Assert(s == cp.ParamsNeg[D], "Interface velocity must be continuous across the level-set.");
-                    double s = double.NaN;
-
-                    // Computation of fictitious values: transform values from A to B and vice-versa
-                    // =============================================================================
-
-                    // fictitious u
-                    double uAFict;
-                    uAFict = (uLevSet[_d])(cp.time);
-                    //TransformU(_d, D, s, cp.n, cp.x, U_A, U_B, out uAFict, out uBFict);
-
-                    // ficticious Gradient times Normal
-                    double grUA;
-                    TransformGradU(_d, D, pN, pGradU_A, pGradU_B, out grUA);
-
-                    // compute the fluxes
-                    // ==================
-
-                    // penalty
-                    double hCutCellMin = Math.Min(cp.PosCellLengthScale, cp.NegCellLengthScale);
-                    if (hCutCellMin <= 1.0e-10 * cp.hCellMin)
-                        // very small cell -- clippling
-                        hCutCellMin = cp.hCellMin;
-                    double _penalty = penalty(hCutCellMin);
-
-                    // kinematic viscosity for both phases, resp. dynamic viscosity for the u_p_2 -- case
-
-                    // Finally, compute the fluxes
-                    FlxNeg = 0;
-                    FlxNeg += _penalty * (uA - uAFict) * 1/Re; //VORZEICHEN UMGEDREHT
-                    FlxNeg -= grUA * 1/Re; //VORZEICHEN UMGEDREHT
-                    FlxPos = 0;
-                }
-            }
-        }
-
-        static unsafe void TransformGradU(
-            int _d, int D, double* n, double* GradU_A, double* GradU_B,
-            out double grUA)
-        {
-            Debug.Assert(_d < D);
-
-            // Gradient U * normal
-            grUA = 0;
-            double* pGradU_A_d = GradU_A + _d * D;
-            double* pGradU_B_d = GradU_B + _d * D;
-            for (int d1 = 0; d1 < D; d1++)
-            {
-               grUA += pGradU_A_d[d1] * n[d1];
-            }
-        }
-
-
-        unsafe static double TransformGradU_2D(int d, double muA, double muB, double* N, double NormalSign, double* GradUA)
-        {
-            //double uxA = GradUA[0, 0];
-            //double uyA = GradUA[0, 1];
-            //double vxA = GradUA[1, 0];
-            //double vyA = GradUA[1, 1];
-            //Debug.Assert(GradUA.GetLength(1) == 2);
-            double uxA = *GradUA;
-            double uyA = *(GradUA + 1);
-            double vxA = *(GradUA + 2);
-            double vyA = *(GradUA + 3);
-            Debug.Assert(Math.Abs(NormalSign) == 1.0);
-
-
-            double NX = N[0] * NormalSign;
-            double NY = N[1] * NormalSign;
-            double NXp2 = NX * NX;
-            double NYp2 = NY * NY;
-
-            switch (d)
-            {
-                case 0:
-                    {
-                        return (NormalSign / muB) * (
-                              uxA * (2 * NYp2 * NX * (-muB + muA))
-                            + uyA * (-NY * (-2 * muB * NXp2 + 2 * muA * NXp2 - muA))
-                            + vxA * (-NY * (muB + 2 * muA * NXp2 - muA - 2 * muB * NXp2))
-                            + vyA * (NX * (muB - 2 * muB * NXp2 + 2 * muA * NXp2 - 2 * muA))
-                            );
-                    }
-
-                case 1:
-                    {
-                        return (NormalSign / muB) * (
-                               uxA * (-NY * (2 * muA * NXp2 - 2 * muB * NXp2 + muB))
-                             + uyA * (NX * (muB + 2 * muA * NXp2 - muA - 2 * muB * NXp2))
-                             + vxA * (NX * (-2 * muB * NXp2 - muA + 2 * muB + 2 * muA * NXp2))
-                             + vyA * (2 * NY * NXp2 * (-muB + muA))
-                            );
-
-                    }
-
-                default: throw new ArgumentException();
-            }
-
-        }
-
-
-
-        /// <summary>
-        /// velocity transformation according to tangential no-slip.
-        /// </summary>
-        double TransformU_Noslip(int d, int D, double[] n, double[] Ufremd)
-        {
-            Debug.Assert(n.Length == D);
-            Debug.Assert(d >= 0 && d < D);
-
-            double acc = 0;
-            for (int d1 = 0; d1 < D; d1++)
-                acc += n[d1] * (Ufremd[d1]);
-
-
-            return Ufremd[d] - acc * n[d];
-        }
-
-
-        void TransformU(int d, int D, double s, double[] n, double[] X, double[] uA, double[] uB, out double uAfict_d, out double uBfict_d)
-        {
-            Debug.Assert(d < D);
-
-            //if (!T.MaterialInterface) {
-            //     double uAxN = BLAS.ddot(D, n, 1, uA, 1);
-            //     double uBxN = BLAS.ddot(D, n, 1, uB, 1);
-
-            //     double rhoJmp = m_rhoB - m_rhoA;
-
-
-            //    // normal component: using the continuity in normal direction
-            //    double uAxN_fict, uBxN_fict;
-
-            //    uAxN_fict = (1 / m_rhoA) * (m_rhoB * uBxN + (-s) * rhoJmp); // transform from species B to A: we call this the "A-fictitious" value
-            //    uBxN_fict = (1 / m_rhoB) * (m_rhoA * uAxN - (-s) * rhoJmp); // transform from species A to B: we call this the "B-fictitious" value
-
-
-            //    // Variant: no constraint on normal component
-            //    //double uAxN_fict = uAxN;
-            //    //double uBxN_fict = uBxN;
-
-            //    // return
-            //    uBfict_d = uBxN_fict*n[d] + TransformU_Noslip(d, D, n, uA);
-            //    uAfict_d = uAxN_fict*n[d] + TransformU_Noslip(d, D, n, uB);
-            //} else {
-            uBfict_d = uA[d];
-            uAfict_d = uB[d];
-            //}
-        }
-
-
-
-        public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_Neg, double[] U_Pos)
-        {
-            //EquationAndVarMode varMode = T.varmode;
-            int m_D = this.m_D;
-            int m_d = this.m_d;       
-
-            // extract velocity component
-            double uNeg = U_Neg[m_d];
-            double uPos = U_Pos[m_d];
-
-
-            // interface velocity
-            //double s = cp.ParamsPos[m_D];
-            //Debug.Assert(s == cp.ParamsNeg[m_D], "Interface velocity must be continuous across the level-set.");
-            double s = double.NaN;
-
-            // Fluxes
-            FlxNeg = (uLevSet[m_d])(cp.time);     //VORZEICHEM UMGEDREHT
-            FlxPos = 0;    
-        }
-
-        public override void FluxPotential(out double G, double[] U)
-        {
-            //G = 0;
-            G = U[this.m_d]; //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-        }
-
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp)
-        {
-            NuPos = 1;
-            NuNeg = 1;
-        }
-
-        public override int LevelSetIndex
-        {
-            get { return 0; }
-        }
-
-        public override IList<string> ArgumentOrdering
-        {
-            get
-            {
-                return VariableNames.VelocityVector(m_D);
-            }
-        }
-
-        public override IList<string> ParameterOrdering
-        {
-            get
-            {
-                return null;
-            }
-        }
-
-        public override SpeciesId PositiveSpecies
-        {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
-        }
-
-        public override SpeciesId NegativeSpecies
-        {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
-        }
-    }
-    */
+ 
 }

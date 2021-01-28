@@ -1344,6 +1344,7 @@ namespace BoSSS.Foundation {
                 else
                     DomainFields = new CoordinateMapping(grdDat);
 
+                
 
                 if(owner.RequiresEdgeQuadrature) {
 
@@ -1664,9 +1665,9 @@ namespace BoSSS.Foundation {
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
-                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
-                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (double time, IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(time, DomF.ToArray(), ParamF.ToArray());
                 };
 
             return GetFDJacobianBuilder_(DomainFields, ParameterMap, CodomainVarMap, ParamUpdate);
@@ -1693,7 +1694,7 @@ namespace BoSSS.Foundation {
         /// </param>
         public virtual FDJacobianBuilder GetFDJacobianBuilder_(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
                 if(!IsCommited)
@@ -1725,7 +1726,7 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Not for direct user interaction
             /// </summary>
-            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
+            public FDJacobianBuilder(IEvaluatorNonLin __Eval, Action<double, IEnumerable<DGField>, IEnumerable<DGField>> __delParameterUpdate) {
 
                 eps = 1.0;
                 while(1.0 + eps > 1.0) {
@@ -1746,7 +1747,7 @@ namespace BoSSS.Foundation {
                 //Console.WriteLine("FDJac: no of color lists: " + ColorLists.Length);
             }
 
-            void EmptyParamUpdate(IEnumerable<DGField> F, IEnumerable<DGField> P) {
+            void EmptyParamUpdate(double t, IEnumerable<DGField> F, IEnumerable<DGField> P) {
                 // do nothing
             }
 
@@ -1851,7 +1852,7 @@ namespace BoSSS.Foundation {
                 private set;
             }
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> DelParamUpdate;
 
             /// <summary>
             /// - 1st index: enumeration of color lists
@@ -2415,7 +2416,7 @@ namespace BoSSS.Foundation {
                 // ===============================
 
                 double[] F0 = new double[Lout];
-                DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
 #if DEBUG
                 CoordinateVector ParamsVec;
                 double[] ParamsVecBkup;
@@ -2506,7 +2507,7 @@ namespace BoSSS.Foundation {
                         // evaluate operator
                         // -------------------
                         EvalBuf.ClearEntries();
-                        DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                        DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
                         Eval.Evaluate(1.0, 0.0, EvalBuf);
                         NoOfEvals++;
 
@@ -2648,7 +2649,7 @@ namespace BoSSS.Foundation {
                 // restore original state before return
                 // ====================================
                 U0.SetV(U0backup);
-                DelParamUpdate(domFields, Eval.Parameters.ToArray());
+                DelParamUpdate(this.time, domFields, Eval.Parameters.ToArray());
 #if DEBUG
                 if (Eval.Parameters.Count > 0) {
                     double deltaParamsVec = ParamsVecBkup.L2DistPow2(ParamsVecBkup).MPISum().Sqrt();
