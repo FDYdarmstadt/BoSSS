@@ -816,7 +816,7 @@ namespace BoSSS.Foundation.XDG {
                                             }
                                             ICompositeQuadRule<QuadRule> rule;
                                             using (new BlockTrace("QuadRule-compilation", tr)) {
-                                                CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
+                                                CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA, SpeciesB,  IntegrationDom);
                                                 rule = SurfIntegration.Compile(GridData, quadOrder);
 
                                                 if (ruleDiagnosis) {

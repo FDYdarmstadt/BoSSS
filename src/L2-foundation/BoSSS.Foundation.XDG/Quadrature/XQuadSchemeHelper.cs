@@ -796,7 +796,7 @@ namespace BoSSS.Foundation.XDG {
                             IntegrationDom = IntegrationDom.Except(doublyCut);
 
                             //Das geht so noch nicht!
-                            var jmpA = IdentifyWingA(jLevSet, spA);
+                            var jmpA = IdentifyWingA(jLevSet, spA); 
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
 
                             var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref);

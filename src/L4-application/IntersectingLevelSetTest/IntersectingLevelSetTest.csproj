@@ -47,6 +47,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AllUpTest.cs" />
+    <Compile Include="Integrals.cs" />
     <Compile Include="LevelSetFlux.cs" />
     <Compile Include="PlotControl.cs" />
     <Compile Include="Program.cs" />

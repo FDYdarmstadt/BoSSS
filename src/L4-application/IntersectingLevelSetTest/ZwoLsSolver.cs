@@ -36,15 +36,16 @@ namespace IntersectingLevelSetTest {
     /// if more than one level-set is involved.
     /// </summary>
     internal class ZwoLsSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
-        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 4), GenericBlas.Linspace(-1, 1, 4));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 2), GenericBlas.Linspace(-1, 1, 2));
             return grd;
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             base.Init(control);
         }
 
@@ -106,7 +107,7 @@ namespace IntersectingLevelSetTest {
         internal int DEGREE = 1;
 
         private void LsUpdate(double t) {
-            double offset = t;
+            t = t /  90 * Math.PI;
 
             Console.WriteLine("LSUpdate t = " + t);
 
@@ -115,7 +116,7 @@ namespace IntersectingLevelSetTest {
             }
 
             double phi1(double x, double y) {
-                return (0.01 * t * x) - (y);
+                return (Math.Tan(t) * x) - (y);
             }
 
             double phi2(double x, double y) {
@@ -123,7 +124,7 @@ namespace IntersectingLevelSetTest {
             }
 
             double phi3(double x, double y) {
-                return (x - (0.1 * t) * y);
+                return (x - (Math.Tan(t) * y));
             }
 
             Phi0.ProjectField(phi3);
@@ -205,6 +206,11 @@ namespace IntersectingLevelSetTest {
 
             OperatorMatrix.SaveToTextFile("matrix.txt");
 
+            // compute integrals 
+            Integrals integrals = new Integrals();
+            integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
+
+
             // compute error
             ERR.Clear();
             ERR.Acc(1.0, du_dx_Exact, LsTrk.Regions.GetSpeciesSubGrid("B").VolumeMask);
@@ -240,6 +246,9 @@ namespace IntersectingLevelSetTest {
             dt = 1;
             return dt;
         }
+
+
+
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             string filename = "ZwoLsTest." + timestepNo;

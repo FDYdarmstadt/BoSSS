@@ -7,7 +7,7 @@ namespace IntersectingLevelSetTest
         static void Main(string[] args)
         {
             XQuadFactoryHelper.CheckQuadRules = true;
-
+            
             BoSSS.Solution.Application<PlotControl>._Main(
                 args,
                 true,
