@@ -527,14 +527,15 @@ namespace BoSSS.Application.IBM_Solver {
                 var comps = IBM_Op.EquationComponents[CodName[d]];
 
                 if (IBM_Op_config.convection){
+                    //int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
                     var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
-                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
-                            ParameterFunction, this.Control.PhysicalParameters.rho_A, false);
+                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap, this.Control.PhysicalParameters.rho_A, true, 1,"A","B",true);
                     comps.Add(ConvIB); // immersed boundary component
                 }
 
                 if (IBM_Op_config.PressureGradient){
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk);
+                    //int _d, int _D, LevelSetTracker LsTrk, int iLevSet, string FluidSpc, string SolidSpecies
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk,1,"A","B");
                     comps.Add(presLs); // immersed boundary component
                 }
 
@@ -544,18 +545,19 @@ namespace BoSSS.Application.IBM_Solver {
                     double _p = degU;
                     double penalty_base = (_p + 1) * (_p + D) / D;
                     double penalty = penalty_base * penalty_mul;
+                    //int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
                     var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty, this.ComputePenaltyIB,
+                            penalty,
                             this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
-                            ParameterFunction);
+                            1, "A", "B", true);
                     comps.Add(ViscLs); // immersed boundary component
 
                 }
             }
 
             if (IBM_Op_config.continuity){
-                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1,
-                    ParameterFunction);
+                //int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, "A", "B", true);
                 IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component
                 if (this.Control.EqualOrder) {
                     var pst = new PressureStabilizationAtLevelSet(LsTrk, this.Control.PressureStabilizationFactor, 1 / this.Control.PhysicalParameters.mu_A, 0.0);
@@ -1041,7 +1043,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// Setting initial values.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double time) {
 
             if (true) {
                 DGField mpiRank = new SinglePhaseField(new Basis(GridData, 0), "rank");
@@ -1082,7 +1084,7 @@ namespace BoSSS.Application.IBM_Solver {
             
             Console.WriteLine("Total number of cells:    {0}", Grid.NumberOfCells);
             Console.WriteLine("Total number of DOFs:     {0}", CurrentSolution.Count().MPISum());
-            base.SetInitial();
+            base.SetInitial(0.0);
 
             this.LevSet.GetExtremalValues(out double LevsetMin, out double LevsetMax);
             if (LevsetMax == 0.0 && LevsetMin == 0.0) {
