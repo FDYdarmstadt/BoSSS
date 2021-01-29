@@ -40,7 +40,7 @@ namespace IntersectingLevelSetTest {
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 2), GenericBlas.Linspace(-1, 1, 2));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 6), GenericBlas.Linspace(-0.5, 0.5, 6));
             return grd;
         }
 
@@ -104,7 +104,7 @@ namespace IntersectingLevelSetTest {
         /// <summary>
         /// DG polynomial degree
         /// </summary>
-        internal int DEGREE = 1;
+        internal int DEGREE = 2;
 
         private void LsUpdate(double t) {
             t = t /  90 * Math.PI;
@@ -144,8 +144,8 @@ namespace IntersectingLevelSetTest {
         protected override void SetInitial(double t) {
             this.LsUpdate(t);
 
-            u.ProjectField((x, y) => x);
-            du_dx_Exact.ProjectField((x, y) => 1.0);
+            u.ProjectField((x, y) => x * x);
+            du_dx_Exact.ProjectField((x, y) => 2 * x);
         }
 
         private XSpatialOperatorMk2 Op;
@@ -208,7 +208,7 @@ namespace IntersectingLevelSetTest {
 
             // compute integrals 
             Integrals integrals = new Integrals();
-            integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
+            //integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
 
 
             // compute error
