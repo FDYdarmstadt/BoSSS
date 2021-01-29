@@ -1526,6 +1526,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // 'revert' agglomeration
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+
+                    mgOperator.OperatorMatrix.SaveToTextFileSparse("IBM_OpM");
                 }
 
             } else {

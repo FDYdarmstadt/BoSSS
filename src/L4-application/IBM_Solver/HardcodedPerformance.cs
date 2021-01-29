@@ -49,7 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
             
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -209,18 +209,52 @@ namespace BoSSS.Application.IBM_Solver {
 
 
 
-            if (only_channel) {
-                    C.InitialValues_Evaluators.Add("Phi", X => -1);
-                } else {
-                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
-                    C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
-                    C.ForcedPhi = PhiFunc;
-                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
-                }
-            }
+                Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
-            // Some Info Output
-            switch (SpaceDim) {
+                    if (pos.Length != X.Length)
+                        throw new ArgumentException("check dimension of center of mass");
+
+                    Vector angVelo = new Vector(new double[] { 0, 0, anglev });
+                    Vector CenterofMass = new Vector(pos);
+                    Vector radialVector = new Vector(X) - CenterofMass;
+                    Vector transVelocity = new Vector(new double[SpaceDim]);
+                    Vector pointVelocity;
+
+                    switch (SpaceDim) {
+                        case 2:
+                        pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
+                        break;
+                        case 3:
+                        pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
+                        break;
+                        default:
+                        throw new NotImplementedException("this number of dimensions is not supported");
+                    }
+
+                    return pointVelocity;
+                };
+
+                Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
+                Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
+                Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
+
+
+                C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(0), X => -1);
+                if (only_channel)
+                    C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), X => -1);
+                else {
+                    C.UseImmersedBoundary = true;
+                    if (C.UseImmersedBoundary) {
+                        C.InitialValues_Evaluators_TimeDep.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), PhiFunc);
+                        C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
+                        C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
+                        if (SpaceDim == 3)
+                            C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
+                    }
+                }
+
+                // Some Info Output
+                switch (SpaceDim) {
                 case 2:
                     Console.WriteLine("...starting calculation of Cube2D");
                     break;

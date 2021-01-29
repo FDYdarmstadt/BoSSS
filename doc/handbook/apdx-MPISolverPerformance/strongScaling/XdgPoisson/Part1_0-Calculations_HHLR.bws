@@ -36,12 +36,12 @@ List of 0 instances of IDatabaseInfo {
 //myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_strong_scaleing_test";
+string WFlowName = "Xdg_strong_scaleing";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_strong_scaleing_test'.
+Project name is set to 'Xdg_strong_scaleing'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -58,27 +58,36 @@ Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_MPI'.
 ==============
 tempDB.Sessions
 **************
-List of 20 instances of ISessionInfo {
-  0: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
-  1: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
-  2: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
-  3: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
-  4: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
-  5: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
-  6: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
-  7: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
-  8: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
-  9: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
-  10: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
-  11: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
-  12: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
-  13: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
-  14: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
-  15: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
-  16: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
-  17: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
-  18: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
-  19: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
+List of 29 instances of ISessionInfo {
+  0: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/29/2021 12:56:33	4f4edf30...
+  1: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:34	de178d4f...
+  2: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:33	f94b4207...
+  3: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 01:55:12	7954e722...
+  4: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/25/2021 14:37:18	0140f620...
+  5: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c64	01/23/2021 10:35:27	2be820b4...
+  6: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c64	01/23/2021 10:32:20	95a852bb...
+  7: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/23/2021 09:36:27	49d6c02c...
+  8: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/23/2021 01:03:57	ac287e9c...
+  9: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
+  10: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
+  11: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
+  12: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
+  13: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
+  14: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
+  15: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
+  16: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
+  17: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
+  18: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
+  19: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
+  20: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
+  21: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
+  22: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
+  23: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
+  24: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
+  25: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
+  26: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
+  27: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
+  28: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
 }
 ==============
 // ===================
@@ -162,7 +171,7 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {4,64};
+int[] core_sweep = {4,8,16,32,64,128};
 int p           = 2;
 int Problemsize = 1000000;
 **************
@@ -178,10 +187,14 @@ test;
 ==============
 tempDB.Grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  1: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
-  2: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  1: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  2: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  3: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  4: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  5: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
+  6: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
 **************
@@ -260,19 +273,28 @@ Creating grid with 103823 cells.
 Grid Edge Tags changed.
 
 ==============
+((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
 **************
+List of 6 instances of KeyValuePair{String,GridPartitioningVector} {
+  0: [predef128, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  1: [predef16, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  2: [predef32, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  3: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  4: [predef64, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  5: [predef8, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+}
 ==============
 // Overwrite Selection
 //var ListOfgrids = new List<IGridInfo>();
 //ListOfgrids.AddRange(tempDB.Grids.Pick(0));
 //IGridInfo[] grids = ListOfgrids.ToArray();
-IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
+//IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
 **************
 ==============
 grids;
 **************
 List of 1 instances of IGridInfo {
-  0: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  0: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
 // =====================================
@@ -325,10 +347,10 @@ int[] PolyDegS = new int[] {p};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_pardiso, 
     //LinearSolverCode.classic_mumps, 
     LinearSolverCode.exp_Kcycle_schwarz, 
-    LinearSolverCode.exp_gmres_levelpmg, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
@@ -354,7 +376,11 @@ foreach(int cores in core_sweep){
     if(J*Np > MaxDof)
         continue;
     
+    //int rnd         = new Random().Next();
+    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}_rnd{4}", J, k, solver_name,cores,rnd);
     string caseName = string.Format("J{0}_k{1}_{2}_c{3}", J, k, solver_name,cores);
+    
+    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}", J, k, solver_name,cores);
     Console.WriteLine("setting up: " + caseName);
     Console.WriteLine("based on grid: "+grd.Name);
 
@@ -410,18 +436,18 @@ foreach(int cores in core_sweep){
 }
 }
 **************
-setting up: J103823_k2_classic_pardiso_c4
-based on grid: Xdg_strong_scaleing_test_J103823
-setting up: J103823_k2_classic_pardiso_c64
-based on grid: Xdg_strong_scaleing_test_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c4
-based on grid: Xdg_strong_scaleing_test_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c64
-based on grid: Xdg_strong_scaleing_test_J103823
-setting up: J103823_k2_exp_gmres_levelpmg_c4
-based on grid: Xdg_strong_scaleing_test_J103823
-setting up: J103823_k2_exp_gmres_levelpmg_c64
-based on grid: Xdg_strong_scaleing_test_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327
+based on grid: Xdg_strong_scaleing_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231
+based on grid: Xdg_strong_scaleing_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564
+based on grid: Xdg_strong_scaleing_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503
+based on grid: Xdg_strong_scaleing_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008
+based on grid: Xdg_strong_scaleing_J103823
+setting up: J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304
+based on grid: Xdg_strong_scaleing_J103823
 
 ==============
 **************
@@ -447,56 +473,70 @@ foreach(var ctrl in controls){
     aJob.SetControlObject(ctrl);
     aJob.NumberOfMPIProcs         = ncores;
     aJob.ExecutionTime            = "02:00:00";
-    aJob.MemPerCPU                = "3500";
+    aJob.MemPerCPU                = "3600";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J103823_k2_classic_pardiso_c4
-Deploying job J103823_k2_classic_pardiso_c4 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327
+Deploying job J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing_test-XdgPoisson32021Jan22_215444
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193024
 copied 29 files.
    written file: control.obj
 deployment finished.
-16883528
+16949920
 
- Submitting: J103823_k2_classic_pardiso_c64
-Deploying job J103823_k2_classic_pardiso_c64 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231
+Deploying job J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing_test-XdgPoisson32021Jan22_215449
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193028
 copied 29 files.
    written file: control.obj
 deployment finished.
-16883533
+16949921
 
- Submitting: J103823_k2_exp_Kcycle_schwarz_c4
-Info: Found successful session "Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770..." -- job is marked as successful, no further action.
-No submission, because job status is: FinishedSuccessful
- Submitting: J103823_k2_exp_Kcycle_schwarz_c64
-Deploying job J103823_k2_exp_Kcycle_schwarz_c64 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564
+Deploying job J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing_test-XdgPoisson32021Jan22_215456
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193034
 copied 29 files.
    written file: control.obj
 deployment finished.
-16883536
+16949922
 
- Submitting: J103823_k2_exp_gmres_levelpmg_c4
-Info: Found successful session "Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd..." -- job is marked as successful, no further action.
-No submission, because job status is: FinishedSuccessful
- Submitting: J103823_k2_exp_gmres_levelpmg_c64
-Deploying job J103823_k2_exp_gmres_levelpmg_c64 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503
+Deploying job J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing_test-XdgPoisson32021Jan22_215503
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193039
 copied 29 files.
    written file: control.obj
 deployment finished.
-16883540
+16949923
+
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008
+Deploying job J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008 ... 
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193045
+copied 29 files.
+   written file: control.obj
+deployment finished.
+16949924
+
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304
+Deploying job J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304 ... 
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193050
+copied 29 files.
+   written file: control.obj
+deployment finished.
+16949925
 
 
 ==============
@@ -610,6 +650,12 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
 Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

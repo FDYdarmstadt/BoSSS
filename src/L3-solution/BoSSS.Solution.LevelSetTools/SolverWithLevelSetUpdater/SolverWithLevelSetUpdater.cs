@@ -231,6 +231,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.Prescribed: {
                         var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
+                        lsUpdater.AddEvolver(LevelSetCG, prescrEvo);
                         break;
                     }
                     case LevelSetEvolution.None: {

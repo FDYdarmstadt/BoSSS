@@ -520,7 +520,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int SpaceDim = 2) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int SpaceDim = 2) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -659,12 +659,12 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
 
 
-
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
             if (only_channel)
                 C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), X => -1);
             else {
                 C.UseImmersedBoundary = true;
-                if (C.UseImmersedBoundary) {
+                if (C.UseImmersedBoundary) { 
                     C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
                     C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
                     C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
@@ -692,23 +692,26 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.EqualOrder = false;
             //C.PressureStabilizationFactor = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 20;
             C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.pMaxOfCoarseSolver = k;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            C.RefinementLevel = 2;
 
             // Timestepping
             // ============
