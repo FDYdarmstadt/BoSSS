@@ -72,7 +72,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             None
         }
 
-        public Correction CorrectionType = Correction.Mass;
+        public Correction CorrectionType = Correction.None;
 
         /// <summary>
         /// Type of algebraic correction that is performed

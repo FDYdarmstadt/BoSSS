@@ -677,6 +677,13 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
 
         /// <summary>
+        /// Time dependent Gravity for each species.
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>[]> Gravity;
+
+        /// <summary>
         /// Control Options for ReInit
         /// </summary>
         [DataMember]

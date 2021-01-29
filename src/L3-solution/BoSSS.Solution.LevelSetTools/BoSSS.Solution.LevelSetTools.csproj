@@ -126,6 +126,7 @@
     <Compile Include="SemiLagrangianLevelSet\SemiLagrangianLevelSetMethod.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\PhasefieldEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />
     <Compile Include="StokesExtension\InteriorVelocityBoundary.cs" />

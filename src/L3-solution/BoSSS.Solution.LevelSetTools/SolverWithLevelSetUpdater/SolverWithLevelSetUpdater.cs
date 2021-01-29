@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
@@ -48,6 +49,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         protected override LevelSetTracker InstantiateTracker() {
             LsUpdater = InstantiateLevelSetUpdater();
+
+            // register all managed LevelSets
+            foreach (DualLevelSet LevSet in LsUpdater.LevelSets.Values) {
+                base.RegisterField(LevSet.CGLevelSet);
+                base.RegisterField(LevSet.DGLevelSet);
+            }
+
             return LsUpdater.Tracker;
         }
 
@@ -68,6 +76,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return 0.0;
         }
 
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
 
@@ -83,20 +92,36 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-            
+
             // enforce continuity
             // ------------------
-            
+
             var pair1 = LsUpdater.LevelSets.First().Value;
             var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
-            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+            UpdateLevelset(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
             double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
             if(dist1 != 0)
                 throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
-            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
+            UpdateLevelset(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // und doppelt hält besser ;)
             double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
             if(dist2 != 0)
                 throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
         }
+
+        // Hack to set the correct time for the levelset tracker on restart
+        double restartTime = 0.0;
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            base.PostRestart(time, timestep);
+            // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+
+            // set restart time, used later in the intial tracker updates
+            restartTime = time;
+
+            // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+            this.LsUpdater.Tracker.PushStacks();
+        }
+
     }
 }

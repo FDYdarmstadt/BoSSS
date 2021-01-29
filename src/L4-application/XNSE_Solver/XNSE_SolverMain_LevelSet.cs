@@ -370,8 +370,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     case LevelSetEvolution.Phasefield:
                         this.DGLevSet.Current.Clear();
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                        PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
-                        PhaseField.InitCH();
+                        throw new NotImplementedException("changed interface - Vectorfield -> Singlephasefield[]");
+                        //PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        //PhaseField.InitCH();
                         break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
@@ -753,8 +754,8 @@ namespace BoSSS.Application.XNSE_Solver {
                             //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("A"), CutCells);
                             //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("B"), CutCells);
                         }
-                        PhaseField.UpdateFields(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
-                        PhaseField.MovePhasefield(iTimestep, dt, Phystime);
+                        //PhaseField.UpdateFields(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        //PhaseField.MovePhasefield(iTimestep, dt, Phystime);
                         break;
                     default:
                         throw new ApplicationException();

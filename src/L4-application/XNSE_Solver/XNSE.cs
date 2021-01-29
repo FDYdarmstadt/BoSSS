@@ -109,7 +109,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
                 case LevelSetEvolution.FastMarching: {
                     LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]); 
+                    if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty()) levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]); 
                     var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
                                         
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
@@ -126,6 +126,19 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
                     lsUpdater.AddEvolver(VariableNames.LevelSetCG, sokesExtEvo);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
+                    break;
+                }
+                case LevelSetEvolution.Phasefield: {
+                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+
+                    var PhasefieldEvolver = new PhasefieldEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
+                        new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }), this.Control,
+                        this.Control.AgglomerationThreshold, this.GridData);                    
+
+                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
+                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, PhasefieldEvolver);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
                     break;
                 }
@@ -236,9 +249,13 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
+                var GravityAd = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, this.Control.Gravity["A"][d]);
+                opFactory.AddParameter(GravityAd);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, GravityAd);
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
+                var GravityBd = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, this.Control.Gravity["B"][d]);
+                opFactory.AddParameter(GravityBd);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, GravityBd);
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
@@ -327,7 +344,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (LsUpdater?.Parameters != null) {
                 AddPltFields(LsUpdater.Parameters.Values);
                 AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
-                AddPltFields(LsUpdater.InternalFields.Values);
+                //AddPltFields(LsUpdater.InternalFields.Values);
             }
 
             Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
@@ -341,7 +358,6 @@ namespace BoSSS.Application.XNSE_Solver {
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
-
 
     }
 }

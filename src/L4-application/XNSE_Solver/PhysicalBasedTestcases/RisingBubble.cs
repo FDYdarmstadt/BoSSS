@@ -263,6 +263,227 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         }
 
+        /// <summary>
+        /// Control for various testing/Matthias; **If you want to modify, create your own copy!**
+        /// - jan2021: used as a test for the implementation of Phasefield/Stokes-Extension Levelset
+        /// </summary>
+        /// <param name="p"></param>
+        /// <param name="kelem"></param>
+        /// <param name="_DbPath"></param>
+        /// <param name="dt">
+        /// size of time-step, should be chosen as <c>(1.0 / (double)kelem) / 16.0</c> 
+        /// </param>
+        /// <returns></returns>
+        public static XNSE_Control RB_mr(int p = 2, int kelem = 20, double dt = 3.125e-3, string _DbPath = null) {
+            //BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RisingBubble.RB(p:1,kelem:10)
+
+            XNSE_Control C = new XNSE_Control();
+
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_RisingBubble";
+            //_DbPath = @"\\dc1\userspace\yotov\bosss-db\RisingBubble"";
+
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.SessionName = "RisingBubbleHeimann";
+            C.ProjectDescription = "rising bubble";
+            C.SuperSampling = 3;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.SetDGdegree(p);
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            //C.Tags.Add("Testcase 1");
+            //C.PhysicalParameters.rho_A = 100;
+            //C.PhysicalParameters.rho_B = 1000;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 10;
+            //C.PhysicalParameters.Sigma = 24.5;
+
+            C.Tags.Add("Testcase 2");
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1000;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 10;
+            C.PhysicalParameters.Sigma = 1.96;
+
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+
+            double xSize = 1.0;
+            double ySize = 2.0;
+
+            //int kelem = 160;
+
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    string et = null;
+                    if (Math.Abs(X[1]) <= 1.0e-8)
+                        et = "wall_lower";
+                    else if (Math.Abs(X[1] - ySize) <= 1.0e-8)
+                        et = "wall_upper";
+                    else if (Math.Abs(X[0]) <= 1.0e-8)
+                        et = "freeslip_left";
+                    else if (Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = "freeslip_right";
+                    else
+                        throw new ArgumentException("unknown boundary region");
+
+                    return et;
+                });
+
+                grd.AddPredefinedPartitioning("ZwoProcSplit", delegate (double[] X) {
+                    int rank;
+                    double x = X[0];
+                    if (x < 0.5)
+                        rank = 0;
+                    else
+                        rank = 1;
+
+                    return rank;
+                });
+
+                grd.AddPredefinedPartitioning("VierProcSplit", delegate (double[] X) {
+                    int rank;
+                    double x = X[0];
+                    if (x < 0.35)
+                        rank = 0;
+                    else if (x < 0.5)
+                        rank = 1;
+                    else if (x < 0.75)
+                        rank = 2;
+                    else
+                        rank = 3;
+
+                    return rank;
+                });
+
+
+                return grd;
+            };
+
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "VierProcSplit";
+
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double[] center = new double[] { 0.5, 0.5 }; //0.5,0.5
+            double radius = 0.25;
+
+            //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
+            Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
+
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCG, PhiFunc);
+
+            Func<double, double> PeriodicFunc = x => radius;
+
+
+            C.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
+            C.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
+
+
+            //Guid restartID = new Guid("322f07e1-2ac3-4ed4-af8b-1c46ab7e55a0");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 986);
+            //C.ReInitControl.PrintIterations = true; 
+
+            #endregion
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall_lower");
+            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_left");
+            C.AddBoundaryValue("freeslip_right");
+
+            //C.AddBoundaryCondition("wall_lower", VariableNames.LevelSet, PhiFunc);
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = true;
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.RefinementLevel = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            //C.dt_increment = 20;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.dtMax = dt / 2.0;
+            C.dtMin = dt / 2.0;
+            C.Endtime = 3;
+            C.NoOfTimesteps = 20000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+
+        }
+
 
         /*
         /// <summary>

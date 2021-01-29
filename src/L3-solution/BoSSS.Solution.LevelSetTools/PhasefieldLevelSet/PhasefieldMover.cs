@@ -45,7 +45,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <param name="_phystime"></param>
         public void RelaxationStep(int _TimestepNo = -1, double _dt = 10.0, double _phystime = 0.0)
         {
-            this.Velocity.Clear();
+            foreach (var f in this.Velocity)
+                f.Clear();
             RunSolverOneStep(_TimestepNo, _dt, _phystime);
         }
 
