@@ -80,8 +80,6 @@ namespace BoSSS.Solution.NSECommon {
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        /// <param name="inp"></param>
-        /// <returns></returns>
         private double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = cj[jCellIn];
             double mu = PenaltyBase * cj_in;

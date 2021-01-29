@@ -615,7 +615,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Sets fields an their exact derivatives.
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 
             if (this.GridData.SpatialDimension == 3) {
 

@@ -39,7 +39,7 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// Vectorized version of <see cref="Evaluate(double[], double)"/>
+        /// Vectorized version of <see cref="Evaluate(double[], double)"/>, matches the signature of <see cref="Foundation.ScalarFunctionTimeDep"/>
         /// </summary>
         /// <param name="input">positions in space at which the function should be evaluated;
         ///  - 1st index: point index;

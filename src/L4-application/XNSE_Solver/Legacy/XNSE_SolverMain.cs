@@ -59,37 +59,16 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
-    /// Optional: coupled heat equation with evaporation
-    /// Optional: kinetic energy equation 
+    /// - Optional: coupled heat equation with evaporation
+    /// - Optional: kinetic energy equation 
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
-
-        //===========
-        // Main file
-        //===========
-        static void Main(string[] args) {
-
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingSinglePhaseChannelTest(1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //throw new Exception("Remove me");
-            
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });
-        }
-
-        static void KatastrophenPlot(DGField[] dGFields) {
-            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-        }
-
 
         //=====================================
         // Field declaration and instantiation
@@ -1530,8 +1509,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
 
             this.LsTrk.PushStacks();
 
@@ -1557,7 +1536,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         protected override void ResetInitial() {
-            base.SetInitial();
+            base.SetInitial(0.0);
 
             this.InitLevelSet();
 

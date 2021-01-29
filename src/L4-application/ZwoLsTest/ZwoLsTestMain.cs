@@ -197,8 +197,8 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u.ProjectField((x, y) => x);
             du_dx_Exact.ProjectField((x, y) => 1.0);

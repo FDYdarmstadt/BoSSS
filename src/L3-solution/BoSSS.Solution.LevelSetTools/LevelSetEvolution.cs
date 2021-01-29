@@ -88,8 +88,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// Spline Level Set
         /// </summary>
         SplineLS,
-
-        
+                
         /// <summary>
         /// An extension velocity computed from a Stokes equation; 
         /// In contrast to other methods, this should be reliable for general interface topologies
@@ -99,7 +98,6 @@ namespace BoSSS.Solution.LevelSetTools {
         /// For details:
         /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.StokesExtensionEvolver"/>.
         /// </remarks>
-        StokesExtension
-
+        StokesExtension,
     }
 }

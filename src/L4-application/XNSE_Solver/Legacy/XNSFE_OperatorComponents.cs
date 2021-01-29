@@ -26,9 +26,9 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XheatCommon;
+using BoSSS.Application.XNSE_Solver;
 
-
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
     public static partial class XOperatorComponentsFactory {
 
         //==============================================================
@@ -70,7 +70,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (!config.isMovingMesh) {
                     comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
                     comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
-                    comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                    comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, -1, false, thermParams, sigma));
                 } 
             } else {
                 comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
@@ -123,7 +123,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, config.getPhysParams.Sigma);
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, LsTrk, -1, false, thermParams, config.getPhysParams.Sigma);
             comps.Add(divEvap);
 
         }

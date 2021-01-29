@@ -340,7 +340,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// sets some initial value for field <see cref="u"/>;
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
            switch (GridData.SpatialDimension) {
                 case 2:
 

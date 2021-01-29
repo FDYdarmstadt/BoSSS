@@ -41,9 +41,13 @@
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics, Version=2.6.0.29, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="MathNet.Numerics">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Numerics" />
@@ -126,6 +130,8 @@
     <Compile Include="SemiLagrangianLevelSet\SemiLagrangianLevelSetMethod.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\PrescribedEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdaterControl.cs" />
     <Compile Include="SolverWithLevelSetUpdater\PhasefieldEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />

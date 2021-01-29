@@ -1023,7 +1023,7 @@ namespace BoSSS.Solution.LevelSetTools
             */
 
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCellsGrid.VolumeMask);
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"));
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"), 0);
             
             // =============================
             // compute force vector in cell.

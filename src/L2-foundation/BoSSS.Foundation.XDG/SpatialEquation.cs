@@ -121,11 +121,13 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     public abstract class SurfaceEquation : SpatialEquation 
     {
         /// <summary>
+        /// First/Negative species (with respect to level-set)
         /// Order not important.
         /// </summary>
         public abstract string FirstSpeciesName { get; }
 
         /// <summary>
+        /// Second/Positive species (with respect to level-set)
         /// Order not important.
         /// </summary>
         public abstract string SecondSpeciesName { get; }
@@ -190,6 +192,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         }
     }
 
+    /// <summary>
+    /// Accumulation of equations
+    /// Finds the names of all required parameters and coefficients
+    /// </summary>
     class SystemOfEquations 
     {
         public LinkedList<SpatialEquation> SpatialEquations;
@@ -198,6 +204,9 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public LinkedList<BulkEquation> BulkEquations;
 
+        /// <summary>
+        /// Create empty System
+        /// </summary>
         public SystemOfEquations() {
             InterfaceEquations = new LinkedList<SurfaceEquation>();
             BulkEquations = new LinkedList<BulkEquation>();
@@ -267,6 +276,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     }
                 }
             }
+
             return parameterNames.ToArray();
         }
 

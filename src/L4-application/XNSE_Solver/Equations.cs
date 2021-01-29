@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (!config.isMovingMesh) {
                     AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
                     AddComponent(new ConvectionAtLevelSet_nonMaterialLLF(d, D, lsTrk, thermParams, sigma));
-                    AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, sigma));
+                    AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, -1, false, thermParams, sigma));
                 }
             } else {
                 AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
@@ -106,7 +106,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // therefore we only need these terms when using splitting...
                     AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
                     AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
-                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, physParams));
+                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, -1, false, physParams));
                 } else {
                     AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, lsTrk, physParams));
                 }
@@ -157,7 +157,7 @@ namespace BoSSS.Application.XNSE_Solver {
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
-            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, thermParams, config.getPhysParams.Sigma);
+            var divEvap = new DivergenceAtLevelSet_withEvaporation(D, lsTrk, -1, false, thermParams, config.getPhysParams.Sigma);
             AddComponent(divEvap);
         }
 
@@ -194,7 +194,7 @@ namespace BoSSS.Application.XNSE_Solver {
             PhysicalParameters physicalParameters = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
-            var divEvap = new DivergenceAtLevelSet_withMassFlux(D, lsTrk, dntParams.ContiSign, dntParams.RescaleConti, physicalParameters);
+            var divEvap = new DivergenceAtLevelSet_withMassFlux(D, lsTrk, -1, false, physicalParameters);
             AddComponent(divEvap);
         }
 

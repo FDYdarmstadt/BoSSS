@@ -230,7 +230,7 @@ namespace ALTSTests {
             }
         }
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             c.ProjectField(delegate (double x, double y) {
                 if (x <= pod)
                     return inflowDirichletValue;
