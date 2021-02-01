@@ -32,6 +32,21 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+    /// 
+    /// Quick start instructions:
+    /// - The Fluid-Fluid-Interphase is level-set No. 0 and is named `Phi` 
+    ///   in the initial values <see cref="AppControl.InitialValues"/>, see <see cref="DGField.Identification"/>)
+    /// - The immersed boundary interface has the name `Phi2`
+    ///   `Phi` is always activated and cannot be turned of; `Phi2` can be activated/deactivated via <see cref="XNSE_Control.UseImmersedBoundary"/>.
+    /// - One should not need to set an initial value for `Phi` for simulations where no fluid-fluid interface is required:
+    ///   If `Phi` it is identical to 0.0 in the entire domain, it will be set to -1, i.e. the entire domain will be assigned to species "A".
+    /// - The vectorial velocity of `Phi2` is set via the fields `VelocityX@Phi2`, `VelocityY@Phi2` and `VelocityZ@Phi2` (in 3D). 
+    ///   By specifying a vectorial velocity, one can also specify tangential velocities of the surface. 
+    ///   The normal component should match the normal velocity which can be computed from `Phi2`,
+    ///   yielding following compatibility condition: 
+    /// ```math
+    ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
+    /// ```
     /// </remarks>
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
 
