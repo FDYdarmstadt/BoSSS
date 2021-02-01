@@ -61,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+            
             XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
@@ -127,6 +128,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
             int D = this.Grid.SpatialDimension;
             var lsNames = this.LevelSetNames;
+            //ISpatialOperator test = this.Operator; hier ist noch kein OP
             int NoOfLevelSets = lsNames.Length;
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();

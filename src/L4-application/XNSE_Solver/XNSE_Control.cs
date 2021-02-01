@@ -519,6 +519,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
+
+        /// <summary>
+        /// An explicit expression of the Level-set over time: \phi = f(x,y;t).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> Phi;
+
         /// <summary>
         /// See <see cref="InterfaceAveraging"/>
         /// </summary>

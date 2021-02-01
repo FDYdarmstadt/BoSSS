@@ -218,7 +218,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Cell[] refinedCells = new Cell[Leaves.Length];
 
                         for (int iSubDiv = 0; iSubDiv < Leaves.Length; iSubDiv++) {
-                            Cell newCell = CreateRefinedCell(ref noOfGlobalCells, globalIDOffset, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
+                            Cell newCell = CreateRefinedCell(ref noOfGlobalCells, globalCellIDOffsetLocalProcess, NewCoarseningClusterId, oldCell, Leaves, iSubDiv);
                             refinedCells[iSubDiv] = newCell;
 
                             NodeSet RefNodes = Kref.GetInterpolationNodes(oldCell.Type);
