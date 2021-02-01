@@ -37,7 +37,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         abstract public int QuadOrder();
 
-
         protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {
                 // set the MultigridOperator configuration for each level:
@@ -121,7 +120,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// boundary condition mapping, mainly required for the Stokes extension, where a velocity boundary condition is required.
         /// </summary>
         protected abstract IncompressibleBoundaryCondMap GetBcMap();
-
+        
         /// <summary>
         /// Sets up the level-set-system (fields for storing, evolution operators, ...) before XDG-fields can be created.
         /// </summary>
@@ -169,6 +168,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                         SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
                         DGlevelSets[iLevSet] = SplineLevelSet;
+                        break;
+                    }
+                    case LevelSetEvolution.RigidObject: {
+                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                         break;
                     }
                     default:
@@ -227,10 +230,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         int nodeCount = 30;
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                         var SplineEvolver = new SplineLevelSetEvolver(LevelSetCG, (GridData)(this.GridData));
+                        lsUpdater.AddEvolver(LevelSetCG, SplineEvolver);
                         break;
                     }
                     case LevelSetEvolution.Prescribed: {
                         var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
+                        lsUpdater.AddEvolver(LevelSetCG, prescrEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.RigidObject: {
+                        var rigidEvolver = EvolveRigidLevelSet();
+                        lsUpdater.AddEvolver(LevelSetCG, rigidEvolver);
                         break;
                     }
                     case LevelSetEvolution.None: {
@@ -265,7 +275,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        
+        /// <summary>
+        /// Used to provide information about rigid objects to the levelSetUpdater in case of <see cref="LevelSetEvolution.RigidObject"/>
+        /// Overwrite this to enter information.
+        /// </summary>
+        protected virtual RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Used to provide information about rigid objects to the levelSetEvolver in case of <see cref="LevelSetEvolution.RigidObject"/>
+        /// Overwrite this to enter information.
+        /// </summary>
+        protected virtual RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
+            throw new NotImplementedException();
+        }
 
         /// <summary>
         /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
@@ -276,7 +301,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
-
+            
             foreach(var NamePair in this.LevelSetNames) {
                 string LevelSetCG = NamePair.ContLs;
                 

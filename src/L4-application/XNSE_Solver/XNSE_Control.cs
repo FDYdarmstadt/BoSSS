@@ -524,17 +524,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
-
-
-        /// <summary>
-        /// An explicit expression of the Level-set over time.
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public Func<double[], double, double> Phi;
-
-       
-
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
         /// </summary>

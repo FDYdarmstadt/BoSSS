@@ -65,7 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
     /// to obtain a single interface velocity.
     /// </summary>
-    class LevelSetVelocity : ILevelSetParameter {
+    public class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
         protected IList<string> parameters;

@@ -119,8 +119,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
 
+        /// <summary>
+        /// An explicit expression of the Level-set over time: \phi = f(x,y;t).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> Phi;
 
-        
         /// <summary>
         /// Width of the narrow band.
         /// </summary>

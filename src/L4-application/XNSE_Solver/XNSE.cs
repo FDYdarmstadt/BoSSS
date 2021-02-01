@@ -245,6 +245,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+            
             OperatorFactory opFactory = new OperatorFactory();
             
             DefineSystem(D, opFactory, levelSetUpdater);

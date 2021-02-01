@@ -73,8 +73,8 @@ namespace BoSSS.Application.FSI_Solver {
 
         public void SetPeriodicBoundaryPosition(double[] periodicBoundaryPosition, int dimension) {
             Aux = new FSIAuxillary();
-            if (!PeriodicBoundaryPosition[dimension].IsNullOrEmpty())
-                throw new Exception("Overwrite of periodic boundaries during a simulation is not allowed.");
+            if (PeriodicBoundaryPosition[0].IsNullOrEmpty() && dimension == 0)
+                OriginInVirtualPeriodicDomain.Clear();
             Aux.TestArithmeticException(periodicBoundaryPosition, ("periodic boundary position, dimension " + dimension));
             PeriodicBoundaryPosition[dimension] = periodicBoundaryPosition.CloneAs();
 
