@@ -714,14 +714,20 @@ namespace BoSSS.Foundation {
                             int i0 = 0;
                             for (int indV1 = 0; indV1 < VertAtEdge.Count; indV1++) {
                                 i0++;
-                                for (int indV2 = i0; indV2 < VertAtEdge.Count; indV2++) {
+                            for (int indV2 = i0; indV2 < VertAtEdge.Count; indV2++) {
+                                    int v1 = GlobalVert2Local[VertAtEdge.ElementAt(indV1)];
+                                    int v2 = GlobalVert2Local[VertAtEdge.ElementAt(indV2)];
                                     int m, n;
-                                    if (VertAtEdge.ElementAt(indV1) <= VertAtEdge.ElementAt(indV2)) {
-                                        m = VertAtEdge.ElementAt(indV1);
-                                        n = VertAtEdge.ElementAt(indV2);
+                                    if (local2Interproc[v1] >= 0 && local2Interproc[v2] >= 0) {
+                                        if (v1 <= v2) {
+                                            m = v1;
+                                            n = v2;
+                                        } else {
+                                            m = v2;
+                                            n = v1;
+                                        }
                                     } else {
-                                        m = VertAtEdge.ElementAt(indV2);
-                                        n = VertAtEdge.ElementAt(indV1);
+                                        throw new ArgumentException("should not occur");
                                     }
 
                                     numECond += NegotiateNumECond(m, n, CondIncidenceMatrix, ProcsAtInterprocVert[local2Interproc[m]]);

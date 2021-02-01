@@ -632,8 +632,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                             foreach (int neigh in Neighb) {
                                 if (neigh > this.GridDat.Cells.NoOfLocalUpdatedCells && DomainBit[neigh]
                                     && !Accepted_MutuableExt[neigh] && m_PhiAvg[neigh] < m_PhiAvg[jCellAccpt]) {
-                                    Console.WriteLine("MPI-rank {0}: add externalUpdateCell {1} (PhiAvg_neigh{2} {3} < PhiAvg_jCell {4})", 
-                                        this.GridDat.MpiRank, jCellAccpt, neigh, m_PhiAvg[neigh], m_PhiAvg[jCellAccpt]);
+                                    //Console.WriteLine("MPI-rank {0}: add externalUpdateCell {1} (PhiAvg_neigh{2} {3} < PhiAvg_jCell {4})", 
+                                    //    this.GridDat.MpiRank, jCellAccpt, neigh, m_PhiAvg[neigh], m_PhiAvg[jCellAccpt]);
                                     if (!externalUpdateCells.Contains(jCellAccpt))
                                         externalUpdateCells.Add(jCellAccpt);
                                     NoOfExtUpdate++;
@@ -661,7 +661,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (NoOfExtUpdate.MPISum() > 0) {
-                    Console.WriteLine("MPI-rank {0}: externalUpdateCells", this.GridDat.MpiRank);
+                    //Console.WriteLine("MPI-rank {0}: externalUpdateCells", this.GridDat.MpiRank);
                     CellMask Accepted_Update = new CellMask(this.GridDat, Accepted_Mutuable);
                     for (int d = 0; d < ExtProperty.Length; d++) {
                         ExtProperty[d].MPIExchange();
@@ -695,7 +695,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 ReinitField = reinitField;
             }
             //Build Local Solver that solves the Eikonal in each cell.
-            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_2DStructured(Phi.Basis);
+            //FastMarching.ILocalSolver localSolver2D = new FastMarching.LocalMarcher.LocalMarcher_2DStructured(Phi.Basis);
+            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_Structured(Phi.Basis);
 
             //Build Global Solver that marches through all cells
             FastMarching.GlobalMarcher.CellMarcher fastMarcher = new FastMarching.GlobalMarcher.CellMarcher(Phi.Basis, localSolver);

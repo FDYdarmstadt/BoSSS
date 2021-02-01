@@ -47,17 +47,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 8, int wallBC = 1) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 2, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            int D = 2;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            int D = 3;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-            if (D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            //if (D == 3)
+            //    C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
 
             // basic database options
             // ======================
@@ -249,7 +249,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { (H / 2.0) + 0.04, H / 2.0, H / 2.0 };
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { (H / 2.0) + 0.0, H / 2.0, H / 2.0 };
             double radius = 0.2;
 
             if (D == 2) {
@@ -427,9 +427,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.BaseRefinementLevel = 1;
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            C.BaseRefinementLevel = 2;
             C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;
@@ -448,7 +448,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 1e-2; // 5e-2;
+            double dt = 5e-2; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

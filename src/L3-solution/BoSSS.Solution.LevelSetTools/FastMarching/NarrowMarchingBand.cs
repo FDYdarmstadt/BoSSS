@@ -280,8 +280,22 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 NewLevelSet.Acc(1.0, OldLevSet, NEAR);
             }
 
-            
-            
+            // for testing purposes
+            //BitArray testBit = new BitArray(J);
+            //testBit[0] = true;
+            //testBit[1] = true;
+            //testBit[2] = true;
+            //testBit[3] = true;
+            //testBit[12] = true;
+            //testBit[15] = true;
+            //testBit[48] = true;
+            //testBit[51] = true;
+            //testBit[60] = true;
+            //testBit[63] = true;
+            //CellMask testMask = new CellMask(gdat, testBit);
+            //NewLevelSet.Clear(testMask);
+
+
             // set values in positive and negative FAR region to +1 and -1
             // -----------------------------------------------------------
 
@@ -313,6 +327,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
+            //BitArray ReinitPosBitmask = new BitArray(J);
+            //BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
@@ -351,7 +367,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
-
+            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
+            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
@@ -385,7 +402,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //if (NoOfNegReinit.MPISum() > 0)
             //    marcher.Reinitialize(NewLevelSet, ReinitNeg, -1, Known, LevelSetGrad, null);
 
-            // save reinit at OLD levelset, to prevent doing it multiple times
+            //// save reinit at OLD levelset, to prevent doing it multiple times
             //OldLevSet.Clear(ReinitPos);
             //OldLevSet.Clear(ReinitNeg);
             //OldLevSet.Acc(1.0, NewLevelSet, ReinitPos);

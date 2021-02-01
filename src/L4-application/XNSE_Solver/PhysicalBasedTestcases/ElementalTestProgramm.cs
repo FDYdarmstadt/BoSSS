@@ -27,6 +27,7 @@ using BoSSS.Solution.LevelSetTools.TestCases;
 using BoSSS.Solution.XdgTimestepping;
 using System.Runtime.CompilerServices;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 

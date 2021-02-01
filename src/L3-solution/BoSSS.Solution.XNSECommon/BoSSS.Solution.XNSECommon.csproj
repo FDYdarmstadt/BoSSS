@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Coefficients.cs" />
     <Compile Include="ConvectionAtLevelSet_LLF.cs" />
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />

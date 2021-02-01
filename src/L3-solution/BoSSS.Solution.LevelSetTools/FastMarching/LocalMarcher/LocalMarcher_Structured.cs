@@ -108,6 +108,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             Node[] Accepted = SetupAccepted(jCell, AcceptedMask, Phi);
 
             //Solve
+            //Console.WriteLine("LocalMarcher.LocalSolver: macher.march()");
             marcher.march(Accepted);
 
             //Project solution to DGSpace
@@ -212,19 +213,19 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
                 int neighbor = nd - 1;
                 if (neighbor > -1 && neighbor % resolution < resolution - 1)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd + 1;
                 if (neighbor < nodeGrid.Count && neighbor % resolution > 0)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd - resolution;
                 if (neighbor > -1)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd + resolution;
                 if (neighbor < nodeGrid.Count)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
             }
         }
 
@@ -236,27 +237,27 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
                 int neighbor = nd - 1;
                 if (neighbor > -1 && neighbor % resolution < resolution - 1)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd + 1;
                 if (neighbor < nodeGrid.Count() && neighbor % resolution > 0)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd - resolution;
                 if (neighbor > -1 && neighbor % (resolution * resolution) < resolution * (resolution - 1))
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd + resolution;
                 if (neighbor < nodeGrid.Count() && neighbor % (resolution * resolution) > resolution - 1)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd - resolution * resolution;
                 if (neighbor > -1)
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
 
                 neighbor = nd + resolution * resolution;
                 if (neighbor < nodeGrid.Count())
-                    node.neighbors.AddLast(nodeGrid.ElementAt(nd));
+                    node.neighbors.AddLast(nodeGrid.ElementAt(neighbor));
             }
         }
 
@@ -330,23 +331,60 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
         MultidimensionalArray ConvertToQuadNodes(List<Node> Grid) {
             //int length = Grid.Count - 2;
-            int ConvertetdArray_Length = Grid.Count - edgeNodes.Count;
-            MultidimensionalArray ConvertedArray = MultidimensionalArray.Create(ConvertetdArray_Length);
+            int ConvertedArray_Length = Grid.Count - edgeNodes.Count;
+            MultidimensionalArray ConvertedArray = MultidimensionalArray.Create(ConvertedArray_Length);
 
+            int D = gridDat.SpatialDimension;
             BitArray edgeNodesBit;
-            if (gridDat.SpatialDimension == 2)
+            if (D == 2)
                 edgeNodesBit = EdgeNodes2D();
-            else if (gridDat.SpatialDimension == 3)
+            else if (D == 3)
                 edgeNodesBit = EdgeNodes3D();
             else
                 throw new ArgumentOutOfRangeException("not supported spatial dimension");
 
+
             //Remove Edges and write to Multidimensionalarray. Make sure that everything is kept in the correct order!
-            int i_ConvertedArray = 0;
-            for (int i = 0; i < Grid.Count; i++) {
-                if (!edgeNodesBit[i])
-                    ConvertedArray[i_ConvertedArray] = Grid[i].Phi;
+            if (D == 2) {
+                int i_ConvertedArray = 0;
+                int i_increment = resolution - 2;
+                int iShift_ConvertedArray = 1;
+                for (int i = 0; i < Grid.Count; i++) {
+                    if (!edgeNodesBit[i]) {
+                        ConvertedArray[i_ConvertedArray] = Grid[i].Phi;
+                        i_ConvertedArray += i_increment;
+                        if (i_ConvertedArray >= ConvertedArray_Length) {
+                            i_ConvertedArray = iShift_ConvertedArray;
+                            iShift_ConvertedArray++;
+                        }
+                    }
+                }
             }
+
+            if (D == 3) {
+                int i_ConvertedArray = 0;
+                int i_increment = (resolution - 2) * (resolution - 2);
+                int iShift_ConvertedArray = (resolution - 2);
+                int iShift_increment = (resolution - 2);
+                int iShift_ConvertedArray2 = 1;
+                for (int i = 0; i < Grid.Count; i++) {
+                    if (!edgeNodesBit[i]) {
+                        //Console.WriteLine("i_ConvertedArray = {0}", i_ConvertedArray);
+                        ConvertedArray[i_ConvertedArray] = Grid[i].Phi;
+                        i_ConvertedArray += i_increment;
+                        if (i_ConvertedArray >= ConvertedArray_Length) {
+                            i_ConvertedArray = iShift_ConvertedArray;
+                            iShift_ConvertedArray += iShift_increment;
+                            if (iShift_ConvertedArray >= i_increment) {
+                                iShift_ConvertedArray = iShift_ConvertedArray2;
+                                iShift_ConvertedArray2++;
+                            }
+                        }
+                    }
+                }
+            }
+
+
 
             return ConvertedArray;
         }
@@ -357,6 +395,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             int numberOfQuadNodes = PhiAtQuadNodes.Length;
             MultidimensionalArray weighted_PhiAtQuadNodes = MultidimensionalArray.Create(numberOfQuadNodes);
 
+            //NodeSet quadNodes = this.daRuleS[0].Nodes;
 
             for (int i = 0; i < numberOfQuadNodes; i++) { // loop over all quadrature nodes
                 weighted_PhiAtQuadNodes[i] = PhiAtQuadNodes[i] * this.daRuleS[iKref].Weights[i];

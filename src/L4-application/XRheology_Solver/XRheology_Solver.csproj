@@ -37,6 +37,10 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
+    </Reference>
     <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
@@ -58,6 +62,8 @@
     <Compile Include="GenericTestcases.cs" />
     <Compile Include="Physical_Testcases\ChannelFlow.cs" />
     <Compile Include="Physical_Testcases\Droplet.cs" />
+    <Compile Include="XBase_Control.cs" />
+    <Compile Include="XBase_Solver.cs" />
     <Compile Include="XRheology_OperatorConfiguration.cs" />
     <Compile Include="XRheology_Control.cs" />
     <Compile Include="XRheology_OperatorFactory.cs" />
@@ -103,6 +109,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj">
+      <Project>{7c92a61e-a113-4093-9e37-2786ac737f36}</Project>
+      <Name>BoSSS.Solution.EnergyCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>

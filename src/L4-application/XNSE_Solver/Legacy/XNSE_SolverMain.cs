@@ -59,8 +59,9 @@ using NUnit.Framework;
 using MPI.Wrappers;
 using System.Collections;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSE_Solver.Legacy {
 
     /// <summary>
     /// Solver for Incompressible Multiphase flows
@@ -71,30 +72,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// This is the old variant of the XNSE-solver, used for the PhD thesis of Martin Smuda.
     /// </remarks>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
-
-        //===========
-        // Main file
-        //===========
-        static void Main(string[] args) {
-
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelTest();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //throw new Exception("Remove me");
-
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });
-        }
-
-        static void KatastrophenPlot(DGField[] dGFields) {
-            Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-        }
 
 
         //=====================================
@@ -1810,7 +1787,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //    return DesiredLevel_j;
 
         //}
-        bool flag = true;
 
         int LevelIndicator(int j, int CurrentLevel) {
 
