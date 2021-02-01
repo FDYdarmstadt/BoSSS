@@ -66,6 +66,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             MarchingCell[] AcceptedCells = MarchingCell.BuildInitialAcceptedCells(Accepted);
 
             //Solve
+            //Console.WriteLine("CellMarcher: Solver.march()");
             Solver.march(AcceptedCells);
 
         }

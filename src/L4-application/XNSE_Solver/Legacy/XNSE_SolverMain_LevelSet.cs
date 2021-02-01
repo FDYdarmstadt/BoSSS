@@ -489,7 +489,8 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
                 // true, if the separate evolution steps should be plotted
                 bool plotUpdateSteps = false;
-                //Console.WriteLine("Warning! - plot update levelset steps");
+                if (plotUpdateSteps)
+                    Console.WriteLine("Warning! - plot update levelset steps");
 
 
                 int D = base.Grid.SpatialDimension;
@@ -760,7 +761,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     default:
                         throw new ApplicationException();
                 }
-
+                
                 #endregion
 
                 if (plotUpdateSteps)

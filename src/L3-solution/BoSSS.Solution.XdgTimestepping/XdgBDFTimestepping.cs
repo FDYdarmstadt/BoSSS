@@ -512,6 +512,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    //Console.WriteLine("Warning: All cells are cut cells - check your settings!");
+
             }
 
 

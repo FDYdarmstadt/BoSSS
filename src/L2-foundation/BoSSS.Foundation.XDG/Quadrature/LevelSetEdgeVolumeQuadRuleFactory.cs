@@ -175,9 +175,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 Weights = MultidimensionalArray.Create(edgeSimplex.NoOfVertices)
             };
 
+            int RefCell = 0;
+            if (LevelSetData.GridDat.Cells.Cells2Edges.Distinct().Count() > 1) {
+                RefCell = LevelSetData.GridDat.Cells.Cells2Edges.FirstIndexWhere(
+                    edges => edges.Count() == LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces);
+            }
+
             signTestRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
                 LevelSetData.GridDat, simplex, new FixedRuleFactory<QuadRule>(signEdgeRule)).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(RefCell), MaskType.Geometrical), -1).
                 First().Rule;
         }
 
@@ -514,12 +520,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 minOrder += 1;
             }
 
+            int RefCell = 0;
+            if (LevelSetData.GridDat.Cells.Cells2Edges.Distinct().Count() > 1) {
+                RefCell = LevelSetData.GridDat.Cells.Cells2Edges.FirstIndexWhere(
+                    edges => edges.Count() == LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces);
+            }
+
             QuadRule singleEdgeRule = RefElement.FaceRefElement.GetQuadratureRule(minOrder);
             baseRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
                 LevelSetData.GridDat,
                 LevelSetData.GridDat.Grid.RefElements[0],
                 new FixedRuleFactory<QuadRule>(singleEdgeRule)).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(RefCell), MaskType.Geometrical), -1).
                 First().Rule;
 
             //Basis singleEdgeBasis = new Basis(tracker.GridDat, order, RefElement.FaceRefElement);

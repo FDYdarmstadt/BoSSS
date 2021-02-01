@@ -50,15 +50,17 @@ namespace BoSSS.Solution.LevelSetTools.FastMarcher {
 
     public enum MarchingNodeStatus {
 
-        KNOWN_FIX = 0,
+        NOT_SET = 0,
 
-        KNOWN_NEW = 1,
+        KNOWN_FIX = 1,
 
-        KNOWN_OLD = 2,
+        KNOWN_NEW = 2,
 
-        BAND_NEW = 3,
+        KNOWN_OLD = 3,
 
-        BAND_OLD = 4
+        BAND_NEW = 4,
+
+        BAND_OLD = 5
 
     }
 }

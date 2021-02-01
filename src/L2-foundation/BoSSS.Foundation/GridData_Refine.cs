@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // define counters to get the correct global id and vertex id
                 long noOfGlobalCells = oldGrid.NumberOfCells_l;
-                long globalIDOffset = GetGlobalIdOffset(cellsToRefine, KrefS_SubdivLeaves);
+                long globalCellIDOffsetLocalProcess = GetGlobalIdOffset(cellsToRefine, KrefS_SubdivLeaves);
                 long newVertexCounter = (oldGrid.Cells.Max(cl => cl.NodeIndices.Max()) + 1).MPIMax();
 
                 // all locally adapted cells (on this mpi process)
@@ -514,6 +514,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         /// <param name="CellsToRefine">
         /// </param>
+        //private int GetGlobalIdOffset(IEnumerable<int> cellsToRefine) {
+        //    int globalIDOffset = 0;
+        //    int noOfRefinedCellsPerCell = 4;
+        //    int noOfNewCellsIDPerCell = noOfRefinedCellsPerCell - 1;
+        //    int sendOffset = cellsToRefine.Count();
+        //    int[] receiveOffset = sendOffset.MPIAllGatherO();
+        //    for (int m = 0; m < MpiRank; m++) {
+        //        globalIDOffset += receiveOffset[m] * noOfNewCellsIDPerCell;
+        //    }
+        //    return globalIDOffset;
+        //}
         private long GetGlobalIdOffset(IEnumerable<int> CellsToRefine, RefElement.SubdivisionTreeNode[][] KrefS_SubdivLeaves) {
             long countLeaves = 0;
             for (int j = 0; j < CellsToRefine.Count(); j++) {
