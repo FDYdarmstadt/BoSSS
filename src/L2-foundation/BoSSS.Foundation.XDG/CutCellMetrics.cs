@@ -276,7 +276,7 @@ namespace BoSSS.Foundation.XDG {
 
                             for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++)
                             {
-                                if (schH.IsSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB))
+                                if (schH.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB))
                                 {
                                     var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
                                     var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);

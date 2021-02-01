@@ -755,7 +755,7 @@ namespace BoSSS.Foundation.XDG {
                                     // loop over level-sets
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
-                                        if (SchemeHelper.IsSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
+                                        if (SchemeHelper.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
                                             var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
                                             var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 

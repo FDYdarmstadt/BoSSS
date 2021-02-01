@@ -274,7 +274,7 @@ namespace BoSSS.Foundation.XDG {
                 // overwrite with cut-cell-rules in cut-cells:
                 foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                     for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
-                        if (!IsSeparatedByLevSet(iLevSet, sp, sp)) {
+                        if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
                             EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
 #if DEBUG
                             CellMask difference = cutEdges.GetAdjacentCells().Except(XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet));
@@ -291,12 +291,12 @@ namespace BoSSS.Foundation.XDG {
                 // overwrite with double-cut-cell-rules in double-cut-cells:
                 foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                     for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
-                        if (!IsSeparatedByLevSet(iLevSet, sp, sp)) {
+                        if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
                             EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet).Intersect(allRelevantEdges);
                             var jmp = IdentifyWingA(iLevSet, sp);
                             //handle rules for cells/edges where two levelsets are present
                             for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                                if (!IsSeparatedByLevSet(jLevSet, sp, sp)) {
+                                if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
                                     EdgeMask doublyCut = cutEdges.Intersect(GetCutEdges(Kref, jLevSet));
                                     if (doublyCut.Count() > 0) {
                                         var jmpJ = IdentifyWingA(jLevSet, sp);
@@ -462,7 +462,7 @@ namespace BoSSS.Foundation.XDG {
             string[,] speciesTable = (string[,])(this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable);
             string spName = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(sp);
             
-            //Find sp indices, only 2d
+            //Find sp indices, only 2LS
             for (int i = 0; i < 2; ++i) {
                 for (int j = 0; j < 2; ++j) {
                     if (speciesTable[i, j] == spName) {
@@ -487,7 +487,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Does levSet separate species A and B?
         /// </summary>
-        public bool IsSeparatedByLevSet(int levSet, SpeciesId A, SpeciesId B) {
+        public bool SpeciesAreSeparatedByLevSet(int levSet, SpeciesId A, SpeciesId B) {
             switch (this.XDGSpaceMetrics.NoOfLevelSets) {
                 case 1:
                 return IsSeparatedByLevSet1LS(levSet, A, B);
@@ -498,7 +498,6 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotSupportedException();
             }
         }
-
 
         bool IsSeparatedByLevSet1LS(int levSet, SpeciesId A, SpeciesId B) {
             string nameA = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(A);
@@ -530,7 +529,6 @@ namespace BoSSS.Foundation.XDG {
             }
             return false;
         }
-
 
         /// <summary>
         /// Quadrature scheme which is used for the penalty components in <see cref="XSpatialOperator.GhostEdgesOperator"/>, for species <paramref name="sp"/>.
@@ -658,7 +656,7 @@ namespace BoSSS.Foundation.XDG {
 
             // now: rules for the cut-cells:
             for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                if (!IsSeparatedByLevSet(iLevSet, sp, sp)) {
+                if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
                     var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                     var cutCells = cutDom.Intersect(CellMask);
 
@@ -675,7 +673,7 @@ namespace BoSSS.Foundation.XDG {
 
             //now: rules for the doubly cut-cells
             for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                if (!IsSeparatedByLevSet(iLevSet, sp, sp)) {
+                if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
                     var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
                     var cutCells = cutDom.Intersect(CellMask);
 
@@ -687,7 +685,7 @@ namespace BoSSS.Foundation.XDG {
 
                         //handle rules for cells/edges where two levelsets are present
                         for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                            if (!IsSeparatedByLevSet(jLevSet, sp, sp)) {
+                            if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
                                 CellMask doublyCut = GetCutCells(iLevSet, jLevSet).Intersect(_cutDom);
                                 if (doublyCut.Count() > 0) {
                                     var jmpJ = IdentifyWingA(jLevSet, sp);
