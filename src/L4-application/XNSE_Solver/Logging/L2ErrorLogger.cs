@@ -44,6 +44,16 @@ namespace BoSSS.Application.XNSE_Solver {
             int D = this.SolverMain.GridData.SpatialDimension;
             double[] Ret = new double[D + 1];
 
+            string[] fluidSpecies;
+            if(this.SolverMain is BoSSS.Application.XNSE_Solver.XNSE newSolver) {
+                fluidSpecies = newSolver.XOperator.Species.ToArray();
+            } else if(this.SolverMain is XNSE_Solver.Legacy.XNSE_SolverMain oldSolver) {
+                fluidSpecies = new[] { "A", "B" };
+            } else {
+                throw new NotImplementedException("missing some cast here");
+            }
+
+
             if (this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
                 // nothing to do
                 return Ret;
@@ -64,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Dictionary<string, double[]> L2Error_Species = new Dictionary<string, double[]>();
                 double[] L2Error = new double[D];
 
-                foreach (var spc in this.LsTrk.SpeciesNames) {
+                foreach (var spc in fluidSpecies) {
                     L2Error_Species.Add(spc, new double[D]);
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
@@ -95,24 +105,23 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.ExactSolutionPressure != null) {
 
                 // pass 1: mean value of pressure difference
-                double DiffInt = 0;
-                foreach (var spc in this.LsTrk.SpeciesNames) {
+                double DiffInt = 0, Volume = 0;
+                foreach (var spc in fluidSpecies) {
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
                     var rule = scheme.Compile(this.SolverMain.GridData, order);
 
                     DiffInt += this.CurrentPressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
-                    //Volume +=  this.Pressure.GetSpeciesShadowField(spc).LxError(null, (a, b) => (1.0), rule);
+                    Volume +=  this.CurrentPressure.GetSpeciesShadowField(spc).LxError(null, (X, a, b) => (1.0), rule); // exact volume of the 
                 }
-                double Volume2 = (new SubGrid(CellMask.GetFullMask(this.GridData))).Volume;
-                double PressureDiffMean = DiffInt / Volume2;
+                double PressureDiffMean = DiffInt / Volume;
 
 
                 double L2Error = 0;
                 Dictionary<string, double> L2Error_Species = new Dictionary<string, double>();
 
-                foreach (var spc in this.LsTrk.SpeciesNames) {
+                foreach (var spc in fluidSpecies) {
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);

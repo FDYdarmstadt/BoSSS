@@ -1748,7 +1748,7 @@ namespace BoSSS.Solution {
         /// sets initial values as defined in the control file. Override this
         /// method to set initial values for the fields;
         /// </summary>
-        protected virtual void SetInitial() {
+        protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
@@ -1776,7 +1776,7 @@ namespace BoSSS.Solution {
                 foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
                     //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
-                    ScalarFunction Function = val.Value;
+                    ScalarFunction Function = val.Value.SetTime(time);
 
                     bool found = false;
                     foreach (DGField f in relevantFields) {
@@ -1796,7 +1796,7 @@ namespace BoSSS.Solution {
                                 //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
                                 //SpeciesOnlyField.ProjectField(Function);
 
-                                Pass2_Evaluators.Add(val.Key, val.Value);
+                                Pass2_Evaluators.Add(val.Key, val.Value.SetTime(time));
 
                                 found = true;
                                 break;
@@ -1998,7 +1998,7 @@ namespace BoSSS.Solution {
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
                 if (this.Control == null) {
-                    SetInitial(); // default behavior if no control file is present
+                    SetInitial(0.0); // default behavior if no control file is present
                 } else {
                     if (this.Control != null) {
                         if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null)
@@ -2009,7 +2009,7 @@ namespace BoSSS.Solution {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
                         } else {
-                            SetInitial();
+                            SetInitial(0.0);
                         }
                     }
                 }

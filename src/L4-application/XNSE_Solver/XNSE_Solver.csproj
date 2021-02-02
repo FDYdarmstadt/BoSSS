@@ -63,7 +63,7 @@
       <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+    <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -93,6 +93,7 @@
     <Compile Include="Logging\MovingContactLineLogging.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="Logging\RisingBubble2DBenchmarkQuantities.cs" />
+    <Compile Include="Tests\BasicThreePhase.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
     <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />
@@ -108,6 +109,7 @@
     <Compile Include="Tests\BcTest_PressureOutlet.cs" />
     <Compile Include="Tests\ChannelTest.cs" />
     <Compile Include="Tests\HeatTransportTest.cs" />
+    <Compile Include="Tests\IBMChannel.cs" />
     <Compile Include="Tests\LevelSetAdvectionTest.cs" />
     <Compile Include="Tests\LevelSetContinuityTest.cs" />
     <Compile Include="Tests\LevelSetInitializationTest.cs" />
@@ -118,8 +120,7 @@
     <Compile Include="Tests\StaticDropletTest.cs" />
     <Compile Include="Logging\WaveLikeLogging.cs" />
     <Compile Include="Tests\SteadyStateEvaporationTest.cs" />
-    <Compile Include="XBase_Solver.cs" />
-    <Compile Include="XBase_Control.cs" />
+    <Compile Include="Tests\TaylorCouette.cs" />
     <Compile Include="XHeat.cs" />
     <Compile Include="XNSE.cs" />
     <Compile Include="XNSEinSituPostProcessingModule.cs" />
@@ -128,20 +129,20 @@
     <Compile Include="Tests\ITest.cs" />
     <Compile Include="Tests\MovingDropletTest.cs" />
     <Compile Include="Tests\PolynomialTestForConvection.cs" />
-    <Compile Include="LevelSetMovement.cs" />
+    <Compile Include="Legacy\LevelSetMovement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\TranspiratingChannelTest.cs" />
     <Compile Include="Tests\UnitTest.cs" />
     <Compile Include="Tests\ViscosityJumpTest.cs" />
     <Compile Include="XNSE_OperatorConfiguration.cs" />
-    <Compile Include="XNSE_SolverMain_Energy.cs" />
-    <Compile Include="XNSE_SolverMain_Heat.cs" />
-    <Compile Include="XNSE_SolverMain.cs" />
-    <Compile Include="XNSE_SolverMain_LevelSet.cs" />
-    <Compile Include="XNSE_SolverMain_Utils.cs" />
+    <Compile Include="Legacy\XNSE_SolverMain_Energy.cs" />
+    <Compile Include="Legacy\XNSE_SolverMain_Heat.cs" />
+    <Compile Include="Legacy\XNSE_SolverMain.cs" />
+    <Compile Include="Legacy\XNSE_SolverMain_LevelSet.cs" />
+    <Compile Include="Legacy\XNSE_SolverMain_Utils.cs" />
     <Compile Include="XNSFE.cs" />
-    <Compile Include="XNSFE_OperatorComponents.cs" />
-    <Compile Include="XNSFE_OperatorFactory.cs" />
+    <Compile Include="Legacy\XNSFE_OperatorComponents.cs" />
+    <Compile Include="Legacy\XNSFE_OperatorFactory.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

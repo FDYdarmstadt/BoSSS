@@ -57,7 +57,10 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// index of the level set to evaluate
         /// </summary>
-        int m_LevSetIdx;
+        internal int m_LevSetIdx {
+            get;
+            private set;
+        }
 
         
         /// <summary>

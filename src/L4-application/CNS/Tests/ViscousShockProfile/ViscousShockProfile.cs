@@ -28,7 +28,7 @@ namespace CNS.Tests.ViscousShockProfile {
         //    Application<CNSControl>._Main(args, false, null, () => new ViscousShockProfile());
         //}
         
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 
             //base.SetInitial();
             WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);

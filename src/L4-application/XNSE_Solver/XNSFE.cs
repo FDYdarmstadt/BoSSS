@@ -103,13 +103,24 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
+            if(iLevSet == 0) {
+                // Main Difference to base implementation:
+                //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
+                var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                return levelSetVelocity;
+            } else {
+                return base.GetLevelSetVelocity(iLevSet);
+            }
+        }
+
+        /*
+
         protected override LevelSetUpdater InstantiateLevelSetUpdater() {
             int levelSetDegree = Control.FieldOptions["Phi"].Degree;
             LevelSetUpdater lsUpdater;
 
-            // Main Difference to base implementation:
-            //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
-            var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
            
             
             switch(Control.Option_LevelSetEvolution) {
@@ -162,5 +173,10 @@ namespace BoSSS.Application.XNSE_Solver {
             
             return lsUpdater;
         }
+
+        */
+
+
+
     }
 }

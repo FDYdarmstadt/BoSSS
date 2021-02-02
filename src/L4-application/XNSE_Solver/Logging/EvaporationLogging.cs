@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.Legacy;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.XNSECommon;

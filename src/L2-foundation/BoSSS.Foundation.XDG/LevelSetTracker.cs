@@ -581,13 +581,13 @@ namespace BoSSS.Foundation.XDG {
         Array m_SpeciesTable;
 
         /// <summary>
-        /// Gets a copy of the species table, a multidimensional string-array.<br/>
+        /// Gets a copy of the species table, a multidimensional string-array.
+        /// 
         /// The species table defines, which species corresponds with 
         /// which combination of level set - signs.
         /// </summary>
         /// <remarks>
-        /// The rank (number of dimensions) of this array is equal to the number of 
-        /// level-sets (<see cref="LevelSets"/>).
+        /// The rank (number of dimensions) of this array is equal to the number of level-sets (<see cref="LevelSets"/>).
         /// Valid indices are only 0 and 1, 0 corresponds to a negative sign an 1 to the positive sign.
         /// E.g. if there are two level sets <em>G</em><sub>1</sub> and <em>G</em><sub>1</sub>
         /// and for some point in space, their sign is -1 and 1, than the species 

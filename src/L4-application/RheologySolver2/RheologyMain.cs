@@ -896,7 +896,7 @@ namespace BoSSS.Application.Rheology {
             var JacBuilder = JacobiOp.GetMatrixBuilder(map, TmpParams, map);
             //this.ParameterUpdate(CurrentState, TmpParams);
             //JacParams.PerformUpdate(CurrentState, TmpParams);
-            JacobiOp.InvokeParameterUpdate(CurrentState, TmpParams);
+            JacobiOp.InvokeParameterUpdate(0.0, CurrentState, TmpParams);
             
             var JacobiDX = new BlockMsrMatrix(map);
             var AffineDX = new double[map.LocalLength];
@@ -1050,12 +1050,12 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Initializing the DG fields
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             int D = GridData.SpatialDimension;
             if (D != 2)
                 throw new NotImplementedException("currently only support for 2 dimensions.");
 
-            base.SetInitial();
+            base.SetInitial(t);
             CreateEquationsAndSolvers(null);
             this.LsTrk = m_Timestepper.LsTrk;
 

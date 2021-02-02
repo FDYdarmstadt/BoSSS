@@ -90,16 +90,17 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 var Visc = new ConductivityInSpeciesBulk(
-                    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                    penalty, // ntParams.UseGhostPenalties ? 0.0 : penalty, 
+                    1.0,
                     BcMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
 
                 comps.Add(Visc);
 
-                if (dntParams.UseGhostPenalties) {
-                    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, BcMap, D,
-                        spcName, spcId, thermParams.k_A, thermParams.k_B);
-                    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(ViscPenalty);
-                }
+                //if (dntParams.UseGhostPenalties) {
+                //    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, BcMap, D,
+                //        spcName, spcId, thermParams.k_A, thermParams.k_B);
+                //    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(ViscPenalty);
+                //}
 
             } else {
 

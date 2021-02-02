@@ -31,19 +31,64 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Development history:
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
+    /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
+    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
+    ///   has approximately degree <= n * p + (p - 1)
+    ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
+    ///   This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
+    ///   When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
+    /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
     /// </remarks>
+    /// 
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
+
+        //===========
+        // Main file
+        //===========
+        static void Main(string[] args) {
+
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            //                                q: -50,
+            //                                deg: 3,
+            //                                AgglomerationTreshold: 0,
+            //                                SolverMode_performsolve: true,
+            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
+
+            void KatastrophenPlot(DGField[] dGFields) {
+                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+            }
+
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            _Main(args, false, delegate () {
+                var p = new XNSE();
+                return p;
+            });
+        }
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
-        public int QuadOrder() {
+        /// <remarks>
+        /// Note: 
+        /// Sayes algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
+        /// We transform $`\int f dx`$ to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} `$
+        /// Suppose $`f`$ has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
+        /// has approximately degree $`\leq n * p + (p - 1) $`
+        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))`$ roots of the level set function, if we want to integrate $`f$` exactly.
+        /// This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant $`f = 1$`.
+        /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
+        /// /// </remarks>
+        override public int QuadOrder() {
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
@@ -56,13 +101,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
-                //Saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-                //We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
-                //Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
-                //has approximately degree <= n * p + (p - 1)
-                //This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
-                //This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
-                //When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
+                //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
             }
@@ -84,89 +123,82 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
-        protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
+        /// <summary>
+        /// 
+        /// </summary>
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
-        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
-            int levelSetDegree = Control.FieldOptions["Phi"].Degree;    // need to change naming convention of old XNSE_Solver
 
-            LevelSetUpdater lsUpdater;
+        
 
-            // averaging at interface:
-            ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+        /// <summary>
+        /// dirty hack...
+        /// </summary>
+        protected override IncompressibleBoundaryCondMap GetBcMap() {
+            if(boundaryMap == null)
+                boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+            return boundaryMap;
+        }
+
+
+        protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
+            int D = GridData.SpatialDimension;
             
-            
-            switch (Control.Option_LevelSetEvolution) {
-                case LevelSetEvolution.Fourier: {
-                    if (Control.EnforceLevelSetConservation) {
-                        throw new NotSupportedException("mass conservation correction currently not supported");
-                    }
-                    FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    fourierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourierLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.FastMarching: {
-                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]); 
-                    var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension);
-                                        
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.StokesExtension: {
-                    LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSetDG.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    var sokesExtEvo = new StokesExtensionEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSetDG.GridDat.SpatialDimension,
-                        new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }),
-                        this.Control.AgglomerationThreshold, this.GridData);
+            if(iLevSet == 0) {
+                // +++++++++++++++++++
+                // the fluid interface 
+                // +++++++++++++++++++
 
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSetDG, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, sokesExtEvo);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
+                // averaging at interface:
+                ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, D, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                return levelSetVelocity;
+            } else if(iLevSet == 1) {
+                // +++++++++++++++++++++
+                // the immersed boundary
+                // +++++++++++++++++++++
+
+                string[] VelocityNames = VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(1), VariableNames.VelocityVector(D)).ToArray();
+                ScalarFunctionTimeDep[] VelFuncs = new ScalarFunctionTimeDep[D];
+                for(int d = 0; d < D; d++) {
+                    Control.InitialValues_EvaluatorsVec.TryGetValue(VelocityNames[d], out VelFuncs[d]);
                 }
-                case LevelSetEvolution.SplineLS: {
-                    int nodeCount = 30;
-                    Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                    SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.None: {
-                    LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSet1.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
-                    break;
-                }
-                default:
-                throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
+
+
+                ILevelSetParameter levelSetVelocity = new ExplicitLevelSetVelocity(VariableNames.LevelSetCGidx(1), VelFuncs);
+                return levelSetVelocity;
+            } else {
+                throw new ArgumentOutOfRangeException();
             }
-
-            return lsUpdater;
         }
 
         /// <summary>
-        /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
-        /// must be overridden, since it does not preform the continuity projection, see <see cref="DualLevelSet"/>,
-        /// but it may overwrite the continuous level set.
-        ///
-        /// This implementation, however, ensures continuity of the level-set at the cell boundaries.
+        /// 
         /// </summary>
-        protected override void SetInitial() {
-            base.SetInitial(); // base implementation does not considers the DG/CG pair.
+        protected override int NoOfLevelSets {
+            get {
+                if(Control.UseImmersedBoundary)
+                    return 2;
+                else 
+                    return 1;
+            }
+        }
 
-            // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
-            var pair1 = LsUpdater.LevelSets[VariableNames.LevelSetCG];
-            pair1.DGLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
+        /// <summary>
+        /// Either fluids A and B; or A, B and solid C.
+        /// </summary>
+        protected override Array SpeciesTable {
+            get {
+                if(Control.UseImmersedBoundary) {
+                    var r = new string[2, 2];
+                    r[0, 0] = "A";
+                    r[0, 1] = "C"; // solid
+                    r[1, 0] = "B";
+                    r[1, 1] = "C"; // also solid
+                    return r;
+                } else {
+                    return new[] { "A", "B" };
+                }
+            }
         }
 
 
@@ -214,15 +246,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
-            boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
-
+            
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            XOP.FreeMeanValue[VariableNames.Pressure] = !boundaryMap.DirichletPressureBoundary;
+            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
@@ -231,8 +262,13 @@ namespace BoSSS.Application.XNSE_Solver {
             return XOP;
         }
 
+        /// <summary>
+        /// Setup of the incompressible two-phase Navier-Stokes equation
+        /// </summary>
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
+            GetBcMap();
+
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
@@ -243,9 +279,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
-            opFactory.AddParameter(new Velocity0(D));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            opFactory.AddParameter(v0Mean);
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(new Velocity0(D));
+                opFactory.AddParameter(v0Mean);
+            }
 
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
@@ -296,12 +334,32 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 default:
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
-                
+
             }
+
+            if (Control.UseImmersedBoundary)
+                DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+        }
+
+        /// <summary>
+        /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>;
+        /// Override to customize.
+        /// </summary>
+        protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            for (int d = 0; d < D; ++d) {
+                opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            }
+
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+
+            //throw new NotImplementedException("todo");
+            opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
 
             DGField[] plotFields = this.m_RegisteredFields.ToArray();
             void AddPltField(DGField f) {
@@ -341,7 +399,5 @@ namespace BoSSS.Application.XNSE_Solver {
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
-
-
     }
 }

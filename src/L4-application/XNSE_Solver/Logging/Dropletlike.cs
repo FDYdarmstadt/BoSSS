@@ -86,7 +86,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // surface
             double surface = 0.0;
             //CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());
-            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId);
+            var surfElemVol = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spcId, 0);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 surfElemVol.Compile(LsTrk.GridDat, this.m_HMForder),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

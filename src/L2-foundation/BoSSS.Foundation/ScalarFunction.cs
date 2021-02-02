@@ -20,8 +20,8 @@ using ilPSP;
 namespace BoSSS.Foundation {
 
     /// <summary>
-    /// delegate for scalar functions in D-dimensional space;
-    /// vectorized definition;
+    /// delegate for steady-state scalar functions in D-dimensional space,
+    /// vectorized definition.
     /// </summary>
     /// <param name="input">positions in space at which the function should be evaluated;
     /// 1st index: point index;
@@ -31,4 +31,36 @@ namespace BoSSS.Foundation {
     /// 1st index: point index, corresponds with 1st index of <paramref name="input"/>
     /// </param>
     public delegate void ScalarFunction(MultidimensionalArray input, MultidimensionalArray output);
+
+    /// <summary>
+    /// delegate for time-dependent scalar functions in D-dimensional space,
+    /// vectorized definition.
+    /// </summary>
+    /// <param name="input">positions in space at which the function should be evaluated;
+    /// 1st index: point index;
+    /// 2nd index: spatial coordinate vector (from 0 to D-1);
+    /// </param>
+    /// <param name="output">result of function evaluation;
+    /// 1st index: point index, corresponds with 1st index of <paramref name="input"/>
+    /// </param>
+    /// <param name="time">
+    /// time
+    /// </param>
+    public delegate void ScalarFunctionTimeDep(MultidimensionalArray input, double time, MultidimensionalArray output);
+
+    /// <summary>
+    /// Extensions functions for <see cref="ScalarFunction"/>
+    /// </summary>
+    public static class ScalarFunctionExt {
+
+        /// <summary>
+        /// fixing the time for some time-depended function <paramref name="f"/>.
+        /// </summary>
+        public static ScalarFunction SetTime(this ScalarFunctionTimeDep f, double t) {
+            return delegate (MultidimensionalArray input, MultidimensionalArray output) {
+                f(input, t, output);
+            };
+        }
+
+    }
 }

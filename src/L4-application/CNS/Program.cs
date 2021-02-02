@@ -447,7 +447,7 @@ namespace CNS {
         /// <summary>
         /// Sets the initial conditions
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             using (var ht = new FuncTrace()) {
                 WorkingSet.ProjectInitialValues(SpeciesMap, base.Control.InitialValues_Evaluators);
             }

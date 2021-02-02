@@ -184,6 +184,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// surface tension
         /// </summary>
         double Sigma { get; }
+
+        /// <summary>
+        /// <see cref="XNSE_Control.UseImmersedBoundary"/>
+        /// </summary>
+        bool TestImmersedBoundary { get; }
+
+        /// <summary>
+        /// Second level-set for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
+        /// </summary>
+        Func<double[], double, double> GetPhi2();
+
+        /// <summary>
+        /// Velocity for the immersed boundary, only called if <see cref="TestImmersedBoundary"/> is true;
+        /// </summary>
+        Func<double[], double, double> GetPhi2U(int d);
     }
 
     interface IXNSFETest : IXNSETest, IXHeatTest {

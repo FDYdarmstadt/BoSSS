@@ -512,6 +512,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
                 if (Jtot[0] == Jtot[1])
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    //Console.WriteLine("Warning: All cells are cut cells - check your settings!");
+
             }
 
 
@@ -815,97 +817,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             //AggregationGridData[] _MultigridSequence) //
         {
             using (new FuncTrace()) {
-
-                //if (m_PrivateBalancingInfo == null)
-                //    throw new NotSupportedException();
-
-                //base.m_LsTrk = LsTrk;
-
-                //if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
-                //    throw new ArgumentException();
-                //if (IterationResiduals.Count() != m_PrivateBalancingInfo.NoOfFields)
-                //    throw new ArgumentException();
-
-                // restore solution stack
-                //m_Stack_u = new CoordinateVector[m_PrivateBalancingInfo.m_Stack_u.Length];
                 m_Stack_u[0] = new CoordinateVector(Fields.ToArray());
-                //for (int s = 1; s < m_Stack_u.Length; s++) {
-                //    m_Stack_u[s] = new CoordinateVector(Fields.Select(dgf => dgf.CloneAs()).ToArray());
-                //}
 
-                //base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
-
-                //for (int i = 0; i < m_Stack_u.Length; i++) {
-                //    if (m_PrivateBalancingInfo.m_Stack_u[i]) {
-                //        DGField[] _Fields = m_Stack_u[i].Mapping.Fields.ToArray();
-                //        for (int iF = 0; iF < _Fields.Length; iF++) {
-                //            _Fields[iF].Clear();
-                //            //L.RestoreDGField(_Fields[iF], GetName__Stack_u(i, iF));
-                //        }
-                //    }
-                //}
-
-                // restore mass matrix
-                //m_Stack_MassMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_MassMatrix.Length];
-                //for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
-                //    if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
-                //        m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
-                //        //L.RestoreMatrix(m_Stack_MassMatrix[i], GetName__Stack_MassMatrix(i), CurrentStateMapping, CurrentStateMapping);
-                //        m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
-                //            .MassMatrixFactory
-                //            .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
-                //    }
-                //}
-
-
-                // Agglomerator
-                //if (m_PrivateBalancingInfo.m_Agglomeration) {
-                //    double[] oldAggTrsh = m_PrivateBalancingInfo.m_Agglomeration_oldTrsh;
-                //    if (oldAggTrsh != null && oldAggTrsh.Length <= 0) {
-                //        oldAggTrsh = null;
-                //    }
-
-                //    m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
-                //        __AgglomerationTreshold: base.Config_AgglomerationThreshold,
-                //        AgglomerateNewborn: (oldAggTrsh != null), AgglomerateDecased: (oldAggTrsh != null),
-                //        ExceptionOnFailedAgglomeration: true,
-                //        oldTs__AgglomerationTreshold: oldAggTrsh);
-
-                //}
-
-                // restore operator matrix
-                //m_Stack_OpMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_Operator.Length];
-                //m_Stack_OpAffine = new double[m_PrivateBalancingInfo.m_Stack_Operator.Length][];
-                //for (int i = 0; i < m_Stack_OpMatrix.Length; i++) {
-
-                //    if (!m_PrivateBalancingInfo.m_Stack_Operator[i])
-                //        continue;
-
-                //    m_Stack_OpMatrix[i] = new BlockMsrMatrix(CurrentStateMapping);
-                //    m_Stack_OpAffine[i] = new double[CurrentStateMapping.LocalLength];
-                //    this.ComputeOperatorMatrix(m_Stack_OpMatrix[i], m_Stack_OpAffine[i],
-                //        m_Stack_u[i].Mapping, m_Stack_u[i].Mapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt);
-                //}
-
-                // finished
-                //m_PrivateBalancingInfo = null;
-                //base.MultigridSequence = _MultigridSequence;
                 InitMultigrid(Fields.ToArray(), this.useX);
-
-                // in case of steady level set the xdgAggBasis need to be updated
-                //if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                //    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                //    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
-                //    base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
-
-                //    // matrix used for precond (must be agglomerated)
-                //    if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
-                //        MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
-                //        m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                //        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
-                //    }
-                //}
-
             }
         }
 

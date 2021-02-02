@@ -161,7 +161,7 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.GridDat = inp.GridDat;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -224,7 +224,7 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.GridDat = inp.GridDat;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -361,7 +361,7 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.GridDat = inp.GridDat;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
@@ -429,7 +429,7 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_OUT = ParamsPos;
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.GridDat = inp.GridDat;
 
             // temp mem.
             double[] uA = new double[NoOfVars];
