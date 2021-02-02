@@ -1634,8 +1634,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             // return 
             // ======
 
-            
-
             m_CurrentPhystime = phystime + dt;
             return success;
         }
@@ -1744,7 +1742,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
             CO.Resample(1, usmall, "samples");
         }
-
 
         public ConvergenceObserver GetFAMatrices(string OutputDir) {
             // build the saddle-point matrix

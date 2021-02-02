@@ -20,6 +20,7 @@ using System.Linq;
 using BoSSS.Solution.LevelSetTools.FastMarcher;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
@@ -107,6 +108,20 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
         //Calculate tempPhi with Eikonalapproximation 
         public void CalculateValue() {
 
+            int D = pos_global.Length;
+            Debug.Assert(D == Pos_local.Length);
+
+            if (D == 2)
+                CalculateValue_2D();
+
+            if (D == 3)
+                CalculateValue_3D();
+            
+        }
+
+
+        public void CalculateValue_2D() {
+
             double phi_l = double.MaxValue;
             double phi_r = double.MaxValue;
             double phi_b = double.MaxValue;
@@ -119,26 +134,75 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             //Exctract u_... and h_... from neighbors
             foreach (Node neighbor in neighbors) {
 
-                if (neighbor.X_global > X_global) {
+                if (neighbor.Pos_global[0] > Pos_global[0]) {
                     phi_r = Math.Abs(neighbor.Phi);
-                    h_r = neighbor.X_global - X_global;
+                    h_r = neighbor.Pos_global[0] - Pos_global[0];
                 }
-                if (neighbor.X_global < X_global) {
+                if (neighbor.Pos_global[0] < Pos_global[0]) {
                     phi_l = Math.Abs(neighbor.Phi);
-                    h_l = X_global - neighbor.X_global;
+                    h_l = Pos_global[0] - neighbor.Pos_global[0];
                 }
-                if (neighbor.Y_global > Y_global) {
+                if (neighbor.Pos_global[1] > Pos_global[1]) {
                     phi_t = Math.Abs(neighbor.Phi);
-                    h_t = neighbor.Y_global - Y_global;
+                    h_t = neighbor.Pos_global[1] - Pos_global[1];
                 }
-                if (neighbor.Y_global < Y_global) {
+                if (neighbor.Pos_global[1] < Pos_global[1]) {
                     phi_b = Math.Abs(neighbor.Phi);
-                    h_b = Y_global - neighbor.Y_global;
+                    h_b = Pos_global[1] - neighbor.Pos_global[1];
                 }
             }
             //Caculate Phi so that abs(grad(phi)) = 1
-            phi = Eikonal.approximate(phi_l, phi_r, phi_b, phi_t, h_l, h_r, h_b, h_t, 1);
+            phi = Eikonal.approximate2D(phi_l, phi_r, phi_b, phi_t, h_l, h_r, h_b, h_t, 1);
         }
+
+
+        public void CalculateValue_3D() {
+
+            double phi_xm = double.MaxValue;    // x-minus (left neighbor)
+            double phi_xp = double.MaxValue;    // x-minus (right neighbor)
+            double phi_ym = double.MaxValue;    // y-minus (bottom neighbor)
+            double phi_yp = double.MaxValue;    // y-minus (top neighbor)
+            double phi_zm = double.MaxValue;    // z-minus (rear neighbor)
+            double phi_zp = double.MaxValue;    // z-minus (front neighbor)
+            double h_xm = double.MaxValue;
+            double h_xp = double.MaxValue;
+            double h_ym = double.MaxValue;
+            double h_yp = double.MaxValue;
+            double h_zm = double.MaxValue;
+            double h_zp = double.MaxValue;
+
+            //Exctract u_... and h_... from neighbors
+            foreach (Node neighbor in neighbors) {
+
+                if (neighbor.Pos_global[0] > Pos_global[0]) {
+                    phi_xp = Math.Abs(neighbor.Phi);
+                    h_xp = neighbor.Pos_global[0] - Pos_global[0];
+                }
+                if (neighbor.Pos_global[0] < Pos_global[0]) {
+                    phi_xm = Math.Abs(neighbor.Phi);
+                    h_xm = Pos_global[0] - neighbor.Pos_global[0];
+                }
+                if (neighbor.Pos_global[1] > Pos_global[1]) {
+                    phi_yp = Math.Abs(neighbor.Phi);
+                    h_yp = neighbor.Pos_global[1] - Pos_global[1];
+                }
+                if (neighbor.Pos_global[1] < Pos_global[1]) {
+                    phi_ym = Math.Abs(neighbor.Phi);
+                    h_ym = Pos_global[1] - neighbor.Pos_global[1];
+                }
+                if (neighbor.Pos_global[2] > Pos_global[2]) {
+                    phi_zp = Math.Abs(neighbor.Phi);
+                    h_zp = neighbor.Pos_global[2] - Pos_global[2];
+                }
+                if (neighbor.Pos_global[2] < Pos_global[2]) {
+                    phi_zm = Math.Abs(neighbor.Phi);
+                    h_zm = Pos_global[2] - neighbor.Pos_global[2];
+                }
+            }
+            //Caculate Phi so that abs(grad(phi)) = 1
+            phi = Eikonal.approximate3D(phi_xm, phi_xp, phi_ym, phi_yp, phi_zm, phi_zp, h_xm, h_xp, h_ym, h_yp, h_zm, h_zp, 1);
+        }
+
 
         //QueueID for Heap
         public int QueueID {

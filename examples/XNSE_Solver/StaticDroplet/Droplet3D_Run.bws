@@ -1,0 +1,473 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 3; Grid Count = 5; Path = D:\local\local_test_db2 }
+  1: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+}
+==============
+int exeQ = 1;
+**************
+==============
+ExecutionQueues[exeQ].AllowedDatabases;
+**************
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+}
+==============
+var myBatch = ExecutionQueues[exeQ];
+**************
+==============
+var myDb = ExecutionQueues[exeQ].AllowedDatabases[0];
+**************
+==============
+**************
+==============
+//MiniBatchProcessor.Server.StartIfNotRunning(false);
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("Droplet3D");   // set project name
+**************
+Project name is set to 'Droplet3D'.
+
+==============
+**************
+==============
+// Testcase setup
+// ==============
+double L      = 1.0;
+double radius = 0.21; 
+double a      = 1.25 * radius;
+double b      = 0.8 * radius;
+double c      = 0.8 * radius;
+**************
+==============
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[1];
+int[] kelemSeq = new int[]{32};
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    double[] xNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);  
+    double[] zNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);    
+    grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+    grd.EdgeTagNames.Add(1, "wall");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+            if (Math.Abs(X[1] + L/2.0) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[1] - L/2.0) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[0] + L/2.0) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[0] - L/2.0) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[2] + L/2.0) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[2] - L/2.0) <= 1.0e-8)
+                et = 1;
+            return et;
+    });
+            
+    grd.Name = "Droplet3D_test";        
+
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+int[] degS = new int[] { 3 };
+int NoProc = 8;
+**************
+==============
+List<XNSE_Control> controls = new List<XNSE_Control>();
+//List<int> procPerCntrl = new List<int>();
+**************
+==============
+for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
+    
+    XNSE_Control C = new XNSE_Control();
+
+    C.savetodb          = true;
+    C.ContinueOnIoError = false;
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("wall");
+
+
+    //string r_str = (radius).ToString();
+    string a_str = (a).ToString();
+    string b_str = (b).ToString();
+    string c_str = (c).ToString();
+    C.AddInitialValue("Phi", "X => ((X[0]/"+a_str+").Pow2() + (X[1]/"+b_str+").Pow2() + (X[2]/"+c_str+").Pow2()).Sqrt() - 1", false); 
+   
+    //C.InitSignedDistance = true; 
+    
+    C.PhysicalParameters.rho_A = 1.0e4;
+    C.PhysicalParameters.rho_B = 1.0e4;
+    C.PhysicalParameters.mu_A  = 1.0;
+    C.PhysicalParameters.mu_B  = 1.0;
+    C.PhysicalParameters.Sigma = 0.1;
+    
+    C.PhysicalParameters.IncludeConvection = false;
+
+    
+    C.dtMin         = 0.2;
+    C.dtMax         = 0.2;
+    C.NoOfTimesteps = 5000;
+    
+    C.AdaptiveMeshRefinement = false;
+    C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
+    C.BaseRefinementLevel    = 3;
+  
+
+    C.LSContiProjectionMethod                         = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+    //C.Option_LevelSetEvolution                        = LevelSetEvolution.None;
+    C.Option_LevelSetEvolution                        = LevelSetEvolution.FastMarching;
+    C.FastMarchingPenaltyTerms                        = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+    C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+    
+    C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+    C.TimeSteppingScheme           = BoSSS.Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
+    C.Timestepper_BDFinit          = BoSSS.Solution.Timestepping.TimeStepperInit.SingleInit;
+    //C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
+    C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Once;
+    
+    C.saveperiod = 5;
+    
+    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_test_NoProc"+NoProc;
+    
+    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+    
+    //controls[iDeg,iGrd] = C;
+    controls.Add(C);
+    C.CreateJob(); // job will be permanently linked to control object
+
+}
+}
+**************
+==============
+controls.Count;
+**************
+1
+==============
+controls.ElementAt(0).SessionName
+**************
+Droplet3D_k3_mesh0_test_NoProc8
+==============
+**************
+==============
+LastError
+**************
+==============
+**************
+==============
+using System.Threading;
+**************
+==============
+bool run = true;
+**************
+==============
+foreach(var cntrl in controls) {
+    var job = cntrl.GetJob();
+    if(run) {
+        Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
+        job.NumberOfMPIProcs = NoProc;
+        job.Activate(myBatch);
+    } else {
+        Console.WriteLine("Status Session: {0}", cntrl.SessionName);
+        var jS = job.Status;
+        Console.WriteLine(jS);
+    }
+}
+**************
+Submitting Session: Droplet3D_k3_mesh0_test_NoProc8
+Deploying job Droplet3D_k3_mesh0_test_NoProc8 ... 
+Submitting job with the following database info: 
+Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
+No alternative paths specified.
+Deploying executables and additional files ...
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Jan16_201224
+copied 31 files.
+   written file: control.obj
+   copied 'amd64' runtime.
+deployment finished.
+
+
+==============
+**************
+==============
+databases.Pick(0).Sessions
+**************
+List of 3 instances of ISessionInfo {
+  0: OscillatingDroplet3D	SetupTest	01/15/2021 13:58:42	fcda5435...
+  1: Droplet3D	Droplet3D_k2_mesh0_test3*	01/14/2021 12:37:08	eb3da8db...
+  2: Droplet3D	Droplet3D_k2_mesh0_test2*	01/14/2021 12:32:28	57fd38d7...
+}
+==============
+databases.Pick(0).Sessions.Pick(0).OpenSessionDirectory()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

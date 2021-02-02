@@ -70,6 +70,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
+
         //=====================================
         // Field declaration and instantiation
         //=====================================
@@ -1783,7 +1784,6 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         //    return DesiredLevel_j;
 
         //}
-        bool flag = true;
 
         int LevelIndicator(int j, int CurrentLevel) {
 
