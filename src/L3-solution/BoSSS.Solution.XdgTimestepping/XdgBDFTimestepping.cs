@@ -1527,7 +1527,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-                    mgOperator.OperatorMatrix.SaveToTextFileSparse("IBM_OpM");
+
+                    //ExtractSomeSamplepoints("samples");
+
                 }
 
             } else {
@@ -1632,6 +1634,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // return 
             // ======
 
+            
+
             m_CurrentPhystime = phystime + dt;
             return success;
         }
@@ -1705,6 +1709,42 @@ namespace BoSSS.Solution.XdgTimestepping {
             // return
             return CO;
         }
+
+        public void ExtractSomeSamplepoints(string OutputDir) {
+            BlockMsrMatrix System, MaMa;
+            double[] RHSsmall, RHSbig, RHS;
+            double[] usmall, ubig;
+            int Lsmall, Lbig;
+
+            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+            RHS.ScaleV(-1);
+            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                System, MaMa,
+                this.Config_MultigridOperator,
+                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+
+            Lbig = mgOperator.Mapping.ProblemMapping.LocalLength;
+            Lsmall = mgOperator.Mapping.LocalLength;
+            usmall = new double[Lsmall];
+            ubig = new double[Lbig];
+            RHSbig = RHS.CloneAs();
+            RHSsmall = new double[Lsmall];
+
+            var ReferenceSolver = new DirectSolver() {
+                WhichSolver = DirectSolver._whichSolver.PARDISO,
+                SolverVersion = Parallelism.SEQ,
+            };
+
+            ReferenceSolver.Init(mgOperator);
+            mgOperator.TransformRhsInto(RHSbig, RHSsmall, true);
+            ReferenceSolver.Solve(usmall, RHSsmall);
+            mgOperator.TransformSolFrom(ubig, usmall);
+
+            m_CurrentAgglomeration.ClearAgglomerated(ubig, this.m_Stack_u[0].Mapping);
+            var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
+            CO.Resample(1, usmall, "samples");
+        }
+
 
         public ConvergenceObserver GetFAMatrices(string OutputDir) {
             // build the saddle-point matrix

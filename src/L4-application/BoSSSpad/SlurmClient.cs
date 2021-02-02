@@ -414,10 +414,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 if (!this.UseLB2 && !this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH -C avx2");
-                } else {
-                    sw.WriteLine("#SBATCH -C avx");
-                }
+                } // else //t.b.d. no way to allocated avx512 exclusively right now ...
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
+
+                if (myJob.NumberOfNodes > 0)
+                    sw.WriteLine("#SBATCH -N " + myJob.NumberOfNodes);
 
                 // Load modules
                 foreach (string arg in moduleLoad) {

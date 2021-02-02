@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -17,8 +18,8 @@ using BoSSS.Application.XdgPoisson3;
 // ==================================
 // setup Client & Workflow & Database
 // ==================================
-Sevar myBatch = (SlurmClient)ExecutionQueues[1];
-ExecutionQueues[1].AllowedDatabases;
+var myBatch = (SlurmClient)ExecutionQueues[3];
+ExecutionQueues[3].AllowedDatabases;
 **************
 List of 0 instances of IDatabaseInfo {
 }
@@ -26,15 +27,13 @@ List of 0 instances of IDatabaseInfo {
 //myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_weakscaling_test";
+string WFlowName = "Xdg_weakscaling_memory";
 WorkflowMgm.Init(WFlowName);
+WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_weakscaling_test'.
-List of 3 instances of KeyValuePair{String,Job} {
-  0: [J42875_k2_classic_pardiso, J42875_k2_classic_pardiso: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
-  1: [J42875_k2_exp_Kcycle_schwarz, J42875_k2_exp_Kcycle_schwarz: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
-  2: [J42875_k2_exp_gmres_levelpmg, J42875_k2_exp_gmres_levelpmg: FinishedSuccessful (SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217)]
+Project name is set to 'Xdg_weakscaling_memory'.
+List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
 // providing corresponding paths on both platforms:
@@ -45,38 +44,62 @@ string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_MPI'.
+
 ==============
 tempDB.Sessions
 **************
-List of 28 instances of ISessionInfo {
-  0: Xdg_weakscaling	J42875_k2_classic_pardiso	09/11/2020 19:41:17	42ea1bdf...
-  1: Xdg_weakscaling	J42875_k2_exp_Kcycle_schwarz	09/11/2020 19:41:19	da0b0216...
-  2: Xdg_weakscaling	J42875_k2_exp_gmres_levelpmg	09/11/2020 19:41:13	268669a8...
-  3: Xdg_weakscaling_s	J8000_k2_exp_gmres_levelpmg	09/10/2020 18:43:32	955b4bf4...
-  4: Xdg_weakscaling_s	J4096_k2_exp_gmres_levelpmg	09/10/2020 18:43:23	c7faeca3...
-  5: Xdg_weakscaling_s	J32768_k2_exp_gmres_levelpmg	09/10/2020 18:43:27	d199f4e2...
-  6: Xdg_weakscaling_s	J64000_k2_exp_gmres_levelpmg	09/10/2020 18:43:30	661f2480...
-  7: Xdg_weakscaling_s	J17576_k2_exp_gmres_levelpmg	09/10/2020 18:43:35	942ec92b...
-  8: Xdg_weakscaling_s	J8000_k2_exp_Kcycle_schwarz	09/07/2020 11:50:02	03f8a68d...
-  9: Xdg_weakscaling_s	J262144_k2_exp_Kcycle_schwarz	09/07/2020 12:47:35	30d85acc...
-  10: Xdg_weakscaling_s	J512000_k2_exp_Kcycle_schwarz	09/07/2020 18:18:53	756f1a1d...
-  11: Xdg_weakscaling_s	J17576_k2_classic_pardiso	09/07/2020 11:50:04	8933624d...
-  12: Xdg_weakscaling_s	J132651_k2_exp_Kcycle_schwarz_predef	09/08/2020 12:03:42	8d6690a6...
-  13: Xdg_weakscaling_s	J17576_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	96f9eadf...
-  14: Xdg_weakscaling_s	J32768_k2_classic_pardiso	09/07/2020 11:50:04	bc0f0a7e...
-  15: Xdg_weakscaling_s	J8000_k2_classic_pardiso	09/07/2020 11:50:02	c491e120...
-  16: Xdg_weakscaling_s	J4096_k2_exp_Kcycle_schwarz	09/07/2020 11:50:00	c6ce6e97...
-  17: Xdg_weakscaling_s	J32768_k2_exp_Kcycle_schwarz	09/07/2020 11:49:59	cffe8f8f...
-  18: Xdg_weakscaling_s	J64000_k2_exp_Kcycle_schwarz	09/07/2020 11:55:06	e4698a1e...
-  19: Xdg_weakscaling_s	J4096_k2_classic_pardiso	09/07/2020 11:50:00	f045d3c4...
-  20: Xdg_weakscaling_s	J64000_k2_classic_pardiso	09/07/2020 11:49:59	f312a69e...
-  21: Xdg_weakscaling	J1030301_k2_exp_Kcycle_schwarz*	09/09/2020 00:11:48	7c726c15...
-  22: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz_METIS*	09/08/2020 12:03:42	9e35baf0...
-  23: Xdg_weakscaling_Debug	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 22:06:13	c07fec44...
-  24: Xdg_weakscaling_	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 13:11:54	15c2fe29...
-  25: Xdg_weakscaling	J262144_k2_classic_pardiso*	09/07/2020 12:34:35	45886724...
-  26: Xdg_weakscaling	J132651_k2_exp_Kcycle_schwarz*	09/07/2020 12:00:18	8281a95d...
-  27: Xdg_weakscaling	J132651_k2_classic_pardiso*	09/07/2020 11:53:33	9c9fb483...
+List of 50 instances of ISessionInfo {
+  0: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c32	02/02/2021 13:23:43	ec19916e...
+  1: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c64	02/02/2021 13:23:55	a43ae5b9...
+  2: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c128	02/02/2021 13:24:02	ddcb1b8f...
+  3: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c4	02/02/2021 11:35:27	04ed0208...
+  4: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c8	02/02/2021 11:35:28	d117b1ea...
+  5: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c16	02/02/2021 11:35:37	f2a88fce...
+  6: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c20*	02/02/2021 11:35:49	cd7aef13...
+  7: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c24*	02/02/2021 11:35:48	981da200...
+  8: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c12*	02/02/2021 11:35:31	e86cd2eb...
+  9: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4	02/01/2021 22:25:32	ca676d19...
+  10: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c128	02/01/2021 13:21:44	1711fcfa...
+  11: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4*	02/01/2021 13:20:13	abd26057...
+  12: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:24:12	73472711...
+  13: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:21:06	f6050eb5...
+  14: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	02/01/2021 11:49:20	04d27a9f...
+  15: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304	01/31/2021 22:06:24	6c3d33eb...
+  16: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008	01/31/2021 17:55:24	339d4c51...
+  17: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503	01/29/2021 19:55:31	926fa3b6...
+  18: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327	01/29/2021 19:46:38	22c3a03a...
+  19: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231	01/29/2021 19:47:34	c1cb50e1...
+  20: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	01/29/2021 19:48:33	852e2db9...
+  21: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/29/2021 12:56:33	4f4edf30...
+  22: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:34	de178d4f...
+  23: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:33	f94b4207...
+  24: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 01:55:12	7954e722...
+  25: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/25/2021 14:37:18	0140f620...
+  26: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c64	01/23/2021 10:35:27	2be820b4...
+  27: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c64	01/23/2021 10:32:20	95a852bb...
+  28: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/23/2021 09:36:27	49d6c02c...
+  29: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/23/2021 01:03:57	ac287e9c...
+  30: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
+  31: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
+  32: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
+  33: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
+  34: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
+  35: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
+  36: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
+  37: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
+  38: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
+  39: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
+  40: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
+  41: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
+  42: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
+  43: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
+  44: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
+  45: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
+  46: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
+  47: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
+  48: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
+  49: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
 }
 ==============
 // ===================
@@ -113,10 +136,10 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {22};
+int[] core_sweep = {4,8,16,32,64,128};
 //int[] core_sweep = {16};
 int p          = 2;
-int DOFperCore = 100000;
+int DOFperCore = 60000;
 **************
 ==============
 // calculate totalgrid size corresponding to DOFperCore
@@ -132,30 +155,36 @@ cells2cores.Add(test[i],core_sweep[i]);
 }
 cells2cores;
 **************
-List of 1 instances of KeyValuePair{Int32,Int32} {
-  0: [226981, 22]
+List of 6 instances of KeyValuePair{Int32,Int32} {
+  0: [24389, 4]
+  1: [50653, 8]
+  2: [97336, 16]
+  3: [195112, 32]
+  4: [389017, 64]
+  5: [778688, 128]
 }
 ==============
 tempDB.Grids;
 **************
-List of 17 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
-  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
-  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
-  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
-  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
-  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
-  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
-  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
-  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
-  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
-  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
-  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
-  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
-  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
-  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
-  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
-  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+List of 18 instances of IGridInfo {
+  0: { Guid = 43c4a2a0-4003-4ea8-96a2-b40131080dc1; Name = Xdg_weakscaling_memory_J778688; Cell Count = 778688; Dim = 3 }
+  1: { Guid = f2b2db11-d298-4378-a06d-60166e772eba; Name = Xdg_weakscaling_memory_J389017; Cell Count = 389017; Dim = 3 }
+  2: { Guid = ebfcbd62-c4a1-4486-85cb-eaf931cad344; Name = Xdg_weakscaling_memory_J195112; Cell Count = 195112; Dim = 3 }
+  3: { Guid = 766e2291-038e-4e6a-9cd7-bd6648a32335; Name = Xdg_weakscaling_memory_J97336; Cell Count = 97336; Dim = 3 }
+  4: { Guid = a51afaf8-bdb8-46fd-8228-e08aa8bc9bdc; Name = Xdg_weakscaling_memory_J50653; Cell Count = 50653; Dim = 3 }
+  5: { Guid = 04a8a08e-7757-4227-a2b1-aef2ba396c9c; Name = Xdg_weakscaling_memory_J24389; Cell Count = 24389; Dim = 3 }
+  6: { Guid = e897f4b2-63bf-4e27-a969-d54180bb331f; Name = Xdg_1Node_Memory_J103823; Cell Count = 103823; Dim = 3 }
+  7: { Guid = 4d3417af-1d2b-4c31-b88e-79440389d6c9; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  8: { Guid = 6b7afe3a-0ca2-4b68-bcdb-daf8b6a51dfe; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  9: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  10: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  11: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  12: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  13: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  14: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  15: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  16: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
+  17: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
 double xMax = 1.0, yMax = 1.0, zMax=1.0;
@@ -280,42 +309,58 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 226981 cells.
+Creating grid with 24389 cells.
+Grid Edge Tags changed.
+Creating grid with 50653 cells.
+Grid Edge Tags changed.
+Creating grid with 97336 cells.
+Grid Edge Tags changed.
+Creating grid with 195112 cells.
+Grid Edge Tags changed.
+Creating grid with 389017 cells.
+Grid Edge Tags changed.
+Creating grid with 778688 cells.
 Grid Edge Tags changed.
 
 ==============
 tempDB.Grids;
 **************
-List of 17 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
-  1: { Guid = b37906d0-8e08-4898-9509-894e1e3d2872; Name = Xdg_weakscaling_J658503; Cell Count = 658503; Dim = 3 }
-  2: { Guid = d3f3fd62-e609-4ab9-a2e3-30b734397291; Name = Xdg_weakscaling_J328509; Cell Count = 328509; Dim = 3 }
-  3: { Guid = e7ea6bc0-f549-4b01-a7b7-fc6475ffdfa6; Name = Xdg_weakscaling_J166375; Cell Count = 166375; Dim = 3 }
-  4: { Guid = f79aed73-4648-40d1-b648-b805d8c98b2d; Name = Xdg_weakscaling_J85184; Cell Count = 85184; Dim = 3 }
-  5: { Guid = e1a02622-2663-4455-b48b-d5d1067c9157; Name = Xdg_weakscaling_J42875; Cell Count = 42875; Dim = 3 }
-  6: { Guid = 8678c786-174d-4ad9-9d55-9ab2e936bcb3; Name = Xdg_weakscaling_Debug_J132651; Cell Count = 132651; Dim = 3 }
-  7: { Guid = e0025320-5098-450c-ace8-82318cb4b390; Name = Xdg_weakscaling_J1030301; Cell Count = 1030301; Dim = 3 }
-  8: { Guid = e97cde32-f955-450b-bcfb-39896d233bad; Name = Xdg_weakscaling_J512000; Cell Count = 512000; Dim = 3 }
-  9: { Guid = 9a6d6841-8a34-4d17-9281-5120c5522361; Name = Xdg_weakscaling_J262144; Cell Count = 262144; Dim = 3 }
-  10: { Guid = 69aa4b3b-263d-478d-9d81-b8c0c6facccd; Name = Xdg_weakscaling_J132651; Cell Count = 132651; Dim = 3 }
-  11: { Guid = a87ed323-6584-42e9-9404-3afb43226cac; Name = Xdg_weakscaling_J64000; Cell Count = 64000; Dim = 3 }
-  12: { Guid = c75cbd43-a2b7-4d65-b4c9-7077b2dec485; Name = Xdg_weakscaling_J32768; Cell Count = 32768; Dim = 3 }
-  13: { Guid = 063ebea7-cae5-42d3-823f-9ae39510a379; Name = Xdg_weakscaling_J17576; Cell Count = 17576; Dim = 3 }
-  14: { Guid = ac23870f-00fe-40c8-829d-8b69bf9a3366; Name = Xdg_weakscaling_J8000; Cell Count = 8000; Dim = 3 }
-  15: { Guid = 48de75f1-78d7-43d0-8d8b-b89b1c6f556b; Name = Xdg_weakscaling_J4096; Cell Count = 4096; Dim = 3 }
-  16: { Guid = 3cdb9253-8155-4bb0-aef5-a1ec4d16e10a; Name = Xdg_Xcores_test_J166375; Cell Count = 166375; Dim = 3 }
+List of 18 instances of IGridInfo {
+  0: { Guid = 43c4a2a0-4003-4ea8-96a2-b40131080dc1; Name = Xdg_weakscaling_memory_J778688; Cell Count = 778688; Dim = 3 }
+  1: { Guid = f2b2db11-d298-4378-a06d-60166e772eba; Name = Xdg_weakscaling_memory_J389017; Cell Count = 389017; Dim = 3 }
+  2: { Guid = ebfcbd62-c4a1-4486-85cb-eaf931cad344; Name = Xdg_weakscaling_memory_J195112; Cell Count = 195112; Dim = 3 }
+  3: { Guid = 766e2291-038e-4e6a-9cd7-bd6648a32335; Name = Xdg_weakscaling_memory_J97336; Cell Count = 97336; Dim = 3 }
+  4: { Guid = a51afaf8-bdb8-46fd-8228-e08aa8bc9bdc; Name = Xdg_weakscaling_memory_J50653; Cell Count = 50653; Dim = 3 }
+  5: { Guid = 04a8a08e-7757-4227-a2b1-aef2ba396c9c; Name = Xdg_weakscaling_memory_J24389; Cell Count = 24389; Dim = 3 }
+  6: { Guid = e897f4b2-63bf-4e27-a969-d54180bb331f; Name = Xdg_1Node_Memory_J103823; Cell Count = 103823; Dim = 3 }
+  7: { Guid = 4d3417af-1d2b-4c31-b88e-79440389d6c9; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  8: { Guid = 6b7afe3a-0ca2-4b68-bcdb-daf8b6a51dfe; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  9: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  10: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  11: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  12: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  13: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  14: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  15: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  16: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
+  17: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
 // Overwrite Selection
 //var ListOfgrids = new List<IGridInfo>();
 //ListOfgrids.AddRange(tempDB.Grids.Pick(0));
-//IGridInfo[] grids = ListOfgrids.ToArray();
+IGridInfo[] grids = tempDB.Grids.Pick(0,1,2,3,4,5).ToArray();
 **************
 ==============
 grids;
 **************
-List of 1 instances of IGridInfo {
-  0: { Guid = 5b075d21-3974-45d4-b097-079db824e6c1; Name = Xdg_weakscaling_J226981; Cell Count = 226981; Dim = 3 }
+List of 6 instances of IGridInfo {
+  0: { Guid = 43c4a2a0-4003-4ea8-96a2-b40131080dc1; Name = Xdg_weakscaling_memory_J778688; Cell Count = 778688; Dim = 3 }
+  1: { Guid = f2b2db11-d298-4378-a06d-60166e772eba; Name = Xdg_weakscaling_memory_J389017; Cell Count = 389017; Dim = 3 }
+  2: { Guid = ebfcbd62-c4a1-4486-85cb-eaf931cad344; Name = Xdg_weakscaling_memory_J195112; Cell Count = 195112; Dim = 3 }
+  3: { Guid = 766e2291-038e-4e6a-9cd7-bd6648a32335; Name = Xdg_weakscaling_memory_J97336; Cell Count = 97336; Dim = 3 }
+  4: { Guid = a51afaf8-bdb8-46fd-8228-e08aa8bc9bdc; Name = Xdg_weakscaling_memory_J50653; Cell Count = 50653; Dim = 3 }
+  5: { Guid = 04a8a08e-7757-4227-a2b1-aef2ba396c9c; Name = Xdg_weakscaling_memory_J24389; Cell Count = 24389; Dim = 3 }
 }
 ==============
 // =====================================
@@ -368,10 +413,10 @@ int[] PolyDegS = new int[] {p};
 ==============
 // Solvers which we want to instrument:
 LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
-    LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_pardiso, 
     //LinearSolverCode.classic_mumps, 
     LinearSolverCode.exp_Kcycle_schwarz, 
-    LinearSolverCode.exp_gmres_levelpmg, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
 }; 
 **************
 ==============
@@ -382,10 +427,6 @@ int MaxDof = int.MaxValue;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
-No. of errors|warnings: 0|2.
-
 ==============
 // --------------------
 // setup control object
@@ -453,12 +494,18 @@ foreach(IGridInfo grd in grids) {
 }
 }
 **************
-setting up: J226981_k2_classic_pardiso
-based on grid: Xdg_weakscaling_J226981
-setting up: J226981_k2_exp_Kcycle_schwarz
-based on grid: Xdg_weakscaling_J226981
-setting up: J226981_k2_exp_gmres_levelpmg
-based on grid: Xdg_weakscaling_J226981
+setting up: J778688_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J778688
+setting up: J389017_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J389017
+setting up: J195112_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J195112
+setting up: J97336_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J97336
+setting up: J50653_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J50653
+setting up: J24389_k2_exp_Kcycle_schwarz
+based on grid: Xdg_weakscaling_memory_J24389
 
 ==============
 //var solver = new XdgPoisson3Main();
@@ -480,14 +527,12 @@ foreach(var ctrl in controls) {
         cells2cores.TryGetValue(nocells,out nocores);
         Console.WriteLine("{0}:{1}",nocores, nocells);
 
-        
         Console.WriteLine(" Submitting: " + ctrl.SessionName); 
         var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
         aJob.SetControlObject(ctrl);
-        ((SlurmClient)ExecutionQueues[1]).SlurmAccount = "project01217";  // Jens 
         aJob.NumberOfMPIProcs         = nocores;
         aJob.ExecutionTime            = "02:00:00";
-        aJob.MemPerCPU                = "2500";
+        aJob.MemPerCPU                = "2000";
         aJob.UseComputeNodesExclusive = true;
         aJob.Activate(myBatch);
     } catch (Exception e){
@@ -495,39 +540,24 @@ foreach(var ctrl in controls) {
     }
 }
 **************
-22:226981
- Submitting: J226981_k2_classic_pardiso
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200546
-copied 30 files.
-   written file: control.obj
-deployment finished.
-
-15585642
-22:226981
- Submitting: J226981_k2_exp_Kcycle_schwarz
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200548
-copied 30 files.
-   written file: control.obj
-deployment finished.
-
-15585645
-22:226981
- Submitting: J226981_k2_exp_gmres_levelpmg
-Job not submitted yet, or no result session is known - starting submission.
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_weakscaling_test-XdgPoisson32020Sep11_200551
-copied 30 files.
-   written file: control.obj
-deployment finished.
-
-15585647
+128:778688
+ Submitting: J778688_k2_exp_Kcycle_schwarz
+Job with name 'J778688_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
+64:389017
+ Submitting: J389017_k2_exp_Kcycle_schwarz
+Job with name 'J389017_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
+32:195112
+ Submitting: J195112_k2_exp_Kcycle_schwarz
+Job with name 'J195112_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
+16:97336
+ Submitting: J97336_k2_exp_Kcycle_schwarz
+Job with name 'J97336_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
+8:50653
+ Submitting: J50653_k2_exp_Kcycle_schwarz
+Job with name 'J50653_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
+4:24389
+ Submitting: J24389_k2_exp_Kcycle_schwarz
+Job with name 'J24389_k2_exp_Kcycle_schwarz' is already defined in the workflow management.
 
 ==============
 // ================
@@ -631,3 +661,4 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
 Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 
+==============

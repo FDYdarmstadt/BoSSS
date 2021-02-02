@@ -45,11 +45,11 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SpinningCube(string _DbPath = null, int k =4, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control Rotating_Cube(string _DbPath = null, int k = 4, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim = 2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
-            
 
-            //C.DbPath = @"D:\trash_db";
+
+            C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -58,15 +58,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.GridPartType = GridPartType.METIS;
             C.SetDGdegree(k);
             C.DynamicLoadBalancing_Period = 1;
-
-            // Assign correct names
-            if (only_channel) {
-                C.SessionName = "Channel_k" + k + "_" +cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
-            } else {
-                C.SessionName = "Cube_k" + k + "_" + cells_x + "x" + cells_yz;
-                if (SpaceDim==3)
-                    C.SessionName += "x" + cells_yz;
-            }
+            C.SessionName = "IBM_rotcube";
 
             C.saveperiod = 1;
             //C.SessionName = "Sphere_k" + k + "_h" + h+"Re100";
@@ -92,8 +84,8 @@ namespace BoSSS.Application.IBM_Solver {
                     C.GridFunc = delegate {
 
                         // x-direction
-                        double xMin=-1, yMin=-1, zMin=-1; 
-                        double xMax=1, yMax=1, zMax=1;
+                        double xMin = -1, yMin = -1, zMin = -1;
+                        double xMax = 1, yMax = 1, zMax = 1;
                         var _xNodes = GenericBlas.Linspace(xMin, xMax, cells_x + 1);
                         //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                         // y-direction
@@ -105,17 +97,17 @@ namespace BoSSS.Application.IBM_Solver {
                         GridCommons grd;
                         switch (SpaceDim) {
                             case 2:
-                                grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
-                                break;
+                            grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+                            break;
 
                             case 3:
-                                grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, false, false);
-                                break;
+                            grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, false, false);
+                            break;
 
                             default:
-                                throw new ArgumentOutOfRangeException();
+                            throw new ArgumentOutOfRangeException();
                         }
-                       
+
                         grd.EdgeTagNames.Add(1, "Velocity_inlet");
                         grd.EdgeTagNames.Add(2, "Wall");
                         grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -156,31 +148,31 @@ namespace BoSSS.Application.IBM_Solver {
                         });
 
                         return grd;
-                        
+
                     };
                 }
-                
 
-                
+
+
 
                 // Set Initial Conditions
                 C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                if(SpaceDim==3)
+                if (SpaceDim == 3)
                     C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
                 // Phi (X,t): p-norm cube with forced rotation
 
-                Func<double[],double,double> PhiFunc = delegate (double[] X, double t) {
-                
+                Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+
                     int power = 2;
                     double anglev = 0.1;
                     //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
 
                     C.AngularVelocity[2] = anglev;
                     //double angle = -(anglev * t) % (2 * Math.PI);
-                    double angle = -(anglev * t) % (2*Math.PI);
+                    double angle = -(anglev * t) % (2 * Math.PI);
                     double[] pos;
 
                     switch (SpaceDim) {
@@ -189,78 +181,44 @@ namespace BoSSS.Application.IBM_Solver {
                         C.CenterofMass = pos;
                         return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                         - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                        + Math.Pow(C.particleRadius, power))*100;
+                        + Math.Pow(C.particleRadius, power)) * 100;
                         //return -X[0] * X[0] - X[1] * X[1] + C.particleRadius * C.particleRadius;
 
 
                         case 3:
-                            pos = new double[] { 0, 0, 0};
-                            C.CenterofMass = pos;
-                            return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                            - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                            - Math.Pow(X[2] - pos[2],power)
-                            + Math.Pow(C.particleRadius, power);
+                        pos = new double[] { 0, 0, 0 };
+                        C.CenterofMass = pos;
+                        return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                        - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                        - Math.Pow(X[2] - pos[2], power)
+                        + Math.Pow(C.particleRadius, power);
                         default:
-                            throw new NotImplementedException();
+                        throw new NotImplementedException();
                     }
-                    
+
 
                 };
 
 
 
-                Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
-
-                    if (pos.Length != X.Length)
-                        throw new ArgumentException("check dimension of center of mass");
-
-                    Vector angVelo = new Vector(new double[] { 0, 0, anglev });
-                    Vector CenterofMass = new Vector(pos);
-                    Vector radialVector = new Vector(X) - CenterofMass;
-                    Vector transVelocity = new Vector(new double[SpaceDim]);
-                    Vector pointVelocity;
-
-                    switch (SpaceDim) {
-                        case 2:
-                        pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
-                        break;
-                        case 3:
-                        pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
-                        break;
-                        default:
-                        throw new NotImplementedException("this number of dimensions is not supported");
-                    }
-
-                    return pointVelocity;
-                };
-
-                Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
-                Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
-                Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
-
-
-                C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(0), X => -1);
-                if (only_channel)
-                    C.InitialValues_Evaluators.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), X => -1);
-                else {
-                    C.UseImmersedBoundary = true;
-                    if (C.UseImmersedBoundary) {
-                        C.InitialValues_Evaluators_TimeDep.Add(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), PhiFunc);
-                        C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
-                        C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
-                        if (SpaceDim == 3)
-                            C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
-                    }
+                if (only_channel) {
+                    C.InitialValues_Evaluators.Add("Phi", X => -1);
+                } else {
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
+                    C.ForcedPhi = PhiFunc;
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
+            }
 
-                // Some Info Output
-                switch (SpaceDim) {
+            // Some Info Output
+            switch (SpaceDim) {
                 case 2:
-                    Console.WriteLine("...starting calculation of Cube2D");
-                    break;
+                Console.WriteLine("...starting calculation of Cube2D");
+                break;
                 case 3:
-                    Console.WriteLine("...starting calculation of Cube3D");
-                    break;
+                Console.WriteLine("...starting calculation of Cube3D");
+                break;
             }
 
 
@@ -299,19 +257,17 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.NoOfMultigridLevels = 4;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.verbose = true;
+            C.LinearSolver.NoOfMultigridLevels = 3;
 
             C.EqualOrder = false;
-            C.PressureStabilizationFactor = 1;  
+            C.PressureStabilizationFactor = 1;
             C.LinearSolver.pMaxOfCoarseSolver = k;
 
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            C.LinearSolver.verbose = true;
             C.NonLinearSolver.verbose = true;
-            //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdaptiveMeshRefinement = false;
 
@@ -335,7 +291,7 @@ namespace BoSSS.Application.IBM_Solver {
             //C.Endtime = 1000;
             //C.NoOfTimesteps = 10;
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            
 
             return C;
         }

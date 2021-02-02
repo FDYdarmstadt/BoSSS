@@ -178,6 +178,33 @@ namespace ilPSP.Tracing {
             }
         }
 
+        [DataMember]
+        internal long m_Memory = 0;
+
+        /// <summary>
+        /// memory of call without childcalls
+        /// </summary>
+        [JsonIgnore]
+        public long ExclusiveMemory {
+            get {
+                long childs = 0;
+                foreach (var c in Calls.Values) {
+                    childs += c.m_Memory;
+                }
+                return m_Memory - childs;
+            }
+        }
+
+        /// <summary>
+        /// memory of call inculding all childcalls
+        /// </summary>
+        [JsonIgnore]
+        public long InclusiveMemory {
+            get {
+                return m_Memory;
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -519,11 +546,20 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
-        /// 
+        /// ticks spent in blocking MPI routines within traced child calls
         /// </summary>
         public long TicksSpentInBlocking {
             get {
                 return AllCalls.Sum(a => a.m_TicksSpentinBlocking);
+            }
+        }
+
+        /// <summary>
+        /// Memory spent in traced child calls
+        /// </summary>
+        public long MemorySpent {
+            get {
+                return AllCalls.Sum(a => a.m_Memory);
             }
         }
 

@@ -36,12 +36,12 @@ List of 0 instances of IDatabaseInfo {
 //myBatch.MonoDebug = true;
 **************
 ==============
-string WFlowName = "Xdg_strong_scaleing";
+string WFlowName = "Xdg_1Node_Memory";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_strong_scaleing'.
+Project name is set to 'Xdg_1Node_Memory'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -58,36 +58,54 @@ Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_MPI'.
 ==============
 tempDB.Sessions
 **************
-List of 29 instances of ISessionInfo {
-  0: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/29/2021 12:56:33	4f4edf30...
-  1: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:34	de178d4f...
-  2: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:33	f94b4207...
-  3: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 01:55:12	7954e722...
-  4: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/25/2021 14:37:18	0140f620...
-  5: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c64	01/23/2021 10:35:27	2be820b4...
-  6: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c64	01/23/2021 10:32:20	95a852bb...
-  7: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/23/2021 09:36:27	49d6c02c...
-  8: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/23/2021 01:03:57	ac287e9c...
-  9: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
-  10: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
-  11: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
-  12: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
-  13: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
-  14: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
-  15: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
-  16: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
-  17: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
-  18: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
-  19: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
-  20: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
-  21: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
-  22: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
-  23: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
-  24: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
-  25: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
-  26: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
-  27: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
-  28: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
+List of 47 instances of ISessionInfo {
+  0: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c4	02/02/2021 11:35:27	04ed0208...
+  1: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c8	02/02/2021 11:35:28	d117b1ea...
+  2: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c16	02/02/2021 11:35:37	f2a88fce...
+  3: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c20*	02/02/2021 11:35:49	cd7aef13...
+  4: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c24*	02/02/2021 11:35:48	981da200...
+  5: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c12*	02/02/2021 11:35:31	e86cd2eb...
+  6: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4	02/01/2021 22:25:32	ca676d19...
+  7: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c128	02/01/2021 13:21:44	1711fcfa...
+  8: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4*	02/01/2021 13:20:13	abd26057...
+  9: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:24:12	73472711...
+  10: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:21:06	f6050eb5...
+  11: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	02/01/2021 11:49:20	04d27a9f...
+  12: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304	01/31/2021 22:06:24	6c3d33eb...
+  13: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008	01/31/2021 17:55:24	339d4c51...
+  14: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503	01/29/2021 19:55:31	926fa3b6...
+  15: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327	01/29/2021 19:46:38	22c3a03a...
+  16: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231	01/29/2021 19:47:34	c1cb50e1...
+  17: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	01/29/2021 19:48:33	852e2db9...
+  18: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/29/2021 12:56:33	4f4edf30...
+  19: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:34	de178d4f...
+  20: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:33	f94b4207...
+  21: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 01:55:12	7954e722...
+  22: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/25/2021 14:37:18	0140f620...
+  23: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c64	01/23/2021 10:35:27	2be820b4...
+  24: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c64	01/23/2021 10:32:20	95a852bb...
+  25: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/23/2021 09:36:27	49d6c02c...
+  26: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/23/2021 01:03:57	ac287e9c...
+  27: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
+  28: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
+  29: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
+  30: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
+  31: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
+  32: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
+  33: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
+  34: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
+  35: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
+  36: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
+  37: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
+  38: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
+  39: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
+  40: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
+  41: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
+  42: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
+  43: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
+  44: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
+  45: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
+  46: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
 }
 ==============
 // ===================
@@ -171,10 +189,25 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {4,8,16,32,64,128};
-int p           = 2;
-int Problemsize = 1000000;
+int[] core_sweep = {32,64,128};
+int p             = 2;
+int Problemsize   = 1000000;
+int MemoryPerCore = 2500;
 **************
+==============
+Func<int, int> Nodes4WeakScale = delegate(int NoOfCores){
+int MemPerNode = 64*1024;
+return (int)((double)MemoryPerCore / (double)MemPerNode * NoOfCores)+1;
+};
+Func<int, int> Nodes4StrongScale = delegate(int NoOfCores){
+int corespernode = 24;
+return (int)((double)NoOfCores / (double)corespernode) +1;
+};
+**************
+==============
+Nodes4StrongScale(128);
+**************
+6
 ==============
 // calculate grid size
 double Res    = Math.Pow(Problemsize/Utils.Np(p),0.333333333);
@@ -187,17 +220,24 @@ test;
 ==============
 tempDB.Grids;
 **************
-List of 7 instances of IGridInfo {
-  0: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  1: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  2: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  3: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  4: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  5: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
-  6: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
+List of 12 instances of IGridInfo {
+  0: { Guid = e897f4b2-63bf-4e27-a969-d54180bb331f; Name = Xdg_1Node_Memory_J103823; Cell Count = 103823; Dim = 3 }
+  1: { Guid = 4d3417af-1d2b-4c31-b88e-79440389d6c9; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  2: { Guid = 6b7afe3a-0ca2-4b68-bcdb-daf8b6a51dfe; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
+  3: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  4: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  5: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  6: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  7: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  8: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  9: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
+  10: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
+  11: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
+ResRndup
 **************
+47
 ==============
 **************
 ==============
@@ -276,25 +316,27 @@ Grid Edge Tags changed.
 ((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
 **************
 List of 6 instances of KeyValuePair{String,GridPartitioningVector} {
-  0: [predef128, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  0: [predef12, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
   1: [predef16, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  2: [predef32, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  3: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  4: [predef64, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  2: [predef20, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  3: [predef24, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+  4: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
   5: [predef8, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
 }
+==============
+**************
 ==============
 // Overwrite Selection
 //var ListOfgrids = new List<IGridInfo>();
 //ListOfgrids.AddRange(tempDB.Grids.Pick(0));
 //IGridInfo[] grids = ListOfgrids.ToArray();
-//IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
+IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(3)};
 **************
 ==============
 grids;
 **************
 List of 1 instances of IGridInfo {
-  0: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  0: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
 }
 ==============
 // =====================================
@@ -361,6 +403,10 @@ int MaxDof = int.MaxValue;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
+No. of errors|warnings: 0|2.
+
 ==============
 // --------------------
 // setup control object
@@ -380,7 +426,7 @@ foreach(int cores in core_sweep){
     //string caseName = string.Format("J{0}_k{1}_{2}_c{3}_rnd{4}", J, k, solver_name,cores,rnd);
     string caseName = string.Format("J{0}_k{1}_{2}_c{3}", J, k, solver_name,cores);
     
-    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}", J, k, solver_name,cores);
+    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}_", J, k, solver_name,cores);
     Console.WriteLine("setting up: " + caseName);
     Console.WriteLine("based on grid: "+grd.Name);
 
@@ -436,17 +482,11 @@ foreach(int cores in core_sweep){
 }
 }
 **************
-setting up: J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327
+setting up: J103823_k2_exp_Kcycle_schwarz_c32
 based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231
+setting up: J103823_k2_exp_Kcycle_schwarz_c64
 based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564
-based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503
-based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008
-based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304
+setting up: J103823_k2_exp_Kcycle_schwarz_c128
 based on grid: Xdg_strong_scaleing_J103823
 
 ==============
@@ -463,7 +503,6 @@ based on grid: Xdg_strong_scaleing_J103823
 // ==========
 **************
 ==============
-myBatch.UseLB2 = true;
 **************
 ==============
 foreach(var ctrl in controls){
@@ -473,70 +512,41 @@ foreach(var ctrl in controls){
     aJob.SetControlObject(ctrl);
     aJob.NumberOfMPIProcs         = ncores;
     aJob.ExecutionTime            = "02:00:00";
-    aJob.MemPerCPU                = "3600";
+    aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
+    aJob.NumberOfNodes            = Nodes4StrongScale(ncores);
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327
-Deploying job J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c32
+Deploying job J103823_k2_exp_Kcycle_schwarz_c32 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193024
+Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132329
 copied 29 files.
    written file: control.obj
 deployment finished.
-16949920
+16973647
 
- Submitting: J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231
-Deploying job J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c64
+Deploying job J103823_k2_exp_Kcycle_schwarz_c64 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193028
+Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132335
 copied 29 files.
    written file: control.obj
 deployment finished.
-16949921
+16973648
 
- Submitting: J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564
-Deploying job J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564 ... 
+ Submitting: J103823_k2_exp_Kcycle_schwarz_c128
+Deploying job J103823_k2_exp_Kcycle_schwarz_c128 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193034
+Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132341
 copied 29 files.
    written file: control.obj
 deployment finished.
-16949922
-
- Submitting: J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503
-Deploying job J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503 ... 
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193039
-copied 29 files.
-   written file: control.obj
-deployment finished.
-16949923
-
- Submitting: J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008
-Deploying job J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008 ... 
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193045
-copied 29 files.
-   written file: control.obj
-deployment finished.
-16949924
-
- Submitting: J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304
-Deploying job J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304 ... 
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_strong_scaleing-XdgPoisson32021Jan29_193050
-copied 29 files.
-   written file: control.obj
-deployment finished.
-16949925
+16973650
 
 
 ==============
@@ -650,6 +660,10 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
 Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

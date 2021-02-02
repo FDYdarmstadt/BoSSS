@@ -37,6 +37,7 @@ using ilPSP;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.IBM_Solver {
 
@@ -528,14 +529,14 @@ namespace BoSSS.Application.IBM_Solver {
 
                 if (IBM_Op_config.convection){
                     //int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
-                    var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
-                            d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap, this.Control.PhysicalParameters.rho_A, true, 1,"A","B",true);
+                    var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.IBM_ConvectionAtIB(d, D, LsTrk, this.Control.AdvancedDiscretizationOptions.LFFA, boundaryCondMap,
+                            ParameterFunction, this.Control.PhysicalParameters.rho_A, false);
                     comps.Add(ConvIB); // immersed boundary component
                 }
 
                 if (IBM_Op_config.PressureGradient){
                     //int _d, int _D, LevelSetTracker LsTrk, int iLevSet, string FluidSpc, string SolidSpecies
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk,1,"A","B");
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.IBM_PressureFormAtIB(d, D, LsTrk);
                     comps.Add(presLs); // immersed boundary component
                 }
 
@@ -546,10 +547,10 @@ namespace BoSSS.Application.IBM_Solver {
                     double penalty_base = (_p + 1) * (_p + D) / D;
                     double penalty = penalty_base * penalty_mul;
                     //int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
-                    var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, LsTrk,
-                            penalty,
+                    var ViscLs = new BoSSS.Solution.NSECommon.Operator.Viscosity.IBM_ViscosityAtIB(d, D, LsTrk,
+                            penalty, this.ComputePenaltyIB,
                             this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A,
-                            1, "A", "B", true);
+                            ParameterFunction);
                     comps.Add(ViscLs); // immersed boundary component
 
                 }
@@ -557,7 +558,8 @@ namespace BoSSS.Application.IBM_Solver {
 
             if (IBM_Op_config.continuity){
                 //int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter
-                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, "A", "B", true);
+                var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.IBM_DivergenceAtIB(D, LsTrk, 1,
+                    ParameterFunction);
                 IBM_Op.EquationComponents["div"].Add(divPen); // immersed boundary component
                 if (this.Control.EqualOrder) {
                     var pst = new PressureStabilizationAtLevelSet(LsTrk, this.Control.PressureStabilizationFactor, 1 / this.Control.PhysicalParameters.mu_A, 0.0);
@@ -812,7 +814,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 Grad_p.Clear();
                 Grad_p.Gradient(1.0, Pressure);
-                if(phystime<=0)
+                if (phystime <= 0)
                     base.m_IOFields.AddRange(Grad_p);
                 //base.RegisterField(Grad_p);
 

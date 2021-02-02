@@ -25,6 +25,11 @@ namespace ilPSP
 
         }
 
+        public static void PrintMostExpensiveMemory(this MethodCallRecord mcr, int count) {
+            GetMostExpensiveMemory(Console.Out, mcr, count);
+            Console.Out.Flush();
+        }
+
         public static void GetMostExpensiveCalls(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
             int i = 1;
             var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTicks);
@@ -141,5 +146,23 @@ namespace ilPSP
             }
             Console.Out.Flush();
         }
+
+        private static void GetMostExpensiveMemory(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
+            int i = 1;
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.MemorySpent);
+            foreach (var kv in mostExpensive) {
+                wrt.Write("#" + i + ": ");
+                wrt.WriteLine(string.Format(
+                "'{0}': {1} calls, {2} MB, exclusive memory",
+                    kv.Name,
+                    kv.CallCount,
+                    kv.MemorySpent));
+                if (i == printcnt) return;
+                i++;
+            }
+            Console.Out.Flush();
+        }
+
+
     }
 }

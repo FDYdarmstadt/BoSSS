@@ -76,7 +76,6 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
             get;
         }
-
         
         /// <summary>
         /// The memory (in MB) that is reserved for every core
@@ -84,6 +83,16 @@ namespace BoSSS.Application.BoSSSpad {
         public string MemPerCPU {
             set;
             get;
+        }
+
+        private int m_NumberOfNodes = -1;
+
+        /// <summary>
+        /// overrides Memory per CPU criterion. MemoryPerCPU = memorypernode * nonode / cpupernode. Memory per node is architecture dependent.
+        /// </summary>
+        public int NumberOfNodes {
+            get { return m_NumberOfNodes;  }
+            set { m_NumberOfNodes = value;  }
         }
 
         /*

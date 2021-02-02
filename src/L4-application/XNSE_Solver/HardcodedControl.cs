@@ -520,12 +520,12 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int SpaceDim = 2) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int SpaceDim = 2) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
+            C.DbPath = @"D:\trash_db";
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/RotCube";
             C.ProjectDescription = "rotating cube";
@@ -536,7 +536,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.SetFieldOptions(k, 2);
             C.GridPartType = GridPartType.METIS;
-            C.SessionName = "test";
+            C.SessionName = "XNSE_rotcube";
             C.saveperiod = 1;
 
 
@@ -596,13 +596,23 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //if (SpaceDim == 3)
             //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-           
+
 
             // Phi (X,t): p-norm cube with forced rotation
 
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
             double anglev = 0.1;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.13;
+
 
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
@@ -612,16 +622,18 @@ namespace BoSSS.Application.XNSE_Solver {
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (SpaceDim) {
                     case 2:
-                    return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    + Math.Pow(particleRad, power)) * 100;
+                    //return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    //+ Math.Pow(particleRad, power)) * 100;
+                    return - X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
 
                     case 3:
-                    return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    - Math.Pow(X[2] - pos[2], power)
-                    + Math.Pow(particleRad, power);
+                    //return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    //- Math.Pow(X[2] - pos[2], power)
+                    //+ Math.Pow(particleRad, power);
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
@@ -676,15 +688,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Wall");
             //VelocityX@Phi2, VelocityY@Phi2 und VelocityZ@Phi2
 
-            // Physical Parameters
-            // ===================
-            const double rhoA = 0.1;
-            const double muA = 0.01;
-
-            C.PhysicalParameters.IncludeConvection = false;
-            C.PhysicalParameters.Material = true;
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.mu_A = muA;
+            
             //C.OperatorMatrixAnalysis = false;
 
             // misc. solver options
@@ -699,19 +703,18 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.LinearSolver.NoOfMultigridLevels = 3;
-            C.LinearSolver.MaxSolverIterations = 20;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.pMaxOfCoarseSolver = k;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            C.RefinementLevel = 2;
+            C.AdaptiveMeshRefinement = false;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefinementLevel = 2;
 
             // Timestepping
             // ============

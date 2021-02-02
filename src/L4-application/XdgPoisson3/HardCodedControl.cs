@@ -543,7 +543,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 10;
+            int Res = 59;
             int blocksize = 10000;
 
             C.GridFunc = delegate () {
@@ -570,9 +570,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MaxKrylovDim = 1000;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
+            //C.LinearSolver.pMaxOfCoarseSolver = 1;
             //C.LinearSolver.TargetBlockSize = 79;
-           C.ExcactSolSupported = false;
+            C.ExcactSolSupported = false;
             double radius = 0.7;
             C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
             C.MU_A = -1;
