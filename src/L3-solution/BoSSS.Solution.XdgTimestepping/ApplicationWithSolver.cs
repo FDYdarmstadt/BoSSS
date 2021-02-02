@@ -69,8 +69,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
-            //var test = this.Operator;
-            //
+
             CreateTrackerHack();
 
             // solution:

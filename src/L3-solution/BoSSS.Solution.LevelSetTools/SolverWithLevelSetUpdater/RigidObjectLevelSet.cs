@@ -80,11 +80,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IDictionary<string, DGField> InternalFields => null;
 
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            
+
+            CellMask near = levelSet.Tracker.Regions.GetNearMask4LevSet(levelSet.LevelSetIndex, 1);
+
             var ls = levelSet.DGLevelSet;
+            CellMask posFar = levelSet.Tracker.Regions.GetLevelSetWing(levelSet.LevelSetIndex, +1).VolumeMask.Except(near);
+            CellMask negFar = levelSet.Tracker.Regions.GetLevelSetWing(levelSet.LevelSetIndex, -1).VolumeMask.Except(near);
+            ls.Clear(posFar);
+            CellMask cut = levelSet.Tracker.Regions.GetNearMask4LevSet(levelSet.LevelSetIndex, 0);
+            ls.AccConstant(1, posFar);
+            ls.Clear(negFar);
+            ls.AccConstant(-1, negFar);
+
             ls.Clear();
             ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(LevelSetFunction, time);
-            ls.ProjectField(1.0, Function);
+            ls.ProjectField(1.0, Function, new BoSSS.Foundation.Quadrature.CellQuadratureScheme(true, near));
         }
     }
 }
