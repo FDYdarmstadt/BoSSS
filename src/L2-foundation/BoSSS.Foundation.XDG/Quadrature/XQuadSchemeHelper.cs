@@ -490,16 +490,16 @@ namespace BoSSS.Foundation.XDG {
         public bool SpeciesAreSeparatedByLevSet(int levSet, SpeciesId A, SpeciesId B) {
             switch (this.XDGSpaceMetrics.NoOfLevelSets) {
                 case 1:
-                return IsSeparatedByLevSet1LS(levSet, A, B);
+                return AreSeparatedByLevSet1LS(levSet, A, B);
                 case 2:
-                return IsSeparatedByLevSet2LS(levSet, A, B);
+                return AreSeparatedByLevSet2LS(levSet, A, B);
 
                 default:
                 throw new NotSupportedException();
             }
         }
 
-        bool IsSeparatedByLevSet1LS(int levSet, SpeciesId A, SpeciesId B) {
+        bool AreSeparatedByLevSet1LS(int levSet, SpeciesId A, SpeciesId B) {
             string nameA = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(A);
             string nameB = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(B);
             string[] speciesTable = (string[])this.XDGSpaceMetrics.LevelSetRegions.SpeciesTable;
@@ -512,7 +512,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        bool IsSeparatedByLevSet2LS(int levSet, SpeciesId A, SpeciesId B) {
+        bool AreSeparatedByLevSet2LS(int levSet, SpeciesId A, SpeciesId B) {
             string nameA = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(A);
             string nameB = this.XDGSpaceMetrics.LevelSetRegions.GetSpeciesName(B);
 
@@ -758,7 +758,7 @@ namespace BoSSS.Foundation.XDG {
                         if (doublyCut.Count() > 0) {
                             IntegrationDom = IntegrationDom.Except(doublyCut);
 
-                            //Das geht so noch nicht!
+                            //Ist das so in Ordnung?
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
 
