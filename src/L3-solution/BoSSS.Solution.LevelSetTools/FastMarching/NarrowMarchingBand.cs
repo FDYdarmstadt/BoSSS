@@ -327,8 +327,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
-            //BitArray ReinitPosBitmask = new BitArray(J);
-            //BitArray ReinitNegBitmask = new BitArray(J);
+            BitArray ReinitPosBitmask = new BitArray(J);
+            BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
@@ -350,12 +350,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
                     if(PosBitMask[j]) {
-                        //ReinitPosBitmask[j] = true;
+                        ReinitPosBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
                     if(NegBitMask[j]) {
-                        //ReinitNegBitmask[j] = true;
+                        ReinitNegBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
@@ -367,8 +367,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
-            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
-            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
+            CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
+            CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
@@ -582,7 +582,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
             TimeEvoOp.Commit();
 
-            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.ExplicitEuler, TimeEvoOp,
+            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
                 LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {

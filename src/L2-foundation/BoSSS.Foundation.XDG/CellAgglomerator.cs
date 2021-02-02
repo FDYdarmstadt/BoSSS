@@ -434,11 +434,13 @@ namespace BoSSS.Foundation.XDG {
 
                         while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
                             if (CycleDetection[jTarget] == true) {
-                                // write Diagnostic output before killing the code.
-                                this.PlotAgglomerationPairs("GraphWithCycles-" + mpiRank + ".csv");
-                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0,J));
-                                CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
-                                localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
+                                // write Diagnostic output before killing the code.  
+                                if (this.AggInfo != null) {
+                                    this.PlotAgglomerationPairs("GraphWithCycles-" + mpiRank + ".csv");
+                                    BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
+                                    CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
+                                    localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
+                                }
                                 // kill it
                                 throw new ArgumentException("Cycle in agglomeration graph.");
                             }

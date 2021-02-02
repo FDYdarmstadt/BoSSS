@@ -70,6 +70,12 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
     /// </summary>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
+        //static void Main(string[] args) {
+        //    _Main(args, false, delegate () {
+        //        var p = new XNSE_SolverMain();
+        //        return p;
+        //    });
+        //}
 
         //=====================================
         // Field declaration and instantiation

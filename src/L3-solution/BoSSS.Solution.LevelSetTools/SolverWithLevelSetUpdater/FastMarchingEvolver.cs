@@ -105,7 +105,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();
 
-            //int TimestepNo = (int)(time / dt);
+            int TimestepNo = (int)(time / dt);
             //TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
             //DGField[] plotFields = ArrayTools.Cat<DGField>(meanVelocity);
             //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, time, 2);
@@ -113,7 +113,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             NarrowMarchingBand.Evolve_Mk2(
                 dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
-                m_HMForder);
+                m_HMForder,
+                TimestepNo, true);
 
             //tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
             //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, 0.0, 2);

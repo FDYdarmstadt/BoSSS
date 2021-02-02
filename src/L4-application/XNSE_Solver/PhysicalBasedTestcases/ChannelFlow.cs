@@ -47,13 +47,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 2, int wallBC = 0) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 18, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            int D = 3;
+            int D = 2;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             //if (D == 3)
@@ -147,11 +147,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double L = 2;
-            double H = 1;
+            double H = 2;
 
             if (D == 2) {
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false);
                     //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
@@ -249,8 +249,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
 
-            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.049, H / 2.0 } : new double[] { (H / 2.0) + 0.0, H / 2.0, H / 2.0 };
-            double radius = 0.2;
+            double[] center = (D == 2) ? new double[] { (H / 2.0) + 0.0, H / 2.0 } : new double[] { (H / 2.0) + 0.0, H / 2.0, H / 2.0 };
+            double radius = 0.4;
 
             if (D == 2) {
                 C.InitialValues_Evaluators.Add("Phi",
@@ -292,7 +292,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityX#B", X => 5.0);
 
             if (wallBC == 1) {
-                U = 0.1;
+                U = 1.0;
                 C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
                 C.InitialValues_Evaluators.Add("VelocityX#B", X => U);
             }
@@ -427,7 +427,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             C.BaseRefinementLevel = 2;
             C.RefinementLevel = 2;
@@ -444,15 +444,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 5e-2; // 5e-2;
+            double dt = 0.0138; // 5e-2; // 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 200; // 500;
+            C.NoOfTimesteps = 20; // 500;
             C.saveperiod = 10;
 
             #endregion

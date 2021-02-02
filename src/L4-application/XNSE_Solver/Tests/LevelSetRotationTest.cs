@@ -31,10 +31,10 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// Basic test case for advecting the leve-set field
+    /// Basic test case for rotating the leve-set field
     /// in a constant velocity field
     /// </summary>
-    class LevelSetAdvectionTest : IXNSElsTest {
+    class LevelSetRotationTest : IXNSElsTest {
 
         public bool TestImmersedBoundary => false;
 
@@ -51,12 +51,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         double L = 1.0;
         double Radius = 0.4;
-        double Ux = 1;
+        double Uscale = 1;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public LevelSetAdvectionTest(int spatDim, int LevelSetDegree) {
+        public LevelSetRotationTest(int spatDim, int LevelSetDegree) {
             this.SpatialDimension = spatDim;
             this.LevelsetPolynomialDegree = LevelSetDegree;
         }
@@ -77,7 +77,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public double ComputeTimestep(int Resolution, int LSdegree) {
             int gridCells1D = 9 * Resolution;
             double h = 1.0 * L / (double)gridCells1D;
-            double dt = h / Ux;
+            double dt = h / Uscale;
             dt /= (double)(LSdegree * LSdegree);
 
             return dt;
@@ -111,26 +111,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 throw new ArgumentOutOfRangeException();
             }
 
-            grd.EdgeTagNames.Add(1, "velocity_inlet_top");
-            grd.EdgeTagNames.Add(2, "velocity_inlet_bottom");
-            grd.EdgeTagNames.Add(3, "velocity_inlet_left");
-            grd.EdgeTagNames.Add(4, "velocity_inlet_right");
-            if (SpatialDimension == 3) {
-                grd.EdgeTagNames.Add(5, "velocity_inlet_front");
-                grd.EdgeTagNames.Add(6, "velocity_inlet_back");
-            }
+            grd.EdgeTagNames.Add(1, "velocity_inlet");
 
             grd.DefineEdgeTags(delegate (double[] X) {
                 double x = X[0], y = X[1];
                 if (Math.Abs(x - (-L)) <= 1.0e-7)
                     // velocity inlet
-                    return (byte)3;
+                    return (byte)1;
                 if (Math.Abs(x - (L)) <= 1.0e-7)
                     //  velocity inlet (
-                    return (byte)4;
+                    return (byte)1;
                 if (Math.Abs(y - (-L)) <= 1.0e-7)
                     // bottom wall
-                    return (byte)2;
+                    return (byte)1;
                 if (Math.Abs(y - (L)) <= 1.0e-7)
                     // top wall
                     return (byte)1;
@@ -138,10 +131,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     double z = X[2];
                     if (Math.Abs(z - (-L)) <= 1.0e-7)
                         // back wall
-                        return (byte)6;
+                        return (byte)1;
                     if (Math.Abs(z - (L)) <= 1.0e-7)
                         // front wall
-                        return (byte)5;
+                        return (byte)1;
                 }
 
                 throw new ArgumentOutOfRangeException();
@@ -157,55 +150,40 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
-            config.Add("velocity_inlet_left", new AppControl.BoundaryValueCollection());
-            config["velocity_inlet_left"].Evaluators.Add(
+            config.Add("velocity_inlet", new AppControl.BoundaryValueCollection());
+            config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Ux);
-            config["velocity_inlet_left"].Evaluators.Add(
+                (X, t) => Uscale * X[1]);
+            config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Ux);
+                (X, t) => Uscale * X[1]);
 
-            config.Add("velocity_inlet_right", new AppControl.BoundaryValueCollection());
-            config["velocity_inlet_right"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Ux);
-            config["velocity_inlet_right"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Ux);
-
-            config.Add("velocity_inlet_bottom", new AppControl.BoundaryValueCollection());
-            config["velocity_inlet_bottom"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Ux);
-            config["velocity_inlet_bottom"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Ux);
-
-            config.Add("velocity_inlet_top", new AppControl.BoundaryValueCollection());
-            config["velocity_inlet_top"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Ux);
-            config["velocity_inlet_top"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Ux);
+            config["velocity_inlet"].Evaluators.Add(
+                VariableNames.Velocity_d(1) + "#A",
+                (X, t) => -Uscale * X[0]);
+            config["velocity_inlet"].Evaluators.Add(
+                VariableNames.Velocity_d(1) + "#B",
+                (X, t) => -Uscale * X[0]);
 
             if (SpatialDimension == 3) {
 
-                config.Add("velocity_inlet_back", new AppControl.BoundaryValueCollection());
-                config["velocity_inlet_back"].Evaluators.Add(
-                    VariableNames.Velocity_d(0) + "#A",
-                    (X, t) => Ux);
-                config["velocity_inlet_back"].Evaluators.Add(
-                    VariableNames.Velocity_d(0) + "#B",
-                    (X, t) => Ux);
+                // todo
 
-                config.Add("velocity_inlet_front", new AppControl.BoundaryValueCollection());
-                config["velocity_inlet_front"].Evaluators.Add(
-                    VariableNames.Velocity_d(0) + "#A",
-                    (X, t) => Ux);
-                config["velocity_inlet_front"].Evaluators.Add(
-                    VariableNames.Velocity_d(0) + "#B",
-                    (X, t) => Ux);
+                //config.Add("velocity_inlet_back", new AppControl.BoundaryValueCollection());
+                //config["velocity_inlet_back"].Evaluators.Add(
+                //    VariableNames.Velocity_d(0) + "#A",
+                //    (X, t) => Ux);
+                //config["velocity_inlet_back"].Evaluators.Add(
+                //    VariableNames.Velocity_d(0) + "#B",
+                //    (X, t) => Ux);
+
+                //config.Add("velocity_inlet_front", new AppControl.BoundaryValueCollection());
+                //config["velocity_inlet_front"].Evaluators.Add(
+                //    VariableNames.Velocity_d(0) + "#A",
+                //    (X, t) => Ux);
+                //config["velocity_inlet_front"].Evaluators.Add(
+                //    VariableNames.Velocity_d(0) + "#B",
+                //    (X, t) => Ux);
             }
 
             return config;
@@ -214,14 +192,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         bool quadratic = false;
 
         /// <summary>
-        /// Level-Set: at t=0 circle with radius R, at the center (0,0); moving with Ux in x-direction.
+        /// Level-Set: at t=0 circle with radius R, at the center (0,0); non-moving.
         /// </summary>
         public Func<double[], double, double> GetPhi() {
             return delegate (double[] X, double time) {
 
-                double x0 = -Radius / 2.0; 
-                double x = X[0] - x0, y = X[1];
-                x -= time * Ux;
+
+                double x = X[0], y = X[1];
+                //x -= time * Uscale;
 
                 double dist;
                 switch (SpatialDimension) {
@@ -237,20 +215,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// velocity: constant velocity field with Ux in x-direction.
+        /// velocity: constant rotational velocity field.
         /// </summary>
         public Func<double[], double, double> GetU(string species, int d) {
             switch (SpatialDimension) {
                 case 2:
                 if (d == 0)
-                    return ((_2D)((x, y) => Ux)).Convert_xy2X().Convert_X2Xt();
+                    return ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt();
                 else if (d == 1)
-                    return ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt();
+                    return ((_2D)((x, y) => -Uscale * x)).Convert_xy2X().Convert_X2Xt();
                 else
                     throw new ArgumentOutOfRangeException();
                 case 3:
                 if (d == 0)
-                    return ((_3D)((x, y, z) => Ux)).Convert_xyz2X().Convert_X2Xt();
+                    return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
                 else if (d == 1)
                     return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
                 else if (d == 2)

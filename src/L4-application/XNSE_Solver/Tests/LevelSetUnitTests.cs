@@ -34,28 +34,101 @@ using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
+
+    interface IXNSElsTest : IXNSETest {
+
+        /// <summary>
+        /// compute a suitable timestep for various combinationa of grid resolutions and level-set degrees
+        /// </summary>
+        /// <returns></returns>
+        double ComputeTimestep(int gridResolution, int lsDegree);
+
+    }
+
     /// <summary>
     /// A collection of all-up NUnit tests for the XNSE solver regarding various level set handling
     /// </summary>
     [TestFixture]
-    static public partial class LevelSetUnitTest {
+    static public partial class LevelSetUnitTests {
 
 
         /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectiontTest"/>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetScalingTest"/>
+        /// </summary>
+        //[Test]
+        //public static void LevelSetScalingTest(
+        //    [Values(2)] int spatialDimension,
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+        //    //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+        //    {
+        //    // Todo: singleInit/multiInit, 
+
+        //    var Tst = new LevelSetScalingTest(spatialDimension, LSdegree);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+
+        //    LevelSetTest(Tst, C);
+
+        //}
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetRotationTest"/>
         /// </summary>
         [Test]
-        public static void LevelSetAdvectiontTest(
+        public static void LevelSetRotationTest(
+            [Values(2)] int spatialDimension,
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+            {
+            // Todo: singleInit/multiInit, 
+
+            var Tst = new LevelSetRotationTest(spatialDimension, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+
+            LevelSetTest(Tst, C);
+
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionTest(
             [Values(2)] int spatialDimension,
             [Values(2,3,4)] int LSdegree,
             [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling levelSetHandling)
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
             //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
             {
                 // Todo: singleInit/multiInit, 
 
-            var Tst = new LevelSetAdvectiontTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, levelSetEvolution, levelSetHandling);
+            var Tst = new LevelSetAdvectionTest(spatialDimension, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+
+            LevelSetTest(Tst, C);
+
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetShearingTest(
+            [Values(2)] int spatialDimension,
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+            {
+            // Todo: singleInit/multiInit, 
+
+            var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
 
             LevelSetTest(Tst, C);
 
@@ -66,9 +139,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             using (var solver = new XNSE()) {
 
-                //Console.WriteLine("Warning! - enabled immediate plotting");
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 3;
+                Console.WriteLine("Warning! - enabled immediate plotting");
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -93,19 +166,18 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-
-        class AS_XNSE_Control : XNSE_Control {
+        class ASLS_XNSE_Control : XNSE_Control {
             public override Type GetSolverType() {
                 return typeof(XNSE);
             }
         }
 
 
-        static AS_XNSE_Control LSTstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, 
+        static ASLS_XNSE_Control LSTstObj2CtrlObj(IXNSElsTest tst, int FlowSolverDegree, int NoTimesteps,
             LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
             int GridResolution = 2) {
 
-            AS_XNSE_Control C = new AS_XNSE_Control();
+            ASLS_XNSE_Control C = new ASLS_XNSE_Control();
             int D = tst.SpatialDimension;
 
 
@@ -184,29 +256,30 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 
             C.Option_LevelSetEvolution = levelSetEvolution;
-            if (levelSetEvolution == LevelSetEvolution.Fourier) {   // ToDo: refactor Fourier initialization!
-                int numSp = 640;
-                double[] FourierP = new double[numSp];
-                double[] samplP = new double[numSp];
-                for (int sp = 0; sp < numSp; sp++) {
-                    FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
-                    samplP[sp] = ((LevelSetAdvectiontTest)tst).Radius;
-                }
+            //if (levelSetEvolution == LevelSetEvolution.Fourier) {   // ToDo: refactor Fourier initialization!
+            //    int numSp = 640;
+            //    double[] FourierP = new double[numSp];
+            //    double[] samplP = new double[numSp];
+            //    for (int sp = 0; sp < numSp; sp++) {
+            //        FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
+            //        samplP[sp] = ((LevelSetAdvectiontTest)tst).Radius;
+            //    }
 
-                C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 0.1) {
-                    center = new double[] { 0.0, 0.0},
-                    FourierEvolve = Fourier_Evolution.MaterialPoints,
-                    centerMove = CenterMovement.Reconstructed,
-                };
-            }
+            //    C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 0.1) {
+            //        center = new double[] { 0.0, 0.0},
+            //        FourierEvolve = Fourier_Evolution.MaterialPoints,
+            //        centerMove = CenterMovement.Reconstructed,
+            //    };
+            //}
 
             C.Timestepper_LevelSetHandling = levelSetHandling;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
 
-            C.NoOfTimesteps = 5;
-            C.dtFixed = tst.dt;
-            C.Endtime = 5 * tst.dt;
+            C.NoOfTimesteps = NoTimesteps;
+            double dt = tst.ComputeTimestep(GridResolution, FlowSolverDegree);
+            C.dtFixed = dt;
+            C.Endtime = (double) (NoTimesteps * dt);
 
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
