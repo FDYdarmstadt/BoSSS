@@ -305,20 +305,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 Debug.Assert(noOfLambdas < noOfNodesPerEdge, "Not enough integration points");
 
 
-                //int suspIdx = Array.IndexOf(mask.ItemEnum.ToArray(), 1410);
-
-
                 LambdaEdgeBoundaryQuadrature cellBoundaryQuadrature =
                     new LambdaEdgeBoundaryQuadrature(this, CoFaceQuadRuleFactory, maxLambdaDegree, mask);
                 cellBoundaryQuadrature.Execute();
                 MultidimensionalArray boundaryResults = cellBoundaryQuadrature.Results;
-                //var bndy1410 = boundaryResults.ExtractSubArrayShallow(suspIdx, -1, -1);
 
                 LambdaLevelSetSurfaceQuadrature surfaceQuadrature =
                     new LambdaLevelSetSurfaceQuadrature(this, edgeSurfaceRuleFactory, maxLambdaDegree, mask);
                 surfaceQuadrature.Execute();
                 MultidimensionalArray surfaceResults = surfaceQuadrature.Results;
-                //var surf1410 = surfaceResults.ExtractSubArrayShallow(suspIdx, -1, -1);
 
                 int noOfRhs = 0;
                 int[,] rhsIndexMap = new int[mask.NoOfItemsLocally, noOfFaces];
@@ -366,13 +361,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 int sign = numPos - numNeg;
 
                                 if (sign == 0) {
-                                    CellMask cellMark = new CellMask(mask.GridData, Chunk.GetSingleElementChunk(cell), MaskType.Logical);
-                                    //cellMark.SaveToTextFile("FuckedCell.csv", false);
-                                    int iEdge = mask.GridData.CellToEdge(cell, e);
-                                    EdgeMask edgMask = new EdgeMask(mask.GridData, Chunk.GetSingleElementChunk(iEdge));
-                                    //edgMask.SaveToTextFile("FuckedEdge.csv", false);
-
-                                    Console.WriteLine($"numpos: {numPos}, numNeg: {numNeg}");
+                                    //CellMask cellMark = new CellMask(mask.GridData, Chunk.GetSingleElementChunk(cell), MaskType.Logical);
+                                    ////cellMark.SaveToTextFile("FuckedCell.csv", false);
+                                    //int iEdge = mask.GridData.CellToEdge(cell, e);
+                                    //EdgeMask edgMask = new EdgeMask(mask.GridData, Chunk.GetSingleElementChunk(iEdge));
+                                    ////edgMask.SaveToTextFile("FuckedEdge.csv", false);
+                                    //Console.WriteLine($"numpos: {numPos}, numNeg: {numNeg}");
                                     throw new ArithmeticException($"Could not determine sign of face {e} of cell {cell}");
                                 }
 
