@@ -251,6 +251,11 @@ namespace BoSSS.Foundation.XDG {
             return LevSetQrIns;
         }
 
+
+        public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet) {
+            throw new NotImplementedException("haha");
+        }
+
         /// <summary>
         /// Boundary quadrature for the surface elements, i.e. for each cut background-cell \f$ K_j \f$ a quadrature to approximate
         /// \f[

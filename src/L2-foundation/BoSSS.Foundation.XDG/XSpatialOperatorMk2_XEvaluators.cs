@@ -111,9 +111,24 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+            protected override void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species) {
+                Debug.Assert(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.ContactLineOperator_Ls0, this.m_lsTrk, spcName, quadOrder, eqs, cqs, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
+                var ContactLineBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params_4Species, CodomFrame.FrameMap);
+                ContactLineBuilder.MPITtransceive = false;
+                SpeciesContactLineBuilder.Add(SpeciesId, ContactLineBuilder);
+            }
+
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesBulkMtxBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
+            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesContactLineBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
 
             /// <summary>
             /// <see cref="IEvaluatorLinear.ComputeAffine{V}(V)"/>
@@ -205,7 +220,7 @@ namespace BoSSS.Foundation.XDG {
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
-                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
+                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder }) {
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
@@ -391,7 +406,7 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
 
-                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval }) {
+                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval }) {
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -546,11 +561,27 @@ namespace BoSSS.Foundation.XDG {
                 SpeciesSurfElmEval.Add(SpeciesId, SurfElmEval);
             }
 
+            /// <summary>
+            /// creates an evaluator
+            /// </summary>
+            protected override void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld) {
+                Debug.Assert(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.ContactLineOperator_Ls0, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
+                var ContactLineEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
+                ContactLineEval.MPITtransceive = false;
+                SpeciesContactLineEval.Add(SpeciesId, ContactLineEval);
+            }
 
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesBulkEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesGhostEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesSurfElmEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
-
+            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesContactLineEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
 
         }
 
@@ -715,6 +746,13 @@ namespace BoSSS.Foundation.XDG {
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
+
+                        if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
+                            EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
+                            CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                            ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
+                        }
+
                     }
 
                     // coupling terms
@@ -870,6 +908,11 @@ namespace BoSSS.Foundation.XDG {
             /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
+
+            /// <summary>
+            /// Create Integrator for <see cref="XSpatialOperatorMk2.ContactLineOperator_Ls0"/>
+            /// </summary>
+            abstract protected void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
             /// Create integrator for <see cref="ILevelSetForm"/> components
