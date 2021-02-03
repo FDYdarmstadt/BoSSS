@@ -282,48 +282,34 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
-    public class Gravity : ParameterS, ILevelSetParameter {
+    public class Gravity : ParameterS {
         int degree;
 
-        Func<double[], double, double> timedependent;
-        bool istimedependent = false;
+        Func<double[], double, double> initial;
 
         string[] names;
 
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
-            IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields){
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
 
-            if (istimedependent) {
-                GravityUpdate(time, DomainVarFields, ParameterVarFields);
-            }
-        }
-
-        public Gravity(string species, int d, int D, Func<double[], double, double> initial, double rho, int degree, bool istimedependent) {
+        public Gravity(string species, int d, int D, Func<double[], double, double> initial, double rho, int degree) {
             this.degree = degree;
 
             names = new string[1];
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             names[0] = gravity + "#" + species;
-            this.timedependent = (X, t) => -initial(X, t) * rho;
-            this.istimedependent = istimedependent;
+            this.initial = (X, t) => -initial(X, t) * rho;
         }
 
-        public static Gravity CreateFrom(string species, int d, int D, AppControl control, double rho, Func<double[], double, double> GravityFunc = null) {
-            bool istimedependent = false;
+        public static Gravity CreateFrom(string species, int d, int D, AppControl control, double rho, Func<double[], double, double> gravityFunc) {
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             string gravityOfSpecies = gravity + "#" + species;
-            Func<double[], double, double> timedependentGravity;
-            if (GravityFunc != null) {
-                timedependentGravity = GravityFunc;
-                istimedependent = true;
-            }
-            else if (control.InitialValues_Evaluators.TryGetValue(gravityOfSpecies, out Func<double[], double> initialValue)) {
-                timedependentGravity = (X, t) => initialValue(X);
+            Func<double[], double, double> initialGravity;
+            if (gravityFunc != null) {
+                initialGravity = gravityFunc;
             } else {
-                timedependentGravity = (X, t) => 0.0;
+                initialGravity = (X, t) => 0.0;
             }
 
             int gravityDegree;
@@ -334,7 +320,7 @@ namespace BoSSS.Solution.XNSECommon {
             } else {
                 gravityDegree = 0;
             }
-            return new Gravity(species, d, D, timedependentGravity, rho, gravityDegree, istimedependent);
+            return new Gravity(species, d, D, initialGravity, rho, gravityDegree);
         }
 
         public override IList<string> ParameterNames => names;
@@ -342,14 +328,79 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
             DGField gravity = new SinglePhaseField(basis, names[0]);
-            gravity.ProjectField(X => timedependent(X, 0.0));
+            gravity.ProjectField(X => initial(X, 0.0));
             return new (string, DGField)[] { (names[0], gravity) };
         }
 
-        void GravityUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            DGField gravity = ParameterVarFields[names[0]];
-            gravity.Clear();
-            gravity.ProjectField(X => timedependent(X, time));
+        double timeOfLastUpdate = 0.0;
+        public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if (timeOfLastUpdate != time) {
+                timeOfLastUpdate = time;
+                DGField gravity = ParameterVarFields[names[0]];
+                gravity.Clear();
+                gravity.ProjectField(X => initial(X, time));
+            }
+        }
+    }
+
+    public class VolumeForce : ParameterS {
+        int degree;
+
+        Func<double[], double, double> initial;
+
+        string[] names;
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
+        public VolumeForce(string species, int d, int D, Func<double[], double, double> initial, int degree) {
+            this.degree = degree;
+
+            names = new string[1];
+            string volforce = BoSSS.Solution.NSECommon.VariableNames.VolumeForceVector(D)[d];
+            names[0] = volforce + "#" + species;
+            this.initial = (X, t) => -initial(X, t);
+        }
+
+        public static VolumeForce CreateFrom(string species, int d, int D, AppControl control, Func<double[], double, double> VolForceFunc) {
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.VolumeForceVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + species;
+            Func<double[], double, double> initialVolForce;
+            if (VolForceFunc != null) {
+                initialVolForce = VolForceFunc;
+            } else {
+                initialVolForce = (X, t) => 0.0;
+            }
+
+            int volForceDegree;
+            if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
+                volForceDegree = opts.Degree;
+            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+                volForceDegree = velOpts.Degree;
+            } else {
+                volForceDegree = 0;
+            }
+            return new VolumeForce(species, d, D, initialVolForce, volForceDegree);
+        }
+
+        public override IList<string> ParameterNames => names;
+
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
+            DGField volforce = new SinglePhaseField(basis, names[0]);
+            volforce.ProjectField(X => initial(X, 0.0));
+            return new (string, DGField)[] { (names[0], volforce) };
+        }
+
+        double timeOfLastUpdate = 0.0;
+        public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if (timeOfLastUpdate != time) {
+                timeOfLastUpdate = time;
+                DGField volforce = ParameterVarFields[names[0]];
+                volforce.Clear();
+                volforce.ProjectField(X => initial(X, time));
+            }
         }
     }
 

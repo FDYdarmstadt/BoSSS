@@ -272,15 +272,28 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                var GravityAd = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, this.Control.Gravity["A"][d]);
-                opFactory.AddParameter(GravityAd);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, GravityAd);
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                var GravityBd = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, this.Control.Gravity["B"][d]);
-                opFactory.AddParameter(GravityBd);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, GravityBd);
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+
+                // Add Gravitation
+                {
+                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.Gravity?["A"][d]);
+                    opFactory.AddParameter(GravA);
+                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.Gravity?["B"][d]);
+                    opFactory.AddParameter(GravB);
+                }
+                if (this.Control.InitialValues_Evaluators.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d])) || this.Control.InitialValues_Evaluators_TimeDep.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d]))) {
+                    Console.WriteLine("Warning: You are trying to use the InitialValues_Evaluators to set a gravity. This is not supported any more!");
+                }
+
+                // Add additional volume forces
+                {
+                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.VolumeForce?["A"][d]);
+                    opFactory.AddParameter(VolForceA);
+                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.VolumeForce?["B"][d]);
+                    opFactory.AddParameter(VolForceB);
+                }
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);

@@ -557,11 +557,19 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
 
         /// <summary>
-        /// Time dependent Gravity for each species.
+        /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> Gravity;
+
+        /// <summary>
+        /// Time dependent function for the volume force (component-wise) (either A or B).
+        /// This is a force, not an acceleration, as e.g. <see cref="Gravity"/>
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>[]> VolumeForce;
 
         /// <summary>
         /// Control Options for ReInit
