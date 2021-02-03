@@ -73,6 +73,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             jFound += map.GridDat.CellPartitioning.i0;
 
             long jFoundGlob = jFound.MPIMax();
+            if(jFoundGlob < 0)
+                throw new ApplicationException("unable to find reference cell.");
             return jFoundGlob;
         }
 
@@ -97,7 +99,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(bases.Length != FreeMeanValue.Length)
                 throw new ArgumentException(); 
 
-            if(FreeMeanValue.Any() == false) {
+            if(FreeMeanValue.Any(b => b) == false) {
+                // none of the solution variables contains a "free mean value"
+                // => no need to do anything further
                 return;
             }
 
@@ -120,7 +124,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_ReferenceIndices = null;
             }
 
-            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell));
+
+            int originRank = BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell); // on this rank, the 'm_ReferenceIndices' are defined
+            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank);
 
         }
 
