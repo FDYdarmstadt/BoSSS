@@ -89,9 +89,9 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            Tecplot.PlotFields(this.m_RegisteredFields, "XHEAT_Solver" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(this.m_RegisteredFields, "XHEAT-" + timestepNo, physTime, superSampling);
             if(Timestepping?.Parameters != null) {
-                Tecplot.PlotFields(Timestepping.Parameters, "XHEAT_Solver_Params" + timestepNo, physTime, superSampling);
+                Tecplot.PlotFields(Timestepping.Parameters, "XHEAT-Params-" + timestepNo, physTime, superSampling);
             }
         }
 
@@ -105,6 +105,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            XOP.IsLinear = true;
             XOP.Commit();
 
             return XOP;
