@@ -148,8 +148,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
-                
 
+                bool isRestart = Control.RestartInfo != null;
                 switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         //if(Control.EnforceLevelSetConservation) {
@@ -169,7 +169,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         //if(Control.InitialValues_EvaluatorsVec.ContainsKey(LevelSetCG))
                         levelSetDG.Clear();
-                        levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
+                        if(!isRestart)levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
@@ -184,7 +184,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
                 }
 
-                if(DGlevelSets[iLevSet].L2Norm() == 0.0) {
+                if(DGlevelSets[iLevSet].L2Norm() == 0.0 && !isRestart) {
                     Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
                     DGlevelSets[iLevSet].AccConstant(-1.0);
                 }
