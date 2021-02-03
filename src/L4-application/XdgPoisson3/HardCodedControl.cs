@@ -543,7 +543,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 8;
+            int Res = 20;
             int blocksize = 10;
 
             C.GridFunc = delegate () {

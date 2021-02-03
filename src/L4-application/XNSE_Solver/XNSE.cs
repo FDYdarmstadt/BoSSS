@@ -96,13 +96,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <remarks>
         /// Note: 
         /// Sayes algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-        /// We transform $`\int f dx`$ to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} `$
-        /// Suppose $`f`$ has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
+        /// We transform $`\int f dx $` to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} $`
+        /// Suppose $`f$` has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
         /// has approximately degree $`\leq n * p + (p - 1) $`
-        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))`$ roots of the level set function, if we want to integrate $`f$` exactly.
+        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))$` roots of the level set function, if we want to integrate $`f$` exactly.
         /// This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant $`f = 1$`.
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
-        /// /// </remarks>
+        /// </remarks>
         override public int QuadOrder() {
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {

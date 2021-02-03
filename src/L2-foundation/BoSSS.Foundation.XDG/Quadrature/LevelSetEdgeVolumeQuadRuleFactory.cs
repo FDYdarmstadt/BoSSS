@@ -30,9 +30,13 @@ using BoSSS.Foundation.Grid.RefElements;
 namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
     /// <summary>
-    /// Uses the hierarchical moment-fitting (HMF) strategy to compute
+    /// For a 3D setting, this class implements the hierarchical moment-fitting (HMF) strategy to compute
     /// two-dimensional volume integrals over the boundaries of cells that
-    /// are intersected by the level set. In other words: If the (planar) edge
+    /// are intersected by the level set, i.e integrals of the form
+    /// ```math
+    ///   \oint_{K_j \cap \{ \vec{x}; \varphi( \vec{x} ) < 0 \} } f \ dS
+    /// ```
+    /// In other words: If the (planar) edge
     /// of a three-dimensional element is intersected by the level set, this
     /// factory applies the HMF strategy in order to create accurate quadrature
     /// rules for the integration over the negative/positive (depending on the
@@ -52,11 +56,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.LevelSetEdgeVolumeQuadRuleFactory"/>
         /// </summary>
         private JumpTypes jumpType;
-
-        ///// <summary>
-        ///// Tracks the level set
-        ///// </summary>
-        //private LevelSetTracker tracker;
 
         /// <summary>
         /// Factory for one-dimensional integration rules for the edges of the
@@ -104,18 +103,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private PolynomialList lambdaBasis;
 
-        ///// <summary>
-        ///// The sub-grid for the current execution mask
-        ///// </summary>
-        //private SubGrid subGrid;
-
         /// <summary>
         /// The requested polynomial order in the last call of
         /// <see cref="GetQuadRuleSet"/>; used for caching
         /// </summary>
         private int lastOrder = -1;
 
-        /// seems to be incorectly implementd:
+        /// <summary>
+        /// seems to be incorrectly implemented:
         /// <summary>
         /// Cache for quadrature rules
         /// <list type="bullet">
@@ -309,15 +304,21 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     "Assumption violated: Number of nodes varies from edge to edge.");
                 Debug.Assert(noOfLambdas < noOfNodesPerEdge, "Not enough integration points");
 
+
+                //int suspIdx = Array.IndexOf(mask.ItemEnum.ToArray(), 1410);
+
+
                 LambdaEdgeBoundaryQuadrature cellBoundaryQuadrature =
                     new LambdaEdgeBoundaryQuadrature(this, CoFaceQuadRuleFactory, maxLambdaDegree, mask);
                 cellBoundaryQuadrature.Execute();
-                double[, ,] boundaryResults = cellBoundaryQuadrature.Results;
+                MultidimensionalArray boundaryResults = cellBoundaryQuadrature.Results;
+                //var bndy1410 = boundaryResults.ExtractSubArrayShallow(suspIdx, -1, -1);
 
                 LambdaLevelSetSurfaceQuadrature surfaceQuadrature =
                     new LambdaLevelSetSurfaceQuadrature(this, edgeSurfaceRuleFactory, maxLambdaDegree, mask);
                 surfaceQuadrature.Execute();
-                double[, ,] surfaceResults = surfaceQuadrature.Results;
+                MultidimensionalArray surfaceResults = surfaceQuadrature.Results;
+                //var surf1410 = surfaceResults.ExtractSubArrayShallow(suspIdx, -1, -1);
 
                 int noOfRhs = 0;
                 int[,] rhsIndexMap = new int[mask.NoOfItemsLocally, noOfFaces];
@@ -325,7 +326,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 foreach (Chunk chunk in mask) {
                     MultidimensionalArray levelSetValues = LevelSetData.GetLevSetValues(signTestRule.Nodes, chunk.i0, chunk.Len);
                     
-                    for (int i = 0; i < chunk.Len; i++) {
+                    for (int i = 0; i < chunk.Len; i++) { // loop over cells in chunk
                         int cell = i + chunk.i0;
                         iSubGrid++;
 
@@ -365,8 +366,14 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 int sign = numPos - numNeg;
 
                                 if (sign == 0) {
-                                    throw new Exception(String.Format(
-                                        "Could not determine sign of face {0} of cell {1}", e, cell));
+                                    CellMask cellMark = new CellMask(mask.GridData, Chunk.GetSingleElementChunk(cell), MaskType.Logical);
+                                    //cellMark.SaveToTextFile("FuckedCell.csv", false);
+                                    int iEdge = mask.GridData.CellToEdge(cell, e);
+                                    EdgeMask edgMask = new EdgeMask(mask.GridData, Chunk.GetSingleElementChunk(iEdge));
+                                    //edgMask.SaveToTextFile("FuckedEdge.csv", false);
+
+                                    Console.WriteLine($"numpos: {numPos}, numNeg: {numNeg}");
+                                    throw new ArithmeticException($"Could not determine sign of face {e} of cell {cell}");
                                 }
 
                                 switch (jumpType) {
@@ -605,11 +612,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <returns>
         /// The values of <see cref="lambdaBasis"/> in each node of
         /// <paramref name="rule"/>
-        /// <list type="bullet">
-        ///     <item>1st index: Node index</item>
-        ///     <item>2nd index: Basis function index</item>
-        ///     <item>3rd index: Spatial dimension</item>
-        /// </list>
+        /// - 1st index: Node index
+        /// - 2nd index: Basis function index
+        /// - 3rd index: Spatial dimension
         /// </returns>
         /// <remarks>
         /// This method does not evaluate a Lambda which is constant since the
@@ -699,21 +704,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             /// <summary>
             /// Integration results for the last call to <see cref="Execute"/>
-            /// <list type="bullet">
-            ///     <item>
-            ///     1st index: Cell index within
-            ///     <see cref="LevelSetEdgeVolumeQuadRuleFactory.subGrid"/>
-            ///     </item>
-            ///     <item>
-            ///     2nd index: Local edge index
-            ///     </item>
-            ///     <item>
-            ///     3rd index: Basis function (see
-            ///     <see cref="LevelSetEdgeVolumeQuadRuleFactory.EvaluateLambdas"/>
-            ///     </item>
-            /// </list>
+            /// - 1st index: Cell index within mask provided in constructor
+            /// - 2nd index: Local edge index
+            /// - 3rd index: Basis function (see <see cref="LevelSetEdgeVolumeQuadRuleFactory.EvaluateLambdas"/>
             /// </summary>
-            public double[, ,] Results;
+            public MultidimensionalArray Results;
+
+
+            static ICompositeQuadRule<CellEdgeBoundaryQuadRule> ExecuteFactory(IQuadRuleFactory<CellEdgeBoundaryQuadRule> edgeRuleFactory, CellMask mask, int maxLambdaDegree) {
+                var scheme = new CellEdgeBoundaryQuadratureScheme(false, edgeRuleFactory, mask);
+                var rule = scheme.Compile(mask.GridData, maxLambdaDegree);
+                return rule;
+            }
 
             /// <summary>
             /// Constructor
@@ -730,7 +732,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 : base(
                     new int[] { owner.GetNumberOfLambdas() },
                     owner.LevelSetData.GridDat,
-                    (new CellEdgeBoundaryQuadratureScheme(false, edgeRuleFactory, mask)).Compile(owner.LevelSetData.GridDat, maxLambdaDegree),
+                    ExecuteFactory(edgeRuleFactory, mask, maxLambdaDegree),
                     CoordinateSystem.Reference) {
                 this.owner = owner;
                 noOfItemsLocally = mask.NoOfItemsLocally;
@@ -740,10 +742,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// Computes the integrals while overwriting <see cref="Results"/>
             /// </summary>
             public override void Execute() {
-                Results = new double[
+                Results = MultidimensionalArray.Create(
                     noOfItemsLocally,
                     gridData.iGeomCells.RefElements[0].NoOfFaces,
-                    IntegralCompDim[0]];
+                    IntegralCompDim[0]);
                 base.Execute();
             }
 
@@ -759,20 +761,20 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             /// <summary>
-            /// For each edge \f$ E\f$  of each cell in
+            /// For each face $` E $`  of each cell in
             /// the given range and for each
-            /// \f$ \vec{\Lambda}\f$  in
+            /// $` \vec{\Lambda}\ $`  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// \f$ 
+            /// ```math 
             /// \int \limits_{\partial E} \vec{\Lambda} \cdot \vec{n} H(\varphi) \;ds,
-            /// \f$ 
-            /// where \f$ \vec{n}\f$  denotes the outer
-            /// unit normal vector on \f$ \partial E\f$ 
-            /// (<b>not</b> \f$ E\f$ !). Moreover,
-            /// \f$ H\f$  a weight function that depends
-            /// on the level set function \f$ \varphi\f$ .
-            /// Typically, \f$ H\f$  is given by the
+            /// ```
+            /// where $` \vec{n} $`  denotes the outer
+            /// unit normal vector on $` \partial E $` 
+            /// (**not** $` E $`!). Moreover,
+            /// $` H $`  a weight function that depends
+            /// on the level set function $` \varphi $`.
+            /// Typically, $` H $`  is given by the
             /// Heaviside function. For more details, see
             /// <see cref="CutLineQuadRuleFactory"/>
             /// </summary>
@@ -848,7 +850,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Used for the computation of the integral of the basis functions
         /// (see <see cref="lambdaBasis"/>) over the intersection of the zero
-        /// iso-contour of the level set with an edge. This requires a special
+        /// iso-contour of the level set with a face. This requires a special
         /// treatment; see <see cref="edgeSurfaceRuleFactory"/>.
         /// </summary>
         private class LambdaLevelSetSurfaceQuadrature : CellBoundaryQuadrature<CellBoundaryQuadRule> {
@@ -865,21 +867,18 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
             /// <summary>
             /// Integration results for the last call to <see cref="Execute"/>
-            /// <list type="bullet">
-            ///     <item>
-            ///     1st index: Cell index within
-            ///     <see cref="LevelSetEdgeVolumeQuadRuleFactory.subGrid"/>
-            ///     </item>
-            ///     <item>
-            ///     2nd index: Local edge index
-            ///     </item>
-            ///     <item>
-            ///     3rd index: Basis function (see
-            ///     <see cref="LevelSetEdgeVolumeQuadRuleFactory.EvaluateLambdas"/>
-            ///     </item>
-            /// </list>
+            /// - 1st index: item index within execution mask provided with constructor
+            /// - 2nd index: cell face index
+            /// - 3rd index: Basis function (see <see cref="LevelSetEdgeVolumeQuadRuleFactory.EvaluateLambdas"/>
             /// </summary>
-            public double[, ,] Results;
+            public MultidimensionalArray Results;
+
+
+            static ICompositeQuadRule<CellBoundaryQuadRule> ExecuteFactory(IQuadRuleFactory<CellBoundaryQuadRule> surfaceRuleFactory, CellMask mask, int maxLambdaDegree) {
+                var scheme = new CellBoundaryQuadratureScheme(surfaceRuleFactory, mask);
+                var rule = scheme.Compile(mask.GridData, maxLambdaDegree);
+                return rule;
+            }
 
             /// <summary>
             /// Constructor
@@ -891,7 +890,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             public LambdaLevelSetSurfaceQuadrature(LevelSetEdgeVolumeQuadRuleFactory owner, IQuadRuleFactory<CellBoundaryQuadRule> surfaceRuleFactory, int maxLambdaDegree, CellMask mask)
                 : base(new int[] { owner.GetNumberOfLambdas() },
                        owner.LevelSetData.GridDat,
-                       (new CellBoundaryQuadratureScheme(surfaceRuleFactory, mask)).Compile(owner.LevelSetData.GridDat, maxLambdaDegree),
+                       ExecuteFactory(surfaceRuleFactory, mask, maxLambdaDegree),
                        CoordinateSystem.Reference) //
             {
                 this.owner = owner;
@@ -904,29 +903,29 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// Computes the integrals while overwriting <see cref="Results"/>
             /// </summary>
             public override void Execute() {
-                Results = new double[
+                Results = MultidimensionalArray.Create(
                     noOfItemsLocally,
-                    gridData.iGeomCells.RefElements[0].NoOfFaces,
-                    IntegralCompDim[0]];
+                    gridData.iGeomCells.RefElements.Max(Kref => Kref.NoOfFaces),
+                    IntegralCompDim[0]);
                 base.Execute();
             }
 
             
 
             /// <summary>
-            /// For each edge \f$ E\f$  of each cell in
+            /// For each face $` E $`  of each cell in
             /// the given range and for each
-            /// \f$ \vec{\Lambda}\f$  in
+            /// $` \vec{\Lambda} $`  in
             /// <see cref="LevelSetEdgeVolumeQuadRuleFactory.lambdaBasis"/>:
             /// Computes
-            /// \f$ 
+            /// ```math 
             /// \int_{ \{ \vec{x}; \varphi(\vec{x}) = 0 \}  \cap E} \vec{\Lambda} \cdot \vec{n}_I \;ds,
-            /// \f$ 
-            /// where \f$ \varphi\f$  is the level set
+            /// ```
+            /// where $` \varphi $`  is the level set
             /// function and \f$ \vec{n}_I\f$  denotes the
             /// unit normal vector on
-            /// \f$ \varphi \cap E\f$ 
-            /// (<b>not</b> \f$ E\f$ !)
+            /// $` \varphi \cap E $` 
+            /// (**not** $` E $`!)
             /// </summary>
             /// <param name="i0"></param>
             /// <param name="Length"></param>
@@ -940,11 +939,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     MultidimensionalArray lambdaValues = owner.EvaluateLambdas(i0 + i, CurrentRule);
                     int nodeIndex = -1;
 
-                    for (int e = 0; e < gridData.iGeomCells.RefElements[0].NoOfFaces; e++) {
+                    int jCell = i + i0;
+                    var Kref = gridData.iGeomCells.GetRefElement(jCell);
+                    int NoOfFaces = Kref.NoOfFaces;
+
+                    if(jCell == 1410) {
+                        Console.WriteLine();
+                    }
+
+                    for (int e = 0; e < NoOfFaces; e++) { // loop over faces...
                         MultidimensionalArray levelSetNormals =
-                            LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, i0 + i, CurrentRule, e);
+                            LevelSetEdgeSurfaceQuadRuleFactory.EvaluateRefNormalsOnEdge(this.owner.LevelSetData, jCell, CurrentRule, e);
                         MultidimensionalArray metrics = LevelSetEdgeSurfaceQuadRuleFactory.GetMetricTermsOnEdge(
-                            this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, i0 + i, e);
+                            this.owner.LevelSetData, this.owner.levelSetIndex, CurrentRule, jCell, e);
 
                         for (int j = 0; j < CurrentRule.NumbersOfNodesPerFace[e]; j++) {
                             nodeIndex++;
@@ -968,7 +975,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// </summary>
             protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
                 for (int i = 0; i < Length; i++) {
-                    int cell = i0 + i;
+                    //int cell = i0 + i;
                     iSubGrid++;
 
                     for (int e = 0; e < owner.LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces; e++) {
