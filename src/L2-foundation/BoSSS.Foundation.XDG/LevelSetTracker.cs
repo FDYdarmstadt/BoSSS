@@ -1774,6 +1774,7 @@ namespace BoSSS.Foundation.XDG {
 
                                         int[] jNeighs = Neighbours[j];
 
+
                                         // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
                                         int mindv = int.MaxValue;
                                         for(int k = 0; k < _NoOfSmplxVertice; k++)
