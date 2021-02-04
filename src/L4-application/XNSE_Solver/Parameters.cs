@@ -111,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 } catch {
                     Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
                     EvoVelocity = D.ForLoop(
-                        d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                        d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0_d(d)]
                         );
                 }
 

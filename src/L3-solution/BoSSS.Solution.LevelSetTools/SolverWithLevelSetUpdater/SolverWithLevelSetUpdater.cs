@@ -7,6 +7,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.Tecplot;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -79,6 +80,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             foreach (DualLevelSet LevSet in LsUpdater.LevelSets.Values) {
                 base.RegisterField(LevSet.CGLevelSet);
                 base.RegisterField(LevSet.DGLevelSet);
+            }
+
+            // register internal fields, e.g. extension velocity etc.
+            foreach (var field in LsUpdater.InternalFields.Values) {
+                base.RegisterField(field);
             }
 
             return LsUpdater.Tracker;
@@ -327,22 +333,30 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return 0.0;
         }
 
+        protected override void CreateAdditionalFields() {
+            base.CreateAdditionalFields();
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-            base.CreateEquationsAndSolvers(L);
-
+            // Level Set Parameters
             var domainFields = CurrentState.Fields;
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
             for (int iVar = 0; iVar < domainFields.Count; iVar++) {
                 DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
             }
 
-            var parameterFields = Timestepping.Parameters;
+            var parameterFields = CurrentParameter.Fields;
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
+            
+            foreach (var f in LsUpdater.Parameters.Values) {
+                base.RegisterField(f);
+            }
+        }
+
+        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+            base.CreateEquationsAndSolvers(L);            
 
             // enforce continuity
             // ------------------
