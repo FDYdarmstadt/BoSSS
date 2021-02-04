@@ -1039,15 +1039,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach(var spc in new[] { "A", "B" }) {
+            C.Gravity = new Dictionary<string, Func<double[], double, double>[]>();
+
+            foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for(int d = 0; d < D; d++) {
+                Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
+
+                for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
+                    Gravity[d] = (X,t) => tst.GetF(spc, d)(X);
                 }
 
+                C.Gravity.Add(spc, Gravity);
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
 
             }
@@ -1337,7 +1342,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
                 }
             }
 
