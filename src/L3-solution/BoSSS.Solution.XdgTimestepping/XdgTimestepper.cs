@@ -233,13 +233,16 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             double _AgglomerationThreshold = 0.1,
             LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
-            LevelSetTracker _optTracker = null) //
+            LevelSetTracker _optTracker = null,
+            IList<DGField> _Parameters = null) //
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
 
-            if(this.Parameters.IsNullOrEmpty())
+            if (_Parameters.IsNullOrEmpty())
                 this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
 
             LsTrk = _optTracker;
             foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
@@ -272,24 +275,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 _AgglomerationThreshold,
                 LinearSolver, NonLinearSolver);
 
-        }
-
-        public XdgTimestepping(
-            XSpatialOperatorMk2 op,
-            IEnumerable<DGField> Fields,
-            IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme,
-            DelUpdateLevelset _UpdateLevelset = null,
-            LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
-            double _AgglomerationThreshold = 0.1,
-            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
-            LevelSetTracker _optTracker = null, IList<DGField> _Parameters = null) :
-            this(op, Fields, IterationResiduals, __Scheme, _UpdateLevelset, _LevelSetHandling, _MultigridOperatorConfig, _MultigridSequence, _AgglomerationThreshold, LinearSolver, NonLinearSolver, _optTracker){
-
-            this.Parameters = _Parameters;
-        }
+        }       
 
         private void ConstructorCommon(
             ISpatialOperator op, bool UseX, 
@@ -440,13 +426,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             TimeSteppingScheme __Scheme,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
-            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null) //
+            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
+            IList<DGField> _Parameters = null) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
 
-            if (this.Parameters.IsNullOrEmpty())
+            if (_Parameters.IsNullOrEmpty())
                 this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
+
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
                        
@@ -459,20 +449,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 _MultigridSequence,
                 0.0,
                 LinearSolver, NonLinearSolver);
-        }
-
-        public XdgTimestepping(
-            SpatialOperator op,
-            IEnumerable<DGField> Fields,
-            IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
-            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
-            IList<DGField> _Parameters = null) : this(op, Fields, IterationResiduals, __Scheme, _MultigridOperatorConfig, _MultigridSequence, LinearSolver, NonLinearSolver) {
-
-            this.Parameters = _Parameters;
-
         }
 
         /// <summary>
