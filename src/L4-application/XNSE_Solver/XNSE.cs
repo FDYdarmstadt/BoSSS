@@ -256,7 +256,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 

@@ -55,8 +55,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false);
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis) / 2, -distance * Math.Sin(angleXAxis) / 2 }, 0, 1),
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis) / 2, distance * Math.Sin(angleXAxis) / 2 }, angle, 1)
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, -distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, 0, 1),
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, angle, 1)
             };
 
 
