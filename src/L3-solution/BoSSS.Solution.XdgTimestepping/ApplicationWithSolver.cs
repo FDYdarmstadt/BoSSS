@@ -38,21 +38,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Mapping for parameter fields can be set by <see cref="CreateAdditionalFields"/>
+        /// List for parameter fields can be set by <see cref="CreateAdditionalFields"/>
         /// </summary>
-        public virtual CoordinateMapping CurrentParameter {
-            get {
-                return CurrentParameterVector.Mapping;
-            }
-
-        }
-
-        /// <summary>
-        /// DG coordinates of <see cref="CurrentParameter"/> in a single vector
-        /// </summary>
-        public virtual CoordinateVector CurrentParameterVector {
+        public virtual IList<DGField> Parameters {
             get;
             protected set;
+
         }
 
         /// <summary>
@@ -116,8 +107,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // parameters
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
-            CurrentParameterVector = parameterFields.Count() > 0 ? new CoordinateVector(parameterFields) : new CoordinateVector(new CoordinateMapping(this.GridData), false); // if we have no Parameters we need an empty mapping
+            Parameters = new List<DGField>();
             foreach (var f in parameterFields) {
+                this.Parameters.Add(f);
                 base.RegisterField(f);
             }            
 
@@ -432,7 +424,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
-                CurrentParameter.Fields);
+                Parameters);
 
             base.Timestepping = solver;
 
@@ -553,7 +545,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver,
-                CurrentParameter.Fields);
+                Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 

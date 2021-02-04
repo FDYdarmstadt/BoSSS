@@ -9,6 +9,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
+using BoSSS.Solution.XNSECommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,8 +82,11 @@ namespace BoSSS.Application.XNSE_Solver {
                     opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, heatBoundaryMap, lsUpdater.Tracker, config));
                 }
             }
+
             opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
+            opFactory.AddParameter(new Velocity0(D));
             opFactory.AddCoefficient(new EvapMicroRegion());
+
             if (config.prescribedMassflux != null)
                 opFactory.AddCoefficient(new PrescribedMassFlux(config));
 

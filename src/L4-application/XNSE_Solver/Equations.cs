@@ -86,8 +86,6 @@ namespace BoSSS.Application.XNSE_Solver {
             AddInterfaceNSE_MassFlux(dimension, d, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             if (config.prescribedMassflux != null)
                 AddCoefficient("PrescribedMassFlux");
 
@@ -100,6 +98,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // from XNSFE_OperatorComponents
             if (config.isTransport) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
                 if (!config.isMovingMesh) {
                     // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
                     // for the moving mesh discretization this condition is already contained in the convective terms
@@ -225,8 +225,6 @@ namespace BoSSS.Application.XNSE_Solver {
             AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
 
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             AddCoefficient("EvapMicroRegion");
         }
 
@@ -262,6 +260,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
                 if (config.isMovingMesh) {
                     AddComponent(new HeatConvectionAtLevelSet_MovingMesh_withMassflux(dimension, LsTrk, Tsat, config.getPhysParams, thermParams));
                 } else {
