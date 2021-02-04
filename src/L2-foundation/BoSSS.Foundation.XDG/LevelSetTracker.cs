@@ -29,6 +29,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using System.Collections.ObjectModel;
+using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -1705,104 +1706,133 @@ namespace BoSSS.Foundation.XDG {
                 using (new BlockTrace("NEAR_SWEEPS", tr)) {
                     
                     int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
-                    
-                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                        // Pre-sweep: ensure correct distance in the vertex markers
-                        // --------------------------------------------------------
+                    for(int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                        // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
-                        // there is certainly a smarter way to integrate the loops
+                        long NumberOfChanges = 1;
+                        while(NumberOfChanges > 0) { // sweep until we have no more updates
+                            NumberOfChanges = 0;
 
-                        // ensures that the distance of each vertex is lower or equal to the cell distance
-                        for (int j = 0; j < J; j++) { // sweep over cells;
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
-                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
-                                if(dJ <= dist) {
-                                    foreach (int kk in VerticeInd[j]) {
-                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
-                                        dVk = Math.Min(dVk, dJ);
-                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                            // Pre-sweep: ensure correct distance in the vertex markers
+                            // --------------------------------------------------------
+
+                            // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
+                            // there is certainly a smarter way to integrate the loops
+
+                            // ensures that the distance of each vertex is lower or equal to the cell distance
+                            for(int j = 0; j < J; j++) { // sweep over cells;
+                                for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                                    int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
+                                    if(dJ <= dist) {
+                                        foreach(int kk in VerticeInd[j]) {
+                                            int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                            dVk = Math.Min(dVk, dJ);
+                                            EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // MPI update
-                        // ----------
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets); 
+                            //using(var stw = new StreamWriter("Vertice-" + dist + ".csv")) {
+                            //    var vCoords = m_gDat.Vertices.Coordinates;
+                            //    for(int k = 0; k < m_gDat.Vertices.Count; k++) {
+                            //        stw.Write(vCoords[k, 0]);
+                            //        stw.Write(" ");
+                            //        stw.Write(vCoords[k, 1]);
+                            //        stw.Write(" ");
+                            //        double dVk = DecodeLevelSetDist(VertexMarker[k], 0);
+                            //        stw.Write(dVk);
+                            //        stw.WriteLine();
+                            //    }
+                            //}
 
-                        // Main sweep: set cells and neighbors
-                        // -----------------------------------
-                        for (int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
-                            int[] _VerticeInd = VerticeInd[j];
-                            int _NoOfSmplxVertice = _VerticeInd.Length;
-                            Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
 
-                            //for (int k = 0; k < NoOfSmplxVertice; k++)
-                            //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
-                            ushort[] __PrevLevSetRegions = null;
-                            if (incremental)
-                                __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
+                            // MPI update
+                            // ----------
+                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
 
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                            // Main sweep: set cells and neighbors
+                            // -----------------------------------
+                            for(int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
+                                int[] _VerticeInd = VerticeInd[j];
+                                int _NoOfSmplxVertice = _VerticeInd.Length;
+                                Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
 
-                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
-                                if (dJ >= dist) {
-                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                    // cell has not been assigned to band 'dist' or closer yet
-                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                //for (int k = 0; k < NoOfSmplxVertice; k++)
+                                //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
+                                ushort[] __PrevLevSetRegions = null;
+                                if(incremental)
+                                    __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                                    // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
-                                    int mindv = int.MaxValue;
-                                    for (int k = 0; k < _NoOfSmplxVertice; k++)
-                                        mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
-                                    if (incremental) {
-                                        // The following line ensures that when the level-set is leaving the computational domain,
-                                        // we still have a near-cell on the boundary.
-                                        int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
-                                        mindv = Math.Min(mindv, prevDist);
-                                    }
-                                    mindv++; // increase layer
+                                for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
 
-                                    if (mindv == dist) {
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
-                                        
-                                        // propagate back form cells to vertices
-                                        for (int k = 0; k < _NoOfSmplxVertice; k++) {
-                                            int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
-                                            dVk = Math.Min(dVk, mindv);
-                                            EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
-                                        }
+                                    int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd); // distance of 'cell j'
+                                    if(dJ >= dist) {
+                                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                        // cell has not been assigned to band 'dist' or closer yet
+                                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                        // treatment of neighbor cells: robustness against 
-                                        //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
-                                        //  - periodic boundary conditions
                                         int[] jNeighs = Neighbours[j];
+
+                                        // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
+                                        int mindv = int.MaxValue;
+                                        for(int k = 0; k < _NoOfSmplxVertice; k++)
+                                            mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
+                                        // cell-to-cell propagation; find minimum of: { distance of neighbor cells, cell distance so far }
                                         foreach(int jN in jNeighs) {
                                             int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
-                                            if (distN > dist + 1) {
-                                                EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+                                            mindv = Math.Min(mindv, distN);
+                                        }
+                                        if(incremental) {
+                                            // The following line ensures that when the level-set is leaving the computational domain,
+                                            // we still have a near-cell on the boundary.
+                                            int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
+                                            mindv = Math.Min(mindv, prevDist);
+                                        }
+                                        mindv++; // increase layer
 
-                                                if(jN < J) {
-                                                    foreach(int kk in VerticeInd[jN]) {
-                                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
-                                                        dVk = Math.Min(dVk, dist + 1);
-                                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                        if(mindv == dist) {
+                                            EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
+                                            if(mindv != dJ)
+                                                NumberOfChanges++;
+
+                                            // propagate back form cells to vertices
+                                            for(int k = 0; k < _NoOfSmplxVertice; k++) {
+                                                int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
+                                                dVk = Math.Min(dVk, mindv);
+                                                EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                            }
+
+                                            // treatment of neighbor cells: robustness against 
+                                            //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
+                                            //  - periodic boundary conditions
+                                            foreach(int jN in jNeighs) {
+                                                int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
+                                                if(distN > dist + 1) {
+                                                    EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+
+                                                    if(jN < J) {
+                                                        foreach(int kk in VerticeInd[jN]) {
+                                                            int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                                            dVk = Math.Min(dVk, dist + 1);
+                                                            EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                                        }
                                                     }
-                                                }
 
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                        }
+                            } // end of cell loop
 
-                        // MPI update
-                        // ----------
-                        MPIUpdate(LevSetRegionsUnsigned, m_gDat);
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
+                            // MPI update
+                            // ----------
+                            MPIUpdate(LevSetRegionsUnsigned, m_gDat);
+                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
+
+                            NumberOfChanges = NumberOfChanges.MPISum();
+                        }
                     }
                 }
 
