@@ -432,8 +432,7 @@ namespace BoSSS.Solution.XheatCommon {
             Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
-            Ret += pnlty * (uA[0] - uB[0]) * (kA * vA - kB * vB); // penalty term
-            
+            Ret += pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
 
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
@@ -604,7 +603,7 @@ namespace BoSSS.Solution.XheatCommon {
             Ret -= 0.5 * (vA + vB) * (kA * Grad_uA_xN - kB * Grad_uB_xN);
 
             // extension of penalty
-            Ret += pnlty * kA * vA * (uB[0] - Tsat) - pnlty * kB * vB * (Tsat - uA[0]);   
+            Ret += pnlty * wPenalty * vA * (uB[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uA[0]);   
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
