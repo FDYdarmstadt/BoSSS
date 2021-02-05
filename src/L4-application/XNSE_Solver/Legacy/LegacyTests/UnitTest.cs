@@ -33,7 +33,7 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-
+    /*
     /// <summary>
     /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
     /// </summary>
@@ -760,15 +760,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-
-                Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
-                for (int d = 0; d < D; d++) {
-                    Gravity[d] = tst.GetF(spc, d).Convert_X2Xt();
-                }
-                C.Gravity.Add(spc, Gravity);
             }
 
             C.Phi = tst.GetPhi();
@@ -820,4 +815,5 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
     }
+    */
 }
