@@ -114,13 +114,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             LevelSetTracker lsTrk = GetTracker(map);
             BitArray Cells2avoid;
-            int neighborSearchDepth = 2;
+            int neighborSearchDepth = 4;
             int jFound = -1;
             bool foundACell = false;
             //Debugger.Launch();
             while (!foundACell && neighborSearchDepth >= 0) {
                 if (lsTrk != null) {
-                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
+                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(0, neighborSearchDepth)).GetBitMask();
                     for (int i = 0; i < neighborSearchDepth - 2; i++) {
                         if (neighborSearchDepth - 2 > 0)
                             Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
