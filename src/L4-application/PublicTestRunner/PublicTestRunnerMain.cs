@@ -104,7 +104,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(MPITest.Program),
                         typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
@@ -603,6 +603,14 @@ namespace PublicTestRunner {
                         }
                     }
                 }
+
+                //using(var s = new StreamWriter("tests.txt")) {
+                //    foreach(var t in allTests) {
+                //        s.WriteLine(t.testname);
+                //    }
+                //}
+                //throw new Exception();
+
                 {
                     var ParAssln = GetAllMpiAssemblies();
                     if (ParAssln != null) {

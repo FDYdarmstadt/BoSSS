@@ -39,6 +39,21 @@ namespace BoSSS.Application.XNSE_Solver {
     ///   This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
     ///   When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+    /// 
+    /// Quick start instructions:
+    /// - The Fluid-Fluid-Interphase is level-set No. 0 and is named `Phi` 
+    ///   in the initial values <see cref="AppControl.InitialValues"/>, see <see cref="DGField.Identification"/>)
+    /// - The immersed boundary interface has the name `Phi2`
+    ///   `Phi` is always activated and cannot be turned of; `Phi2` can be activated/deactivated via <see cref="XNSE_Control.UseImmersedBoundary"/>.
+    /// - One should not need to set an initial value for `Phi` for simulations where no fluid-fluid interface is required:
+    ///   If `Phi` it is identical to 0.0 in the entire domain, it will be set to -1, i.e. the entire domain will be assigned to species "A".
+    /// - The vectorial velocity of `Phi2` is set via the fields `VelocityX@Phi2`, `VelocityY@Phi2` and `VelocityZ@Phi2` (in 3D). 
+    ///   By specifying a vectorial velocity, one can also specify tangential velocities of the surface. 
+    ///   The normal component should match the normal velocity which can be computed from `Phi2`,
+    ///   yielding following compatibility condition: 
+    /// ```math
+    ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
+    /// ```
     /// </remarks>
     /// 
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
@@ -81,13 +96,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <remarks>
         /// Note: 
         /// Sayes algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-        /// We transform $`\int f dx`$ to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} `$
-        /// Suppose $`f`$ has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
+        /// We transform $`\int f dx $` to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} $`
+        /// Suppose $`f$` has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
         /// has approximately degree $`\leq n * p + (p - 1) $`
-        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))`$ roots of the level set function, if we want to integrate $`f$` exactly.
+        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))$` roots of the level set function, if we want to integrate $`f$` exactly.
         /// This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant $`f = 1$`.
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
-        /// /// </remarks>
+        /// </remarks>
         override public int QuadOrder() {
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
