@@ -1049,7 +1049,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    Gravity[d] = (X,t) => tst.GetF(spc, d)(X);
+                    Gravity[d] = tst.GetF(spc, d).Convert_X2Xt();
                 }
 
                 C.Gravity.Add(spc, Gravity);

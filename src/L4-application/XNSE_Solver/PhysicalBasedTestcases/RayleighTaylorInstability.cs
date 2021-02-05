@@ -1012,8 +1012,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
 
             double g = 9.81e2;
-            C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
-            C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
+            C.Gravity = new Dictionary<string, Func<double[], double, double>[]>();
+            Func<double[], double, double>[] Gravity = { (X, t) => 0.0, (X, t) => -g }; // constant
+            C.Gravity.Add("A", Gravity);
+            C.Gravity.Add("B", Gravity);
 
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("0141eba2-8d7b-4593-8595-bfff12dbfc40");

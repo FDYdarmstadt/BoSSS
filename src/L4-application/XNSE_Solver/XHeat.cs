@@ -132,7 +132,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 Velocity0MeanPrescribed v0Mean = new Velocity0MeanPrescribed(D, lsUpdater.Tracker, quadOrder);
                 opFactory.AddParameter(v0Mean);
                 lsUpdater.AddLevelSetParameter("Phi", v0Mean);
-            }            
+            }
+
+            // Level set evolver need the gradient
+            BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);            
         }        
 
         protected override IncompressibleBoundaryCondMap GetBcMap() {
