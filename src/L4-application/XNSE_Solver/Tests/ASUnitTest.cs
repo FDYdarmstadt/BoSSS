@@ -125,9 +125,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 #if !DEBUG
-
-
-#if !DEBUG
         /// <summary>
         /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
         /// </summary>
