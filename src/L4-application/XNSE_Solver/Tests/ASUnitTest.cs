@@ -1332,6 +1332,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
+            C.Gravity = new Dictionary<string, Func<double[], double, double>[]>();
+
             foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
                 C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
