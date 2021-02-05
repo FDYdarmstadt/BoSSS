@@ -724,7 +724,7 @@ namespace BoSSS.Application.FSI_Solver {
                 // physics
                 // -------------------------------------------------
                 ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
-                CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
+                CalculateParticleForcesAndTorque(AllParticleHydrodynamics, dt);
                 CalculateParticleVelocity(ParticleList, dt, 0);
                 CalculateCollision(ParticleList, dt);
                 CalculateParticlePosition(dt);
@@ -759,7 +759,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                     m_BDF_Timestepper.Solve(phystime, dt, false);
 
-                    CalculateParticleForcesAndTorque(AllParticleHydrodynamics);
+                    CalculateParticleForcesAndTorque(AllParticleHydrodynamics, dt);
                     CalculateParticleVelocity(ParticleList, dt, iterationCounter);
 
                     if (!IsFullyCoupled)
@@ -813,9 +813,9 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        private void CalculateParticleForcesAndTorque(ParticleHydrodynamics AllParticleHydrodynamics) {
+        private void CalculateParticleForcesAndTorque(ParticleHydrodynamics AllParticleHydrodynamics, double dt) {
             ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(2, Velocity, Pressure, LsTrk, FluidViscosity);
-            AllParticleHydrodynamics.CalculateHydrodynamics(ParticleList, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled);
+            AllParticleHydrodynamics.CalculateHydrodynamics(ParticleList, hydrodynamicsIntegration, FluidDensity, IsFullyCoupled, dt);
         }
 
         /// <summary>

@@ -773,6 +773,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateTranslationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 Vector l_Acceleration = HydrodynamicForces[0] / (Density * ParticleArea);
+                l_Acceleration[1] = 0;
                 Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
                 return l_Acceleration;
             }
@@ -785,6 +786,7 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double CalculateRotationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
+                l_Acceleration = 0;
                 Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
                 return l_Acceleration;
             }

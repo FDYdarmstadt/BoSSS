@@ -21,7 +21,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// <summary>
     /// base class for error evaluation within tests
     /// </summary>
-    abstract class ErrorEvaluator {
+    public abstract class ErrorEvaluator {
 
         protected SolverWithLevelSetUpdater<XNSE_Control> solver;
 
@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// <remarks>
     /// Seems redundant with <see cref="L2ErrorLogger"/>
     /// </remarks>
-    class XNSEErrorEvaluator : ErrorEvaluator {
+    public class XNSEErrorEvaluator : ErrorEvaluator {
 
         public XNSEErrorEvaluator(XNSE solver) : base(solver){
 
@@ -197,7 +197,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// computes error fields for: Phi, PhiDG, gradient of PhiDG 
     /// integral values: area, length
     /// </summary>
-    class LevelSetErrorEvaluator : ErrorEvaluator {
+    public class LevelSetErrorEvaluator : ErrorEvaluator {
 
         public LevelSetErrorEvaluator(XNSE solver) : base(solver) {
 

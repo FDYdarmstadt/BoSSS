@@ -83,7 +83,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control Single(double angle = 180, double verticalDistance = 0, double distance = 1.125, double halfAxis = 0.5, double aspectRatio = 0.5) {
+        public static FSI_Control Single(double angle = 0, double verticalDistance = 0, double distance = 0, double halfAxis = 0.5, double aspectRatio = 0.1) {
             FSI_Control C = new FSI_Control(2, "2particleInteractions", "active Particles");
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -98,8 +98,8 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 100, lengthY: 100, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(2);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(0);
 
             // Coupling Properties
             // =============================
@@ -107,20 +107,20 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = true;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.hydrodynamicsConvergenceCriterion = 1e-3;
+            C.hydrodynamicsConvergenceCriterion = 1e-5;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 10;
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.IncludeConvection = true;
             C.IsStationary = false;
-            double particleDensity = 1;
+            double particleDensity = 1000;
 
             // Particle Properties
             // =============================   
             C.fixPosition = true;
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0, false);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             C.Particles = new List<Particle> {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance / 2, verticalDistance / 2 }, angle, 1)
             };
@@ -137,8 +137,8 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 100000);
-
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 100000);
+            C.FullOutputToConsole = true;
             return C;
         }
 
