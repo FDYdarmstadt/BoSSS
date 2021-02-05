@@ -1343,6 +1343,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                 }
+
+                Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
+                for (int d = 0; d < D; d++) {
+                    Gravity[d] = tst.GetF(spc, d).Convert_X2Xt();
+                }
+                C.Gravity.Add(spc, Gravity);
             }
 
             C.Phi = tst.GetPhi();
