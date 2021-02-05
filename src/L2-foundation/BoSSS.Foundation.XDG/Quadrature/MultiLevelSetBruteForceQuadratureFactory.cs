@@ -150,25 +150,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new Exception("Factory not found");
         }
 
-        public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1) {
-            CombinedID id = new CombinedID {
-                LevSet0 = levSetIndex0,
-                Jmp0 = JumpTypes.Heaviside,
-                LevSet1 = levSetIndex1,
-                Jmp1 = jmp1
-            };
-            LevelSetCombination phi = FindPhi(id);
-            
-            double SqrtGram(int edge) {
-                var g = grid.Edges.SqrtGramian[edge];
-                g = 1 / g;
-                return g;
-            }
-
-            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge, SqrtGram);
-            return new BruteForceQuadratureFactory(edgeScheme);
-        }
-
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
         {
             CombinedID id = new CombinedID
@@ -233,6 +214,51 @@ namespace BoSSS.Foundation.XDG.Quadrature
             var volumeScheme = new BruteForceVolumeScheme(phi.Evaluate);
             return new BruteForceQuadratureFactory(volumeScheme);
         }
+
+        public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1) {
+            CombinedID id = new CombinedID {
+                LevSet0 = levSetIndex0,
+                Jmp0 = JumpTypes.Heaviside,
+                LevSet1 = levSetIndex1,
+                Jmp1 = jmp1
+            };
+            LevelSetCombination phi = FindPhi(id);
+
+            double SqrtGram(int edge) {
+                var g = grid.Edges.SqrtGramian[edge];
+                g = 1 / g;
+                return g;
+            }
+
+            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge, SqrtGram);
+            return new BruteForceQuadratureFactory(edgeScheme);
+        }
+
+        public IQuadRuleFactory<QuadRule> GetIntersectionFactory(int levSetIndex0, int levSetIndex1) {
+
+            void Phi(int cell, NodeSet nodes, MultidimensionalArray result) {
+                LevelSet levelSet0 = (LevelSet)levelSets[levSetIndex0].LevelSet;
+                levelSet0.Evaluate(cell, 1, nodes, result);
+
+                LevelSet levelSet1 = (LevelSet)levelSets[levSetIndex1].LevelSet;
+                MultidimensionalArray result1 = MultidimensionalArray.Create(1, result.Length);
+                levelSet1.Evaluate(cell, 1, nodes, result1);
+                
+                for(int i = 0; i < result.Length; ++i) {
+                    result[0, i] = Math.Abs(result[0, i]) + Math.Abs(result1[0, i]);
+                }
+            }
+
+            double SqrtGram(int edge) {
+                var g = grid.Edges.SqrtGramian[edge];
+                g = 1 / g;
+                return g;
+            }
+
+            var surfaceScheme = new BruteForceZeroScheme(Phi, SqrtGram);
+            return new BruteForceQuadratureFactory(surfaceScheme);
+        }
+
     }
 
     class BruteForceQuadratureFactory : IQuadRuleFactory<QuadRule>

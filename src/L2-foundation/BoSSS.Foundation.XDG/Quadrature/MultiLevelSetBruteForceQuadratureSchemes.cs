@@ -462,12 +462,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi;
 
-        Func<int, double> jacobianDeterminant;
+        Func<int, double> gram;
 
-        public BruteForceEdgePointScheme(Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi
-            , Func<int, double> jacobianDeterminant) {
+        public BruteForceEdgePointScheme(Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi,
+            Func<int, double> gram) {
             this.phi = phi;
-            this.jacobianDeterminant = jacobianDeterminant;
+            this.gram = gram;
         }
 
         public void Initialize(int resolution) {
@@ -508,7 +508,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 rule = QuadRule.CreateEmpty(Line.Instance, 1, 1);
                 rule.Nodes.LockForever();
             } else {
-                double weight = jacobianDeterminant(edge);
+                double weight = gram(edge);
                 rule = ExtractQuadRule(nodeMap, numberOfEdgeNodes, weight);
             }
             return rule;
@@ -520,6 +520,108 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
                     rule.Nodes[j, 0] = edgeNodes[i, 0];
+                    rule.Weights[j] = weight;
+                    ++j;
+                }
+            }
+            rule.Nodes.LockForever();
+            return rule;
+        }
+    }
+
+    internal class BruteForceZeroScheme : IScheme {
+
+        private TensorGrid grid;
+        private Action<int, NodeSet, MultidimensionalArray> phi0;
+        private Action<int, NodeSet, MultidimensionalArray> phi1;
+        private Func<int, double> gram;
+
+        public RefElement ReferenceElement => Square.Instance;
+
+        ///Zeros must be also only mimimas of phi
+        public BruteForceZeroScheme(
+            Action<int, NodeSet, MultidimensionalArray> phi0,
+            Func<int, double> gram) {
+            this.phi0 = phi0;
+            this.gram = gram;
+        }
+
+        public void Initialize(int resolution) {
+            resolution *= 2;
+            grid = new TensorGrid(CenteredLinSpace(resolution), CenteredLinSpace(resolution));
+            phiValues0 = MultidimensionalArray.Create(1, resolution * resolution);
+        }
+
+        private static double[] CenteredLinSpace(int resolution) {
+            double[] nodes = new double[resolution];
+            double increment = 2.0 / resolution;
+            double first = increment / 2 - 1.0;
+            for (int i = 0; i < resolution; ++i) {
+                nodes[i] = increment * i + first;
+            }
+            return nodes;
+        }
+
+        private MultidimensionalArray phiValues0;
+
+
+        public QuadRule GetQuadRule(int cell) {
+            phi0(cell, grid.VolumeNodes, phiValues0);
+
+            (BitArray nodeMap, int numberOfVolumeNodes) = FindZeroNodes();
+            
+            QuadRule rule;
+            if (numberOfVolumeNodes == 0) {
+                rule = QuadRule.CreateEmpty(Square.Instance, 1, 2);
+                rule.Nodes.LockForever();
+            } else {
+                double weight = gram(cell);
+                rule = ExtractQuadRule(nodeMap, numberOfVolumeNodes, weight);
+            }
+            return rule;
+        }
+        
+        private (BitArray, int) FindZeroNodes() {
+            BitArray nodeMap = new BitArray(grid.VolumeNodes.NoOfNodes);
+            int numberOfVolumeNodes = 0;
+            for (int i = 0; i < nodeMap.Length; ++i) {
+                (int a, int b, int c, int d) = grid.NeighborNodes(i);
+                bool isMinimum = true;
+                if (a > -1) {
+                    if (phiValues0[0, i] > phiValues0[0, a]) {
+                        isMinimum = false;
+                    }
+                }
+                if (b > -1) {
+                    if (phiValues0[0, i] > phiValues0[0, b]) {
+                        isMinimum = false;
+                    }
+                }
+                if (c > -1) {
+                    if (phiValues0[0, i] > phiValues0[0, c]) {
+                        isMinimum = false;
+                    }
+                }
+                if (d > -1) {
+                    if (phiValues0[0, i] > phiValues0[0, d]) {
+                        isMinimum = false;
+                    }
+                }
+                if (isMinimum) {
+                    nodeMap[i] = true;
+                    ++numberOfVolumeNodes;
+                }
+            }
+            return (nodeMap, numberOfVolumeNodes);
+        }
+
+        private QuadRule ExtractQuadRule(BitArray nodeMap, int count, double weight) {
+            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2);
+            int j = 0;
+            for (int i = 0; i < nodeMap.Length; ++i) {
+                if (nodeMap[i]) {
+                    rule.Nodes[j, 0] = grid.VolumeNodes[i, 0];
+                    rule.Nodes[j, 1] = grid.VolumeNodes[i, 1];
                     rule.Weights[j] = weight;
                     ++j;
                 }

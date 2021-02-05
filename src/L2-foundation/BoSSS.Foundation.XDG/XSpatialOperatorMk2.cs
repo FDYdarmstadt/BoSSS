@@ -1575,8 +1575,7 @@ namespace BoSSS.Foundation.XDG {
         }
         
         CellQuadratureScheme DefaultContactLineCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            throw new NotImplementedException();
-            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc, 0);
+            var volScheme = SchemeHelper.GetContactLineQuadScheme(spc, 0);
             return volScheme;
         }
 

@@ -295,7 +295,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
+            var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp).ToGeometicalMask();
             var IntegrationDom = allDoublyCuts.Intersect(spdom);
             var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
@@ -307,7 +307,7 @@ namespace BoSSS.Foundation.XDG {
                             CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
                             if (doublyCut.Count() > 0) {
                                 var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, jmpJ, Kref);
+                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref);
                                 LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                             }
                         }
