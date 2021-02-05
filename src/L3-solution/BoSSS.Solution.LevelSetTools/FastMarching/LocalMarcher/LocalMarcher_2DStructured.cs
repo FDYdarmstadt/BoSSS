@@ -81,8 +81,9 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
             //Find Accepted Nodes on Cell Edges and Set them
             Node[] Accepted = SetupAccepted(jCell, AcceptedMask, Phi);
-            
+
             //Solve
+            Console.WriteLine("LocalMarcher.LocalSolver: macher.march()");
             marcher.march(Accepted);
             
             //Project solution to DGSpace

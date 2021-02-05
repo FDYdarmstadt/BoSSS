@@ -64,6 +64,14 @@ namespace BoSSS.Solution.LevelSetTools.FastMarcher {
                 IMarchingNode node = consideredQueue.extractMinimum();
                 node.Accept();
                 accepted.Add(node);
+                //if (node.GetType().Name == "MarchingCell") {
+                //    Console.WriteLine("accept MarchingCell {0}", ((FastMarching.GlobalMarcher.MarchingCell)node).jCell);
+                //    Console.WriteLine("MarchingCell.Value {0}", ((FastMarching.GlobalMarcher.MarchingCell)node).Value);
+                //}
+                //if (node.GetType().Name == "Node") {
+                //    Console.WriteLine("accept Node ({0},{1})", ((FastMarching.LocalMarcher.Node)node).Pos_local[0], ((FastMarching.LocalMarcher.Node)node).Pos_local[1]);
+                //    Console.WriteLine("Node.Value {0}", ((FastMarching.LocalMarcher.Node)node).Value);
+                //}
 
                 //update considered nodes
                 if (consideredQueue.number() != 0) {
@@ -77,7 +85,24 @@ namespace BoSSS.Solution.LevelSetTools.FastMarcher {
             //Todo? : Speed up by only going through neighbors that have not been accepted by handling the neighborslist
             foreach(IMarchingNode neighbor in node.Neighbors) {
                 if (!accepted.Contains(neighbor)) {
+                    //if (node.GetType().Name == "MarchingCell") {
+                    //    Console.WriteLine("CalculateValue for neighbor MarchingCell {0} ({1})",
+                    //        ((FastMarching.GlobalMarcher.MarchingCell)neighbor).jCell, ((FastMarching.GlobalMarcher.MarchingCell)node).jCell);
+                    //}
+                    //if (node.GetType().Name == "Node") {
+                    //    Console.WriteLine("CalculateValue for neighbor Node ({0},{1}); node ({2},{3})",
+                    //        ((FastMarching.LocalMarcher.Node)neighbor).Pos_local[0], ((FastMarching.LocalMarcher.Node)neighbor).Pos_local[1],
+                    //        ((FastMarching.LocalMarcher.Node)node).Pos_local[0], ((FastMarching.LocalMarcher.Node)node).Pos_local[1]);
+                    //}
                     neighbor.CalculateValue();
+                    //if (node.GetType().Name == "MarchingCell") {
+                    //    Console.WriteLine("Value for neighbor MarchingCell = {0}",
+                    //        ((FastMarching.GlobalMarcher.MarchingCell)neighbor).Value);
+                    //}
+                    //if (node.GetType().Name == "Node") {
+                    //    Console.WriteLine("Value for neighbor Node = {0}",
+                    //        ((FastMarching.LocalMarcher.Node)neighbor).Value);
+                    //}
                     if (considered.Contains(neighbor)) {
                         consideredQueue.changeKey(neighbor.QueueID, neighbor);
                     } else {
@@ -99,6 +124,14 @@ namespace BoSSS.Solution.LevelSetTools.FastMarcher {
             accepted = new HashSet<IMarchingNode>();
             foreach (IMarchingNode node in initialNodes) {
                 accepted.Add(node);
+                //if (node.GetType().Name == "MarchingCell") {
+                //    Console.WriteLine("accept MarchingCell {0}", ((FastMarching.GlobalMarcher.MarchingCell)node).jCell);
+                //    Console.WriteLine("MarchingCell.Value {0}", ((FastMarching.GlobalMarcher.MarchingCell)node).Value);
+                //}
+                //if (node.GetType().Name == "Node") {
+                //    Console.WriteLine("accept Node ({0},{1})", ((FastMarching.LocalMarcher.Node)node).Pos_local[0], ((FastMarching.LocalMarcher.Node)node).Pos_local[1]);
+                //    Console.WriteLine("Node.Value {0}", ((FastMarching.LocalMarcher.Node)node).Value);
+                //}
             }
         }
 

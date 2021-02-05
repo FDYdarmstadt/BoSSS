@@ -526,10 +526,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
-            C.SkipSolveAndEvaluateResidual = true;
+
             XNSESolverTest(Tst, C);
 
         }

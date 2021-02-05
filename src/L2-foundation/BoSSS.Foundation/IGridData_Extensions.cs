@@ -1034,6 +1034,39 @@ namespace BoSSS.Foundation.Grid {
 
             }
         }
+
+
+        /// <summary>
+        /// returns the logical edge index for a cell/face index pair
+        /// </summary>
+        /// <param name="jCell">
+        /// local cell index
+        /// </param>
+        /// <param name="iFace">
+        /// face index (with respect tor the face numbering of the reference element <see cref="RefElements.RefElement.NoOfFaces"/>)
+        /// </param>
+        /// <param name="g"></param>
+        /// <returns></returns>
+        static public int CellToEdge(this IGridData g, int jCell, int iFace) {
+            GridData gdat = (GridData)g;
+            
+            int[] EdgeCandidates = g.iLogicalCells.Cells2Edges[jCell];
+
+            if(iFace < 0 || iFace >= gdat.Cells.GetRefElement(jCell).NoOfFaces)
+                throw new ArgumentOutOfRangeException("illegal face index.");
+
+            foreach(int i in EdgeCandidates) {
+                int iEdge = Math.Abs(i) - 1;
+                int inOut = i > 0 ? 0 : 1;
+
+                if(gdat.Edges.FaceIndices[iEdge, inOut] == iFace) {
+                    return iEdge;
+                }
+            }
+
+            throw new ApplicationException($"Unable to find edge for cell {jCell}, face {iFace}.");
+        }
+
     }
 
     /// <summary>
