@@ -201,6 +201,22 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Returns a rule factory for the boundary of surface-elements 
+        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// This are point integrals in 2D and line integrals in 3D.
+        /// </summary>
+        /// <returns>
+        /// the returned factory produces <see cref="QuadRule"/>'s on edges
+        /// </returns>
+        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
+            if (zwoLSBruteForceFactories == null) {
+                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+            }
+            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1);
+        }
+
+
+        /// <summary>
         /// Quadrature rule on cell boundaries
         /// </summary>
         public IQuadRuleFactory<CellBoundaryQuadRule> GetCellFaceFactory(int levSetIndex, RefElement Kref, JumpTypes jumpType) {

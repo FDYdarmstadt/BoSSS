@@ -727,7 +727,7 @@ namespace BoSSS.Foundation.XDG {
                                 //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
                                 edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
 
-                                volRule.ToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
+                                volRule.ToTextFileCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
                                 volRule.SumOfWeightsToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
                             }
 
@@ -741,9 +741,15 @@ namespace BoSSS.Foundation.XDG {
                             ctorGhostSpeciesIntegrator(SpeciesId, quadOrder, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
+                        //Only for ls0 so far:
+                        //Add species, if it is separated from another species by level set 0
+                        //For species not separated by ls0, nothing happens
                         if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+
+                            //SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, "surfaceElementOperator_volume.txt");
+                            SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, "surfaceElementOperator_edge.txt");
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
@@ -752,7 +758,6 @@ namespace BoSSS.Foundation.XDG {
                             CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
-
                     }
 
                     // coupling terms
@@ -858,7 +863,7 @@ namespace BoSSS.Foundation.XDG {
                                                 rule = SurfIntegration.Compile(GridData, quadOrder);
 
                                                 if (ruleDiagnosis) {
-                                                    rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
+                                                    rule.ToTextFileCell(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
                                                     rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
                                                 }
                                             }

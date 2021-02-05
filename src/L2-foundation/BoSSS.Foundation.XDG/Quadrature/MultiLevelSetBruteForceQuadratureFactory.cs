@@ -150,6 +150,18 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new Exception("Factory not found");
         }
 
+        public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1) {
+            CombinedID id = new CombinedID {
+                LevSet0 = levSetIndex0,
+                Jmp0 = JumpTypes.Heaviside,
+                LevSet1 = levSetIndex1,
+                Jmp1 = jmp1
+            };
+            LevelSetCombination phi = FindPhi(id);
+            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge);
+            return new BruteForceQuadratureFactory(edgeScheme);
+        }
+
         public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
         {
             CombinedID id = new CombinedID
