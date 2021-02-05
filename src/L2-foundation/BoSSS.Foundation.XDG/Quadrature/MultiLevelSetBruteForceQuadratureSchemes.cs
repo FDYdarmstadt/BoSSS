@@ -462,15 +462,17 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi;
 
-        private double weight;
+        Func<int, double> jacobianDeterminant;
 
-        public BruteForceEdgePointScheme(Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi) {
+        public BruteForceEdgePointScheme(Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi
+            , Func<int, double> jacobianDeterminant) {
             this.phi = phi;
+            this.jacobianDeterminant = jacobianDeterminant;
         }
 
         public void Initialize(int resolution) {
             resolution *= 2;
-            weight = 2.0 / (resolution);
+            
             phiValuesIn = MultidimensionalArray.Create(1, resolution);
             phiValuesOut = MultidimensionalArray.Create(1, resolution);
             CreateEdgeNodes(resolution);
@@ -496,7 +498,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             BitArray nodeMap = new BitArray(edgeNodes.NoOfNodes);
             int numberOfEdgeNodes = 0;
             for (int i = 0; i < nodeMap.Length - 1; ++i) {
-                if (phiValuesIn[0, i] > 0 && phiValuesIn[0, i+1] < 0) {
+                if (phiValuesIn[0, i] * phiValuesIn[0, i+1] < 0) {
                     nodeMap[i] = true;
                     ++numberOfEdgeNodes;
                 }
@@ -506,12 +508,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 rule = QuadRule.CreateEmpty(Line.Instance, 1, 1);
                 rule.Nodes.LockForever();
             } else {
-                rule = ExtractQuadRule(nodeMap, numberOfEdgeNodes);
+                double weight = jacobianDeterminant(edge);
+                rule = ExtractQuadRule(nodeMap, numberOfEdgeNodes, weight);
             }
             return rule;
         }
 
-        private QuadRule ExtractQuadRule(BitArray nodeMap, int count) {
+        private QuadRule ExtractQuadRule(BitArray nodeMap, int count, double weight) {
             QuadRule rule = QuadRule.CreateEmpty(ReferenceElement, count, 1);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {

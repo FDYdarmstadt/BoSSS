@@ -158,7 +158,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
             LevelSetCombination phi = FindPhi(id);
-            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge);
+            
+            double SqrtGram(int edge) {
+                var g = grid.Edges.SqrtGramian[edge];
+                g = 1 / g;
+                return g;
+            }
+
+            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge, SqrtGram);
             return new BruteForceQuadratureFactory(edgeScheme);
         }
 
@@ -193,8 +200,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
             Vector Scales(int cell)
             {
-                MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Square.Instance.Center, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
-                return new Vector(1 / jacobian[0, 0], 1 / jacobian[1, 1]);
+                MultidimensionalArray inverseJacobian = grid.InverseJacobian.GetValue_Cell(Square.Instance.Center, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+                return new Vector(inverseJacobian[0, 0], inverseJacobian[1, 1]);
             }
 
             void Gradient(int cell, NodeSet nodes, MultidimensionalArray result)

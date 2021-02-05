@@ -282,7 +282,39 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public CellQuadratureScheme GetContactLineQuadScheme(SpeciesId sp, int iLevSet) {
-            throw new NotImplementedException("haha, mach mal!");
+            //Find domain
+            CellMask allDoublyCuts = CellMask.GetEmptyMask(XDGSpaceMetrics.GridDat, MaskType.Geometrical);
+
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                    if (iLevSet != jLevSet) {
+                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
+                            allDoublyCuts = allDoublyCuts.Union(GetCutCells(iLevSet, jLevSet));
+                        }
+                    }
+                }
+            }
+
+            var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
+            var IntegrationDom = allDoublyCuts.Intersect(spdom);
+            var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
+
+            //Handle doubly cut cells, do it all again, this time add quadrature Factory
+            foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
+                for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                    if (iLevSet != jLevSet) {
+                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
+                            CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
+                            if (doublyCut.Count() > 0) {
+                                var jmpJ = IdentifyWingA(jLevSet, sp);
+                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, jmpJ, Kref);
+                                LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
+                            }
+                        }
+                    }
+                }
+            }
+            return LevSetQrIns;
         }
 
         /// <summary>

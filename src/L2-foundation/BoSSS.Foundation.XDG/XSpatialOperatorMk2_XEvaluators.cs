@@ -748,7 +748,7 @@ namespace BoSSS.Foundation.XDG {
                             EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
 
-                            //SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, "surfaceElementOperator_volume.txt");
+                            SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, "surfaceElementOperator_volume.txt");
                             SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, "surfaceElementOperator_edge.txt");
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }

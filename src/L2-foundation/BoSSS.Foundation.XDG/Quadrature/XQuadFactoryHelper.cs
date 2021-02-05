@@ -514,7 +514,10 @@ namespace BoSSS.Foundation.XDG {
             return m_SurfaceFactory[levSetIndex];
         }
 
-
+        /// <summary>
+        /// Generates a quadrature rule factory for integrating over a surface.
+        /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
+        /// </summary>
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
         {
             if (zwoLSBruteForceFactories == null)
@@ -524,6 +527,18 @@ namespace BoSSS.Foundation.XDG {
             return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0, 
                 levSetIndex1, 
                 jmp1);
+        }
+
+
+        /// <summary>
+        /// Generates a quadrature rule factory the intersection of levelset0 and levelset1 where levelset0 = levelset1 = 0
+        /// This is a point in 2D, a line in 3D.
+        /// </summary>
+        public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol) {
+            if (zwoLSBruteForceFactories == null) {
+                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+            }
+            return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1);
         }
 
         /// <summary>
