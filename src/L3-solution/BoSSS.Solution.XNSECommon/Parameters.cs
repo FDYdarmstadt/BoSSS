@@ -76,7 +76,7 @@ namespace BoSSS.Solution.XNSECommon {
     public class Velocity0Prescribed : ParameterS {
         int degree;
 
-        IDictionary<string, Func<double[], double>> initial;
+        IDictionary<string, Func<double[], double, double>> initial;
 
         string[] names;
 
@@ -84,7 +84,9 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override DelParameterFactory Factory => Velocity0PrescribedFactory;
 
-        public Velocity0Prescribed(LevelSetTracker LsTrk, int d, int D, IDictionary<string, Func<double[], double>> initial, int degree) {
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
+        public Velocity0Prescribed(LevelSetTracker LsTrk, int d, int D, IDictionary<string, Func<double[], double, double>> initial, int degree) {
             this.degree = degree;
             this.LsTrk = LsTrk;
 
@@ -99,14 +101,16 @@ namespace BoSSS.Solution.XNSECommon {
 
             string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d];
 
-            IDictionary<string, Func<double[], double>> initial = new Dictionary<string, Func<double[], double>>();
+            IDictionary<string, Func<double[], double, double>> initial = new Dictionary<string, Func<double[], double, double>>();
             foreach (string species in LsTrk.SpeciesNames) {
                 string velocityOfSpecies = velocity + "#" + species;
-                Func<double[], double> initialVelocity;
-                if (control.InitialValues_Evaluators.TryGetValue(velocityOfSpecies, out Func<double[], double> initialValue)) {
-                    initialVelocity = initialValue;
+                Func<double[], double, double> initialVelocity;
+                if (control.InitialValues_Evaluators_TimeDep.TryGetValue(velocityOfSpecies, out Func<double[], double, double> initialValue_TimeDep)) {
+                    initialVelocity = initialValue_TimeDep;
+                } else if (control.InitialValues_Evaluators.TryGetValue(velocityOfSpecies, out Func<double[], double> initialValue)) {
+                    initialVelocity = (X,t) => initialValue(X);
                 } else {
-                    initialVelocity = X => 0.0;
+                    initialVelocity = (X,t) => 0.0;
                 }
                 initial.Add(species, initialVelocity);
             }
@@ -129,9 +133,20 @@ namespace BoSSS.Solution.XNSECommon {
             XDGField velocity = new XDGField(basis, names[0]);
 
             foreach (var species in LsTrk.SpeciesNames)
-                velocity.GetSpeciesShadowField(species).ProjectField(initial[species]);
+                velocity.GetSpeciesShadowField(species).ProjectField(initial[species].Convert_Xt2X(0.0));
 
             return new (string, DGField)[] { (names[0], velocity) };
+        }
+
+        double timeOfLastUpdate = 0.0;
+        public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if (timeOfLastUpdate != time) {
+                foreach (var species in LsTrk.SpeciesNames) {
+                    timeOfLastUpdate = time;
+                    ((XDGField)ParameterVarFields[names[0]]).GetSpeciesShadowField(species).Clear();
+                    ((XDGField)ParameterVarFields[names[0]]).GetSpeciesShadowField(species).ProjectField(X => initial[species](X, time));
+                }
+            }
         }
 
 
