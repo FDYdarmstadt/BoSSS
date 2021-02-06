@@ -126,7 +126,7 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
 
-            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
             if(mu.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return mu;
@@ -187,6 +187,9 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
         }
+
+
+
 
         override public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             base.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);

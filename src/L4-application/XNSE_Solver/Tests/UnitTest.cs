@@ -72,7 +72,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             GenericTest(Tst, C);
         }
-
+/*
 #if !DEBUG
         /// <summary>
         /// scaling of condition number for polynomial order 3 (polynomial order parameter is unwrapped for better parallelism of test execution)
@@ -285,6 +285,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
+*/
 
         /// <summary>
         /// <see cref="BcTest_PressureOutlet"/>
