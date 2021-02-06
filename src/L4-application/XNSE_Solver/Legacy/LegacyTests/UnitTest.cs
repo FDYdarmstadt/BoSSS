@@ -33,14 +33,14 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-    /*
+
     /// <summary>
     /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
     /// </summary>
     [TestFixture]
     static public partial class UnitTest {
 
-
+        /*
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
@@ -307,11 +307,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             const int GridRes = 4; // resolutions 2, 4, etc. place level-set at cell boundary
 #endif
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard, GridResolution:GridRes, CutCellQuadratureType:CutCellQuadratureType, SurfTensionMode:SurfTensionMode);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.Standard, GridResolution: GridRes, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode);
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
-            if (spatialDimension == 2)
+            if(spatialDimension == 2)
                 ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg, CutCellQuadratureType, SurfTensionMode);
 
         }
@@ -356,7 +356,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode = ViscosityMode.Standard;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             MovingDropletTest(spatialDimension, deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
-        
+
         }
 
         /// <summary>
@@ -398,7 +398,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode = ViscosityMode.Standard;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             MovingDropletTest(spatialDimension, deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
-        
+
         }
 
         /// <summary>
@@ -439,7 +439,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             MovingDropletTest(spatialDimension, deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
-        
+
         }
 
         /// <summary>
@@ -481,7 +481,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
             MovingDropletTest(spatialDimension, deg, AgglomerationTreshold, performsolve, stm, Radius, vmode, bSteady, includeConvection, CutCellQuadratureType);
-        
+
         }
 
         /// <summary>
@@ -526,8 +526,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new MovingDropletTest(Radius, includeConvection, bSteady, spatialDimension);
 
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm, 
-                CutCellQuadratureType:CutCellQuadratureType, GridResolution: (spatialDimension == 2) ? 2 : 1);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, SurfTensionMode: stm,
+                CutCellQuadratureType: CutCellQuadratureType, GridResolution: (spatialDimension == 2) ? 2 : 1);
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
@@ -559,12 +559,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
             GenericTest(Tst, C);
-            if (deg == 2)
+            if(deg == 2)
                 ScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            if (deg == 3)
+            if(deg == 3)
                 ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
         }
-      
+
 
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
@@ -580,7 +580,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
             ) {
 
-            if (spatialDimension == 3 && periodicity) {
+            if(spatialDimension == 3 && periodicity) {
                 Console.WriteLine($"Reminder: check constained DG projection in 3D for periodic BC");
                 return;
             }
@@ -597,7 +597,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
             //}
         }
-        
+
         /// <summary>
         /// <see cref="Tests.PolynomialTestForConvection"/>
         /// </summary>
@@ -622,7 +622,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         private static void GenericTest(IXNSETest Tst, XNSE_Control C) {
-            if (Tst.SpatialDimension == 3) {
+            if(Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
                 //if (C.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
@@ -640,7 +640,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 var ErrorPoPo = new L2ErrorLogger();
                 C.PostprocessingModules.Add(ErrorPoPo);
-                
+
 
                 //Console.WriteLine("Warning! - enabled immediate plotting");
                 //C.ImmediatePlotPeriod = 1;
@@ -702,7 +702,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode, 
+        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1) {
@@ -735,7 +735,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // boundary conditions
             // ===================
 
-            foreach (var kv in tst.GetBoundaryConfig()) {
+            foreach(var kv in tst.GetBoundaryConfig()) {
                 C.BoundaryValues.Add(kv);
             }
 
@@ -755,11 +755,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach (var spc in new[] { "A", "B" }) {
+            foreach(var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for (int d = 0; d < D; d++) {
+                for(int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                     C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
                 }
@@ -775,7 +775,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
-            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+            if(D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             } else {
@@ -788,7 +788,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // =======================
 
 
-            if (tst.steady) {
+            if(tst.steady) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
                 C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -816,5 +816,5 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
     }
-    */
+
 }
