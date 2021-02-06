@@ -1168,20 +1168,18 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            C.Gravity = new Dictionary<string, Func<double[], double, double>[]>();
 
             foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
 
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    Gravity[d] = tst.GetF(spc, d).Convert_X2Xt();
+                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    C.SetGravity(spc, d, Gravity_d);
                 }
 
-                C.Gravity.Add(spc, Gravity);
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
 
             }
@@ -1460,9 +1458,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-
-            C.Gravity = new Dictionary<string, Func<double[], double, double>[]>();
-
+                        
             foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
                 C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
@@ -1477,9 +1473,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
                 for (int d = 0; d < D; d++) {
-                    Gravity[d] = tst.GetF(spc, d).Convert_X2Xt();
+                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    C.SetGravity(spc, d, Gravity_d);
                 }
-                C.Gravity.Add(spc, Gravity);
             }
 
             C.Phi = tst.GetPhi();

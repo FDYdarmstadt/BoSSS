@@ -31,8 +31,9 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.XNSE_Solver.Legacy;
+using BoSSS.Application.XNSE_Solver.Tests;
 
-namespace BoSSS.Application.XNSE_Solver.Tests {
+namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
 
     /// <summary>
     /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
@@ -311,8 +312,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !performsolve;
 
             GenericTest(Tst, C);
-            if(spatialDimension == 2)
-                ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg, CutCellQuadratureType, SurfTensionMode);
+            //if(spatialDimension == 2)
+            //    ScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.Standard, deg, CutCellQuadratureType, SurfTensionMode);
 
         }
 
@@ -559,10 +560,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
             GenericTest(Tst, C);
-            if(deg == 2)
-                ScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            if(deg == 3)
-                ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //if(deg == 2)
+            //    ScalingTest(Tst, new[] { 2, 3, 4 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //if(deg == 3)
+            //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
         }
 
 
@@ -682,9 +683,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /*
+         * For the legacy solver, we don't want to run the expensive Scaling tests
+         * 
 
         private static void ScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode) {
-
+            Console.WriteLine("Remenber do deactivate");
 #if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
@@ -700,7 +704,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: Name);
 #endif
         }
-
+*/
 
         static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,

@@ -65,17 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
-            //                                q: -50,
-            //                                deg: 3,
-            //                                AgglomerationTreshold: 0,
-            //                                SolverMode_performsolve: true,
-            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
@@ -293,20 +283,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 // Add Gravitation
                 if(config.isGravity){
-                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.Gravity?["A"][d]);
+                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
                     opFactory.AddParameter(GravA);
-                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.Gravity?["B"][d]);
+                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
                     opFactory.AddParameter(GravB);
-                }
-                if (this.Control.InitialValues_Evaluators.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d])) || this.Control.InitialValues_Evaluators_TimeDep.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d]))) {
-                    throw new ApplicationException("Warning: You are trying to use the InitialValues_Evaluators to set a gravity. This is not supported any more!");
                 }
 
                 // Add additional volume forces
                 if (config.isVolForce) {
-                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.VolumeForce?["A"][d]);
+                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
                     opFactory.AddParameter(VolForceA);
-                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.VolumeForce?["B"][d]);
+                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
                     opFactory.AddParameter(VolForceB);
                 }
             }

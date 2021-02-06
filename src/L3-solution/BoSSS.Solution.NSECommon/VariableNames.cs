@@ -1272,6 +1272,14 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// component of gravity/volume force names
+        /// </summary>
+        public static string VolumeForce_d(int d) {
+            return VolumeForceVector(3)[d];
+        }
+
+
+        /// <summary>
         /// vector of gravity/volume force names
         /// </summary>
         /// <param name="D">

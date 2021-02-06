@@ -27,6 +27,7 @@ using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.EnergyCommon;
 using ilPSP;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -36,8 +37,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
-            Gravity = !control.Gravity.IsNullOrEmpty();
-            VolForce = !control.VolumeForce.IsNullOrEmpty();
+
+            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z')));
+            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z')));
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
