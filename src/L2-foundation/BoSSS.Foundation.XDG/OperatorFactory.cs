@@ -195,9 +195,6 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             string[] parameters = eqSystem.Parameters();
             string[] species = eqSystem.Species();
 
-
-            
-
             var spatialOperator = new XSpatialOperatorMk2(
                 domainVars,
                 parameters,
@@ -236,6 +233,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                 if(equation.SurfaceComponents != null) {
                     foreach(IEquationComponent component in equation.SurfaceComponents) {
                         spatialOperator.SurfaceElementOperator_Ls0.EquationComponents[equation.CodomainName].Add(component);
+                    }
+                }
+                if(equation.ContactLineComponents != null) {
+                    foreach (IEquationComponent component in equation.ContactLineComponents) {
+                        spatialOperator.ContactLineOperator_Ls0.EquationComponents[equation.CodomainName].Add(component);
                     }
                 }
             }

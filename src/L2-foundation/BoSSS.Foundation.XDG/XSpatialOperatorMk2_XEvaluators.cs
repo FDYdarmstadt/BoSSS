@@ -628,7 +628,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool ruleDiagnosis = false;
+            static private bool ruleDiagnosis = true;
 
             /// <summary>
             /// ctor
@@ -747,16 +747,19 @@ namespace BoSSS.Foundation.XDG {
                         if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-
-                            SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, "surfaceElementOperator_volume.txt");
-                            SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, "surfaceElementOperator_edge.txt");
+                            if (ruleDiagnosis) {
+                                SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                            }
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
                         if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                             CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                            ContactLine_Volume.ToTextFileCell(GridData, quadOrder, "contactLineOperator.txt");
+                            if (ruleDiagnosis) {
+                                ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                            }
                             ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
                     }

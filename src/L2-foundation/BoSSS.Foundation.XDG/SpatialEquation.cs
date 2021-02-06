@@ -121,6 +121,14 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     public abstract class SurfaceEquation : SpatialEquation 
     {
         /// <summary>
+        /// Empty surface equation.
+        /// </summary>
+        public SurfaceEquation() {
+            SurfaceComponents = new LinkedList<IEquationComponent>();
+            ContactLineComponents = new LinkedList<IEquationComponent>();
+        }
+
+        /// <summary>
         /// First/Negative species (with respect to level-set)
         /// Order not important.
         /// </summary>
@@ -139,11 +147,9 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public LinkedList<IEquationComponent> SurfaceComponents { get; private set; }
 
         /// <summary>
-        /// Empty surface equation.
+        /// Specialized contact line components that are part of a special spatial operator in the general spatial operator.
         /// </summary>
-        public SurfaceEquation() {
-            SurfaceComponents = new LinkedList<IEquationComponent>();
-        }
+        public LinkedList<IEquationComponent> ContactLineComponents { get; private set; }
 
         /// <summary>
         /// Add Specialized surface components that will be part of a special spatial operator.
@@ -152,6 +158,15 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// <param name="surfaceComponent"> Specialized surface component </param>
         public void AddSurfaceComponent(IEquationComponent surfaceComponent) {
             SurfaceComponents.AddLast(surfaceComponent);
+        }
+
+        /// <summary>
+        /// Add Specialized surface components that will be part of a special spatial operator.
+        /// Generally, surface equations are also added via <see cref="SpatialEquation.AddComponent(IEquationComponent)"/>.
+        /// </summary>
+        /// <param name="surfaceComponent"> Specialized surface component </param>
+        public void AddContactLineComponent(IEquationComponent surfaceComponent) {
+            ContactLineComponents.AddLast(surfaceComponent);
         }
     }
 

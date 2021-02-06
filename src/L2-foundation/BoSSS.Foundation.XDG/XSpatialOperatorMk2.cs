@@ -1561,16 +1561,27 @@ namespace BoSSS.Foundation.XDG {
         }
         #endregion
 
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_ContactLine_VolumeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme
+        /// </summary>
         public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> ContactLine_VolumeQuadratureSchemeProvider {
             get {
-                if (m_SurfaceElement_VolumeQuadraturSchemeProvider == null)
-                    m_SurfaceElement_VolumeQuadraturSchemeProvider = DefaultContactLineCQSprovider;
-                return m_SurfaceElement_VolumeQuadraturSchemeProvider;
+                if (m_ContactLine_VolumeQuadraturSchemeProvider == null)
+                    m_ContactLine_VolumeQuadraturSchemeProvider = DefaultContactLineCQSprovider;
+                return m_ContactLine_VolumeQuadraturSchemeProvider;
             }
             set {
                 if (IsCommited)
                     throw new NotSupportedException("not allowed to change after Commit");
-                m_SurfaceElement_VolumeQuadraturSchemeProvider = value;
+                m_ContactLine_VolumeQuadraturSchemeProvider = value;
             }
         }
         
