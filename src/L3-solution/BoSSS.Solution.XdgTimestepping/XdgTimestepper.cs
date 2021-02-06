@@ -233,12 +233,16 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             double _AgglomerationThreshold = 0.1,
             LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
-            LevelSetTracker _optTracker = null) //
+            LevelSetTracker _optTracker = null,
+            IList<DGField> _Parameters = null) //
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
 
-            this.Parameters = op.InvokeParameterFactory(Fields);
+            if (_Parameters.IsNullOrEmpty())
+                this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
 
             LsTrk = _optTracker;
             foreach(var f in Fields.Cat(IterationResiduals).Cat(Parameters)) {
@@ -271,7 +275,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 _AgglomerationThreshold,
                 LinearSolver, NonLinearSolver);
 
-        }
+        }       
 
         private void ConstructorCommon(
             ISpatialOperator op, bool UseX, 
@@ -422,12 +426,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             TimeSteppingScheme __Scheme,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
-            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null) //
+            LinearSolverConfig LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
+            IList<DGField> _Parameters = null) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
 
-            this.Parameters = op.InvokeParameterFactory(Fields);
+            if (_Parameters.IsNullOrEmpty())
+                this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
+
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
                        

@@ -287,11 +287,28 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+
+                // Add Gravitation
+                if(config.isGravity){
+                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.Gravity?["A"][d]);
+                    opFactory.AddParameter(GravA);
+                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.Gravity?["B"][d]);
+                    opFactory.AddParameter(GravB);
+                }
+                if (this.Control.InitialValues_Evaluators.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d])) || this.Control.InitialValues_Evaluators_TimeDep.Any(InitialValue => InitialValue.Key.StartsWith(VariableNames.GravityVector(D)[d]))) {
+                    throw new ApplicationException("Warning: You are trying to use the InitialValues_Evaluators to set a gravity. This is not supported any more!");
+                }
+
+                // Add additional volume forces
+                if (config.isVolForce) {
+                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.VolumeForce?["A"][d]);
+                    opFactory.AddParameter(VolForceA);
+                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.VolumeForce?["B"][d]);
+                    opFactory.AddParameter(VolForceB);
+                }
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
@@ -372,38 +389,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
-        }
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
-            DGField[] plotFields = this.m_RegisteredFields.ToArray();
-            void AddPltField(DGField f) {
-                bool add = true;
-                foreach(var ff in plotFields) {
-                    if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
-                        add = false;
-                        break;
-                    }
-                }
-                if(add) {
-                    f.AddToArray(ref plotFields);
-                }
-            }
-            void AddPltFields(IEnumerable<DGField> fs) {
-                foreach(var f in fs)
-                    AddPltField(f);
-            }
-
-            if (Timestepping?.Parameters != null) {
-                AddPltFields(Timestepping.Parameters);
-            }
-            if (LsUpdater?.Parameters != null) {
-                AddPltFields(LsUpdater.Parameters.Values);
-                AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
-                AddPltFields(LsUpdater.InternalFields.Values);
-            }
-
-            Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

@@ -33,7 +33,7 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
-
+    /*
     /// <summary>
     /// A collection of all-up NUnit tests for the old XNSE solver <see cref="XNSE_SolverMain"/>.
     /// </summary>
@@ -816,4 +816,5 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
     }
+    */
 }

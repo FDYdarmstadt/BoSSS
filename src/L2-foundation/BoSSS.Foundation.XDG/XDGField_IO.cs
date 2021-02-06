@@ -224,9 +224,6 @@ namespace BoSSS.Foundation.XDG {
 
             int MyIndex = tsi.FieldInitializers.IndexOf(
                 this.Initializer, (a, b) => a.Identification.Equals(b.Identification));
-            XDGFieldInitializer myInfo = (XDGFieldInitializer)tsi.FieldInitializers.Single(info =>
-                info.Identification.Equals(this.Identification));
-
 
             if (MyIndex >= 0) {
                 int J = this.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
