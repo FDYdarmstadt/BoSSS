@@ -563,7 +563,7 @@ namespace PublicTestRunner {
             if (MpiSize != 1) {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
-            string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
+            string DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
             Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
 
             Tracer.NamespacesToLog = new string[] { "" };
