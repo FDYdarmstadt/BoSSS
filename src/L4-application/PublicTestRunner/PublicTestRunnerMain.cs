@@ -579,6 +579,8 @@ namespace PublicTestRunner {
                 InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
+                if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
+                    throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account.");
                 BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
                 Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
