@@ -48,20 +48,20 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
-            BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
-            //                                q: -50,
-            //                                deg: 3,
-            //                                AgglomerationTreshold: 0,
-            //                                SolverMode_performsolve: true,
-            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            throw new Exception("Remove me");
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            ////BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
+            ////Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
+            ////                                q: -50,
+            ////                                deg: 3,
+            ////                                AgglomerationTreshold: 0,
+            ////                                SolverMode_performsolve: true,
+            ////                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
+            ////                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
@@ -384,7 +384,6 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             if (LsUpdater?.Parameters != null) {
                 AddPltFields(LsUpdater.Parameters.Values);
-                AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
                 AddPltFields(LsUpdater.InternalFields.Values);
             }
 

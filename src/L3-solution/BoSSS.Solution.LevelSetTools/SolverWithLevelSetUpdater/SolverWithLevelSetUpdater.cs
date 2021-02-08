@@ -2,9 +2,7 @@
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using ilPSP;
 using ilPSP.Utils;
@@ -78,6 +76,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
+        /// 
+        /// </summary>
+        protected override void CreateTrackerHack() {
+            base.CreateTrackerHack();
+
+            foreach (DualLevelSet ls in LsUpdater.LevelSets.Values) {
+                if (ls.DGLevelSet is DGField f) {
+                    base.RegisterField(ls.DGLevelSet);
+                }
+            }
+
+        }
+
+
+        /// <summary>
         /// Number of different interfaces 
         /// </summary>
         protected abstract int NoOfLevelSets {
@@ -123,7 +136,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract IncompressibleBoundaryCondMap GetBcMap();
 
         /// <summary>
-        /// Sets up the level-set-system (fields for storing, evolution operators, ...) before XDG-fields can be created.
+        /// Instantiate the level-set-system (fields for storing, evolution operators, ...) 
+        /// Before creating XDG-fields one need to
+        /// initialize the level-set fields <see cref="InitializeLevelSets"/>
         /// </summary>
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
             int D = this.Grid.SpatialDimension;
@@ -132,7 +147,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();
 
-            // phase 1: initialization of level-sets
+
+            // phase 1: create level-sets
             // ======================================
             LevelSet[] DGlevelSets = new LevelSet[NoOfLevelSets];
             for(int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
@@ -140,49 +156,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
-                
 
-                switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
-                    case LevelSetEvolution.Fourier: {
-                        //if(Control.EnforceLevelSetConservation) {
-                        //    throw new NotSupportedException("mass conservation correction currently not supported");
-                        //}
-                        FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                        fourierLevelSet.Clear();
-                        fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
-                        DGlevelSets[iLevSet] = fourierLevelSet;
-                        break;
-                    }
-                    case LevelSetEvolution.Prescribed:
-                    case LevelSetEvolution.StokesExtension:
-                    case LevelSetEvolution.FastMarching:
-                    case LevelSetEvolution.None: {
-                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                        //if(Control.InitialValues_EvaluatorsVec.ContainsKey(LevelSetCG))
-                        levelSetDG.Clear();
-                        levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
-                        DGlevelSets[iLevSet] = levelSetDG;
-                        break;
-                    }
-                    case LevelSetEvolution.SplineLS: {
-                        int nodeCount = 30;
-                        Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                        SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                        DGlevelSets[iLevSet] = SplineLevelSet;
-                        break;
-                    }
-                    default:
-                    throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
-                }
-
-                if(DGlevelSets[iLevSet].L2Norm() == 0.0) {
-                    Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
-                    DGlevelSets[iLevSet].AccConstant(-1.0);
-                }
+                LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                DGlevelSets[iLevSet] = levelSetDG;
             }
 
-            // phase 2: initialization of updater
-            // ==================================
+
+            // phase 2: create updater
+            // =======================
             LevelSetUpdater lsUpdater;
             switch(NoOfLevelSets) {
                 case 1:
@@ -200,8 +181,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
 
-            // phase 3: init of evolvers
-            // =========================
+            // phase 3: instantiate evolvers
+            // ============================
             for(int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
@@ -258,13 +239,83 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
+        /// <summary>
+        /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
+        /// and projection on continous LevelSetCG
+        /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
+        /// </summary>
+        protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
+
+            var lsNames = this.LevelSetNames;
+            int NoOfLevelSets = lsNames.Length;
+            if (NoOfLevelSets != lsUpdater.LevelSets.Count)
+                throw new ApplicationException();
+
+
+            for (int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
+                string LevelSetDG = lsNames[iLevSet].DgLs;
+                string LevelSetCG = lsNames[iLevSet].ContLs;
+                DualLevelSet pair = LsUpdater.LevelSets[LevelSetCG];
+
+                int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
+                if (levelSetDegree != pair.DGLevelSet.Basis.Degree)
+                    throw new ApplicationException();
+
+                switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
+                    case LevelSetEvolution.Fourier: {
+                        FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                        fourierLevelSet.Clear();
+                        fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                        pair.DGLevelSet = fourierLevelSet;
+                        break;
+                    }
+                    case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.FastMarching:
+                    case LevelSetEvolution.None: {
+                        pair.DGLevelSet.Clear();
+                        pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));  
+                        break;
+                    }
+                    case LevelSetEvolution.SplineLS: {
+                        int nodeCount = 30;
+                        Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
+                        SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
+                        if (time != 0.0)
+                            Console.WriteLine("Warning: no time dependent initial value");
+                        pair.DGLevelSet = SplineLevelSet;
+                        break;
+                    }
+                    default:
+                        throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
+                }
+
+                if (pair.DGLevelSet.L2Norm() == 0.0) {
+                    Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
+                    pair.DGLevelSet.AccConstant(-1.0);
+                } 
+
+            }
+
+            // tracker needs to be updated to get access to the cut-cell mask
+            LsUpdater.Tracker.UpdateTracker(time);
+
+            //Make Continuous
+            LsUpdater.EnforceContinuity();
+
+            LsUpdater.Tracker.UpdateTracker(time);
+
+        }
+
+
+        /// <summary>
+        /// <see cref="XdgTimestepping.LevelSetHandling"/>
+        /// </summary>
         protected override LevelSetHandling LevelSetHandling {
             get {
                 return this.Control.Timestepper_LevelSetHandling;
             }
         }
-
-
         
 
         /// <summary>
@@ -277,14 +328,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
 
-            foreach(var NamePair in this.LevelSetNames) {
-                string LevelSetCG = NamePair.ContLs;
-                
-                // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
-                var pair1 = LsUpdater.LevelSets[LevelSetCG];
-                pair1.DGLevelSet.Clear();
-                pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
-            }
+            //foreach(var NamePair in this.LevelSetNames) {
+            //    string LevelSetCG = NamePair.ContLs;
+
+            //    // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
+            //    var pair1 = LsUpdater.LevelSets[LevelSetCG];
+            //    pair1.DGLevelSet.Clear();
+            //    pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
+            //}
+
+            this.InitializeLevelSets(LsUpdater, t);
+
         }
 
 
@@ -325,20 +379,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-            
+
+
             // enforce continuity
             // ------------------
-            
-            var pair1 = LsUpdater.LevelSets.First().Value;
-            var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
-            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
-            double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
-            if(dist1 != 0)
-                throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
-            UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
-            double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
-            if(dist2 != 0)
-                throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
+
+            if (L == null) {
+                var pair1 = LsUpdater.LevelSets.First().Value;
+                var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
+                UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+                double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+                if (dist1 != 0)
+                    throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
+                UpdateLevelset(this.CurrentState.Fields.ToArray(), 0.0, 0.0, 1.0, false); // und doppelt hält besser ;)
+                double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
+                if (dist2 != 0)
+                    throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
+            }
+
         }
+
+
     }
 }

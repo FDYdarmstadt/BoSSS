@@ -823,15 +823,15 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 4) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 6) {
 
             XNSE_Control C = new XNSE_Control();
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
-            //string _DbPath = @"D:\local\local_test_db2";
-            string _DbPath = null;
+            string _DbPath = @"D:\local\local_test_db2";
+            //string _DbPath = null;
 
             // basic database options
             // ======================
@@ -888,16 +888,23 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            double rho = 1e4;
-            double mu = 1.0;
-            double sigma = 0.1;
+            double ratio = 0.001;
 
-            C.Tags.Add("La = 500");
-            C.PhysicalParameters.rho_A = rho;
-            C.PhysicalParameters.rho_B = rho;
-            C.PhysicalParameters.mu_A = mu;
-            C.PhysicalParameters.mu_B = mu;
-            C.PhysicalParameters.Sigma = sigma;
+            C.Tags.Add("Ohnesorge Zahl = 1");
+            C.PhysicalParameters.rho_A = 10;
+            C.PhysicalParameters.rho_B = 10 * ratio;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1 * ratio;
+            C.PhysicalParameters.Sigma = 0.1;
+
+
+            //C.Tags.Add("Ohnesorge Zahl = 0.1");
+            //C.PhysicalParameters.rho_A = 100;
+            //C.PhysicalParameters.rho_B = 100 * ratio;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 1 * ratio;
+            //C.PhysicalParameters.Sigma = 1;
+
 
             C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
@@ -908,30 +915,35 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double Lscale = 1.0; ;
-            double L = 2.0 * Lscale;
+            double Lscale = 1.0;
+            double L = 5.0 * Lscale;
+            double L_drop = 1.5 * Lscale;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Znodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+                double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
+                double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem/2) + 1, 1.5, false);
+                out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem/2) + 1, 1.5, true);
+                out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+
+                var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
                 grd.EdgeTagNames.Add(1, "wall");
 
                 grd.DefineEdgeTags(delegate (double[] X) {
                     byte et = 0;
-                    if (Math.Abs(X[1] + (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[1] + (L)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[1] - (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[1] - (L)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] + (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[0] + (L)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[0] - (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[0] - (L)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[2] + (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[2] + (L)) <= 1.0e-8)
                         et = 1;
-                    if (Math.Abs(X[2] - (L / 2.0)) <= 1.0e-8)
+                    if (Math.Abs(X[2] - (L)) <= 1.0e-8)
                         et = 1;
                     return et;
                 });
@@ -946,15 +958,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double r = 0.21 * Lscale;
-            double a = 1.25 * r;
-            double b = 0.8 * r;
-            double c = 0.8 * r;
+            // prolate/oblate spheroid 
+            //double r = 0.21 * Lscale;
+            //double a = 1.25 * r;
+            //double b = 0.8 * r;
+            //double c = 0.8 * r;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
+            // Legndre polynomial m = 2 (spherical harmonics)
+            // f(theta) = gamma_2 + f_2 * P_2(theta) denotes
+            // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
+            // f_2 denotes the initial amplitude
 
+            double f_2 = 0.5;
+            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
+            Func<double[], double> PhiFunc = delegate(double[] X) {
+                double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+                double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+                double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+                double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
+                double phi = r - f;
+                return phi;
+            };
+            
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-
 
             //// restart
             //var database = new DatabaseInfo(_DbPath);
@@ -1053,7 +1080,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 2000;
+            C.NoOfTimesteps = 1;
             C.saveperiod = 2;
 
             #endregion

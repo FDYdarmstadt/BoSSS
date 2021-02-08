@@ -128,7 +128,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int LS_TrackerWidth = 1;
 
 
-        
     }
 
 

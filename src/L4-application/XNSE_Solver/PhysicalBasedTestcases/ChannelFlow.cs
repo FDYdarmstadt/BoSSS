@@ -34,6 +34,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.TestCases;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -47,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 18, int wallBC = 1) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 5, int wallBC = 1) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -427,10 +428,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = false;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 2;
-            C.RefinementLevel = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 2;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel = 2;
+            //C.RefinementLevel = 2;
 
             C.InitSignedDistance = false;
             C.adaptiveReInit = false;

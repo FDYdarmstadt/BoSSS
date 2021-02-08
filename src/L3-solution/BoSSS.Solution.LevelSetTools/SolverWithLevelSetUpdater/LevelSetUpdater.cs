@@ -215,10 +215,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
 
                 //Make Continuous
+                EnforceContinuity();
+
+            }
+
+
+            /// <summary>
+            /// 
+            /// </summary>
+            internal void EnforceContinuity() {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
                 CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
-
 
                 //enforcer.SetFarField(phaseInterface.DGLevelSet, Near1, PosFF);
                 double normB4 = phaseInterface.DGLevelSet.L2Norm();
@@ -226,8 +234,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
                 double normAf = phaseInterface.DGLevelSet.L2Norm();
                 double CGnormAf = phaseInterface.CGLevelSet.L2Norm();
-
             }
+
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -291,11 +299,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, string interfaceName) {
+
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
                     dgLevelSet, backgroundGrid, continuityMode);
             cgLevelSet.Identification = interfaceName;
-            cgLevelSet.AccLaidBack(1.0, dgLevelSet);
+            //cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
 
@@ -311,7 +320,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(levelSet0, backgroundGrid, continuityMode);
             lsUpdaters.Add(levelSet0.Identification, singleUpdater);
 
-            Tracker.UpdateTracker(0.0);
+            //Tracker.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -329,7 +338,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for(int i = 0; i < 2; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
                 cgLevelSets[i].Identification = interfaceNames[i];
-                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+                //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1]);
 
@@ -346,7 +355,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
 
-            Tracker.UpdateTracker(0.0);
+            //Tracker.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -363,7 +372,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
                 cgLevelSets[i].Identification = interfaceNames[i];
-                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+                //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2]);
 
@@ -380,7 +389,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
 
-            Tracker.UpdateTracker(0.0);
+            //Tracker.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -398,7 +407,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
                 cgLevelSets[i].Identification = interfaceNames[i];
-                cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
+                //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2], cgLevelSets[3]);
 
@@ -415,7 +424,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
 
-            Tracker.UpdateTracker(0.0);
+            //Tracker.UpdateTracker(0.0);
         }
 
         static SingleLevelSetUpdater CreateSingleLevelSetUpdater(DualLevelSet levelSet, GridData grid, ContinuityProjectionOption continuityMode) {
@@ -426,6 +435,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 continuityMode);
             return new SingleLevelSetUpdater(levelSet, enforcer1);
         }
+
 
         /// <summary>
         /// current (i.e. after latest update) values of level-set related parameter fields
@@ -474,9 +484,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             bool incremental) {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
-            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "beforeUpdateParameters", time, 2);
+
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
-            //Tecplot.Tecplot.PlotFields(ArrayTools.Cat(DomainVarFields.Values, InnerParameterFields.Values), "afterUpdateParameters", time, 2);
+
             foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
                 residual += updater.UpdateLevelSet(
                     DomainVarFields,
@@ -488,8 +498,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
             UpdateParameters(DomainVarFields, InnerParameterFields, time + dt); // update parameters after change of level-set.
+
             return residual;
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void EnforceContinuity() {
+            foreach (SingleLevelSetUpdater updater in lsUpdaters.Values) {
+                updater.EnforceContinuity();
+            }
+        }
+
 
         /// <summary>
         /// Allocation

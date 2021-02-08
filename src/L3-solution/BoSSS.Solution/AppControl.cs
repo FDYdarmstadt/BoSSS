@@ -1026,6 +1026,14 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int AMR_startUpSweeps = 1;
 
+
+        /// <summary>
+        /// List of active AMR level indicators 
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
+
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.

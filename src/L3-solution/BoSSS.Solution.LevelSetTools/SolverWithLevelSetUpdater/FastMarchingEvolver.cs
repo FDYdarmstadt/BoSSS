@@ -114,7 +114,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 dt, phaseInterface.Tracker, lsBuffer, phaseInterface.DGLevelSet, filtLevSetGradient,
                 meanVelocity, extensionVelocity,
                 m_HMForder,
-                TimestepNo, true);
+                TimestepNo, false);
 
             //tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
             //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, 0.0, 2);

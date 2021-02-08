@@ -76,22 +76,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetRotationTest"/>
         /// </summary>
-        [Test]
-        public static void LevelSetRotationTest(
-            [Values(2)] int spatialDimension,
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
-            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
-            {
-            // Todo: singleInit/multiInit, 
+        //[Test]
+        //public static void LevelSetRotationTest(
+        //    [Values(2)] int spatialDimension,
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+        //    //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+        //    {
+        //    // Todo: singleInit/multiInit, 
 
-            var Tst = new LevelSetRotationTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+        //    var Tst = new LevelSetRotationTest(spatialDimension, LSdegree);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
 
-            LevelSetTest(Tst, C);
+        //    LevelSetTest(Tst, C);
 
-        }
+        //}
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
@@ -117,22 +117,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
-        public static void LevelSetShearingTest(
-            [Values(2)] int spatialDimension,
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
-            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
-            {
-            // Todo: singleInit/multiInit, 
+        //[Test]
+        //public static void LevelSetShearingTest(
+        //    [Values(2)] int spatialDimension,
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+        //    //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+        //    {
+        //    // Todo: singleInit/multiInit, 
 
-            var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+        //    var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
 
-            LevelSetTest(Tst, C);
+        //    LevelSetTest(Tst, C);
 
-        }
+        //}
 
 
         private static void LevelSetTest(IXNSETest Tst, XNSE_Control C) {

@@ -1812,8 +1812,8 @@ namespace BoSSS.Solution {
                 }
 
                 if(LsTrk != null) {
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.UpdateTracker(0.0); // doppeltes Update hält besser; 
+                    LsTrk.UpdateTracker(time);
+                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)
@@ -2063,7 +2063,6 @@ namespace BoSSS.Solution {
                     }
                 }
 
-
                 // =================================================================================
                 // Main/outmost time-stepping loop
                 // (in steady-state: only one iteration)
@@ -2203,6 +2202,7 @@ namespace BoSSS.Solution {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
+            bool plotAdaption = true;
 
             using (var tr = new FuncTrace()) {
 
@@ -2350,6 +2350,8 @@ namespace BoSSS.Solution {
                         // mesh adaptation
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 10 }), 2);
 
                         // backup old data
                         // ===============
@@ -2455,6 +2457,8 @@ namespace BoSSS.Solution {
                         CreateFields(); // full user control   
                         PostRestart(physTime, TimeStepNo);
 
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
                         // re-set Level-Set tracker
                         int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
@@ -2475,10 +2479,10 @@ namespace BoSSS.Solution {
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if(f.Identification == "Phi")
-                                //throw new ApplicationException("ask Smuda why he did this");
-                                continue;
-                            //f.Clear();
+                            //if(f.Identification == "Phi")
+                            //    //throw new ApplicationException("ask Smuda why he did this");
+                            //    continue;
+                            ////f.Clear();
 
                             remshDat.RestoreDGField(f);
                         }
@@ -2489,6 +2493,8 @@ namespace BoSSS.Solution {
                 } //end of adapt mesh branch
 
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+                if (plotAdaption)
+                    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
 
                 return true;
             }

@@ -540,11 +540,14 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     }
                 }
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, this.LsTrk, this.MultigridSequence);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, 
+                    this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
 
 
                 if (this.Control.solveKineticEnergyEquation) {
-                    KineticEnergyTimestepper.DataRestoreAfterBalancing(L, this.KineticEnergy.ToEnumerable(), this.ResidualKineticEnergy.ToEnumerable(), this.LsTrk, this.MultigridSequence);
+                    KineticEnergyTimestepper.DataRestoreAfterBalancing(L, 
+                        this.KineticEnergy.ToEnumerable(), this.ResidualKineticEnergy.ToEnumerable(), 
+                        this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
                 }
 
 
