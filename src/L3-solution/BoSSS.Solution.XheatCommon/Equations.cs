@@ -57,7 +57,6 @@ namespace BoSSS.Solution.XheatCommon {
                 else
                     conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
                 AddComponent(conv);
-
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
             }
@@ -161,9 +160,8 @@ namespace BoSSS.Solution.XheatCommon {
             codomainName = EquationNames.HeatEquation;
             AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
-            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddCoefficient("EvapMicroRegion");
         }
 
@@ -198,8 +196,10 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
                 Console.WriteLine("include heat convection");
-                AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
+                //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
+                AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh));
             }
 
             // viscous operator (laplace)
@@ -208,7 +208,8 @@ namespace BoSSS.Solution.XheatCommon {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_material(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
             } else {
                 AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk));

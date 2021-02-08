@@ -240,5 +240,14 @@ namespace BoSSS.Application.XRheology_Solver {
                 return true;
             }
         }
+
+        /// <summary>
+        /// Volume Force
+        /// </summary>
+        public bool isVolForce {
+            get {
+                return false;
+            }
+        }
     }
 }

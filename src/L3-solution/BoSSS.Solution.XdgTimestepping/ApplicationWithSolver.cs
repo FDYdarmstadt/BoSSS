@@ -43,6 +43,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// List for parameter fields can be set by <see cref="CreateAdditionalFields"/>
+        /// </summary>
+        public virtual IList<DGField> Parameters {
+            get;
+            protected set;
+
+        }
+
+        /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateResidualFields"/>
         /// </summary>
         public virtual CoordinateMapping CurrentResidual {
@@ -100,7 +109,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// An example would be e.g. parameters such as Gravity which are set through the control file.
         /// </summary>
         protected virtual void CreateAdditionalFields() {
-            
+
+            // parameters
+            var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
+            Parameters = new List<DGField>();
+            foreach (var f in parameterFields) {
+                this.Parameters.Add(f);
+                base.RegisterField(f);
+            }            
+
         }
 
 
@@ -376,7 +393,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -528,7 +545,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridSequence,
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
-                this.LsTrk);
+                this.LsTrk,
+                Parameters);
 
             base.Timestepping = solver;
 
@@ -648,7 +666,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 

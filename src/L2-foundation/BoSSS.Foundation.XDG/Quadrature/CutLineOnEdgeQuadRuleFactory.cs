@@ -205,33 +205,35 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             var result = new List<ChunkRulePair<CellEdgeBoundaryQuadRule>>(mask.NoOfItemsLocally);
             foreach (Chunk chunk in mask) {
                 for (int i = 0; i < chunk.Len; i++) {
-                    int cell = i + chunk.i0;
+                    int jCell = i + chunk.i0;
 
-                    if (cache.ContainsKey(cell)) {
+
+
+                    if (cache.ContainsKey(jCell)) {
                         result.Add(new ChunkRulePair<CellEdgeBoundaryQuadRule>(
-                            Chunk.GetSingleElementChunk(cell),
-                            cache[cell]));
+                            Chunk.GetSingleElementChunk(jCell),
+                            cache[jCell]));
                         continue;
                     }
 
                     List<Vector> nodes = new List<Vector>();
                     List<double> weights = new List<double>();
 
-                    if (lsData.GridDat.Cells.Cells2Edges[cell].Length != noOfEdges) {
+                    if (lsData.GridDat.Cells.Cells2Edges[jCell].Length != noOfEdges) {
                         throw new NotImplementedException("Not implemented for hanging nodes");
                     }
 
                     int[] noOfNodesPerEdge = new int[noOfEdges];
                     int[,] noOfNodesPerEdgeOfEdge = new int[noOfEdges, noOfEdgesOfEdge];
                     for (int e = 0; e < noOfEdges; e++) {
-                        int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[cell][e]) - 1;
+                        int edge = Math.Abs(lsData.GridDat.Cells.Cells2Edges[jCell][e]) - 1;
                         double edgeDet = lsData.GridDat.Edges.SqrtGramian[edge];
 
                         for (int ee = 0; ee < noOfEdgesOfEdge; ee++) {
                             LineSegment refSegment = referenceLineSegments[e, ee];
                             double edgeOfEdgeDet = RefElement.FaceRefElement.FaceTrafoGramianSqrt[ee];
 
-                            double[] roots = refSegment.GetRoots(lsData.LevelSet, cell, 0);
+                            double[] roots = refSegment.GetRoots(lsData.LevelSet, jCell, 0);
                             LineSegment[] subSegments = refSegment.Split(roots);
 
                             for (int k = 0; k < subSegments.Length; k++) {
@@ -243,7 +245,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 if(jumpType != JumpTypes.Implicit) {
                                     //using (tracker.GridDat.NSC.CreateLock(
                                     //    MultidimensionalArray.CreateWrapper(point, 1, D), 0, -1.0)) {
-                                    MultidimensionalArray levelSetValue = lsData.GetLevSetValues(_point, cell, 1);
+                                    MultidimensionalArray levelSetValue = lsData.GetLevSetValues(_point, jCell, 1);
 
                                     switch(jumpType) {
                                         case JumpTypes.Heaviside:
@@ -286,9 +288,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         CellEdgeBoundaryQuadRule emptyRule =
                             CellEdgeBoundaryQuadRule.CreateEmpty(1, RefElement);
                         emptyRule.Nodes.LockForever();
-                        cache.Add(cell, emptyRule);
+                        cache.Add(jCell, emptyRule);
                         result.Add(new ChunkRulePair<CellEdgeBoundaryQuadRule>(
-                            Chunk.GetSingleElementChunk(cell), emptyRule));
+                            Chunk.GetSingleElementChunk(jCell), emptyRule));
                         continue;
                     }
 
@@ -309,10 +311,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     };
                     subdividedRule.Weights.SetSubVector(weights, -1);
 
-                    cache.Add(cell, subdividedRule);
+                    cache.Add(jCell, subdividedRule);
 
                     result.Add(new ChunkRulePair<CellEdgeBoundaryQuadRule>(
-                        Chunk.GetSingleElementChunk(cell), subdividedRule));
+                        Chunk.GetSingleElementChunk(jCell), subdividedRule));
                 }
             }
 

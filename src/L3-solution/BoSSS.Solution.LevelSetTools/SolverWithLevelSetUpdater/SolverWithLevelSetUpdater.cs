@@ -1,9 +1,11 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.Tecplot;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -71,6 +73,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         protected override LevelSetTracker InstantiateTracker() {
             LsUpdater = InstantiateLevelSetUpdater();
+
+            // register all managed LevelSets
+            foreach (DualLevelSet LevSet in LsUpdater.LevelSets.Values) {
+                base.RegisterField(LevSet.CGLevelSet);
+                base.RegisterField(LevSet.DGLevelSet);
+            }
+
+            // register internal fields, e.g. extension velocity etc.
+            foreach (var field in LsUpdater.InternalFields.Values) {
+                base.RegisterField(field);
+            }
+
             return LsUpdater.Tracker;
         }
 
@@ -159,6 +173,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                 DGlevelSets[iLevSet] = levelSetDG;
+
             }
 
 
@@ -202,6 +217,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData);
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.Phasefield: {
+                        var PhasefieldEvolver = new PhasefieldEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(), this.Control,
+                            this.Control.AgglomerationThreshold, this.GridData);
+
+                        lsUpdater.AddEvolver(LevelSetCG, PhasefieldEvolver);
                         break;
                     }
                     case LevelSetEvolution.SplineLS: {
@@ -364,22 +387,50 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return 0.0;
         }
 
+
+        //protected override void CreateAdditionalFields() {
+        //    base.CreateAdditionalFields();
+
+        //    // Level Set Parameters
+        //    var domainFields = CurrentState.Fields;
+        //    var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
+        //    for (int iVar = 0; iVar < domainFields.Count; iVar++) {
+        //        DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
+        //    }
+
+        //    var parameterFields = base.Parameters;
+        //    var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
+        //    for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
+        //        ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+        //    }
+        //    LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
+            
+        //    foreach (var f in LsUpdater.Parameters.Values) {
+        //        base.RegisterField(f);
+        //    }
+        //}
+
+
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
 
+            // Level Set Parameters
             var domainFields = CurrentState.Fields;
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
             for (int iVar = 0; iVar < domainFields.Count; iVar++) {
                 DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
             }
 
-            var parameterFields = Timestepping.Parameters;
+            var parameterFields = base.Parameters;
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
 
+            foreach (var f in LsUpdater.Parameters.Values) {
+                base.RegisterField(f);
+            }
 
             // enforce continuity
             // ------------------
@@ -399,6 +450,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         }
 
+
+        // Hack to set the correct time for the levelset tracker on restart
+        double restartTime = 0.0;
+
+
+        //public override void PostRestart(double time, TimestepNumber timestep) {
+        //    base.PostRestart(time, timestep);
+        //    // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+        //    if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+        //        this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+
+        //    // set restart time, used later in the intial tracker updates
+        //    restartTime = time;
+
+        //    // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+        //    this.LsUpdater.Tracker.PushStacks();
+        //}
 
     }
 }

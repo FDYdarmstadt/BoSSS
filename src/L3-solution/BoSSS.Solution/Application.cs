@@ -2202,7 +2202,7 @@ namespace BoSSS.Solution {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
-            bool plotAdaption = true;
+            bool plotAdaption = false;
 
             using (var tr = new FuncTrace()) {
 

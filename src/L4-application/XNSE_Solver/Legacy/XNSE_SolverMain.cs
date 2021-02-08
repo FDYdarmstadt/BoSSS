@@ -68,6 +68,9 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
     /// - Optional: coupled heat equation with evaporation
     /// - Optional: kinetic energy equation 
     /// </summary>
+    /// <remarks>
+    /// This is the old variant of the XNSE-solver, used for the PhD thesis of Martin Smuda.
+    /// </remarks>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
         //static void Main(string[] args) {
