@@ -50,7 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
 
         MarchingNodeStatus status;
 
-        int jCell;
+        public int jCell;
         MarchingCell[] neighbors = null;
         double phi_CellAverage;
 

@@ -39,6 +39,21 @@ namespace BoSSS.Application.XNSE_Solver {
     ///   This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant f = 1.
     ///   When evaluating a constant function, n = 0, the degree of the integrand immensely simplifies to (p - 1).
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+    /// 
+    /// Quick start instructions:
+    /// - The Fluid-Fluid-Interphase is level-set No. 0 and is named `Phi` 
+    ///   in the initial values <see cref="AppControl.InitialValues"/>, see <see cref="DGField.Identification"/>)
+    /// - The immersed boundary interface has the name `Phi2`
+    ///   `Phi` is always activated and cannot be turned of; `Phi2` can be activated/deactivated via <see cref="XNSE_Control.UseImmersedBoundary"/>.
+    /// - One should not need to set an initial value for `Phi` for simulations where no fluid-fluid interface is required:
+    ///   If `Phi` it is identical to 0.0 in the entire domain, it will be set to -1, i.e. the entire domain will be assigned to species "A".
+    /// - The vectorial velocity of `Phi2` is set via the fields `VelocityX@Phi2`, `VelocityY@Phi2` and `VelocityZ@Phi2` (in 3D). 
+    ///   By specifying a vectorial velocity, one can also specify tangential velocities of the surface. 
+    ///   The normal component should match the normal velocity which can be computed from `Phi2`,
+    ///   yielding following compatibility condition: 
+    /// ```math
+    ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
+    /// ```
     /// </remarks>
     /// 
     public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
@@ -50,18 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
-            //                                q: -50,
-            //                                deg: 3,
-            //                                AgglomerationTreshold: 0,
-            //                                SolverMode_performsolve: true,
-            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
@@ -82,13 +86,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <remarks>
         /// Note: 
         /// Sayes algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-        /// We transform $`\int f dx`$ to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} `$
-        /// Suppose $`f`$ has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
+        /// We transform $`\int f dx $` to the reference Element, $`\int f dx = \int f(T) |det D(T)| d\hat{x} $`
+        /// Suppose $`f$` has degree $`n$` and suppose the transformation $`T$` has degree $`p$`, then the integrand in reference space
         /// has approximately degree $`\leq n * p + (p - 1) $`
-        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))`$ roots of the level set function, if we want to integrate $`f$` exactly.
+        /// This is problematic, because we need to find $`\sqrt(n * p + (p - 1))$` roots of the level set function, if we want to integrate $`f$` exactly.
         /// This goes unnoticed when verifying the quadrature method via volume/surface integrals with constant $`f = 1$`.
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
-        /// /// </remarks>
+        /// </remarks>
         override public int QuadOrder() {
             if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
@@ -273,11 +277,25 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+
+                // Add Gravitation
+                if(config.isGravity){
+                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
+                    opFactory.AddParameter(GravA);
+                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
+                    opFactory.AddParameter(GravB);
+                }
+
+                // Add additional volume forces
+                if (config.isVolForce) {
+                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
+                    opFactory.AddParameter(VolForceA);
+                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
+                    opFactory.AddParameter(VolForceB);
+                }
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
@@ -358,38 +376,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
-        }
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
-            DGField[] plotFields = this.m_RegisteredFields.ToArray();
-            void AddPltField(DGField f) {
-                bool add = true;
-                foreach(var ff in plotFields) {
-                    if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
-                        add = false;
-                        break;
-                    }
-                }
-                if(add) {
-                    f.AddToArray(ref plotFields);
-                }
-            }
-            void AddPltFields(IEnumerable<DGField> fs) {
-                foreach(var f in fs)
-                    AddPltField(f);
-            }
-
-            if (Timestepping?.Parameters != null) {
-                AddPltFields(Timestepping.Parameters);
-            }
-            if (LsUpdater?.Parameters != null) {
-                AddPltFields(LsUpdater.Parameters.Values);
-                AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
-                AddPltFields(LsUpdater.InternalFields.Values);
-            }
-
-            Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

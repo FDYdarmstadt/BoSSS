@@ -371,8 +371,9 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     case LevelSetEvolution.Phasefield:
                         this.DGLevSet.Current.Clear();
                         this.DGLevSet.Current.AccLaidBack(1.0, this.LevSet);
-                        PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
-                        PhaseField.InitCH();
+                        throw new NotImplementedException("changed interface - Vectorfield -> Singlephasefield[]");
+                        //PhaseField = new Phasefield(this.Control.PhasefieldControl, this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        //PhaseField.InitCH();
                         break;
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Prescribed:
@@ -489,7 +490,8 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
                 // true, if the separate evolution steps should be plotted
                 bool plotUpdateSteps = false;
-                //Console.WriteLine("Warning! - plot update levelset steps");
+                if (plotUpdateSteps)
+                    Console.WriteLine("Warning! - plot update levelset steps");
 
 
                 int D = base.Grid.SpatialDimension;
@@ -754,13 +756,13 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                             //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("A"), CutCells);
                             //ExtensionVelocity.Current[g].Acc(-0.5, XDGvelocity.Velocity[g].GetSpeciesShadowField("B"), CutCells);
                         }
-                        PhaseField.UpdateFields(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
-                        PhaseField.MovePhasefield(iTimestep, dt, Phystime);
+                        //PhaseField.UpdateFields(this.LevSet, this.DGLevSet.Current, this.LsTrk, this.ExtensionVelocity.Current, this.GridData, this.Control, this.MultigridSequence);
+                        //PhaseField.MovePhasefield(iTimestep, dt, Phystime);
                         break;
                     default:
                         throw new ApplicationException();
                 }
-
+                
                 #endregion
 
                 if (plotUpdateSteps)

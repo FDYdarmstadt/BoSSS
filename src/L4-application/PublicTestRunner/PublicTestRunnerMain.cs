@@ -104,7 +104,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE_SolverMain),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(MPITest.Program),
                         typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
@@ -529,8 +529,10 @@ namespace PublicTestRunner {
                             }
 
 
-
-                            YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
+                            if (t.NoOfProcs == 1)
+                                YAML.WriteLine(DebugOrReleaseSuffix + "#" + t.shortname + ":" + t.testname + ":");
+                            else 
+                                YAML.WriteLine(DebugOrReleaseSuffix + "#p" + t.NoOfProcs + "#" + t.shortname + ":" + t.testname + ":");
                             YAML.WriteLine("   extends: .Test");
 
                             if (t.NoOfProcs == 1)
@@ -603,6 +605,14 @@ namespace PublicTestRunner {
                         }
                     }
                 }
+
+                //using(var s = new StreamWriter("tests.txt")) {
+                //    foreach(var t in allTests) {
+                //        s.WriteLine(t.testname);
+                //    }
+                //}
+                //throw new Exception();
+
                 {
                     var ParAssln = GetAllMpiAssemblies();
                     if (ParAssln != null) {
@@ -968,6 +978,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
+                j.RetryCount = 1;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {

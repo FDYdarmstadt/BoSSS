@@ -272,6 +272,20 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string GravityZ = "GravityZ";
 
+        /// <summary>
+        /// Volume force component in x - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceX = "VolumeForceX";
+
+        /// <summary>
+        /// Volume force component in y - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceY = "VolumeForceY";
+
+        /// <summary>
+        /// Volume force component in z - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceZ = "VolumeForceZ";
 
         /// <summary>
         /// vorticity component in x - direction; 
@@ -1255,8 +1269,31 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { GravityX, GravityY, GravityZ };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
-        }  
-        
+        }
+
+        /// <summary>
+        /// component of gravity/volume force names
+        /// </summary>
+        public static string VolumeForce_d(int d) {
+            return VolumeForceVector(3)[d];
+        }
+
+
+        /// <summary>
+        /// vector of gravity/volume force names
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] VolumeForceVector(int D) {
+            if (D == 2)
+                return new string[] { VolumeForceX, VolumeForceY };
+            else if (D == 3)
+                return new string[] { VolumeForceX, VolumeForceY, VolumeForceZ };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
         /// <summary>
         /// vector of convective names
         /// </summary>

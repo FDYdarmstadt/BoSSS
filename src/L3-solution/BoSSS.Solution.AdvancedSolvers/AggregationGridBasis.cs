@@ -1181,8 +1181,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void SetupCompositeBasis(int _jAgg) {
             using(new FuncTrace()) {
 
-                if(_jAgg < 0)
-                    Console.WriteLine("Warning: you are using a Method which is known to scale bad (worse than linear) with the number-of-cells.");
+                //if(_jAgg < 0)
+                //    Console.WriteLine("Warning: you are using a Method which is known to scale bad (worse than linear) with the number-of-cells.");
 
                 Basis b = this.DGBasis;
                 AggregationGridData ag = this.AggGrid;

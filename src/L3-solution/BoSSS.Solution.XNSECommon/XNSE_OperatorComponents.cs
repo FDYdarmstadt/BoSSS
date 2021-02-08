@@ -649,6 +649,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         bool isGravity { get; }
 
+        /// <summary>
+        /// Include a general volume force component
+        /// </summary>
+        bool isVolForce { get; }
+
     }
 
 

@@ -140,7 +140,7 @@ namespace LTSTests {
             else if (ALTS)
                 //maxL2error = 1.23576348037153E-08 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.23595770364496E-08 + 1e-14; // dt=dt_input 
-                maxL2error = 1.23595770364496E-08 + 1e-16; // dt=dt_input 
+                maxL2error = 1.23595770364496E-08 + 1e-6; // dt=dt_input 
 
             Console.WriteLine(
                 "LTS@dt=" + dt + "and order=" + order + " L2 Error: " + L2error + " (Threshold is " + maxL2error + ")");

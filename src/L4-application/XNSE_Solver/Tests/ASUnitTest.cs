@@ -126,13 +126,111 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 #if !DEBUG
         /// <summary>
-        /// <see cref="ViscosityJumpTest"/>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
         /// </summary>
         [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_OneStepGaussAndStokes() //1
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes() //2
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_OneStepGaussAndStokes() //3
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_OneStepGaussAndStokes() //4
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_Standard_Saye() //5
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_Standard_Saye() //6
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.Standard;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p2_FullySymmetric_Saye() //7
+        {
+            int deg = 2;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
+        [Test]
+        public static void ScalingStaticDropletTest_p3_FullySymmetric_Saye() //8
+        {
+            int deg = 3;
+            ViscosityMode vmode = ViscosityMode.FullySymmetric;
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            ScalingStaticDropletTest(deg, vmode, CutCellQuadratureType);
+        }
+
+#endif
+
+
+        /// <summary>
+        /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
+        /// </summary>
         public static void ScalingStaticDropletTest(
-            [Values(2, 3)] int deg,
-            [Values(ViscosityMode.Standard, ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            int deg,
+            ViscosityMode vmode,
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
             )
         {
 
@@ -157,7 +255,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
         }
-#endif
+
 
 
 #if !DEBUG        
@@ -463,10 +561,44 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
         [Test]
+        public static void TaylorCouetteConvergenceTest_IBM(
+            [Values(2, 3)] int FlowSolverDegree = 3
+            ) {
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
+            [Values(2, 3)] int FlowSolverDegree = 3
+            ) {
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Projected(
+            [Values(2, 3)] int FlowSolverDegree = 3
+            ) {
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+        }
+
+#endif
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
         public static void TaylorCouetteConvergenceTest(
             [Values(2, 3)] int FlowSolverDegree = 3,
             [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
             ) {
 
             double AgglomerationTreshold = 0.3;
@@ -502,7 +634,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
         }
-#endif
+
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
@@ -526,10 +658,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
-            C.SkipSolveAndEvaluateResidual = true;
+
             XNSESolverTest(Tst, C);
 
         }
@@ -1039,13 +1168,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach(var spc in new[] { "A", "B" }) {
+
+            foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for(int d = 0; d < D; d++) {
+
+                for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
+                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    C.SetGravity(spc, d, Gravity_d);
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
@@ -1326,7 +1458,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-
+                        
             foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionTemperature.Add(spc, tst.GetT(spc));
                 C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetT(spc).Convert_Xt2X(0.0));
@@ -1337,7 +1469,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                    C.InitialValues_Evaluators.Add(VariableNames.Gravity_d(d) + "#" + spc, tst.GetF(spc, d));
+                }
+
+                Func<double[], double, double>[] Gravity = new Func<double[], double, double>[D];
+                for (int d = 0; d < D; d++) {
+                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    C.SetGravity(spc, d, Gravity_d);
                 }
             }
 
