@@ -249,13 +249,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 }
             }
 
-            double SqrtGram(int edge) {
-                var g = grid.Edges.SqrtGramian[edge];
-                g = 1 / g;
+            double Det(int cell) {
+                MultidimensionalArray inverseJacobian = grid.JacobianDeterminat.GetValue_Cell(Square.Instance.Center, cell, 1);
+                double g = 1 / inverseJacobian[0, 0];
                 return g;
             }
 
-            var surfaceScheme = new BruteForceZeroScheme(Phi, SqrtGram);
+            var surfaceScheme = new BruteForceZeroScheme(Phi, Det);
             return new BruteForceQuadratureFactory(surfaceScheme);
         }
 

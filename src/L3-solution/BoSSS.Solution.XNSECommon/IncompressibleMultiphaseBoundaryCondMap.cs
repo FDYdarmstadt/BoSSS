@@ -51,7 +51,13 @@ namespace BoSSS.Solution.XNSECommon {
             return scalarFields.ToArray();
         }
 
-
+        /// <summary>
+        /// Boundary condition mapping for incompressible XDG multiphase methods.
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="b">Tags are identified with boundary conditions by comparing strings in tagnames. 
+        /// If the tagname contains the substring wall, this will be a wall boundary condition</param>
+        /// <param name="SpeciesNames"></param>
         public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
            : base(f, b, PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
         {

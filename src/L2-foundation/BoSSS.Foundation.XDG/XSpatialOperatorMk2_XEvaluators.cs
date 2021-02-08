@@ -111,6 +111,9 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+            /// <summary>
+            /// creates a matrix builder
+            /// </summary>
             protected override void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species) {
                 Debug.Assert(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0);
                 string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
@@ -628,7 +631,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Write quadrature rules to text file, for debugging
             /// </summary>
-            static private bool ruleDiagnosis = true;
+            static private bool ruleDiagnosis = false;
 
             /// <summary>
             /// ctor
@@ -890,7 +893,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                 }
-            }
+           }
 
             /// <summary>
             /// 
