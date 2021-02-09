@@ -79,7 +79,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            //
             CreateTrackerHack();
 
             // solution:
@@ -367,14 +366,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         internal override void CreateTrackerHack() {
             var trk = InstantiateTracker();
-
+            //var test = this.Operator;
             if(base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
                 if(!object.ReferenceEquals(trk, base.LsTrk))
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
-
+            //ClearOperator();
             foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
                 if(ls is DGField f) {
                     base.RegisterField(f);
@@ -382,8 +381,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
-
-        XSpatialOperatorMk2 m_XOperator;
+        private XSpatialOperatorMk2 m_XOperator { 
+            get; 
+            set; 
+        }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>

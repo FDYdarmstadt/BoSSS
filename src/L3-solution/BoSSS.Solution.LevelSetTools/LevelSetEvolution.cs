@@ -99,5 +99,10 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.StokesExtensionEvolver"/>.
         /// </remarks>
         StokesExtension,
+
+        /// <summary>
+        /// A level set formulation for the surface of rigid objects. The Movement depends only on the position and orientation of the object.
+        /// </summary>
+        RigidObject,
     }
 }

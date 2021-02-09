@@ -160,8 +160,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
             
-            grad.ApplyAll(x => Math.Abs(x));     
-            double delta = grad.InnerProduct(diameters) * sqrt_2;
+            grad.ApplyAll(x => Math.Abs(x));
+            double delta = grad.InnerProduct(diameters) / 2;
 
             return delta;
         }
@@ -196,12 +196,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //abs(Hessian) * diameters = delta 
             MultidimensionalArray delta = hessian * diameters;
             delta = delta.ExtractSubArrayShallow(new int[] { -1, 0 });
-            
             //Check if suitable
             //-----------------------------------------------------------------------------------------------------------------
-
-            //|gk| > δk
-            if( Math.Abs(gradient[heightDirection]) > delta[heightDirection])
+                //|gk| > δk
+            if ( Math.Abs(gradient[heightDirection]) > delta[heightDirection])
             {
                 bool suitable = true;
                 // Sum_j( g_j + delta_j)^2 / (g_k - delta_k)^2 < 20
@@ -213,7 +211,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 }
                 sum /= Math.Pow(gradient[heightDirection] - delta[heightDirection], 2);
 
-                suitable &= sum < 20;
+                suitable &= sum < 2;
 
                 return suitable;
             }

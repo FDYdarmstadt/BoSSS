@@ -36,11 +36,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Include translation?
-        /// </summary>
-        internal override bool IncludeTranslation { get; } = false;
-
-        /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
@@ -73,19 +68,11 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calculate the new acceleration (translational and rotational)
-        /// </summary>
-        /// <param name="dt"></param>
-        protected override double CalculateRotationalAcceleration(double dt) {
-            return 0;
-        }
-
-        /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return new Vector(SpatialDim);
         }
 

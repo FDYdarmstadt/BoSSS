@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using FSI_Solver;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -54,10 +55,81 @@ namespace BoSSS.Application.FSI_Solver {
                 RotationalAcceleration.Add(new double());
                 HydrodynamicTorque.Add(new double());
             }
+            PeriodicBoundaryPosition = new double[SpatialDim][];
         }
+
+        /// <summary>
+        /// First index: The spatial direction of the periodic boundary.
+        /// Second index: The ID of the periodic boundary. Left and lower boundary has ID=0, right and upper boundary ID=1.
+        /// </summary>
+        [DataMember]
+        private readonly double[][] PeriodicBoundaryPosition;
+
+        /// <summary>
+        /// The origin of the virtual domain at the periodic boundary.
+        /// </summary>
+        [DataMember]
+        public List<Vector> OriginInVirtualPeriodicDomain = new List<Vector>();
+
+        public void SetPeriodicBoundaryPosition(double[] periodicBoundaryPosition, int dimension) {
+            Aux = new FSIAuxillary();
+            if (PeriodicBoundaryPosition[0].IsNullOrEmpty() && dimension == 0)
+                OriginInVirtualPeriodicDomain.Clear();
+            Aux.TestArithmeticException(periodicBoundaryPosition, ("periodic boundary position, dimension " + dimension));
+            PeriodicBoundaryPosition[dimension] = periodicBoundaryPosition.CloneAs();
+
+            switch (dimension) {
+                case 0:
+                xPeriodic = true;
+                for (int d = 0; d < PeriodicBoundaryPosition[dimension].Length; d++) {
+                    OriginInVirtualPeriodicDomain.Add(new Vector(2 * PeriodicBoundaryPosition[0][d], 0));
+                }
+                break;
+                case 1:
+                yPeriodic = true;
+                for (int d = 0; d < PeriodicBoundaryPosition[dimension].Length; d++) {
+                    OriginInVirtualPeriodicDomain.Add(new Vector(0, 2 * PeriodicBoundaryPosition[1][d]));
+                }
+                break;
+            }
+
+            if(xPeriodic && yPeriodic) {
+                for(int d1 = 0; d1 < 2; d1++) {
+                    for(int d2 = 0; d2 < 2; d2++) {
+                        OriginInVirtualPeriodicDomain.Add(new Vector(OriginInVirtualPeriodicDomain[d1][0], OriginInVirtualPeriodicDomain[2 + d2][1]));
+                    }
+                }
+            }
+        }
+
+        private bool xPeriodic = false;
+        private bool yPeriodic = false;
+
+        public double[][] GetPeriodicBoundaryPosition() => PeriodicBoundaryPosition;
+
+        public bool IsInsideOfPeriodicDomain(Vector Point, double Tolerance) {
+            for (int d = 0; d < PeriodicBoundaryPosition.Length; d++) {
+                if (!PeriodicBoundaryPosition[d].IsNullOrEmpty()) {
+                    Vector wallNormal = new Vector(1 - d, d);
+                    for (int wallID = 0; wallID < PeriodicBoundaryPosition[d].Length; wallID++) {
+                        double tolerance = Tolerance;
+                        if (wallID == 1) {
+                            tolerance = Tolerance * (-1);
+                            wallNormal *= -1;
+                        }
+                        double wallWithTolerance = PeriodicBoundaryPosition[d][wallID] - tolerance;
+                        Vector wallToPoint = d == 0 ? new Vector(Point[0] - (wallWithTolerance), Point[1]) : new Vector(Point[0], Point[1] - (wallWithTolerance));
+                        if (wallNormal * wallToPoint < 0)
+                            return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         internal double omega = 1;
         [NonSerialized]
-        internal FSI_Auxillary Aux = new FSI_Auxillary();
+        internal FSIAuxillary Aux = new FSIAuxillary();
         [DataMember]
         private const int NumberOfHistoryEntries = 3;
         [DataMember]
@@ -92,6 +164,8 @@ namespace BoSSS.Application.FSI_Solver {
         public double MaxParticleLengthScale;
         [DataMember]
         internal double[,] AddedDampingTensor = new double[6, 6];
+        [DataMember]
+        public Vector DistanceToMaster = new Vector(0, 0);
 
         /// <summary>
         /// Mass of the current particle.
@@ -103,13 +177,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// Include rotation?
         /// </summary>
         [DataMember]
-        internal virtual bool IncludeRotation { get; } = true;
+        internal bool IncludeRotation = true;
 
         /// <summary>
         /// Include translation?
         /// </summary>
         [DataMember]
-        internal virtual bool IncludeTranslation { get; } = true;
+        internal bool IncludeTranslation = true;
 
         /// <summary>
         /// Use added damping?, for reference: Banks et.al. 2017
@@ -121,11 +195,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the position of the particle.
         /// </summary>
         /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetPosition(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Position[historyPosition];
         }
 
@@ -133,11 +207,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the angle of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetAngle(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Angle[historyPosition];
         }
 
@@ -145,11 +219,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the translational velocity of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetTranslationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalVelocity[historyPosition];
         }
 
@@ -157,11 +231,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the rotational velocity of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetRotationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalVelocity[historyPosition];
         }
 
@@ -169,11 +243,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the translational acceleration of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetTranslationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalAcceleration[historyPosition];
         }
 
@@ -181,11 +255,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the rotational acceleration of the particle.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetRotationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalAcceleration[historyPosition];
         }
 
@@ -193,11 +267,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the force acting on the particle in the current time step.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for 4 timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for 4 time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal Vector GetHydrodynamicForces(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicForces[historyPosition];
         }
 
@@ -205,39 +279,45 @@ namespace BoSSS.Application.FSI_Solver {
         /// Returns the torque acting on the particle in the current time step.
         /// </summary>
         /// /// <param name="historyPosition">
-        /// The history of the particle is saved for four timesteps. historyPosition=0 returns the newest value.
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
         internal double GetHydrodynamicTorque(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
-                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " timesteps are saved. The requested value is " + historyPosition + " steps in the past!");
+                throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicTorque[historyPosition];
         }
 
         /// <summary>
-        /// Saves position and angle of the last timestep.
+        /// Saves position and angle of the last time-step.
         /// </summary>
         public void SavePositionAndAngleOfPreviousTimestep() {
-            Aux.SaveVectorOfLastTimestep(Position);
-            Aux.SaveValueOfLastTimestep(Angle);
+            using (new FuncTrace()) {
+                Aux.SaveVectorOfLastTimestep(Position);
+                Aux.SaveValueOfLastTimestep(Angle);
+            }
         }
 
         /// <summary>
-        /// Saves translational and rotational velocities of the last timestep.
+        /// Saves translational and rotational velocities of the last time-step.
         /// </summary>
         public void SaveVelocityOfPreviousTimestep() {
-            Aux.SaveVectorOfLastTimestep(TranslationalVelocity);
-            Aux.SaveValueOfLastTimestep(RotationalVelocity);
-            Aux.SaveVectorOfLastTimestep(TranslationalAcceleration);
-            Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+            using (new FuncTrace()) {
+                Aux.SaveVectorOfLastTimestep(TranslationalVelocity);
+                Aux.SaveValueOfLastTimestep(RotationalVelocity);
+                Aux.SaveVectorOfLastTimestep(TranslationalAcceleration);
+                Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+            }
         }
 
         /// <summary>
-        /// Saves force and torque of the previous timestep.
+        /// Saves force and torque of the previous time-step.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousTimestep() {
-            Aux.SaveVectorOfLastTimestep(HydrodynamicForces);
-            for (int i = 0; i < NumberOfHistoryEntries; i++)
-            Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
+            using (new FuncTrace()) {
+                Aux.SaveVectorOfLastTimestep(HydrodynamicForces);
+                for (int i = 0; i < NumberOfHistoryEntries; i++)
+                    Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
+            }
         }
 
         /// <summary>
@@ -250,14 +330,16 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial angle.
         /// </param>
         internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0) {
-            if (historyLength == 0)
-                historyLength = NumberOfHistoryEntries;
-            Aux = new FSI_Auxillary();
-            for (int i = 0; i < historyLength; i++) {
-                Position[i] = new Vector(initialPosition);
-                Angle[i] = initialAngle * 2 * Math.PI / 360;
-                Aux.TestArithmeticException(Position[i], "initial particle position");
-                Aux.TestArithmeticException(Angle[i], "initial particle angle");
+            using (new FuncTrace()) {
+                if (historyLength == 0)
+                    historyLength = NumberOfHistoryEntries;
+                Aux = new FSIAuxillary();
+                for (int i = 0; i < historyLength; i++) {
+                    Position[i] = new Vector(initialPosition);
+                    Angle[i] = initialAngle * 2 * Math.PI / 360;
+                    Aux.TestArithmeticException(Position[i], "initial particle position");
+                    Aux.TestArithmeticException(Angle[i], "initial particle angle");
+                }
             }
         }
 
@@ -271,13 +353,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial rotational velocity.
         /// </param>
         internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0) {
-            if (historyLength == 0)
-                historyLength = NumberOfHistoryEntries;
-            for (int i = 0; i < historyLength; i++) {
-                TranslationalVelocity[i] = initalTranslation == null ? new Vector(SpatialDim) : new Vector(initalTranslation);
-                RotationalVelocity[i] = initalRotation;
-                Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
-                Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+            using (new FuncTrace()) {
+                if (historyLength == 0)
+                    historyLength = NumberOfHistoryEntries;
+                for (int i = 0; i < historyLength; i++) {
+                    TranslationalVelocity[i] = initalTranslation == null ? new Vector(SpatialDim) : new Vector(initalTranslation);
+                    RotationalVelocity[i] = initalRotation;
+                    Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
+                    Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+                }
             }
         }
 
@@ -291,13 +375,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial rotational velocity.
         /// </param>
         internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0) {
-            if (historyLength == 0)
-                historyLength = NumberOfHistoryEntries;
-            for (int i = 0; i < historyLength; i++) {
-                TranslationalAcceleration[i] = new Vector(initalTranslationAcceleration);
-                RotationalAcceleration[i] = initalRotationAcceleration;
-                Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
-                Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+            using (new FuncTrace()) {
+                if (historyLength == 0)
+                    historyLength = NumberOfHistoryEntries;
+                for (int i = 0; i < historyLength; i++) {
+                    TranslationalAcceleration[i] = new Vector(initalTranslationAcceleration);
+                    RotationalAcceleration[i] = initalRotationAcceleration;
+                    Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
+                    Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
+                }
             }
         }
 
@@ -311,17 +397,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial rotational velocity.
         /// </param>
         internal void InitializeParticleForceAndTorque(double[] initalForce, double initalTorque, int historyLength = 0, double dt = 0) {
-            if (historyLength == 0)
-                historyLength = NumberOfHistoryEntries;
-            for (int i = 0; i < historyLength; i++) {
-                HydrodynamicForces[i] = new Vector(initalForce);
-                HydrodynamicTorque[i] = initalTorque;
-                if(dt != 0) {
-                    TranslationalAcceleration[i] = CalculateTranslationalAcceleration(dt);
-                    RotationalAcceleration[i] = CalculateRotationalAcceleration(dt);
+            using (new FuncTrace()) {
+                if (historyLength == 0)
+                    historyLength = NumberOfHistoryEntries;
+                for (int i = 0; i < historyLength; i++) {
+                    HydrodynamicForces[i] = new Vector(initalForce);
+                    HydrodynamicTorque[i] = initalTorque;
+                    if (dt != 0) {
+                        TranslationalAcceleration[i] = CalculateTranslationalAcceleration(dt);
+                        RotationalAcceleration[i] = CalculateRotationalAcceleration(dt);
+                    }
+                    Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
+                    Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
                 }
-                Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
-                Aux.TestArithmeticException(RotationalVelocity[i], "initial particle rotational velocity");
             }
         }
 
@@ -332,15 +420,17 @@ namespace BoSSS.Application.FSI_Solver {
         /// The initial translational velocity.
         /// </param>
         internal void TransferDataFromOtherParticle(Motion motionDataToTransfer) {
-            for(int h = 0; h < NumberOfHistoryEntries; h++) {
-                Position[h] = new Vector(motionDataToTransfer.GetPosition(h));
-                TranslationalVelocity[h] = new Vector(motionDataToTransfer.GetTranslationalVelocity(h));
-                TranslationalAcceleration[h] = new Vector(motionDataToTransfer.GetTranslationalAcceleration(h));
-                HydrodynamicForces[h] = new Vector(motionDataToTransfer.GetHydrodynamicForces(h));
-                Angle[h] = motionDataToTransfer.GetAngle(h);
-                RotationalVelocity[h] = motionDataToTransfer.GetRotationalVelocity(h);
-                RotationalAcceleration[h] = motionDataToTransfer.GetRotationalAcceleration(h);
-                HydrodynamicTorque[h] = motionDataToTransfer.GetHydrodynamicTorque(h);
+            using (new FuncTrace()) {
+                for (int h = 0; h < NumberOfHistoryEntries; h++) {
+                    Position[h] = new Vector(motionDataToTransfer.GetPosition(h));
+                    TranslationalVelocity[h] = new Vector(motionDataToTransfer.GetTranslationalVelocity(h));
+                    TranslationalAcceleration[h] = new Vector(motionDataToTransfer.GetTranslationalAcceleration(h));
+                    HydrodynamicForces[h] = new Vector(motionDataToTransfer.GetHydrodynamicForces(h));
+                    Angle[h] = motionDataToTransfer.GetAngle(h);
+                    RotationalVelocity[h] = motionDataToTransfer.GetRotationalVelocity(h);
+                    RotationalAcceleration[h] = motionDataToTransfer.GetRotationalAcceleration(h);
+                    HydrodynamicTorque[h] = motionDataToTransfer.GetHydrodynamicTorque(h);
+                }
             }
         }
 
@@ -354,73 +444,82 @@ namespace BoSSS.Application.FSI_Solver {
         /// Old time-step size
         /// </param>
         internal void AdaptParticleHistoryToNewTimeStep(double newTimestep, double oldTimestep) {
-            AdaptParticleHistoryToNewTimeStep(Position, newTimestep, oldTimestep);
-            AdaptParticleHistoryToNewTimeStep(TranslationalVelocity, newTimestep, oldTimestep);
-            AdaptParticleHistoryToNewTimeStep(TranslationalAcceleration, newTimestep, oldTimestep);
-            AdaptParticleHistoryToNewTimeStep(Angle, newTimestep, oldTimestep);
-            AdaptParticleHistoryToNewTimeStep(RotationalVelocity, newTimestep, oldTimestep);
-            AdaptParticleHistoryToNewTimeStep(RotationalAcceleration, newTimestep, oldTimestep);
+            using (new FuncTrace()) {
+                AdaptParticleHistoryToNewTimeStep(Position, newTimestep, oldTimestep);
+                AdaptParticleHistoryToNewTimeStep(TranslationalVelocity, newTimestep, oldTimestep);
+                AdaptParticleHistoryToNewTimeStep(TranslationalAcceleration, newTimestep, oldTimestep);
+                AdaptParticleHistoryToNewTimeStep(Angle, newTimestep, oldTimestep);
+                AdaptParticleHistoryToNewTimeStep(RotationalVelocity, newTimestep, oldTimestep);
+                AdaptParticleHistoryToNewTimeStep(RotationalAcceleration, newTimestep, oldTimestep);
+            }
         }
 
         private void AdaptParticleHistoryToNewTimeStep(List<Vector> variable, double newTimestep, double oldTimestep) {
-            if (oldTimestep == 0)// for restart
-                oldTimestep = 1e-6;
-            List<Vector> stuetzstelle = new List<Vector>();
-            for (int h = 0; h <  NumberOfHistoryEntries; h++) {
-                stuetzstelle.Add(new Vector(variable[h]));
-            }
-            List<Vector> newVariable = new List<Vector> { new Vector(variable[0]) };
-            for (int i = 1; i < NumberOfHistoryEntries; i++) {
-                double currentNewTimestep = -i * newTimestep;
-                double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
-                newVariable.Add(new Vector(langrangePoly[0] * variable[0]));
-                for (int j = 1; j < NumberOfHistoryEntries; j++) {
-                    newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+            using (new FuncTrace()) {
+                if (oldTimestep == 0)// for restart
+                    oldTimestep = 1e-6;
+                List<Vector> stuetzstelle = new List<Vector>();
+                for (int h = 0; h < NumberOfHistoryEntries; h++) {
+                    stuetzstelle.Add(new Vector(variable[h]));
                 }
-            }
-            variable.Clear();
-            for (int h = 0; h < NumberOfHistoryEntries; h++) {
-                variable.Add(new Vector(newVariable[h]));
+                List<Vector> newVariable = new List<Vector> { new Vector(variable[0]) };
+                for (int i = 1; i < NumberOfHistoryEntries; i++) {
+                    double currentNewTimestep = -i * newTimestep;
+                    double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
+                    newVariable.Add(new Vector(langrangePoly[0] * variable[0]));
+                    for (int j = 1; j < NumberOfHistoryEntries; j++) {
+                        newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+                    }
+                }
+                variable.Clear();
+                for (int h = 0; h < NumberOfHistoryEntries; h++) {
+                    variable.Add(new Vector(newVariable[h]));
+                }
             }
         }
 
         private void AdaptParticleHistoryToNewTimeStep(List<double> variable, double newTimestep, double oldTimestep) {
-            if (oldTimestep == 0)// for restart
-                oldTimestep = 1e-6;
-            List<double> stuetzstelle = new List<double>();
-            for (int h = 0; h < NumberOfHistoryEntries; h++) {
-                stuetzstelle.Add(variable[h]);
-            }
-            List<double> newVariable = new List<double>();
-            newVariable.Add(variable[0]);
-            for (int i = 1; i < NumberOfHistoryEntries; i++) {
-                double currentNewTimestep = -i * newTimestep;
-                double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
-                newVariable.Add(langrangePoly[0] * variable[i]);
-                for (int j = 1; j < NumberOfHistoryEntries; j++) {
-                    newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+            using (new FuncTrace()) {
+                if (oldTimestep == 0)// for restart
+                    oldTimestep = 1e-6;
+                List<double> stuetzstelle = new List<double>();
+                for (int h = 0; h < NumberOfHistoryEntries; h++) {
+                    stuetzstelle.Add(variable[h]);
                 }
-            }
-            variable.Clear();
-            for (int h = 0; h < NumberOfHistoryEntries; h++) {
-                variable.Add(newVariable[h]);
+                List<double> newVariable = new List<double> {
+                    variable[0]
+                };
+                for (int i = 1; i < NumberOfHistoryEntries; i++) {
+                    double currentNewTimestep = -i * newTimestep;
+                    double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
+                    newVariable.Add(langrangePoly[0] * variable[i]);
+                    for (int j = 1; j < NumberOfHistoryEntries; j++) {
+                        newVariable[i] = newVariable[i] + langrangePoly[j] * stuetzstelle[j];
+                    }
+                }
+                variable.Clear();
+                for (int h = 0; h < NumberOfHistoryEntries; h++) {
+                    variable.Add(newVariable[h]);
+                }
             }
         }
 
         private double[] CalculateLangrangePolynom(double time, double oldTimestep) {
-            double[] lPoly = new double[NumberOfHistoryEntries];
-            for (int i = 0; i < NumberOfHistoryEntries; i++) {
-                if (i != 0)
-                    lPoly[i] = time / (-i * oldTimestep);
-                for (int j = 1; j < NumberOfHistoryEntries; j++) {
-                    if (j == i)
-                        continue;
-                    if (i == 0 && j == 1)
-                        lPoly[i] = (time + j * oldTimestep) / ((j - i) * oldTimestep);
-                    lPoly[i] *= (time + j * oldTimestep) / ((j - i) * oldTimestep);
+            using (new FuncTrace()) {
+                double[] lPoly = new double[NumberOfHistoryEntries];
+                for (int i = 0; i < NumberOfHistoryEntries; i++) {
+                    if (i != 0)
+                        lPoly[i] = time / (-i * oldTimestep);
+                    for (int j = 1; j < NumberOfHistoryEntries; j++) {
+                        if (j == i)
+                            continue;
+                        if (i == 0 && j == 1)
+                            lPoly[i] = (time + j * oldTimestep) / ((j - i) * oldTimestep);
+                        lPoly[i] *= (time + j * oldTimestep) / ((j - i) * oldTimestep);
+                    }
                 }
+                return lPoly;
             }
-            return lPoly;
         }
 
         /// <summary>
@@ -442,36 +541,63 @@ namespace BoSSS.Application.FSI_Solver {
         public void SetParticleMomentOfInertia(double moment) => MomentOfInertia = moment;
 
         /// <summary>
-        /// Sets the collision timestep.
+        /// Sets the collision time-step.
         /// </summary>
         /// <param name="collisionTimestep">
         /// The physical time consumend by the collision procedure.
         /// </param>
         public void SetCollisionTimestep(double collisionTimestep) => CollisionTimestep = collisionTimestep;
 
-        /// <summary>
-        /// Calls the calculation of the position and angle.
-        /// </summary>
-        /// <param name="dt"></param>
-        public void UpdateParticlePositionAndAngle(double dt) {
-            if (CollisionTimestep < 0)
-                CollisionTimestep = 0;
-            SavePositionAndAngleOfPreviousTimestep();
-            if(CollisionTimestep> dt) {
-                throw new Exception("Collision timestep: " + CollisionTimestep);
-            }
-            Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
-            Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
-            CollisionTimestep = 0;
-        }
 
         /// <summary>
         /// Calls the calculation of the position and angle.
         /// </summary>
         /// <param name="dt"></param>
+        public void UpdateParticlePositionAndAngle(double dt) {
+            using (new FuncTrace()) {
+                if (CollisionTimestep < 0)
+                    CollisionTimestep = 0;
+                SavePositionAndAngleOfPreviousTimestep();
+                if (CollisionTimestep > dt) {
+                    throw new Exception("Collision time-step: " + CollisionTimestep);
+                }
+                Position[0] = CalculateParticlePosition(dt - CollisionTimestep);
+                Angle[0] = CalculateParticleAngle(dt - CollisionTimestep);
+                if (Angle[0] > 2 * Math.PI)
+                    Angle[0] -= 2 * Math.PI;
+                CollisionTimestep = 0;
+                if(!IsInsideOfPeriodicDomain(Position[0], 0)) {
+                    for(int i = 0; i < OriginInVirtualPeriodicDomain.Count(); i++) {
+                        if(IsInsideOfPeriodicDomain(Position[0] + OriginInVirtualPeriodicDomain[i], 0)) {
+                            for(int h = 0; h < Position.Count(); h++) {
+                                Position[h] = new Vector(Position[h] + OriginInVirtualPeriodicDomain[i]);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Calls the calculation of the position and angle during the calculation of the collisions.
+        /// </summary>
+        /// <param name="dt"></param>
         internal void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
-            Position[0] = CalculateParticlePositionDuringCollision(collisionDynamicTimestep);
-            Angle[0] = CalculateParticleAngleDuringCollision(collisionDynamicTimestep);
+            using (new FuncTrace()) {
+                Position[0] = CalculateParticlePositionDuringCollision(collisionDynamicTimestep);
+                //if (!IsInsideOfPeriodicDomain(Position[0], 0)) {
+                //    for (int i = 0; i < OriginInVirtualPeriodicDomain.Count(); i++) {
+                //        if (IsInsideOfPeriodicDomain(Position[0] + OriginInVirtualPeriodicDomain[i], 0)) {
+                //            for (int h = 0; h < Position.Count(); h++) {
+                //                Position[h] = new Vector(Position[h] + OriginInVirtualPeriodicDomain[i]);
+                //            }
+                //            break;
+                //        }
+                //    }
+                //}
+                Angle[0] = CalculateParticleAngleDuringCollision(collisionDynamicTimestep);
+            }
         }
 
         /// <summary>
@@ -479,50 +605,67 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         internal void UpdateParticleVelocity(double dt) {
-            TranslationalAcceleration[0] = CalculateTranslationalAcceleration(dt - CollisionTimestep);
-            RotationalAcceleration[0] = CalculateRotationalAcceleration(dt - CollisionTimestep);
-            TranslationalVelocity[0] = CalculateTranslationalVelocity(dt - CollisionTimestep);
-            RotationalVelocity[0] = CalculateAngularVelocity(dt - CollisionTimestep);
-        }
-
-        internal virtual void SetGhostPosition(Vector position) {
-            for (int h = 0; h<NumberOfHistoryEntries; h++) {
-                Position[h] = new Vector(position);
+            using (new FuncTrace()) {
+                TranslationalAcceleration[0] = CalculateTranslationalAcceleration(dt - CollisionTimestep);
+                RotationalAcceleration[0] = CalculateRotationalAcceleration(dt - CollisionTimestep);
+                TranslationalVelocity[0] = CalculateTranslationalVelocity(dt - CollisionTimestep);
+                RotationalVelocity[0] = CalculateAngularVelocity(dt - CollisionTimestep);
             }
         }
 
-        internal virtual void CopyNewVelocity(Vector translational, double rotational) {
+        internal void SetDistanceToMaster(Vector distanceToMaster) {
+            Aux.TestArithmeticException(DistanceToMaster, "DistanceToMaster");
+            DistanceToMaster = new Vector(distanceToMaster);
+        }
+
+        internal Vector GetDistanceToMaster() => DistanceToMaster;
+
+        internal virtual void SetDuplicatePosition(Vector position) {
+            Aux.TestArithmeticException(DistanceToMaster, "DistanceToMaster");
+            Console.WriteLine("Dist " + DistanceToMaster[0]);
+            Console.WriteLine("pos " + position);
+            Position[0] = new Vector(DistanceToMaster + position);
+        }
+
+        internal virtual void SetDuplicateAngle(double angle) {
+            Angle[0] = angle;
+        }
+
+        internal virtual void SetDuplicateVelocity(Vector translational, double rotational) {
             TranslationalVelocity[0] = new Vector(translational);
             RotationalVelocity[0] = rotational;
         }
 
         internal void UpdateForcesAndTorque(int particleID, double[] fullListHydrodynamics) {
-            double[] tempForces = new double[SpatialDim];
-            for (int d = 0; d < SpatialDim; d++) {
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
-                    tempForces[d] = fullListHydrodynamics[particleID * 3 + d];
-                
+            using (new FuncTrace()) {
+                Vector forces = new Vector(SpatialDim);
+                for (int d = 0; d < SpatialDim; d++) {
+                    if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
+                        forces[d] = fullListHydrodynamics[particleID * 3 + d];
+
+                }
+                HydrodynamicForces[0] = forces;
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
+                    HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
+                Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
+                Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
             }
-            //tempForces[1] = 0;
-            HydrodynamicForces[0] = new Vector(tempForces);
-            if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
-                HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
-            Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
         }
 
         /// <summary>
-        /// Predicts the hydrodynamics at the beginning of the iteration loop in each timestep.
+        /// Predicts the hydrodynamics at the beginning of the iteration loop in each time-step.
         /// </summary>
         /// <param name="activeStress"></param>
         /// <param name="timestepID">
-        /// The timestep ID. Used to distinguish between the first timestep and all other steps.
+        /// The time-step ID. Used to distinguish between the first time-step and all other steps.
         /// </param>
         internal virtual void PredictForceAndTorque(double activeStress, double circumference, int timestepID, double fluidViscosity, double fluidDensity, double dt) {
-            HydrodynamicForces[0] = new Vector(HydrodynamicForces[1]);
-            HydrodynamicTorque[0] = HydrodynamicTorque[1];
-            Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
-            Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
+            using (new FuncTrace()) {
+                HydrodynamicForces[0] = new Vector(HydrodynamicForces[1]);
+                HydrodynamicTorque[0] = HydrodynamicTorque[1];
+                Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
+                Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
+            }
         }
 
         /// <summary>
@@ -556,9 +699,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePosition(double dt) {
-            Vector position = Position[1] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
-            Aux.TestArithmeticException(position, "particle position");
-            return position;
+            using (new FuncTrace()) {
+                Vector position = Position[1] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
+                position[0] = 0;
+                position[1] = 0;
+                Aux.TestArithmeticException(position, "particle position");
+                return position;
+            }
         }
 
         /// <summary>
@@ -566,9 +713,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngle(double dt) {
-            double angle = Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 6;
-            Aux.TestArithmeticException(angle, "particle angle");
-            return angle;
+            using (new FuncTrace()) {
+                double angle = 0;// Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                Aux.TestArithmeticException(angle, "particle angle");
+                return angle;
+            }
         }
 
         /// <summary>
@@ -576,9 +725,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
-            Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 6;
-            Aux.TestArithmeticException(position, "particle position");
-            return position;
+            using (new FuncTrace()) {
+                Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
+                Aux.TestArithmeticException(position, "particle position");
+                return position;
+            }
         }
 
         /// <summary>
@@ -586,29 +737,35 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngleDuringCollision(double dt) {
-            double angle = Angle[0] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 6;
-            Aux.TestArithmeticException(angle, "particle angle");
-            return angle;
+            using (new FuncTrace()) {
+                double angle = Angle[0] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                Aux.TestArithmeticException(angle, "particle angle");
+                return angle;
+            }
         }
 
         /// <summary>
         /// Calculate the new translational velocity of the particle.
         /// </summary>
-        /// <param name="dt">Timestep</param>
+        /// <param name="dt">Time-step</param>
         protected virtual Vector CalculateTranslationalVelocity(double dt) {
-            Vector translationalVelocity = TranslationalVelocity[1] + (TranslationalAcceleration[0] + 4 * TranslationalAcceleration[1] + TranslationalAcceleration[2]) * dt / 6;
-            Aux.TestArithmeticException(translationalVelocity, "particle translational velocity");
-            return translationalVelocity;
+            using (new FuncTrace()) {
+                Vector translationalVelocity = TranslationalVelocity[1] + (TranslationalAcceleration[0] + 4 * TranslationalAcceleration[1] + TranslationalAcceleration[2]) * dt / 3;
+                Aux.TestArithmeticException(translationalVelocity, "particle translational velocity");
+                return translationalVelocity;
+            }
         }
 
         /// <summary>
         /// Calculate the new angular velocity of the particle.
         /// </summary>
-        /// <param name="dt">Timestep</param>
+        /// <param name="dt">Time-step</param>
         protected virtual double CalculateAngularVelocity(double dt) {
-            double rotationalVelocity = RotationalVelocity[1] + (RotationalAcceleration[0] + 4 * RotationalAcceleration[1] + RotationalAcceleration[2]) * dt / 6;
-            Aux.TestArithmeticException(rotationalVelocity, "particle rotational velocity");
-            return rotationalVelocity;
+            using (new FuncTrace()) {
+                double rotationalVelocity = RotationalVelocity[1] + (RotationalAcceleration[0] + 4 * RotationalAcceleration[1] + RotationalAcceleration[2]) * dt / 3;
+                Aux.TestArithmeticException(rotationalVelocity, "particle rotational velocity");
+                return rotationalVelocity;
+            }
         }
 
         /// <summary>
@@ -616,37 +773,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual Vector CalculateTranslationalAcceleration(double dt) {
-            Vector l_Acceleration = HydrodynamicForces[0] / (Density * ParticleArea);
-            Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
-            return l_Acceleration;
-        }
-
-        protected double[][] TransformStressToPrint(List<double[]>[] stressToPrintOut) {
-            if (stressToPrintOut[0].Count() != stressToPrintOut[1].Count())
-                throw new Exception("Something strange happend!");
-            double[][] output = new double[stressToPrintOut[0].Count()][];
-            for (int d = 0; d < SpatialDim; d++) {
-                for (int i = stressToPrintOut[d].Count() - 1; i > 0; i--) {
-                    for (int j = 0; j < i - 1; j++) {
-                        if (stressToPrintOut[d][j][0] > stressToPrintOut[d][j + 1][0]) {
-                            double[] temp = stressToPrintOut[d][j].CloneAs();
-                            stressToPrintOut[d][j] = stressToPrintOut[d][j + 1].CloneAs();
-                            stressToPrintOut[d][j + 1] = temp;
-                        }
-                    }
-                }
+            using (new FuncTrace()) {
+                Vector l_Acceleration = HydrodynamicForces[0] / (Density * ParticleArea);
+                l_Acceleration[1] = 0;
+                Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
+                return l_Acceleration;
             }
-            for (int i = 0; i < output.Length; i++) {
-                if (Math.Abs(stressToPrintOut[0][i][0] - stressToPrintOut[1][i][0]) > 1e-15)
-                    throw new Exception("Something strange happend!");
-                double surfaceParam = stressToPrintOut[0][i][0];
-                double normalStress = Math.Cos(surfaceParam) * stressToPrintOut[0][i][1] + Math.Sin(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
-                double tangentialStress = -Math.Sin(surfaceParam) * stressToPrintOut[0][i][1] + Math.Cos(stressToPrintOut[0][i][0]) * stressToPrintOut[1][i][1];
-                surfaceParam = Math.PI * (1 - Math.Sign(-Math.Sin(Angle[0]) * Math.Cos(surfaceParam) + Math.Cos(Angle[0]) * Math.Sin(surfaceParam))) / 2 + Math.Acos(Math.Cos(Angle[0]) * Math.Cos(surfaceParam) + Math.Sin(Angle[0]) * Math.Sin(surfaceParam));
-                double[] insert = new double[] { surfaceParam, normalStress, tangentialStress };
-                output[i] = insert;
-            }
-            return output;
         }
 
         /// <summary>
@@ -654,35 +786,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt"></param>
         protected virtual double CalculateRotationalAcceleration(double dt) {
-            double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
-            Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
-            return l_Acceleration;
-        }
-
-        private TextWriter logStress;
-
-        /// <summary>
-        /// Creates a log file for the residum of the hydrodynamic forces.
-        /// </summary>
-        public void CreateStressLogger(SessionInfo CurrentSessionInfo, IDatabaseDriver DatabaseDriver, double phystime, int particleID) {
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIRank);
-            if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                string name = "stress_Time_" + phystime.ToString() + "_particle_" + particleID.ToString();
-                logStress = DatabaseDriver.FsDriver.GetNewLog(name, CurrentSessionInfo.ID);
-                logStress.WriteLine(string.Format("{0},{1},{2},{3}", "Time", "surfaceParam", "stressNormal", "stressTangential"));
-            }
-        }
-
-        /// <summary>
-        /// Creates a log file for the residum of the hydrodynamic forces.
-        /// </summary>
-        public void LogStress(double phystime) {
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIRank);
-            if ((MPIRank == 0) && (logStress != null)) {
-                for (int i = 0; i <  currentStress.Length; i++) {
-                    logStress.WriteLine(string.Format("{0},{1},{2},{3}", phystime, currentStress[i][0], currentStress[i][1], currentStress[i][2]));
-                    logStress.Flush();
-                }
+            using (new FuncTrace()) {
+                double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
+                l_Acceleration = 0;
+                Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
+                return l_Acceleration;
             }
         }
 
@@ -691,65 +799,34 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public virtual Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt = 0) {
-            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
-            currentStress = TransformStressToPrint(stressToPrintOut);
-            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = ForcesMPISum(tempForces);
-            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
-            return tempForces;
+        public virtual Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt = 0) {
+            using (new FuncTrace()) {
+                Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
+                Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+                return tempForces;
+            }
         }
-
-        protected double[][] currentStress;
 
         /// <summary>
         /// Calculates the gravitational forces.
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        protected Vector CalculateGravitationalForces(double fluidDensity, Vector tempForces) {
-            tempForces += (Density - fluidDensity) * ParticleArea * Gravity;
-            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics after adding gravity");
-            return tempForces;
-        }
-
-        /// <summary>
-        /// Summation of the hydrodynamic forces over all MPI-processes
-        /// </summary>
-        /// <param name="forces"></param>
-        protected Vector ForcesMPISum(Vector forces) {
-            double[] stateBuffer = ((double[])forces).CloneAs();
-            double[] globalStateBuffer = stateBuffer.MPISum();
-            forces = new Vector(globalStateBuffer);
-            Aux.TestArithmeticException(forces, "temporal forces during calculation of hydrodynamics after mpi-summation");
-            return forces;
+        public Vector GetGravityForces(double fluidDensity) {
+            return (Density - fluidDensity) * ParticleArea * Gravity;
         }
 
         /// <summary>
         /// Update Forces and Torque acting from fluid onto the particle
         /// </summary>
-        /// <param name="U"></param>
-        /// <param name="P"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
         /// <param name="cutCells"></param>
         /// <param name="dt"></param>
         public virtual double CalculateHydrodynamicTorque(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt = 0) {
-            double tempTorque = hydrodynamicsIntegration.Torque(Position[0], cutCells);
-            Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
-            TorqueMPISum(ref tempTorque);
-            return tempTorque;
-        }
-
-        /// <summary>
-        /// Summation of the hydrodynamic torque over all MPI-processes
-        /// </summary>
-        /// <param name="torque"></param>
-        protected void TorqueMPISum(ref double torque) {
-            double stateBuffer = torque;
-            double globalStateBuffer = stateBuffer.MPISum();
-            torque = globalStateBuffer;
-            Aux.TestArithmeticException(torque, "temporal torque during calculation of hydrodynamics after mpi-summation");
+            using (new FuncTrace()) {
+                double tempTorque = hydrodynamicsIntegration.Torque(Position[0], cutCells);
+                Aux.TestArithmeticException(tempTorque, "temporal torque during calculation of hydrodynamics");
+                return tempTorque;
+            }
         }
 
         /// <summary>
@@ -757,7 +834,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="fluidViscosity"></param>
         public double ComputeParticleReynoldsNumber(double fluidViscosity) {
-            return 2 * TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / fluidViscosity;
+            using (new FuncTrace()) {
+                return 2 * TranslationalVelocity[0].L2Norm() * MaxParticleLengthScale / fluidViscosity;
+            }
         }
 
         /// <summary>
@@ -766,77 +845,87 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="fluidViscosity"></param>
         /// <param name="fluidDensity"></param>
         public double ComputeParticleStokesNumber(double fluidViscosity, double fluidDensity) {
-            return ComputeParticleReynoldsNumber(fluidViscosity) * Density / (9 * fluidDensity);
+            using (new FuncTrace()) {
+                return ComputeParticleReynoldsNumber(fluidViscosity) * Density / (9 * fluidDensity);
+            }
         }
 
         /// <summary>
         /// Calculating the particle momentum
         /// </summary>
         public double[] CalculateParticleMomentum() {
-            double[] temp = new double[SpatialDim + 1];
-            for (int d = 0; d < SpatialDim; d++) {
-                temp[d] = ParticleMass * TranslationalVelocity[0][d];
+            using (new FuncTrace()) {
+                double[] temp = new double[SpatialDim + 1];
+                for (int d = 0; d < SpatialDim; d++) {
+                    temp[d] = ParticleMass * TranslationalVelocity[0][d];
+                }
+                temp[SpatialDim] = MomentOfInertia * RotationalVelocity[0];
+                return temp;
             }
-            temp[SpatialDim] = MomentOfInertia * RotationalVelocity[0];
-            return temp;
         }
 
         /// <summary>
         /// Calculating the particle kinetic energy
         /// </summary>
         public double[] CalculateParticleKineticEnergy() {
-            double[] temp = new double[SpatialDim + 1];
-            for (int d = 0; d < SpatialDim; d++) {
-                temp[d] = 0.5 * ParticleMass * TranslationalVelocity[0][d].Pow2();
+            using (new FuncTrace()) {
+                double[] temp = new double[SpatialDim + 1];
+                for (int d = 0; d < SpatialDim; d++) {
+                    temp[d] = 0.5 * ParticleMass * TranslationalVelocity[0][d].Pow2();
+                }
+                temp[SpatialDim] = 0.5 * MomentOfInertia * RotationalVelocity[0].Pow2();
+                return temp;
             }
-            temp[SpatialDim] = 0.5 * MomentOfInertia * RotationalVelocity[0].Pow2();
-            return temp;
         }
 
         /// <summary>
         /// Builds the array for the post-collision communication between MPI-processes.
         /// </summary>
         public double[] BuildSendArray() {
-            double[] dataSend = new double[19];
-            dataSend[0] = RotationalVelocity[0];
-            dataSend[1] = RotationalAcceleration[0];
-            dataSend[2] = TranslationalVelocity[0][0];
-            dataSend[3] = TranslationalVelocity[0][1];
-            dataSend[4] = TranslationalAcceleration[0][0];
-            dataSend[5] = TranslationalAcceleration[0][1];
-            dataSend[6] = Angle[0];
-            dataSend[7] = Position[0][0];
-            dataSend[8] = Position[0][1];
-            dataSend[9] = CollisionTimestep;
-            dataSend[10] = RotationalVelocity[1];
-            dataSend[11] = TranslationalVelocity[1][0];
-            dataSend[12] = TranslationalVelocity[1][1];
-            dataSend[13] = Angle[1];
-            dataSend[14] = Position[1][0];
-            dataSend[15] = Position[1][1];
-            dataSend[16] = RotationalAcceleration[1];
-            dataSend[17] = TranslationalAcceleration[1][0];
-            dataSend[18] = TranslationalAcceleration[1][1];
-            return dataSend;
+            using (new FuncTrace()) {
+                double[] dataSend = new double[19];
+                dataSend[0] = RotationalVelocity[0];
+                dataSend[1] = RotationalAcceleration[0];
+                dataSend[2] = TranslationalVelocity[0][0];
+                dataSend[3] = TranslationalVelocity[0][1];
+                dataSend[4] = TranslationalAcceleration[0][0];
+                dataSend[5] = TranslationalAcceleration[0][1];
+                dataSend[6] = Angle[0];
+                dataSend[7] = Position[0][0];
+                dataSend[8] = Position[0][1];
+                dataSend[9] = CollisionTimestep;
+                dataSend[10] = RotationalVelocity[1];
+                dataSend[11] = TranslationalVelocity[1][0];
+                dataSend[12] = TranslationalVelocity[1][1];
+                dataSend[13] = Angle[1];
+                dataSend[14] = Position[1][0];
+                dataSend[15] = Position[1][1];
+                dataSend[16] = RotationalAcceleration[1];
+                dataSend[17] = TranslationalAcceleration[1][0];
+                dataSend[18] = TranslationalAcceleration[1][1];
+                return dataSend;
+            }
         }
 
         /// <summary>
         /// Overwrites the particles parameters with the values received during the post-collision MPI-communication.
         /// </summary>
         public void WriteReceiveArray(double[] dataReceive, int offset) {
-            RotationalVelocity[0] = dataReceive[0 + offset];
-            RotationalAcceleration[0] = dataReceive[1 + offset];
-            TranslationalVelocity[0] = new Vector(dataReceive[2 + offset], dataReceive[3 + offset]);
-            TranslationalAcceleration[0] = new Vector(dataReceive[4 + offset], dataReceive[5 + offset]);
-            Angle[0] = dataReceive[6 + offset];
-            Position[0] = new Vector(dataReceive[7 + offset], dataReceive[8 + offset]);
-            CollisionTimestep = dataReceive[9 + offset];
-            RotationalVelocity[1] = dataReceive[10 + offset];
-            TranslationalVelocity[1] = new Vector(dataReceive[11 + offset], dataReceive[12 + offset]);
-            Angle[1] = dataReceive[13 + offset];
-            Position[1] = new Vector(dataReceive[14 + offset], dataReceive[15 + offset]);
-            RotationalAcceleration[1] = dataReceive[16 + offset];
-            TranslationalAcceleration[1] = new Vector(dataReceive[17 + offset], dataReceive[18 + offset]);
+            using (new FuncTrace()) {
+                RotationalVelocity[0] = dataReceive[0 + offset];
+                RotationalAcceleration[0] = dataReceive[1 + offset];
+                TranslationalVelocity[0] = new Vector(dataReceive[2 + offset], dataReceive[3 + offset]);
+                TranslationalAcceleration[0] = new Vector(dataReceive[4 + offset], dataReceive[5 + offset]);
+                Angle[0] = dataReceive[6 + offset];
+                Position[0] = new Vector(dataReceive[7 + offset], dataReceive[8 + offset]);
+                CollisionTimestep = dataReceive[9 + offset];
+                RotationalVelocity[1] = dataReceive[10 + offset];
+                TranslationalVelocity[1] = new Vector(dataReceive[11 + offset], dataReceive[12 + offset]);
+                Angle[1] = dataReceive[13 + offset];
+                Position[1] = new Vector(dataReceive[14 + offset], dataReceive[15 + offset]);
+                RotationalAcceleration[1] = dataReceive[16 + offset];
+                TranslationalAcceleration[1] = new Vector(dataReceive[17 + offset], dataReceive[18 + offset]);
+            }
         }
 
         public virtual object Clone() {

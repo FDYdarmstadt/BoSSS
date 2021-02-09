@@ -56,7 +56,7 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         [DataMember]
-        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        private readonly FSIAuxillary Aux = new FSIAuxillary();
         [DataMember]
         private readonly Vector gravity = new Vector(0,0);
         [DataMember]

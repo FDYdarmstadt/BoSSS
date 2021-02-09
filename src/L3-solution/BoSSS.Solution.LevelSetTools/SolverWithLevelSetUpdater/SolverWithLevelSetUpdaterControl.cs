@@ -119,8 +119,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [JsonIgnore]
         public Func<double, double> Phi0Initial;
 
-
-        
         /// <summary>
         /// Width of the narrow band.
         /// </summary>

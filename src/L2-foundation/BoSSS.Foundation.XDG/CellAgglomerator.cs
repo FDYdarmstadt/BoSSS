@@ -41,6 +41,12 @@ namespace BoSSS.Foundation.XDG {
     public class CellAgglomerator {
 
         /// <summary>
+        /// Temporary feature; will be removed in future;
+        /// Plotting if agglomeration fails.
+        /// </summary>
+        public static Action<DGField[]> CellAggKatastrophenplot;
+
+        /// <summary>
         /// defines a pair (source and target) of cells affected by agglomeration
         /// </summary>
         [Serializable]
@@ -419,7 +425,9 @@ namespace BoSSS.Foundation.XDG {
                     // (123 -> 234), (234 -> 32), which form an agglomeration chain,
                     // we can replace that by (123 -> 32), (234 ->32) and avoid an agglomeration level, which is expensive.
                     // Thus, agglomeration levels are only necessary, if agglomeration chains cross processor boundaries.
-
+                    Basis b = new Basis(GridDat, 0);
+                    DGField FailedViz = new SinglePhaseField(b, "FailedCells");
+                    bool exception = false;
                     for (int iPair = 0; iPair < AggPairs.Count; iPair++) {
                         int jSource = AggPairs[iPair].Item1;
                         int jTarget = AggPairs[iPair].Item2;
@@ -433,10 +441,10 @@ namespace BoSSS.Foundation.XDG {
                             CycleDetection.SetAll(false);
 
                         while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
+                            FailedViz.SetMeanValue(jTarget, jTarget);
                             if (CycleDetection[jTarget] == true) {
-                                // write Diagnostic output before killing the code.
-                                this.PlotAgglomerationPairs("GraphWithCycles-" + mpiRank + ".csv");
-                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0,J));
+                                FailedViz.SetMeanValue(jTarget, -jTarget);
+                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
                                 CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
                                 localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
                                 // kill it
@@ -447,6 +455,22 @@ namespace BoSSS.Foundation.XDG {
 
                             jTarget = AggPairs[nextPair].Item2;
                         }
+
+                        //while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
+                        //    if (CycleDetection[jTarget] == true) {
+                        //        // write Diagnostic output before killing the code.
+                        //        this.PlotAgglomerationPairs("GraphWithCycles-" + mpiRank + ".csv");
+                        //        BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
+                        //        CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
+                        //        localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
+                        //        // kill it
+                        //        throw new ArgumentException("Cycle in agglomeration graph.");
+                        //    }
+                        //    CycleDetection[jTarget] = true;
+                        //    int nextPair = Cells2Aggpairs[jTarget];
+
+                        //    jTarget = AggPairs[nextPair].Item2;
+                        //}
 
                         if (jTarget >= J)
                             // do not reduce over MPI boundaries...

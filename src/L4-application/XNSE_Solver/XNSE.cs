@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            //InitMPI();
+            InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
             //throw new Exception("Remove me");
@@ -251,6 +251,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+            
             OperatorFactory opFactory = new OperatorFactory();
             
             DefineSystem(D, opFactory, levelSetUpdater);
@@ -261,7 +262,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 

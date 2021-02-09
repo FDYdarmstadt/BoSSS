@@ -39,7 +39,7 @@ namespace BoSSS.Application.FSI_Solver {
         internal double[,] IntegrationOverLevelSet(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt, double[] currentPosition) {
             double[,] addedDampingTensor = new double[6, 6];
             double alpha = 0.5;
-            int RequiredOrder = 2;
+            int RequiredOrder = 4;
             for (int DampingTensorID = 0; DampingTensorID < 4; DampingTensorID++) {
                 for (int d1 = 0; d1 < 3; d1++) {
                     for (int d2 = 0; d2 < 3; d2++) {
@@ -111,7 +111,7 @@ namespace BoSSS.Application.FSI_Solver {
                         }
 
                         var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.CutCells_P(levelSetTracker));
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.ParticleCutCells(levelSetTracker, levelSetTracker.Regions.GetCutCellMask()));
                         CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat,
                             cqs.Compile(levelSetTracker.GridDat, RequiredOrder),
                             delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {

@@ -55,7 +55,45 @@ namespace BoSSS.Application.FSI_Solver {
             SetDGdegree(degree);
         }
 
+        /// <summary>
+        /// Set true during restart.
+        /// </summary>
         public bool IsRestart = false;
+
+        /// <summary>
+        /// List of the boundary values at the domain boundary.
+        /// </summary>
+        readonly List<string> m_BoundaryValues = new List<string>();
+
+        /// <summary>
+        /// Overall domain volume
+        /// </summary>
+        public double DomainVolume;
+
+        /// <summary>
+        /// The position of all boundaries, independent of boundary condition.
+        /// </summary>
+        public double[][] BoundaryPositionPerDimension;
+
+        /// <summary>
+        /// The position of all boundaries, only for walls.
+        /// </summary>
+        public double[][] WallPositionPerDimension;
+
+        /// <summary>
+        /// True for periodic walls
+        /// </summary>
+        public bool[] BoundaryIsPeriodic;
+
+        /// <summary>
+        /// Max grid length
+        /// </summary>
+        public double MaxGridLength;
+
+        /// <summary>
+        /// Min grid length
+        /// </summary>
+        public double MinGridLength;
 
         /// <summary>
         /// Setting <see cref="Solution.Control.AppControl.FieldOptions"/>
@@ -70,7 +108,6 @@ namespace BoSSS.Application.FSI_Solver {
             this.AddFieldOption("Pressure", k - 1);
             this.AddFieldOption("PhiDG", k_phiDG);
             this.AddFieldOption("Phi", k_phi);
-            //this.AddFieldOption("Vorticity*", k);
         }
 
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
@@ -82,17 +119,13 @@ namespace BoSSS.Application.FSI_Solver {
             else
                 savetodb = false;
         }
-
-        public bool ConstantRefinement = false;
-
-        public void SetAddaptiveMeshRefinement(int amrLevel, bool constantRefinement = false) {
+        
+        public void SetAddaptiveMeshRefinement(int amrLevel) {
             if (amrLevel == 0)
                 return;
             AdaptiveMeshRefinement = true;
             RefinementLevel = amrLevel;
             AMR_startUpSweeps = amrLevel;
-            Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
-            ConstantRefinement = constantRefinement;
         }
 
         public void SetBoundaries(List<string> boundaryValues) {
@@ -104,13 +137,6 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        readonly List<string> m_BoundaryValues = new List<string>();
-        public double FluidDomainVolume;
-        public double[][] BoundaryPositionPerDimension;
-        public double[][] WallPositionPerDimension;
-        public bool[] BoundaryIsPeriodic;
-        public double MaxGridLength;
-        public double MinGridLength;
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
             BoundaryPositionPerDimension = new double[2][];
@@ -127,7 +153,7 @@ namespace BoSSS.Application.FSI_Solver {
             if (m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])
                 SetBoundaries(new List<string> { "Wall" });
             GridFunc = delegate {
-                FluidDomainVolume = lengthX * lengthY;
+                DomainVolume = lengthX * lengthY;
                 int q = new int(); // #Cells in x-dircetion + 1
                 int r = new int(); // #Cells in y-dircetion + 1
 
@@ -226,31 +252,19 @@ namespace BoSSS.Application.FSI_Solver {
         /// Set true if the coupling between fluid and particle should be calculated iterative, while using Lie-Splitting.
         /// </summary>
         [DataMember]
-        public int maxIterationsFullyCoupled = 100000;
+        public int fullyCoupledSplittingMaxIterations = 100000;
 
         /// <summary>
-        /// Set true if the lower wall should be plastic, i.e. the coefficient of restitution is 0.
+        /// Set true if the complete output should be printed to the console.
         /// </summary>
         [DataMember]
-        public bool LowerWallFullyPlastic = false;
+        public bool FullOutputToConsole = false;
 
         /// <summary>
         /// Function describing the fixed level-set movement
         /// </summary>
         [DataMember]
         public Func<double[], double, double> MovementFunc;
-
-        /// <summary>
-        /// Function describing the fixed level-set movement
-        /// </summary>
-        [DataMember]
-        public Func<double, double>[] transVelocityFunc;
-
-        /// <summary>
-        /// Function describing the fixed level-set movement
-        /// </summary>
-        [DataMember]
-        public Func<double, double>[] anglVelocityFunc;
         
         /// <summary>
         /// The termination criterion for fully coupled/implicit level-set evolution.
@@ -277,21 +291,10 @@ namespace BoSSS.Application.FSI_Solver {
         public Vector gravity = new Vector(0, 0);
 
         /// <summary>
-        /// used for added damping model. By default added damping is not applied to the particles. The value should be set between 0.5-1.5.
-        /// </summary>
-        [DataMember]
-        public double addedDampingCoefficient = -1;
-
-        /// <summary>
         /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-
-        /// <summary>
-        /// Function describing the boundary values at the level-set (VelocityX, VelocityY)
-        /// </summary>
-        public Func<double, double>[] BoundaryFunc;
+        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
 
         /// <summary>
         /// All particles in the FSI
@@ -301,21 +304,19 @@ namespace BoSSS.Application.FSI_Solver {
             get;
             set;
         }
-        public bool fixPosition = false;
-        public enum CollisionModel {
-            RepulsiveForce = 0,
 
-            MomentumConservation = 1,
-
-            NoCollisionModel = 2
-
-        }
-
-        public double minDistanceThreshold = 0;
-
+        /// <summary>
+        /// Fix all particles
+        /// </summary>
         [DataMember]
-        public CollisionModel collisionModel = CollisionModel.MomentumConservation;
+        public bool fixPosition = false;
 
+        /// <summary>
+        /// For Collisions
+        /// </summary>
+        [DataMember]
+        public double minDistanceThreshold = 0;
+        
         /// <summary>
         /// if true the flow solver is turned off
         /// </summary>
@@ -325,7 +326,5 @@ namespace BoSSS.Application.FSI_Solver {
         public override Type GetSolverType() {
             return typeof(FSI_SolverMain);
         }
-
-        public bool UsePerssonSensor = false;
     }
 }
