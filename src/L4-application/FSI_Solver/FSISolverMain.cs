@@ -1010,7 +1010,7 @@ namespace BoSSS.Application.FSI_Solver {
                 for (int j = 0; j < noOfLocalCells; j++) {
                     if (cellsToRefine[j] < refinementLevel) {
                         Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
-                        cellsToRefine[j] = (ParticleList[p].Contains(cellCenter) && !ParticleList[p].Contains(cellCenter, -MaxGridLength)) ? refinementLevel : 0;
+                        cellsToRefine[j] = (ParticleList[p].Contains(cellCenter, MaxGridLength) && !ParticleList[p].Contains(cellCenter, -MaxGridLength)) ? refinementLevel : 0;
                     }
                 }
             }

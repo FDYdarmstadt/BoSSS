@@ -153,6 +153,7 @@ namespace FSI_Solver {
             double[] ParticleReynoldsNumber = new double[Particles.Count()];
             double highestReNumber = 0;
             double[] ParticleStokesNumber = new double[Particles.Count()];
+            double volumeFraction = 0;
             for (int p = 0; p < Particles.Count(); p++) {
                 Particle CurrentParticle = Particles[p];
                 double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
@@ -167,10 +168,11 @@ namespace FSI_Solver {
                 if (ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] > highestReNumber)
                     highestReNumber = ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)];
                 ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleStokesNumber(FluidViscosity, FluidDensity);
+                volumeFraction += CurrentParticle.Area;
             }
             double volumeFractionA = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"));
             double volumeFractionB = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("B"));
-            double volumeFraction = volumeFractionB / (volumeFractionA + volumeFractionB);
+            volumeFraction = volumeFraction / FluidDomainVolume;
 
             StringBuilder OutputBuilder = new StringBuilder();
 

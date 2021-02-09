@@ -701,6 +701,8 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateParticlePosition(double dt) {
             using (new FuncTrace()) {
                 Vector position = Position[1] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
+                position[0] = 0;
+                position[1] = 0;
                 Aux.TestArithmeticException(position, "particle position");
                 return position;
             }
@@ -712,7 +714,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngle(double dt) {
             using (new FuncTrace()) {
-                double angle = Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                double angle = 0;// Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
                 Aux.TestArithmeticException(angle, "particle angle");
                 return angle;
             }

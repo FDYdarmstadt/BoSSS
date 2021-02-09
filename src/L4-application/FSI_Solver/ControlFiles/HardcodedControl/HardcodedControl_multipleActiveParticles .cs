@@ -283,7 +283,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 10) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 7) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -303,18 +303,18 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 100;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 2;
+            double nextParticleDistance = particleLength * 2.1;
             double domainLength = nextParticleDistance * noOfParticles;
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
-            C.SetBoundaries(boundaryValues);
+            //List<string> boundaryValues = new List<string> {
+            //    "Wall"
+            //};
+            //C.SetBoundaries(boundaryValues);
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
+            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-8;
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.minDistanceThreshold = 1 / cellsPerUnitLength;
-            C.CoefficientOfRestitution = 0.25;
+            C.CoefficientOfRestitution = 0.75;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
@@ -364,7 +364,7 @@ namespace BoSSS.Application.FSI_Solver {
             return C;
         }
 
-        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.2) {
+        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -373,7 +373,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 200, lengthY: 200, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 100, lengthY: 100, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-4;
             // Fluid Properties
@@ -387,7 +387,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 1;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 1, 1 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.5, 0.5 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
 
             // misc. solver options
             // =============================  
