@@ -269,9 +269,40 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
 
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
+
+            //DGField PosField = new SinglePhaseField(new Basis(gdat, 0), "positiveLevelSetWing");
+            //DGField NegField = new SinglePhaseField(new Basis(gdat, 0), "negativeLevelSetWing");
+            //foreach (Chunk cnk in Pos) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        PosField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //foreach (Chunk cnk in Neg) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        NegField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //CellMask intersect = Pos.Intersect(Neg);
+            //DGField IntersectField = new SinglePhaseField(new Basis(gdat, 0), "intersectLevelSetWing");
+            //foreach (Chunk cnk in intersect) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        IntersectField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //Tecplot.Tecplot.PlotFields(new DGField[] { PosField, NegField, IntersectField }, "LevelSetWings", 0.0, 1);
+
+
             EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask);
-            if(touching.NoOfItemsLocally > 0)
+            if (touching.NoOfItemsLocally > 0) {
+                Console.WriteLine("on Proc {0}: touching.NoOfItemsLocally = {1}", gdat.MpiRank, touching.NoOfItemsLocally);
                 throw new ArithmeticException("Error in level-set topology.");
+            }
 
             if(object.ReferenceEquals(OldLevSet, NewLevelSet)) {
                 NewLevelSet = OldLevSet.CloneAs();
@@ -377,12 +408,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // perform Reinitialization
             // ------------------------
-
-            if (plotMarchingSteps) {
-                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
-            }
-
 
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 

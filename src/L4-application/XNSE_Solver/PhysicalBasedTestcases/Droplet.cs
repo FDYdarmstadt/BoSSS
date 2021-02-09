@@ -823,15 +823,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 6) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 9) {
 
             XNSE_Control C = new XNSE_Control();
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
+            bool quarterDomain = true;
+
             //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
-            string _DbPath = @"D:\local\local_test_db2";
-            //string _DbPath = null;
+            //string _DbPath = @"D:\local\local_test_db2";
+            string _DbPath = null;
 
             // basic database options
             // ======================
@@ -916,40 +918,83 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region grid
 
             double Lscale = 1.0;
-            double L = 5.0 * Lscale;
-            double L_drop = 1.5 * Lscale;
+            double L = 6.0 * Lscale;
+            double L_drop = 2.0 * Lscale;
 
-            C.GridFunc = delegate () {
-                double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
-                double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem/2) + 1, 1.5, false);
-                out_min = out_min.GetSubVector(0, (out_min.Length - 2));
-                double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem/2) + 1, 1.5, true);
-                out_max = out_max.GetSubVector(1, (out_max.Length - 1));
-                double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+            if (!quarterDomain) {
+                C.GridFunc = delegate () {
+                    double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
+                    double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+                    double[] nodes = droplet;
+                    L = L_drop;
 
-                var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
+                    var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-                grd.EdgeTagNames.Add(1, "wall");
+                    grd.EdgeTagNames.Add(1, "wall");
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] + (L)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (L)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (L)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] - (L)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[2] + (L)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[2] - (L)) <= 1.0e-8)
-                        et = 1;
-                    return et;
-                });
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
 
-                return grd;
-            };
+                    return grd;
+                };
+
+            } else {
+
+                C.GridFunc = delegate () {
+                    double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
+                    double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
+                    //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+
+                    var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
+
+                    L = L_drop;
+
+                    grd.EdgeTagNames.Add(1, "wall");
+                    grd.EdgeTagNames.Add(2, "slipsymmetry");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
+
+                    return grd;
+                };
+
+            }
 
             #endregion
 
@@ -1013,6 +1058,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
             C.AddBoundaryValue("wall");
+            if (quarterDomain)
+                C.AddBoundaryValue("slipsymmetry");
 
             #endregion
 
