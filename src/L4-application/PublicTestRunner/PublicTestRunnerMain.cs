@@ -124,7 +124,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
                         //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }

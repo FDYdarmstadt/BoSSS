@@ -42,6 +42,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            InitMPI();
+            DeleteOldPlotFiles();
+            TestProgram.TestParticleInShearFlow();
+            throw new Exception("remove me");
+
+
+            /*
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
@@ -49,7 +56,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             _Main(args, false, delegate () {
                 var p = new XNSERO();
                 return p;
-            });
+            });*/
         }
 
         /// <summary>

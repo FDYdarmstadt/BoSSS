@@ -39,9 +39,22 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
             Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
             AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            UseImmersedBoundary = true;
             TimeSteppingScheme = TimeSteppingScheme.BDF2;
             NonlinearCouplingSolidFluid = true;
+        }
+
+        /// <summary>
+        /// always true
+        /// </summary>
+        public override bool UseImmersedBoundary {
+            get {
+                return true;
+            }
+            set {
+                if(value == false) {
+                    Console.Error.WriteLine($"Immersed Boundary cannot be turned off for {typeof(XNSERO).Name}.");    
+                }
+            }
         }
 
         public bool ContainsSecondFluidSpecies = false;

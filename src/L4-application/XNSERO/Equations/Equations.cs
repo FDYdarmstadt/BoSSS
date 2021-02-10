@@ -5,8 +5,7 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using System;
 using System.Linq;
-namespace BoSSS.Application.XNSERO_Solver {
-    class Equations {
+namespace BoSSS.Application.XNSERO_Solver.Equations {
 
         /// <summary>
         /// Incompressible, Newtonian momentum equation, (fluid/solid) immersed boundary
@@ -118,5 +117,4 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
             }
         }
-    }
 }

@@ -140,9 +140,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel: 1);
 
-            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
-            C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
+            C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY#A", X => 0.02);
+            C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY#A", X => -0.02);
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
             double particleDensity = 1;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, true);
             C.SetParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });

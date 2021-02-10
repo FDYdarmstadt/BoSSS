@@ -71,7 +71,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Activation of second level-set.
         /// </summary>
         [DataMember]
-        public bool UseImmersedBoundary = false;
+        virtual public bool UseImmersedBoundary {
+            get;
+            set;
+        }
 
         /// <summary>
         /// - default (false): preconditioning for velocity and pressure is determined by 
