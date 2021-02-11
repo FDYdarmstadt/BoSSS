@@ -23,7 +23,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// ctor
         /// </summary>
         public SolverWithLevelSetUpdaterControl() {
-            
+            Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
         }
 
 
@@ -31,7 +31,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// See <see cref="LevelSetHandling"/>
         /// </summary>
         [DataMember]
-        public LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+        virtual public LevelSetHandling Timestepper_LevelSetHandling {
+            get;
+            set;
+        } 
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative

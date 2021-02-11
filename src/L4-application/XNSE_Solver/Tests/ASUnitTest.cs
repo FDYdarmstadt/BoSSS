@@ -823,7 +823,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
-                XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
@@ -882,7 +882,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         solver.RunSolverMode();
 
                         //-------------------Evaluate Error ---------------------------------------- 
-                        XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                        var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                         double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
                         double[] ErrThresh = Tst.AcceptableL2Error;
 
@@ -990,7 +990,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator evaluator = new XHeatErrorEvaluator(solver);
+                var evaluator = new XHeatErrorEvaluator<XNSE_Control>(solver);
                 if (Tst.CheckT) {                    
                     double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
@@ -1039,7 +1039,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Flow Error ---------------------------------------- 
-                XNSEErrorEvaluator flowevaluator = new XNSEErrorEvaluator(solver);
+                var flowevaluator = new XNSEErrorEvaluator<XNSFE_Control>(solver);
                 double[] LastErrors = flowevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
@@ -1052,7 +1052,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator heatevaluator = new XHeatErrorEvaluator(solver);
+                var heatevaluator = new XHeatErrorEvaluator<XNSFE_Control>(solver);
                 if (Tst.CheckT) {
                     LastErrors = LastErrors.Cat(heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C) );
 

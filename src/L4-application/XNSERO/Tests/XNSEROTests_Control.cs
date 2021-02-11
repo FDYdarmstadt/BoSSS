@@ -180,6 +180,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
+        public static XNSERO_Control TestParticleInShearFlow_Phoretic(int k = 2) {
+            //BoSSS.Application.XNSERO_Solver.XNSEROTest_Control.TestParticleInShearFlow_Phoretic();
+
+            var C = TestParticleInShearFlow(k);
+            C.UsePhoreticField = true;
+            return C;
+        }
+
         public static XNSERO_Control TestStickyTrap(int k = 2) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "ParticleCollisionTest");
             // grid and boundary conditions

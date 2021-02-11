@@ -75,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
-                LevelSetErrorEvaluator evaluator = new LevelSetErrorEvaluator(solver);
+                var evaluator = new LevelSetErrorEvaluator<XNSE_Control>(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(C.Endtime, C);
 
                 string[] ErrNames = new string[] { "Phi", "PhiDG", "Gradient PhiDG" };

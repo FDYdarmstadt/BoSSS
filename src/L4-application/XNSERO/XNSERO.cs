@@ -15,7 +15,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using static BoSSS.Application.XNSERO_Solver.Equations;
+
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -35,20 +35,20 @@ namespace BoSSS.Application.XNSERO_Solver {
     ///   which were mainly used for PhD thesis of D. Krause and B. Deußen and TRR146.
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
     /// </remarks>
-    public class XNSERO : XNSE {
+    public class XNSERO : XNSE<XNSERO_Control> {
 
         /// <summary>
         /// Main 
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI();
-            DeleteOldPlotFiles();
-            TestProgram.TestParticleInShearFlow();
-            throw new Exception("remove me");
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //TestProgram.TestParticleInShearFlow();
+            //throw new Exception("remove me");
 
 
-            /*
+            
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
@@ -56,7 +56,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             _Main(args, false, delegate () {
                 var p = new XNSERO();
                 return p;
-            });*/
+            });//*/
         }
 
         /// <summary>
@@ -85,28 +85,28 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Second entry: left/lower wall [0] or right/upper wall [1]
         /// </remarks>
         [DataMember]
-        private double[][] BoundaryCoordinates => ((XNSERO_Control)Control).BoundaryPositionPerDimension;
+        private double[][] BoundaryCoordinates => (Control).BoundaryPositionPerDimension;
 
         /// <summary>
         /// Array with two entries (2D). [0] true: x-Periodic, [1] true: y-Periodic
         /// </summary>
         [DataMember]
-        private bool[] IsPeriodic => ((XNSERO_Control)Control).BoundaryIsPeriodic;
+        private bool[] IsPeriodic => (Control).BoundaryIsPeriodic;
 
         /// <summary>
         /// Grid length parameter used as tolerance measurement for particles.
         /// </summary>
         [DataMember]
-        private double MaxGridLength => ((XNSERO_Control)Control).MaxGridLength;
+        private double MaxGridLength => Control.MaxGridLength;
 
         [DataMember]
-        private bool ContainsSecondFluidSpecies => ((XNSERO_Control)Control).ContainsSecondFluidSpecies;
+        private bool ContainsSecondFluidSpecies => Control.ContainsSecondFluidSpecies;
 
         [DataMember]
-        private Vector Gravity => ((XNSERO_Control)Control).GetGravity();
+        private Vector Gravity => Control.GetGravity();
 
         [DataMember]
-        private bool AllParticlesFixed => ((XNSERO_Control)Control).fixPosition;
+        private bool AllParticlesFixed => Control.fixPosition;
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -122,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </remarks>
         protected override RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
             if(Particles.IsNullOrEmpty())
-                Particles = ((XNSERO_Control)Control).Particles.ToArray();
+                Particles = Control.Particles.ToArray();
             CreatePhysicalDataLogger();
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
@@ -135,12 +135,25 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provides information about the evolution of the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
+
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
             }
             return new RigidObjectLevelSetEvolver(ParticleLevelSet, MaxGridLength);
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+            base.DefineSystem(D, opFactory, lsUpdater);
+
+            if(Control.UsePhoreticField) {
+                opFactory.AddEquation(new Equations.PhoreticFieldBulk());
+            }
+        }
+
 
         /// <summary>
         /// Definition of the boundary condition on the immersed boundary, i.e. at the surface of the particles, <see cref="XNSE_Control.UseImmersedBoundary"/>;
@@ -150,8 +163,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(new FuncTrace()) {
                 XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
                 for(int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                    opFactory.AddEquation(new NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 }
 
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
@@ -159,6 +172,10 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
                 opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));
+
+                if(Control.UsePhoreticField) {
+                    opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk));
+                }
             }
         }
 

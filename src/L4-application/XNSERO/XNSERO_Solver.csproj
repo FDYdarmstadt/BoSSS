@@ -71,8 +71,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConvectionAtIB.cs" />
-    <Compile Include="Equations.cs" />
     <Compile Include="Auxillary.cs" />
+    <Compile Include="Equations\Equations.cs" />
+    <Compile Include="Equations\PhoreticField.cs" />
     <Compile Include="HardcodedControl_multipleActiveParticles.cs" />
     <Compile Include="ParticleCollision.cs" />
     <Compile Include="Parameters.cs" />

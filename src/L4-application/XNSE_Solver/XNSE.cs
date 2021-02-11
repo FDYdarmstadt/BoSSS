@@ -22,11 +22,39 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
     /// <summary>
+    /// 
+    /// </summary>
+    public class XNSE : XNSE<XNSE_Control> {
+
+        //===========
+        // Main file
+        //===========
+        static void Main(string[] args) {
+
+            InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+            //throw new Exception("Remove me");
+
+            void KatastrophenPlot(DGField[] dGFields) {
+                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+            }
+
+            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            _Main(args, false, delegate () {
+                var p = new XNSE();
+                return p;
+            });
+        }
+    }
+
+    /// <summary>
     /// Multiphase-XDG-solver, with features:
     /// - incompressible two-phase flows.
     /// - solid immersed boundaries (planned).
     /// - three phase contact lines at the domain boundary
     /// - three phase contact lines at the intersection of the immersed solid boundary 
+    /// - the generic control parameter <typeparamref name="T"/> allows derivations of this solver
     /// </summary>
     /// <remarks>
     /// Development history:
@@ -57,28 +85,9 @@ namespace BoSSS.Application.XNSE_Solver {
     /// ```
     /// </remarks>
     /// 
-    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
+    public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
-        //===========
-        // Main file
-        //===========
-        static void Main(string[] args) {
-
-            InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //throw new Exception("Remove me");
-
-            void KatastrophenPlot(DGField[] dGFields) {
-                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-            }
-
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });
-        }
+       
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)

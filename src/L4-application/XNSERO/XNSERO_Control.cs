@@ -16,16 +16,24 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
+    [Serializable]
     public class XNSERO_Control : XNSE_Control {
 
         public XNSERO_Control() {
+            base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
+            // Set default values to LevelSet (one could still overwrite those)
+            InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
+            AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            NonlinearCouplingSolidFluid = true;
         }
 
         /// <summary>
         /// ctor
         /// </summary>
-        public XNSERO_Control(int degree, string projectName, string projectDescription = null, List<string> tags = null) : base() {
+        public XNSERO_Control(int degree, string projectName, string projectDescription = null, List<string> tags = null) : this() {
             ProjectName = projectName;
             SessionName = projectName;
             ProjectDescription = projectDescription;
@@ -35,12 +43,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
             }
             SetDGdegree(degree);
-            // Set default values to LevelSet (one could still overwrite those)
-            InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
-            Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
-            AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            TimeSteppingScheme = TimeSteppingScheme.BDF2;
-            NonlinearCouplingSolidFluid = true;
         }
 
         /// <summary>
@@ -57,6 +59,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        [DataMember]
         public bool ContainsSecondFluidSpecies = false;
 
         /// <summary>
@@ -69,36 +72,43 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Set true during restart.
         /// </summary>
+        [DataMember]
         public bool IsRestart = false;
 
         /// <summary>
         /// List of the boundary values at the domain boundary.
         /// </summary>
+        [DataMember]
         readonly List<string> m_BoundaryValues = new List<string>();
 
         /// <summary>
         /// The position of all boundaries, independent of boundary condition.
         /// </summary>
+        [DataMember]
         public double[][] BoundaryPositionPerDimension;
 
         /// <summary>
         /// The position of all boundaries, only for walls.
         /// </summary>
+        [DataMember]
         public double[][] WallPositionPerDimension;
 
         /// <summary>
         /// True for periodic walls
         /// </summary>
+        [DataMember]
         public bool[] BoundaryIsPeriodic;
 
         /// <summary>
         /// Max grid length
         /// </summary>
+        [DataMember]
         public double MaxGridLength;
 
         /// <summary>
         /// Min grid length
         /// </summary>
+        [DataMember]
         public double MinGridLength;
 
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
@@ -261,7 +271,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
-        public new LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+        public override LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
         public void SetParticles(List<Particle> ParticleList) {
             Particles = ParticleList.ToArray();
@@ -277,6 +287,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
             InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
             Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
+
+            
         }
 
         /// <summary>
@@ -296,5 +308,18 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         [DataMember]
         public double minDistanceThreshold = 0;
+
+        /// <summary>
+        /// type of appropriate solver
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(XNSERO);
+        }
+
+        /// <summary>
+        /// switch to turn the Phoretic Field on/off
+        /// </summary>
+        [DataMember]
+        public bool UsePhoreticField = false;
     }
 }

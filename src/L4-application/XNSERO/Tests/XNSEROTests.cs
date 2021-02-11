@@ -73,8 +73,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(XNSERO p = new XNSERO()) {
 
                 XNSERO_Control ctrl = XNSEROTest_Control.TestParticleInShearFlow(k: 2);
-                ctrl.ImmediatePlotPeriod = 1;
-                ctrl.SuperSampling = 3;
                 p.Init(ctrl);
                 p.RunSolverMode();
 
