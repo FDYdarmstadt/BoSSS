@@ -777,7 +777,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             }
                         }
                     }
-                    double PSnINorm = PSnI.L2Norm();
                     double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
 
 

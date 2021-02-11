@@ -104,7 +104,7 @@ namespace IntersectingLevelSetTest {
 
         private void LsUpdate(double t) {
             Console.WriteLine("LSUpdate t = " + t);
-            SetLs2(t);
+            SetLs(t);
             
             LsTrk.UpdateTracker(t);
             LsTrk.PushStacks();
@@ -120,21 +120,13 @@ namespace IntersectingLevelSetTest {
         private void SetLs(double t) {
             t = t / 90 * Math.PI;
             double phi0(double x, double y) {
-                return (y > 0) ? Math.Sqrt(x.Pow2() + (y - 0.1).Pow2()) - 1.3 : 1;
+                return (x - (Math.Tan(t) * y));
             }
-
             double phi1(double x, double y) {
                 return (Math.Tan(t) * x) - (y);
             }
-
-            double phi2(double x, double y) {
-                return (x);
-            }
-
-            double phi3(double x, double y) {
-                return (x - (Math.Tan(t) * y));
-            }
-            Phi0.ProjectField(phi3);
+            
+            Phi0.ProjectField(phi0);
             Phi1.ProjectField(phi1);
         }
 
