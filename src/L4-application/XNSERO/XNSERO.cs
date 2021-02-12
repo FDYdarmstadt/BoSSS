@@ -110,6 +110,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         private bool AllParticlesFixed => Control.fixPosition;
 
+        [DataMember]
+        private double CoefficientOfRestitution => ((XNSERO_Control)Control).CoefficientOfRestitution;
+
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
@@ -272,7 +275,9 @@ namespace BoSSS.Application.XNSERO_Solver {
                 CalculateCollision(Particles, dt);
                 CalculateParticlePositionAndAngle(Particles, dt);
             }
-
+            Console.WriteLine("Particle rotational velocity " + Particles[0].Motion.GetRotationalVelocity(0));
+            Console.WriteLine("Particle trans velocity " + Particles[0].Motion.GetTranslationalVelocity(0));
+            Console.WriteLine("Particle position " + Particles[0].Motion.GetPosition(0));
             LogPhysicalData(phystime, TimestepNo);
             Console.WriteLine($"done with time step {TimestepNo}");
             TimeSpan ts = stopWatch.Elapsed;
@@ -320,7 +325,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 foreach(Particle p in Particles) {
                     p.IsCollided = false;
                 }
-                ParticleCollision Collision = new ParticleCollision(MaxGridLength, 1, dt, ((XNSERO_Control)Control).WallPositionPerDimension, ((XNSERO_Control)Control).BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
+                ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, ((XNSERO_Control)Control).WallPositionPerDimension, ((XNSERO_Control)Control).BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
                 Collision.Calculate(Particles);
             }
         }

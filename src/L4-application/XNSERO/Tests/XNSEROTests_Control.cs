@@ -51,8 +51,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetParticles(particles);
 
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             C.PhysicalParameters.IncludeConvection = false;
 
             // misc. solver options
@@ -103,8 +101,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetParticles(particles);
 
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             C.PhysicalParameters.IncludeConvection = false;
 
             // misc. solver options
@@ -190,17 +186,17 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public static XNSERO_Control TestStickyTrap(int k = 2) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "ParticleCollisionTest");
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             // grid and boundary conditions
             // ============================ 
             List<string> boundaryValues = new List<string> {
             "Wall_left",
             "Wall_right",
-            "Pressure_Outlet_lower",
-            "Pressure_Outlet_upper"
+            "Pressure_Dirichlet_lower",
+            "Pressure_Dirichlet_upper"
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
-            //C.SetAddaptiveMeshRefinement(amrLevel: 2);
             // Initial Values
             // ==============
 
@@ -208,13 +204,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Fluid Properties
-            C.PhysicalParameters.rho_A = 1.0;
-            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 1;
             C.CoefficientOfRestitution = 0;
             C.SetGravity(new Vector(0, -9.81));
 
             // Particle Properties
-            double particleDensity1 = 4.0;
+            double particleDensity1 = 100.0;
             InitializeMotion motion1 = new InitializeMotion(particleDensity1, false, true);
             double particleDensity2 = 1.0;
             InitializeMotion motion2 = new InitializeMotion(particleDensity2, false, true, true);
@@ -228,11 +224,13 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // misc. solver options
             // ====================
-
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LinearSolver.MaxSolverIterations = 10;
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MinSolverIterations = 1;
+            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MinSolverIterations = 3;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
             // ============
@@ -242,7 +240,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 35;
+            C.NoOfTimesteps = 25;
 
             // haben fertig...
             // ===============

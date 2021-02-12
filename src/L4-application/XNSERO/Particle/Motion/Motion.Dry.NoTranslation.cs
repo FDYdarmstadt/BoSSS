@@ -82,5 +82,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             clonedMotion.SetMomentOfInertia(MomentOfInertia);
             return clonedMotion;
         }
+
+        /// <summary>
+        /// Calculates the gravitational forces.
+        /// </summary>
+        /// <param name="fluidDensity"></param>
+        /// <param name="tempForces"></param>
+        public override Vector GetGravityForces(Vector Gravity) {
+            return new Vector(0, 0);
+        }
     }
 }

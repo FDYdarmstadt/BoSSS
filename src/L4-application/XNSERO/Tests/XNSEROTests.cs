@@ -91,6 +91,29 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         [Test]
+        public static void TestParticleInShearFlow_Phoretic() {
+            using(XNSERO p = new XNSERO()) {
+
+                XNSERO_Control ctrl = XNSEROTest_Control.TestParticleInShearFlow_Phoretic(k: 2);
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+                double angularVelocitySol = -0.00283955477369256;
+                double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
+
+                double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
+                Console.WriteLine("   angular velocity is " + angularVelocityIs);
+                Console.WriteLine("         should be     " + angularVelocitySol);
+                Console.WriteLine("         difference is " + diff_Velocity);
+
+
+                Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
+
+            }
+        }
+
+
+        [Test]
         public static void TestStickyTrap() {
             using(XNSERO p = new XNSERO()) {
 
@@ -99,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.0792658735354393);
+                Dest_Should = new Vector(0.0, 0.084);
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));

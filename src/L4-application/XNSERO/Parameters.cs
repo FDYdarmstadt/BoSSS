@@ -21,7 +21,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public RigidObjectLevelSetVelocity(string levelSetName, Particle[] Particles, double[] FluidViscosity, string[] FluidSpecies, Vector Gravity, double TimeStep, double GridToleranceParam) : base() {
             ParticleHydrodynamics = new ParticleHydrodynamics(2);
-            //ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
+            ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
             SpatialDimension = Particles[0].Motion.GetPosition().Dim;
             this.Particles = Particles;
             this.FluidSpecies = FluidSpecies;

@@ -29,6 +29,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             TimeSteppingScheme = TimeSteppingScheme.BDF2;
             NonlinearCouplingSolidFluid = true;
+            UseImmersedBoundary = true;
+            CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
         }
 
         /// <summary>

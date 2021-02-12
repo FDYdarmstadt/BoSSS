@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.SetTimesteps(1e-1, 5);
+            C.SetTimesteps(1e-1, 50000000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LinearSolver.NoOfMultigridLevels = 10;
