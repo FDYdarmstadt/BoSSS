@@ -1,6 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
@@ -67,6 +68,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         public override void SetDGdegree(int p) {
             SetFieldOptions(p, Math.Max(12, p));
+
+            FieldOptions.Add(VariableNames.Phoretic, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
         }
 
         /// <summary>
@@ -267,11 +273,13 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public Vector GetGravity() => Gravity;
 
+        /*
         /// <summary>
         /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
         /// </summary>
         [DataMember]
         public override LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+        */
 
         public void SetParticles(List<Particle> ParticleList) {
             Particles = ParticleList.ToArray();

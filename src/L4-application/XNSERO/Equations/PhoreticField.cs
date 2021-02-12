@@ -26,10 +26,12 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
         public override double MassScale => 0.0; // no time derivative
 
-        public override string CodomainName => BoSSS.Solution.NSECommon.VariableNames.Phoretic;
+        public override string CodomainName => "PhoreticResidual";
 
 
         public PhoreticFieldBulk() {
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Phoretic);
 
             AddComponent(new BulkLaplace());
         }
@@ -62,13 +64,12 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
         public override string SecondSpeciesName => "C";
 
-        public override string CodomainName => BoSSS.Solution.NSECommon.VariableNames.Phoretic;
+        public override string CodomainName => "PhoreticResidual";
 
 
         public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk) {
-
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Phoretic);
             AddComponent(new XLaplace_Interface(lstrk, 1.0));
-
         }
 
 
@@ -99,7 +100,6 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
 
             protected double muA;
-            protected double muB;
             protected double penatly_baseFactor;
 
 
@@ -111,6 +111,12 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             }
 
 
+            /// <summary>
+            /// Implements a Neumann boundary condition for fluid phase A
+            /// </summary>
+            /// <remarks>
+            /// Note: when adding additional terms, the <see cref="LevelSetTerms"/> must be updated correctly.
+            /// </remarks>
             public virtual double InnerEdgeForm(ref CommonParams inp,
                 double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
                 double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
@@ -120,7 +126,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 double Acc = 0;
                 double g_N = this.g_Neum(ref inp);
                 Acc += muA * g_N * vA;
-                
+
                 return Acc;
             }
 
@@ -137,39 +143,14 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 Debug.Assert(!double.IsInfinity(penaltySizeFactor));
                 
                 double penalty_muFactor;
-                penalty_muFactor = Math.Max(Math.Abs(muA), Math.Abs(muB)) * Math.Sign(muA);
+                penalty_muFactor = muA;
 
                 double eta = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
                 if(eta.IsNaNorInf())
                     throw new ArithmeticException("Inf/NaN in penalty computation.");
                 return eta;
             }
-
-            //List<int> cellElo = new List<int>();
-
-            /*
-            protected void ComputeScaling(ref CommonParams inp, out double scaleIN, out double scaleOT) {
-                Debug.Assert(Math.Sign(muA) == Math.Sign(muB));
-
-                switch(this.m_mode) {
-                    case Mode.SWIP: {
-                        scaleIN = muB / (muA + muB);
-                        scaleOT = muA / (muA + muB);
-                        return;
-                    }
-
-                    case Mode.SIP: {
-                        // Konventionell:
-                        scaleIN = 0.5;
-                        scaleOT = 0.5;
-                        return;
-                    }
-
-                    default:
-                    throw new NotImplementedException();
-                }
-            }
-            */
+                       
 
 
             MultidimensionalArray NegLengthScaleS;
@@ -204,7 +185,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// The Solid Domain
             /// </summary>
             public SpeciesId PositiveSpecies {
-                get { return m_LsTrk.GetSpeciesId("B"); }
+                get { return m_LsTrk.GetSpeciesId("C"); }
             }
 
             /// <summary>
@@ -214,9 +195,13 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 get { return m_LsTrk.GetSpeciesId("A"); }
             }
 
+            /// <summary>
+            /// Remark: in case of doubt, use <see cref="TermActivationFlags.AllOn"/>
+            /// </summary>
             public TermActivationFlags LevelSetTerms {
                 get {
-                    return TermActivationFlags.UxV | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV;
+                    //return TermActivationFlags.UxV | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | 
+                    return TermActivationFlags.V; // sufficient for Neumann b.c.
                 }
             }
 

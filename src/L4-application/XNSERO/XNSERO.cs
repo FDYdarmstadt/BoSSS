@@ -3,6 +3,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
@@ -11,6 +12,7 @@ using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -85,13 +87,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Second entry: left/lower wall [0] or right/upper wall [1]
         /// </remarks>
         [DataMember]
-        private double[][] BoundaryCoordinates => (Control).BoundaryPositionPerDimension;
+        private double[][] BoundaryCoordinates => Control.BoundaryPositionPerDimension;
 
         /// <summary>
         /// Array with two entries (2D). [0] true: x-Periodic, [1] true: y-Periodic
         /// </summary>
         [DataMember]
-        private bool[] IsPeriodic => (Control).BoundaryIsPeriodic;
+        private bool[] IsPeriodic => Control.BoundaryIsPeriodic;
 
         /// <summary>
         /// Grid length parameter used as tolerance measurement for particles.
@@ -364,6 +366,22 @@ namespace BoSSS.Application.XNSERO_Solver {
                     }
                 }
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            }
+        }
+
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+            base.AddMultigridConfigLevel(configsLevel);
+
+            if(Control.UsePhoreticField) {
+                int pVel = VelocityDegree();
+
+                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                    DegreeS = new int[] { pVel },
+                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Phoretic) }
+                };
+                configsLevel.Add(configPres);
             }
         }
     }
