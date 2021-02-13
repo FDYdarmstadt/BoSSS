@@ -186,7 +186,9 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public static XNSERO_Control TestStickyTrap(int k = 2) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "ParticleCollisionTest");
-            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            
             // grid and boundary conditions
             // ============================ 
             List<string> boundaryValues = new List<string> {

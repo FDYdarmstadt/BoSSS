@@ -30,13 +30,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(XNSERO p = new XNSERO()) {
 
                 var ctrl = XNSEROTest_Control.LevelSetTest();
+                ctrl.ImmediatePlotPeriod = 1;
+                ctrl.SuperSampling = 3;
+
                 p.Init(ctrl);
                 p.RunSolverMode();
                 BitArray cutCellMask = p.LsTrk.Regions.GetCutCellMask().GetBitMask();
                 BitArray cutCellMaskSoll = new BitArray(cutCellMask.Length);
                 cutCellMaskSoll[5] = true;
                 cutCellMaskSoll[6] = true;
-                cutCellMaskSoll[8] = true;
+                cutCellMaskSoll[9] = true;
                 cutCellMaskSoll[10] = true;
                 for(int i = 0; i < cutCellMask.Length; i++) {
                     Assert.IsTrue(cutCellMask[i] == cutCellMaskSoll[i], "Error in level set projection, cell " + i);

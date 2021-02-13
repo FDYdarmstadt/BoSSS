@@ -1256,7 +1256,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XHeat_Control : XNSE_Control {
+        class AS_XHeat_Control : XNSFE_Control {
             public override Type GetSolverType() {
                 return typeof(XHeat);
             }

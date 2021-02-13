@@ -64,12 +64,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            Tests.ASUnitTest.BasicThreePhaseTest(false, false, false, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 2);
-           // BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest(False, False, False, Curvature_Projected, 2);
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            throw new Exception("Remove me");
+            //InitMPI();
+            // DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);

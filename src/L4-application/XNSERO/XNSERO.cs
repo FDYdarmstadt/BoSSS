@@ -46,6 +46,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
+            //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow();
             //throw new Exception("remove me");
 
