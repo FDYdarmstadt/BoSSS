@@ -805,8 +805,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
-            if (Tst.SpatialDimension == 3)
-            {
+            
+            if(Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
             }

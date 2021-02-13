@@ -64,10 +64,11 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
+            Tests.ASUnitTest.BasicThreePhaseTest(false, false, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 2);
             //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            //throw new Exception("Remove me");
+            throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
@@ -382,9 +383,9 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");
+            Console.WriteLine($"Done with time step {TimestepNo}.");
             return dt;
         }
     }
