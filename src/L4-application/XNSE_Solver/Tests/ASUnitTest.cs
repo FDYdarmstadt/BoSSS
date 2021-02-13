@@ -829,9 +829,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 double[] ErrThresh = Tst.AcceptableL2Error;
                 if (LastErrors.Length != ErrThresh.Length)
                     throw new ApplicationException();
-                for (int i = 0; i < ErrThresh.Length; i++)
-                {
-                    Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                for(int i = 0; i < ErrThresh.Length; i++) {
+                    bool ok = LastErrors[i] <= ErrThresh[i];
+                    Console.Write("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ErrThresh[i] + ")");
                 }
 
                 double[] ResThresh = Tst.AcceptableResidual;
@@ -841,14 +846,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 for (int i = 0; i < ResNorms.Length; i++)
                 {
                     ResNorms[i] = solver.CurrentResidual.Fields[i].L2Norm();
-                    Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+                    bool ok = ResNorms[i] <= ResThresh[i];
+                    Console.Write("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ResThresh[i] + ")");
                 }
 
                 for (int i = 0; i < ErrThresh.Length; i++)
-                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i], $"Error {solver.CurrentState.Fields[i].Identification} above threshold.");
 
                 for (int i = 0; i < ResNorms.Length; i++)
-                    Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
+                    Assert.LessOrEqual(ResNorms[i], ResThresh[i], $"Residual {solver.CurrentResidual.Fields[i].Identification} above threshold.");
             }
         }
 
@@ -1111,10 +1122,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XNSE_Control : XNSE_Control
-        {
-            public override Type GetSolverType()
-            {
+        class AS_XNSE_Control : XNSE_Control {
+            public override Type GetSolverType() {
                 return typeof(XNSE);
             }
         }
