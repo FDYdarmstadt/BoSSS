@@ -29,7 +29,7 @@
 ///\section*{Prerequisites}
 ///
 ///\begin{itemize}
-///\item the \BoSSS\ framework
+///\item the \BoSSS{} framework
 ///\item a visualization tool, e.g Paraview or VisIt
 ///\item the knowledge of how to setup a database for \BoSSS{}
 ///\end{itemize}
@@ -38,6 +38,10 @@
 /// First, the simple testcase of a 2D channel flow will be explained. After 
 /// that, there will be a short part about the immersed boundary feature of our incompressible flow solver. 
 /// Therefore the flow around a cylinder will be investigated using the immersed boundary method.
+///
+/// Note that \BoSSS{}, at the present time contains no stand-alone single-phase  
+/// solver that is fully recomended - although there are some legacy solvers, e.g. SIMPLE.
+/// Instead, the two-phase-solver with immersed boundary is used, where the two-phase option ist deactivated.
 ///
 ///\section*{Problem statement}
 ///
@@ -70,17 +74,21 @@ restart;
 /// For the interactive mode of the solver in \BoSSSpad{} we have to load several dependencies first:
 using System.Diagnostics;\newline 
 using BoSSS.Foundation.Grid.RefElements;\newline 
-using BoSSS.Application.IBM\_Solver;
+using BoSSS.Application.XNSE\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
-/// Now, a new database has to be created or opened by the following command
+/// Now, a new database has to be created.
+/// In this worksheet, we use a temporary database which will be deleted
+/// after the worksheet has been executed.
+/// For your calculation, you might consider some non-temporary alternative,
+/// cf. \code{OpenOrCreateDatabase} or \code{OpenOrCreateDefaultDatabase}:
 var myDb = CreateTempDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
-/// Create a new control object for setting up the simulation
-var c = new IBM\_Control();
+/// Create a new control object for setting up the simulation:
+var c = new XNSE\_Control();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -135,7 +143,7 @@ grid.DefineEdgeTags(delegate (double[] X) \{\newline
 \btab if (Math.Abs(X[1] - (-2)) <= 1.0e-8)\newline 
 \btab \btab return "wall"; // wall at y = -2\newline 
 \btab if (Math.Abs(X[1] - (+2.1 )) <= 1.0e-8)\newline 
-\btab \btab return "wall"; // wall at y = +2\newline 
+\btab \btab return "wall"; // wall at y = +2.1\newline 
 \btab if (Math.Abs(X[0] - (-2)) <= 1.0e-8)\newline 
 \btab \btab return "Velocity\_Inlet"; // velocity inlet at x = -2\newline 
 \btab if (Math.Abs(X[0] - (+20.0)) <= 1.0e-8)\newline 
@@ -155,7 +163,7 @@ c.SetGrid(grid);
 /// Specification of boundary conditions with a parabolic velocity profile for the inlet
 c.BoundaryValues.Clear();\newline 
 c.AddBoundaryValue("Velocity\_Inlet", "VelocityX", \newline 
-\btab   (X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1)))); 
+\btab   (X => (4.1 * 1.5 * (X[1] + 2) * (4.1 - (X[1] + 2)) / (4.1 * 4.1))));
  }
 \BoSSSexe
 \BoSSScmd{
@@ -177,22 +185,16 @@ c.PhysicalParameters.IncludeConvection = true;
 /// Initial Values are set to 0; Note that the following lines are only for 
 /// demonstration -- if no initial value is specified, 0 is set automatically.
 c.InitialValues.Clear();\newline 
-c.InitialValues.Add("VelocityX",new Formula("X => 0.0", false));\newline 
-c.InitialValues.Add("VelocityY",new Formula("X => 0.0", false));\newline 
-c.InitialValues.Add("Pressure",new Formula("X => 0.0", false));
+c.InitialValues.Add("VelocityX", new Formula("X => 0.0", false));\newline 
+c.InitialValues.Add("VelocityY", new Formula("X => 0.0", false));\newline 
+c.InitialValues.Add("Pressure", new Formula("X => 0.0", false));
  }
 \BoSSSexe
 \BoSSScmd{
 /// Timestepping properties:
-/// We will simulate the steady state solution by using just one timestep of 
-/// $10^20$ (\code{1E20}) seconds of physical time for this instationary 
-/// simulation.
-c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler;\newline 
-double dt            = 1E20;\newline 
-c.dtMax              = dt;\newline 
-c.dtMin              = dt;\newline 
-c.Endtime            = 64;\newline 
-c.NoOfTimesteps      = 1;
+/// Most solvers in \BoSSS{} simulate transient equations. Configuring
+/// a steady simulation confiures one very large timestep.
+c.TimesteppingMode = AppControl.\_TimesteppingMode.Steady;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -202,7 +204,7 @@ c.NoOfTimesteps      = 1;
 \BoSSScmd{
 /// The solver can be run inline (i.e. within the \BoSSSpad process) by 
 /// executing the \code{Run} method on the control objece \code{c}.
-/// An inline run wil block \BoSSSpad until the solver exits.
+/// An inline run will block \BoSSSpad until the solver exits.
 c.Run();
  }
 \BoSSSexe

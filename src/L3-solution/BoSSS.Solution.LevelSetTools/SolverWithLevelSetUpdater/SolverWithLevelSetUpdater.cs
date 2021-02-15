@@ -146,6 +146,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             int NoOfLevelSets = lsNames.Length;
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();
+            bool isRestart = Control.RestartInfo != null;
 
             // phase 1: initialization of level-sets
             // ======================================
@@ -154,9 +155,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
+                ScalarFunction Phi_InitialValue = null;
+                if(!isRestart) {
+                    if(Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
+                        Phi_InitialValue = scalarFunctionTimeDep.SetTime(0.0);
+                    }
+                }
+
+
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
-                bool isRestart = Control.RestartInfo != null;
                 switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         //if(Control.EnforceLevelSetConservation) {
@@ -164,7 +172,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         //}
                         FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                         fourierLevelSet.Clear();
-                        fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
+                        if(Phi_InitialValue != null)
+                            fourierLevelSet.ProjectField(Phi_InitialValue);
                         DGlevelSets[iLevSet] = fourierLevelSet;
                         break;
                     }
@@ -176,7 +185,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         //if(Control.InitialValues_EvaluatorsVec.ContainsKey(LevelSetCG))
                         levelSetDG.Clear();
-                        if(!isRestart)levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
+                        if(Phi_InitialValue != null)
+                            levelSetDG.ProjectField(Phi_InitialValue);
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
@@ -196,7 +206,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 }
 
                 if(DGlevelSets[iLevSet].L2Norm() == 0.0 && !isRestart) {
-                    Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
+                    //Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
                     DGlevelSets[iLevSet].AccConstant(-1.0);
                 }
             }
@@ -333,7 +343,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
                 var pair1 = LsUpdater.LevelSets[LevelSetCG];
                 pair1.DGLevelSet.Clear();
-                pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
+
+                if(Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
+                    pair1.DGLevelSet.ProjectField(scalarFunctionTimeDep.SetTime(t));
+                }
+
+                if(pair1.DGLevelSet.L2Norm() == 0.0) {
+                    Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
+                    pair1.DGLevelSet.AccConstant(-1.0);
+                }
             }
         }
 

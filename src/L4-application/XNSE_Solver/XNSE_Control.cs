@@ -699,5 +699,21 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
+
+
+        /// <summary>
+        /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>
+        /// </summary>
+        [JsonIgnore]
+        public override _TimesteppingMode TimesteppingMode {
+            get {
+                return base.TimesteppingMode;
+            }
+            set {
+                base.TimesteppingMode = value;
+                if(value == _TimesteppingMode.Steady)
+                    this.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            }
+        }
     }
 }

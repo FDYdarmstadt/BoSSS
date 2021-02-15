@@ -218,7 +218,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [Serializable]
         [DataContract]
-        sealed public class BoundaryValueCollection {
+        sealed public class BoundaryValueCollection : ICloneable {
 
             /// <summary>
             /// optional string to encode the type of the boundary
@@ -282,6 +282,23 @@ namespace BoSSS.Solution.Control {
                 get {
                     return m_BoundaryValues;
                 }
+            }
+
+            /// <summary>
+            /// non-shallow copy
+            /// </summary>
+            public object Clone() {
+                var r = new BoundaryValueCollection();
+                r.type = this.type;
+                foreach(var s in this.m_BoundaryValues) {
+                    r.m_BoundaryValues.Add(s.Key, s.Value);
+                }
+                foreach(var q in this.Evaluators) {
+                    if(!r.Evaluators.ContainsKey(q.Key)) {
+                        r.Evaluators.Add(q.Key, q.Value);
+                    }
+                }
+                return r;
             }
         }
 
