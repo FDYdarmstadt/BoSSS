@@ -172,6 +172,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
                 LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                //levelSetDG.Clear();
+                //levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                 DGlevelSets[iLevSet] = levelSetDG;
             }
 
@@ -322,9 +324,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             }
 
+            LsUpdater.Tracker.PushStacks();
+
             LsUpdater.Tracker.UpdateTracker(time);
 
-            LsUpdater.Tracker.PushStacks();
+            //LsUpdater.Tracker.PushStacks();
 
         }
 

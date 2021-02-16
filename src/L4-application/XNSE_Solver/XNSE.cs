@@ -68,13 +68,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //DeleteOldPlotFiles();
 
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////Tests.ASUnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye);
-            ////Tests.ASUnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 1.0471975511966d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
-            ////Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Projected(2);
-            //Tests.ASUnitTest.BasicThreePhaseTest(true, false, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 2);
-            ////Tests.ASUnitTest.BasicThreePhaseTest(true, true, true, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, 2);
-            ////Tests.ASUnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
-            ////Tests.ASUnitTest.ASTestRayleighTaylorInstability();
 
             //throw new Exception("Remove me");
 
