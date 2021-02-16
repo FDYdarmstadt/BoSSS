@@ -202,6 +202,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// setup AMR level indicators
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            base.SetUpEnvironment();
+
+            // AMR level indactors
+            //====================
+            m_AMRLevelIndicators.Clear();
+            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
+                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+            }
+
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                lvlInd.Setup(this);
+            }
+        }
+
+
+        /// <summary>
         /// 
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
@@ -213,19 +232,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
-
-
-
-                // AMR level indactors
-                //====================
-                m_AMRLevelIndicators.Clear();
-                if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
-                    m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
-                }
-
-                foreach (var lvlInd in ActiveAMRLevelIndicators) {
-                    lvlInd.Setup(this);
-                }
 
 
             } else {
