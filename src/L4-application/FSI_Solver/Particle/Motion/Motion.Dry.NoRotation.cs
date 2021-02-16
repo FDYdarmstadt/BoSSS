@@ -35,11 +35,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Include rotation?
-        /// </summary>
-        internal override bool IncludeRotation { get; } = false;
-
-        /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>

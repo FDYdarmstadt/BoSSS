@@ -124,7 +124,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
                         //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
@@ -703,7 +704,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 220 * 60;
+                const double TimeOutSec = 24 * 55 * 60;
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {

@@ -1,5 +1,5 @@
 ﻿/* =======================================================================
-Copyright 2019 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace FSI_Solver {
@@ -33,6 +34,7 @@ namespace FSI_Solver {
         private double AccumulatedCollisionTimestep = 0;
         private double[][] AccumulatedLocalSaveTimestep;
         private bool[][] Overlapping;
+        private readonly bool DetermineOnlyOverlap;
         private Vector[][] DistanceVector;
         private Vector[][] ClosestPoints;
         private readonly double[][] WallCoordinates;
@@ -47,7 +49,7 @@ namespace FSI_Solver {
         /// Reduced version of the collision model, used to check for periodic boundaries.
         /// </summary>
         /// <param name="gridLenghtscale">
-        /// Characteristic lenght of the grid.
+        /// Characteristic length of the grid.
         /// </param>
         public ParticleCollision(double gridLenghtscale) {
             CoefficientOfRestitution = 0;
@@ -59,7 +61,7 @@ namespace FSI_Solver {
         /// Constructor for the collision model.
         /// </summary>
         /// <param name="gridLenghtscale">
-        /// Characteristic lenght of the grid.
+        /// Characteristic length of the grid.
         /// </param>
         /// <param name="coefficientOfRestitution">
         /// Static coefficient of restitution
@@ -76,16 +78,17 @@ namespace FSI_Solver {
         /// <param name="minDistance">
         /// Min. distance threshold.
         /// </param>
-        public ParticleCollision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance) {
+        public ParticleCollision(double gridLenghtscale, double coefficientOfRestitution, double dt, double[][] wallCoordinates, bool[] IsPeriodicBoundary, double minDistance, bool DetermineOnlyOverlap) {
             CoefficientOfRestitution = coefficientOfRestitution;
             TimestepSize = dt;
             GridLengthScale = gridLenghtscale;
             WallCoordinates = wallCoordinates;
             MinDistance = minDistance;
             this.IsPeriodicBoundary = IsPeriodicBoundary;
+            this.DetermineOnlyOverlap = DetermineOnlyOverlap;
         }
 
-        private readonly FSI_Auxillary Aux = new FSI_Auxillary();
+        private readonly FSIAuxillary Aux = new FSIAuxillary();
 
         private void CreateCollisionArrarys(int noOfParticles) {
             AccumulatedLocalSaveTimestep = new double[noOfParticles][];
@@ -111,10 +114,10 @@ namespace FSI_Solver {
         /// <param name="particles">
         /// List of all particles
         /// </param>
-        public void CalculateCollision(Particle[] particles) {
+        public void Calculate(Particle[] particles) {
             Particles = particles;
             // Step 1
-            // Some var definintion
+            // Some var definition
             // =======================================================
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
@@ -124,7 +127,7 @@ namespace FSI_Solver {
             // Step 2
             // Loop over time until the particles hit.
             // =======================================================
-            while (AccumulatedCollisionTimestep < TimestepSize)// the collision needs to take place within the current timestep dt.
+            while (AccumulatedCollisionTimestep < TimestepSize)// the collision needs to take place within the current time-step dt.
             {
                 CreateCollisionArrarys(Particles.Length);
                 double globalMinimalDistance = double.MaxValue;
@@ -135,7 +138,7 @@ namespace FSI_Solver {
                 // -------------------------------------------------------
                 while (globalMinimalDistance > distanceThreshold) {
                     // Step 2.1.1
-                    // Move the particle with the current save timestep.
+                    // Move the particle with the current save time-step.
                     // -------------------------------------------------------
                     MoveParticlesWithSaveTimestep(Particles, saveTimestep);
                     saveTimestep = double.MaxValue;
@@ -164,11 +167,12 @@ namespace FSI_Solver {
                                 globalMinimalDistance = DistanceVector[p0][wallID].Abs();
                             }
                             if (temp_Overlapping) {
-                                double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
-                                saveTimestep = 0;
-                                Particle[] overlappingParticles = new Particle[] { Particles[p0] };
+                                if (DetermineOnlyOverlap)
+                                    throw new Exception("Static particles overlap");
                                 Console.WriteLine("Particle " + p0 + " and wall " + w + " overlap");
-                                MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
+                                DistanceVector[p0][w] = new Vector(Particles[p0].Motion.GetPosition(0));
+                                DistanceVector[w][p0] = new Vector(-Particles[p0].Motion.GetPosition(0)[0], -Particles[p0].Motion.GetPosition(0)[1]);
+                                globalMinimalDistance = 0;
                             }
                         }
 
@@ -196,16 +200,14 @@ namespace FSI_Solver {
                                 globalMinimalDistance = DistanceVector[p0][p1].Abs();
                             }
                             if (temp_Overlapping) {
-                                double overlappingTimestep = -TimestepSize * 0.5; // reset time to find a particle state before they overlap.
-                                saveTimestep = 0;
-                                Particle[] overlappingParticles = new Particle[] { Particles[p0], Particles[p1] };
+                                if (DetermineOnlyOverlap)
+                                    throw new Exception("Static particles overlap");
                                 Console.WriteLine("Particle " + p0 + " and particle " + p1 + " overlap");
-                                MoveParticlesWithSaveTimestep(overlappingParticles, overlappingTimestep);
+                                DistanceVector[p0][p1] = new Vector(Particles[p0].Motion.GetPosition(0) - Particles[p1].Motion.GetPosition(0));
+                                DistanceVector[p1][p0] = new Vector(Particles[p1].Motion.GetPosition(0) - Particles[p0].Motion.GetPosition(0));
+                                globalMinimalDistance = 0;
                             }
                         }
-                    }
-                    if (saveTimestep <= double.MaxValue && globalMinimalDistance != double.MaxValue) {
-                        Console.WriteLine("Minimal distance " + globalMinimalDistance + ", threshold " + distanceThreshold + ", current save time+step " + saveTimestep + " accumulated timestep " + AccumulatedCollisionTimestep);
                     }
                     if (saveTimestep >= 0)
                         AccumulatedCollisionTimestep += saveTimestep;
@@ -225,11 +227,9 @@ namespace FSI_Solver {
                             for (int j = 0; j < ParticleCollidedWith[currentParticleID].Count(); j++) {
                                 int secondObjectID = ParticleCollidedWith[currentParticleID][j];
                                 ComputeMomentumBalanceCollision(currentParticleID, secondObjectID, distanceThreshold);
-                                TransferResultsToGhostParticles(currentParticleID);
-                                if(IsParticle(secondObjectID))
-                                    TransferResultsToGhostParticles(secondObjectID);
-                                if (Particles[currentParticleID].IsCollided)
-                                    Console.WriteLine("Particle " + currentParticleID + " and particle / wall " + secondObjectID + " collided");
+                                //TransferResultsToDuplicateParticles(currentParticleID);
+                                //if(IsParticle(secondObjectID))
+                                //    TransferResultsToDuplicateParticles(secondObjectID);
                             }
                         }
                     }
@@ -247,12 +247,14 @@ namespace FSI_Solver {
             }
         }
 
-        private void TransferResultsToGhostParticles(int currentParticleID) {
-            if (Particles[currentParticleID].MasterGhostIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
-                for (int k = 0; k < Particles[currentParticleID].MasterGhostIDs.Length; k++) {
-                    if(Particles[currentParticleID].MasterGhostIDs[k] - 1 != currentParticleID && Particles[currentParticleID].MasterGhostIDs[k] > 0) {
-                        Particles[Particles[currentParticleID].MasterGhostIDs[k] - 1].IsCollided = true;
-                        TemporaryVelocity[Particles[currentParticleID].MasterGhostIDs[k] - 1] = TemporaryVelocity[currentParticleID].CloneAs();
+        private void TransferResultsToDuplicateParticles(int currentParticleID) {
+            if (Particles.Length < currentParticleID)
+                throw new Exception("No particle with ID " + currentParticleID);
+            if (Particles[currentParticleID].MasterDuplicateIDs[0] > 0 && Particles[currentParticleID].IsCollided) {
+                for (int k = 0; k < Particles[currentParticleID].MasterDuplicateIDs.Length; k++) {
+                    if(Particles[currentParticleID].MasterDuplicateIDs[k] - 1 != currentParticleID && Particles[currentParticleID].MasterDuplicateIDs[k] > 0) {
+                        Particles[Particles[currentParticleID].MasterDuplicateIDs[k] - 1].IsCollided = true;
+                        TemporaryVelocity[Particles[currentParticleID].MasterDuplicateIDs[k] - 1] = TemporaryVelocity[currentParticleID].CloneAs();
                     }
 
                 }
@@ -307,7 +309,7 @@ namespace FSI_Solver {
         }
 
         private void FindCollisionPartners(int particle, int potentialCollisionPartner, List<int> currentParticleCollidedWith, double distanceThreshold) {
-            if (DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) {
+            if ((DistanceVector[particle][potentialCollisionPartner].Abs() <= distanceThreshold && AccumulatedCollisionTimestep < TimestepSize && AccumulatedLocalSaveTimestep[particle][potentialCollisionPartner] > 0) || Overlapping[particle][potentialCollisionPartner]) {
                 int insertAtIndex = currentParticleCollidedWith.Count();
                 for (int i = 1; i < currentParticleCollidedWith.Count(); i++) {
                     if (DistanceVector[particle][currentParticleCollidedWith[i]].Abs() > DistanceVector[particle][potentialCollisionPartner].Abs())
@@ -343,8 +345,16 @@ namespace FSI_Solver {
         private void MoveParticlesWithSaveTimestep(Particle[] particles, double dynamicTimestep) {
             for (int p = 0; p < particles.Length; p++) {
                 Particle currentParticle = particles[p];
-                if (dynamicTimestep != 0) {
+                int[] duplicateHierachy = currentParticle.MasterDuplicateIDs;
+                if (dynamicTimestep != 0 && currentParticle.IsMaster) {
                     currentParticle.Motion.CollisionParticlePositionAndAngle(dynamicTimestep);
+                    //for(int p1 = 0; p1 < duplicateHierachy.Length; p1++) {
+                    //    if(duplicateHierachy[p1] > 0 && !particles[duplicateHierachy[p1] - 1].IsMaster) {
+                    //        Particle currentDuplicate = particles[duplicateHierachy[p1] - 1];
+                    //        currentDuplicate.Motion.SetDuplicatePosition(currentParticle.Motion.GetPosition(0));
+                    //        currentDuplicate.Motion.SetDuplicateAngle(currentParticle.Motion.GetAngle(0));
+                    //    }
+                    //}
                 }
             }
         }
@@ -433,126 +443,124 @@ namespace FSI_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         private void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-
-            // Step 1
-            // Initialize the algorithm with the particle position
-            // =======================================================
+            int NoOfPeriodicBdny0 = Particle0.Motion.OriginInVirtualPeriodicDomain.Count();
+            int NoOfPeriodicBdny1 = Particle1 == null ? 0 : Particle1.Motion.OriginInVirtualPeriodicDomain.Count();
             int spatialDim = Particle0.Motion.GetPosition(0).Dim;
-            Vector[] positionVectors = new Vector[2];
-            positionVectors[0] = new Vector(Particle0.Motion.GetPosition(0));
-            positionVectors[1] = new Vector(Particle1 == null ? Particle0.ClosestPointOnOtherObjectToThis : Particle1.Motion.GetPosition(0));
-            Vector supportVector = positionVectors[0] - positionVectors[1];
-            Aux.TestArithmeticException(supportVector, "support vector");
-
-            // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
-            List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
-
-            closestPoints = new Vector[2];
-            closestPoints[0] = new Vector(spatialDim);
-            closestPoints[1] = new Vector(spatialDim);
             Overlapping = false;
-            int maxNoOfIterations = 50;
-
-            // Step 2
-            // Start the iteration
-            // =======================================================
-            for (int i = 0; i <= maxNoOfIterations; i++) {
-                Vector negativeSupportVector = new Vector(spatialDim);
-                negativeSupportVector.Sub(supportVector);
-
-                // Calculate the support point of the two particles, 
-                // which are the closest points if the algorithm is finished.
-                // -------------------------------------------------------
-                CalculateSupportPoint(Particle0, SubParticleID0, negativeSupportVector, out closestPoints[0]);
-                // Particle-Particle collision
-                if (Particle1 != null) {
-                    CalculateSupportPoint(Particle1, SubParticleID1, supportVector, out closestPoints[1]);
-                }
-                // Particle-wall collision
-                else {
-                    closestPoints[1] = new Vector(spatialDim);
-                    if (positionVectors[0][0] == positionVectors[1][0])
-                        closestPoints[1] = new Vector(closestPoints[0][0], positionVectors[1][1]);
-                    else
-                        closestPoints[1] = new Vector(positionVectors[1][0], closestPoints[0][1]);
-                }
-                Aux.TestArithmeticException(closestPoints[0], "closest point on particle 0");
-                Aux.TestArithmeticException(closestPoints[1], "closest point on particle 1");
-
-                // The current support point can be found by forming 
-                // the difference of the support points on the two particles
-                // -------------------------------------------------------
-                Vector supportPoint = closestPoints[0] - closestPoints[1];
-                Aux.TestArithmeticException(supportPoint, "support point");
-
-                // If the condition is true
-                // we have found the closest points!
-                // -------------------------------------------------------
-                if (((supportVector * negativeSupportVector) - (supportPoint * negativeSupportVector)) >= -1e-12 && i > 1)
-                    break;
-
-                // Add new support point to simplex
-                // -------------------------------------------------------
-                Simplex.Insert(0, new Vector(supportPoint));
-
-                // Calculation the new vector v with the distance
-                // algorithm
-                // -------------------------------------------------------
-                supportVector = DistanceAlgorithm(Simplex, out Overlapping);
-
-                // End algorithm if the two objects are overlapping.
-                // -------------------------------------------------------
-                if (Overlapping)
-                    break;
-
-                // Could not find the closest points... crash!
-                // -------------------------------------------------------
-                if (i == maxNoOfIterations)
-                    throw new Exception("No convergence in GJK-algorithm, reached iteration #" + i);
+            DistanceVec = new Vector(spatialDim);
+            closestPoints = new Vector[2];
+            Vector supportVector = new Vector(spatialDim);
+            Vector[] temp_closestPoints = new Vector[2];
+            for (int i = 0; i < DistanceVec.Count(); i++) {
+                DistanceVec[i] = int.MaxValue;
             }
+            Debug.Assert(NoOfPeriodicBdny0 == NoOfPeriodicBdny1);
+            for (int d1 = 0; d1 < NoOfPeriodicBdny0 + 1; d1++) {
+                for (int d2 = 0; d2 < NoOfPeriodicBdny1 + 1; d2++) {
+                    // Step 1
+                    // Initialize the algorithm with the particle position
+                    // =======================================================
+                    Vector[] positionVectors = new Vector[2];
+                    positionVectors[0] = d1 == NoOfPeriodicBdny0
+                        ? new Vector(Particle0.Motion.GetPosition(0))
+                        : new Vector(Particle0.Motion.GetPosition(0) + Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
+                    if (Particle1 == null)
+                        positionVectors[1] = Particle0.ClosestPointOnOtherObjectToThis;
+                    else positionVectors[1] = d2 == NoOfPeriodicBdny0
+                        ? Particle1.Motion.GetPosition(0)
+                        : Particle1.Motion.GetPosition(0) + Particle1.Motion.OriginInVirtualPeriodicDomain[d2];
+                    
+                    supportVector = positionVectors[0] - positionVectors[1];
+                    if (d1 == d2 && d1 != NoOfPeriodicBdny0)
+                        continue;
+                    if (Particle1 == null) {
+                        if (supportVector.Abs() > 1.5 * Particle0.GetLengthScales().Max() && d1 != NoOfPeriodicBdny0)
+                            continue;
+                    } else if (supportVector.Abs() > 1.5 * (Particle0.GetLengthScales().Max() + Particle1.GetLengthScales().Max()) && (d1 != NoOfPeriodicBdny0 || d2 != NoOfPeriodicBdny1))
+                        continue;
 
+                    if (supportVector.Abs() == 0)
+                        supportVector = new Vector(1, 0);
+                    Aux.TestArithmeticException(supportVector, "support vector");
+
+                    // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
+                    List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
+
+                    temp_closestPoints[0] = new Vector(spatialDim);
+                    temp_closestPoints[1] = new Vector(spatialDim);
+                    int maxNoOfIterations = 1000;
+
+                    // Step 2
+                    // Start the iteration
+                    // =======================================================
+                    for (int i = 0; i <= maxNoOfIterations; i++) {
+                        Vector negativeSupportVector = new Vector(-supportVector[0], -supportVector[1]);
+                        negativeSupportVector -= supportVector;
+
+                        // Calculate the support point of the two particles, 
+                        // which are the closest points if the algorithm is finished.
+                        // -------------------------------------------------------
+                        temp_closestPoints[0] = Particle0.GetSupportPoint(negativeSupportVector, positionVectors[0], SubParticleID0);
+                        // Particle-Particle collision
+                        if (Particle1 != null) {
+                            temp_closestPoints[1] = Particle1.GetSupportPoint(supportVector, positionVectors[1], SubParticleID1);
+                        }
+                        // Particle-wall collision
+                        else {
+                            if (positionVectors[0][0] == positionVectors[1][0])
+                                temp_closestPoints[1] = new Vector(temp_closestPoints[0][0], positionVectors[1][1]);
+                            else
+                                temp_closestPoints[1] = new Vector(positionVectors[1][0], temp_closestPoints[0][1]);
+                        }
+
+                        // The current support point can be found by forming 
+                        // the difference of the support points on the two particles
+                        // -------------------------------------------------------
+                        Vector supportPoint = temp_closestPoints[0] - temp_closestPoints[1];
+                        Aux.TestArithmeticException(supportPoint, "support point");
+                        if (d1 < NoOfPeriodicBdny0)
+                            temp_closestPoints[0] = new Vector(temp_closestPoints[0] - Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
+                        if (d2 < NoOfPeriodicBdny1)
+                            temp_closestPoints[1] = new Vector(temp_closestPoints[1] - Particle1.Motion.OriginInVirtualPeriodicDomain[d2]);
+
+                        // If the condition is true
+                        // we have found the closest points!
+                        // -------------------------------------------------------
+                        if (((supportVector * negativeSupportVector) - (supportPoint * negativeSupportVector)) >= -1e-12 && i > 1)
+                            break;
+
+                        // Add new support point to simplex
+                        // -------------------------------------------------------
+                        Simplex.Insert(0, new Vector(supportPoint));
+
+                        // Calculation the new vector v with the distance
+                        // algorithm
+                        // -------------------------------------------------------
+                        supportVector = DistanceAlgorithm(Simplex, out Overlapping);
+
+                        
+
+                        // End algorithm if the two objects are overlapping.
+                        // -------------------------------------------------------
+                        if (Overlapping)
+                            break;
+
+                        // Could not find the closest points... crash!
+                        // -------------------------------------------------------
+                        if (i > maxNoOfIterations)
+                            throw new Exception("No convergence in GJK-algorithm, reached iteration #" + i);
+                    }
+                    if (supportVector.Abs() < DistanceVec.Abs()) {
+                        DistanceVec = new Vector(supportVector);
+                        closestPoints[0] = new Vector(temp_closestPoints[0]);
+                        closestPoints[1] = new Vector(temp_closestPoints[1]);
+                    }
+                }
+            }
             // Step 3
             // Return min distance and distance vector.
             // =======================================================
-            DistanceVec = new Vector(supportVector);
-        }
-
-        private void CalculateSupportPoint(Particle particle, int SubParticleID, Vector supportVector, out Vector supportPoint) {
-            int spatialDim = particle.Motion.GetPosition(0).Dim;
-            supportPoint = new Vector(spatialDim);
-            // A direct formulation of the support function for a sphere exists, thus it is also possible to map it to an ellipsoid.
-            if (particle is Particle_Ellipsoid || particle is Particle_Sphere || particle is Particle_Rectangle || particle is Particle_Shell) {
-                supportPoint = particle.GetSupportPoint(supportVector, SubParticleID);
-            }
-            // Interpolated binary search in all other cases.
-            else {
-                double angle = particle.Motion.GetAngle(0);
-                Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
-                double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
-                double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
-                double L = searchStartAngle - Math.PI;
-                double R = searchStartAngle + Math.PI;
-                while (L < R && Math.Abs(L-R) > 1e-15) {
-                    searchStartAngle = (L + R) / 2;
-                    double dAngle = 1e-8;
-                    MultidimensionalArray SurfacePoints = particle.GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
-                    Vector RightNeighbour = new Vector(spatialDim);
-                    Vector LeftNeighbour = new Vector(spatialDim);
-                    for (int d = 0; d < spatialDim; d++) {
-                        supportPoint[d] = SurfacePoints[1, d];
-                        LeftNeighbour[d] = SurfacePoints[0, d];
-                        RightNeighbour[d] = SurfacePoints[2, d];
-                    }
-                    if ((supportPoint * supportVector) > (RightNeighbour * supportVector) && (supportPoint * supportVector) > (LeftNeighbour * supportVector))
-                        break; // The current temp_supportPoint is the actual support point.
-                    else if ((RightNeighbour * supportVector) > (LeftNeighbour * supportVector))
-                        L = searchStartAngle; // Search on the right side of the current point.
-                    else
-                        R = searchStartAngle; // Search on the left side.
-                }
-                Vector position = new Vector(particle.Motion.GetPosition(0));
-                supportPoint.Acc(position);
-            }
+            
         }
 
         private Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {
@@ -729,30 +737,31 @@ namespace FSI_Solver {
             Particles[particleID].CalculateEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]);
             if (IsParticle(secondObjectID))
                 Particles[secondObjectID].CalculateEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]);
-            double collisionCoefficient = CalculateCollisionCoefficient(particleID, secondObjectID, normalVector);
+            double[] collisionCoefficient = CalculateCollisionCoefficient(particleID, secondObjectID, normalVector);
             Vector velocityP0 = CalculateNormalAndTangentialVelocity(particleID, normalVector);
             Vector radialVectorP0 = Particles[particleID].CalculateRadialVector(ClosestPoints[particleID][secondObjectID]);
             Vector tempVel0 = Particles[particleID].Motion.IncludeTranslation 
-                ? (velocityP0[0] + collisionCoefficient / Particles[particleID].Motion.ParticleMass) * normalVector + velocityP0[1] * tangentialVector 
+                ? (velocityP0[0] + collisionCoefficient[0] / Particles[particleID].Motion.ParticleMass) * normalVector + (velocityP0[1] + collisionCoefficient[1] / Particles[particleID].Motion.ParticleMass) * tangentialVector 
                 : new Vector(0, 0);
             TemporaryVelocity[particleID][0] = tempVel0[0];
             TemporaryVelocity[particleID][1] = tempVel0[1];
-            TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient / Particles[particleID].MomentOfInertia : 0;
+            TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient[0] / Particles[particleID].MomentOfInertia + (radialVectorP0[0] * tangentialVector[1] - radialVectorP0[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[particleID].MomentOfInertia : 0;
             Particles[particleID].IsCollided = true;
             Overlapping[particleID][secondObjectID] = false;
 
             if (IsParticle(secondObjectID)) {
                 Vector velocityP1 = CalculateNormalAndTangentialVelocity(secondObjectID, normalVector);
                 Vector tempVel1 = Particles[secondObjectID].Motion.IncludeTranslation
-                    ? (velocityP1[0] - collisionCoefficient / Particles[secondObjectID].Motion.ParticleMass) * normalVector + velocityP1[1] * tangentialVector
+                    ? (velocityP1[0] - collisionCoefficient[0] / Particles[secondObjectID].Motion.ParticleMass) * normalVector + (velocityP1[1] - collisionCoefficient[1] / Particles[secondObjectID].Motion.ParticleMass) * tangentialVector
                     : new Vector(0, 0);
                 Vector radialVectorP1 = Particles[secondObjectID].CalculateRadialVector(ClosestPoints[secondObjectID][particleID]);
                 TemporaryVelocity[secondObjectID][0] = tempVel1[0];
                 TemporaryVelocity[secondObjectID][1] = tempVel1[1];
-                TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient / Particles[secondObjectID].MomentOfInertia : 0;
+                TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient[0] / Particles[secondObjectID].MomentOfInertia - (radialVectorP1[0] * tangentialVector[1] - radialVectorP1[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[secondObjectID].MomentOfInertia : 0;
                 Overlapping[secondObjectID][particleID] = false;
                 Particles[secondObjectID].IsCollided = true;
             }
+            Console.WriteLine("Particle " + particleID + " and particle " + secondObjectID + " collided");
         }
 
         private Vector CalculateNormalAndTangentialVelocity(int particleID, Vector normalVector) {
@@ -761,30 +770,39 @@ namespace FSI_Solver {
             return new Vector(velocity * normalVector, velocity * tangentialVector);
         }
 
-        private double CalculateCollisionCoefficient(int p0, int p1, Vector normalVector) {
+        private double[] CalculateCollisionCoefficient(int p0, int p1, Vector normalVector) {
+            Vector tangentialVector = new Vector(-normalVector[1], normalVector[0]);
             Vector[] translationalVelocity = new Vector[2];
             translationalVelocity[0] = CalculateNormalAndTangentialVelocity(p0, normalVector);
             translationalVelocity[1] = new Vector(0, 0);
             double[] massReciprocal = new double[] { 0, 0 };
-            double[] momentOfInertiaReciprocal = new double[] { 0, 0 };
-            double[] eccentricity = new double[] { 0, 0 };
+            double[] normalMomentOfInertiaReciprocal = new double[] { 0, 0 };
+            double[] tangentialMomentOfInertiaReciprocal = new double[] { 0, 0 };
+            double[] normalEccentricity = new double[] { 0, 0 };
+            double[] tangentialEccentricity = new double[] { 0, 0 };
 
             massReciprocal[0] = Particles[p0].Motion.IncludeTranslation ? 1 / Particles[p0].Motion.ParticleMass : 0;
-            momentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
-            eccentricity[0] = Particles[p0].CalculateEccentricity(normalVector, ClosestPoints[p0][p1]);
+            normalMomentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
+            tangentialMomentOfInertiaReciprocal[0] = Particles[p0].Motion.IncludeRotation ? Particles[p0].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[p0][p1]) / Particles[p0].MomentOfInertia : 0;
+            normalEccentricity[0] = Particles[p0].CalculateEccentricity(normalVector, ClosestPoints[p0][p1]);
+            tangentialEccentricity[0] = Particles[p0].CalculateEccentricity(tangentialVector, ClosestPoints[p0][p1]);
 
             if (IsParticle(p1)) {
                 translationalVelocity[1] = CalculateNormalAndTangentialVelocity(p1, normalVector);
                 massReciprocal[1] = Particles[p1].Motion.IncludeTranslation ? 1 / Particles[p1].Motion.ParticleMass : 0;
-                momentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
-                eccentricity[1] = Particles[p1].CalculateEccentricity(normalVector, ClosestPoints[p1][p0]);
+                normalMomentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
+                tangentialMomentOfInertiaReciprocal[1] = Particles[p1].Motion.IncludeRotation ? Particles[p1].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[p1][p0]) / Particles[p1].MomentOfInertia : 0;
+                normalEccentricity[1] = Particles[p1].CalculateEccentricity(normalVector, ClosestPoints[p1][p0]);
+                tangentialEccentricity[1] = Particles[p1].CalculateEccentricity(tangentialVector, ClosestPoints[p1][p0]);
             }
-
-            double collisionCoefficient = -(1 + CoefficientOfRestitution) * ((translationalVelocity[0][0] - translationalVelocity[1][0]) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            double[] collisionCoefficient = new double[2];
+            collisionCoefficient[0] = -(1 + CoefficientOfRestitution) * ((translationalVelocity[0][0] - translationalVelocity[1][0]) / (massReciprocal[0] + massReciprocal[1] + normalMomentOfInertiaReciprocal[0] + normalMomentOfInertiaReciprocal[1]));
+            collisionCoefficient[1] = 0;// -(translationalVelocity[0][1] - translationalVelocity[1][1]) / (massReciprocal[0] + massReciprocal[1] + tangentialMomentOfInertiaReciprocal[0] + tangentialMomentOfInertiaReciprocal[1]);
             double tempRotVelocity2 = 0;
             if (IsParticle(p1))
                 tempRotVelocity2 = TemporaryVelocity[p1][2];
-            collisionCoefficient -= (1 + CoefficientOfRestitution) * ((eccentricity[0] * TemporaryVelocity[p0][2] - eccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + momentOfInertiaReciprocal[0] + momentOfInertiaReciprocal[1]));
+            collisionCoefficient[0] -= (1 + CoefficientOfRestitution) * ((normalEccentricity[0] * TemporaryVelocity[p0][2] - normalEccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + normalMomentOfInertiaReciprocal[0] + normalMomentOfInertiaReciprocal[1]));
+            collisionCoefficient[1] -= 0;// (tangentialEccentricity[0] * TemporaryVelocity[p0][2] - tangentialEccentricity[1] * tempRotVelocity2) / (massReciprocal[0] + massReciprocal[1] + tangentialMomentOfInertiaReciprocal[0] + tangentialMomentOfInertiaReciprocal[1]);
             return collisionCoefficient;
         }
 

@@ -143,6 +143,7 @@
     <Compile Include="XNSFE.cs" />
     <Compile Include="Legacy\XNSFE_OperatorComponents.cs" />
     <Compile Include="Legacy\XNSFE_OperatorFactory.cs" />
+    <Compile Include="XNSFE_Control.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

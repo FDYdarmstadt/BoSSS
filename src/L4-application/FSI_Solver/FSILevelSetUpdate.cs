@@ -24,12 +24,13 @@ using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace FSI_Solver {
-    internal class FSI_LevelSetUpdate {
+    internal class FSILevelSetUpdate {
 
-        internal FSI_LevelSetUpdate(IGridData GridData, double MinGridLength) {
+        internal FSILevelSetUpdate(IGridData GridData, double MinGridLength) {
             this.GridData = GridData;
             this.MinGridLength = MinGridLength;
         }
@@ -38,50 +39,37 @@ namespace FSI_Solver {
         private readonly double MinGridLength;
 
         /// <summary>
-        /// Initialization of coloured cells based on particle geometry.
+        /// Initialization of colored cells based on particle geometry.
         /// </summary>
         internal int[] InitializeColoring(LevelSetTracker LsTrk, Particle[] Particles, double MaxGridLength) {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int JE = GridData.iLogicalCells.NoOfExternalCells + GridData.iLogicalCells.NoOfLocalUpdatedCells;
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            int[] coloredCells = new int[J];
+            int[] coloredCells = new int[JE];
             for (int p = 0; p < Particles.Length; p++) {
-                for (int j = 0; j < J; j++) {
-                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength / 2))
+                for (int j = 0; j < GridData.iLogicalCells.NoOfLocalUpdatedCells; j++) {
+                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength))
                         coloredCells[j] = p + 1;
                 }
             }
-            //RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
-            return coloredCells;
-        }
-
-        internal int[] UpdateColoring(LevelSetTracker LsTrk, Particle[] Particles, double MaxGridLength) {
-            int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            int[] coloredCells = new int[J];
-            for (int p = 0; p < Particles.Length; p++) {
-                for (int j = 0; j < J; j++) {
-                    if (Particles[p].Contains(new Vector(CellCenters[j, 0], CellCenters[j, 1]), MaxGridLength / 2))
-                        coloredCells[j] = p + 1;
-                }
-            }
-            RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
+            coloredCells.MPIExchange(GridData);
+            RecolorNeighbouringCells(coloredCells);
             return coloredCells;
         }
 
         /// <summary>
-        /// Update of all coloured cells.
+        /// Update of all colored cells.
         /// </summary>
         internal int[] UpdateColoring(LevelSetTracker LsTrk) {
             int[] coloredCells = LsTrk.Regions.ColorMap4Spc[LsTrk.GetSpeciesId("B")];
             int[] coloredCellsExchange = coloredCells.CloneAs();
             coloredCellsExchange.MPIExchange(GridData);
             ColorNeighborCells(coloredCells, coloredCellsExchange);
-            //RecolorCellsOfNeighborParticles(coloredCells, (GridData)GridData);
+            RecolorNeighbouringCells(coloredCells);
             return coloredCells;
         }
 
         /// <summary>
-        /// searchs for all particles with the same color
+        /// Searches for all particles with the same color
         /// </summary>
         /// <param name="ParticleColor">
         /// a list of all particles with their specific color
@@ -97,7 +85,7 @@ namespace FSI_Solver {
             }
             return particleIDsWithSameColor.ToArray();
         }
-    
+
         /// <summary>
         /// Method find the color of all particles combined with MPI communication.
         /// </summary>
@@ -129,7 +117,7 @@ namespace FSI_Solver {
         internal void DetermineParticleColorOfGhostParticles(int[] globalParticleColor, List<Particle> ParticleList) {
             for (int i = 0; i < globalParticleColor.Length; i++) {
                 if (globalParticleColor[i] == 0) {
-                    int masterID = ParticleList[i].MasterGhostIDs[0] - 1;
+                    int masterID = ParticleList[i].MasterDuplicateIDs[0] - 1;
                     globalParticleColor[i] = globalParticleColor[masterID];
                 }
             }
@@ -232,132 +220,93 @@ namespace FSI_Solver {
         }
 
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
-            int neighbourSearchDepth = 1;
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int k = 0; k < neighbourSearchDepth; k++) {
-                for (int j = 0; j < noOfLocalCells; j++) {
-                    GridData.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighbors, out _);
-                    for (int i = 0; i < CellNeighbors.Length; i++) {
-                        if (coloredCellsExchange[CellNeighbors[i]] != 0 && coloredCellsExchange[j] == 0) {
-                            coloredCells[j] = coloredCellsExchange[CellNeighbors[i]];
-                        }
-                    }
-                }
-                coloredCellsExchange = coloredCells.CloneAs();
-                coloredCellsExchange.MPIExchange(GridData);
-            }
-        }
-
-        private int[] FindCellsToRecolor(int[] coloredCells, GridData currentGrid) {
-            int[] globalCellColor = GetGlobalCellColor(coloredCells, currentGrid);
-            long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(currentGrid);
-            int maxColor = globalCellColor.Max().MPIMax();
-            int[] newColor = new int[maxColor + 1];
-            for (int i = 0; i < globalCellColor.Length; i++) {
-                for (int j = 0; j < globalCellNeighbourship[i].Length; j++) {
-                    if (globalCellColor[i] != globalCellColor[globalCellNeighbourship[i][j]] && globalCellColor[globalCellNeighbourship[i][j]] != 0 && globalCellColor[i] != 0) {
-                        if(newColor[globalCellColor[i]] != 0) {
-                            for(int k = 1; k < newColor.Length; k++) {
-                                if(newColor[k] == newColor[globalCellColor[i]]) {
-                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
-                                }
-                                if(k == newColor[globalCellColor[i]]) {
-                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
-                                }
-                            }
-                        }
-                        newColor[globalCellColor[i]] = globalCellColor[globalCellNeighbourship[i][j]];
-                        if(newColor[globalCellColor[globalCellNeighbourship[i][j]]] != 0) {
-                            for (int k = 1; k < newColor.Length; k++) {
-                                if (newColor[k] == newColor[globalCellColor[globalCellNeighbourship[i][j]]]) {
-                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
-                                }
-                                if (k == newColor[globalCellColor[globalCellNeighbourship[i][j]]]) {
-                                    newColor[k] = globalCellColor[globalCellNeighbourship[i][j]];
-                                }
-                            }
-                        }
-                        newColor[globalCellColor[globalCellNeighbourship[i][j]]] = globalCellColor[globalCellNeighbourship[i][j]];
+            for (int j = 0; j < noOfLocalCells; j++) {
+                Tuple<int, int, int>[] cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
+                for (int i = 0; i < cellNeigbours.Length; i++) {
+                    if (coloredCellsExchange[cellNeigbours[i].Item1] != 0 && coloredCellsExchange[j] == 0) {
+                        coloredCells[j] = coloredCellsExchange[cellNeigbours[i].Item1];
                     }
                 }
             }
-            return newColor;
+            coloredCellsExchange = coloredCells.CloneAs();
+            coloredCellsExchange.MPIExchange(GridData);
         }
 
-        private void RecolorAlreadyRecoloredCellsRecursive(int[] newColorArray, int currentColor, int newColor) {
-            if (newColor == newColorArray[currentColor])
+        private void RecolorNeighbouringCells(int[] ColoredCells) {
+            int[][] globalColorNeighbours = GlobalColorNeighbours(ColoredCells);
+            int[] recolorWith = new int[globalColorNeighbours.Length];
+            for (int i = globalColorNeighbours.Length - 1; i > 0; i--) {
+                if (globalColorNeighbours[i].Length > 0) {
+                    if (globalColorNeighbours[i].Min() < i) {
+                        recolorWith[i] = globalColorNeighbours[i].Min();
+                        for (int j = 0; j < globalColorNeighbours[i].Length; j++) {
+                            recolorWith[globalColorNeighbours[i][j]] = globalColorNeighbours[i].Min();
+                            RecolorRecursive(globalColorNeighbours[i][0], globalColorNeighbours[i][j], recolorWith, globalColorNeighbours);
+                        }
+                    } else {
+                        recolorWith[i] = i;
+                        for (int j = 0; j < globalColorNeighbours[i].Length; j++) {
+                            recolorWith[globalColorNeighbours[i][j]] = i;
+                            RecolorRecursive(i, globalColorNeighbours[i][j], recolorWith, globalColorNeighbours);
+                        }
+                    }
+                } else {
+                    recolorWith[i] = i;
+                }
+            }
+
+            for (int i = 0; i < ColoredCells.Length; i++) {
+                if (ColoredCells[i] != 0) {
+                    ColoredCells[i] = recolorWith[ColoredCells[i]];
+                }
+            }
+        }
+
+        private void RecolorRecursive(int currentColor, int neighbourColor, int[] recolorWith, int[][] GlobalColorNeighbours) {
+            if (currentColor == 0)
                 return;
-            if (newColorArray[currentColor] != 0){// && currentColor > newColor) {
-                for (int k = newColorArray.Length - 1; k > 0; k--) {
-                    if (k == newColorArray[currentColor]) {
-                        newColorArray[k] = newColor;
-                        RecolorAlreadyRecoloredCellsRecursive(newColorArray, k, newColor);
-                    }
+            for (int j = 0; j < GlobalColorNeighbours[neighbourColor].Length; j++) {
+                if (recolorWith[GlobalColorNeighbours[neighbourColor][j]] != currentColor) {
+                    recolorWith[GlobalColorNeighbours[neighbourColor][j]] = currentColor;
+                    RecolorRecursive(currentColor, GlobalColorNeighbours[neighbourColor][j], recolorWith, GlobalColorNeighbours);
                 }
             }
         }
 
-        private int[] GetGlobalCellColor(int[] localCellColor, GridData currentGrid) {
-            Partitioning cellPartitioning = currentGrid.CellPartitioning;
-            long globalJ = cellPartitioning.TotalLength;
-            long[] i0 = cellPartitioning.GetI0s();
-            int[] globalCellColor = new int[globalJ];
-
-            int[][] exchangeCellColor = localCellColor.MPIGatherO(0);
-            exchangeCellColor = exchangeCellColor.MPIBroadcast(0);
-
-            for (int m = 0; m < currentGrid.MpiSize; m++) {
-                for (long j = i0[m]; j < i0[m+1]; j++) {
-                    globalCellColor[j] = exchangeCellColor[m][j - i0[m]];
-                }
+        private int[][] GlobalColorNeighbours(int[] coloredCells) {
+            List<int>[] localColorNeighbours = LocalColorNeighbours(coloredCells, coloredCells.Max().MPIMax());
+            int[][] globalColorNeighbours = new int[localColorNeighbours.Length][];
+            for (int i = 1; i < localColorNeighbours.Length; i++) {
+                List<int>[] exchangeVariable = localColorNeighbours[i].MPIAllGatherO();
+                for (int j = 0; j < exchangeVariable.Length; j++)
+                    localColorNeighbours[i].AddRange(exchangeVariable[j]);
+                globalColorNeighbours[i] = localColorNeighbours[i].ToArray();
             }
-            return globalCellColor;
+            return globalColorNeighbours;
         }
 
-        private long[][] GetGlobalCellNeigbourship(GridData currentGrid) {
-            Partitioning cellPartitioning = currentGrid.CellPartitioning;
-            long globalJ = cellPartitioning.TotalLength;
-            int localJ = currentGrid.Cells.NoOfLocalUpdatedCells;
-            long[] i0 = cellPartitioning.GetI0s();
-            long local_i0 = cellPartitioning.i0;
-
-            long[] externalCellsGlobalIndices = currentGrid.iParallel.GlobalIndicesExternalCells;
-            long[][] localCellNeighbourship = new long[localJ][];
-            for (int j = 0; j < localCellNeighbourship.Length; j++) {
-                currentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighbours, out _);
-                localCellNeighbourship[j] = new long[CellNeighbours.Length];
-                for (int i = 0; i < localCellNeighbourship[j].Length; i++) {
-                    if (localCellNeighbourship[j][i] < localJ)
-                        localCellNeighbourship[j][i] = CellNeighbours[i] + local_i0;
-                    else
-                        localCellNeighbourship[j][i] = (int)externalCellsGlobalIndices[localCellNeighbourship[j][i] - localJ];
-                }
-            }
-
-            long[][][] exchangeCellNeighbourship = localCellNeighbourship.MPIGatherO(0);
-            exchangeCellNeighbourship = exchangeCellNeighbourship.MPIBroadcast(0);
-
-            long[][] globalCellNeigbourship = new long[globalJ][];
-            for (int m = 0; m < currentGrid.MpiSize; m++) {
-                for (int j = 0; j < exchangeCellNeighbourship[m].Length; j++) {
-                    globalCellNeigbourship[j + i0[m]] = exchangeCellNeighbourship[m][j];
-                }
-            }
-            return globalCellNeigbourship;
-        }
-
-        private void RecolorCellsOfNeighborParticles(int[] coloredCells, GridData currentGrid) {
-            int[] newColor = FindCellsToRecolor(coloredCells, currentGrid);
+        private List<int>[] LocalColorNeighbours(int[] coloredCells, int GlobalMaxColor) {
             int J = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int i = 1; i < newColor.Length; i++) {
-                if (newColor[i] != 0) {
-                    for (int j = 0; j < J; j++) {
-                        if (coloredCells[j] == i) {
-                            coloredCells[j] = newColor[i];
+            List<int>[] colorNeighbours = new List<int>[GlobalMaxColor + 1];
+            for (int i = 0; i < colorNeighbours.Length; i++)
+                colorNeighbours[i] = new List<int>();
+            for (int j = 0; j < J; j++) {
+                int currentColor = coloredCells[j];
+                if (currentColor != 0) {
+                    Tuple<int, int, int>[] cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
+                    for (int i = 0; i < cellNeigbours.Length; i++) {
+                        int neighbourColor = coloredCells[cellNeigbours[i].Item1];
+                        if (neighbourColor != 0 && neighbourColor != currentColor) {
+                            if (!colorNeighbours[currentColor].Contains(neighbourColor))
+                                colorNeighbours[currentColor].Add(neighbourColor);
+                            if (!colorNeighbours[neighbourColor].Contains(currentColor))
+                                colorNeighbours[neighbourColor].Add(currentColor);
                         }
                     }
                 }
             }
+            return colorNeighbours;
         }
     }
 }

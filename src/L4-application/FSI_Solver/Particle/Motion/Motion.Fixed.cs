@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using System;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Application.FSI_Solver {
     [Serializable]
@@ -35,17 +36,7 @@ namespace BoSSS.Application.FSI_Solver {
             IncludeRotation = false;
             IncludeTranslation = false;
         }
-
-        /// <summary>
-        /// Include rotation?
-        /// </summary>
-        internal override bool IncludeRotation { get; } = false;
-
-        /// <summary>
-        /// Include translation?
-        /// </summary>
-        internal override bool IncludeTranslation { get; } = false;
-        
+                
         /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
@@ -88,7 +79,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
             return new Vector(SpatialDim);
         }
 

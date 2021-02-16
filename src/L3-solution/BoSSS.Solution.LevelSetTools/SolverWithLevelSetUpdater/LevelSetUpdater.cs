@@ -345,7 +345,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
-
             Tracker.UpdateTracker(0.0);
         }
 
@@ -514,7 +513,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             
             if(lsParameterFields == null)
                 lsParameterFields = new Dictionary<string, DGField>();
-            
             foreach(ILevelSetParameter parameter in parameters) {
                 LinkedList<string> notFound = new LinkedList<string>();
                 foreach(string pName in parameter.ParameterNames) {
