@@ -2017,19 +2017,33 @@ namespace BoSSS.Solution {
                 //// Adaptive-Mesh-Refinement on startup
                 //// =========================================
 
-                //bool initialRedist = false;
-                //for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                //    initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                if (this.Control.AdaptiveMeshRefinement) {
 
-                //    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                //        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+                    // unprocessed initial value IO
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
 
-                //    //if (initialRedist == true) {
-                //    //    ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
-                //    //    if (this.RollingSave)
-                //    //        rollingSavesTsi[0] = Tuple.Create(0, ts0);
-                //    //}
-                //}
+                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                    if (this.RollingSave)
+                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+
+
+                    bool initialRedist = false;
+                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+
+                        if (initialRedist == true) {
+
+                            if (this.Control.ImmediatePlotPeriod > 0)
+                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                            if (this.RollingSave)
+                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
+
+                        }
+                    }
+                }
 
                 // ================================================================================
                 // sometimes, the operators depend on parameters,
@@ -2064,19 +2078,19 @@ namespace BoSSS.Solution {
                 // Adaptive-Mesh-Refinement on startup
                 // =========================================
 
-                bool initialRedist = false;
-                for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
+                //bool initialRedist = false;
+                //for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
+                //    initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
 
-                    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+                //    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
+                //        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
 
-                    if (initialRedist == true) {
-                        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
-                        if (this.RollingSave)
-                            rollingSavesTsi[0] = Tuple.Create(0, ts0);
-                    }
-                }
+                //    if (initialRedist == true) {
+                //        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                //        if (this.RollingSave)
+                //            rollingSavesTsi[0] = Tuple.Create(0, ts0);
+                //    }
+                //}
 
                 // =================================================================================
                 // Main/outmost time-stepping loop
@@ -2671,9 +2685,9 @@ namespace BoSSS.Solution {
                         GridData oldGridData = (GridData)this.GridData;
                         GridCommons oldGrid = oldGridData.Grid;
                         Guid oldGridId = oldGrid.ID;
-                        Permutation tau;
+                        //Permutation tau;
                         GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
-                        BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                        BackupDataOnInit(oldGridData, this.LsTrk, remshDat);
 
                         // save new grid to database
                         // ==========================
@@ -2847,6 +2861,17 @@ namespace BoSSS.Solution {
             // backup user data
             this.DataBackupBeforeBalancing(loadbal);
         }
+
+
+        private void BackupDataOnInit(GridData oldGridData, LevelSetTracker oldLsTrk, GridUpdateDataVaultBase loadbal) {
+
+            // backup level-set tracker 
+            if (this.LsTrk != null) {
+                loadbal.BackupTracker();
+            }
+
+        }
+
 
         private static int CheckPartition(int[] NewPartition, int JupOld) {
             int mpiRank;// = oldGridData.CellPartitioning.MpiRank;
