@@ -496,11 +496,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
-            foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
-                if(ls is DGField f) {
-                    base.RegisterField(f);
-                }
-            }
+            //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
+            //    if(ls is DGField f) {
+            //        base.RegisterField(f);
+            //    }
+            //}
 
         }
 

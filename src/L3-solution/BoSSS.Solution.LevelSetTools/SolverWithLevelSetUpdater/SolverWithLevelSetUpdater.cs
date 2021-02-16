@@ -92,16 +92,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateTrackerHack() {
-            base.CreateTrackerHack();
+        //protected override void CreateTrackerHack() {
+        //    base.CreateTrackerHack();
 
-            foreach (DualLevelSet ls in LsUpdater.LevelSets.Values) {
-                if (ls.DGLevelSet is DGField f) {
-                    base.RegisterField(ls.DGLevelSet);
-                }
-            }
+        //    foreach (DualLevelSet ls in LsUpdater.LevelSets.Values) {
+        //        if (ls.DGLevelSet is DGField f) {
+        //            base.RegisterField(ls.DGLevelSet);
+        //        }
+        //    }
 
-        }
+        //}
 
 
         /// <summary>
@@ -162,10 +162,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 throw new ApplicationException();
 
 
-            // phase 1: create level-sets
+            // phase 1: create DG level-sets
             // ======================================
             LevelSet[] DGlevelSets = new LevelSet[NoOfLevelSets];
-            for(int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
+            for (int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
@@ -173,7 +173,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                 DGlevelSets[iLevSet] = levelSetDG;
-
             }
 
 
@@ -316,17 +315,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (pair.DGLevelSet.L2Norm() == 0.0) {
                     Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
                     pair.DGLevelSet.AccConstant(-1.0);
-                } 
+                }
+
+                pair.CGLevelSet.Clear();
+                pair.CGLevelSet.AccLaidBack(1.0, pair.DGLevelSet);
 
             }
 
-            // tracker needs to be updated to get access to the cut-cell mask
             LsUpdater.Tracker.UpdateTracker(time);
 
-            //Make Continuous
-            LsUpdater.EnforceContinuity();
-
-            LsUpdater.Tracker.UpdateTracker(time);
+            LsUpdater.Tracker.PushStacks();
 
         }
 
@@ -351,7 +349,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
 
-            //foreach(var NamePair in this.LevelSetNames) {
+            //foreach (var NamePair in this.LevelSetNames) {
             //    string LevelSetCG = NamePair.ContLs;
 
             //    // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
@@ -404,7 +402,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         //        ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
         //    }
         //    LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-            
+
         //    foreach (var f in LsUpdater.Parameters.Values) {
         //        base.RegisterField(f);
         //    }
@@ -455,18 +453,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         double restartTime = 0.0;
 
 
-        //public override void PostRestart(double time, TimestepNumber timestep) {
-        //    base.PostRestart(time, timestep);
-        //    // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
-        //    if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
-        //        this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+        public override void PostRestart(double time, TimestepNumber timestep) {
+            base.PostRestart(time, timestep);
 
-        //    // set restart time, used later in the intial tracker updates
-        //    restartTime = time;
+            if (!this.Control.AdaptiveMeshRefinement) {
 
-        //    // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
-        //    this.LsUpdater.Tracker.PushStacks();
-        //}
+                Console.WriteLine("PostRestart temporarily switched off for AMR");
+
+                // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+                if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+                    this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+
+                // set restart time, used later in the intial tracker updates
+                restartTime = time;
+
+                // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+                this.LsUpdater.Tracker.PushStacks();
+            }
+        }
 
     }
 }
