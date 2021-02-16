@@ -93,12 +93,12 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
             double r;
             // Falle_Links:
-            r = Math.Abs(Motion.GetPosition(0)[1] - X[1]);
-            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Motion.GetPosition(0)[1] - Motion.GetPosition(0)[0] - m_Length) - Math.Abs(X[1] - Motion.GetPosition(0)[1]));
-            r = Math.Max(r, Math.Abs(Motion.GetPosition(0)[0] - X[0] - 0.5 * m_Length));
+            r = Math.Abs(Postion[1] - X[1]);
+            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Postion[1] - Postion[0] - m_Length) - Math.Abs(X[1] - Postion[1]));
+            r = Math.Max(r, Math.Abs(Postion[0] - X[0] - 0.5 * m_Length));
             r -= 4.5 * m_Length;
             r = -r;
             return r;
@@ -113,10 +113,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             // only for rectangular cells
             double radiusTolerance = 5 * m_Length + tolerance;
-            var distance = point.L2Distance(Motion.GetPosition(0));
+            var distance = point.L2Distance(Position);
             return distance < radiusTolerance;
         }
 

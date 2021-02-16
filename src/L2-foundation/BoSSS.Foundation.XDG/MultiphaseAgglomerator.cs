@@ -1109,7 +1109,6 @@ namespace BoSSS.Foundation.XDG {
                             //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
                             double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                             double frac_neigh = spcVol_neigh / totVol_neigh;
-
                             // max?
                             if (frac_neigh > frac_neigh_max) {
                                 frac_neigh_max = frac_neigh;

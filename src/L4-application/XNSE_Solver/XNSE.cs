@@ -27,6 +27,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - solid immersed boundaries (planned).
     /// - three phase contact lines at the domain boundary
     /// - three phase contact lines at the intersection of the immersed solid boundary 
+    /// - the generic control parameter <typeparamref name="T"/> allows derivations of this solver
     /// </summary>
     /// <remarks>
     /// Development history:
@@ -56,8 +57,7 @@ namespace BoSSS.Application.XNSE_Solver {
     ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
     /// ```
     /// </remarks>
-    /// 
-    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
+    public class XNSE : XNSE<XNSE_Control> {
 
         //===========
         // Main file
@@ -81,9 +81,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 return p;
             });
         }
+    }
+
+    /// <summary>
+    /// Generic versions which should be used for derivatives 
+    /// </summary>
+    public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
+
+       
 
         /// <summary>
-        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
+        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
         /// <remarks>
@@ -253,6 +261,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+            
             OperatorFactory opFactory = new OperatorFactory();
             
             DefineSystem(D, opFactory, levelSetUpdater);
@@ -263,7 +272,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 

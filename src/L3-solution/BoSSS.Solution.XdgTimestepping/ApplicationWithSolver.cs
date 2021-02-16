@@ -84,7 +84,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            //
             CreateTrackerHack();
 
             // solution:
@@ -488,7 +487,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void CreateTrackerHack() {
             var trk = InstantiateTracker();
-
+            //var test = this.Operator;
             if(base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
@@ -504,8 +503,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-
-        XSpatialOperatorMk2 m_XOperator;
+        private XSpatialOperatorMk2 m_XOperator { 
+            get; 
+            set; 
+        }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>

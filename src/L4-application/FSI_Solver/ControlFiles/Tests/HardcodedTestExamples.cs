@@ -104,7 +104,7 @@ namespace BoSSS.Application.FSI_Solver {
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY", X => -0.02);
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.hydrodynamicsConvergenceCriterion = 1e-2;
             double particleDensity = 1;
             C.gravity = new Vector(0, 0);
@@ -138,7 +138,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.Endtime = 120;
             C.NoOfTimesteps = 25;
 
-           
+            C.FullOutputToConsole = true;
 
             // haben fertig...
             // ===============
@@ -195,7 +195,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.fullyCoupledSplittingMaxIterations = 100;
 
             return C;
         }
@@ -325,9 +325,9 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000;
+            C.fullyCoupledSplittingMaxIterations = 1000;
 
 
 
@@ -383,9 +383,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
 
             return C;

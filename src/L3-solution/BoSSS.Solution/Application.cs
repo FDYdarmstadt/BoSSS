@@ -1750,6 +1750,7 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
+                
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {

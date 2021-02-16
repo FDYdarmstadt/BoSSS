@@ -536,7 +536,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             
             if(lsParameterFields == null)
                 lsParameterFields = new Dictionary<string, DGField>();
-            
             foreach(ILevelSetParameter parameter in parameters) {
                 LinkedList<string> notFound = new LinkedList<string>();
                 foreach(string pName in parameter.ParameterNames) {

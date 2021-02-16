@@ -37,7 +37,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         abstract public int QuadOrder();
 
-
         protected override MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {
                 // set the MultigridOperator configuration for each level:
@@ -62,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+            
             XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
@@ -148,7 +148,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// boundary condition mapping, mainly required for the Stokes extension, where a velocity boundary condition is required.
         /// </summary>
         protected abstract IncompressibleBoundaryCondMap GetBcMap();
-
+        
         /// <summary>
         /// Instantiate the level-set-system (fields for storing, evolution operators, ...) 
         /// Before creating XDG-fields one need to
@@ -157,9 +157,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
             int D = this.Grid.SpatialDimension;
             var lsNames = this.LevelSetNames;
+            //ISpatialOperator test = this.Operator; hier ist noch kein OP
             int NoOfLevelSets = lsNames.Length;
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();
+            //bool isRestart = Control.RestartInfo != null;
 
 
             // phase 1: create DG level-sets
@@ -169,12 +171,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
+                //ScalarFunction Phi_InitialValue = null;
+                //if(!isRestart) {
+                //    if(Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
+                //        Phi_InitialValue = scalarFunctionTimeDep.SetTime(0.0);
+                //    }
+                //}
+
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
                 LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                 //levelSetDG.Clear();
                 //levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                 DGlevelSets[iLevSet] = levelSetDG;
+
             }
 
 
@@ -232,10 +242,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         int nodeCount = 30;
                         Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
                         var SplineEvolver = new SplineLevelSetEvolver(LevelSetCG, (GridData)(this.GridData));
+                        lsUpdater.AddEvolver(LevelSetCG, SplineEvolver);
                         break;
                     }
                     case LevelSetEvolution.Prescribed: {
                         var prescrEvo = new PrescribedEvolver(this.Control.InitialValues_EvaluatorsVec[LevelSetCG]);
+                        lsUpdater.AddEvolver(LevelSetCG, prescrEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.RigidObject: {
+                        var rigidEvolver = EvolveRigidLevelSet();
+                        lsUpdater.AddEvolver(LevelSetCG, rigidEvolver);
                         break;
                     }
                     case LevelSetEvolution.None: {
@@ -341,7 +358,25 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 return this.Control.Timestepper_LevelSetHandling;
             }
         }
-        
+
+
+        /// <summary>
+        /// Used to provide information about rigid objects to the levelSetUpdater in case of <see cref="LevelSetEvolution.RigidObject"/>
+        /// Overwrite this to enter information.
+        /// </summary>
+        protected virtual RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
+            throw new NotImplementedException();
+        }
+
+
+        /// <summary>
+        /// Used to provide information about rigid objects to the levelSetEvolver in case of <see cref="LevelSetEvolution.RigidObject"/>
+        /// Overwrite this to enter information.
+        /// </summary>
+        protected virtual RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
+            throw new NotImplementedException();
+        }
+
 
         /// <summary>
         /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
@@ -353,13 +388,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
 
+            
             //foreach (var NamePair in this.LevelSetNames) {
             //    string LevelSetCG = NamePair.ContLs;
 
             //    // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
             //    var pair1 = LsUpdater.LevelSets[LevelSetCG];
             //    pair1.DGLevelSet.Clear();
-            //    pair1.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(t));
+
+            //    if (Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
+            //        pair1.DGLevelSet.ProjectField(scalarFunctionTimeDep.SetTime(t));
+            //    }
+
+            //    if (pair1.DGLevelSet.L2Norm() == 0.0) {
+            //        Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
+            //        pair1.DGLevelSet.AccConstant(-1.0);
+            //    }
             //}
 
             this.InitializeLevelSets(LsUpdater, t);

@@ -549,6 +549,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Temperature = "Temperature";
 
+
+        /// <summary>
+        /// Phoretic field/concentration
+        /// </summary>
+        public const string Phoretic = "PhoreticField";
+
+
         /// <summary>
         /// variable name for temperature (linearization point)
         /// </summary>
