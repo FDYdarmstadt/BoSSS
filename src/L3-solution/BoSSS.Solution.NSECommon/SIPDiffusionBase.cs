@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon
         /// <summary>
         /// The Function in \nabla \dot (Diffusivity \nabla u), e.g. heat conductivity or diffusion coefficient
         /// </summary>
-        protected abstract double Diffusivity(double[] Parameters, double[,] GradU = null);
+        protected abstract double Diffusivity(double[] Parameters, double[,] GradU , Vector NodeCoordinates);
 
         protected double PenaltyBase;
         protected Func<double[], double, double>[] ArgumentFunction;
@@ -168,8 +168,8 @@ namespace BoSSS.Solution.NSECommon
             double DiffusivityMax;
             double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
             double[] difusivityArguments_OUT = prmsOK ? inp.Parameters_OUT : _uB;
-            DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA);
-            DiffusivityB = Diffusivity(difusivityArguments_OUT, _Grad_uB);
+            DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA, inp.X);
+            DiffusivityB = Diffusivity(difusivityArguments_OUT, _Grad_uB, inp.X);
 
             foreach (var Diffusivity in new double[]{DiffusivityA, DiffusivityB})
             {
@@ -200,7 +200,7 @@ namespace BoSSS.Solution.NSECommon
             double pnlty = 2 * GetPenalty(inp.jCellIn, -1);
             double[] difusivityArguments_IN = prmsOK ? inp.Parameters_IN : _uA;
 
-            double DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA);
+            double DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA, inp.X);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
 
@@ -231,7 +231,7 @@ namespace BoSSS.Solution.NSECommon
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double Acc = 0;
             double[] difusivityArguments = prmsOK ? cpv.Parameters : U;
-            double DiffusivityValue = Diffusivity(difusivityArguments, GradU);
+            double DiffusivityValue = Diffusivity(difusivityArguments, GradU, cpv.Xglobal);
             Debug.Assert(!double.IsNaN(DiffusivityValue));
             Debug.Assert(!double.IsInfinity(DiffusivityValue));
 
