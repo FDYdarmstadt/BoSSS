@@ -24,7 +24,7 @@ using System.Linq;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
+    public class ViscosityAtIB : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
         LevelSetTracker m_LsTrk;
 

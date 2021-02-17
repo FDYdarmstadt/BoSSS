@@ -50,10 +50,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow();
             //throw new Exception("remove me");
-
-
-            
-
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
@@ -61,14 +57,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             _Main(args, false, delegate () {
                 var p = new XNSERO();
                 return p;
-            });//*/
+            });
         }
 
         /// <summary>
         /// An array of all particles (rigid objects). Particles are only added at the initialization of the simulation. 
         /// </summary>
         [DataMember]
-        public Particle[] Particles { get; private set; }
+        public Particle[] Particles { get => Control.Particles; }
 
         /// <summary>
         /// Spatial dimension
@@ -126,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Coefficient of restitution for collisions.
         /// </summary>
         [DataMember]
-        private double CoefficientOfRestitution => ((XNSERO_Control)Control).CoefficientOfRestitution;
+        private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
 
         /// <summary>
         /// Checks whether added damping tensors have been created. Only used if added damping is activated.
@@ -146,8 +142,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Tested by <see cref="TestProgram.TestRigidLevelSetProjection"/>
         /// </remarks>
         protected override RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
-            if(Particles.IsNullOrEmpty())
-                Particles = Control.Particles.ToArray();
             CreatePhysicalDataLogger();
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
@@ -160,7 +154,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provides information about the evolution of the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
-
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
@@ -169,8 +162,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// 
+        /// Setup of the incompressible two-phase Navier-Stokes equation. If necessary adds the phoretic equations.
         /// </summary>
+        /// <remarks>base: Navier Stokes, if(...): phoretic field</remarks>
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             base.DefineSystem(D, opFactory, lsUpdater);
 

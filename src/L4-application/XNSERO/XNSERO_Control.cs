@@ -119,6 +119,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         public double MinGridLength;
 
+        /// <summary>
+        /// Dimension of the domain.
+        /// </summary>
+        [DataMember]
+        public int SpatialDimension;
+
+        /// <summary>
+        /// Add database and the frequency of saves.
+        /// </summary>
+        /// <param name="dataBasePath"></param>
+        /// <param name="savePeriod"></param>
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
             if(dataBasePath != null) {
                 savetodb = true;
@@ -128,6 +139,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 savetodb = false;
         }
 
+        /// <summary>
+        /// Setup AMR Level at the level set.
+        /// </summary>
+        /// <param name="amrLevel"></param>
         public void SetAddaptiveMeshRefinement(int amrLevel) {
             if(amrLevel == 0)
                 return;
@@ -136,6 +151,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             AMR_startUpSweeps = amrLevel;
         }
 
+        /// <summary>
+        /// Setup boundary values, e.g. wall, pressure_dirichlet...
+        /// </summary>
+        /// <param name="boundaryValues"></param>
         public void SetBoundaries(List<string> boundaryValues) {
             if(boundaryValues.Count() > 4)
                 throw new NotImplementedException("max 4 boundary values");
@@ -145,7 +164,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        /// <summary>
+        /// Set the grid in a rectangular domain. Currently only 2D!
+        /// </summary>
+        /// <param name="lengthX"></param>
+        /// <param name="lengthY"></param>
+        /// <param name="cellsPerUnitLength"></param>
+        /// <param name="periodicX"></param>
+        /// <param name="periodicY"></param>
         public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+            SpatialDimension = 2;
             MaxGridLength = 1 / cellsPerUnitLength;
             BoundaryPositionPerDimension = new double[2][];
             WallPositionPerDimension = new double[2][];
@@ -244,7 +272,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
         }
 
-
+        /// <summary>
+        /// Set time-steps and length of the simulation.
+        /// </summary>
+        /// <param name="dt"></param>
+        /// <param name="noOfTimesteps"></param>
         public void SetTimesteps(double dt, int noOfTimesteps) {
             dtMax = dt;
             dtMin = dt;
@@ -265,6 +297,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         private Vector Gravity = new Vector(0, 0);
 
+        /// <summary>
+        /// Set gravity for particles and fluid species.
+        /// </summary>
+        /// <param name="Gravity"></param>
         public void SetGravity(Vector Gravity) {
             this.Gravity = new Vector(Gravity);
             InitialValues_Evaluators.Add("GravityX#A", X => Gravity[0]);
@@ -273,6 +309,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitialValues_Evaluators.Add("GravityY#B", X => Gravity[1]);
         }
 
+        /// <summary>
+        /// Returns gravity vector.
+        /// </summary>
+        /// <returns></returns>
         public Vector GetGravity() => Gravity;
 
         /*
@@ -302,7 +342,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// All particles in the FSI
+        /// All particles
         /// </summary>
         [DataMember]
         public Particle[] Particles { get; private set; }
