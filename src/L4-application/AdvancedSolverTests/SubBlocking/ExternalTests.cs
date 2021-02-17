@@ -26,6 +26,13 @@ namespace AdvancedSolverTests.SubBlocking
         [Values(2)] int DGOrder,
         [Values(4)] int Res) {
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
+
+
             //Matlabaufruf --> gesamte Matrix nach Matlab schreiben
             //Teilmatritzen gemäß Globalid extrahieren
             //Mit ExternalRows vergleichen
@@ -87,6 +94,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(4)] int Res
             ) {
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
+
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
             Console.WriteLine("FastSubMatrixExtraction({0},{1},{2})", UseXdg, DGOrder, MShape);
 
@@ -146,6 +159,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.full_var_spec, MatrixShape.full_var, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(4)] int Res
             ) {
+            
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
 
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
             Console.WriteLine("SubMatrixExtraction({0},{1},{2})", UseXdg, DGOrder, MShape);
@@ -206,6 +225,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.diagonal_var_spec, MatrixShape.diagonal_spec, MatrixShape.diagonal_var, MatrixShape.diagonal)] MatrixShape MShape,
             [Values(4)] int Res
             ) {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
 
             Utils.TestInit((int) UseXdg, DGOrder, (int) MShape);
             Console.WriteLine("SubMatrixIgnoreCoupling({0},{1},{2})", UseXdg, DGOrder, MShape);
@@ -281,6 +306,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.diagonal_var_spec, MatrixShape.diagonal_spec, MatrixShape.diagonal_var, MatrixShape.diagonal)] MatrixShape MShape,
             [Values(4)] int Res
             ) {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
 
             Utils.TestInit((int) UseXdg, DGOrder, (int) MShape);
             Console.WriteLine("SubMatrixIgnoreCoupling({0},{1},{2})", UseXdg, DGOrder, MShape);
@@ -358,6 +389,13 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full_var, MatrixShape.full)] MatrixShape MShape,
             [Values(4)] int Res) {
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
+
+
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
             Console.WriteLine("SubSelection({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
 
@@ -421,6 +459,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(4)] int Res) {
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
+
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
             Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
 
@@ -477,6 +521,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(2)] int DGOrder,
             [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(16)] int Res) {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
 
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
             Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
@@ -536,6 +586,12 @@ namespace AdvancedSolverTests.SubBlocking
             [Values(MatrixShape.full_var_spec, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(16)] int Res) {
 
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
+
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape, Res);
             Console.WriteLine("VectorSplitOperation({0},{1},{2},{3})", UseXdg, DGOrder, MShape, Res);
 
@@ -585,6 +641,12 @@ namespace AdvancedSolverTests.SubBlocking
         [Values(2)] int DGOrder,
         [Values(4)] int Res
         ) {
+
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
+            if(MPISize <= 1) {
+                Console.WriteLine("Terminating: this test is supposed to be run in parallel, but currently running on only 1 processor.");
+                return;
+            }
 
             Utils.TestInit((int)UseXdg, DGOrder);
             Console.WriteLine("ExternalIndexTest({0},{1})", UseXdg, DGOrder);

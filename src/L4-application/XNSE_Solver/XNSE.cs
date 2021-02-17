@@ -20,12 +20,14 @@ using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
 
+
     /// <summary>
     /// Multiphase-XDG-solver, with features:
     /// - incompressible two-phase flows.
     /// - solid immersed boundaries (planned).
     /// - three phase contact lines at the domain boundary
     /// - three phase contact lines at the intersection of the immersed solid boundary 
+    /// - the generic control parameter <typeparamref name="T"/> allows derivations of this solver
     /// </summary>
     /// <remarks>
     /// Development history:
@@ -55,27 +57,16 @@ namespace BoSSS.Application.XNSE_Solver {
     ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
     /// ```
     /// </remarks>
-    /// 
-    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
+    public class XNSE : XNSE<XNSE_Control> {
 
         //===========
         // Main file
         //===========
         static void Main(string[] args) {
 
-            InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ScalingStaticDropletTest_p3_Standard_OneStepGaussAndStokes();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTest.LevelSetAdvectiontTest(2, 2, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.MovingDropletTest_rel_p2_Saye_Standard(0.01d, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.69711d, true, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.BasicThreePhaseTest();
-            //Tests.ASUnitTest.HeatDecayTest(r: 0.8598,
-            //                                q: -50,
-            //                                deg: 3,
-            //                                AgglomerationTreshold: 0,
-            //                                SolverMode_performsolve: true,
-            //                                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes,
-            //                                stm: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //InitMPI();
+            // DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
@@ -88,9 +79,17 @@ namespace BoSSS.Application.XNSE_Solver {
                 return p;
             });
         }
+    }
+
+    /// <summary>
+    /// Generic versions which should be used for derivatives 
+    /// </summary>
+    public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
+
+       
 
         /// <summary>
-        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
+        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
         /// <remarks>
@@ -288,11 +287,25 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A));
                 opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddParameter(Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+
+                // Add Gravitation
+                if(config.isGravity){
+                    var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
+                    opFactory.AddParameter(GravA);
+                    var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
+                    opFactory.AddParameter(GravB);
+                }
+
+                // Add additional volume forces
+                if (config.isVolForce) {
+                    var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
+                    opFactory.AddParameter(VolForceA);
+                    var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
+                    opFactory.AddParameter(VolForceB);
+                }
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
@@ -373,38 +386,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
-        }
-
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
-            DGField[] plotFields = this.m_RegisteredFields.ToArray();
-            void AddPltField(DGField f) {
-                bool add = true;
-                foreach(var ff in plotFields) {
-                    if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
-                        add = false;
-                        break;
-                    }
-                }
-                if(add) {
-                    f.AddToArray(ref plotFields);
-                }
-            }
-            void AddPltFields(IEnumerable<DGField> fs) {
-                foreach(var f in fs)
-                    AddPltField(f);
-            }
-
-            if (Timestepping?.Parameters != null) {
-                AddPltFields(Timestepping.Parameters);
-            }
-            if (LsUpdater?.Parameters != null) {
-                AddPltFields(LsUpdater.Parameters.Values);
-                AddPltField(LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet);
-                AddPltFields(LsUpdater.InternalFields.Values);
-            }
-
-            Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

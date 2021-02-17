@@ -172,10 +172,6 @@
       <Project>{9a1b20c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>LowMachCombustionNSE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\internal\src\XNSERO\XNSERO_Solver.csproj">
-      <Project>{08b50efe-e463-4bae-8d29-bc109b86290e}</Project>
-      <Name>XNSERO_Solver</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
       <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
       <Name>ilPSP.LinSolvers.MUMPS</Name>
@@ -311,6 +307,10 @@
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj">
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
       <Name>BoSSS.PlotGenerator</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj">
+      <Project>{08b50efe-e463-4bae-8d29-bc109b86290e}</Project>
+      <Name>XNSERO_Solver</Name>
     </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>

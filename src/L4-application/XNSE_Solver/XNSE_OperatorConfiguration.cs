@@ -26,7 +26,8 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.EnergyCommon;
-
+using ilPSP;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -37,6 +38,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
 
+            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z')));
+            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z')));
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
@@ -98,8 +101,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Fucking Gravity
         /// </summary>
         public bool isGravity {
+            get {                
+                return Gravity;
+            }
+        }
+
+        /// <summary>
+        /// Volume Force
+        /// </summary>
+        public bool isVolForce {
             get {
-                return true;
+                return VolForce;
             }
         }
 
@@ -141,6 +153,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// include continuity equation
         /// </summary>
         public bool Continuity;
+
+        /// <summary>
+        /// include gravity
+        /// </summary>
+        public bool Gravity;
+
+        /// <summary>
+        /// include general volume force
+        /// </summary>
+        public bool VolForce;
+
 
         // <summary>
         // include heat equation

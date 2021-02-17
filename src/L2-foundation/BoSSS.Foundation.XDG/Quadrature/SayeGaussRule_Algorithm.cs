@@ -291,7 +291,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         //Algorithm 3
         //page: A1006
-        protected void SayeRecursion(TreeNode<T> treeNode, int recursionLevel = 0)
+        protected void SayeRecursion(TreeNode<T> treeNode)
         {
             T arg = treeNode.Value;
 

@@ -118,9 +118,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(MathNet.Numerics.Complex32).Assembly);
             eval.ReferenceAssembly(typeof(Mono.CSharp.Evaluator).Assembly);
             eval.ReferenceAssembly(typeof(CNS.Program).Assembly);
-            eval.ReferenceAssembly(typeof(IBM_Solver.IBM_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(XNSE_Solver.XNSE).Assembly);
-            eval.ReferenceAssembly(typeof(XNSE_Solver.Legacy.XNSE_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
             eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
             //eval.ReferenceAssembly(typeof(XRheology_Solver.XRheology_SolverMain).Assembly);

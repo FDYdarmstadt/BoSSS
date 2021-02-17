@@ -127,9 +127,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
-        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            using (var tr = new FuncTrace()) {
+        public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
+            //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using(var tr = new FuncTrace()) {
                 int id = int.Parse(idToken);
 
 
@@ -138,10 +138,10 @@ namespace BoSSS.Application.BoSSSpad {
                 //if (optInfo != null && optInfo is ISchedulerJob _JD) {
                 //    JD = _JD;
                 //} else {
-                using (new BlockTrace("Scheduler.OpenJob", tr)) {
+                using(new BlockTrace("Scheduler.OpenJob", tr)) {
                     JD = Scheduler.OpenJob(id);
                 }
-                
+
                 //}
                 /*
                  * the following seems really slow:
@@ -179,37 +179,43 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                 int ExitCode = int.MinValue;
-                using (new BlockTrace("TASK_FILTERING", tr)) {
+                using(new BlockTrace("TASK_FILTERING", tr)) {
                     ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-                    foreach (ISchedulerTask t in tasks) {
+                    foreach(ISchedulerTask t in tasks) {
                         DeployDir = t.WorkDirectory;
                         ExitCode = t.ExitCode;
                     }
                 }
 
-                using (new BlockTrace("STATE_EVAL", tr)) {
-                    switch (JD.State) {
+                using(new BlockTrace("STATE_EVAL", tr)) {
+                    var JDstate = JD.State;
+
+                    switch(JDstate) {
                         case JobState.Configuring:
                         case JobState.Submitted:
                         case JobState.Validating:
                         case JobState.ExternalValidation:
                         case JobState.Queued:
-                            return (JobStatus.PendingInExecutionQueue, null);
+                        return (JobStatus.PendingInExecutionQueue, null);
 
                         case JobState.Running:
                         case JobState.Finishing:
-                            return (JobStatus.InProgress, null);
+                        return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
-                            return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
+                        var retCode = (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
+                        if(retCode.Item1 != JobStatus.FinishedSuccessful)
+                            Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate + ", Exit code = " + ExitCode);
+                        return retCode;
 
                         case JobState.Failed:
                         case JobState.Canceled:
                         case JobState.Canceling:
-                            return (JobStatus.FailedOrCanceled, ExitCode);
+                        Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate);
+                        return (JobStatus.FailedOrCanceled, ExitCode);
 
                         default:
-                            throw new NotImplementedException("Unknown job state: " + JD.State);
+                        throw new NotImplementedException("Unknown job state: " + JD.State);
                     }
                 }
             }

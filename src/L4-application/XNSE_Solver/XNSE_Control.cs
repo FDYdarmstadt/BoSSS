@@ -37,6 +37,7 @@ using Newtonsoft.Json;
 using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Foundation;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -70,7 +71,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Activation of second level-set.
         /// </summary>
         [DataMember]
-        public bool UseImmersedBoundary = false;
+        virtual public bool UseImmersedBoundary {
+            get;
+            set;
+        }
 
         /// <summary>
         /// - default (false): preconditioning for velocity and pressure is determined by 
@@ -143,7 +147,7 @@ namespace BoSSS.Application.XNSE_Solver {
             });
         }
 
-
+        /*
         public void SetDGdegree2(int p) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = p,
@@ -165,8 +169,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
+        
 
-
+        /// <summary>
+        /// Allows to set DG degree of level set and flow solver 
+        /// </summary>
+        /// <param name="VelDegree"></param>
+        /// <param name="LevSetDegree"></param>
         public void SetFieldOptions2(int VelDegree, int LevSetDegree) {
             FieldOptions.Add(VariableNames.VelocityX, new FieldOpts() {
                 Degree = VelDegree,
@@ -192,7 +201,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
-
+        */
 
         [DataMember]
         public string methodTagLS;
@@ -554,6 +563,74 @@ namespace BoSSS.Application.XNSE_Solver {
         public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
 
         /// <summary>
+        /// Time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        public ScalarFunctionTimeDep GetGravity(string species, int d) {
+            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Setting time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        public void SetGravity(string species, int d, IBoundaryAndInitialData g) {
+            this.InitialValues[VariableNames.Gravity_d(d) + "#" + species] = g;
+        }
+
+        /// <summary>
+        /// Setting time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        /// <remarks>
+        /// Note: using the setter is not recommended when working with the job management system,
+        /// since these values specified here cannot be serialized.
+        /// Instead, <see cref="AppControl.InitialValues"/> or <see cref="SetGravity(string, int, IBoundaryAndInitialData)"/> should be used.
+        /// </remarks>
+        public void SetGravity(string species, int d, Func<double[], double, double> g) {
+            this.InitialValues_Evaluators_TimeDep[VariableNames.Gravity_d(d) + "#" + species] = g;
+        }
+
+        /// <summary>
+        /// Setting time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        /// <remarks>
+        /// Note: using the setter is not recommended when working with the job management system,
+        /// since these values specified here cannot be serialized.
+        /// Instead, <see cref="AppControl.InitialValues"/> or <see cref="SetGravity(string, int, IBoundaryAndInitialData)"/> should be used.
+        /// </remarks>
+        public void SetGravity(string species, Func<double[], double, double>[] G) {
+            for(int d = 0; d < G.Length; d++)
+                this.InitialValues_Evaluators_TimeDep[VariableNames.Gravity_d(d) + "#" + species] = G[d];
+        }
+
+
+        /// <summary>
+        /// Time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        public ScalarFunctionTimeDep GetVolumeForce(string species, int d) {
+            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Setting time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        public void SetVolumeForce(string species, int d, IBoundaryAndInitialData g) {
+            this.InitialValues[VariableNames.VolumeForce_d(d) + "#" + species] = g;
+        }
+
+        /// <summary>
+        /// Setting time dependent (component-wise) gravitational acceleration (either A or B).
+        /// </summary>
+        /// <remarks>
+        /// Note: using the setter is not recommended when working with the job management system,
+        /// since these values specified here cannot be serialized.
+        /// Instead, <see cref="AppControl.InitialValues"/> or <see cref="SetVolumeForce(string, int, IBoundaryAndInitialData)"/> should be used.
+        /// </remarks>
+        public void SetVolumeForce(string species, int d, Func<double[], double, double> g) {
+            this.InitialValues_Evaluators_TimeDep[VariableNames.VolumeForce_d(d) + "#" + species] = g;
+        }
+
+        /// <summary>
         /// Control Options for ReInit
         /// </summary>
         [DataMember]
@@ -622,5 +699,21 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
+
+
+        /// <summary>
+        /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>
+        /// </summary>
+        [JsonIgnore]
+        public override _TimesteppingMode TimesteppingMode {
+            get {
+                return base.TimesteppingMode;
+            }
+            set {
+                base.TimesteppingMode = value;
+                if(value == _TimesteppingMode.Steady)
+                    this.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            }
+        }
     }
 }

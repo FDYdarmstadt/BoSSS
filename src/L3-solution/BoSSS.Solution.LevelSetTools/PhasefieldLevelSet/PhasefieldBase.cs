@@ -101,7 +101,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Transport velocity
         /// </summary>
-        protected VectorField<SinglePhaseField> Velocity;
+        protected SinglePhaseField[] Velocity;
 #pragma warning restore 649
 
         /// <summary>
@@ -181,7 +181,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Phasefield instantiation, constructor
         /// </summary>
-        public Phasefield(PhasefieldControl _Control, LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
+        public Phasefield(PhasefieldControl _Control, LevelSet _LevSet, SinglePhaseField _DGLevSet,  LevelSetTracker _LsTrk, SinglePhaseField[] _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
         {
             if (_Control != null)
                 this.Init(_Control);
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Updating Phasefield after changes in Grid and/or Basis
         /// </summary>
-        public void UpdateFields(LevelSet _LevSet, SinglePhaseField _DGLevSet, LevelSetTracker _LsTrk, VectorField<SinglePhaseField> _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
+        public void UpdateFields(LevelSet _LevSet, SinglePhaseField _DGLevSet, LevelSetTracker _LsTrk, SinglePhaseField[] _Velocity, IGridData _GridData, AppControl _control, AggregationGridData[] _mgSeq)
         {
             // check if signature of external and local Grid changed
             if (this.GridData != _GridData)

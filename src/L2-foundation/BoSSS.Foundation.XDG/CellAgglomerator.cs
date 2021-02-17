@@ -40,11 +40,11 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public class CellAgglomerator {
 
-        /// <summary>
-        /// Temporary feature; will be removed in future;
-        /// Plotting if agglomeration fails.
-        /// </summary>
-        public static Action<DGField[]> CellAggKatastrophenplot;
+        ///// <summary>
+        ///// Temporary feature; will be removed in future;
+        ///// Plotting if agglomeration fails.
+        ///// </summary>
+        //public static Action<DGField[]> CellAggKatastrophenplot;
 
         /// <summary>
         /// defines a pair (source and target) of cells affected by agglomeration

@@ -132,7 +132,7 @@
     <Compile Include="Legacy\LevelSetMovement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tests\TranspiratingChannelTest.cs" />
-    <Compile Include="Tests\UnitTest.cs" />
+    <Compile Include="Legacy\LegacyTests\UnitTest.cs" />
     <Compile Include="Tests\ViscosityJumpTest.cs" />
     <Compile Include="XNSE_OperatorConfiguration.cs" />
     <Compile Include="Legacy\XNSE_SolverMain_Energy.cs" />
@@ -143,6 +143,7 @@
     <Compile Include="XNSFE.cs" />
     <Compile Include="Legacy\XNSFE_OperatorComponents.cs" />
     <Compile Include="Legacy\XNSFE_OperatorFactory.cs" />
+    <Compile Include="XNSFE_Control.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">

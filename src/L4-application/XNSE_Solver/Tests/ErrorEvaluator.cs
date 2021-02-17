@@ -14,6 +14,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
@@ -23,9 +24,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// </summary>
     public abstract class ErrorEvaluator {
 
-        protected SolverWithLevelSetUpdater<XNSE_Control> solver;
+        protected IApplication solver;
 
-        public ErrorEvaluator(SolverWithLevelSetUpdater<XNSE_Control> solver) {
+        public ErrorEvaluator(IApplication solver) {
             this.solver = solver;
         }
 
@@ -57,10 +58,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// <remarks>
     /// Seems redundant with <see cref="L2ErrorLogger"/>
     /// </remarks>
-    public class XNSEErrorEvaluator : ErrorEvaluator {
+    public class XNSEErrorEvaluator<T> : ErrorEvaluator where T: XNSE_Control, new() {
 
-        public XNSEErrorEvaluator(XNSE solver) : base(solver){
+        public XNSEErrorEvaluator(IApplication solver) : base(solver){
 
+        }
+
+        new protected ApplicationWithSolver<T> solver {
+            get {
+                return (ApplicationWithSolver<T>)(base.solver);
+            }
         }
 
         public double[] ComputeVelocityError(IDictionary<string, Func<double[], double, double>[]> exactVelocity, double time)
@@ -197,10 +204,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     /// computes error fields for: Phi, PhiDG, gradient of PhiDG 
     /// integral values: area, length
     /// </summary>
-    public class LevelSetErrorEvaluator : ErrorEvaluator {
+    public class LevelSetErrorEvaluator<T> : ErrorEvaluator where T: XNSE_Control, new() {
 
-        public LevelSetErrorEvaluator(XNSE solver) : base(solver) {
+        public LevelSetErrorEvaluator(IApplication solver) : base(solver) {
 
+        }
+
+        new protected SolverWithLevelSetUpdater<T> solver {
+            get {
+                return (SolverWithLevelSetUpdater<T>)(base.solver);
+            }
         }
 
         /// <summary>
@@ -288,14 +301,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests
     }
 
 
-    class XHeatErrorEvaluator : ErrorEvaluator {
+    class XHeatErrorEvaluator<T> : ErrorEvaluator where T: XNSE_Control, new() {
 
-        public XHeatErrorEvaluator(XHeat solver) : base(solver) {
-
-        }
-        public XHeatErrorEvaluator(XNSFE solver) : base(solver) {
+        public XHeatErrorEvaluator(IApplication solver) : base(solver) {
 
         }
+        new protected SolverWithLevelSetUpdater<T> solver {
+            get {
+                return (SolverWithLevelSetUpdater<T>)(base.solver);
+            }
+        }
+
 
         public double ComputeTemperatureError(IDictionary<string, Func<double[], double, double>> exactTemperature, double time) {
             int D = solver.GridData.SpatialDimension;
