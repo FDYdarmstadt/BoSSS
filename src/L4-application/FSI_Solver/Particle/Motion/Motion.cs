@@ -640,12 +640,12 @@ namespace BoSSS.Application.FSI_Solver {
             using (new FuncTrace()) {
                 Vector forces = new Vector(SpatialDim);
                 for (int d = 0; d < SpatialDim; d++) {
-                    if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-12)
+                    if (Math.Abs(fullListHydrodynamics[particleID * 3 + d]) > 1e-6)
                         forces[d] = fullListHydrodynamics[particleID * 3 + d];
 
                 }
                 HydrodynamicForces[0] = forces;
-                if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-12)
+                if (Math.Abs(fullListHydrodynamics[particleID * 3 + SpatialDim]) > 1e-6)
                     HydrodynamicTorque[0] = fullListHydrodynamics[particleID * 3 + SpatialDim];
                 Aux.TestArithmeticException(HydrodynamicForces[0], "hydrodynamic forces");
                 Aux.TestArithmeticException(HydrodynamicTorque[0], "hydrodynamic torque");
@@ -701,8 +701,6 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateParticlePosition(double dt) {
             using (new FuncTrace()) {
                 Vector position = Position[1] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
-                position[0] = 0;
-                position[1] = 0;
                 Aux.TestArithmeticException(position, "particle position");
                 return position;
             }
@@ -714,7 +712,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngle(double dt) {
             using (new FuncTrace()) {
-                double angle = 0;// Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                double angle = Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
                 Aux.TestArithmeticException(angle, "particle angle");
                 return angle;
             }
@@ -775,7 +773,6 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual Vector CalculateTranslationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 Vector l_Acceleration = HydrodynamicForces[0] / (Density * ParticleArea);
-                l_Acceleration[1] = 0;
                 Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
                 return l_Acceleration;
             }
@@ -788,7 +785,6 @@ namespace BoSSS.Application.FSI_Solver {
         protected virtual double CalculateRotationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
-                l_Acceleration = 0;
                 Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");
                 return l_Acceleration;
             }

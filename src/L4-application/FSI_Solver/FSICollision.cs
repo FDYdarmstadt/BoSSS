@@ -140,7 +140,8 @@ namespace FSI_Solver {
                     // Step 2.1.1
                     // Move the particle with the current save time-step.
                     // -------------------------------------------------------
-                    MoveParticlesWithSaveTimestep(Particles, saveTimestep);
+                    if(!DetermineOnlyOverlap)
+                        MoveParticlesWithSaveTimestep(Particles, saveTimestep);
                     saveTimestep = double.MaxValue;
                     for (int p0 = 0; p0 < Particles.Length; p0++) {
                         // Step 2.1.2
@@ -209,6 +210,8 @@ namespace FSI_Solver {
                             }
                         }
                     }
+                    if (DetermineOnlyOverlap)
+                        return;
                     if (saveTimestep >= 0)
                         AccumulatedCollisionTimestep += saveTimestep;
                     if (AccumulatedCollisionTimestep >= TimestepSize)

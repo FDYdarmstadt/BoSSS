@@ -161,7 +161,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
             
             grad.ApplyAll(x => Math.Abs(x));
-            double delta = grad.InnerProduct(diameters) / 2;
+            double delta = grad.InnerProduct(diameters) * sqrt_2;
 
             return delta;
         }
