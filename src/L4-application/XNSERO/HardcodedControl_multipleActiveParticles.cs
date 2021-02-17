@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
 
             // Particle Properties
             // =============================
@@ -74,19 +74,19 @@ namespace BoSSS.Application.XNSERO_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.StrangSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.SetTimesteps(1e-1, 50000000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             C.LinearSolver.NoOfMultigridLevels = 10;
-            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MaxSolverIterations = 1;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.verbose = false;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.UseSchurBlockPrec = false;
             C.LinearSolver.pMaxOfCoarseSolver = k;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.TargetBlockSize = 10000;
             return C;
         }

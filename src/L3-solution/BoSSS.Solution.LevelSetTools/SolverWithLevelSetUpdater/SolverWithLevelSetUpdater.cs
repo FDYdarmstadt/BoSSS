@@ -142,7 +142,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
             int D = this.Grid.SpatialDimension;
             var lsNames = this.LevelSetNames;
-            //ISpatialOperator test = this.Operator; hier ist noch kein OP
             int NoOfLevelSets = lsNames.Length;
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();
@@ -198,7 +197,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.RigidObject: {
-                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         break;
                     }
                     default:
