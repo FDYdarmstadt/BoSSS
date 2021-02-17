@@ -17,7 +17,13 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
-    class RigidObjectLevelSetVelocity : ParameterS, ILevelSetParameter {
+    /// <summary>
+    /// Level set velocity of a rigid object.
+    /// </summary>
+    /// <remarks>
+    /// \boldsymbol{u}_{LevelSet}=\boldsymbol{u}_trans+\boldsymbol{\omega}\times\boldsymbol{r}
+    /// </remarks>
+    public class RigidObjectLevelSetVelocity : ParameterS, ILevelSetParameter {
 
         public RigidObjectLevelSetVelocity(string levelSetName, Particle[] Particles, double[] FluidViscosity, string[] FluidSpecies, Vector Gravity, double TimeStep, double GridToleranceParam) : base() {
             ParticleHydrodynamics = new ParticleHydrodynamics(2);
@@ -26,7 +32,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.Particles = Particles;
             this.FluidSpecies = FluidSpecies;
             this.TimeStep = TimeStep;
-            this.GridToleranceParam = GridToleranceParam;
+            this.GridToleranceParam = GridToleranceParam * 0.5;
             m_ParameterNames = VariableNames.AsLevelSetVariable(levelSetName, VariableNames.VelocityVector(SpatialDimension)).ToArray();
             this.FluidViscosity = FluidViscosity;
             this.Gravity = Gravity;
@@ -39,9 +45,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly double TimeStep;
         private readonly double GridToleranceParam;
         private readonly string[] m_ParameterNames;
-        private LevelSetTracker LsTrk;
         private readonly double[] FluidViscosity;
         private readonly Vector Gravity;
+        private int HistoryPosition = 0;
 
         public override IList<string> ParameterNames {
             get {
@@ -57,7 +63,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        /// <summary>
+        /// Velocity at rigid level set during parameter update.
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="DomainVarFields"></param>
+        /// <param name="ParameterVarFields"></param>
+        private void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using (new FuncTrace()) {
                 HistoryPosition = 0;
                 XDGField Pressure = (XDGField)DomainVarFields[VariableNames.Pressure];
@@ -66,57 +78,55 @@ namespace BoSSS.Application.XNSERO_Solver {
                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(SpatialDimension, Velocity, Pressure, Particles[0].LsTrk, FluidViscosity);
                 ParticleHydrodynamics.CalculateHydrodynamics(Particles, hydrodynamicsIntegration, FluidSpecies, Gravity, TimeStep);
                 CalculateParticleVelocity(Particles, TimeStep);
-                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
-                ScalarFunction Function;
-                for (int d = 0; d < SpatialDimension; d++) {
-                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
-                    levelSetVelocity[d].Clear();
-                    switch (d) {
-                        case 0:
-                        Function = NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityX);
-                        break;
-                        case 1:
-                        Function = NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityY);
-                        break;
-                        default:
-                        throw new NotImplementedException("Rigid object solver only for 2D");
-                    }
-                    levelSetVelocity[d].ProjectField(Function);
-                }
-
-            }
-        }
-
-        void LevelSetInternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            using (new FuncTrace()) {
-                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
-                ScalarFunction Function;
-                HistoryPosition = 1;
-                for (int d = 0; d < SpatialDimension; d++) {
-                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
-                    levelSetVelocity[d].Clear();
-                    switch (d) {
-                        case 0:
-                        Function = NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityX);
-                        break;
-                        case 1:
-                        Function = NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityY);
-                        break;
-                        default:
-                        throw new NotImplementedException("Rigid object solver only for 2D");
-                    }
-                    levelSetVelocity[d].ProjectField(Function);
-                }
+                SetLevelSetVelocity(ParameterVarFields);
             }
         }
 
         private void CalculateParticleVelocity(Particle[] Particles, double dt) {
-            foreach (Particle p in Particles) {
-                p.Motion.UpdateParticleVelocity(dt);
+            using (new FuncTrace()) {
+                foreach (Particle p in Particles) {
+                    p.Motion.UpdateParticleVelocity(dt);
+                }
             }
         }
-        private int HistoryPosition = 0;
 
+        /// <summary>
+        /// Velocity at rigid level set during level set parameter update
+        /// </summary>
+        /// <param name="levelSet"></param>
+        /// <param name="time"></param>
+        /// <param name="DomainVarFields"></param>
+        /// <param name="ParameterVarFields"></param>
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                foreach (Particle p in Particles) {
+                    p.LsTrk = levelSet.Tracker;
+                }
+                ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
+                HistoryPosition = 1;
+                SetLevelSetVelocity(ParameterVarFields);
+            }
+        }
+
+        private void SetLevelSetVelocity(IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
+                for (int d = 0; d < SpatialDimension; d++) {
+                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                    levelSetVelocity[d].Clear();
+                    switch (d) {
+                        case 0:
+                        levelSetVelocity[d].ProjectField(NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityX));
+                        break;
+                        case 1:
+                        levelSetVelocity[d].ProjectField(NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityY));
+                        break;
+                        default:
+                        throw new NotImplementedException("Rigid object solver only for 2D");
+                    }
+                }
+            }
+        }
 
         double GetLevelSetVelocityX(double[] X) {
             double levelSetVelocity = 0;
@@ -142,17 +152,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             return levelSetVelocity;
         }
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            this.LsTrk = levelSet.Tracker;
-
-            foreach (Particle p in Particles) {
-                p.LsTrk = levelSet.Tracker;
-            }
-
-            ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
-            LevelSetInternalParameterUpdate(time, DomainVarFields, ParameterVarFields);
-        }
-
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocties = new (string, DGField)[SpatialDimension];
             var bv = DomainVarFields[VariableNames.VelocityX].Basis;
@@ -168,7 +167,7 @@ namespace BoSSS.Application.XNSERO_Solver {
     }
 
 
-    class ActiveStress : ParameterS, ILevelSetParameter {
+    public class ActiveStress : ParameterS, ILevelSetParameter {
 
         public ActiveStress(string levelSetName, Particle[] Particles, double GridToleranceParam) : base() {
             D = Particles[0].Motion.GetPosition().Dim;

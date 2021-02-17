@@ -133,100 +133,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Residual for fully coupled system
-        /// </summary>
-        /// <param name="Particles">
-        /// A list of all particles
-        /// </param>
-        /// <param name="FluidViscosity"></param>
-        /// <param name="phystime"></param>
-        /// <param name="TimestepInt"></param>
-        /// <param name="IterationCounter"> </param>
-        /// /// <param name="Finalresult"></param>
-        /// <param name="MPIangularVelocity"></param>
-        /// <param name="Force"></param>
-        internal void PrintResultToConsole(List<Particle> Particles, LevelSetTracker LsTrk, double FluidViscosity, double FluidDensity, double phystime, int TimestepInt, double FluidDomainVolume, bool FullOutputToConsole) {
-            double[] TranslationalMomentum = new double[2] { 0, 0 };
-            double RotationalMomentum = 0;
-            double[] totalKE = new double[3] { 0, 0, 0 };
-            double[] ParticleReynoldsNumber = new double[Particles.Count()];
-            double highestReNumber = 0;
-            double[] ParticleStokesNumber = new double[Particles.Count()];
-            for (int p = 0; p < Particles.Count(); p++) {
-                Particle CurrentParticle = Particles[p];
-                double[] SingleParticleMomentum = CurrentParticle.Motion.CalculateParticleMomentum();
-                double[] SingleParticleKineticEnergy = CurrentParticle.Motion.CalculateParticleKineticEnergy();
-                TranslationalMomentum[0] += SingleParticleMomentum[0];
-                TranslationalMomentum[1] += SingleParticleMomentum[1];
-                RotationalMomentum += SingleParticleMomentum[SingleParticleMomentum.Length - 1];
-                totalKE[0] += SingleParticleKineticEnergy[0];
-                totalKE[1] += SingleParticleKineticEnergy[1];
-                totalKE[2] += SingleParticleKineticEnergy[SingleParticleMomentum.Length - 1];
-                ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleReynoldsNumber(FluidViscosity);
-                if (ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)] > highestReNumber)
-                    highestReNumber = ParticleReynoldsNumber[Particles.IndexOf(CurrentParticle)];
-                ParticleStokesNumber[Particles.IndexOf(CurrentParticle)] = CurrentParticle.Motion.ComputeParticleStokesNumber(FluidViscosity, FluidDensity);
-            }
-            double volumeFractionA = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"));
-            double volumeFractionB = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("B"));
-            double volumeFraction = volumeFractionB / (volumeFractionA + volumeFractionB);
-
-            StringBuilder OutputBuilder = new StringBuilder();
-
-            OutputBuilder.AppendLine("=======================================================");
-            OutputBuilder.AppendLine("Solving system with " + Particles.Count() + " particles. Time: " + phystime);
-            if (!FullOutputToConsole) {
-                OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-                OutputBuilder.AppendLine("Total momentum in system:  " + Math.Sqrt(TranslationalMomentum[0].Pow2() + TranslationalMomentum[1].Pow2()));
-                OutputBuilder.AppendLine("Total kinetic energy in system:  " + (totalKE[0] + totalKE[1] + totalKE[2]));
-                OutputBuilder.AppendLine("-------------------------------------------------------");
-            }
-            OutputBuilder.AppendLine("Fluid density: " + FluidDensity + ", viscosity: " + FluidViscosity);
-
-            if (FullOutputToConsole) {
-                for (int p = 0; p < Particles.Count(); p++) {
-                    Particle CurrentParticle = Particles[p];
-                    // only print particles with some action
-                    if (CurrentParticle.Motion.IncludeTranslation || CurrentParticle.Motion.IncludeRotation) {
-                        int PrintP = p + 1;
-                        OutputBuilder.AppendLine("-------------------------------------------------------");
-                        OutputBuilder.AppendLine("Final status report for timestep #" + TimestepInt + ", particle #" + PrintP + ", Time: " + phystime);
-                        OutputBuilder.AppendLine("Particle type: " + CurrentParticle);
-                        OutputBuilder.AppendLine("Particle density: " + CurrentParticle.Motion.Density);
-                        OutputBuilder.AppendLine("Maximum length: " + CurrentParticle.GetLengthScales().Max() + ", minimum length: " + CurrentParticle.GetLengthScales().Min());
-                        OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
-                        if (CurrentParticle.IsCollided)
-                            OutputBuilder.AppendLine("Particle " + p + " is collided. Position X: " + Particles[p].Motion.GetPosition(0)[0] + ", Position X: " + Particles[p].Motion.GetPosition(0)[1]);
-                        OutputBuilder.AppendLine("-------------------------------------------------------");
-                        OutputBuilder.AppendLine("Drag Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[0]);
-                        OutputBuilder.AppendLine("Lift Force: " + CurrentParticle.Motion.GetHydrodynamicForces(0)[1]);
-                        OutputBuilder.AppendLine("Torqe: " + CurrentParticle.Motion.GetHydrodynamicTorque(0));
-                        OutputBuilder.AppendLine("Transl VelocityX: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[0]);
-                        OutputBuilder.AppendLine("Transl VelocityY: " + CurrentParticle.Motion.GetTranslationalVelocity(0)[1]);
-                        OutputBuilder.AppendLine("Angular Velocity: " + CurrentParticle.Motion.GetRotationalVelocity(0));
-                        OutputBuilder.AppendLine("X-position: " + CurrentParticle.Motion.GetPosition(0)[0]);
-                        OutputBuilder.AppendLine("Y-position: " + CurrentParticle.Motion.GetPosition(0)[1]);
-                        OutputBuilder.AppendLine("Angle: " + CurrentParticle.Motion.GetAngle(0));
-                        OutputBuilder.AppendLine();
-                        OutputBuilder.AppendLine("Particle Reynolds number: " + ParticleReynoldsNumber[p]);
-                        OutputBuilder.AppendLine("Particle Stokes number: " + ParticleStokesNumber[p]);
-                        OutputBuilder.AppendLine("=======================================================");
-                        OutputBuilder.AppendLine();
-                    }
-                }
-            } else {
-                OutputBuilder.AppendLine("Particle type of first particle: " + Particles[0]);
-                OutputBuilder.AppendLine("Particle density of first particle: " + Particles[0].Motion.Density);
-                OutputBuilder.AppendLine("Maximum length of first particle: " + Particles[0].GetLengthScales().Max() + ", minimum length: " + Particles[0].GetLengthScales().Min());
-                OutputBuilder.AppendLine("Particle Reynolds number of fastest particle: " + highestReNumber);
-                OutputBuilder.AppendLine("Volume fraction: " + volumeFraction);
-                OutputBuilder.AppendLine("=======================================================");
-                OutputBuilder.AppendLine();
-            }
-            Console.WriteLine(OutputBuilder.ToString());
-        }
-
-        /// <summary>
         /// Check consistency of particle properties on all MPI-processes
         /// </summary>
         /// <param name="Particles">
@@ -238,9 +144,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="MPISize">
         /// No of processes
         /// </param>
-        internal void ParticleState_MPICheck(List<Particle> Particles, IGridData GridData, int MPISize) {
+        internal void ParticleState_MPICheck(Particle[] Particles, IGridData GridData, int MPISize, int TimeStepNo) {
+            if ((TimeStepNo % 10) != 0)// Do this check every ten time-steps to save some time.
+                return;
             int D = GridData.SpatialDimension;
-            int NoOfParticles = Particles.Count;
+            int NoOfParticles = Particles.Length;
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             {
                 // verify that we have the same number of particles on each processor
@@ -249,7 +157,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 if (NoOfParticles_min != NoOfParticles || NoOfParticles_max != NoOfParticles)
                     throw new ApplicationException("mismatch in number of MPI particles");
 
-                // nor, compare those particles:
+                // now, compare those particles:
                 int matrixDim = Particles[0].Motion.AddedDampingTensor.GetLength(0);
                 int NoOfVars = (7 + D * 8 + matrixDim * matrixDim); // variables per particle; size can be increased if more values should be compared
                 double[] CheckSend = new double[NoOfParticles * NoOfVars];
@@ -289,11 +197,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
 
                 double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
-                //unsafe {
-                //    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
-                //        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                //    }
-                //}
+                unsafe {
+                    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
+                        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    }
+                }
 
                 for (int iP = 0; iP < NoOfParticles; iP++) {
                     for (int iVar = 0; iVar < NoOfVars; iVar++) {

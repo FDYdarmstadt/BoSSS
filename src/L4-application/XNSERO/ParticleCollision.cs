@@ -114,7 +114,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// List of all particles
         /// </param>
         public void Calculate(Particle[] particles) {
-            Console.WriteLine("Collision " + this.DetermineOnlyOverlap + particles.Length);
             Particles = particles;
             // Step 1
             // Some var definition
@@ -183,7 +182,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                         for (int p1 = p0 + 1; p1 < Particles.Length; p1++) {
                             Particle[] currentParticles = new Particle[] { Particles[p0], Particles[p1] };
                             CalculateMinimumDistance(currentParticles, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out bool temp_Overlapping);
-                            Console.WriteLine("distance " + temp_DistanceVector.Abs() + " overlap " + temp_Overlapping);
                             Overlapping[p0][p1] = temp_Overlapping;
                             Overlapping[p1][p0] = temp_Overlapping;
                             ClosestPoints[p0][p1] = temp_ClosestPoints[0];

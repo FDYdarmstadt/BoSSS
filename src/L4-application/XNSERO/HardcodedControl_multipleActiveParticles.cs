@@ -52,20 +52,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
-            Random insertParticle = new Random();
             int j = 0;
             List<Particle> particles = new List<Particle>();
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
                 while(leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    double temp_insertParticle = insertParticle.Next(0, 3);
-                    temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
-                    //if (temp_insertParticle != 0) 
-                    {
-                        double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
-                        angle2 = angle2.MPIBroadcast(0);
-                        particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress, new double[] { 0, 0 }));
-                    }
+                    double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
+                    angle2 = angle2.MPIBroadcast(0);
+                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress, new double[] { 0, 0 }));
                     i += 1;
                 }
                 j += 1;

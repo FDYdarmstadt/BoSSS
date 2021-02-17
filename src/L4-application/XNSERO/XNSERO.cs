@@ -130,6 +130,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         private bool initAddedDamping = true;
 
         /// <summary>
+        /// Additional helper methods. Checking the validity of calculated results and mpi consistency.
+        /// </summary>
+        private Auxillary Auxillary = new Auxillary();
+
+        /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
         /// <param name="Basis">
@@ -292,6 +297,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             InitializeParticlesNewTimestep(dt);
+            Auxillary.ParticleState_MPICheck(Particles, GridData, MPISize);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
             CalculateCollision(Particles, dt);
