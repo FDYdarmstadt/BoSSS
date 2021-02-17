@@ -850,7 +850,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
-
+           
             // DG degrees
             // ==========
             #region degrees
@@ -907,7 +907,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_B = 1 * ratio;
             //C.PhysicalParameters.Sigma = 1;
 
-
+            
             C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
@@ -1129,6 +1129,149 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Endtime = 1000;
             C.NoOfTimesteps = 1;
             C.saveperiod = 2;
+
+            #endregion
+
+            return C;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control OscillatingDroplet3D_LegendrePolynomials(double f_2 = 0.5) {
+
+            XNSE_Control C = new XNSE_Control();
+
+
+            // basic database options
+            // ======================
+            #region db
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+            // grid generation
+            // ===============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            // prolate/oblate spheroid 
+            //double r = 0.21 * Lscale;
+            //double a = 1.25 * r;
+            //double b = 0.8 * r;
+            //double c = 0.8 * r;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
+
+            // Legndre polynomial m = 2 (spherical harmonics)
+            // f(theta) = gamma_2 + f_2 * P_2(theta) denotes
+            // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
+            // f_2 denotes the initial amplitude
+
+            //double f_2 = 0.5;
+            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
+
+            //Func<double[], double> PhiFunc = delegate (double[] X) {
+            //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+            //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+            //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+            //    double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
+            //    double phi = r - f;
+            //    return phi;
+            //};
+
+            //Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() 
+            //- gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1)));
+
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            string f_2_string = f_2.ToString();
+            string gam_2_string = gam_2.ToString();
+            C.InitialValues.Add("Phi", new Formula("X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - " + gam_2_string 
+                + " * (1 + " + f_2_string + " * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1))", false));
+
+
+            #endregion
+
+
+            // exact solution
+            // ==============
+            #region exact
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // level set options
+            // ====================
+            #region solver
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            // timesteps need to be set by user in worksheet
 
             #endregion
 

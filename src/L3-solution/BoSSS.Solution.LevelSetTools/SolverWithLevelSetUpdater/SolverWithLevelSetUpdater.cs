@@ -180,10 +180,27 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
-                LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                //levelSetDG.Clear();
-                //levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
-                DGlevelSets[iLevSet] = levelSetDG;
+                switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
+                    case LevelSetEvolution.Fourier: 
+                    case LevelSetEvolution.Prescribed:
+                    case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.FastMarching:
+                    case LevelSetEvolution.Phasefield:
+                    case LevelSetEvolution.None: 
+                    case LevelSetEvolution.SplineLS: {
+                        LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
+                        //levelSetDG.Clear();
+                        //levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
+                        DGlevelSets[iLevSet] = levelSetDG;
+                        break;
+                    }
+                    case LevelSetEvolution.RigidObject: {
+                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                        break;
+                    }
+                    default:
+                        throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
+                }
 
             }
 
@@ -327,6 +344,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         pair.DGLevelSet = SplineLevelSet;
                         break;
                     }
+                    case LevelSetEvolution.RigidObject:
+                        break;
                     default:
                         throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
                 }
