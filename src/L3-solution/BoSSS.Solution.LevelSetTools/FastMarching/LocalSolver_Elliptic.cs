@@ -251,12 +251,12 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                 for(int d = 0; d < D; d++) {
                     // central difference 
-                    Acc += 0.5 * (Grad_Phi[0, d] + Parameters_OUT[1 + d]) * Normale[d] * _v * LhsSwitch;
-                    Acc += 0.5 * _Grad_v[d] * Normale[d] * (Phi[0] - Parameters_OUT[0]) * LhsSwitch; // symmetry term
+                    //Acc += 0.5 * (Grad_Phi[0, d] + Parameters_OUT[1 + d]) * Normale[d] * _v * LhsSwitch;
+                    //Acc += 0.5 * _Grad_v[d] * Normale[d] * (Phi[0] - Parameters_OUT[0]) * LhsSwitch; // symmetry term
 
                     // inner values
-                    //Acc += Grad_Phi[0, d] * Normale[d] * _v * LhsSwitch;
-                    //Acc += _Grad_v[d] * Normale[d] * (Phi[0] - Parameters_OUT[0]) * LhsSwitch; // symmetry term
+                    Acc += Grad_Phi[0, d] * Normale[d] * _v * LhsSwitch;
+                    Acc += _Grad_v[d] * Normale[d] * (Phi[0] - Parameters_OUT[0]) * LhsSwitch; // symmetry term
                 }
 
                 Acc -= penalty * (Phi[0] - Parameters_OUT[0]) * _v * LhsSwitch;

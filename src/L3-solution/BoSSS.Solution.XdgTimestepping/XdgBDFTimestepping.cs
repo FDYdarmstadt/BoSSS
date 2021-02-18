@@ -720,7 +720,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGridData[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence,
+            ISpatialOperator abstractOperator) //
         {
             using (new FuncTrace()) {
 
@@ -728,6 +729,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotSupportedException();
 
                 base.m_LsTrk = LsTrk;
+
+                base.AbstractOperator = abstractOperator;
 
                 if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
                     throw new ArgumentException();

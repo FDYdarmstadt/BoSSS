@@ -753,7 +753,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGridData[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence,
+            ISpatialOperator abstractOperator) //
         {
             var gDat = Fields.First().GridDat;
             if(!object.ReferenceEquals(LsTrk.GridDat, gDat))
@@ -764,13 +765,20 @@ namespace BoSSS.Solution.XdgTimestepping {
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
             } else if(m_RK_Timestepper != null) {
                 throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
             } else {
                 throw new NotImplementedException();
             }
 
+            if (abstractOperator.GetType() == typeof(XSpatialOperatorMk2))
+                XdgOperator = (XSpatialOperatorMk2)abstractOperator;
+            if (abstractOperator.GetType() == typeof(SpatialOperator))
+                DgOperator = (SpatialOperator)abstractOperator;
+
+            if (!object.ReferenceEquals(this.Operator, m_BDF_Timestepper.AbstractOperator))
+                throw new ApplicationException();
 
         }
 

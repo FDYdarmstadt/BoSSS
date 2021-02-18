@@ -65,15 +65,17 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //InitMPI();
-            // DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0d, 3, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //DeleteOldPlotFiles();
+
+            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
-
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+
             _Main(args, false, delegate () {
                 var p = new XNSE();
                 return p;
@@ -387,6 +389,39 @@ namespace BoSSS.Application.XNSE_Solver {
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
+
+
+        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
+
+        //    DGField[] plotFields = this.m_RegisteredFields.ToArray();
+        //    void AddPltField(DGField f) {
+        //        bool add = true;
+        //        foreach(var ff in plotFields) {
+        //            if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
+        //                add = false;
+        //                break;
+        //            }
+        //        }
+        //        if(add) {
+        //            f.AddToArray(ref plotFields);
+        //        }
+        //    }
+        //    void AddPltFields(IEnumerable<DGField> fs) {
+        //        foreach(var f in fs)
+        //            AddPltField(f);
+        //    }
+
+        //    if (Timestepping?.Parameters != null) {
+        //        AddPltFields(Timestepping.Parameters);
+        //    }
+        //    if (LsUpdater?.Parameters != null) {
+        //        AddPltFields(LsUpdater.Parameters.Values);
+        //        AddPltFields(LsUpdater.InternalFields.Values);
+        //    }
+
+        //    Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
+        //}
+
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
