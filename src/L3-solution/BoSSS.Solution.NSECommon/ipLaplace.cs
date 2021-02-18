@@ -113,7 +113,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// penalty degree multiplier
         /// </summary>
-        double m_penalty_deg;
+        protected double m_penalty_deg;
         
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>

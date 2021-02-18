@@ -16,6 +16,9 @@ using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using ilPSP.Tracing;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver {
     static class FromControl {
@@ -65,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
     /// to obtain a single interface velocity.
     /// </summary>
-    class LevelSetVelocity : ILevelSetParameter {
+    public class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
         protected IList<string> parameters;
@@ -108,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 } catch {
                     Console.Error.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
                     EvoVelocity = D.ForLoop(
-                        d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X]
+                        d => (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0_d(d)]
                         );
                 }
 
@@ -430,16 +433,30 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray MassFlux = MultidimensionalArray.Create(Len, K);
 
                     for (int dd = 0; dd < D; dd++) {
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                     }
+                    ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
+
+                    var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
 
                     for (int j = 0; j < Len; j++) {
 
-                        for (int k = 0; k < K; k++) {     
-                            result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                        for (int k = 0; k < K; k++) {
+                            
+                            result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - 0.5 * MassFlux[j, k] * (1 / rhoA + 1 / rhoB) * Normals[j, k, d]; // calculate as modified rankine-hugoniot shock condition
+
+                            //if (rhoA != rhoB) {
+                            //    result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
+                            //} else if (Math.Abs(VelA[j, k, d] - VelB[j, k, d]) <= 1e-6) {
+                            //    double rho = 0.5 * (rhoA + rhoB);                             
+                            //    result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - MassFlux[j, k] / rho; // (relative) interface velocity depends solely on the mass flux
+                            //} else {
+                            //    throw new ApplicationException("unable to calculate Interface velocity");
+                            //}
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
@@ -488,7 +505,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             var paramName = BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension;
 
-            SinglePhaseField MassFluxField = (SinglePhaseField)ParameterVarFields[paramName];
+            SinglePhaseField MassFluxField = new SinglePhaseField(ParameterVarFields[paramName].Basis);
             int order = MassFluxField.Basis.Degree * MassFluxField.Basis.Degree + 2;
 
             XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
@@ -539,6 +556,33 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
+
+
+            // no extension
+            ParameterVarFields[paramName].Clear();
+            ParameterVarFields[paramName].Acc(1.0, MassFluxField);
+
+            //// extension
+            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
+            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
+            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
+            //int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
+            //double[][] MassFluxMin = new double[1][];
+            //double[][] MassFluxMax = new double[1][];
+            //MassFluxMin[0] = new double[J];
+            //MassFluxMax[0] = new double[J];
+
+            //VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d=> new SinglePhaseField(levelSet.DGLevelSet.Basis)));
+            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+
+            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
+            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
+
+            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
+            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
+            //    MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
+
+            ParameterVarFields[paramName].CheckForNanOrInf(true, true, true);
         }
 
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {

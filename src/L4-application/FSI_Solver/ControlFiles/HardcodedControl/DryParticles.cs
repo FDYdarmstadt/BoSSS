@@ -57,9 +57,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
 
             return C;

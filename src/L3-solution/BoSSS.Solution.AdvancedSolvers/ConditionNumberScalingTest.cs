@@ -24,6 +24,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Easy-to-use driver routine
         /// </summary>
+        /// <param name="controls">
+        /// a set of control object over which the scaling is investigated
+        /// </param>
+        /// <param name="plotAndWait">
+        /// if true, an interactive Gnuplot session is opened
+        /// </param>
+        /// <param name="title">
+        /// Gnuplot title/output filename
+        /// </param>
         static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false, string title = "") {
             var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);

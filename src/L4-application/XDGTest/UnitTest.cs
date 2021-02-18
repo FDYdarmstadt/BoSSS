@@ -64,21 +64,57 @@ namespace BoSSS.Application.XDGTest {
         }
 
 
+        static public XDGTestControl PeriodicBoundaryTest() {
+            var ctrl = new XDGTestControl();
+
+            ctrl.SetDGdegree(2);
+
+            ctrl.InitialValues_Evaluators.Add("Phi", XDGTestMain.Phi0);
+            ctrl.InitialValues_Evaluators.Add("Pressure#A", XDGTestMain.PressureExactA);
+            ctrl.InitialValues_Evaluators.Add("Pressure#B", XDGTestMain.PressureExactB);
+
+            ctrl.GridFunc = delegate () {
+                var xNodes = GenericBlas.Linspace(-1, 2, 25);
+                xNodes = xNodes.Take(24).ToArray();
+                var yNodes = GenericBlas.Linspace(-1, 1, 13);
+                var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX:true, periodicY: true);
+                return grd;
+            };
+
+            //ctrl.ImmediatePlotPeriod = 1;
+            //ctrl.SuperSampling = 3;
+
+            ctrl.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Transient;
+            ctrl.dtFixed = 1.0;
+            ctrl.NoOfTimesteps = 1;
+
+
+            return ctrl;
+        }
+
+
+
 
         [Test]
         public static void AllUp() {
-            XDGTestMain p = null;
-            XDGTestMain._Main(new string[] { "--control", "cs:BoSSS.Application.XDGTest.UnitTest.AllUpTestControl()" /*"--delplt", "--implt", "1", "-u4"*/}, false, delegate() {
-                p = new XDGTestMain();
-                return p;
-            });
+            //XDGTestMain p = null;
+            //XDGTestMain._Main(new string[] { "--control", "cs:BoSSS.Application.XDGTest.UnitTest.AllUpTestControl()" /*"--delplt", "--implt", "1", "-u4"*/}, false, delegate() {
+            //    p = new XDGTestMain();
+            //    return p;
+            //});
 
 
-            double err = p.AutoExtrapolationErr;
-            double thres = 1.0e-10;
+            var ctrl = BoSSS.Application.XDGTest.UnitTest.AllUpTestControl();
+            using(var p = new XDGTestMain()) {
+                p.Init(ctrl);
+                p.RunSolverMode();
 
-            Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
-            Assert.LessOrEqual(err, thres);
+                double err = p.AutoExtrapolationErr;
+                double thres = 1.0e-10;
+
+                Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
+                Assert.LessOrEqual(err, thres);
+            }
         }
 
 

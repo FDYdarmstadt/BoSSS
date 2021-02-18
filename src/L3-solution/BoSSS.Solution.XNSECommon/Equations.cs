@@ -185,14 +185,21 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             }
 
-            // gravity
+            // gravity & more general volume force
             // ================
-            if(config.isGravity) {
+            if (config.isGravity) {
                 string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
                 string gravityOfSpecies = gravity + "#" + SpeciesName;
                 var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
                 AddComponent(gravityComponent);
                 AddParameter(gravityOfSpecies);
+            }
+            if (config.isVolForce) {
+                string volforce = BoSSS.Solution.NSECommon.VariableNames.VolumeForceVector(D)[d];
+                string volforceOfSpecies = volforce + "#" + SpeciesName;
+                var volforceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(volforceOfSpecies, speciesName);
+                AddComponent(volforceComponent);
+                AddParameter(volforceOfSpecies);
             }
         }
 

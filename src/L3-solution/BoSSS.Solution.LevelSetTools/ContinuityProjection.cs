@@ -215,7 +215,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 CDGField.AccToDGField(1.0, LevelSet);
             } else {
                 LevelSet.Clear();
-                LevelSet.AccLaidBack(1.0, LevelSet);
+                LevelSet.AccLaidBack(1.0, DGLevelSet);
             }
         }
     }

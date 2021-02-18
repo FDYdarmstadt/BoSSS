@@ -1,11 +1,16 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using ilPSP;
+using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,6 +43,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// List for parameter fields can be set by <see cref="CreateAdditionalFields"/>
+        /// </summary>
+        public virtual IList<DGField> Parameters {
+            get;
+            protected set;
+
+        }
+
+        /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateResidualFields"/>
         /// </summary>
         public virtual CoordinateMapping CurrentResidual {
@@ -61,7 +75,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.Timestepping.OperatorAnalysis();
         }      
 
-        abstract internal void CreateTrackerHack();
+        abstract protected void CreateTrackerHack();
 
         /// <summary>
         /// Called on startup and 
@@ -70,7 +84,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            //
             CreateTrackerHack();
 
             // solution:
@@ -95,7 +108,15 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// An example would be e.g. parameters such as Gravity which are set through the control file.
         /// </summary>
         protected virtual void CreateAdditionalFields() {
-            
+
+            // parameters
+            var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
+            Parameters = new List<DGField>();
+            foreach (var f in parameterFields) {
+                this.Parameters.Add(f);
+                base.RegisterField(f);
+            }            
+
         }
 
 
@@ -181,6 +202,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// setup AMR level indicators
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            base.SetUpEnvironment();
+
+            // AMR level indactors
+            //====================
+            m_AMRLevelIndicators.Clear();
+            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
+                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+            }
+
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                lvlInd.Setup(this);
+            }
+        }
+
+
+        /// <summary>
         /// 
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
@@ -193,16 +233,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
 
+
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
+
                 // currently, only supported for the BDF timestepper.
-                
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+
+                if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))
+                    throw new ApplicationException();
+
             }
         }
+
 
         /// <summary>
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
@@ -214,6 +260,103 @@ namespace BoSSS.Solution.XdgTimestepping {
             CurrentResidualVector = null;
             ClearOperator();
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TimestepNo"></param>
+        /// <param name="newGrid"></param>
+        /// <param name="old2NewGrid"></param>
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            using (new FuncTrace()) {
+
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if (AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if (AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                    } else {
+
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+
+                } else {
+
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+
+            int J = this.GridData.CellPartitioning.LocalLength;
+            int[] levelChanges = new int[J];
+
+            // combine all results of active level indicators
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                int[] lvls = lvlInd.DesiredCellChanges();
+                levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+            }
+
+            // get desired level 
+            int[] levels = new int[J];
+            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+            for (int j = 0; j < J; j++) {
+                levels[j] = cells[j].RefinementLevel;
+                if (levelChanges[j] > 0)
+                    levels[j] += 1;
+                else if (levelChanges[j] < 0)
+                    levels[j] -= 1;
+            }
+
+            return levels;
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.AMRLevelIndicator"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
+        }
+
+
 
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>;
@@ -255,7 +398,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -348,9 +491,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
             var trk = InstantiateTracker();
-
+            //var test = this.Operator;
             if(base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
@@ -358,15 +501,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
-            foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
-                if(ls is DGField f) {
-                    base.RegisterField(f);
-                }
-            }
+            //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
+            //    if(ls is DGField f) {
+            //        base.RegisterField(f);
+            //    }
+            //}
+
         }
 
-
-        XSpatialOperatorMk2 m_XOperator;
+        private XSpatialOperatorMk2 m_XOperator { 
+            get; 
+            set; 
+        }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
@@ -376,7 +522,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                     if(!m_XOperator.IsCommited)
-                        throw new ApplicationException("Operator must be comitted by user.");
+                        throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
             }
@@ -406,7 +552,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridSequence,
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
-                this.LsTrk);
+                this.LsTrk,
+                Parameters);
 
             base.Timestepping = solver;
 
@@ -461,7 +608,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
                
         }
 
@@ -526,7 +673,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 

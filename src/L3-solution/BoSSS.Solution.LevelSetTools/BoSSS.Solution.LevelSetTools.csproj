@@ -112,6 +112,8 @@
     <Compile Include="FastMarching\FastMarchReinit.cs" />
     <Compile Include="Advection\NonconservativeAdvection.cs" />
     <Compile Include="LevelSetEvolution.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\AMRLevelIndicatorWithLevelset.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\AMRonNarrowband.cs" />
     <Compile Include="SolverWithLevelSetUpdater\FourierLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\ILevelSetEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\FastMarchingEvolver.cs" />
@@ -131,7 +133,9 @@
     <Compile Include="SemiLagrangianLevelSet\TestCases.cs" />
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
     <Compile Include="SolverWithLevelSetUpdater\PrescribedEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\RigidObjectLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdaterControl.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\PhasefieldEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />
     <Compile Include="StokesExtension\InteriorVelocityBoundary.cs" />

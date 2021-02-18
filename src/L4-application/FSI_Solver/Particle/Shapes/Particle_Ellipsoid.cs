@@ -20,7 +20,6 @@ using ilPSP;
 using System.Linq;
 using ilPSP.Utils;
 using FSI_Solver;
-using System.Diagnostics;
 
 namespace BoSSS.Application.FSI_Solver {
     [DataContract]
@@ -39,10 +38,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="length">
+        /// <param name="halfAxisA">
         /// The length of the horizontal halfaxis.
         /// </param>
-        /// <param name="thickness">
+        /// <param name="halfAxisB">
         /// The length of the vertical halfaxis.
         /// </param>
         /// <param name="startPos">
@@ -60,11 +59,11 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Ellipsoid(InitializeMotion motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
-            m_Length = length;
-            m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
+        public Particle_Ellipsoid(InitializeMotion motionInit, double halfAxisA = 4, double halfAxisB = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            m_Length = halfAxisA;
+            m_Thickness = halfAxisB;
+            Aux.TestArithmeticException(halfAxisA, "Particle length");
+            Aux.TestArithmeticException(halfAxisB, "Particle thickness");
 
             Motion.SetParticleMaxLengthscale(GetLengthScales().Max());
             Motion.SetParticleArea(Area);
@@ -97,14 +96,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
-            double angle = -Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
-            double r = -(((X[0] - position[0]) * Math.Cos(angle) - (X[1] - position[1]) * Math.Sin(angle)) / m_Length).Pow2()
-                       - (((X[0] - position[0]) * Math.Sin(angle) + (X[1] - position[1]) * Math.Cos(angle)) / m_Thickness).Pow2()
-                       + 1.0;
-            if (double.IsNaN(r) || double.IsInfinity(r))
-                throw new ArithmeticException();
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
+            Vector position = Postion;
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
+                        - (((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
+                        + 1.0;
             return r;
         }
 
@@ -117,35 +115,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
-            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), Math.Sin(Motion.GetAngle(0)));
-            Vector normalOrientation = new Vector(-Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
-            double Ellipse = ((point - position) * orientation).Pow2() / a.Pow2() + ((point - position) * normalOrientation).Pow2() / b.Pow2();
+            double Ellipse = ((point[0] - position[0]) * orientation[0] + (point[1] - position[1]) * orientation[1]).Pow2() / a.Pow2() + ((point[0] - position[0]) * orientation[1] - (point[1] - position[1]) * orientation[0]).Pow2() / b.Pow2();
             return Ellipse < 1;
-        }
-
-        /// <summary>
-        /// Returns an array with points on the surface of the particle.
-        /// </summary>
-        /// <param name="hMin">
-        /// Minimal cell length. Used to specify the number of surface points.
-        /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double dAngle, double searchAngle, int subParticleID) {
-            if (SpatialDim != 2)
-                throw new NotImplementedException("Only two dimensions are supported.");
-            double angle = Motion.GetAngle(0);
-            int noOfCurrentPointWithNeighbours = 3;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(noOfCurrentPointWithNeighbours, SpatialDim);
-            for (int j = 0; j < noOfCurrentPointWithNeighbours; j++) {
-                double verticalAxis = m_Length * Math.Cos(searchAngle + dAngle * (j - 1));
-                double horizontalAxis = m_Thickness * Math.Sin(searchAngle + dAngle * (j - 1));
-                SurfacePoints[j, 0] = (verticalAxis * Math.Cos(angle) - horizontalAxis * Math.Sin(angle));// + position[0];
-                SurfacePoints[j, 1] = (verticalAxis * Math.Sin(angle) + horizontalAxis * Math.Cos(angle));// + position[1];
-            }
-            return SurfacePoints;
         }
 
         /// <summary>
@@ -154,21 +131,22 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
-            Aux = new FSI_Auxillary();
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+            Aux = new FSIAuxillary();
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             Vector SupportPoint = new Vector(SpatialDim);
             double angle = Motion.GetAngle(0);
-            Vector position = new Vector(Motion.GetPosition(0));
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            Vector position = new Vector(Position);
 
             double[,] rotMatrix = new double[2, 2];
-            rotMatrix[0, 0] = m_Length * Math.Cos(angle);
-            rotMatrix[0, 1] = -m_Thickness * Math.Sin(angle);
-            rotMatrix[1, 0] = m_Length * Math.Sin(angle);
-            rotMatrix[1, 1] = m_Thickness * Math.Cos(angle);
+            rotMatrix[0, 0] = (m_Length) * orientation[0];
+            rotMatrix[0, 1] = (-m_Thickness) * orientation[1];
+            rotMatrix[1, 0] = (m_Length) * orientation[1];
+            rotMatrix[1, 1] = (m_Thickness) * orientation[0];
             double[,] transposeRotMatrix = rotMatrix.CloneAs();
             transposeRotMatrix[0, 1] = rotMatrix[1, 0];
             transposeRotMatrix[1, 0] = rotMatrix[0, 1];
@@ -179,7 +157,7 @@ namespace BoSSS.Application.FSI_Solver {
                     rotVector[i] += transposeRotMatrix[i, j] * supportVector[j];
                 }
             }
-            rotVector.ScaleV(1 / rotVector.L2Norm());
+            rotVector = rotVector.Normalize();
 
             for (int i = 0; i < 2; i++) {
                 for (int j = 0; j < 2; j++) {
@@ -198,17 +176,9 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         public override object Clone() {
-            Particle clonedParticle = new Particle_Ellipsoid(MotionInitializer,
-                                                             m_Length,
-                                                             m_Thickness,
-                                                             Motion.GetPosition(),
-                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
-                                                             ActiveStress,
-                                                             Motion.GetTranslationalVelocity(),
-                                                             Motion.GetRotationalVelocity());
-            clonedParticle.IsMaster = IsMaster;
-
-            return clonedParticle;
+            return new Particle_Ellipsoid(MotionInitializer, m_Length, m_Thickness, Motion.GetPosition(), Motion.GetAngle() * 360 / (2 * Math.PI), ActiveStress, Motion.GetTranslationalVelocity(), Motion.GetRotationalVelocity()) {
+                IsMaster = IsMaster
+            };
         }
     }
 }

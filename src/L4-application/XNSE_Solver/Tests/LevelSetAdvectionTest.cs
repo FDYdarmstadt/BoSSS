@@ -31,11 +31,10 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// Basic test for surface tension and convective terms: a drop
-    /// 'moving' in a constant velocity field, i.e.
-    /// \f$ \vec{u}(t,\vec{x}) = (1,0)^T\f$ .
+    /// Basic test case for advecting the leve-set field
+    /// in a constant velocity field
     /// </summary>
-    class LevelSetAdvectiontTest : IXNSETest {
+    class LevelSetAdvectionTest : IXNSElsTest {
 
         public bool TestImmersedBoundary => false;
 
@@ -50,14 +49,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             throw new NotImplementedException();
         }
 
-
-        public double Radius = 0.4;
+        double L = 1.0;
+        double Radius = 0.4;
         double Ux = 1;
 
         /// <summary>
         /// ctor
         /// </summary>
-        public LevelSetAdvectiontTest(int spatDim, int LevelSetDegree) {
+        public LevelSetAdvectionTest(int spatDim, int LevelSetDegree) {
             this.SpatialDimension = spatDim;
             this.LevelsetPolynomialDegree = LevelSetDegree;
         }
@@ -65,13 +64,29 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double dt {
             get {
-                return 0.001;
+                return -1.0;    // will be set in LevelSetTest() according to level set cfl 
             }
         }
 
-
         /// <summary>
-        /// creates a square in 2D and a square in 3D
+        /// computes the timestep size according to the level-set CFL condition
+        /// </summary>
+        /// <param name="Resolution"></param>
+        /// <param name="LSdegree"></param>
+        /// <returns></returns>
+        public double ComputeTimestep(int Resolution, int LSdegree) {
+            int gridCells1D = 9 * Resolution;
+            double h = 1.0 * L / (double)gridCells1D;
+            double dt = h / Ux;
+            dt /= (double)(LSdegree * LSdegree);
+
+            return dt;
+
+        }
+
+       
+        /// <summary>
+        /// creates a square in 2D and a cube in 3D
         /// </summary>
         /// <param name="Resolution"></param>
         /// <returns></returns>
@@ -79,7 +94,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             if (Resolution < 1)
                 throw new ArgumentException();
             
-            double L = 1.0;
+            //double L = 1.0;
             var xNodes = GenericBlas.Linspace(-L, L, 9 * Resolution + 1);
             var yNodes = GenericBlas.Linspace(-L, L, 9 * Resolution + 1);
             var zNodes = GenericBlas.Linspace(-L, L, 9 * Resolution + 1);
@@ -204,7 +219,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public Func<double[], double, double> GetPhi() {
             return delegate (double[] X, double time) {
 
-                double x = X[0], y = X[1];
+                double x0 = -Radius / 2.0; 
+                double x = X[0] - x0, y = X[1];
                 x -= time * Ux;
 
                 double dist;
@@ -336,7 +352,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableL2Error {
             get {
-                  return new double[] { 1.0e-7, 1.0e-7, 1.0e-1 };
+                  return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
             }
         }
 
