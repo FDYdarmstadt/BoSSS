@@ -54,9 +54,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             Random angle = new Random();
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            while(leftCorner + j * nextParticleDistance < domainLength / 2) {
+            while (leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
-                while(leftCorner + i * nextParticleDistance < domainLength / 2) {
+                while (leftCorner + i * nextParticleDistance < domainLength / 2) {
                     double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
                     angle2 = angle2.MPIBroadcast(0);
                     particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress, new double[] { 0, 0 }));
@@ -85,10 +85,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control TWOPI(double angle = 0, double angleXAxis = 150, double distance = 5, double halfAxis = 0.5, double aspectRatio = 0.5) {
-            XNSERO_Control C = new XNSERO_Control(2, "2particleInteractions", "active Particles");
+        public static XNSERO_Control TWOPI(double angle = 180, double angleXAxis = 0, double distance = 0, double halfAxis = 0.5, double aspectRatio = 0.5) {
+            XNSERO_Control C = new XNSERO_Control(3, "2particleInteractions", "active Particles");
 
-            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\2PI4", 1);
+            C.SetSaveOptions(@"\\hpccluster\hpccluster-scratch\deussen\cluster_db\2PI5", 1);
 
             //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\2particleInteractions", savePeriod: 1);
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
@@ -99,25 +99,26 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Pressure_Dirichlet"
             };
             C.SetBoundaries(boundaryValues);
-            double length = 10;
-            C.SetGrid(lengthX: length, lengthY: length, cellsPerUnitLength: 14, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
-
+            double length = 5;
+            C.SetGrid(lengthX: length, lengthY: length, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.RefinementLevel = 2;
+            C.AdaptiveMeshRefinement = true;
+            C.RefineStrategy = XNSE_Solver.XNSE_Control.RefinementStrategy.constantInterface;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.mu_A = 10;
+            C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 10;
-
+            C.SetGravity(new ilPSP.Vector(0, 1));
             // Particle Properties
             // =============================   
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             List<Particle> particles = new List<Particle>();
             particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, -distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, 0, 10),
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, angle, 10)
+                //new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, -distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, 0, 10),
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, angle, 0)
             };
             C.SetParticles(particles);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
@@ -126,12 +127,15 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================  
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: 1);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
+            C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.verbose = false;
+            C.UseSchurBlockPrec = false;
+            C.LinearSolver.pMaxOfCoarseSolver = 1;
 
             // Coupling Properties
             // =============================

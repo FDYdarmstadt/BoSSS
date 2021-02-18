@@ -63,10 +63,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * AllParticles.Count()];
                
                 // Calculate hydrodynamics.
-                CellMask allCutCells = AllParticles[0].LsTrk.Regions.GetCutCellMask();
+                CellMask allCutCells = AllParticles[0].LsTrk.Regions.GetCutCellMask4LevSet(1);
                 for (int p = 0; p < AllParticles.Count(); p++) {
                     Particle currentParticle = AllParticles[p];
-                    CellMask CutCells = currentParticle.ParticleCutCells(AllParticles[0].LsTrk, allCutCells, 0);
+                    CellMask CutCells = currentParticle.ParticleCutCells(AllParticles[0].LsTrk, allCutCells);
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
                     double[] tempHydrodynamics = currentParticle.Motion.CalculateHydrodynamics(HydrodynamicIntegrator, CutCells, FluidSpecies, dt);
                     for (int d = 0; d < SpatialDimension + 1; d++) 
@@ -145,7 +145,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsRelaxation(double[] hydrodynamics, ref double omega) {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            return m_ForcesAndTorqueWithoutRelaxation.Count > 2 ? AitkenRelaxation(hydrodynamics, ref omega) : StaticUnderrelaxation(hydrodynamics);
+            return m_ForcesAndTorqueWithoutRelaxation.Count > 3 ? AitkenRelaxation(hydrodynamics, ref omega) : StaticUnderrelaxation(hydrodynamics);
         }
 
         private double[] StaticUnderrelaxation(double[] variable) {
@@ -154,7 +154,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int d = 0; d < variable.Length; d++) {
                     if (variable[d] == 0)
                         continue;
-                    returnVariable[d] = 0.9 * variable[d] + (1 - 0.9) * m_ForcesAndTorquePreviousIteration[1][d];
+                    returnVariable[d] = 0.5 * variable[d] + (1 - 0.5) * m_ForcesAndTorquePreviousIteration[1][d];
                 }
                 return returnVariable;
             }

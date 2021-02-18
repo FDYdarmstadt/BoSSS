@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.Particles = Particles;
             this.FluidSpecies = FluidSpecies;
             this.TimeStep = TimeStep;
-            this.GridToleranceParam = GridToleranceParam * 0.5;
+            this.GridToleranceParam = GridToleranceParam;
             m_ParameterNames = VariableNames.AsLevelSetVariable(levelSetName, VariableNames.VelocityVector(SpatialDimension)).ToArray();
             this.FluidViscosity = FluidViscosity;
             this.Gravity = Gravity;
@@ -63,13 +63,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        /// <summary>
-        /// Velocity at rigid level set during parameter update.
-        /// </summary>
-        /// <param name="t"></param>
-        /// <param name="DomainVarFields"></param>
-        /// <param name="ParameterVarFields"></param>
-        private void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using (new FuncTrace()) {
                 HistoryPosition = 0;
                 XDGField Pressure = (XDGField)DomainVarFields[VariableNames.Pressure];
@@ -78,7 +72,42 @@ namespace BoSSS.Application.XNSERO_Solver {
                 ParticleHydrodynamicsIntegration hydrodynamicsIntegration = new ParticleHydrodynamicsIntegration(SpatialDimension, Velocity, Pressure, Particles[0].LsTrk, FluidViscosity);
                 ParticleHydrodynamics.CalculateHydrodynamics(Particles, hydrodynamicsIntegration, FluidSpecies, Gravity, TimeStep);
                 CalculateParticleVelocity(Particles, TimeStep);
-                SetLevelSetVelocity(ParameterVarFields);
+                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
+                LevelSetTracker LsTrk = Particles[0].LsTrk;
+                for (int d = 0; d < SpatialDimension; d++) {
+                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                    levelSetVelocity[d].Clear();
+                    levelSetVelocity[d].ProjectField(1.0,
+                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                        int K = result.GetLength(1); 
+                        for (int j = 0; j < Len; j++) {
+                            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, SpatialDimension);
+                            double[] cellCenter = LsTrk.GridDat.Cells.GetCenter(j + j0);
+                            LsTrk.GridDat.TransformLocal2Global(NS, globCoord, j + j0);
+                            for (int k = 0; k < K; k++) {
+                                double velocityLocal = 0.0;
+                                for (int p = 0; p < Particles.Length; p++) {
+                                    Particle particle = Particles[p];
+                                    if (particle.Contains(cellCenter, GridToleranceParam)) {
+                                        double[] X = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                                        Vector radialVector = particle.CalculateRadialVector(X);
+                                        switch (d) {
+                                            case 0:
+                                            velocityLocal = particle.Motion.GetTranslationalVelocity(HistoryPosition)[0] - particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[1];
+                                            break;
+                                            case 1:
+                                            velocityLocal = particle.Motion.GetTranslationalVelocity(HistoryPosition)[1] + particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[0];
+                                            break;
+                                            default:
+                                            throw new NotImplementedException("Rigid object solver only for 2D");
+                                        }
+                                    }
+                                }
+                                result[j, k] = velocityLocal;
+                            }
+                        }
+                    });
+                }
             }
         }
 
@@ -104,58 +133,14 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
                 HistoryPosition = 1;
-                SetLevelSetVelocity(ParameterVarFields);
+                InternalParameterUpdate(time, DomainVarFields, ParameterVarFields);
             }
-        }
-
-        private void SetLevelSetVelocity(IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            using (new FuncTrace()) {
-                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
-                for (int d = 0; d < SpatialDimension; d++) {
-                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
-                    levelSetVelocity[d].Clear();
-                    switch (d) {
-                        case 0:
-                        levelSetVelocity[d].ProjectField(NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityX));
-                        break;
-                        case 1:
-                        levelSetVelocity[d].ProjectField(NonVectorizedScalarFunction.Vectorize(GetLevelSetVelocityY));
-                        break;
-                        default:
-                        throw new NotImplementedException("Rigid object solver only for 2D");
-                    }
-                }
-            }
-        }
-
-        double GetLevelSetVelocityX(double[] X) {
-            double levelSetVelocity = 0;
-            for (int p = 0; p < Particles.Length; p++) {
-                Particle particle = Particles[p];
-                if (particle.Contains(X, GridToleranceParam)) {
-                    Vector radialVector = particle.CalculateRadialVector(X);
-                    levelSetVelocity = particle.Motion.GetTranslationalVelocity(HistoryPosition)[0] - particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[1];
-                }
-            }
-            return levelSetVelocity;
-        }
-
-        double GetLevelSetVelocityY(double[] X) {
-            double levelSetVelocity = 0;
-            for (int p = 0; p < Particles.Length; p++) {
-                Particle particle = Particles[p];
-                if (particle.Contains(X, GridToleranceParam)) {
-                    Vector radialVector = particle.CalculateRadialVector(X);
-                    levelSetVelocity = particle.Motion.GetTranslationalVelocity(HistoryPosition)[1] + particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[0];
-                }
-            }
-            return levelSetVelocity;
         }
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocties = new (string, DGField)[SpatialDimension];
             var bv = DomainVarFields[VariableNames.VelocityX].Basis;
-            var b = new Basis(bv.GridDat, bv.Degree);
+            var b = new Basis(bv.GridDat, Math.Max(6, bv.Degree));
 
             for (int d = 0; d < SpatialDimension; ++d) {
                 string paramName = ParameterNames[d];
@@ -212,13 +197,13 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                         for (int j = 0; j < Len; j++) {
                             MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-                            LsTrk.GridDat.TransformLocal2Global(NS, globCoord, j);
+                            double[] cellCenter = LsTrk.GridDat.Cells.GetCenter(j + j0);
+                            LsTrk.GridDat.TransformLocal2Global(NS, globCoord, j+ j0);
                             for (int k = 0; k < K; k++) {
                                 double activeStressLocal = 0.0;
-                                double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
                                 for (int p = 0; p < Particles.Length; p++) {
                                     Particle particle = Particles[p];
-                                    if (particle.Contains(globX, GridToleranceParam)) {
+                                    if (particle.Contains(cellCenter, GridToleranceParam)) {
                                         double activeStressMagnitude = particle.ActiveStress;
                                         double angle = particle.Motion.GetAngle(0);
                                         Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
@@ -227,17 +212,18 @@ namespace BoSSS.Application.XNSERO_Solver {
                                         if (orientation * normalVector <= 0)
                                             activeStressLocal = 0;
                                         else {
-                                            activeStressMagnitude *= Math.Pow(orientationNormal * normalVector, 8);
-                                            switch (d) {
-                                                case 0:
-                                                activeStressLocal = orientationNormal * normalVector > 0 ? -activeStressMagnitude * normalVector[1] : activeStressMagnitude * normalVector[1];
-                                                break;
-                                                case 1:
-                                                activeStressLocal = orientationNormal * normalVector > 0 ? (activeStressMagnitude * normalVector[0]) : -activeStressMagnitude * normalVector[0];
-                                                break;
-                                                default:
-                                                throw new NotImplementedException("Rigid object solver only for 2D");
-                                            }
+                                            //activeStressMagnitude *= Math.Pow(orientationNormal * normalVector, 2);
+                                            //switch (d) {
+                                            //    case 0:
+                                            //    activeStressLocal = orientationNormal * normalVector > 0 ? -activeStressMagnitude * normalVector[1] : activeStressMagnitude * normalVector[1];
+                                            //    break;
+                                            //    case 1:
+                                            //    activeStressLocal = orientationNormal * normalVector > 0 ? (activeStressMagnitude * normalVector[0]) : -activeStressMagnitude * normalVector[0];
+                                            //    break;
+                                            //    default:
+                                            //    throw new NotImplementedException("Rigid object solver only for 2D");
+                                            //}
+                                            activeStressLocal = -activeStressMagnitude * orientation[d];
                                         }
                                     }
                                 }

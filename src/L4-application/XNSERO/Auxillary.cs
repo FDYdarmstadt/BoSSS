@@ -26,13 +26,13 @@ using System.Text;
 
 namespace BoSSS.Application.XNSERO_Solver {
     /// <summary>
-    /// Helper class for the FSISolver. Contains additional methods for testing and console output.
+    /// Helper class for the FSISolver. Contains additional methods for testing.
     /// </summary>
     [Serializable]
     public class Auxillary {
         /// <summary>
         /// This method saves the list value at list position "0" to the next position.
-        /// Use this method for onedimensional vars.
+        /// Use this method for one dimensional vars.
         /// </summary>
         /// <param name="variable">
         /// Name of the list.
@@ -144,7 +144,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="MPISize">
         /// No of processes
         /// </param>
-        internal void ParticleState_MPICheck(Particle[] Particles, IGridData GridData, int MPISize, int TimeStepNo) {
+        internal void ParticleStateMPICheck(Particle[] Particles, IGridData GridData, int MPISize, int TimeStepNo) {
             if ((TimeStepNo % 10) != 0)// Do this check every ten time-steps to save some time.
                 return;
             int D = GridData.SpatialDimension;

@@ -172,7 +172,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
                     levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
             }
-            return levelSet;
+            return levelSet * 100;
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells, double GridLengthScaleParameter) {
+        public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
             BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h = LsTrk.GridDat.Cells.h_maxGlobal;

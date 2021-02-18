@@ -32,10 +32,10 @@ namespace BoSSS.Application.FSI_Solver {
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Dirichlet"
+                "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            double length = 6;
+            double length = 30;
             C.SetGrid(lengthX: length, lengthY: length, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(3);
 
@@ -49,24 +49,24 @@ namespace BoSSS.Application.FSI_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.IsStationary = false;
-            double particleDensity = 1000;
+            double particleDensity = 100;
 
             // Particle Properties
             // =============================   
             C.fixPosition = true;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, -distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, 0, 1),
-                //new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, angle, 1)
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, -distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, 0, 10),
+                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis * Math.PI / 180) / 2, distance * Math.Sin(angleXAxis * Math.PI / 180) / 2 }, angle, 10)
             };
 
 
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 10);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 1);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;

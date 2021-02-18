@@ -117,7 +117,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             double angle = currentParticle.Motion.GetAngle(0);
             Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector orientationNormal = new Vector(-orientation[1], orientation[0]);
-            Vector activeStressVector = orientationNormal * normalVector > 0 ? new Vector(-activeStress * normalVector[1], activeStress * normalVector[0]) : new Vector(activeStress * normalVector[1], -activeStress * normalVector[0]);
+            //Vector activeStressVector = orientationNormal * normalVector > 0 ? new Vector(-activeStress * normalVector[1], activeStress * normalVector[0]) : new Vector(activeStress * normalVector[1], -activeStress * normalVector[0]);
+            Vector activeStressVector = -activeStress * orientation;
             BoundaryConditionType bcType = orientation * normalVector <= 0 || activeStress == 0 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             Debug.Assert(ArgumentOrdering.Count == dim);

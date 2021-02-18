@@ -113,7 +113,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                         CellMask allCutCells = particle.LsTrk.Regions.GetCutCellMask();
                         var SchemeHelper = levelSetTracker.GetXDGSpaceMetrics(new[] { levelSetTracker.GetSpeciesId("A") }, RequiredOrder, 1).XQuadSchemeHelper;
-                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.ParticleCutCells(levelSetTracker, allCutCells, 0));
+                        CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, particle.ParticleCutCells(levelSetTracker, allCutCells));
                         CellQuadrature.GetQuadrature(new int[] { 1 }, levelSetTracker.GridDat,
                             cqs.Compile(levelSetTracker.GridDat, RequiredOrder),
                             delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
