@@ -319,11 +319,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (levelSetDegree != pair.DGLevelSet.Basis.Degree)
                     throw new ApplicationException();
 
+
+                ScalarFunction Phi_InitialValue = null;
+                if (Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
+                    Phi_InitialValue = scalarFunctionTimeDep.SetTime(0.0);
+                }
+
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
                         FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
                         fourierLevelSet.Clear();
-                        fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
+                        if (Phi_InitialValue != null)
+                            fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
                         pair.DGLevelSet = fourierLevelSet;
                         break;
                     }
@@ -332,7 +339,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();
-                        pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));  
+                        if (Phi_InitialValue != null)
+                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));  
                         break;
                     }
                     case LevelSetEvolution.SplineLS: {
