@@ -573,6 +573,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// empty/default vector of dimension <paramref name="D"/>
+        /// </summary>
+        public static Vector Empty(int D) {
+            if(D < 0 || D > 3)
+                throw new ArgumentOutOfRangeException("Invalid spatial dimension for vector: " + D);
+            Vector e = default(Vector);
+            e.Dim = D;
+            return e;
+        }
+
+
+        /// <summary>
         /// the <paramref name="d"/>-th standard basis
         /// </summary>
         /// <param name="D">spatial dimension</param>

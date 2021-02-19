@@ -620,6 +620,7 @@ namespace BoSSS.Application.BoSSSpad {
             JobStatus? StatusCache = null;
             int? ExitCodeCache = null;
 
+
             /// <summary>
             /// Status of the deployment
             /// </summary>
@@ -633,6 +634,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     var s = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
                     string ExitCodeStr = s.ExitCode.HasValue ? s.ExitCode.Value.ToString() : "null";
+                    this.ExitCodeCache = s.ExitCode;
 
                     if(s.Item1 == JobStatus.FinishedSuccessful) {
                         StatusCache = s.Item1;
@@ -643,7 +645,8 @@ namespace BoSSS.Application.BoSSSpad {
                     if(s.Item1 == JobStatus.FailedOrCanceled) {
                         StatusCache = s.Item1;
                         if(s.ExitCode == null || s.ExitCode == 0)
-                            throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
+                            this.ExitCodeCache = -655321;
+                        //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
 
                     }
 

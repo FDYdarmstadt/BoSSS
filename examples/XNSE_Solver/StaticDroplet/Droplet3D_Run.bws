@@ -6,8 +6,8 @@ restart
 
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 3; Grid Count = 5; Path = D:\local\local_test_db2 }
-  1: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 11; Grid Count = 13; Path = D:\local\local_test_db2 }
+  1: { Session Count = 2; Grid Count = 6; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -30,7 +30,7 @@ int exeQ = 1;
 ExecutionQueues[exeQ].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 1; Grid Count = 4; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 2; Grid Count = 6; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 ==============
 var myBatch = ExecutionQueues[exeQ];
@@ -55,13 +55,44 @@ Project name is set to 'Droplet3D'.
 ==============
 // Testcase setup
 // ==============
-double L      = 1.0;
-double radius = 0.21; 
-double a      = 1.25 * radius;
-double b      = 0.8 * radius;
-double c      = 0.8 * radius;
+double L   = 2.0;
+double f_2 = 0.5; //  amplitude of the initial deformation
 **************
 ==============
+// physical setting
+// ================
+double ratio = 0.001;
+int setup    = 1;
+
+string setupTag;
+double rhoA;
+double rhoB;
+double muA;
+double muB;
+double sigma;
+
+switch (setup) {
+case 1: {
+setupTag = "Ohnesorge Zahl = 1";
+rhoA     = 10;
+rhoB     = 10 * ratio;
+muA      = 1;
+muB      = 1 * ratio;
+sigma    = 0.1;
+break;
+}
+case 2: {
+setupTag = "Ohnesorge Zahl = 0.1";
+rhoA     = 100;
+rhoB     = 100 * ratio;
+muA      = 1;
+muB      = 1 * ratio;
+sigma    = 1;
+break;
+}
+default:
+break;
+}
 **************
 ==============
 // ===========================
@@ -70,7 +101,7 @@ double c      = 0.8 * radius;
 **************
 ==============
 var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{32};
+int[] kelemSeq = new int[]{9};
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -79,26 +110,26 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     
     GridCommons grd;
 
-    double[] xNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);
-    double[] yNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);  
-    double[] zNodes = GenericBlas.Linspace(-L/2.0, L/2.0, kelem + 1);    
+    double[] xNodes = GenericBlas.Linspace(-L, L, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(-L, L, kelem + 1);  
+    double[] zNodes = GenericBlas.Linspace(-L, L, kelem + 1);    
     grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
 
     grd.EdgeTagNames.Add(1, "wall");
  
     grd.DefineEdgeTags(delegate (double[] X) {
         byte et = 0;
-            if (Math.Abs(X[1] + L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[1] + L) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[1] - L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[1] - L) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[0] + L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[0] + L) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[0] - L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[0] - L) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[2] + L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[2] + L) <= 1.0e-8)
                 et = 1;
-            if (Math.Abs(X[2] - L/2.0) <= 1.0e-8)
+            if (Math.Abs(X[2] - L) <= 1.0e-8)
                 et = 1;
             return et;
     });
@@ -111,6 +142,7 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
+An equivalent grid (127cdf8b-5681-46ca-b250-2e1ca0461c21) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -121,7 +153,7 @@ Grid Edge Tags changed.
 **************
 ==============
 int[] degS = new int[] { 3 };
-int NoProc = 8;
+int NoProc = 4;
 **************
 ==============
 List<XNSE_Control> controls = new List<XNSE_Control>();
@@ -131,7 +163,7 @@ List<XNSE_Control> controls = new List<XNSE_Control>();
 for(int iDeg = 0; iDeg < degS.Length; iDeg++) {
 for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
-    XNSE_Control C = new XNSE_Control();
+    XNSE_Control C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet3D_LegendrePolynomials(f_2);
 
     C.savetodb          = true;
     C.ContinueOnIoError = false;
@@ -144,49 +176,28 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.SetGrid(grd);
     C.AddBoundaryValue("wall");
 
-
-    //string r_str = (radius).ToString();
-    string a_str = (a).ToString();
-    string b_str = (b).ToString();
-    string c_str = (c).ToString();
-    C.AddInitialValue("Phi", "X => ((X[0]/"+a_str+").Pow2() + (X[1]/"+b_str+").Pow2() + (X[2]/"+c_str+").Pow2()).Sqrt() - 1", false); 
-   
-    //C.InitSignedDistance = true; 
-    
-    C.PhysicalParameters.rho_A = 1.0e4;
-    C.PhysicalParameters.rho_B = 1.0e4;
-    C.PhysicalParameters.mu_A  = 1.0;
-    C.PhysicalParameters.mu_B  = 1.0;
-    C.PhysicalParameters.Sigma = 0.1;
+    C.Tags.Add(setupTag);
+    C.PhysicalParameters.rho_A = rhoA;
+    C.PhysicalParameters.rho_B = rhoB;
+    C.PhysicalParameters.mu_A  = muA;
+    C.PhysicalParameters.mu_B  = muB;
+    C.PhysicalParameters.Sigma = sigma;
     
     C.PhysicalParameters.IncludeConvection = false;
 
     
     C.dtMin         = 0.2;
     C.dtMax         = 0.2;
-    C.NoOfTimesteps = 5000;
+    C.NoOfTimesteps = 1000;
     
-    C.AdaptiveMeshRefinement = false;
-    C.RefineStrategy         = XNSE_Control.RefinementStrategy.constantInterface;
-    C.BaseRefinementLevel    = 3;
+    C.AdaptiveMeshRefinement = true;
+    C.activeAMRlevelIndicators.Add(new BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.AMRonNarrowband() { maxRefinementLevel = 2 });
+    C.AMR_startUpSweeps = 2;
   
-
-    C.LSContiProjectionMethod                         = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-    //C.Option_LevelSetEvolution                        = LevelSetEvolution.None;
-    C.Option_LevelSetEvolution                        = LevelSetEvolution.FastMarching;
-    C.FastMarchingPenaltyTerms                        = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-    C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-    
-    C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-
-    C.TimeSteppingScheme           = BoSSS.Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
-    C.Timestepper_BDFinit          = BoSSS.Solution.Timestepping.TimeStepperInit.SingleInit;
-    //C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.None;
-    C.Timestepper_LevelSetHandling = BoSSS.Solution.XdgTimestepping.LevelSetHandling.Coupled_Once;
     
     C.saveperiod = 5;
     
-    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_test_NoProc"+NoProc;
+    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_testAMR_NoProc"+NoProc;
     
     C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
     
@@ -204,7 +215,7 @@ controls.Count;
 ==============
 controls.ElementAt(0).SessionName
 **************
-Droplet3D_k3_mesh0_test_NoProc8
+Droplet3D_k3_mesh0_testAMR_NoProc4
 ==============
 **************
 ==============
@@ -232,13 +243,13 @@ foreach(var cntrl in controls) {
     }
 }
 **************
-Submitting Session: Droplet3D_k3_mesh0_test_NoProc8
-Deploying job Droplet3D_k3_mesh0_test_NoProc8 ... 
+Submitting Session: Droplet3D_k3_mesh0_testAMR_NoProc4
+Deploying job Droplet3D_k3_mesh0_testAMR_NoProc4 ... 
 Submitting job with the following database info: 
 Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
 No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Jan16_201224
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Feb17_161342
 copied 31 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -257,6 +268,16 @@ List of 3 instances of ISessionInfo {
 }
 ==============
 databases.Pick(0).Sessions.Pick(0).OpenSessionDirectory()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

@@ -145,7 +145,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_LsTrk.IncreaseHistoryLength(0);
             } else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
                   || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                  || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                 m_LsTrk.IncreaseHistoryLength(1);
             } else {
                 m_LsTrk.IncreaseHistoryLength(S + 1);
@@ -161,7 +161,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             } else {
                 if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
                     || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                    || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                     m_Stack_MassMatrix = new BlockMsrMatrix[1];
                 } else {
                     m_Stack_MassMatrix = new BlockMsrMatrix[S + 1];
@@ -315,7 +315,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 case LevelSetHandling.LieSplitting:
                 case LevelSetHandling.StrangSplitting:
-                case LevelSetHandling.FSI_LieSplittingFullyCoupled:
+                case LevelSetHandling.FSILieSplittingFullyCoupled:
                     // noop.
                     break;
 
@@ -332,7 +332,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // Solution-Stack
             // --------------
-            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
+            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
                 // entry 0 should remain the same object all the time
                 var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
@@ -719,7 +719,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGridData[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence,
+            ISpatialOperator abstractOperator) //
         {
             using (new FuncTrace()) {
 
@@ -727,6 +728,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotSupportedException();
 
                 base.m_LsTrk = LsTrk;
+
+                base.AbstractOperator = abstractOperator;
 
                 if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
                     throw new ArgumentException();
@@ -791,15 +794,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // in case of steady level set the xdgAggBasis need to be updated
                 if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
 
                     // matrix used for precond (must be agglomerated)
                     if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                         MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                         m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        if (this.m_CurrentAgglomeration != null) {
+                            m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        }
                     }
                 }
 
@@ -869,7 +874,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (Config_LevelSetHandling == LevelSetHandling.None
                 || Config_LevelSetHandling == LevelSetHandling.LieSplitting
                 || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled)
+                || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled)
                 m_Stack_CutCellMetrics_incHist = null;
             else {
                 m_Stack_CutCellMetrics_incHist = new CutCellMetrics[S - 1];
@@ -885,7 +890,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             } else {
                 if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
                     || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                    || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                     m_Stack_MassMatrix_incHist = null;
                 } else {
                     m_Stack_MassMatrix_incHist = new BlockMsrMatrix[S - 1];
@@ -961,7 +966,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                    || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                     if (m_IterationCounter == 0) {
                         if(m_CurrentAgglomeration != null)
                             throw new ApplicationException();
@@ -980,7 +985,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
                     if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                        || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                        || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                         // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
 
                         Debug.Assert(m_IterationCounter == 0);
@@ -1126,7 +1131,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 } else if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                     || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                    || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled
+                    || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled
                     || this.Config_LevelSetHandling == LevelSetHandling.None) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Splitting:
@@ -1407,7 +1412,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================================
             if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
                 || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                || Config_LevelSetHandling == LevelSetHandling.FSI_LieSplittingFullyCoupled) {
+                || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
 
                 Debug.Assert(m_CurrentAgglomeration == null);
 
@@ -1419,7 +1424,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //var oldCCM = this.UpdateCutCellMetrics();
 
                 // evolve the level set
-                if (Config_LevelSetHandling != LevelSetHandling.FSI_LieSplittingFullyCoupled && !this.coupledOperator)
+                if (Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled && !this.coupledOperator)
                 {
                     m_LsTrk.IncreaseHistoryLength(1);
                     m_LsTrk.PushStacks();

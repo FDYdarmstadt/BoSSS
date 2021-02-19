@@ -88,13 +88,6 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-            Tecplot.PlotFields(this.m_RegisteredFields, "XHEAT_Solver" + timestepNo, physTime, superSampling);
-            if(Timestepping?.Parameters != null) {
-                Tecplot.PlotFields(Timestepping.Parameters, "XHEAT_Solver_Params" + timestepNo, physTime, superSampling);
-            }
-        }
-
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
             boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
@@ -105,6 +98,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            XOP.IsLinear = true;
             XOP.Commit();
 
             return XOP;
@@ -129,101 +123,21 @@ namespace BoSSS.Application.XNSE_Solver {
             opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));
             opFactory.AddCoefficient(new EvapMicroRegion());
 
-            // Add Velocity parameters as prescribed variables
-            for(int d = 0; d < D; d++)
+
+            // Add Velocity parameters as prescribed variables (needed for level set)
+            for (int d = 0; d < D; d++)
                 opFactory.AddParameter(Velocity0Prescribed.CreateFrom(lsUpdater.Tracker, d, D, Control));
 
-            Velocity0MeanPrescribed v0Mean = new Velocity0MeanPrescribed(D, lsUpdater.Tracker, quadOrder);
-            opFactory.AddParameter(v0Mean);
-            lsUpdater.AddLevelSetParameter("Phi", v0Mean);
-
-            Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
-            opFactory.AddParameter(normalsParameter);
-            lsUpdater.AddLevelSetParameter("Phi", normalsParameter);
-            // even though we have no surface tension here, we still need this
-            switch(Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter("Phi", maxSigmaParameter);
-                BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter("Phi", lsBGradient);
-                break;
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
-                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter("Phi", lsGradient);
-                break;
-                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
-                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
-                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                BeltramiGradientAndCurvature lsGradientAndCurvature =
-                    FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
-                opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter("Phi", lsGradientAndCurvature);
-                break;
-                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets["Phi"].DGLevelSet;
-                var fourrier = new FourierEvolver(
-                    VariableNames.LevelSetCG,
-                    ls,
-                    Control.FourierLevSetControl,
-                    Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter("Phi", fourrier);
-                lsUpdater.AddEvolver("Phi", fourrier);
-                opFactory.AddParameter(fourrier);
-                break;
-                default:
-                break;
+            if (this.Control.ThermalParameters.IncludeConvection) {
+                Velocity0MeanPrescribed v0Mean = new Velocity0MeanPrescribed(D, lsUpdater.Tracker, quadOrder);
+                opFactory.AddParameter(v0Mean);
+                lsUpdater.AddLevelSetParameter("Phi", v0Mean);
             }
-        }
 
-        /*
-        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
-            int levelSetDegree = Control.FieldOptions[VariableNames.LevelSetCG].Degree;
-
-            LevelSetUpdater lsUpdater;
-            switch(Control.Option_LevelSetEvolution) {
-                case LevelSetEvolution.Fourier:
-                if(Control.EnforceLevelSetConservation) {
-                    throw new NotSupportedException("mass conservation correction currently not supported");
-                }
-                FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetCG);
-                fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
-                break;
-
-                case LevelSetEvolution.FastMarching:
-                LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetCG);
-                levelSet.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.LevelSetCG);
-                var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSet.GridDat.SpatialDimension);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
-                break;
-
-                case LevelSetEvolution.SplineLS:
-                int nodeCount = 30;
-                Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetCG, nodeCount);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
-                var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters));
-                break;
-
-                case LevelSetEvolution.None:
-                LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetCG);
-                levelSet1.ProjectField(Control.InitialValues_Evaluators[VariableNames.LevelSetCG]);
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
-                break;
-                default:
-                throw new NotImplementedException();
-            }
-            return lsUpdater;
-        }
-        */
+            // Level set evolver need the gradient
+            BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);            
+        }        
 
         protected override IncompressibleBoundaryCondMap GetBcMap() {
             // required only for the stokes extension

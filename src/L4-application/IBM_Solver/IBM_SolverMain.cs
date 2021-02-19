@@ -65,7 +65,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Pressure
         /// </summary>
         [InstantiateFromControlFile(VariableNames.Pressure, null, IOListOption.ControlFileDetermined)]
-        public SinglePhaseField Pressure;
+        public XDGField Pressure;
 
         /// <summary>
         /// velocity
@@ -74,7 +74,7 @@ namespace BoSSS.Application.IBM_Solver {
             null,
             true, true,
             IOListOption.ControlFileDetermined)]
-        public VectorField<SinglePhaseField> Velocity;
+        public VectorField<XDGField> Velocity;
 
         /// <summary>
         /// Level-Set tracker
@@ -107,7 +107,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Residual of the continuity equation
         /// </summary>
         [InstantiateFromControlFile("ResidualConti", VariableNames.Pressure, IOListOption.ControlFileDetermined)]
-        public SinglePhaseField ResidualContinuity;
+        public XDGField ResidualContinuity;
 
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace BoSSS.Application.IBM_Solver {
             new string[] { VariableNames.VelocityX, VariableNames.VelocityY, VariableNames.VelocityZ },
             true, true,
             IOListOption.ControlFileDetermined)]
-        public VectorField<SinglePhaseField> ResidualMomentum;
+        public VectorField<XDGField> ResidualMomentum;
 
 #pragma warning restore 649
         #endregion
@@ -333,7 +333,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Unknowns, Residual, this.LsTrk, base.MultigridSequence);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Unknowns, Residual, this.LsTrk, base.MultigridSequence, IBM_Op);
             }
             Debug.Assert(m_BDF_Timestepper != null);
         }
@@ -614,16 +614,16 @@ namespace BoSSS.Application.IBM_Solver {
             // Create Parameters fields
             DGField[] Params;
             {
-                var U0 = new VectorField<SinglePhaseField>(CurrentState.Take(D).Select(F => (SinglePhaseField)F).ToArray());
-                SinglePhaseField[] U0_U0mean;
+                VectorField<XDGField> U0 = new VectorField<XDGField>(CurrentState.Take(D).Select(F => (XDGField)F).ToArray());
+                XDGField[] U0_U0mean;
                 if (this.U0MeanRequired) {
                     Basis U0meanBasis = new Basis(GridData, 0);
-                    VectorField<SinglePhaseField> U0mean = new VectorField<SinglePhaseField>(D, U0meanBasis, "U0mean_", SinglePhaseField.Factory);
-                    U0_U0mean = ArrayTools.Cat<SinglePhaseField>(U0, U0mean);
+                    VectorField<XDGField> U0mean = new VectorField<XDGField>(D, U0meanBasis, "U0mean_", XDGField.Factory);
+                    U0_U0mean = ArrayTools.Cat(U0, U0mean);
                 } else {
-                    U0_U0mean = new SinglePhaseField[2 * D];
+                    U0_U0mean = new XDGField[2 * D];
                 }
-                Params = ArrayTools.Cat<DGField>(U0_U0mean);
+                Params = ArrayTools.Cat(U0_U0mean);
             }
 
             m_LenScales = AgglomeratedCellLengthScales[FluidSpecies[0]];
@@ -834,7 +834,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //}
                 //*/
 
-                //Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A);
+                //Test_Force = IBMSolverUtils.GetForces(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A/this.Control.PhysicalParameters.rho_A);
                 ////oldtorque = torque;
                 //torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
@@ -1250,47 +1250,60 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>.
         /// </summary>
-        protected MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
+        public MultigridOperator.ChangeOfBasisConfig[][] MultigridOperatorConfig {
             get {
                 int pVel = this.Velocity[0].Basis.Degree;
                 int pPrs = this.Pressure.Basis.Degree;
                 int D = this.GridData.SpatialDimension;
-
-                if (this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
-                    && this.Control.VelocityBlockPrecondMode != MultigridOperator.Mode.IdMass_DropIndefinite) {
-                    throw new NotSupportedException("Invalid option for block-preconditioning of momentum equation: " + this.Control.VelocityBlockPrecondMode
-                        + ". Valid options are " + MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite + " and " + MultigridOperator.Mode.IdMass_DropIndefinite + ".");
-
-                }
-
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[6][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
-                    configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 1];
-
-                    //int currpVel = iLevel < 4 ? Math.Max(1, pVel - iLevel) : pVel;
-                    //int currpPrs = iLevel < 4 ? Math.Max(0, pPrs - iLevel) : pPrs;
-                    int currpVel = pVel;
-                    int currpPrs = pPrs;
 
 
-                    // configurations for velocity
-                    for (int d = 0; d < D; d++) {
-                        configs[iLevel][d] = new MultigridOperator.ChangeOfBasisConfig() {
-                            DegreeS = new int[] { Math.Max(1, currpVel) },//DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
-                            mode = this.Control.VelocityBlockPrecondMode,
-                            VarIndex = new int[] { d }
-                        };
+                    var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
+
+
+                    if (this.Control.UseSchurBlockPrec) {
+                        // using a Schur complement for velocity & pressure
+                        var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                        for (int d = 0; d < D; d++) {
+                            d.AddToArray(ref confMomConti.VarIndex);
+                            //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                            pVel.AddToArray(ref confMomConti.DegreeS);
+                        }
+                        D.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                        confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                        configsLevel.Add(confMomConti);
                     }
-                    // configuration for pressure
-                    configs[iLevel][D] = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { Math.Max(0, currpPrs) },//DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
-                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                        VarIndex = new int[] { D }
-                    };
+                    else {
+                        // configurations for velocity
+                        for (int d = 0; d < D; d++) {
+                            var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                                DegreeS = new int[] { pVel },
+                                //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                                mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                                VarIndex = new int[] { d }
+                            };
+                            configsLevel.Add(configVel_d);
+                        }
+                        // configuration for pressure
+                        var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pPrs },
+                            //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                            mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                            VarIndex = new int[] { D }
+                        };
+                        configsLevel.Add(configPres);
+                    }
+
+                    configs[iLevel] = configsLevel.ToArray();
                 }
 
 

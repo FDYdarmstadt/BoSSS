@@ -107,7 +107,7 @@ MiniBatchProcessor.Server.StartIfNotRunning(false);
 /// incompressible channel flow, therefore we have to import the namespace,
 /// and repeat the steps from chapter \ref{IBM} in order to setup the
 /// control object:
-using BoSSS.Application.IBM\_Solver;
+using BoSSS.Application.XNSE\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -148,7 +148,7 @@ myLocalDb.SaveGrid(ref grid);
 \BoSSSexe
 \BoSSScmd{
 // control object instantiation:\newline 
-var c = new IBM\_Control();\newline 
+var c = new XNSE\_Control();\newline 
 // general description:\newline 
 int k                = 1;\newline 
 string desc          = "Steady state, channel, k" + k; \newline 
@@ -164,9 +164,7 @@ double reynolds            = 20; \newline
 c.PhysicalParameters.rho\_A = 1; \newline 
 c.PhysicalParameters.mu\_A  = 1.0/reynolds;\newline 
 // Timestepping properties:\newline 
-c.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.ImplicitEuler; \newline 
-c.dtFixed            = 1E20;  \newline 
-c.NoOfTimesteps      = 1;
+c.TimesteppingMode = AppControl.\_TimesteppingMode.Steady;
  }
 \BoSSSexe
 \BoSSScmd{

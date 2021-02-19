@@ -804,9 +804,6 @@ namespace BoSSS.Solution {
             return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
 
             /*
-            for (int iLevel = 0; iLevel < MGBasis.Length; iLevel++) {
-                LocalDOF[iLevel] = 0;
-                int NoOfCells = MGBasis[iLevel][0].AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
 
                 for(int iCell = 0; iCell < NoOfCells; iCell++) {
                     for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
@@ -825,10 +822,10 @@ namespace BoSSS.Solution {
                     }
                 }
             }
-
             return LocalDOF;
-        */
+            */
         }
+        
         
 
         private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
@@ -838,7 +835,7 @@ namespace BoSSS.Solution {
             var MGBasisAtLevel = MultigridBasis.ToArray();
             int[] NoOFCellsAtLEvel = MGBasisAtLevel.Length.ForLoop(b=> MGBasisAtLevel[b].First().AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
             int counter = 0;
-            
+
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
                 counter = iLevel;

@@ -823,11 +823,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 4) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 9) {
 
             XNSE_Control C = new XNSE_Control();
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            bool quarterDomain = true;
 
             //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
             //string _DbPath = @"D:\local\local_test_db2";
@@ -848,7 +850,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
-
+           
             // DG degrees
             // ==========
             #region degrees
@@ -888,17 +890,24 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===================
             #region physics
 
-            double rho = 1e4;
-            double mu = 1.0;
-            double sigma = 0.1;
+            double ratio = 0.001;
 
-            C.Tags.Add("La = 500");
-            C.PhysicalParameters.rho_A = rho;
-            C.PhysicalParameters.rho_B = rho;
-            C.PhysicalParameters.mu_A = mu;
-            C.PhysicalParameters.mu_B = mu;
-            C.PhysicalParameters.Sigma = sigma;
+            C.Tags.Add("Ohnesorge Zahl = 1");
+            C.PhysicalParameters.rho_A = 10;
+            C.PhysicalParameters.rho_B = 10 * ratio;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1 * ratio;
+            C.PhysicalParameters.Sigma = 0.1;
 
+
+            //C.Tags.Add("Ohnesorge Zahl = 0.1");
+            //C.PhysicalParameters.rho_A = 100;
+            //C.PhysicalParameters.rho_B = 100 * ratio;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 1 * ratio;
+            //C.PhysicalParameters.Sigma = 1;
+
+            
             C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
@@ -908,36 +917,84 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double Lscale = 1.0; ;
-            double L = 2.0 * Lscale;
+            double Lscale = 1.0;
+            double L = 6.0 * Lscale;
+            double L_drop = 2.0 * Lscale;
 
-            C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Znodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
+            if (!quarterDomain) {
+                C.GridFunc = delegate () {
+                    double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
+                    double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+                    double[] nodes = droplet;
+                    L = L_drop;
 
-                grd.EdgeTagNames.Add(1, "wall");
+                    var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] + (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] - (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[2] + (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[2] - (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    return et;
-                });
+                    grd.EdgeTagNames.Add(1, "wall");
 
-                return grd;
-            };
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
+
+                    return grd;
+                };
+
+            } else {
+
+                C.GridFunc = delegate () {
+                    double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
+                    double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
+                    //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+
+                    var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
+
+                    L = L_drop;
+
+                    grd.EdgeTagNames.Add(1, "wall");
+                    grd.EdgeTagNames.Add(2, "slipsymmetry");
+
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
+
+                    return grd;
+                };
+
+            }
 
             #endregion
 
@@ -946,15 +1003,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            double r = 0.21 * Lscale;
-            double a = 1.25 * r;
-            double b = 0.8 * r;
-            double c = 0.8 * r;
+            // prolate/oblate spheroid 
+            //double r = 0.21 * Lscale;
+            //double a = 1.25 * r;
+            //double b = 0.8 * r;
+            //double c = 0.8 * r;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
 
-            Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
+            // Legndre polynomial m = 2 (spherical harmonics)
+            // f(theta) = gamma_2 + f_2 * P_2(theta) denotes
+            // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
+            // f_2 denotes the initial amplitude
 
+            double f_2 = 0.5;
+            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
+            Func<double[], double> PhiFunc = delegate(double[] X) {
+                double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+                double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+                double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+                double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
+                double phi = r - f;
+                return phi;
+            };
+            
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-
 
             //// restart
             //var database = new DatabaseInfo(_DbPath);
@@ -986,6 +1058,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region BC
 
             C.AddBoundaryValue("wall");
+            if (quarterDomain)
+                C.AddBoundaryValue("slipsymmetry");
 
             #endregion
 
@@ -1053,8 +1127,151 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 2000;
+            C.NoOfTimesteps = 1;
             C.saveperiod = 2;
+
+            #endregion
+
+            return C;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static XNSE_Control OscillatingDroplet3D_LegendrePolynomials(double f_2 = 0.5) {
+
+            XNSE_Control C = new XNSE_Control();
+
+
+            // basic database options
+            // ======================
+            #region db
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            // need to be set by user via setDGdegree() in worksheet
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+            // grid generation
+            // ===============
+            #region grid
+
+            // need to be set by user via setGrid() in worksheet
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            // prolate/oblate spheroid 
+            //double r = 0.21 * Lscale;
+            //double a = 1.25 * r;
+            //double b = 0.8 * r;
+            //double c = 0.8 * r;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
+
+            // Legndre polynomial m = 2 (spherical harmonics)
+            // f(theta) = gamma_2 + f_2 * P_2(theta) denotes
+            // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
+            // f_2 denotes the initial amplitude
+
+            //double f_2 = 0.5;
+            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
+
+            //Func<double[], double> PhiFunc = delegate (double[] X) {
+            //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+            //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+            //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+            //    double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
+            //    double phi = r - f;
+            //    return phi;
+            //};
+
+            //Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() 
+            //- gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1)));
+
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            string f_2_string = f_2.ToString();
+            string gam_2_string = gam_2.ToString();
+            C.InitialValues.Add("Phi", new Formula("X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - " + gam_2_string 
+                + " * (1 + " + f_2_string + " * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1))", false));
+
+
+            #endregion
+
+
+            // exact solution
+            // ==============
+            #region exact
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            // need to be set by user in worksheet
+
+            #endregion
+
+
+            // level set options
+            // ====================
+            #region solver
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+            // timesteps need to be set by user in worksheet
 
             #endregion
 

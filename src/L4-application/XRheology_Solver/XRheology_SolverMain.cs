@@ -629,7 +629,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L,
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.StressXX, this.StressXY, this.StressYY),
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualStressXX, ResidualStressXY, this.ResidualStressYY),
-                    this.LsTrk, this.MultigridSequence);
+                    this.LsTrk, this.MultigridSequence, this.XRheology_Operator.Xop);
 
                 //PlotCurrentState(hack_Phystime, new TimestepNumber(hack_TimestepIndex, 13), 2);
 

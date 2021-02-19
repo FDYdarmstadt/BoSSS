@@ -595,7 +595,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Which edges (see <see cref="EdgeData.CellIndices"/>) bound to which cells? 
+        /// Which edges (see <see cref="ILogicalEdgeData.CellIndices"/>) bound to which cells? 
         /// - 1st index: local cell index <em>j</em>, only local updated
         /// - 2nd index: collection, order is arbitrary; 
         /// - content <em>e</em>: If <em>e</em> is positive, then cell <em>j</em> is the first
@@ -623,7 +623,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Returns the volume (to be more exact: the
-        /// <see cref="SpatialDimension"/> - dimensional measure) of the
+        /// <see cref="IGridData.SpatialDimension"/> - dimensional measure) of the
         /// cell <paramref name="j"/>;
         /// </summary>
         /// <param name="j">local cell index</param>
@@ -654,9 +654,15 @@ namespace BoSSS.Foundation.Grid {
         double[] GetCenter(int jCell);
     }
 
+    /// <summary>
+    /// Vertices/Nodes of the mesh
+    /// </summary>
     public interface IVertexData {
 
-
+        /// <summary>
+        /// - 1st index/row index: vertex index 
+        /// - 2nd index: spatial dimension
+        /// </summary>
         MultidimensionalArray Coordinates {
             get;
         }

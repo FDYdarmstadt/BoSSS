@@ -157,7 +157,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         bool CheckE { get; }
     }
 
-    interface IXNSETest : ITest {
+    public interface IXNSETest : ITest {
 
         /// <summary> 
         /// Some external volume force, e.g. gravity.

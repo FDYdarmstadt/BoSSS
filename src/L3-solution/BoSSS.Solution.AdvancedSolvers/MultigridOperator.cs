@@ -29,21 +29,22 @@ using ilPSP.Tracing;
 using MPI.Wrappers;
 using BoSSS.Foundation.XDG;
 using System.Collections;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
     public partial class MultigridOperator {
 
-        internal static LevelSetTracker GetTracker(IEnumerable<Basis> dom) {
+        internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map) {
             LevelSetTracker lsTrk = null;
 
-            foreach(Basis b in dom) {
-                if(b != null && b is XDGBasis xb) {
-                    if(lsTrk == null) {
+            foreach (Basis b in map.BasisS) {
+                if (b != null && b is XDGBasis xb) {
+                    if (lsTrk == null) {
                         lsTrk = xb.Tracker;
                     } else {
-                        if(!object.ReferenceEquals(lsTrk, xb.Tracker))
+                        if (!object.ReferenceEquals(lsTrk, xb.Tracker))
                             throw new ArgumentException("Tracker mismatch.");
                     }
                 }
@@ -51,28 +52,98 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return lsTrk;
         }
 
-        static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+        static private long[][] GetGlobalCellNeigbourship(UnsetteledCoordinateMapping map) {
+            var GlobalNumberOfCells = map.GridDat.CellPartitioning.TotalLength;
+            long[] externalCellsGlobalIndices = map.GridDat.iParallel.GlobalIndicesExternalCells;
+            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            for (long j = 0; j < J; j++) {
+                long globalIndex = j + map.GridDat.CellPartitioning.i0;
+                // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
+                Tuple<int, int, int>[] cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
+                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
+                for (int i = 0; i < cellNeighbours.Length; i++) {
+                    globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
+                }
 
-            LevelSetTracker lsTrk = GetTracker(map.BasisS);
-            BitArray Cells2avoid;
-            if(lsTrk != null) {
-                Cells2avoid = lsTrk.Regions.GetNearFieldMask(0).GetBitMask();
-            } else {
-                Cells2avoid = null;
-            }
-
-            long jFound = -1;
-            for(int j = 0; j < J; j++) {
-                if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
-                    jFound = j;
-                    break;
+                // translate local neighbour index into global index
+                for (int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
+                    if (globalCellNeigbourship[globalIndex][i] < J)
+                        globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + map.GridDat.CellPartitioning.i0;
+                    else
+                        globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - J];
                 }
             }
 
-            jFound += map.GridDat.CellPartitioning.i0;
+            for (int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
+                int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? map.GridDat.MpiRank : 0;
+                processID = processID.MPIMax();
+                globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+            }
+
+            return globalCellNeigbourship;
+        }
+
+        /// <summary>
+        /// Returns the cutcells + neighbours on a global level.
+        /// </summary>
+        /// <param name="globalCellNeighbourship">
+        /// </param>
+        static private BitArray GetGlobalNearBand(BitArray levelSetCells, UnsetteledCoordinateMapping map) {
+            long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(map);
+            BitArray globalCutCells = new BitArray(checked((int)map.GridDat.CellPartitioning.TotalLength));
+            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int j = 0; j < J; j++) {
+                if (levelSetCells[j]) {
+                    int globalIndex = checked((int)(j + map.GridDat.CellPartitioning.i0));
+                    globalCutCells[globalIndex] = true;
+                    for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
+                        globalCutCells[(int)globalCellNeighbourship[globalIndex][i]] = true;
+                    }
+                }
+            }
+
+            for (int j = 0; j < globalCutCells.Length; j++) {
+                globalCutCells[j] = globalCutCells[j].MPIOr();
+            }
+            return globalCutCells;
+        }
+
+        static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
+            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+            LevelSetTracker lsTrk = GetTracker(map);
+            BitArray Cells2avoid;
+            int neighborSearchDepth = 4;
+            int jFound = -1;
+            bool foundACell = false;
+            //Debugger.Launch();
+            while (!foundACell && neighborSearchDepth >= 0) {
+                if (lsTrk != null) {
+                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
+                    for (int i = 0; i < neighborSearchDepth - 2; i++) {
+                        if (neighborSearchDepth - 2 > 0)
+                            Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
+                    }
+                } else {
+                    Cells2avoid = null;
+                }
+                for (int j = 0; j < J; j++) {
+                    if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
+                        jFound = j;
+                        break;
+                    }
+                }
+                foundACell = jFound.MPIMax() >= 0;
+                neighborSearchDepth -= 1;
+            }
+            
+
+            jFound += (int)map.GridDat.CellPartitioning.i0;
 
             long jFoundGlob = jFound.MPIMax();
+            if(jFoundGlob < 0)
+                throw new ApplicationException("unable to find reference cell.");
             return jFoundGlob;
         }
 
@@ -90,17 +161,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void DefineReferenceIndices() {
             UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
             AggregationGridBasis[] bases = this.Mapping.AggBasis;
-            
 
-            if(map.BasisS.Count != bases.Length)
+
+            if (map.BasisS.Count != bases.Length)
                 throw new ArgumentException();
             if(bases.Length != FreeMeanValue.Length)
                 throw new ArgumentException(); 
 
-            if(FreeMeanValue.Any() == false) {
+            if(FreeMeanValue.Any(b => b) == false) {
+                // none of the solution variables contains a "free mean value"
+                // => no need to do anything further
                 return;
             }
-
+            var asd = bases[0].DGBasis;
             int L = bases.Length;
             m_ReferenceCell = FindReferencePointCell(map, bases);
             bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
@@ -120,7 +193,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_ReferenceIndices = null;
             }
 
-            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell));
+
+            int originRank = BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell); // on this rank, the 'm_ReferenceIndices' are defined
+            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank);
 
         }
 
@@ -304,7 +379,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (!MassMatrix.ColPartition.Equals(_ProblemMapping))
                     throw new ArgumentException("Column partitioning mismatch.");
             }
-
+            
             DefineReferenceIndices();
 
             if (this.LevelIndex == 0) {

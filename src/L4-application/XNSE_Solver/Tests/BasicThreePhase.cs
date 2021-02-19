@@ -331,16 +331,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         ///  tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
         /// </summary>
         public double[] AcceptableL2Error {
-            get { return (spatialDimension == 2) ? 
-                    new double[] { 1.0e-6, 1.0e-6, 5.0e-3 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 5.0e-3 }; }
+            get { 
+                var r = (spatialDimension == 2) ? new double[] { 1.0e-6, 1.0e-6, 5.0e-3 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 5.0e-3 };
+                return r;
+            }
         }
 
         /// <summary>
         /// tuned for grid resolution 1 (<see cref="CreateGrid(int)"/>), DG degree 2
         /// </summary>
         public double[] AcceptableResidual {
-            get { return (spatialDimension == 2) ? 
-                    new double[] { 2.0e-5, 2.0e-5, 2.0e-5 } : new double[] { 2.0e-5, 2.0e-5, 2.0e-5, 2.0e-5 }; }
+            get { 
+                var r = (spatialDimension == 2) ? new double[] { 2.0e-5, 2.0e-5, 2.0e-5 } : new double[] { 2.0e-5, 2.0e-5, 2.0e-5, 2.0e-5 };
+                if(!steady)
+                    r.ScaleV(4);
+                return r;
+            }
         }
 
         public int SpatialDimension {

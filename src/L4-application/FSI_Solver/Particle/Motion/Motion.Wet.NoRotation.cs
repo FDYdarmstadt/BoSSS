@@ -40,11 +40,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Include translation?
-        /// </summary>
-        internal override bool IncludeRotation { get; } = false;
-
-        /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
@@ -70,12 +65,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
-        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, double fluidDensity, CellMask cutCells, double dt) {
-            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(out List<double[]>[] stressToPrintOut, cutCells));
-            currentStress = TransformStressToPrint(stressToPrintOut);
+        public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
+            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
             Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-            tempForces = ForcesMPISum(tempForces);
-            tempForces = CalculateGravitationalForces(fluidDensity, tempForces);
             return tempForces;
         }
 

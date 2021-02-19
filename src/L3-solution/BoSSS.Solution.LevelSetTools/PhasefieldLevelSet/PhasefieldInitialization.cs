@@ -33,10 +33,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         {
             CreateFields();
 
-            if (Cahn_Reinit != 0.0)
-                //RelaxationStep();
-                ReInit(Cahn_Reinit, this.Control.cahn);
-            
+            SetCHCoefficents();
+
+            InitFromSignedDistance(this.Control.cahn);
+
+            //if (Cahn_Reinit != 0.0)
+            //    //RelaxationStep();
+            //    ReInit(Cahn_Reinit, this.Control.cahn);
+
             CreateEquationsAndSolvers(null);            
 
             InitLogFile(new Guid());
@@ -82,7 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
             }
         }
 
@@ -96,6 +100,44 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
 
         int reinit = 0;
+
+        private void InitFromSignedDistance(double cahn) {
+            Console.WriteLine($"Initializing Phasefield from signed distance field:\n" +
+                $"  thickness:  {cahn}");
+
+            // we assume the current phasefield is close to the equilibrium tangenshyperbolicus form
+            // also initial Phasefield from XNSE Solver must be given in signed distance form
+            GridData GridDat = (GridData)(phi.GridDat);
+            SinglePhaseField phiNew = new SinglePhaseField(phi.Basis);
+
+            // compute and project 
+            // step one calculate distance field phiDist = 0.5 * log(Max(1+phi, eps)/Max(1-phi, eps)) * sqrt(2) * Cahn_old
+            // step two project the new phasefield phiNew = tanh(phiDist/(sqrt(2) * Cahn_new))
+            // here done in one step, with default quadscheme
+            // ===================
+            phiNew.ProjectField(
+                (ScalarFunctionEx)delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) { // ScalarFunction2
+                    Debug.Assert(result.Dimension == 2);
+                    Debug.Assert(Len == result.GetLength(0));
+                    int K = result.GetLength(1); // number of nodes
+
+                    // evaluate Phi
+                    // -----------------------------
+                    DGLevSet.Evaluate(j0, Len, NS, result);
+
+                    // compute the pointwise values of the new level set
+                    // -----------------------------
+
+                    result.ApplyAll(x => Math.Tanh(x / (Math.Sqrt(2) * cahn)));
+                }
+            );
+
+            phi.Clear();
+            phi.Acc(1.0, phiNew);
+
+            reinit++;
+            //PlotCurrentState(0.0, reinit);
+        }
 
         // Reinitialize Phasefield with changed interface thickness
         private void ReInit(double cahn_old, double cahn)

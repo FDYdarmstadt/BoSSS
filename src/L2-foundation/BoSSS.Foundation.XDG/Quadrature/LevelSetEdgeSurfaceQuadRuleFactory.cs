@@ -96,20 +96,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 var result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
                 foreach (Chunk chunk in mask) {
                     for (int i = 0; i < chunk.Len; i++) {
-                        int cell = chunk.i0 + i;
+                        int jCell = chunk.i0 + i;
 
-                        if (cache.ContainsKey(cell)) {
+                        if (cache.ContainsKey(jCell)) {
                             result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                Chunk.GetSingleElementChunk(cell),
-                                cache[cell]));
+                                Chunk.GetSingleElementChunk(jCell),
+                                cache[jCell]));
                             continue;
                         }
 
+
+
                         optimizationTimer.Start();
-                        CellBoundaryQuadRule optimizedRule = GetOptimizedRule(chunk.i0 + i, order);
+                        CellBoundaryQuadRule optimizedRule = GetOptimizedRule(jCell, order);
                         optimizationTimer.Stop();
 
-                        cache.Add(cell, optimizedRule);
+                        cache.Add(jCell, optimizedRule);
                         result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
                             Chunk.GetSingleElementChunk(i + chunk.i0), optimizedRule));
                     }

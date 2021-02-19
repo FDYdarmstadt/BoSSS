@@ -218,7 +218,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [Serializable]
         [DataContract]
-        sealed public class BoundaryValueCollection {
+        sealed public class BoundaryValueCollection : ICloneable {
 
             /// <summary>
             /// optional string to encode the type of the boundary
@@ -282,6 +282,23 @@ namespace BoSSS.Solution.Control {
                 get {
                     return m_BoundaryValues;
                 }
+            }
+
+            /// <summary>
+            /// non-shallow copy
+            /// </summary>
+            public object Clone() {
+                var r = new BoundaryValueCollection();
+                r.type = this.type;
+                foreach(var s in this.m_BoundaryValues) {
+                    r.m_BoundaryValues.Add(s.Key, s.Value);
+                }
+                foreach(var q in this.Evaluators) {
+                    if(!r.Evaluators.ContainsKey(q.Key)) {
+                        r.Evaluators.Add(q.Key, q.Value);
+                    }
+                }
+                return r;
             }
         }
 
@@ -1025,6 +1042,14 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int AMR_startUpSweeps = 1;
+
+
+        /// <summary>
+        /// List of active AMR level indicators 
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
