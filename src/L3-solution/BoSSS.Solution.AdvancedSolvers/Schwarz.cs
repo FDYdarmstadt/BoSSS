@@ -938,16 +938,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 int ExtLen = Overlap > 0 ? BlockMask.GetLocalAndExternalDOF(m_MgOp.Mapping) : m_MgOp.Mapping.LocalLength;
 
-                                if (Xdummy == null) {
-                                    Xdummy = new double[ExtLen];
-                                } else {
-                                    Xdummy.ClearEntries();
+                                using (new BlockTrace("alloc_dummy_arrays", tr)) {
+                                    if (Xdummy == null) {
+                                        Xdummy = new double[ExtLen];
+                                    } else {
+                                        Xdummy.ClearEntries();
+                                    }
+                                    if (Resdummy == null) {
+                                        Resdummy = new double[ExtLen];
+                                    } else {
+                                        Resdummy.ClearEntries();
+                                    }
                                 }
-                                if (Resdummy == null) {
-                                    Resdummy = new double[ExtLen];
-                                } else {
-                                    Resdummy.ClearEntries();
-                                }
+
                                 Debug.Assert(Resdummy.Length == ResExchange.Vector_Ext.Length + Res.Length, "not same length");
                                 BMfullBlocks[iPart].AccSubVec(bi, Resdummy);
 
@@ -1003,43 +1006,49 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         private void ReEvaluateRes(int iPart, double[] res) {
-            var ri = res.CloneAs();
-            Resdummy.ClearEntries();
-            var xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
-            this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, ri);
-            BMfullBlocks[iPart].AccSubVec(ri, Resdummy);
+            using (new FuncTrace()) {
+                var ri = res.CloneAs();
+                Resdummy.ClearEntries();
+                var xi = BMfullBlocks[iPart].GetSubVec(Xdummy);
+                this.BlockMatrices[iPart].SpMV(-1.0, xi, 1.0, ri);
+                BMfullBlocks[iPart].AccSubVec(ri, Resdummy);
+            }
         }
 
         private void SolveHiSystem(int iPart ) {
-            var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
-            int NoCells = HiModeSolvers.Length;
+            using (new FuncTrace()) {
+                var HiModeSolvers = PmgBlock_HiModeSolvers[iPart];
+                int NoCells = HiModeSolvers.Length;
 
-            double[] xiHi = null;
-            double[] biHi = null;
+                double[] xiHi = null;
+                double[] biHi = null;
 
-            for (int j = 0; j < NoCells; j++) {
-                var HiModeSolver = HiModeSolvers[j];
-                int Np = HiModeSolver.NoOfRows;
-                if (xiHi == null || xiHi.Length != Np)
-                    xiHi = new double[Np];
-                if (biHi == null || biHi.Length != Np)
-                    biHi = new double[Np];
-                biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
-                HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
-                BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
+                for (int j = 0; j < NoCells; j++) {
+                    var HiModeSolver = HiModeSolvers[j];
+                    int Np = HiModeSolver.NoOfRows;
+                    if (xiHi == null || xiHi.Length != Np)
+                        xiHi = new double[Np];
+                    if (biHi == null || biHi.Length != Np)
+                        biHi = new double[Np];
+                    biHi = BMhiBlocks[iPart].GetSubVecOfCell(Resdummy, j);
+                    HiModeSolver.GEMV(1.0, biHi, 0.0, xiHi);
+                    BMhiBlocks[iPart].AccSubVecOfCell(xiHi, j, Xdummy);
+                }
             }
         }
 
         private void SolveLoSystem(int iPart) {
-            var rLo = BMloBlocks[iPart].GetSubVec(Resdummy);
-            double[] xiLo = new double[rLo.Length];
-            try {
-                blockSolvers[iPart].Solve(xiLo, rLo);
-            } catch (ArithmeticException ae) {
-                Console.Error.WriteLine(ae.Message);
-                throw ae;
+            using (new FuncTrace()) {
+                var rLo = BMloBlocks[iPart].GetSubVec(Resdummy);
+                double[] xiLo = new double[rLo.Length];
+                try {
+                    blockSolvers[iPart].Solve(xiLo, rLo);
+                } catch (ArithmeticException ae) {
+                    Console.Error.WriteLine(ae.Message);
+                    throw ae;
+                }
+                BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
             }
-            BMloBlocks[iPart].AccSubVec(xiLo, Xdummy);
         }
 
         /// <summary>

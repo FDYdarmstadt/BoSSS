@@ -33,6 +33,7 @@ using ilPSP.Tracing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Solution.Gnuplot;
+using System.IO;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1633,6 +1634,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ======
             // return 
             // ======
+            //string path = Directory.GetCurrentDirectory();
+            //var dinfo = Directory.CreateDirectory(path+@"\plots");
+            //ExecuteWaterfallAnalysis(dinfo.FullName);
+            //CreateFAMatrices(dinfo.FullName);
+
 
             m_CurrentPhystime = phystime + dt;
             return success;
@@ -1743,7 +1749,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             CO.Resample(1, usmall, "samples");
         }
 
-        public ConvergenceObserver GetFAMatrices(string OutputDir) {
+        public void CreateFAMatrices(string OutputDir) {
+            bool use_exact_solution = false; // switch between exact and zero solution
+
             // build the saddle-point matrix
             //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
             BlockMsrMatrix System, MaMa;
@@ -1763,28 +1771,31 @@ namespace BoSSS.Solution.XdgTimestepping {
                 opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
 
             // Get Reference Solver
-            Lbig = mgOperator.Mapping.ProblemMapping.LocalLength;
+            Lbig = mgOperator.BaseGridProblemMapping.LocalLength;
             Lsmall = mgOperator.Mapping.LocalLength;
+
+            if (!use_exact_solution) {
+                RHS.Clear(); //zero solution
+            }
+
+            var StartSolution = GenericBlas.RandomVec(Lbig, 0);
             RHSbig = RHS.CloneAs();
             RHSsmall = new double[Lsmall];
             usmall = new double[Lsmall];
             ubig = new double[Lbig];
 
-            var ReferenceSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO,
-                SolverVersion = Parallelism.SEQ,
-            };
+            if (use_exact_solution) {
+                StartSolution = new double[Lbig];
+                var ReferenceSolver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.PARDISO,
+                    SolverVersion = Parallelism.SEQ,
+                };
 
-            //var EqSys = mgOperator.OperatorMatrix.ToMsrMatrix();
-            //for (int iRow = EqSys.RowPartitioning.i0; iRow < EqSys.RowPartitioning.iE; iRow++) {
-            //    if (EqSys.GetNoOfNonZerosPerRow(iRow) <= 0)
-            //        EqSys[iRow, iRow] = 1.0;
-            //}
-            ReferenceSolver.Init(mgOperator);
-            mgOperator.TransformRhsInto(RHSbig, RHSsmall,true);
-
-            ReferenceSolver.Solve(usmall, RHSsmall);
-            mgOperator.TransformSolFrom( ubig, usmall);
+                ReferenceSolver.Init(mgOperator);
+                mgOperator.TransformRhsInto(RHSbig, RHSsmall, true);
+                ReferenceSolver.Solve(usmall, RHSsmall);
+                mgOperator.TransformSolFrom(ubig, usmall);
+            }
 
             // Get the configured solvers
             ISolverSmootherTemplate linearSolver;
@@ -1797,6 +1808,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             CO.TecplotOut = OutputDir;
             changeOfu = new double[Lsmall];
             ((OrthonormalizationMultigrid)linearSolver).ExtractSamples = delegate (int iter, double[] u, string name){
+                //if (iter % 5 != 0 && iter != 1)
+                //    return;
                 Debug.Assert(u.Length== usmall.Length);
                 changeOfu.SetV(u);
                 changeOfu.AccV(-1.0, usmall);
@@ -1807,13 +1820,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             linearSolver.Init(mgOperator);
 
             // try to solve the saddle-point system.
-            mgOperator.UseSolver(linearSolver, new double[Lbig], RHS);
-
-            // return
-            return CO;
+            mgOperator.UseSolver(linearSolver, StartSolution, RHS);
         }
 
-        public void ExecuteWaterfallAnalysis(string path) {
+        public void ExecuteWaterfallAnalysis(string OutputDir) {
             BlockMsrMatrix System, MaMa;
             double[] RHS;
             this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
@@ -1824,12 +1834,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                 System, MaMa,
                 this.Config_MultigridOperator,
                 opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
-            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = 300;
+            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = 30;
             ISolverSmootherTemplate linearSolver;
             NonlinearSolver NonlinearSolver;
             GetSolver(out NonlinearSolver, out linearSolver);
-            var plot = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
-            plot.PlotInteractive();
+            var plots = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
+            // put this shit out
+            foreach(var kv in plots) {
+                //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
+                //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
+                kv.Value.SavePgfplotsFile_WA(OutputDir+@"\"+kv.Key+".tex");
+            }
         }
 
         public void ExecuteRandom(out int Iter) {

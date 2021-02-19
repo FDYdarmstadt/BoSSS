@@ -43,11 +43,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[this.Control.LinearSolver.NoOfMultigridLevels][];
                 for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    AddMultigridConfigLevel(configsLevel);
+                    AddMultigridConfigLevel(configsLevel, iLevel);
 
                     configs[iLevel] = configsLevel.ToArray();
                 }
@@ -58,7 +58,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// Configuration of operator pre-pre-conditioning (not a typo), cf. <see cref="MultigridOperatorConfig"/>.
         /// </summary>
-        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
+        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel);
 
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {

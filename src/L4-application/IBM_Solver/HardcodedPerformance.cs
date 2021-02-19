@@ -49,7 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
 
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -257,7 +257,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.verbose = true;
             C.LinearSolver.NoOfMultigridLevels = 3;
 

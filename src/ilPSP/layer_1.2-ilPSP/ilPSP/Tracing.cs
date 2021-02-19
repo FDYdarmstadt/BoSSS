@@ -98,7 +98,7 @@ namespace ilPSP.Tracing {
 
         static private long GetMemory() {
             //Process myself = Process.GetCurrentProcess();
-            //long mem = 0;
+            long mem = 0;
             //{
             //    try {
             //        //mem = myself.WorkingSet64 / (1024 * 1024);
@@ -108,7 +108,7 @@ namespace ilPSP.Tracing {
             //        mem = 0;
             //    }
             //}
-            //return mem;
+            return mem;
         }
 
         private static readonly object padlock = new object();
@@ -145,6 +145,7 @@ namespace ilPSP.Tracing {
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
             Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
             Tracer.Current.m_Memory += GetMemory();
+            Tracer.Current.m_Memory = Tracer.Current.m_Memory < 0 ? 0 : Tracer.Current.m_Memory;
             Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
             Tracer.Current = Tracer.Current.ParrentCall;
         }

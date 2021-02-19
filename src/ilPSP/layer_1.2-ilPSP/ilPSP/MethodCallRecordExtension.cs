@@ -85,7 +85,7 @@ namespace ilPSP
         /// <param name="mcr"></param>
         /// <returns></returns>
         public static Dictionary<string, Tuple<double, double, int>> GetMPIImbalance(MethodCallRecord[] mcrs) {
-            return GetImbalance(mcrs, s => s.TimeSpentinBlocking.TotalSeconds);
+            return GetImbalance(mcrs, s => s.ExclusiveBlockingTime.TotalSeconds);
         }
 
         /// <summary>
@@ -133,14 +133,14 @@ namespace ilPSP
         /// <param name="printcnt"></param>
         private static void GetMostExpensiveBlocking(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
             int i = 1;
-            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.TicksSpentInBlocking);
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveBlockingTicks);
             foreach (var kv in mostExpensive) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
-                "'{0}': {1} calls, {2:0.##E-00} sec. runtime exclusivesec",
+                "'{0}': {1} calls, {2:0.##E-00} sec. exclusive runtime",
                     kv.Name,
                     kv.CallCount,
-                    new TimeSpan(kv.TicksSpentInBlocking).TotalSeconds));
+                    new TimeSpan(kv.ExclusiveBlockingTicks).TotalSeconds));
                 if (i == printcnt) return;
                 i++;
             }
@@ -149,14 +149,14 @@ namespace ilPSP
 
         private static void GetMostExpensiveMemory(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
             int i = 1;
-            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.MemorySpent);
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveMemorySpent);
             foreach (var kv in mostExpensive) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
                 "'{0}': {1} calls, {2} MB, exclusive memory",
                     kv.Name,
                     kv.CallCount,
-                    kv.MemorySpent));
+                    kv.ExclusiveMemorySpent));
                 if (i == printcnt) return;
                 i++;
             }

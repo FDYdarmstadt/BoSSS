@@ -202,10 +202,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int pVel = VelocityDegree();
             int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             int D = this.GridData.SpatialDimension;
+
 
             if (this.Control.UseSchurBlockPrec) {
                 // using a Schur complement for velocity & pressure

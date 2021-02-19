@@ -54,8 +54,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            base.AddMultigridConfigLevel(configsLevel);
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
+            base.AddMultigridConfigLevel(configsLevel, iLevel);
             AddXHeatMultigridConfigLevel(configsLevel);
         }
 

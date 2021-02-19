@@ -146,6 +146,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ============
                 this.OpMatrix = Mtx;
 
+#if TEST
+                Console.WriteLine("level: {0} cells: {1} degree: {2}", op.LevelIndex, op.Mapping.LocalNoOfBlocks, op.Degrees[0]);
+#endif
 
                 // initiate coarser level
                 // ======================
@@ -609,7 +612,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //tmpX.SetV(X);
                         //tmpX.AccV(1.0, PreCorr);
 
-                        SpecAnalysisSample(iIter, PreCorr, "smooth1");
+                        //SpecAnalysisSample(iIter, PreCorr, "smooth1");
 
                         // orthonormalization and residual minimization
                         AddSol(ref PreCorr);
@@ -623,7 +626,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         pos++;
 #endif
 
-                        SpecAnalysisSample(iIter, X, "ortho1");
+                        //SpecAnalysisSample(iIter, X, "ortho1");
 
                         if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
@@ -729,7 +732,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                                           //if (Corr != null)
                                                           //    Corr.SetV(PostCorr);
 
-                        SpecAnalysisSample(iIter, PostCorr, "smooth2_" + g);
+                        //SpecAnalysisSample(iIter, PostCorr, "smooth2_" + g);
 
                         // orthonormalization and residual minimization
                         AddSol(ref PostCorr);
@@ -744,7 +747,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         pos++;
 #endif
 
-                        SpecAnalysisSample(iIter, X, "ortho3_" + g);
+                        //SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
                     
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
@@ -760,8 +763,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
 
+                    SpecAnalysisSample(iIter, X, "_");
 
-                    
                 } // end of solver iterations
 
                 // solution copy
@@ -782,8 +785,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="RealX"></param>
         /// <param name="name"></param>
         private void SpecAnalysisSample(int iter, double[] RealX, string name) {
-            if (iter % 5 != 0 && iter!=1)
-                return;
+            
             if(ExtractSamples == null || this.m_MgOperator.LevelIndex > 0)
                 return; // zero overhead
 
