@@ -743,8 +743,7 @@ namespace BoSSS.Solution.NSECommon {
                             default:
                                 throw new NotImplementedException("PhysicsMode not implemented");
                         }
-
-                        //Add the density parameter for the MixtureFraction Calculation                       
+                    
                         // Calculate BorderEdgeFlux as InnerEdgeFlux
                         // =========================================
                         r = InnerEdgeFlux(ref inp2, Uin, Uout);

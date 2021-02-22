@@ -244,7 +244,7 @@ namespace BoSSS.Solution.NSECommon {
                         res = 0;
                         break;
                         case VariableNames.MassFraction2:
-                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
                         break;
                         case VariableNames.MassFraction3:
                         res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
