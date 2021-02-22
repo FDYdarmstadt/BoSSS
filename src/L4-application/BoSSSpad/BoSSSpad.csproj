@@ -308,6 +308,10 @@
       <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
       <Name>BoSSS.PlotGenerator</Name>
     </ProjectReference>
+    <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj">
+      <Project>{08b50efe-e463-4bae-8d29-bc109b86290e}</Project>
+      <Name>XNSERO_Solver</Name>
+    </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
       <Name>XNSE_Solver</Name>

@@ -88,7 +88,6 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
-                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
@@ -114,6 +113,7 @@ namespace PublicTestRunner {
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
@@ -124,7 +124,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
                         //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
@@ -560,30 +561,54 @@ namespace PublicTestRunner {
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            if (MpiSize != 1) {
+            if(MpiSize != 1) {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
-            string DateNtime = DateTime.Now.ToString("MMMdd_HHmm");
-            Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
 
+
+
+
+
+
+
+            InteractiveShell.ReloadExecutionQueues();
+
+            if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
+                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account.");
+            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
+            Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
+
+            FileStream ServerMutex;
+            string DateNtime;
+            {
+                var rnd = new Random();
+                do {
+                    DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
+                    string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
+                    try {
+                        ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
+                    } catch(IOException) {
+                        ServerMutex = null;
+                        Thread.Sleep(rnd.Next(10000));
+                    }
+                } while(ServerMutex == null);
+                Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
+            }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile(DateNtime);
 
-            int returnCode = 0;
-            using (var tr = new FuncTrace()) {
 
+
+            int returnCode = 0;
+            using(var tr = new FuncTrace()) {
                 // ===================================
                 // phase 1: submit jobs
                 // ===================================
 
-                InteractiveShell.ReloadExecutionQueues();
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
-                BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
-                Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
-
                 DirectoryInfo NativeOverride;
-                if (!bpc.DeployRuntime) {
+                if(!bpc.DeployRuntime) {
                     NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + "_amd64"));
                     NativeOverride.Create();
                     MetaJobMgrIO.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
@@ -594,11 +619,11 @@ namespace PublicTestRunner {
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
                     var assln = GetAllAssemblies();
-                    if (assln != null) {
-                        foreach (var a in assln) {
-                            if (FilterAssembly(a, AssemblyFilter)) {
+                    if(assln != null) {
+                        foreach(var a in assln) {
+                            if(FilterAssembly(a, AssemblyFilter)) {
                                 var allTst4Assi = GetTestsInAssembly(a);
-                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
                                 }
                             }
@@ -615,14 +640,14 @@ namespace PublicTestRunner {
 
                 {
                     var ParAssln = GetAllMpiAssemblies();
-                    if (ParAssln != null) {
-                        foreach (var TT in ParAssln) {
-                            if (FilterAssembly(TT.Asbly, AssemblyFilter)) {
+                    if(ParAssln != null) {
+                        foreach(var TT in ParAssln) {
+                            if(FilterAssembly(TT.Asbly, AssemblyFilter)) {
 
                                 var a = TT.Asbly;
                                 var allTst4Assi = GetTestsInAssembly(a);
 
-                                for (int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
                                 }
                             }
@@ -632,7 +657,7 @@ namespace PublicTestRunner {
 
                 Console.WriteLine($"Found {allTests.Count} individual tests ({DebugOrReleaseSuffix}):");
                 int cnt = 0;
-                foreach (var t in allTests) {
+                foreach(var t in allTests) {
                     cnt++;
                     Console.WriteLine($"  #{cnt}: {t.testname}");
                     Console.WriteLine($"     {t.shortname}");
@@ -642,31 +667,31 @@ namespace PublicTestRunner {
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
                 DateTime start = DateTime.Now;
-                
+
                 cnt = 0;
                 var AllOpenJobs = new List<(Job job, string ResFile, string testname)>();
-                using (new BlockTrace("DEPLOYMENT", tr)) {
+                using(new BlockTrace("DEPLOYMENT", tr)) {
                     var checkResFileName = new HashSet<string>();
 
-                    foreach (var t in allTests) {
+                    foreach(var t in allTests) {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
                             var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
-                            if (checkResFileName.Add(j.resultFile) == false) {
+                            if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
 
                             Console.WriteLine($"Successfully submitted {j.j.Name}.");
                             AllOpenJobs.Add(j);
-                        } catch (Exception e) {
+                        } catch(Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
                             returnCode--;
                         }
                     }
                 }
 
-                if (returnCode == 0) {
+                if(returnCode == 0) {
                     Console.WriteLine($"******* All jobs/tests deployed ({DateTime.Now}) *******");
                 } else {
                     Console.WriteLine($"******* Deployed finished ({DateTime.Now}) -- SOME DEPLOYMENT(S) FAILED *******");
@@ -679,7 +704,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 220 * 60;
+                const double TimeOutSec = 24 * 55 * 60;
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
@@ -782,7 +807,7 @@ namespace PublicTestRunner {
                 // ===================================
 
 
-                if (AllOpenJobs.Count == 0) {
+                if(AllOpenJobs.Count == 0) {
                     Console.WriteLine("----------------------------------------------------------------------------------------------------");
                     Console.WriteLine($"All jobs/tests finished ({DateTime.Now}) - Summary:");
                     Console.WriteLine("----------------------------------------------------------------------------------------------------");
@@ -795,28 +820,28 @@ namespace PublicTestRunner {
                 }
 
                 int SuccessfulFinishedCount = 0;
-                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus == JobStatus.FinishedSuccessful)) {
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname}");
                     SuccessfulFinishedCount++;
                 }
 
                 int OtherStatCount = 0;
-                foreach (var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
+                foreach(var jj in AllFinishedJobs.Where(ttt => ttt.LastStatus != JobStatus.FinishedSuccessful)) {
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.LatestDeployment.DeploymentDirectory.FullName}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
-                foreach (var jj in AllOpenJobs) {
+                foreach(var jj in AllOpenJobs) {
                     Console.WriteLine($"{jj.job.Status}: {jj.job.Name} // {jj.testname} at {jj.job.Status}");
                     returnCode -= 1;
                     OtherStatCount++;
                 }
 
                 // very final message:
-                if (SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
+                if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
 
-                    if (returnCode != 0) {
+                    if(returnCode != 0) {
                         Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
                         Console.Error.WriteLine("FAILURE.");
                     } else {

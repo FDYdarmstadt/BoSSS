@@ -230,9 +230,10 @@ namespace BoSSS.Solution.XNSECommon {
         public virtual double InnerEdgeForm(ref CommonParams inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.Normal;
+            
+            var N = inp.Normal;
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            int D = N.Length;
+            int D = N.Dim;
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == D);

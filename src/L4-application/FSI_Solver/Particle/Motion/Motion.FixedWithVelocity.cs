@@ -37,16 +37,6 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Include rotation?
-        /// </summary>
-        internal override bool IncludeRotation { get; } = true;
-
-        /// <summary>
-        /// Include translation?
-        /// </summary>
-        internal override bool IncludeTranslation { get; } = true;
-        
-        /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>

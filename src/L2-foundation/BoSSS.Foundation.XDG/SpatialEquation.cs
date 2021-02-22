@@ -14,8 +14,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// <summary>
         /// Empty spatial equation.
         /// </summary>
-        public SpatialEquation() 
-        {
+        public SpatialEquation() {
             Components = new LinkedList<IEquationComponent>();
         }
 
@@ -48,18 +47,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// Add name of variable. Will only add, if name was not already added.
         /// </summary>
         /// <param name="names"></param>
-        public void AddVariableNames(params string[] names)
-        {
-            if(VariableNames == null)
-            {
+        public void AddVariableNames(params string[] names) {
+            if(VariableNames == null) {
                 VariableNames = names;
-            }
-            else
-            {
-                foreach(string name in names)
-                {
-                    if (!VariableNames.Contains(name))
-                    {
+            } else {
+                foreach(string name in names) {
+                    if(!VariableNames.Contains(name)) {
                         VariableNames = VariableNames.Cat(name);
                     }
                 }
@@ -70,18 +63,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// Add name of parameter. Will only add, if name was not already added.
         /// </summary>
         /// <param name="names"></param>
-        public void AddParameter(params string[] names)
-        {
-            if (Parameters == null)
-            {
+        public void AddParameter(params string[] names) {
+            if(Parameters == null) {
                 Parameters = names;
-            }
-            else
-            {
-                foreach (string name in names)
-                {
-                    if (!Parameters.Contains(name))
-                    {
+            } else {
+                foreach(string name in names) {
+                    if(!Parameters.Contains(name)) {
                         Parameters = Parameters.Cat(name);
                     }
                 }
@@ -93,11 +80,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// </summary>
         /// <param name="names"></param>
         public void AddCoefficient(params string[] names) {
-            if (Coefficients == null) {
+            if(Coefficients == null) {
                 Coefficients = names;
             } else {
-                foreach (string name in names) {
-                    if (!Coefficients.Contains(name)) {
+                foreach(string name in names) {
+                    if(!Coefficients.Contains(name)) {
                         Coefficients = Coefficients.Cat(name);
                     }
                 }
@@ -108,8 +95,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// Add component to this equation. The variable/parameter/coefficient names must be added separately.
         /// </summary>
         /// <param name="component">Equation component for this equation's codomain</param>
-        public void AddComponent(IEquationComponent component) 
-        {
+        public void AddComponent(IEquationComponent component) {
             Components.AddLast(component);
         }
     }
@@ -118,8 +104,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// XDG Equations on a surface. 
     /// Surface is between to species.
     /// </summary>
-    public abstract class SurfaceEquation : SpatialEquation 
-    {
+    public abstract class SurfaceEquation : SpatialEquation {
         /// <summary>
         /// First/Negative species (with respect to level-set)
         /// Order not important.
@@ -158,8 +143,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// <summary>
     /// XDG Equations for bulk phase.
     /// </summary>
-    public abstract class BulkEquation : SpatialEquation 
-    {
+    public abstract class BulkEquation : SpatialEquation {
         /// <summary>
         /// Name of species for which equation is valid.
         /// </summary>
@@ -196,8 +180,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// Accumulation of equations
     /// Finds the names of all required parameters and coefficients
     /// </summary>
-    class SystemOfEquations 
-    {
+    class SystemOfEquations {
         public LinkedList<SpatialEquation> SpatialEquations;
 
         public LinkedList<SurfaceEquation> InterfaceEquations;
@@ -223,25 +206,19 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             SpatialEquations.AddLast(A);
         }
 
-        public void AddEquation(SpatialEquation A)
-        {
+        public void AddEquation(SpatialEquation A) {
             SpatialEquations.AddLast(A);
         }
 
         public string[] DomainVars() {
             LinkedList<string> domainVars = new LinkedList<string>();
             foreach(SpatialEquation equation in BulkEquations) {
-                if(domainVars.Count == 0) 
-                {
+                if(domainVars.Count == 0) {
                     domainVars.AddRange(equation.VariableNames);
-                } 
-                else 
-                {
+                } else {
                     // a real, sorted merging would be nicer, but it is really tricky to implement
-                    foreach(string n in equation.VariableNames)
-                    {
-                        if (!domainVars.Contains(n))
-                        {
+                    foreach(string n in equation.VariableNames) {
+                        if(!domainVars.Contains(n)) {
                             domainVars.AddLast(n);
                         }
                     }
@@ -263,14 +240,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public string[] Parameters() {
             LinkedList<string> parameterNames = new LinkedList<string>();
-            foreach(SpatialEquation equation in SpatialEquations) 
-            {
-                if(equation.Parameters != null)
-                {
-                    foreach (string parameter in equation.Parameters)
-                    {
-                        if (!parameterNames.Contains(parameter))
-                        {
+            foreach(SpatialEquation equation in SpatialEquations) {
+                if(equation.Parameters != null) {
+                    foreach(string parameter in equation.Parameters) {
+                        if(!parameterNames.Contains(parameter)) {
                             parameterNames.AddLast(parameter);
                         }
                     }
@@ -282,10 +255,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public string[] Coefficients() {
             LinkedList<string> coefficientsNames = new LinkedList<string>();
-            foreach (SpatialEquation equation in SpatialEquations) {
-                if (equation.Coefficients != null) {
-                    foreach (string coefficient in equation.Coefficients) {
-                        if (!coefficientsNames.Contains(coefficient)) {
+            foreach(SpatialEquation equation in SpatialEquations) {
+                if(equation.Coefficients != null) {
+                    foreach(string coefficient in equation.Coefficients) {
+                        if(!coefficientsNames.Contains(coefficient)) {
                             coefficientsNames.AddLast(coefficient);
                         }
                     }
@@ -305,17 +278,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             return species.ToArray();
         }
 
-        public (string, double[])[] MassDiagonal() 
-        {
+        public (string, double[])[] MassDiagonal() {
             StringArrayDictionary<StringArrayDictionary<double>> diag = new StringArrayDictionary<StringArrayDictionary<double>>(Species());
-            foreach(BulkEquation equation in BulkEquations) 
-            {
-                if(diag.TryGetValue(equation.SpeciesName, out StringArrayDictionary<double> scales)) 
-                {
+            foreach(BulkEquation equation in BulkEquations) {
+                if(diag.TryGetValue(equation.SpeciesName, out StringArrayDictionary<double> scales)) {
                     scales.Add(equation.CodomainName, equation.MassScale);
-                } 
-                else 
-                {
+                } else {
                     scales = new StringArrayDictionary<double>(CoDomainVars());
                     scales.Add(equation.CodomainName, equation.MassScale);
                     diag.Add(equation.SpeciesName, scales);
@@ -327,8 +295,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         static (string, double[])[] ToTupleArray(StringArrayDictionary<StringArrayDictionary<double>> d) {
             (string, double[])[] diagonal = new (string, double[])[d.Length];
-            for(int i = 0; i < diagonal.Length; ++i) 
-            {
+            for(int i = 0; i < diagonal.Length; ++i) {
                 diagonal[i] = (d.Keys[i], d.Values[i].Values);
             }
             return diagonal;

@@ -14,12 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
 using System.Collections.Generic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation;
-using FSI_Solver;
 using ilPSP;
+using BoSSS.Application.FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// <summary>
@@ -27,24 +26,37 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// </summary>
     public class FSI_DivergenceAtIB : ILevelSetForm {
 
-        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Func<Vector, FSI_ParameterAtIB> coupling) {
+        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Particle[] allParticles, double minGridLength) {
             D = _D;
             m_LsTrk = lsTrk;
-            m_Coupling = coupling;
+            this.allParticles = allParticles;
+            this.minGridLength = minGridLength;
         }
 
         private readonly LevelSetTracker m_LsTrk;
 
         private readonly int D;
 
-        /// <summary>
-        /// Describes: 0: velX, 1: velY, 2:rotVel,3:particleradius
-        /// </summary>
-        private readonly Func<Vector, FSI_ParameterAtIB> m_Coupling;
+        private readonly Particle[] allParticles;
+
+        private readonly double minGridLength;
 
         public double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
             Vector fluidVelocity = new Vector(U_Neg);
-            return (m_Coupling(inp.X).VelocityAtPointOnLevelSet() - fluidVelocity) * inp.Normal * v_Neg;
+
+            Particle currentParticle = allParticles[0];
+            for (int p = 0; p < allParticles.Length; p++) {
+                bool containsParticle = allParticles[p].Contains(inp.X, 1.5 * minGridLength);
+                if (containsParticle) {
+                    currentParticle = allParticles[p];
+                    break;
+                }
+            }
+            Vector radialVector = currentParticle.CalculateRadialVector(inp.X);
+            Vector particleVelocity = new Vector(currentParticle.Motion.GetTranslationalVelocity(0)[0] - currentParticle.Motion.GetRotationalVelocity(0) * radialVector[1],
+                              currentParticle.Motion.GetTranslationalVelocity(0)[1] + currentParticle.Motion.GetRotationalVelocity(0) * radialVector[0]);
+
+            return (particleVelocity - fluidVelocity) * inp.Normal * v_Neg;
         }
 
         public IList<string> ArgumentOrdering {
