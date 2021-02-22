@@ -21,7 +21,7 @@ using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver {
-    static class FromControl {
+    public static class FromControl {
         public static BeltramiGradient BeltramiGradient(XNSE_Control control, string levelSetName, int D) {
             string levelSet = levelSetName;
             int levelSetDegree;
@@ -68,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
     /// to obtain a single interface velocity.
     /// </summary>
-    class LevelSetVelocity : ILevelSetParameter {
+    public class LevelSetVelocity : ILevelSetParameter {
         protected int D;
 
         protected IList<string> parameters;
@@ -401,7 +401,7 @@ namespace BoSSS.Application.XNSE_Solver {
         
     }
 
-    class LevelSetVelocityGeneralNonMaterial : LevelSetVelocity {
+    public class LevelSetVelocityGeneralNonMaterial : LevelSetVelocity {
 
         public LevelSetVelocityGeneralNonMaterial(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters) : base(levelSetName, D, degree, averagingMode, physicalParameters) {
         }
@@ -470,7 +470,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// mass flows from - phase to + phase.
     /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
     /// </summary>
-    class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
+    public class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
         DualLevelSet levelSet;
