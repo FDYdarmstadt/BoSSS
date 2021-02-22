@@ -110,11 +110,15 @@
     <Compile Include="Tests\ChannelTest.cs" />
     <Compile Include="Tests\HeatTransportTest.cs" />
     <Compile Include="Tests\IBMChannel.cs" />
+    <Compile Include="Tests\LevelSetShearingTest.cs" />
+    <Compile Include="Tests\LevelSetScalingTest.cs" />
+    <Compile Include="Tests\LevelSetBaseTest.cs" />
+    <Compile Include="Tests\LevelSetRotationTest.cs" />
     <Compile Include="Tests\LevelSetAdvectionTest.cs" />
     <Compile Include="Tests\LevelSetContinuityTest.cs" />
     <Compile Include="Tests\LevelSetInitializationTest.cs" />
     <Compile Include="Tests\LevelSetReinitializationTest.cs" />
-    <Compile Include="Tests\LevelSetUnitTest.cs" />
+    <Compile Include="Tests\LevelSetUnitTests.cs" />
     <Compile Include="Tests\SinglePhaseChannel.cs" />
     <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />

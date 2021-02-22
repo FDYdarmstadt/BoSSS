@@ -103,7 +103,8 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Computes refinement and coarsening lists 
         /// (inputs for <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]}, out GridCorrelation)"/>),
-        /// based on a refinement indicator. If the calculation should work parallel it is recommend to use <see cref="ComputeGridChange(GridData, List{Tuple{int, CellMask}}, out List{int}, out List{int[]})"/>.
+        /// based on a refinement indicator. If the calculation should work parallel 
+        /// it is recommend to use <see cref="ComputeGridChange(int[], out List{int}, out List{int[]})"/>.
         /// </summary>
         /// <param name="levelIndicator">
         /// Mapping from (local cell index, current refinement level) to desired refinement level for the respective cell,

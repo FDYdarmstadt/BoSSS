@@ -720,7 +720,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
-            AggregationGridData[] _MultigridSequence) //
+            AggregationGridData[] _MultigridSequence,
+            ISpatialOperator abstractOperator) //
         {
             using (new FuncTrace()) {
 
@@ -728,6 +729,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotSupportedException();
 
                 base.m_LsTrk = LsTrk;
+
+                base.AbstractOperator = abstractOperator;
 
                 if (Fields.Count() != m_PrivateBalancingInfo.NoOfFields)
                     throw new ArgumentException();
@@ -792,15 +795,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // in case of steady level set the xdgAggBasis need to be updated
                 if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
 
                     // matrix used for precond (must be agglomerated)
                     if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                         MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                         m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        if (this.m_CurrentAgglomeration != null) {
+                            m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        }
                     }
                 }
 
