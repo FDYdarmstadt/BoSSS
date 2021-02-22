@@ -2001,9 +2001,11 @@ namespace BoSSS.Solution {
                     SetInitial(0.0); // default behavior if no control file is present
                 } else {
                     if (this.Control != null) {
-                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null)
-                            throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
-                                + " both cannot be unequal null at the same time.");
+                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null) {
+                            //throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
+                            //    + " both cannot be unequal null at the same time.");
+                            Console.WriteLine("Warning: InitialValues set, while restarting a simulation.");
+                        }
 
                         if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
@@ -3110,7 +3112,7 @@ namespace BoSSS.Solution {
 
             if (this.Control != null && this.Control.RestartInfo != null) {
                 if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
-                    throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
+                    //throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
 
                 TimestepNo = RestartFromDatabase(out Time);
                 this.CurrentSessionInfo.RestartedFrom = this.Control.RestartInfo.Item1;
