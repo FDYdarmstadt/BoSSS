@@ -396,9 +396,6 @@ namespace BoSSS.Application.BoSSSpad {
                 if (HHLR_project != null) {
                     sw.WriteLine("#SBATCH -A " + HHLR_project);
                 }
-                if (this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH --exclusive");
-                }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
