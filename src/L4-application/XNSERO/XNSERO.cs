@@ -377,8 +377,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            base.AddMultigridConfigLevel(configsLevel);
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
+            base.AddMultigridConfigLevel(configsLevel, iLevel);
 
             if(Control.UsePhoreticField) {
                 int pVel = VelocityDegree();

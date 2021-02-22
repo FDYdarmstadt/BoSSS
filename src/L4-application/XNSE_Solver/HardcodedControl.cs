@@ -520,12 +520,12 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int cells_x = 10, int cells_yz = 10, bool only_channel = false, int SpaceDim = 2) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int cells_x = 30, int cells_yz = 30, bool only_channel = false, int SpaceDim = 2) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
+            C.DbPath = @"D:\trash_db";
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/RotCube";
             C.ProjectDescription = "rotating cube";

@@ -49,7 +49,7 @@ namespace BoSSS.Application.IBM_Solver {
             IBM_Control C = new IBM_Control();
 
 
-            //C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\IBM";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
@@ -167,7 +167,7 @@ namespace BoSSS.Application.IBM_Solver {
                 Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
 
                     int power = 2;
-                    double anglev = 0.1;
+                    double anglev = 1;
                     //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
 
                     C.AngularVelocity[2] = anglev;
@@ -179,9 +179,12 @@ namespace BoSSS.Application.IBM_Solver {
                         case 2:
                         pos = new double[] { 0, 0 };
                         C.CenterofMass = pos;
-                        return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                        - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                        + Math.Pow(C.particleRadius, power)) * 100;
+                        //return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                        //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                        //+ Math.Pow(C.particleRadius, power)) * 100;
+                        return (-Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
+                        - Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
+                        + Math.Abs(C.particleRadius));
                         //return -X[0] * X[0] - X[1] * X[1] + C.particleRadius * C.particleRadius;
 
 
@@ -225,7 +228,7 @@ namespace BoSSS.Application.IBM_Solver {
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.13;
+            C.particleRadius = 0.49;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.Material = true;
@@ -269,7 +272,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.verbose = true;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
 
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Classic;
 
@@ -284,14 +287,14 @@ namespace BoSSS.Application.IBM_Solver {
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
             C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            //double dt = 0.001;
-            //C.dtFixed = dt;
+            double dt = 0.01;
+            C.dtFixed = dt;
             //C.dtMax = dt;
             //C.dtMin = 0;
             //C.Endtime = 1000;
-            //C.NoOfTimesteps = 10;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            
+            C.NoOfTimesteps = 10;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
 
             return C;
         }
