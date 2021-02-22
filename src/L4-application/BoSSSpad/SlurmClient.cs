@@ -118,7 +118,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-
+        [NonSerialized]
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -356,7 +356,7 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = this.SlurmAccount;
+            string slurmAccount = this.SlurmAccount;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
@@ -393,8 +393,8 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH -p test24");
                 }
-                if (HHLR_project != null) {
-                    sw.WriteLine("#SBATCH -A " + HHLR_project);
+                if (slurmAccount != null) {
+                    sw.WriteLine("#SBATCH -A " + slurmAccount);
                 }
                 if (this.UseLB2 && !this.UseLB2TestPartition) {
                     sw.WriteLine("#SBATCH --exclusive");
