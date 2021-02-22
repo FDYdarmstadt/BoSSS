@@ -397,7 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                foreach (var cmd in this.AdditionalBatchCommands){
+                foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
                     sw.WriteLine(cmd);
                 }
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
