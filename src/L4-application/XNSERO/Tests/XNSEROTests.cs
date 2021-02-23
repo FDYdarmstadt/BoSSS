@@ -139,7 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
 
-                DatabaseUtils.DeleteDatabase(ctrl.DbPath);
+                //DatabaseUtils.DeleteDatabase(ctrl.DbPath);
             }
         }
 
