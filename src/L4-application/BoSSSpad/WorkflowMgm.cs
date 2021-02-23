@@ -213,8 +213,8 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
 
-            if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
-                MiniBatchProcessor.Server.StartIfNotRunning();
+            //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
+            //    MiniBatchProcessor.Server.StartIfNotRunning();
         }
 
         IDatabaseInfo m_DefaultDatabase;
