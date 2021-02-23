@@ -459,7 +459,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Simple plotting interface
         /// </summary>
-        /// <returns>Output of <see cref="GnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        /// <returns>Output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/></returns>
         static public object Plot(IEnumerable<double> X1, IEnumerable<double> Y1, string Name1 = null, string Format1 = null,
             IEnumerable<double> X2 = null, IEnumerable<double> Y2 = null, string Name2 = null, string Format2 = null,
             IEnumerable<double> X3 = null, IEnumerable<double> Y3 = null, string Name3 = null, string Format3 = null,
@@ -470,7 +470,7 @@ namespace BoSSS.Application.BoSSSpad {
             bool logX = false, bool logY = false) {
 
             using (var gp = new Gnuplot()) {
-
+                
 
                 IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
                 IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };

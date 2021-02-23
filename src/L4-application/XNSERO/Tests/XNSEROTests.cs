@@ -19,6 +19,8 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using ilPSP;
 using System.Collections;
+using BoSSS.Foundation.IO;
+using System.IO;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -93,11 +95,36 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        static public IDatabaseInfo CreateTempDatabase() {
+
+            DirectoryInfo TempDir;
+            {
+                var rnd = new Random();
+                bool Exists = false;
+                do {
+                    var tempPath = Path.GetTempPath();
+                    var tempDir = rnd.Next().ToString();
+                    TempDir = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                    Exists = TempDir.Exists;
+                } while (Exists == true);
+            }
+            
+            string path = TempDir.FullName;
+            return DatabaseInfo.CreateOrOpen(path);
+        }
+
+
         [Test]
         public static void TestParticleInShearFlow_Phoretic() {
             using(XNSERO p = new XNSERO()) {
 
                 XNSERO_Control ctrl = XNSEROTest_Control.TestParticleInShearFlow_Phoretic(k: 2);
+                var tempDB = CreateTempDatabase();
+                ctrl.SetDatabase(tempDB);
+                ctrl.savetodb = true;
+
+                
+                
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -112,6 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
 
+                DatabaseUtils.DeleteDatabase(ctrl.DbPath);
             }
         }
 

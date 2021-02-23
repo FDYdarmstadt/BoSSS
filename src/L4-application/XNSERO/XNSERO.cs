@@ -44,14 +44,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow();
-            //throw new Exception("remove me");
+            TestProgram.TestParticleInShearFlow_Phoretic();
+            throw new Exception("remove me");
 
-
+            /*
             
 
             void KatastrophenPlot(DGField[] dGFields) {
