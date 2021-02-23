@@ -327,9 +327,27 @@ namespace ilPSP {
         /// </summary>
         public double Angle2D() {
             if(this.Dim != 2)
-                throw new NotSupportedException();
+                throw new NotSupportedException("Only supported for 2D vectors.");
             return Math.Atan2(this.y, this.x);
         }
+
+        /// <summary>
+        /// Rotates a 2D vector in the xy-plane.
+        /// </summary>
+        public Vector Rotate2D(double angle) {
+            if(this.Dim != 2)
+                throw new NotSupportedException("Only supported for 2D vectors.");
+
+            double cs = Math.Cos(angle);
+            double ss = Math.Sin(angle);
+
+            Vector r = default(Vector);
+            r.Dim = 2;
+            r.x = cs * this.x - ss * this.y;
+            r.y = ss * this.x + cs * this.y;
+            return r;
+        }
+
 
         /// <summary>
         /// The angle, in radians, between this vector and vector <paramref name="o"/>

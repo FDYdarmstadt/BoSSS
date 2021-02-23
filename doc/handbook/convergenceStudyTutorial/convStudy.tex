@@ -101,11 +101,7 @@ using BoSSS.Application.SipPoisson;
  }
 \BoSSSexe
 \BoSSScmd{
-var myBatch = new MiniBatchProcessorClient();
- }
-\BoSSSexe
-\BoSSScmd{
-MiniBatchProcessor.Server.StartIfNotRunning(false);
+var myBatch = ExecutionQueues[0];
  }
 \BoSSSexe
 \BoSSScmd{

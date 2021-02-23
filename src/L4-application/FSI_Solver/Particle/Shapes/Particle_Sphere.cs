@@ -88,9 +88,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
-            double x0 = Motion.GetPosition(0)[0];
-            double y0 = Motion.GetPosition(0)[1];
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
+            double x0 = Postion[0];
+            double y0 = Postion[1];
             return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + m_Radius.Pow2();
         }
 
@@ -103,7 +103,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             double radiusTolerance = m_Radius + tolerance;
             double distance = point.L2Distance(Motion.GetPosition(0));
             return distance < radiusTolerance;
@@ -115,15 +115,15 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
             double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
             double CosT = supportVector[0] / length;
             double SinT = supportVector[1] / length;
             Vector SupportPoint = new Vector(SpatialDim);
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * m_Radius + Motion.GetPosition(0)[0];
-            SupportPoint[1] = SinT * m_Radius + Motion.GetPosition(0)[1];
+            SupportPoint[0] = CosT * m_Radius + Position[0];
+            SupportPoint[1] = SinT * m_Radius + Position[1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
             return SupportPoint;

@@ -805,8 +805,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
-            if (Tst.SpatialDimension == 3)
-            {
+            
+            if(Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
             }
@@ -823,15 +823,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
-                XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
                 if (LastErrors.Length != ErrThresh.Length)
                     throw new ApplicationException();
-                for (int i = 0; i < ErrThresh.Length; i++)
-                {
-                    Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                for(int i = 0; i < ErrThresh.Length; i++) {
+                    bool ok = LastErrors[i] <= ErrThresh[i];
+                    Console.Write("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ErrThresh[i] + ")");
                 }
 
                 double[] ResThresh = Tst.AcceptableResidual;
@@ -841,14 +846,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 for (int i = 0; i < ResNorms.Length; i++)
                 {
                     ResNorms[i] = solver.CurrentResidual.Fields[i].L2Norm();
-                    Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+                    bool ok = ResNorms[i] <= ResThresh[i];
+                    Console.Write("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ResThresh[i] + ")");
                 }
 
                 for (int i = 0; i < ErrThresh.Length; i++)
-                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i], $"Error {solver.CurrentState.Fields[i].Identification} above threshold.");
 
                 for (int i = 0; i < ResNorms.Length; i++)
-                    Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
+                    Assert.LessOrEqual(ResNorms[i], ResThresh[i], $"Residual {solver.CurrentResidual.Fields[i].Identification} above threshold.");
             }
         }
 
@@ -882,7 +893,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         solver.RunSolverMode();
 
                         //-------------------Evaluate Error ---------------------------------------- 
-                        XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                        var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                         double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
                         double[] ErrThresh = Tst.AcceptableL2Error;
 
@@ -990,7 +1001,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator evaluator = new XHeatErrorEvaluator(solver);
+                var evaluator = new XHeatErrorEvaluator<XNSE_Control>(solver);
                 if (Tst.CheckT) {                    
                     double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
@@ -1039,7 +1050,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Flow Error ---------------------------------------- 
-                XNSEErrorEvaluator flowevaluator = new XNSEErrorEvaluator(solver);
+                var flowevaluator = new XNSEErrorEvaluator<XNSFE_Control>(solver);
                 double[] LastErrors = flowevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
@@ -1052,7 +1063,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator heatevaluator = new XHeatErrorEvaluator(solver);
+                var heatevaluator = new XHeatErrorEvaluator<XNSFE_Control>(solver);
                 if (Tst.CheckT) {
                     LastErrors = LastErrors.Cat(heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C) );
 
@@ -1111,10 +1122,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XNSE_Control : XNSE_Control
-        {
-            public override Type GetSolverType()
-            {
+        class AS_XNSE_Control : XNSE_Control {
+            public override Type GetSolverType() {
                 return typeof(XNSE);
             }
         }
@@ -1247,7 +1256,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XHeat_Control : XNSE_Control {
+        class AS_XHeat_Control : XNSFE_Control {
             public override Type GetSolverType() {
                 return typeof(XHeat);
             }

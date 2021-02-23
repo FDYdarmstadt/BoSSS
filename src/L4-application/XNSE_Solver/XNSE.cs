@@ -27,6 +27,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - solid immersed boundaries (planned).
     /// - three phase contact lines at the domain boundary
     /// - three phase contact lines at the intersection of the immersed solid boundary 
+    /// - the generic control parameter <typeparamref name="T"/> allows derivations of this solver
     /// </summary>
     /// <remarks>
     /// Development history:
@@ -56,32 +57,42 @@ namespace BoSSS.Application.XNSE_Solver {
     ///     \vec{v} \cdot \frac{\nabla \varphi_2}{| \nabla \varphi_2 |} =  \frac{- \partial_t \varphi_2}{| \nabla \varphi_2 |} 
     /// ```
     /// </remarks>
-    /// 
-    public class XNSE : SolverWithLevelSetUpdater<XNSE_Control> {
+    public class XNSE : XNSE<XNSE_Control> {
 
         //===========
         // Main file
         //===========
         static void Main(string[] args) {
 
+
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.UnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes);
+
+            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
-
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+
             _Main(args, false, delegate () {
                 var p = new XNSE();
                 return p;
             });
         }
+    }
+
+    /// <summary>
+    /// Generic versions which should be used for derivatives 
+    /// </summary>
+    public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
+
+       
 
         /// <summary>
-        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields tripple order)
+        /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
         /// </summary>
         /// <remarks>
@@ -251,6 +262,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+            
             OperatorFactory opFactory = new OperatorFactory();
             
             DefineSystem(D, opFactory, levelSetUpdater);
@@ -261,7 +273,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection);
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
@@ -379,12 +391,45 @@ namespace BoSSS.Application.XNSE_Solver {
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
 
+
+        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
+
+        //    DGField[] plotFields = this.m_RegisteredFields.ToArray();
+        //    void AddPltField(DGField f) {
+        //        bool add = true;
+        //        foreach(var ff in plotFields) {
+        //            if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
+        //                add = false;
+        //                break;
+        //            }
+        //        }
+        //        if(add) {
+        //            f.AddToArray(ref plotFields);
+        //        }
+        //    }
+        //    void AddPltFields(IEnumerable<DGField> fs) {
+        //        foreach(var f in fs)
+        //            AddPltField(f);
+        //    }
+
+        //    if (Timestepping?.Parameters != null) {
+        //        AddPltFields(Timestepping.Parameters);
+        //    }
+        //    if (LsUpdater?.Parameters != null) {
+        //        AddPltFields(LsUpdater.Parameters.Values);
+        //        AddPltFields(LsUpdater.InternalFields.Values);
+        //    }
+
+        //    Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
+        //}
+
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");
+            Console.WriteLine($"Done with time step {TimestepNo}.");
             return dt;
         }
     }

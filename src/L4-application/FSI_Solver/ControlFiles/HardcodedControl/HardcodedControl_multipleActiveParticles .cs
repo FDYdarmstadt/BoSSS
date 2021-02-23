@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
 using MPI.Wrappers;
 
 namespace BoSSS.Application.FSI_Solver {
@@ -107,9 +108,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
 
             return C;
@@ -168,9 +169,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
             return C;
         }
@@ -220,9 +221,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.fullyCoupledSplittingMaxIterations = 100;
 
 
             return C;
@@ -274,52 +275,55 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.fullyCoupledSplittingMaxIterations = 100;
             
 
             return C;
         }
 
-        public static FSI_Control PackedParticles(int k = 2, double particleLength = 0.1, double aspectRatio = 0.4, int cellsPerUnitLength = 30) {
+        public static FSI_Control PackedParticles(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 6, double noOfParticles = 7) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
-            //string ID = "aab57672-ac36-4f82-b9f9-8e5c89cd06eb";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1000);
+            //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
+            //string ID = "ccf040a2-e5db-47a7-b226-b642676636cd";
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
             //C.IsRestart = true;
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
+            C.FullOutputToConsole = false;
             C.PhysicalParameters.IncludeConvection = false;
+            C.pureDryCollisions = false;
 
             // Particle Properties
             // =============================
-            double particleDensity = 100;
-            double activeStress = 10;
-            double nextParticleDistance = 0.2;
-            double domainLength = nextParticleDistance * 12;
+            double particleDensity = C.PhysicalParameters.rho_A * 100;
+            double activeStress = 1;
+            double nextParticleDistance = particleLength * 2.1;
+            double domainLength = nextParticleDistance * noOfParticles;
             //List<string> boundaryValues = new List<string> {
             //    "Wall"
             //};
             //C.SetBoundaries(boundaryValues);
+            C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.SetAddaptiveMeshRefinement(0);
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
-            C.minDistanceThreshold = 0.025;
-            C.CoefficientOfRestitution = 1;
-            
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
+            C.hydrodynamicsConvergenceCriterion = 1e-4;
+            C.minDistanceThreshold = 1 / cellsPerUnitLength;
+            C.CoefficientOfRestitution = 0.75;
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
             Random insertParticle = new Random();
             int j = 0;
             while(leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
-                while (leftCorner+ i * nextParticleDistance < domainLength / 2) {
-                    double temp_insertParticle = insertParticle.Next(0, 6);
+                while (leftCorner + i * nextParticleDistance < domainLength / 2) {
+                    double temp_insertParticle = insertParticle.Next(0, 3);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
                     //if (temp_insertParticle != 0) 
                     {
@@ -327,7 +331,8 @@ namespace BoSSS.Application.FSI_Solver {
                         double temp_angle2 = angle.Next(0, 361);
                         temp_angle = temp_angle.MPIBroadcast(0);
                         temp_angle2 = temp_angle2.MPIBroadcast(0);
-                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, temp_angle * 180 + temp_angle2 * Math.Pow(-1,i * j), activeStress, new double[] { 0, 0}));
+                        double angle2 = temp_angle * 180 + temp_angle2 * Math.Pow(-1, i * j);
+                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, angle2, activeStress, new double[] { 0,0}));
                     }
                     i += 1;
                 }
@@ -337,31 +342,29 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(1e-2, int.MaxValue, true);
+            C.SetTimesteps(1e-1, int.MaxValue, true);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = true;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
-            C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LSunderrelax = 1.0;
+            C.LinearSolver.verbose = false;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.UseSchurBlockPrec = false;
+            C.LinearSolver.pMaxOfCoarseSolver = k;
             C.LinearSolver.TargetBlockSize = 10000;
 
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 100;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
+            C.fullyCoupledSplittingMaxIterations = 100;
 
-           
             return C;
         }
 
-        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.2) {
+        public static FSI_Control FixedParticle(int k = 2, int amrLevel = 7, double aspectRatio = 0.5) {
             FSI_Control C = new FSI_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/home/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -370,7 +373,7 @@ namespace BoSSS.Application.FSI_Solver {
                 "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 200, lengthY: 200, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid(lengthX: 100, lengthY: 100, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(amrLevel: amrLevel);
             C.hydrodynamicsConvergenceCriterion = 1e-4;
             // Fluid Properties
@@ -384,7 +387,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================
             double particleDensity = 1;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
-            C.Particles.Add(new Particle_Ellipsoid(motion, 1, 1 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
+            C.Particles.Add(new Particle_Ellipsoid(motion, 0.5, 0.5 * aspectRatio, new double[] { 0, 0 }, startAngl: 0, activeStress: 1));
 
             // misc. solver options
             // =============================  
@@ -408,9 +411,9 @@ namespace BoSSS.Application.FSI_Solver {
             // Coupling Properties
             // =============================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LSunderrelax = 1;
-            C.maxIterationsFullyCoupled = 1000000;
+            C.fullyCoupledSplittingMaxIterations = 1000000;
 
 
             return C;

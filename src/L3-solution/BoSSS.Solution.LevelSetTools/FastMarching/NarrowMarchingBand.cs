@@ -269,9 +269,40 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             SubGrid PosGrid = new SubGrid(Pos);
             SubGrid NegGrid = new SubGrid(Neg);
 
+
+            if (plotMarchingSteps) {
+                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+            }
+
+
+            //DGField PosField = new SinglePhaseField(new Basis(gdat, 0), "positiveLevelSetWing");
+            //DGField NegField = new SinglePhaseField(new Basis(gdat, 0), "negativeLevelSetWing");
+            //foreach (Chunk cnk in Pos) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        PosField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //foreach (Chunk cnk in Neg) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        NegField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //CellMask intersect = Pos.Intersect(Neg);
+            //DGField IntersectField = new SinglePhaseField(new Basis(gdat, 0), "intersectLevelSetWing");
+            //foreach (Chunk cnk in intersect) {
+            //    for (int i = cnk.i0; i < cnk.JE; i++) {
+            //        IntersectField.SetMeanValue(i, 1.0);
+            //    }
+            //}
+            //Tecplot.Tecplot.PlotFields(new DGField[] { PosField, NegField, IntersectField }, "LevelSetWings", 0.0, 1);
+
+
             EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask);
-            if(touching.NoOfItemsLocally > 0)
+            if (touching.NoOfItemsLocally > 0) {
+                Console.WriteLine("on Proc {0}: touching.NoOfItemsLocally = {1}", gdat.MpiRank, touching.NoOfItemsLocally);
                 throw new ArithmeticException("Error in level-set topology.");
+            }
 
             if(object.ReferenceEquals(OldLevSet, NewLevelSet)) {
                 NewLevelSet = OldLevSet.CloneAs();
@@ -327,8 +358,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             // identify cells for Reinit
             // -------------------------
 
-            //BitArray ReinitPosBitmask = new BitArray(J);
-            //BitArray ReinitNegBitmask = new BitArray(J);
+            BitArray ReinitPosBitmask = new BitArray(J);
+            BitArray ReinitNegBitmask = new BitArray(J);
             BitArray ReinitBitmask = new BitArray(J);
             BitArray KnownBitmask = new BitArray(J);
             int NoOfPosReinit = 0, NoOfNegReinit = 0;
@@ -350,12 +381,12 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                         throw new ArithmeticException("Level set in un-cut cell seems to be positive and negative at the same time -- something wrong here.");
 
                     if(PosBitMask[j]) {
-                        //ReinitPosBitmask[j] = true;
+                        ReinitPosBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfPosReinit++;
                     }
                     if(NegBitMask[j]) {
-                        //ReinitNegBitmask[j] = true;
+                        ReinitNegBitmask[j] = true;
                         ReinitBitmask[j] = true;
                         NoOfNegReinit++;
                     }
@@ -367,8 +398,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             Console.WriteLine("No of pos/neg reinit: {0}, {1}", NoOfPosReinit, NoOfNegReinit);
             bool reinitialize = NoOfPosReinit.MPISum() > 0 || NoOfNegReinit.MPISum() > 0;
 
-            //CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
-            //CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
+            CellMask ReinitPos = new CellMask(gdat, ReinitPosBitmask);
+            CellMask ReinitNeg = new CellMask(gdat, ReinitNegBitmask);
             CellMask Reinit = new CellMask(gdat, ReinitBitmask);
             CellMask Known = new CellMask(gdat, KnownBitmask);
 
@@ -377,12 +408,6 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             // perform Reinitialization
             // ------------------------
-
-            if (plotMarchingSteps) {
-                TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
-            }
-
 
             var marcher = new Reinit.FastMarch.FastMarchReinit(NewLevelSet.Basis);
 
@@ -582,7 +607,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             TimeEvoOp.EquationComponents["c1"].Add(new UpwindStabiForm(D));
             TimeEvoOp.Commit();
 
-            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.ExplicitEuler, TimeEvoOp,
+            RungeKutta RunschCjuda = new RungeKutta(RungeKuttaScheme.TVD3, TimeEvoOp,
                 LevelSet.Mapping, new CoordinateMapping(ArrayTools.Cat<DGField>(LevelSetGrad, ExtVel)), sgrd: NEARgrid);
 
             RunschCjuda.OnBeforeComputeChangeRate += delegate (double AbsTime, double RelTime) {
