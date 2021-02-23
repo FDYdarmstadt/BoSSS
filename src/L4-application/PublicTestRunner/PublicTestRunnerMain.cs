@@ -659,6 +659,7 @@ namespace PublicTestRunner {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
 
+
                             Console.WriteLine($"Successfully submitted {j.j.Name}.");
                             AllOpenJobs.Add(j);
                         } catch (Exception e) {
