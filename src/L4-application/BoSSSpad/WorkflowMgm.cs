@@ -265,9 +265,9 @@ namespace BoSSS.Application.BoSSSpad {
                     if (InteractiveShell.databases != null) {
                         foreach (var db in InteractiveShell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
-#if DEBUG 
-                                return si.ProjectName.Equals(this.CurrentProject);
-#else
+//#if DEBUG 
+//                                return si.ProjectName.Equals(this.CurrentProject);
+//#else
                                 Guid g = Guid.Empty;
                                 try {
                                     g = si.ID;
@@ -276,7 +276,7 @@ namespace BoSSS.Application.BoSSSpad {
                                     Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
                                     return false;
                                 }
-#endif
+//#endif
                             });
                             ret.AddRange(SS);
                         }
