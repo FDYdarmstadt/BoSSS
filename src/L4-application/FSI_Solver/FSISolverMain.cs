@@ -82,10 +82,13 @@ namespace BoSSS.Application.FSI_Solver {
                 }
             }
             UpdateLevelSetParticles(phystime: t);
-            CreatePhysicalDataLogger();
+            if (!test) {
+                test = true;
+                CreatePhysicalDataLogger();
+            }
             base.SetInitial(t);
         }
-
+        bool test = false;
         /// <summary>
         /// Spatial dimension
         /// </summary>

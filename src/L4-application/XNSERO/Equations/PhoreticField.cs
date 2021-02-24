@@ -107,6 +107,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// Neumann boundary value
             /// </summary>
             double g_Neum(ref CommonParams inp) {
+                double activity = inp.Parameters_IN[0];
                 return 1.0;
             }
 
@@ -120,9 +121,8 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             public virtual double InnerEdgeForm(ref CommonParams inp,
                 double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
                 double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-                
-                //Vector N = inp.Normal;
 
+                //Vector N = inp.Normal;
                 double Acc = 0;
                 double g_N = this.g_Neum(ref inp);
                 Acc += muA * g_N * vA;
@@ -206,7 +206,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             }
 
             public IList<string> ParameterOrdering {
-                get { return null; }
+                get { return new string[] { BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), BoSSS.Solution.NSECommon.VariableNames.Phoretic) }; }
             }
 
 

@@ -22,6 +22,7 @@ using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
@@ -65,8 +66,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 // Calculate hydrodynamics.
                 CellMask allCutCells = AllParticles[0].LsTrk.Regions.GetCutCellMask4LevSet(1);
                 for (int p = 0; p < AllParticles.Count(); p++) {
+                    //Debugger.Launch();
                     Particle currentParticle = AllParticles[p];
                     CellMask CutCells = currentParticle.ParticleCutCells(AllParticles[0].LsTrk, allCutCells);
+                    //CellMask CutCells2 = currentParticle.CutCells;
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
                     double[] tempHydrodynamics = currentParticle.Motion.CalculateHydrodynamics(HydrodynamicIntegrator, CutCells, FluidSpecies, dt);
                     for (int d = 0; d < SpatialDimension + 1; d++) 

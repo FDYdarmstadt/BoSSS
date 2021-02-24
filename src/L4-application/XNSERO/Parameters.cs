@@ -88,8 +88,49 @@ namespace BoSSS.Application.XNSERO_Solver {
                                 double velocityLocal = 0.0;
                                 for (int p = 0; p < Particles.Length; p++) {
                                     Particle particle = Particles[p];
-                                    if (particle.Contains(cellCenter, GridToleranceParam)) {
-                                        double[] X = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                                    double[] X = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                                    if (particle.Contains(cellCenter, GridToleranceParam) && (X - particle.Motion.GetPosition(HistoryPosition)).Abs() > particle.GetLengthScales().Min() / 2) {
+                                        Vector radialVector = particle.CalculateRadialVector(X);
+                                        switch (d) {
+                                            case 0:
+                                            velocityLocal = particle.Motion.GetTranslationalVelocity(HistoryPosition)[0] - particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[1];
+                                            break;
+                                            case 1:
+                                            velocityLocal = particle.Motion.GetTranslationalVelocity(HistoryPosition)[1] + particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[0];
+                                            break;
+                                            default:
+                                            throw new NotImplementedException("Rigid object solver only for 2D");
+                                        }
+                                    }
+                                }
+                                result[j, k] = velocityLocal;
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        void InternalLevelSetParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                DGField[] levelSetVelocity = new ConventionalDGField[SpatialDimension];
+                LevelSetTracker LsTrk = Particles[0].LsTrk;
+                for (int d = 0; d < SpatialDimension; d++) {
+                    levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
+                    levelSetVelocity[d].Clear();
+                    levelSetVelocity[d].ProjectField(1.0,
+                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                        int K = result.GetLength(1);
+                        for (int j = 0; j < Len; j++) {
+                            MultidimensionalArray globCoord = MultidimensionalArray.Create(K, SpatialDimension);
+                            double[] cellCenter = LsTrk.GridDat.Cells.GetCenter(j + j0);
+                            LsTrk.GridDat.TransformLocal2Global(NS, globCoord, j + j0);
+                            for (int k = 0; k < K; k++) {
+                                double velocityLocal = 0.0;
+                                for (int p = 0; p < Particles.Length; p++) {
+                                    Particle particle = Particles[p];
+                                    double[] X = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                                    if (particle.Contains(cellCenter, GridToleranceParam) && (X - particle.Motion.GetPosition(HistoryPosition)).Abs() > particle.GetLengthScales().Min() / 2) {
                                         Vector radialVector = particle.CalculateRadialVector(X);
                                         switch (d) {
                                             case 0:
@@ -133,14 +174,14 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 ParticleHydrodynamics.SaveHydrodynamicOfPreviousTimestep(Particles);
                 HistoryPosition = 1;
-                InternalParameterUpdate(time, DomainVarFields, ParameterVarFields);
+                InternalLevelSetParameterUpdate(time, DomainVarFields, ParameterVarFields);
             }
         }
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var velocties = new (string, DGField)[SpatialDimension];
             var bv = DomainVarFields[VariableNames.VelocityX].Basis;
-            var b = new Basis(bv.GridDat, Math.Max(6, bv.Degree));
+            var b = new Basis(bv.GridDat, bv.Degree);
 
             for (int d = 0; d < SpatialDimension; ++d) {
                 string paramName = ParameterNames[d];
@@ -249,6 +290,89 @@ namespace BoSSS.Application.XNSERO_Solver {
                 DGField stress = new SinglePhaseField(basis, paramName);
                 stresses[d] = (paramName, stress);
             }
+            return stresses;
+        }
+    }
+
+    public class PhoreticActivity : ParameterS, ILevelSetParameter {
+
+        public PhoreticActivity(string levelSetName, Particle[] Particles, double GridToleranceParam) : base() {
+            D = Particles[0].Motion.GetPosition().Dim;
+            this.Particles = Particles;
+            this.GridToleranceParam = GridToleranceParam;
+            m_ParameterNames[0] = VariableNames.AsLevelSetVariable(levelSetName, VariableNames.Phoretic);
+        }
+
+        private readonly int D;
+        private readonly Particle[] Particles;
+        private readonly double GridToleranceParam;
+        private readonly string[] m_ParameterNames;
+
+        public override IList<string> ParameterNames {
+            get {
+                return m_ParameterNames;
+            }
+        }
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                return InternalParameterUpdate;
+            }
+        }
+
+        void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                DGField[] activeStress = new ConventionalDGField[1];
+                LevelSetTracker LsTrk = Particles[0].LsTrk;
+                activeStress[0] = ParameterVarFields[ParameterNames[0]];
+                activeStress[0].Clear();
+                activeStress[0].ProjectField(1.0,
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+
+                        var Normals = LsTrk.DataHistories[1].Current.GetLevelSetNormals(NS, j0, Len);
+
+                    for (int j = 0; j < Len; j++) {
+                        MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                        double[] cellCenter = LsTrk.GridDat.Cells.GetCenter(j + j0);
+                        LsTrk.GridDat.TransformLocal2Global(NS, globCoord, j + j0);
+                        for (int k = 0; k < K; k++) {
+                            double activeStressLocal = 0.0;
+                            for (int p = 0; p < Particles.Length; p++) {
+                                Particle particle = Particles[p];
+                                if (particle.Contains(cellCenter, GridToleranceParam)) {
+                                    double activeStressMagnitude = particle.ActiveStress;
+                                    double angle = particle.Motion.GetAngle(0);
+                                    Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+                                    Vector orientationNormal = new Vector(-orientation[1], orientation[0]);
+                                    Vector normalVector = new Vector(Normals[j, k, 0], Normals[j, k, 1]);
+                                    if (orientation * normalVector <= 0)
+                                        activeStressLocal = 0;
+                                    else {
+                                        activeStressLocal = activeStressMagnitude;
+                                    }
+                                }
+                            }
+                            result[j, k] = activeStressLocal;
+                        }
+                    }
+                });
+            }
+        }
+
+        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            InternalParameterUpdate(time, DomainVarFields, ParameterVarFields);
+        }
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var stresses = new (string, DGField)[1];
+            var velocityBasis = DomainVarFields[VariableNames.VelocityX].Basis;
+            var basis = new Basis(velocityBasis.GridDat, velocityBasis.Degree);
+            string paramName = ParameterNames[0];
+            DGField stress = new SinglePhaseField(basis, paramName);
+            stresses[0] = (paramName, stress);
             return stresses;
         }
     }

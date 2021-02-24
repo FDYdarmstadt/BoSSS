@@ -147,7 +147,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Tested by <see cref="TestProgram.TestRigidLevelSetProjection"/>
         /// </remarks>
         protected override RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
-            CreatePhysicalDataLogger();
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
@@ -196,6 +195,8 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
                 opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));
+                if(Control.UsePhoreticField)
+                    opFactory.AddParameter((ParameterS)GetLevelSetPhoretic(1));
 
                 if(Control.UsePhoreticField) {
                     opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk));
@@ -284,6 +285,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             return levelSetVelocity;
         }
 
+        protected virtual ILevelSetParameter GetLevelSetPhoretic(int iLevSet) {
+            return new PhoreticActivity(VariableNames.LevelSetCGidx(iLevSet), Particles, MaxGridLength);
+        }
+
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
         /// </summary>
@@ -296,7 +301,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             stopWatch.Start();
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
-
+            if (!CreatedLogger) {
+                CreatedLogger = true;
+                CreatePhysicalDataLogger();
+            }
             InitializeParticlesNewTimestep(dt);
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
@@ -304,9 +312,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             CalculateCollision(Particles, dt);
             if(!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
-            Console.WriteLine("Particle 0 " + Particles[0].Motion.GetTranslationalVelocity(0));
-            //Console.WriteLine("Particle 1 " + Particles[1].Motion.GetTranslationalVelocity(0));
             LogPhysicalData(phystime, TimestepNo);
+            Console.WriteLine("Particle 1 " + Particles[0].Motion.GetTranslationalVelocity());
+            Console.WriteLine("Particle 2 " + Particles[1].Motion.GetTranslationalVelocity());
             Console.WriteLine($"done with time step {TimestepNo}");
             TimeSpan ts = stopWatch.Elapsed;
             string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
@@ -314,13 +322,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             return dt;
         }
 
+        bool CreatedLogger = false;
+
         /// <summary>
         /// Safes old values for the velocity of the particles and updates added damping tensors (if used).
         /// </summary>
         private void InitializeParticlesNewTimestep(double dt) {
-            foreach(Particle p in Particles) {
+            CellMask globalCutCells = LsTrk.Regions.GetCutCellMask4LevSet(1);
+            foreach (Particle p in Particles) {
                 p.Motion.SaveVelocityOfPreviousTimestep();
-                if(p.Motion.UseAddedDamping) {
+                p.UpdateParticleCutCells(LsTrk, globalCutCells);
+                p.LsTrk = LsTrk;
+                if (p.Motion.UseAddedDamping) {
                     if(initAddedDamping) {
                         double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
                         p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
@@ -361,7 +374,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Particles"></param>
         /// <param name="dt"></param>
         private void CalculateParticlePositionAndAngle(Particle[] Particles, double dt) {
-            foreach(Particle p in Particles) {
+            foreach (Particle p in Particles) {
                 p.Motion.UpdateParticlePositionAndAngle(dt);
             }
         }

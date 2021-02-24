@@ -70,6 +70,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] tempForces = new double[SpatialDim];
             double[] IntegrationForces = tempForces.CloneAs();
             double[] forcesAndTorque = new double[SpatialDim + 1];
+            if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
+                throw new Exception("something is wrong");
+            }
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
                 CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(1, CutCells);

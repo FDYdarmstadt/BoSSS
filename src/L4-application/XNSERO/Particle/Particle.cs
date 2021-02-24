@@ -172,7 +172,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
                     levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
             }
-            return levelSet * 100;
+            return levelSet;
         }
 
         /// <summary>
@@ -189,15 +189,24 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="LsTrk"></param>
         /// <returns></returns>
         public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
-            BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
+            BitArray CellArray = AllCutCells.GetBitMask();
+            BitArray ContainArray = new BitArray(CellArray.Length);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h = LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h * 1.5);
+                if(CellArray[i])
+                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h * 4);
             }
-            CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
-            CutCells = CutCells.Intersect(AllCutCells);
+
+            CellMask CutCells = new CellMask(LsTrk.GridDat, ContainArray, MaskType.Logical);
+            //CutCells = CutCells.Intersect(AllCutCells);
             return CutCells;
+        }
+
+        public CellMask CutCells { get; private set; }
+
+        public void UpdateParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
+            CutCells = ParticleCutCells(LsTrk, AllCutCells);
         }
 
         /// <summary>

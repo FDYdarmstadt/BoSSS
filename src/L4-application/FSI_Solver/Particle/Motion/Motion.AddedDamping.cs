@@ -157,30 +157,26 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         private double[,] CalculateCoefficientMatrix(double dt) {
-            using (new FuncTrace()) {
-                double[,] massMatrix = GetMassMatrix();
-                double[,] coefficientMatrix = massMatrix.CloneAs();
-                if (m_AddedDampingCoefficient == 0)// somehow the coefficient isnt safed during restart
-                    m_AddedDampingCoefficient = 1;
-                for (int i = 0; i < 3; i++) {
-                    for (int j = 0; j < 3; j++) {
-                        coefficientMatrix[i, j] = massMatrix[i, j] + dt * m_AddedDampingCoefficient * AddedDampingTensor[i, j];
-                    }
+            double[,] massMatrix = GetMassMatrix();
+            double[,] coefficientMatrix = massMatrix.CloneAs();
+            if (m_AddedDampingCoefficient == 0)// somehow the coefficient isnt safed during restart
+                m_AddedDampingCoefficient = 1;
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    coefficientMatrix[i, j] = massMatrix[i, j] + dt * m_AddedDampingCoefficient * AddedDampingTensor[i, j];
                 }
-                return coefficientMatrix;
             }
+            return coefficientMatrix;
         }
 
         /// <summary>
         /// Calculates the mass matrix of the particle.
         /// </summary>
         private double[,] GetMassMatrix() {
-            using (new FuncTrace()) {
-                double[,] MassMatrix = new double[3, 3];
-                MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleArea * Density;
-                MassMatrix[2, 2] = MomentOfInertia;
-                return MassMatrix;
-            }
+            double[,] MassMatrix = new double[3, 3];
+            MassMatrix[0, 0] = MassMatrix[1, 1] = ParticleArea * Density;
+            MassMatrix[2, 2] = MomentOfInertia;
+            return MassMatrix;
         }
 
         /// <summary>
@@ -188,15 +184,13 @@ namespace BoSSS.Application.FSI_Solver {
         /// </summary>
         /// <param name="coefficientMatrix">The matrix calculated in <see cref="CalculateCoefficientMatrix"></see>/></param>
         private double CalculateDenominator(double[,] coefficientMatrix) {
-            using (new FuncTrace()) {
-                double denominator = coefficientMatrix[0, 0] * coefficientMatrix[1, 1] * coefficientMatrix[2, 2];
-                denominator -= coefficientMatrix[0, 0] * coefficientMatrix[1, 2] * coefficientMatrix[2, 1];
-                denominator -= coefficientMatrix[0, 1] * coefficientMatrix[1, 0] * coefficientMatrix[2, 2];
-                denominator += coefficientMatrix[0, 1] * coefficientMatrix[1, 2] * coefficientMatrix[2, 0];
-                denominator += coefficientMatrix[0, 2] * coefficientMatrix[1, 0] * coefficientMatrix[2, 1];
-                denominator -= coefficientMatrix[0, 2] * coefficientMatrix[1, 1] * coefficientMatrix[2, 0];
-                return denominator;
-            }
+            double denominator = coefficientMatrix[0, 0] * coefficientMatrix[1, 1] * coefficientMatrix[2, 2];
+            denominator -= coefficientMatrix[0, 0] * coefficientMatrix[1, 2] * coefficientMatrix[2, 1];
+            denominator -= coefficientMatrix[0, 1] * coefficientMatrix[1, 0] * coefficientMatrix[2, 2];
+            denominator += coefficientMatrix[0, 1] * coefficientMatrix[1, 2] * coefficientMatrix[2, 0];
+            denominator += coefficientMatrix[0, 2] * coefficientMatrix[1, 0] * coefficientMatrix[2, 1];
+            denominator -= coefficientMatrix[0, 2] * coefficientMatrix[1, 1] * coefficientMatrix[2, 0];
+            return denominator;
         }
 
         /// <summary>
@@ -205,12 +199,10 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="hydrodynamicsIntegration"></param>
         /// <param name="fluidDensity"></param>
         public override Vector CalculateHydrodynamicForces(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, double dt) {
-            using (new FuncTrace()) {
-                Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
-                Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-                tempForces = ForceAddedDamping(tempForces, dt);
-                return tempForces;
-            }
+            Vector tempForces = new Vector(hydrodynamicsIntegration.Forces(cutCells));
+            Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
+            tempForces = ForceAddedDamping(tempForces, dt);
+            return tempForces;
         }
 
         /// <summary>

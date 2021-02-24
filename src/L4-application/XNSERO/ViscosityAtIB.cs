@@ -30,22 +30,22 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
-            this.m_penalty_base = penalty_base;
-            this.m_LsTrk = t;
-            this.FluidViscosity = _muA;
+            m_penalty_base = penalty_base;
+            m_LsTrk = t;
+            FluidViscosity = _muA;
             Component = _d;
-            this.m_D = _D;
-            this.m_iLevSet = iLevSet;
-            this.m_SolidSpecies = SolidSpecies;
-            this.m_FluidSpc = FluidSpc;
-            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+            m_D = _D;
+            m_iLevSet = iLevSet;
+            m_SolidSpecies = SolidSpecies;
+            m_FluidSpc = FluidSpc;
+            m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
         }
         readonly int m_iLevSet;
         readonly string m_FluidSpc;
         readonly string m_SolidSpecies;
         readonly int Component;
         readonly int m_D;
-        readonly bool m_UseLevelSetVelocityParameter;
+        private readonly bool m_UseLevelSetVelocityParameter;
 
         /// <summary>
         /// Viskosity in species A
