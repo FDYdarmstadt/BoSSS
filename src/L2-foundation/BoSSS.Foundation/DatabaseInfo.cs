@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.IO {
 
                 }
 
-                throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter.");
+                throw new IOException("Unable to open database - all given paths either don't exist or are ruled out by the machine filter on this machine with name " + mName + " .");
             }
 
 
