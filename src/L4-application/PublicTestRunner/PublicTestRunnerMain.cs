@@ -565,12 +565,6 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-
-
-
-
-
-
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
@@ -587,7 +581,10 @@ namespace PublicTestRunner {
                     string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
                     try {
                         ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                    } catch(IOException) {
+                        using(var wrt = new StreamWriter(ServerMutex)) {
+                            wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
+                        }
+                    } catch(Exception) {
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
