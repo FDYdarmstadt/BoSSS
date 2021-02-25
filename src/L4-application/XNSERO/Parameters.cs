@@ -300,6 +300,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             D = Particles[0].Motion.GetPosition().Dim;
             this.Particles = Particles;
             this.GridToleranceParam = GridToleranceParam;
+            m_ParameterNames = new string[1];
             m_ParameterNames[0] = VariableNames.AsLevelSetVariable(levelSetName, VariableNames.Phoretic);
         }
 
@@ -343,7 +344,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             for (int p = 0; p < Particles.Length; p++) {
                                 Particle particle = Particles[p];
                                 if (particle.Contains(cellCenter, GridToleranceParam)) {
-                                    double activeStressMagnitude = particle.ActiveStress;
+                                    double activeStressMagnitude = particle.phoreticActivity;
                                     double angle = particle.Motion.GetAngle(0);
                                     Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
                                     Vector orientationNormal = new Vector(-orientation[1], orientation[0]);
@@ -367,13 +368,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
-            var stresses = new (string, DGField)[1];
+            var phoreticBoundary = new (string, DGField)[1];
             var velocityBasis = DomainVarFields[VariableNames.VelocityX].Basis;
             var basis = new Basis(velocityBasis.GridDat, velocityBasis.Degree);
             string paramName = ParameterNames[0];
             DGField stress = new SinglePhaseField(basis, paramName);
-            stresses[0] = (paramName, stress);
-            return stresses;
+            phoreticBoundary[0] = (paramName, stress);
+            return phoreticBoundary;
         }
     }
 }

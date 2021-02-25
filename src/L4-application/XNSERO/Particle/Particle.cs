@@ -74,6 +74,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        [DataMember]
+        public double phoreticActivity = 0;
+
         /// <summary>
         /// Level set tracker of the solid level set.
         /// </summary>

@@ -25,7 +25,7 @@ using MPI.Wrappers;
 namespace BoSSS.Application.XNSERO_Solver {
 
     public static class MultiplePacticles {
-        public static XNSERO_Control Main(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 7) {
+        public static XNSERO_Control Main(int k = 3, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 10, double noOfParticles = 1) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -61,12 +61,13 @@ namespace BoSSS.Application.XNSERO_Solver {
                     double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
                     angle2 = angle2.MPIBroadcast(0);
                     particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress, new double[] { 0, 0 }));
+                    particles[particles.Count - 1].phoreticActivity = 1;
                     i += 1;
                 }
                 j += 1;
             }
             C.SetParticles(particles);
-           
+            C.UsePhoreticField = true;
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;

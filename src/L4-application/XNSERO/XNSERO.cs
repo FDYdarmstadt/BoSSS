@@ -148,7 +148,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </remarks>
         protected override RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
-            for(int i = 0; i < ParticleLevelSet.Length; i++) {
+            for (int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
             }
             return new RigidObjectLevelSet(ParticleLevelSet, MaxGridLength, null, Basis, Name);
@@ -159,7 +159,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
             Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
-            for(int i = 0; i < ParticleLevelSet.Length; i++) {
+            for (int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
             }
             return new RigidObjectLevelSetEvolver(ParticleLevelSet, MaxGridLength);
@@ -172,7 +172,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             base.DefineSystem(D, opFactory, lsUpdater);
 
-            if(Control.UsePhoreticField) {
+            if (Control.UsePhoreticField) {
                 opFactory.AddEquation(new Equations.PhoreticFieldBulk());
             }
         }
@@ -183,9 +183,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Override to customize.
         /// </summary>
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
-                for(int d = 0; d < D; ++d) {
+                for (int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
                 }
@@ -195,10 +195,9 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
                 opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));
-                if(Control.UsePhoreticField)
-                    opFactory.AddParameter((ParameterS)GetLevelSetPhoretic(1));
 
-                if(Control.UsePhoreticField) {
+                if (Control.UsePhoreticField) {
+                    opFactory.AddParameter((ParameterS)GetLevelSetPhoretic(1));
                     opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk));
                 }
             }
@@ -212,13 +211,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         /// <returns></returns>
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 SpatialDimension = GridData.SpatialDimension;
-                if(IsFluidInterface(iLevSet)) {
+                if (IsFluidInterface(iLevSet)) {
                     ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
                     return levelSetVelocity;
 
-                } else if(IsParticleInterface(iLevSet)) {
+                } else if (IsParticleInterface(iLevSet)) {
                     SetPeriodicityToParticles();
                     string[] fluidSpecies = CreateSpeciesArray(ContainsSecondFluidSpecies);
                     ILevelSetParameter levelSetVelocity = new RigidObjectLevelSetVelocity(VariableNames.LevelSetCGidx(1), Particles, FluidViscosity, fluidSpecies, Gravity, Control.dtFixed, MaxGridLength);
@@ -236,7 +235,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns></returns>
         private string[] CreateSpeciesArray(bool ContainsSecondFluidSpecies) {
             string[] fluidSpecies;
-            if(ContainsSecondFluidSpecies)
+            if (ContainsSecondFluidSpecies)
                 fluidSpecies = new string[] { "A", "B" };
             else
                 fluidSpecies = new string[] { "A" };
@@ -265,9 +264,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provide information about periodic boundaries to the particles. Does nothing if no periodic boundaries are defined.
         /// </summary>
         private void SetPeriodicityToParticles() {
-            for(int d = 0; d < 2; d++) {
-                if(IsPeriodic[d]) {
-                    for(int p = 0; p < Particles.Length; p++) {
+            for (int d = 0; d < 2; d++) {
+                if (IsPeriodic[d]) {
+                    for (int p = 0; p < Particles.Length; p++) {
                         Particles[p].Motion.SetPeriodicBoundary(BoundaryCoordinates[d], d);
                     }
                 }
@@ -310,7 +309,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
             CalculateCollision(Particles, dt);
-            if(!AllParticlesFixed)
+            if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
             LogPhysicalData(phystime, TimestepNo);
             Console.WriteLine("Particle 1 " + Particles[0].Motion.GetTranslationalVelocity());
@@ -334,7 +333,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.UpdateParticleCutCells(LsTrk, globalCutCells);
                 p.LsTrk = LsTrk;
                 if (p.Motion.UseAddedDamping) {
-                    if(initAddedDamping) {
+                    if (initAddedDamping) {
                         double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
                         p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
                         p.Motion.ExchangeAddedDampingTensors();
@@ -359,8 +358,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Set true if you are only interested in overlapping particles and not the actual distance between different particles, e.g. as check for the initialization of static particles. 
         /// </param>
         private void CalculateCollision(Particle[] Particles, double dt, bool DetermineOnlyOverlap = false) {
-            using(new FuncTrace()) {
-                foreach(Particle p in Particles) {
+            using (new FuncTrace()) {
+                foreach (Particle p in Particles) {
                     p.IsCollided = false;
                 }
                 ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, ((XNSERO_Control)Control).WallPositionPerDimension, ((XNSERO_Control)Control).BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
@@ -388,7 +387,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Creates a log file for the physical data of the particles. Only active if a database is specified.
         /// </summary>
         private void CreatePhysicalDataLogger() {
-            if((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
+            if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                 logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
             }
@@ -401,9 +400,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name = phystime>
         /// </param>
         private void LogPhysicalData(double phystime, int timestepNo) {
-            using(new FuncTrace()) {
-                if((MPIRank == 0) && (logPhysicalDataParticles != null)) {
-                    for(int p = 0; p < Particles.Length; p++) {
+            using (new FuncTrace()) {
+                if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
+                    for (int p = 0; p < Particles.Length; p++) {
                         logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", timestepNo, p, phystime, Particles[p].Motion.GetPosition(0)[0], Particles[p].Motion.GetPosition(0)[1], Particles[p].Motion.GetAngle(0), Particles[p].Motion.GetTranslationalVelocity(0)[0], Particles[p].Motion.GetTranslationalVelocity(0)[1], Particles[p].Motion.GetRotationalVelocity(0), Particles[p].Motion.GetHydrodynamicForces(0)[0], Particles[p].Motion.GetHydrodynamicForces(0)[1], Particles[p].Motion.GetHydrodynamicTorque(0)));
                         logPhysicalDataParticles.Flush();
                     }
@@ -415,7 +414,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
             base.AddMultigridConfigLevel(configsLevel);
 
-            if(Control.UsePhoreticField) {
+            if (Control.UsePhoreticField) {
                 int pVel = VelocityDegree();
 
                 var configPres = new MultigridOperator.ChangeOfBasisConfig() {

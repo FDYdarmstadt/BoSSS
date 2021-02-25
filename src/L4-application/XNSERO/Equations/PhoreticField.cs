@@ -107,7 +107,8 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// Neumann boundary value
             /// </summary>
             double g_Neum(ref CommonParams inp) {
-                double activity = inp.Parameters_IN[0];
+                //double activity = inp.Parameters_IN[0];
+                //return activity;// 1.0;
                 return 1.0;
             }
 
@@ -133,7 +134,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <summary>
             /// Note: for a pure Neumann boundary condition, the penalty is not required;
             /// However, if, at some point a Dirichlet or Robin b.c. should be tested, 
-            /// </summary>
+            /// </summary>f
             protected double GetPenalty(ref CommonParams inp) {
                 
                 double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
@@ -206,7 +207,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             }
 
             public IList<string> ParameterOrdering {
-                get { return new string[] { BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(BoSSS.Solution.NSECommon.VariableNames.LevelSetCGidx(1), BoSSS.Solution.NSECommon.VariableNames.Phoretic) }; }
+                get { return new string[] { Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(1), Solution.NSECommon.VariableNames.Phoretic) }; }
             }
 
 
