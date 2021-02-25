@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
 
             this.m_penalty_base = penalty_base;
             this.m_LsTrk = t;
@@ -39,6 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
             this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+            this.m_UsePhoretic = UsePhoretic;
         }
         readonly int m_iLevSet;
         readonly string m_FluidSpc;
@@ -46,6 +47,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         readonly int Component;
         readonly int m_D;
         readonly bool m_UseLevelSetVelocityParameter;
+        readonly bool m_UsePhoretic;
 
         /// <summary>
         /// Viskosity in species A
@@ -110,6 +112,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             active = 1
         }
 
+        static public bool write = true;
+
         /// <summary>
         /// default-implementation
         /// </summary>
@@ -120,7 +124,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             int dim = normalVector.Dim;
 
             
-            Debug.Assert(ArgumentOrdering.Count == dim);
+
+            Debug.Assert(uA.Length == ArgumentOrdering.Count);
+            Debug.Assert(uB.Length == ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(0) == ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == dim);
@@ -136,6 +142,21 @@ namespace BoSSS.Application.XNSERO_Solver {
             BoundaryConditionType bcType = activeStressVector.Abs() <= 1e-8 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             
+            if(m_UsePhoretic) {
+                Debug.Assert(ArgumentOrdering.Count == dim + 1);
+                double phoreticVal = uA[dim];
+                Vector tangential = normalVector.Rotate2D(Math.PI * 0.5);
+
+                // todo: add computation of slip velocity.
+                // Note: if the relation is non-linear, special treatment is required!
+                if(write) {
+                    Console.WriteLine("todo: add computation of slip velocity; phoretic value is " + phoreticVal);
+                    write = false; // prevent end-less output; 
+                }
+            } else {
+                Debug.Assert(ArgumentOrdering.Count == dim);
+            }
+
 
             // Gradient of u and v 
             // =====================
@@ -214,7 +235,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public IList<string> ArgumentOrdering {
-            get { return VariableNames.VelocityVector(this.m_D); }
+            get { 
+                var ret = VariableNames.VelocityVector(this.m_D); 
+                if(this.m_UsePhoretic) {
+                    ret = ret.Append(VariableNames.Phoretic).ToArray();
+                }
+                return ret;
+            }
         }
 
         /// <summary>

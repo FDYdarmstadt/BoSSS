@@ -71,19 +71,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Use Lichtenberg 2?
+        /// Additional lines to be added to the auto-generated batch.sh file.
         /// </summary>
         [DataMember]
-        public bool UseLB2 {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Use the test partition on Lichtenberg 2?
-        /// </summary>
-        [DataMember]
-        public bool UseLB2TestPartition {
+        public string[] AdditionalBatchCommands {
             get;
             set;
         }
@@ -118,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-
+        [NonSerialized]
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -356,7 +347,7 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = this.SlurmAccount;
+            string slurmAccount = this.SlurmAccount;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
@@ -390,14 +381,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -p test24");
-                }
-                if (HHLR_project != null) {
-                    sw.WriteLine("#SBATCH -A " + HHLR_project);
-                }
-                if (this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH --exclusive");
+                if (slurmAccount != null) {
+                    sw.WriteLine("#SBATCH -A " + slurmAccount);
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
@@ -412,16 +397,10 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                if (!this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -C avx2");
-                } // else //t.b.d. no way to allocated avx512 exclusively right now ...
-                //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
-                if (this.UseLB2 || this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -C avx512");
+                foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
+                    sw.WriteLine(cmd);
                 }
-
-                if (myJob.NumberOfNodes > 0)
-                    sw.WriteLine("#SBATCH -N " + myJob.NumberOfNodes);
+                //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
                 // Load modules
                 foreach (string arg in moduleLoad) {

@@ -46,12 +46,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
-            //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow();
+            ////BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
+            ////BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
+            //TestProgram.TestParticleInShearFlow_Phoretic();
             //throw new Exception("remove me");
 
-
+            
             
 
             void KatastrophenPlot(DGField[] dGFields) {
@@ -164,15 +164,15 @@ namespace BoSSS.Application.XNSERO_Solver {
 
 
         /// <summary>
-        /// Definition of the boundary condition on the immersed boundary, i.e. at the surface of the particles, <see cref="XNSE_Control.UseImmersedBoundary"/>;
-        /// Override to customize.
+        /// Definition of the boundary condition on the immersed boundary, i.e. at the surface of the particles, 
+        /// <see cref="XNSE_Control.UseImmersedBoundary"/>;
         /// </summary>
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             using(new FuncTrace()) {
                 XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
                 for(int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField));
                 }
 
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));

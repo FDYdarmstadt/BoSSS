@@ -64,6 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
+
             //InitMPI();
             //DeleteOldPlotFiles();
 
@@ -427,9 +428,9 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");
+            Console.WriteLine($"Done with time step {TimestepNo}.");
             return dt;
         }
     }
