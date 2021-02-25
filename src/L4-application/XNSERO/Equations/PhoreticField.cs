@@ -67,9 +67,10 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
         public override string CodomainName => "PhoreticResidual";
 
 
-        public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk) {
+        public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk, int iLevSet) {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Phoretic);
             AddComponent(new XLaplace_Interface(lstrk, 1.0));
+            AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(iLevSet), Solution.NSECommon.VariableNames.Phoretic));
         }
 
 
@@ -107,9 +108,9 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// Neumann boundary value
             /// </summary>
             double g_Neum(ref CommonParams inp) {
-                //double activity = inp.Parameters_IN[0];
-                //return activity;// 1.0;
-                return 1.0;
+                double activity = inp.Parameters_IN[0];
+                return activity;
+                //return 1.0;
             }
 
 

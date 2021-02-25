@@ -198,7 +198,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 if (Control.UsePhoreticField) {
                     opFactory.AddParameter((ParameterS)GetLevelSetPhoretic(1));
-                    opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk));
+                    opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk, 1));
                 }
             }
         }
@@ -312,8 +312,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
             LogPhysicalData(phystime, TimestepNo);
-            Console.WriteLine("Particle 1 " + Particles[0].Motion.GetTranslationalVelocity());
-            Console.WriteLine("Particle 2 " + Particles[1].Motion.GetTranslationalVelocity());
+            //Console.WriteLine("Particle 1 " + Particles[0].Motion.GetTranslationalVelocity());
+            //Console.WriteLine("Particle 2 " + Particles[1].Motion.GetTranslationalVelocity());
             Console.WriteLine($"done with time step {TimestepNo}");
             TimeSpan ts = stopWatch.Elapsed;
             string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);

@@ -370,7 +370,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var phoreticBoundary = new (string, DGField)[1];
             var velocityBasis = DomainVarFields[VariableNames.VelocityX].Basis;
-            var basis = new Basis(velocityBasis.GridDat, velocityBasis.Degree);
+            var basis = new Basis(velocityBasis.GridDat, 12);
             string paramName = ParameterNames[0];
             DGField stress = new SinglePhaseField(basis, paramName);
             phoreticBoundary[0] = (paramName, stress);
