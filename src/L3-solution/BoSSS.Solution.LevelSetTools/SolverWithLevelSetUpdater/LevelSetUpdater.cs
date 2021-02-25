@@ -169,7 +169,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     time,
                     dt,
                     underRelax,
-                    incremental);
+                    incremental);  
                 //Calculate Residual
                 CellMask oldCC = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
                 var newCC = phaseInterface.Tracker.Regions.GetCutCellMask();

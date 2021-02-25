@@ -712,7 +712,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // post-smoother
                     // -------------
 
-                    for(int g = 0; g < 2; g++) { // doppelt hält besser
+                    for (int g = 0; g < 2; g++) { // doppelt hält besser
                                                  // Test: Residual on this level / already computed by 'MinimizeResidual' above
 #if DEBUG
                             {
@@ -729,12 +729,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // compute correction
                         double[] PostCorr = new double[L];
                         PostSmoother.Solve(PostCorr, Res); // Vorglättung
-                                                          //if (Corr != null)
-                                                          //    Corr.SetV(PostCorr);
+                                                           //if (Corr != null)
+                                                           //    Corr.SetV(PostCorr);
 
                         //SpecAnalysisSample(iIter, PostCorr, "smooth2_" + g);
 
-                        // orthonormalization and residual minimization
+                        //orthonormalization and residual minimization
                         AddSol(ref PostCorr);
                         //if (Xprev != null)
                         //    Xprev.SetV(X);
@@ -749,8 +749,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
-                    
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+
+
+                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
                     }

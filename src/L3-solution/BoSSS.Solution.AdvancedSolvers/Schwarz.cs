@@ -611,9 +611,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultidimensionalArray[] hiBlocks = HiMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
                         MultidimensionalArray[] fullBlocks = fullMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only
                         loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
-                        
+
                         //get inverse of high-order blocks
-                        if(hiBlocks != null) {
+                        if (hiBlocks != null) {
                             foreach(var block in hiBlocks) {
                                 try {
                                     block.Invert();

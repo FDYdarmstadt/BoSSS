@@ -604,6 +604,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                 templinearSolve = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.MUMPS,
+                    SolverVersion = Parallelism.MPI,
                 };
                 break;
 

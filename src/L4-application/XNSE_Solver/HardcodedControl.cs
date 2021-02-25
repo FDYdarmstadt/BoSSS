@@ -33,6 +33,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -520,7 +521,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int cells_x = 30, int cells_yz = 30, bool only_channel = false, int SpaceDim = 2) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 30, int SpaceDim = 3) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -534,7 +535,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, 2);
+            C.SetFieldOptions(k, Math.Max(2,k*2));
             C.GridPartType = GridPartType.METIS;
             C.SessionName = "XNSE_rotcube";
             C.saveperiod = 1;
@@ -550,12 +551,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 // x-direction
                 double xMin = -1, yMin = -1, zMin = -1;
                 double xMax = 1, yMax = 1, zMax = 1;
-                var _xNodes = GenericBlas.Linspace(xMin, xMax, cells_x + 1);
+                var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                 // y-direction
-                var _yNodes = GenericBlas.Linspace(yMin, yMax, cells_yz + 1);
+                var _yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
                 // z-direction
-                var _zNodes = GenericBlas.Linspace(zMin, zMax, cells_yz + 1);
+                var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
 
 
                 GridCommons grd;
@@ -611,7 +612,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.13;
+            double particleRad = 0.26;
 
 
 
@@ -623,18 +624,24 @@ namespace BoSSS.Application.XNSE_Solver {
                     case 2:
                     return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                     - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    + Math.Pow(particleRad, power)) * 100;
+                    + Math.Pow(particleRad, power)) * 1e6;
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //+ Math.Abs(particleRad);
-                    //return - X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                    //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
-                    //return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //- Math.Pow(X[2] - pos[2], power)
-                    //+ Math.Pow(particleRad, power);
-                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    - Math.Pow(X[2] - pos[2], power)
+                    + Math.Pow(particleRad, power))*Math.Pow(10,power);
+
+                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
+                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
+                    //- Math.Abs(X[2] - pos[2])
+                    //+ Math.Abs(particleRad);
+
+                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
@@ -672,24 +679,18 @@ namespace BoSSS.Application.XNSE_Solver {
             var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
 
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
-            if (only_channel)
-                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), X => -1);
-            else {
-                C.UseImmersedBoundary = true;
-                if (C.UseImmersedBoundary) {
-                    //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
-                    C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
-                    C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
-                    C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
-                    if (SpaceDim == 3)
-                        C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
-                }
+            C.UseImmersedBoundary = true;
+            if (C.UseImmersedBoundary) {
+                //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+                C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
+                if (SpaceDim == 3)
+                    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             }
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
             C.AddBoundaryValue("Wall");
-            //VelocityX@Phi2, VelocityY@Phi2 und VelocityZ@Phi2
 
-            
             //C.OperatorMatrixAnalysis = false;
 
             // misc. solver options
@@ -700,23 +701,26 @@ namespace BoSSS.Application.XNSE_Solver {
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             C.UseSchurBlockPrec = true;
+            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.pMaxOfCoarseSolver = k;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdaptiveMeshRefinement = false;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            //C.RefinementLevel = 2;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
 
             // Timestepping
             // ============
@@ -724,9 +728,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.1;
+            double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
+            C.dtFixed = dt;
             C.NoOfTimesteps = 10;
 
             // haben fertig...

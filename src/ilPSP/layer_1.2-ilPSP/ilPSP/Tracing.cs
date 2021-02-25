@@ -97,8 +97,8 @@ namespace ilPSP.Tracing {
         }
 
         static private long GetMemory() {
-            //Process myself = Process.GetCurrentProcess();
             long mem = 0;
+            Process myself = Process.GetCurrentProcess();
             //{
             //    try {
             //        //mem = myself.WorkingSet64 / (1024 * 1024);
