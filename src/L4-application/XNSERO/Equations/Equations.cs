@@ -27,13 +27,14 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 LevelSetTracker LsTrk,
                 INSE_Configuration config,
                 bool isMovingMesh,
-                bool usePhoretic) : base() //
+                bool usePhoretic,
+                Particle[] AllParticles) : base() //
             {
                 m_fluidPhase = fluidPhase;
                 m_solidPhase = solidPhase;
                 m_iLevSet = iLevSet;
                 m_codomainName = EquationNames.MomentumEquationComponent(d);
-                AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh, usePhoretic);
+                AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh, usePhoretic, AllParticles);
                 AddVariableNames(Solution.NSECommon.VariableNames.VelocityVector(D).Cat(Solution.NSECommon.VariableNames.Pressure));
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray());
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.SurfaceForceVector(D)).ToArray());
@@ -47,7 +48,8 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 LevelSetTracker LsTrk,
                 INSE_Configuration config,
                 bool isMovingMesh,
-                bool usePhoretic) {
+                bool usePhoretic,
+                Particle[] AllParticles) {
                 PhysicalParameters physParams = config.getPhysParams;
                 DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -94,7 +96,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     switch(dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:
-                        AddComponent(new ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, usePhoretic));
+                        AddComponent(new ViscosityAtIB(d, D, LsTrk, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, usePhoretic));
                         break;
                         case ViscosityMode.FullySymmetric:
                         case ViscosityMode.Viscoelastic:
