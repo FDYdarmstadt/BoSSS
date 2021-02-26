@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -7,6 +8,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
@@ -109,16 +111,28 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
             if(iLevSet == 0) {
                 // Main Difference to base implementation:
                 //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
-                var levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+
+                var config = new XNSFE_OperatorConfiguration(Control);
+                var levelSetVelocity = config.isEvaporation ? new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, config) : new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
                 return levelSetVelocity;
             } else {
                 return base.GetLevelSetVelocity(iLevSet);
             }
+        }
+
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            base.PlotCurrentState(physTime, timestepNo, superSampling);
+
+            //XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
+            //XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
+            //VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
+            //GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
+
+            //Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
         }
 
         /*
