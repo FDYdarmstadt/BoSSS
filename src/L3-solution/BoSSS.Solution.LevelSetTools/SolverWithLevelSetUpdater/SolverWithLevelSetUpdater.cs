@@ -90,21 +90,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// 
-        /// </summary>
-        //protected override void CreateTrackerHack() {
-        //    base.CreateTrackerHack();
-
-        //    foreach (DualLevelSet ls in LsUpdater.LevelSets.Values) {
-        //        if (ls.DGLevelSet is DGField f) {
-        //            base.RegisterField(ls.DGLevelSet);
-        //        }
-        //    }
-
-        //}
-
-
-        /// <summary>
         /// Number of different interfaces 
         /// </summary>
         protected abstract int NoOfLevelSets {
