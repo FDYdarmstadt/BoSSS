@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -107,6 +108,8 @@ namespace BoSSS.Application.XNSERO_Solver {
 
 
         private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
+
+        public static IGridData Cunk { get; private set; }
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.

@@ -67,9 +67,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-
-            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-
+            //Tests.ASUnitTest.TaylorCouetteConvergenceTest(1, Tests.TaylorCouette.Mode.TestIBM);
+            //Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {

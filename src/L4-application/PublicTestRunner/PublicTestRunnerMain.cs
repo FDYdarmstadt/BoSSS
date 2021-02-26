@@ -1068,6 +1068,8 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+
             Assembly[] assln = GetAllAssemblies();
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
