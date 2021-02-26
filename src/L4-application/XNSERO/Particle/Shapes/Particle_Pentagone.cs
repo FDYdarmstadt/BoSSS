@@ -137,7 +137,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Returns the legnthscales of a particle.
+        /// Returns the length-scales of a particle.
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Radius, m_Radius };
