@@ -565,12 +565,6 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-
-
-
-
-
-
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
@@ -587,7 +581,10 @@ namespace PublicTestRunner {
                     string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
                     try {
                         ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                    } catch(IOException) {
+                        using(var wrt = new StreamWriter(ServerMutex)) {
+                            wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
+                        }
+                    } catch(Exception) {
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
@@ -728,11 +725,23 @@ namespace PublicTestRunner {
 
 
                                 if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    if(s == JobStatus.FailedOrCanceled) {
+                                        Console.WriteLine(" ------------------- Job Failed reason:");
+                                        var s1 = jj.job.GetStatus(true);
+                                        if(s1 != s) {
+                                            Console.WriteLine("changed its mind to: " + s1);
+                                            s = s1;
+                                        }
+                                    }
+
+
                                     // message:
                                     if(s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
+
+
 
                                     // copy stdout and stderr to logfile
                                     LogResultFile(ot, jj.job, jj.testname, jj.ResFile);

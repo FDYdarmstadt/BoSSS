@@ -63,13 +63,17 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         static public bool OneTimeSetUp() {
+            /*
             Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
             bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
             if(r)
                 Console.WriteLine("started within this process.");
             else
                 Console.WriteLine("already running.");
+            
             return r;
+            */
+            return false;
         }
 
         internal static string DirectoryOffset = "";

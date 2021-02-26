@@ -200,6 +200,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Running:
                         case JobState.Finishing:
+                        case JobState.Canceling:
                         return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
@@ -210,7 +211,6 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Failed:
                         case JobState.Canceled:
-                        case JobState.Canceling:
                         Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate);
                         return (JobStatus.FailedOrCanceled, ExitCode);
 
