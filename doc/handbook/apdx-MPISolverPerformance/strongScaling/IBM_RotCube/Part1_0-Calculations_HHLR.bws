@@ -5,8 +5,9 @@ restart
   _______________________
 
 Databases loaded:
-List of 1 instances of IDatabaseInfo {
+List of 2 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 2; Grid Count = 4; Path = D:\IBM }
 }
 
  Console ready for input. Type 'help' for help.
@@ -27,12 +28,10 @@ List of 4 instances of BatchProcessorClient {
 // ==================================
 // setup Client & Workflow & Database
 // ==================================
-var myBatch = (MsHPC2012Client)ExecutionQueues[1];
-//var myBatch = (SlurmClient)ExecutionQueues[1];
-ExecutionQueues[1].AllowedDatabases;
+//var myBatch = (MsHPC2012Client)ExecutionQueues[1];
+var myBatch                     = (SlurmClient)ExecutionQueues[3];
+myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"};
 **************
-List of 0 instances of IDatabaseInfo {
-}
 ==============
 //myBatch.MonoDebug = true;
 **************
@@ -54,59 +53,12 @@ string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
-Opening existing database 'W:\work\scratch\jw52xeqa\DB_XDGPoisson_MPI'.
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_IBM_test'.
 
 ==============
 tempDB.Sessions
 **************
-List of 47 instances of ISessionInfo {
-  0: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c4	02/02/2021 11:35:27	04ed0208...
-  1: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c8	02/02/2021 11:35:28	d117b1ea...
-  2: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c16	02/02/2021 11:35:37	f2a88fce...
-  3: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c20*	02/02/2021 11:35:49	cd7aef13...
-  4: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c24*	02/02/2021 11:35:48	981da200...
-  5: Xdg_1Node_Memory	J103823_k2_exp_Kcycle_schwarz_c12*	02/02/2021 11:35:31	e86cd2eb...
-  6: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4	02/01/2021 22:25:32	ca676d19...
-  7: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c128	02/01/2021 13:21:44	1711fcfa...
-  8: Xdg_strong_scaleing_test	J205379_k2_exp_Kcycle_schwarz_c4*	02/01/2021 13:20:13	abd26057...
-  9: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:24:12	73472711...
-  10: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4	02/01/2021 12:21:06	f6050eb5...
-  11: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	02/01/2021 11:49:20	04d27a9f...
-  12: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c128_rnd1465588304	01/31/2021 22:06:24	6c3d33eb...
-  13: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c64_rnd978480008	01/31/2021 17:55:24	339d4c51...
-  14: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c32_rnd1097799503	01/29/2021 19:55:31	926fa3b6...
-  15: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c4_rnd168027327	01/29/2021 19:46:38	22c3a03a...
-  16: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c8_rnd774623231	01/29/2021 19:47:34	c1cb50e1...
-  17: Xdg_strong_scaleing	J103823_k2_exp_Kcycle_schwarz_c16_rnd1680887564	01/29/2021 19:48:33	852e2db9...
-  18: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/29/2021 12:56:33	4f4edf30...
-  19: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:34	de178d4f...
-  20: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 10:10:33	f94b4207...
-  21: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/27/2021 01:55:12	7954e722...
-  22: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4_rnd1383390739	01/25/2021 14:37:18	0140f620...
-  23: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c64	01/23/2021 10:35:27	2be820b4...
-  24: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c64	01/23/2021 10:32:20	95a852bb...
-  25: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/23/2021 09:36:27	49d6c02c...
-  26: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/23/2021 01:03:57	ac287e9c...
-  27: Xdg_strong_scaleing_test	J103823_k2_exp_gmres_levelpmg_c4	01/20/2021 22:05:14	025557dd...
-  28: Xdg_strong_scaleing_test	J103823_k2_exp_Kcycle_schwarz_c4	01/20/2021 22:05:06	47051770...
-  29: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c4*	01/20/2021 22:04:27	d9330ec1...
-  30: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_c64*	01/20/2021 22:05:06	9f779f69...
-  31: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:41:22	ef6d6c49...
-  32: Xdg_strong_scaleing_test	J103823_k2_classic_pardiso_4*	01/20/2021 21:39:32	5530725d...
-  33: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 21:32:06	29c413d2...
-  34: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 20:31:59	bf366e56...
-  35: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 20:31:57	a5cde16b...
-  36: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 20:31:50	6ed3d38b...
-  37: Xdg_strong_scaleing_test	J512000_k2_exp_gmres_levelpmg_16*	01/20/2021 18:14:57	74fbe633...
-  38: Xdg_strong_scaleing_test	J512000_k2_classic_pardiso_16*	01/20/2021 18:05:40	85fe36c2...
-  39: Xdg_strong_scaleing_test	J512000_k2_exp_Kcycle_schwarz_16*	01/20/2021 18:05:41	d9ae2b7f...
-  40: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_16	01/20/2021 17:49:39	aceca4ec...
-  41: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_16	01/20/2021 17:49:29	450ccda7...
-  42: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_16*	01/20/2021 17:49:26	be9aa012...
-  43: Xdg_Poison_strong_scale_test	J103823_k2_exp_gmres_levelpmg_22*	01/20/2021 17:43:01	d5c8f7cd...
-  44: Xdg_Poison_strong_scale_test	J103823_k2_exp_Kcycle_schwarz_22*	01/20/2021 17:41:16	668a9734...
-  45: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22*	01/20/2021 17:37:23	fb11b448...
-  46: Xdg_Poison_strong_scale_test	J103823_k2_classic_pardiso_22_22*	01/20/2021 15:15:05	2506b2dd...
+List of 0 instances of ISessionInfo {
 }
 ==============
 // ===================
@@ -190,10 +142,10 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {16};
-int p             = 4;
+int[] core_sweep = {96};
+int p             = 3;
 int Problemsize   = 1000000;
-int MemoryPerCore = 2500;
+int MemoryPerCore = 2000;
 **************
 ==============
 Func<int, int> Nodes4WeakScale = delegate(int NoOfCores){
@@ -217,28 +169,17 @@ int NoOfCells = ResRndup*ResRndup*ResRndup;
 double test   = NoOfCells*Utils.Np(p);
 test;
 **************
-1038230
+1013060
 ==============
 tempDB.Grids;
 **************
-List of 12 instances of IGridInfo {
-  0: { Guid = e897f4b2-63bf-4e27-a969-d54180bb331f; Name = Xdg_1Node_Memory_J103823; Cell Count = 103823; Dim = 3 }
-  1: { Guid = 4d3417af-1d2b-4c31-b88e-79440389d6c9; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
-  2: { Guid = 6b7afe3a-0ca2-4b68-bcdb-daf8b6a51dfe; Name = Xdg_strong_scaleing_test_J205379; Cell Count = 205379; Dim = 3 }
-  3: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  4: { Guid = 7040ba39-1dce-43ee-94ca-62b72dae7b5b; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  5: { Guid = b7d15705-7e37-455c-8cbd-43fb29c21738; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  6: { Guid = c3bb9932-d437-4c2a-aef3-0745604a07ff; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
-  7: { Guid = 0c742c5d-98a5-4420-9b11-c6d54788500d; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  8: { Guid = a596e0db-18ca-4853-b344-b31a2f622600; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  9: { Guid = b59e2806-816c-4596-89c3-fb832f0d1adf; Name = Xdg_strong_scaleing_test_J103823; Cell Count = 103823; Dim = 3 }
-  10: { Guid = 1c8b0cde-9adf-4505-9295-705753445103; Name = Xdg_strong_scaleing_J512000; Cell Count = 512000; Dim = 3 }
-  11: { Guid = d477c7b3-e74e-4fa5-9e3d-ab1211be09f1; Name = Xdg_Poison_strong_scale_test_J103823; Cell Count = 103823; Dim = 3 }
+List of 1 instances of IGridInfo {
+  0: { Guid = fa2b41fc-cc4c-4497-8391-843628845070; Name = IBM_RotCube_test_J50653; Cell Count = 50653; Dim = 3 }
 }
 ==============
 ResRndup
 **************
-47
+37
 ==============
 **************
 ==============
@@ -286,7 +227,7 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
         Console.WriteLine("Creating grid with " + J + " cells.");
         
         GridCommons g;
-        grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, Foundation.Grid.RefElements.CellType.Cube_Linear, false, false, false);
+        g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
         foreach(int cores in core_sweep){
         g.AddPredefinedPartitioning("predef"+cores, Utils.GetPartFunc(cores));
         }
@@ -309,20 +250,15 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Creating grid with 103823 cells.
+Creating grid with 50653 cells.
 Grid Edge Tags changed.
 
 ==============
 ((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
 **************
-List of 6 instances of KeyValuePair{String,GridPartitioningVector} {
-  0: [predef12, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  1: [predef16, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  2: [predef20, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  3: [predef24, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  4: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-  5: [predef8, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-}
+(1,16): error CS0103: The name `grids' does not exist in the current context
+No. of errors|warnings: 1|0.
+
 ==============
 **************
 ==============
@@ -330,226 +266,15 @@ List of 6 instances of KeyValuePair{String,GridPartitioningVector} {
 //var ListOfgrids = new List<IGridInfo>();
 //ListOfgrids.AddRange(tempDB.Grids.Pick(0));
 //IGridInfo[] grids = ListOfgrids.ToArray();
-IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(3)};
+IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
 **************
 ==============
 grids;
 **************
 List of 1 instances of IGridInfo {
-  0: { Guid = 7b5a3056-295d-4f9a-8914-992eedb26825; Name = Xdg_strong_scaleing_J103823; Cell Count = 103823; Dim = 3 }
+  0: { Guid = fa2b41fc-cc4c-4497-8391-843628845070; Name = IBM_RotCube_test_J50653; Cell Count = 50653; Dim = 3 }
 }
 ==============
-Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int p, IGridInfo grid, int DOF){
-    XNSE_Control C = new XNSE_Control();
-            // basic database options
-            // ======================
-
-            //C.DbPath = @"D:\trash_db";
-            C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/RotCube";
-            C.ProjectDescription = "rotating cube";
-            C.Tags.Add("rotating");
-
-            // DG degrees
-            // ==========
-
-            C.SetFieldOptions(k, 2);
-            C.GridPartType = GridPartType.METIS;
-            C.SessionName = "XNSE_rotcube";
-            C.saveperiod = 1;
-
-
-            // grid and boundary conditions
-            // ============================
-
-            //// Create Grid
-            Console.WriteLine("...generating grid");
-            C.GridFunc = delegate {
-
-                // x-direction
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
-                var _xNodes = GenericBlas.Linspace(xMin, xMax, cells_x + 1);
-                //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
-                // y-direction
-                var _yNodes = GenericBlas.Linspace(yMin, yMax, cells_yz + 1);
-                // z-direction
-                var _zNodes = GenericBlas.Linspace(zMin, zMax, cells_yz + 1);
-
-
-                GridCommons grd;
-                switch (SpaceDim) {
-                    case 2:
-                    grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
-                    break;
-
-                    case 3:
-                    grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, Foundation.Grid.RefElements.CellType.Cube_Linear, false, false, false);
-                    break;
-
-                    default:
-                    throw new ArgumentOutOfRangeException();
-                }
-
-                grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                grd.EdgeTagNames.Add(2, "Wall");
-                grd.EdgeTagNames.Add(3, "Pressure_Outlet");
-
-                grd.DefineEdgeTags(delegate (double[] _X) {
-                    var X = _X;
-                    double x, y, z;
-                    x = X[0];
-                    y = X[1];
-                    if (SpaceDim == 3)
-                        z = X[2];
-
-                    return 2;
-                });
-
-                return grd;
-
-            };
-
-            //// Set Initial Conditions
-            //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            //if (SpaceDim == 3)
-            //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-
-
-            // Phi (X,t): p-norm cube with forced rotation
-
-            // Physical Parameters
-            // ===================
-            const double rhoA = 1;
-            const double muA = 1;
-
-            C.PhysicalParameters.IncludeConvection = false;
-            C.PhysicalParameters.Material = true;
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.mu_A = muA;
-            double anglev = 0.1;
-            double[] pos = new double[SpaceDim];
-            double particleRad = 0.13;
-
-
-
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-
-                int power = 2;
-                //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
-                double angle = -(anglev * t) % (2 * Math.PI);
-                switch (SpaceDim) {
-                    case 2:
-                    //return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(particleRad, power)) * 100;
-                    return - X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-
-
-                    case 3:
-                    //return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //- Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //- Math.Pow(X[2] - pos[2], power)
-                    //+ Math.Pow(particleRad, power);
-                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-                    default:
-                    throw new NotImplementedException();
-                }
-
-
-            };
-
-            Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
-
-                if (pos.Length != X.Length)
-                    throw new ArgumentException("check dimension of center of mass");
-
-                Vector angVelo = new Vector(new double[] {0,0, anglev });
-                Vector CenterofMass = new Vector(pos);
-                Vector radialVector = new Vector(X) - CenterofMass;
-                Vector transVelocity = new Vector(new double[SpaceDim]);
-                Vector pointVelocity;
-
-                switch (SpaceDim) {
-                    case 2:
-                    pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
-                    break;
-                    case 3:
-                    pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
-                    break;
-                    default:
-                    throw new NotImplementedException("this number of dimensions is not supported");
-                }
-
-                return pointVelocity;
-            };
-
-            Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
-            Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
-            Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
-
-
-            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
-            if (only_channel)
-                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), X => -1);
-            else {
-                C.UseImmersedBoundary = true;
-                if (C.UseImmersedBoundary) { 
-                    C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
-                    C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
-                    C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
-                    if (SpaceDim == 3)
-                        C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
-                }
-            }
-            C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.AddBoundaryValue("Wall");
-            //VelocityX@Phi2, VelocityY@Phi2 und VelocityZ@Phi2
-
-            
-            //C.OperatorMatrixAnalysis = false;
-
-            // misc. solver options
-            // ====================
-
-            //C.EqualOrder = false;
-            //C.PressureStabilizationFactor = 1;
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-
-            C.UseSchurBlockPrec = true;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.LinearSolver.NoOfMultigridLevels = 5;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_another_Kcycle;
-            C.LinearSolver.pMaxOfCoarseSolver = k;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.NonLinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.verbose = true;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement = false;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            //C.RefinementLevel = 2;
-
-            // Timestepping
-            // ============
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
-            // haben fertig...
-            // ===============
-
-            return C;
-    
-    
-    
-    
-}
 **************
 ==============
 **************
@@ -557,14 +282,13 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
 **************
 ==============
 **************
-0
 ==============
 // - - - - - - - - - - - - -
 // setup of parameter study
 // - - - - - - - - - - - - -
 **************
 ==============
-List<XNSE> controls = new List<XNSE>();
+List<string> controls = new List<string>();
 **************
 ==============
 // polynomial degrees to test
@@ -587,91 +311,19 @@ int MaxDof = int.MaxValue;
 **************
 ==============
 **************
-(1,2): warning CS0105: The using directive for `BoSSS.Solution.XNSECommon' appeared previously in this namespace
-(2,1): warning CS0105: The using directive for `BoSSS.Foundation.XDG' appeared previously in this namespace
-No. of errors|warnings: 0|2.
-
 ==============
 // --------------------
 // setup control object
 // --------------------
-controls.Clear();
-foreach(LinearSolverCode solver_name in solver_nameS) {
+
+//foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {    
-foreach(IGridInfo grd in grids) {
-foreach(int cores in core_sweep){
-    
-    int Np = Utils.Np(k);
-    int J  = grd.NumberOfCells;
-    if(J*Np > MaxDof)
-        continue;
-    
-    //int rnd         = new Random().Next();
-    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}_rnd{4}", J, k, solver_name,cores,rnd);
-    string caseName = string.Format("J{0}_k{1}_{2}_c{3}", J, k, solver_name,cores);
-    
-    //string caseName = string.Format("J{0}_k{1}_{2}_c{3}_", J, k, solver_name,cores);
-    Console.WriteLine("setting up: " + caseName);
-    Console.WriteLine("based on grid: "+grd.Name);
-
-    var ctrl = new XdgPoisson3Control();
-    
-    
-    ctrl.AlternateDbPaths = new[]{
-        new ValueTuple<string,string>(linpath, ""),
-        new ValueTuple<string,string>(winpath, "pcmit32")
-    };
-    ctrl.savetodb = true;
-    ctrl.GridGuid = grd.ID;
-    
-    ctrl.FieldOptions.Add("Phi", new FieldOpts() {
-         Degree = 2,
-         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-    });
-    ctrl.FieldOptions.Add("u", new FieldOpts() {
-         Degree = k,
-         SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-    });
-
-    ctrl.LinearSolver.SolverCode           = solver_name;
-    ctrl.LinearSolver.NoOfMultigridLevels  = 10;
-    ctrl.LinearSolver.TargetBlockSize      = Math.Min(J*Np-1,10000);
-    ctrl.LinearSolver.ConvergenceCriterion = 1e-8;
-    
-    double radius           = 0.71;
-    ctrl.ExcactSolSupported = false;
-    ctrl.InitialValues.Add("Phi", new Formula("X => X[0].Pow2()+X[1].Pow2()+X[2].Pow2()-"+radius+".Pow2()"));
-    ctrl.MU_A = -1;
-    ctrl.MU_B = -1000;
-    ctrl.InitialValues.Add("rhs#A", new Formula("X => 1"));
-    ctrl.InitialValues.Add("rhs#B", new Formula("X => 1"));
-    ctrl.InitialValues.Add("u#A", new Formula ("X => 0"));
-    ctrl.InitialValues.Add("u#B", new Formula ("X => 0"));
-    ctrl.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-    ctrl.SetDefaultDiriBndCnd  = true;
-    //ctrl.TracingNamespaces     = "*";
-    
-    ctrl.ViscosityMode = XLaplace_Interface.Mode.SIP;
-    ctrl.SessionName   = caseName;
-    ctrl.ProjectName   = WFlowName;
-    //ctrl.GridPartType  = BoSSS.Foundation.Grid.GridPartType.METIS;
-    ctrl.GridPartType    = BoSSS.Foundation.Grid.GridPartType.Predefined;
-    ctrl.GridPartOptions = "predef"+cores;
-    
-    ctrl.AgglomerationThreshold = 0.1;
-    
-    controls.Add(ctrl);
-}
-}
-}
-}
+    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2})",k,ResRndup,3);
+    controls.Add(jobstr);
+    Console.WriteLine(jobstr);
+    }
 **************
-setting up: J103823_k2_exp_Kcycle_schwarz_c32
-based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c64
-based on grid: Xdg_strong_scaleing_J103823
-setting up: J103823_k2_exp_Kcycle_schwarz_c128
-based on grid: Xdg_strong_scaleing_J103823
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 37, 3)
 
 ==============
 **************
@@ -687,50 +339,27 @@ based on grid: Xdg_strong_scaleing_J103823
 // ==========
 **************
 ==============
+using BoSSS.Application.XNSE_Solver;
 **************
 ==============
-foreach(var ctrl in controls){
-    int ncores = Convert.ToInt32(ctrl.GridPartOptions.Substring(6));
-    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    var aJob = new Job(ctrl.SessionName, typeof(XdgPoisson3Main));
-    aJob.SetControlObject(ctrl);
-    aJob.NumberOfMPIProcs         = ncores;
+foreach(var ctrlstr in controls){
+    //int ncores = Convert.ToInt32(ctrl.GridPartOptions.Substring(6));
+    int rndnum = new Random().Next();
+    var aJob   = new Job("rotting_cube_"+rndnum,typeof(XNSE));
+    aJob.SetControlStatement(ctrlstr);
+    aJob.NumberOfMPIProcs         = 96;
     aJob.ExecutionTime            = "02:00:00";
     aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
-    aJob.NumberOfNodes            = Nodes4StrongScale(ncores);
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J103823_k2_exp_Kcycle_schwarz_c32
-Deploying job J103823_k2_exp_Kcycle_schwarz_c32 ... 
-
+Deploying job rotting_cube_1886473922 ... 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132329
-copied 29 files.
-   written file: control.obj
+Deployment directory: X:\Deployerie\IBM_RotCube_test-XNSE_Solver2021Feb25_212649
+copied 31 files.
 deployment finished.
-16973647
-
- Submitting: J103823_k2_exp_Kcycle_schwarz_c64
-Deploying job J103823_k2_exp_Kcycle_schwarz_c64 ... 
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132335
-copied 29 files.
-   written file: control.obj
-deployment finished.
-16973648
-
- Submitting: J103823_k2_exp_Kcycle_schwarz_c128
-Deploying job J103823_k2_exp_Kcycle_schwarz_c128 ... 
-
-Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_1Node_Memory-XdgPoisson32021Feb02_132341
-copied 29 files.
-   written file: control.obj
-deployment finished.
-16973650
+17090709
 
 
 ==============
@@ -844,6 +473,24 @@ foreach(KeyValuePair<string,string> stout in Stoutlist){
 Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
 
 
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

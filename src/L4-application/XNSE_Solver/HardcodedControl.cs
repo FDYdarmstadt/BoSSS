@@ -521,12 +521,13 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 30, int SpaceDim = 3) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 30, int SpaceDim = 3) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
+            //C.AlternateDbPaths = new[] { (@"/work/scratch/jw52xeqa/DB_IBM_test", "") };
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSE/RotCube";
             C.ProjectDescription = "rotating cube";

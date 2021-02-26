@@ -24,11 +24,12 @@ namespace AdvancedSolverTests {
         }
 
         public static void Test() {
-            Console.WriteLine("wer hat den output eingestellt: " + ilPSP.Environment.StdoutOnlyOnRank0);
+            //Console.WriteLine("wer hat den output eingestellt: " + ilPSP.Environment.StdoutOnlyOnRank0);
             //AdvancedSolverTests.SubBlocking.LocalTests.MapConsistencyTest(XDGusage.none, 2);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.none, 2, MatrixShape.diagonal);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.diagonal);
-            AdvancedSolverTests.SubBlocking.ExternalTests.SubBlockExtraction(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.SubBlockExtraction(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
+            AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
         }
 
     }
