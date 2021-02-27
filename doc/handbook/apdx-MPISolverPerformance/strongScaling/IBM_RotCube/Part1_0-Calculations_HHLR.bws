@@ -30,10 +30,7 @@ List of 4 instances of BatchProcessorClient {
 // ==================================
 //var myBatch = (MsHPC2012Client)ExecutionQueues[1];
 var myBatch                     = (SlurmClient)ExecutionQueues[3];
-myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"};
-**************
-==============
-//myBatch.MonoDebug = true;
+myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"}; //new string[]{"#SLURM -p test24", "#SLURM -C avx512","#SLURM -N 3"}; 
 **************
 ==============
 string WFlowName = "IBM_RotCube_test";
@@ -58,7 +55,21 @@ Opening existing database 'W:\work\scratch\jw52xeqa\DB_IBM_test'.
 ==============
 tempDB.Sessions
 **************
-List of 0 instances of ISessionInfo {
+List of 14 instances of ISessionInfo {
+  0: XNSE/IBM_benchmark	XNSE_rotsphere	02/26/2021 17:30:39	8a132319...
+  1: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:35:09	4abfa7ef...
+  2: XNSE/IBM_benchmark	XNSE_rotsphere*	02/26/2021 17:30:55	36684c3b...
+  3: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:25:33	6fc6d6f6...
+  4: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:21:48	10b2437c...
+  5: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:16:46	7de3dcf4...
+  6: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:04:09	00348b81...
+  7: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:01	1fd4c0a7...
+  8: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	f07102c1...
+  9: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	fa414a6f...
+  10: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:32:44	77a9229f...
+  11: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:05:45	f06072f2...
+  12: XNSE/RotCube	XNSE_rotcube*	02/26/2021 15:51:57	88776311...
+  13: XNSE/RotCube	XNSE_rotcube*	02/25/2021 21:27:06	6e8461d3...
 }
 ==============
 // ===================
@@ -75,66 +86,12 @@ static class Utils {
     public static int Np(int p) {
         return (p*p*p + 6*p*p + 11*p + 6)/6;
     }    
-    
-    //Non-equidistant nodes
-    public static double[] SinLinSpacing(double l, double r, double a, int n) {
-        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
-        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
-        double[] nodes = new double[n];
-
-        for (int i = 0; i < n; i++)
-            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
-            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
-
-        for (int i = 0; i < n; i++)
-            nodes[i] = nodes[i] * (r - l)*0.5 + l;
-        return nodes;
-    }
-    public static Func<double[],int> GetPartFunc(int cores){
-        Func<double[], int> MakeMyPartioning = delegate (double[] X) {
-        double x  = X[0];
-        double y  = X[1];
-        double z  = X[2];
-
-        int sx = 1;
-        int sy = 1;
-        int sz = 1;
-        for (int i = 0; i < Math.Log(cores, 2); i++) {
-            if (i % 3 == 0)
-                sx*= 2;
-            else if(i % 3 == 1)
-                sy*=2;
-            else
-                sz*=2;
-        }
-
-
-        double xspan = (xMax - xMin) / sx;
-        double yspan = (yMax - yMin) / sy;
-        double zspan = (zMax - zMin) / sz;
-        int rank     = int.MaxValue;
-        int icore    = 0;
-        for (int i = 0; i < sx; i++) {
-            for (int j = 0; j < sy; j++) {
-                for(int k=0;k<sz;k++){
-                    bool xtrue = x <= xspan * (i + 1) + xMin;
-                    bool ytrue = y <= yspan * (j + 1) + yMin;
-                    bool ztrue = z <= zspan * (k + 1) + zMin;
-                    if (xtrue && ytrue && ztrue) {
-                        rank = icore;
-                        return rank;
-                    }
-                    icore++;
-                }
-            }
-        }
-
-        return rank;
-        };
-    return MakeMyPartioning;
-}
 }
 **************
+==============
+Utils.Np(0);
+**************
+1
 ==============
 // ===============================
 // Init grids and save to database
@@ -142,146 +99,24 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {96};
+int[] core_sweep = {40};
 int p             = 3;
 int Problemsize   = 1000000;
 int MemoryPerCore = 2000;
 **************
 ==============
-Func<int, int> Nodes4WeakScale = delegate(int NoOfCores){
-int MemPerNode = 64*1024;
-return (int)((double)MemoryPerCore / (double)MemPerNode * NoOfCores)+1;
-};
-Func<int, int> Nodes4StrongScale = delegate(int NoOfCores){
-int corespernode = 24;
-return (int)((double)NoOfCores / (double)corespernode) +1;
-};
-**************
-==============
-Nodes4StrongScale(128);
-**************
-6
-==============
 // calculate grid size
-double Res    = Math.Pow(Problemsize/Utils.Np(p),0.333333333);
+double Res    = Math.Pow(Problemsize/(Utils.Np(p)*3+Utils.Np(p-1)),0.333333333);
 int ResRndup  = (int)Math.Ceiling(Res);
 int NoOfCells = ResRndup*ResRndup*ResRndup;
 double test   = NoOfCells*Utils.Np(p);
 test;
 **************
-1013060
-==============
-tempDB.Grids;
-**************
-List of 1 instances of IGridInfo {
-  0: { Guid = fa2b41fc-cc4c-4497-8391-843628845070; Name = IBM_RotCube_test_J50653; Cell Count = 50653; Dim = 3 }
-}
+312500
 ==============
 ResRndup
 **************
-37
-==============
-**************
-==============
-// resolution per dimension of space
-// corresponds to the predef partioning
-int sx = 1;
-int sy = 1;
-int sz = 1;
-for (int i = 0; i < Math.Log(64, 2); i++) {
-    if (i % 3 == 0)
-        sx*= 2;
-    else if(i % 3 == 1)
-        sy*=2;
-    else
-        sz*=2;
-}
-Console.WriteLine("sx:{0},sy:{1},sz:{2}",sx,sy,sz);
-**************
-sx:4,sy:4,sz:4
-
-==============
-int[] Resolutions_3D = new int[] { ResRndup };
-IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
-for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
-    int Res = Resolutions_3D[cnt];    
-    
-    double[] xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
-    double[] yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
-    double[] zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
-    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
-    
-    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
-    
-    grids[cnt]=null;
-    foreach(IGridInfo grd in tempDB.Grids){
-        bool check = grd.Name.Contains(string.Format("_J"+ J));
-        if(check){
-          //grids[cnt]=grd;
-        }
-    }
-    
-    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
-    
-    if(grids[cnt] == null){
-        Console.WriteLine("Creating grid with " + J + " cells.");
-        
-        GridCommons g;
-        g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-        foreach(int cores in core_sweep){
-        g.AddPredefinedPartitioning("predef"+cores, Utils.GetPartFunc(cores));
-        }
-        g.Name = GridName;
-        g.EdgeTagNames.Add(1, "Wall");   
-        g.DefineEdgeTags(delegate (double[] X) {
-            //byte ret;
-            return 1;
-        });
-      
-        tempDB.SaveGrid(ref g,true);  
-        grids[cnt] = g;
-    } else {
-        Console.WriteLine("Found Grid: " + grids[cnt]);
-        if(grids[cnt].NumberOfCells != J)
-            throw new Exception("J mismatch");
-        
-        if(grids[cnt].SpatialDimension != 3)
-            throw new Exception("D mismatch");
-    }
-}
-**************
-Creating grid with 50653 cells.
-Grid Edge Tags changed.
-
-==============
-((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
-**************
-(1,16): error CS0103: The name `grids' does not exist in the current context
-No. of errors|warnings: 1|0.
-
-==============
-**************
-==============
-// Overwrite Selection
-//var ListOfgrids = new List<IGridInfo>();
-//ListOfgrids.AddRange(tempDB.Grids.Pick(0));
-//IGridInfo[] grids = ListOfgrids.ToArray();
-IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
-**************
-==============
-grids;
-**************
-List of 1 instances of IGridInfo {
-  0: { Guid = fa2b41fc-cc4c-4497-8391-843628845070; Name = IBM_RotCube_test_J50653; Cell Count = 50653; Dim = 3 }
-}
-==============
-**************
-==============
-**************
-==============
-**************
-==============
-**************
+25
 ==============
 // - - - - - - - - - - - - -
 // setup of parameter study
@@ -310,8 +145,6 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 int MaxDof = int.MaxValue;
 **************
 ==============
-**************
-==============
 // --------------------
 // setup control object
 // --------------------
@@ -323,10 +156,14 @@ foreach(int k in PolyDegS) {
     Console.WriteLine(jobstr);
     }
 **************
-cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 37, 3)
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
 
 ==============
+controls
 **************
+List of 1 instances of String {
+  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
+}
 ==============
 //var solver = new XdgPoisson3Main();
 //solver.Init(c+ontrols[0]);
@@ -342,137 +179,39 @@ cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 37, 3)
 using BoSSS.Application.XNSE_Solver;
 **************
 ==============
+foreach(var cores in core_sweep){
 foreach(var ctrlstr in controls){
-    //int ncores = Convert.ToInt32(ctrl.GridPartOptions.Substring(6));
     int rndnum = new Random().Next();
     var aJob   = new Job("rotting_cube_"+rndnum,typeof(XNSE));
     aJob.SetControlStatement(ctrlstr);
-    aJob.NumberOfMPIProcs         = 96;
-    aJob.ExecutionTime            = "02:00:00";
+    aJob.NumberOfMPIProcs         = cores;
+    aJob.ExecutionTime            = "1:00:00";
     aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
+}
 **************
-Deploying job rotting_cube_1886473922 ... 
+Deploying job rotting_cube_17823411 ... 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\IBM_RotCube_test-XNSE_Solver2021Feb25_212649
+Deployment directory: X:\Deployerie\IBM_RotCube_test-XNSE_Solver2021Feb27_135212
 copied 31 files.
 deployment finished.
-17090709
+17101426
 
 
 ==============
-LastError
-**************
-System.ApplicationException: missing job id return value from slurm command.
-   at BoSSS.Application.BoSSSpad.SlurmClient.Submit(Job myJob, String DeploymentDirectory) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\SlurmClient.cs:line 338
-   at BoSSS.Application.BoSSSpad.Job.Activate(BatchProcessorClient bpc, Boolean DeleteOldDeploymentsAndSessions) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 1199
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 358
-==============
-// ================
-// optional stuff
-// ===============
-var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
-//somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
-**************
-C# evaluator not initialized: use 'restart'.
-
-==============
-WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
-**************
-List of 0 instances of KeyValuePair{String,Job} {
-}
-==============
-using System.IO
 **************
 ==============
-// write out stdout of all jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccess));
-var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stderr.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
-}
 **************
-writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
-
 ==============
-WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
 **************
-List of 0 instances of KeyValuePair{String,Job} {
-}
 ==============
-// write out stdout of Failed Jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
-}
 **************
-Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
-
-
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

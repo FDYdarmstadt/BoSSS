@@ -521,25 +521,30 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 30, int SpaceDim = 3) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 30, int SpaceDim = 2) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
             //C.DbPath = @"D:\trash_db";
-            //C.AlternateDbPaths = new[] { (@"/work/scratch/jw52xeqa/DB_IBM_test", "") };
-            C.savetodb = C.DbPath != null;
-            C.ProjectName = "XNSE/RotCube";
+            C.AlternateDbPaths = new[] {
+                (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
+                (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+            //C.savetodb = C.DbPath != null;
+            C.savetodb = false;
+            C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
+            C.Tags.Add("tracing");
 
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(2,k*2));
-            C.GridPartType = GridPartType.METIS;
-            C.SessionName = "XNSE_rotcube";
+            C.SetFieldOptions(k, Math.Max(6,k*2));
+            C.GridPartType = GridPartType.Hilbert;
+            C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
+            //C.TracingNamespaces = "*";
 
 
             // grid and boundary conditions
@@ -635,14 +640,14 @@ namespace BoSSS.Application.XNSE_Solver {
                     return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                     - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
                     - Math.Pow(X[2] - pos[2], power)
-                    + Math.Pow(particleRad, power))*Math.Pow(10,power);
+                    + Math.Pow(particleRad, power)) * Math.Pow(10, power);
 
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //- Math.Abs(X[2] - pos[2])
                     //+ Math.Abs(particleRad);
 
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
@@ -719,9 +724,9 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
-            C.AdaptiveMeshRefinement = false;
-            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            //C.AMR_startUpSweeps = 1;
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 1;
 
             // Timestepping
             // ============

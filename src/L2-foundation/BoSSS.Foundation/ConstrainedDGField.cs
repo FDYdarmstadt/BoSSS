@@ -34,6 +34,185 @@ using MPI.Wrappers;
 
 namespace BoSSS.Foundation {
 
+    public class myCG : IDisposable {
+        public void Init(BlockMsrMatrix M) {
+
+            Console.WriteLine("I was here at Init");
+            m_Matrix = M;
+            BlockJacInit();
+        }
+
+        public void BlockJacInit() {
+            BlockMsrMatrix M = m_Matrix;
+
+            int L = M.RowPartitioning.LocalLength;
+
+            Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            int Jloc = M._RowPartitioning.LocalNoOfBlocks;
+            long j0 = M._RowPartitioning.FirstBlock;
+            MultidimensionalArray temp = null;
+            for (int j = 0; j < Jloc; j++) {
+                long jBlock = j + j0;
+                int Nblk = M._RowPartitioning.GetBlockLen(jBlock);
+                long i0 = M._RowPartitioning.GetBlockI0(jBlock);
+
+                if (temp == null || temp.NoOfCols != Nblk)
+                    temp = MultidimensionalArray.Create(Nblk, Nblk);
+
+                M.ReadBlock(i0, i0, temp);
+                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+
+                temp.Invert();
+
+                invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+            }
+        }
+        private double omega=0.5;
+
+        public void BlockJacSolve<U, V>(U xl, V bl)
+            where U : IList<double>
+            where V : IList<double> {
+            int L = xl.Count;
+            double[] ql = new double[L];
+
+            double iter0_ResNorm = 0;
+
+            for (int iIter = 0; iIter<10; iIter++) {
+                ql.SetV(bl);
+                m_Matrix.SpMV(-1.0, xl, 1.0, ql);
+                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+
+                if (iIter == 0) {
+                    iter0_ResNorm = ResNorm;
+
+                    
+                }
+
+                Diag.SpMV(1.0, xl, 1.0, ql);
+                invDiag.SpMV(omega, ql, 1.0 - omega, xl);
+
+            }
+        }
+
+        BlockMsrMatrix m_Matrix;
+        BlockMsrMatrix Diag;
+        BlockMsrMatrix invDiag;
+
+        public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
+            where Vec1 : IList<double>
+            where Vec2 : IList<double> //
+        {
+            
+                double[] x, R;
+                if (_x is double[]) {
+                    x = _x as double[];
+                } else {
+                    x = _x.ToArray();
+                }
+                if (_R is double[]) {
+                    R = _R as double[];
+                } else {
+                    R = _R.ToArray();
+                }
+
+                int L = x.Length;
+
+                double[] P = new double[L];
+
+                //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
+                double[] V = new double[L];
+                double[] Z = new double[L];
+
+
+                // compute P0, R0
+                // ==============
+                GenericBlas.dswap(L, x, 1, P, 1);
+                m_Matrix.SpMV(-1.0, P, 1.0, R);
+
+                GenericBlas.dswap(L, x, 1, P, 1);
+                //if (Precond != null) {
+                //    Precond.Solve(Z, R);
+                //    P.SetV(Z);
+                //} else {
+                  //  P.SetV(R);
+            //}
+                BlockJacSolve(Z, R);
+                P.SetV(Z);
+
+                double alpha = R.InnerProd(P).MPISum();
+                double alpha_0 = alpha;
+                double ResNorm;
+
+                ResNorm = Math.Sqrt(alpha);
+                double ResNorm0 = ResNorm;
+
+                // iterate
+                // =======
+                for (int n = 1; true; n++) {
+
+                Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
+                    if (ResNorm / ResNorm0 < 1E-6 || ResNorm < 1E-16 || n > 1000) {
+                        if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not converged.");    
+                        break;
+                    }
+
+                    if (Math.Abs(alpha) <= double.Epsilon) {
+                        // numerical breakdown
+                        break;
+                    }
+
+
+                    m_Matrix.SpMV(1.0, P, 0, V);
+                    double VxP = V.InnerProd(P).MPISum();
+                    if (double.IsNaN(VxP) || double.IsInfinity(VxP))
+                        throw new ArithmeticException();
+                    double lambda = alpha / VxP;
+                    if (double.IsNaN(lambda) || double.IsInfinity(lambda))
+                        throw new ArithmeticException();
+
+
+                    x.AccV(lambda, P);
+
+                    R.AccV(-lambda, V);
+
+                    //if (Precond != null) {
+                    //    Z.Clear();
+                    //    Precond.Solve(Z, R);
+                    //} else {
+                       // Z.SetV(R);
+                //}
+                    Z.Clear();
+                    BlockJacSolve(Z, R);
+
+                    double alpha_neu = R.InnerProd(Z).MPISum();
+
+                    // compute residual norm
+                    ResNorm = R.L2NormPow2().MPISum().Sqrt();
+
+                    P.ScaleV(alpha_neu / alpha);
+                    P.AccV(1.0, Z);
+
+                    alpha = alpha_neu;
+                }
+
+                if (!object.ReferenceEquals(_x, x))
+                    _x.SetV(x);
+                if (!object.ReferenceEquals(_R, R))
+                    _R.SetV(R);
+
+
+                return;
+            
+        }
+    
+        public void Dispose() {
+            m_Matrix.Clear();
+        }
+    }
+
+
+
     /// <summary>
     /// continuous DG field via L2-projection with continuity constraints
     /// </summary>
@@ -76,6 +255,9 @@ namespace BoSSS.Foundation {
         //int[] CellMask2Coord;
 
         int[] GlobalVert2Local;
+
+
+        
 
 
         /// <summary>
@@ -323,6 +505,12 @@ namespace BoSSS.Foundation {
             double[] x = new double[m_Coordinates.Length];
 
             //OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+
+            //var Solver = new myCG();
+            //Solver.Init(AAT);
+            //Solver.Solve(v, RHS);
+            //Solver.Dispose();
+
 
             OpSolver.DefineMatrix(AAT);
             //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
