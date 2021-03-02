@@ -338,7 +338,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     touchCell2 = cellMarker[jCell2];
                 }
 
-                /*
+                
                 if(tags[jEdge + i0] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
                     if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
                         touchCell1 = false;
@@ -346,8 +346,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         touchCell2 = false;
                     }
                 }
-                */
-
 
                 // Only active in case of Local timestepping:
                 // We save more edgeFluxes than necessary, e.g. across possible MPI-borders.
@@ -382,12 +380,12 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         if(touchCell1) {
                             Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m) == i0in);
-                            m_Output[i0ot] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
+                            m_Output[i0in] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
                         }
 
                         if(touchCell2) {
                             Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m) == i0ot);
-                            m_Output[i0in] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
+                            m_Output[i0ot] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
                         }
 
                         if(srgdBndEdge && m == 0) {
@@ -938,10 +936,11 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                                 Vector UotD = MatrixBK.MtxVecMul(Uot);
                                 
-                                /*
+                                
                                 for(int d = 0; d < D; d++) {
                                     m_FieldValuesOT[d][i, k] = UotD[d];
                                 }
+                                /*
                                 for(int d = 0; d < m_FieldValuesOT.Length; d++) {
                                     m_FieldValuesOT[d][i, k] = m_FieldValuesIN[d][i, k];
                                 }

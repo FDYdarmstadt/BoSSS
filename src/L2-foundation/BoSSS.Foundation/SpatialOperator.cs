@@ -1602,7 +1602,7 @@ namespace BoSSS.Foundation {
                     }
 
                     CallEdge(m_NonlinearEdge, "Edge_Integration_NonLin");
-                    //CallEdge(m_ComplicatedPeriodicEdge, "Edge_Integration_NonLin_periodic");
+                    CallEdge(m_ComplicatedPeriodicEdge, "Edge_Integration_NonLin_periodic");
 
 
 #if DEBUG
