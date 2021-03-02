@@ -850,7 +850,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             this.ParametersAndNormals.Start();
 
             // evaluate normals and quadrature transformation metric
-            MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length).CloneAs();
+            MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length);
             MultidimensionalArray QuadScalings;
             if(affine) {
                 QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
@@ -859,7 +859,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             // nodes in global coordinates
-            MultidimensionalArray NodesGlobalCoords =  grid.GlobalNodes.GetValue_EdgeSV(qrNodes, i0, Length);
+            MultidimensionalArray NodesGlobalCoords = grid.GlobalNodes.GetValue_EdgeSV(qrNodes, i0, Length);
 
             this.ParametersAndNormals.Stop();
 
@@ -890,6 +890,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                 var EdgeTags = grid.iGeomEdges.EdgeTags;
 
+                int[][] VectorTuples = new int[][] { new[] { 0, 1 }, new[] { 3, 7 }, new[] { 4, 8 }, new[] { 5, 9 }, new[] { 6, 10 }};
+                
                 for(int i = 0; i < Length; i++) {
                     int iEdge = i + i0;
                     var eT = EdgeTags[iEdge];
@@ -902,36 +904,69 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         var Trafo = grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
 
 
+                        void TransformVector(MultidimensionalArray Mtx, MultidimensionalArray[] Vals) {
+
+                            foreach(int[] VecPtr in VectorTuples) {
+                                Debug.Assert(VecPtr.Length == D);
+
+                                Vector Uorg = new Vector(D);
+                                for(int k = 0; k < NoOfNodes; k++) {
+                                    //if(VecPtr[0] > Vals.Length || Vals[VecPtr[0]] == null)
+                                    //    continue;
+
+                                    for(int d = 0; d < D; d++) {
+                                        Uorg[d] = Vals[VecPtr[d]][i, k];
+                                    }
+
+                                    Vector Udest = Mtx.MtxVecMul(Uorg);
+                         
+                                    for(int d = 0; d < D; d++) {
+                                        Vals[VecPtr[d]][i, k] = Udest[d];
+                                    }
+                                }
+                            }
+                        }
+
                         if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
                             var MatrixFW = Trafo.Matrix.TransposeTo(); // transform from IN to OT
                             MatrixFW.InvertInPlace();
 
-                            Vector Uin = new Vector(D);
-                            Vector N = new Vector(D);
+                            TransformVector(MatrixFW, m_FieldValuesIN);
+                            /*Vector Uin = new Vector(D);
                             for(int k = 0; k < NoOfNodes; k++) {
                                 for(int d = 0; d < D; d++) {
                                     Uin[d] = m_FieldValuesIN[d][i, k];
-                                    N[d] = NormalsGlobalCoords[i, k, d];
                                 }
 
                                 Vector UinD = MatrixFW.MtxVecMul(Uin);
+                                
+                                for(int d = 0; d < D; d++) {
+                                    m_FieldValuesIN[d][i, k] = UinD[d];
+                                }
+                            }//*/
+
+                            // transform normal
+                            Vector N = new Vector(D);
+                            NormalsGlobalCoords = NormalsGlobalCoords.CloneAs(); // Don't mess with cached normals.
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    N[d] = NormalsGlobalCoords[i, k, d];
+                                }
+
                                 Vector ND = MatrixFW.MtxVecMul(N);
 
                                 for(int d = 0; d < D; d++) {
-                                    m_FieldValuesIN[d][i, k] = UinD[d];
                                     NormalsGlobalCoords[i, k, d] = ND[d];
                                 }
-
                             }
                         } else if(_PeriodicVectorTrafo == PeriodicVectorTrafo.bck) {
                             var MatrixBK = Trafo.Matrix.TransposeTo(); // transform from OT to IN
 
-                            //Vector N = new Vector(D);
-                            Vector Uot = new Vector(D);
+                            TransformVector(MatrixBK, m_FieldValuesOT);
+                            /*Vector Uot = new Vector(D);
                             for(int k = 0; k < NoOfNodes; k++) {
                                 for(int d = 0; d < D; d++) {
                                     Uot[d] = m_FieldValuesOT[d][i, k];
-                                    //N[d] = NormalsGlobalCoords[i, k, d];
                                 }
 
                                 Vector UotD = MatrixBK.MtxVecMul(Uot);
@@ -940,16 +975,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                 for(int d = 0; d < D; d++) {
                                     m_FieldValuesOT[d][i, k] = UotD[d];
                                 }
-                                /*
-                                for(int d = 0; d < m_FieldValuesOT.Length; d++) {
-                                    m_FieldValuesOT[d][i, k] = m_FieldValuesIN[d][i, k];
-                                }
-                                for(int d = 0; d < m_MeanFieldValuesOT.Length; d++) {
-                                    if(m_MeanFieldValuesOT[d] != null)
-                                        m_MeanFieldValuesOT[d][i, k] = m_MeanFieldValuesIN[d][i, k];
-                                }
-                                */
-                            }
+                            }//*/
                         } else {
                             throw new NotImplementedException();
                         }
