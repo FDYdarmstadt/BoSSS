@@ -1035,7 +1035,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Vector consisting of Points in radial direction, must be greater than 0.
         /// </param>
         /// <param name="sNodes">
-        /// Vector consisting of Points in rotational direction.
+        /// Vector consisting of Points in rotational direction (1.0 represents 2Pi)
         /// </param>
         /// <param name="CellType">
         /// Type of Elements. Currently only Quads supported.
@@ -1078,7 +1078,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int size;
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
-
 
 
                 // define periodic transformations

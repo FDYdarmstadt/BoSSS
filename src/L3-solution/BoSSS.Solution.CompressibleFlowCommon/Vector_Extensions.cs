@@ -111,7 +111,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
             double[] transformedVector = new double[3];
             double[] __this =  new double[] { _this.x, _this.y, _this.z };
 
-            GetTransformationToEdgeCoordinates(edgeNormal).Transpose().GEMV(
+            GetTransformationToEdgeCoordinates(edgeNormal).TransposeTo().GEMV(
                 1.0, __this, 0.0, transformedVector);
 
             //Debug.Assert(transformedVector.Skip(edgeNormal.Dim).L2Norm() == 0.0);

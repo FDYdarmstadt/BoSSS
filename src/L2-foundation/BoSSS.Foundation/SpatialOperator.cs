@@ -1279,6 +1279,22 @@ namespace BoSSS.Foundation {
         }
 
 
+        internal bool RequiresComplicatedPeriodicity(IGridData gd) {
+            var tags = gd.iGeomEdges.EdgeTags;
+            int E = gd.iGeomEdges.Count;
+            Debug.Assert(E == tags.Length);
+            for(int e = 0; e < E; e++) {
+                int tag = tags[e];
+                if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+
+                    return true;
+
+                }
+            }
+
+            return false;
+        }
+
 
         /// <summary>
         /// evaluation of operators
@@ -1298,6 +1314,15 @@ namespace BoSSS.Foundation {
             /// otherwise, this member is null;
             /// </summary>
             BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_NonlinearEdge;
+
+
+            /// <summary>
+            /// If the grid contains some periodic boundaries which are not parallel (e.g. some cake-pie-subsection of a rotational domain)
+            /// periodicity required additional transformations/rotations of vectors for **both** sides of the periodic edge;
+            /// Furthermore, these rotations are different (inverse) for the in- and the out-edge, 
+            /// therefore the contribution to the out-cell is computed in a second pass, by this integrator.
+            /// </summary>
+            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_ComplicatedPeriodicEdge;
 
             /// <summary>
             /// if the right-hand-side is present and contains nonlinear components, 
@@ -1356,6 +1381,17 @@ namespace BoSSS.Foundation {
                                                             CodomainVarMap,
                                                             edgeQuadRule);
 
+                    if(owner.RequiresComplicatedPeriodicity(grdDat)) {
+                        //m_ComplicatedPeriodicEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
+                        //                                    (SpatialOperator) Owner,
+                        //                                    DomainVarMap,
+                        //                                    ParameterMap,
+                        //                                    CodomainVarMap,
+                        //                                    RestrictQr(edgeQuadRule, GetPeriodicEdgesMask(grdDat)));
+
+                        m_NonlinearEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.bck;
+                        //m_ComplicatedPeriodicEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.fwd;
+                    }
 
 
                 }
@@ -1368,11 +1404,96 @@ namespace BoSSS.Foundation {
                                                                 CodomainVarMap,
                                                                 volQuadRule);
 
+
                 }
 
 
                 base.MPITtransceive = true;
             }
+
+            static EdgeMask GetPeriodicEdgesMask(IGridData gd) {
+                var tags = gd.iGeomEdges.EdgeTags;
+                int E = gd.iGeomEdges.Count;
+                Debug.Assert(E == tags.Length);
+                var bmsk = new BitArray(E);
+                for(int e = 0; e < E; e++) {
+                    if(tags[e] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG)
+                        bmsk[e] = true;
+                }
+                return new EdgeMask(gd, bmsk);
+            }
+
+            /// <summary>
+            /// Removes all edes from a quadrature rule <paramref name="Qr"/> which are not contained in the mask <paramref name="Restriction"/>
+            /// </summary>
+            /// <remarks>
+            /// Brute-force implementation, not very sophisticated; should be ok for now.
+            /// </remarks>
+            static ICompositeQuadRule<QuadRule> RestrictQr(ICompositeQuadRule<QuadRule> Qr, EdgeMask Restriction) {
+                
+                int E = Restriction.GridData.iGeomEdges.Count;
+                var RestrictionBMask = Restriction.GetBitMask();
+                Debug.Assert(RestrictionBMask.Length == E);
+
+                QuadRule[] temp = new QuadRule[E];
+                foreach(var pair in Qr) {
+                    for(int i = pair.Chunk.i0; i < pair.Chunk.JE; i++) {
+                        if(RestrictionBMask[i])
+                            temp[i] = pair.Rule;
+                    }
+                }
+
+                var fQr = new CompositeQuadRule<QuadRule>();
+                for(int i = 0; i < E; i++) {
+                    if(temp[i] != null) {
+                        int iLast = fQr.chunkRulePairs.Count - 1;
+                        if(fQr.chunkRulePairs.Count > 0
+                            && fQr.chunkRulePairs[iLast].Chunk.JE == i
+                            && object.ReferenceEquals(fQr.chunkRulePairs[iLast].Rule, temp[i])) {
+                            var lastShit = fQr.chunkRulePairs[iLast].Chunk;
+                            var enlargedChunk = new Chunk();
+                            enlargedChunk.i0 = lastShit.i0;
+                            enlargedChunk.Len = lastShit.Len + 1;
+
+                            var newShit = new ChunkRulePair<QuadRule>(enlargedChunk, temp[i]);
+                            fQr.chunkRulePairs[iLast] = newShit;
+                        } else {
+                            var next = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(i), temp[i]);
+                            fQr.chunkRulePairs.Add(next);
+                        }
+
+                        Debug.Assert(fQr.chunkRulePairs.Last().Chunk.JE == i + 1);
+                    }
+
+                }
+
+#if DEBUG
+                {
+                    QuadRule[] check = new QuadRule[E];
+                    foreach(var pair in fQr) {
+                        for(int i = pair.Chunk.i0; i < pair.Chunk.JE; i++) {
+                            if(RestrictionBMask[i])
+                                check[i] = pair.Rule;
+                        }
+                    }
+
+                    for(int i = 0; i < E; i++) {
+                        if(check[i] != null) {
+                            Debug.Assert(RestrictionBMask[i] == true);
+                            Debug.Assert(object.ReferenceEquals(check[i], temp[i]));
+                        } else {
+                            Debug.Assert(RestrictionBMask[i] == false || temp[i] == null);
+                        }
+                    }
+
+                }
+
+#endif
+
+                return fQr;
+            }
+
+
 
             /// <summary>
             /// DG fields which serve a input for the spatial operator.
@@ -1457,29 +1578,33 @@ namespace BoSSS.Foundation {
 
 
 
+                    void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
+                        if(ne != null) {
+                            using(new BlockTrace("Edge_Integration_NonLin", tr)) {
 
-                    if(m_NonlinearEdge != null) {
-                        using(new BlockTrace("Edge_Integration_NonLin", tr)) {
+                                ne.m_Output = output;
+                                ne.m_alpha = alpha;
+                                ne.Time = time;
+                                ne.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
+                                ne.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
 
-                            m_NonlinearEdge.m_Output = output;
-                            m_NonlinearEdge.m_alpha = alpha;
-                            m_NonlinearEdge.Time = time;
-                            m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
-                            m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
-
-                            m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
-
-
-                            m_NonlinearEdge.Execute();
-
-                            m_NonlinearEdge.m_Output = null;
-                            m_NonlinearEdge.m_outputBndEdge = null;
-                            m_NonlinearEdge.m_alpha = 1.0;
-                            m_NonlinearEdge.SubGridCellsMarker = null;
+                                ne.m_outputBndEdge = outputBndEdge;
 
 
+                                ne.Execute();
+
+                                ne.m_Output = null;
+                                ne.m_outputBndEdge = null;
+                                ne.m_alpha = 1.0;
+                                ne.SubGridCellsMarker = null;
+                            }
                         }
                     }
+
+                    CallEdge(m_NonlinearEdge, "Edge_Integration_NonLin");
+                    //CallEdge(m_ComplicatedPeriodicEdge, "Edge_Integration_NonLin_periodic");
+
+
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif

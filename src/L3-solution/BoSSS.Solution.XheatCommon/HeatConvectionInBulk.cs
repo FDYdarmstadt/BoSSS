@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XheatCommon {
     public class HeatConvectionInBulk : LinearizedHeatConvection, IEquationComponentSpeciesNotification {
 
 
-        public HeatConvectionInBulk(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, double _capA, double _capB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) 
+        public HeatConvectionInBulk(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, double _capA, double _capB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk)
             : base(SpatDim, _bcmap) {
 
             capA = _capA;
@@ -264,68 +264,68 @@ namespace BoSSS.Solution.XheatCommon {
             switch(edgeType) {
                 case ThermalBcType.ConstantTemperature: {
 
-                        double r = 0.0;
+                    double r = 0.0;
 
-                        // Setup params
-                        // ============
-                        Foundation.CommonParams inp2;
-                        inp2.GridDat = inp.GridDat;
-                        inp2.Normal = inp.Normal;
-                        inp2.iEdge = inp.iEdge;
-                        inp2.Parameters_IN = inp.Parameters_IN;
-                        inp2.X = inp.X;
-                        inp2.time = inp.time;
-                        inp2.jCellIn = inp.jCellIn;
-                        inp2.jCellOut = int.MinValue;
+                    // Setup params
+                    // ============
+                    Foundation.CommonParams inp2;
+                    inp2.GridDat = inp.GridDat;
+                    inp2.Normal = inp.Normal;
+                    inp2.iEdge = inp.iEdge;
+                    inp2.Parameters_IN = inp.Parameters_IN;
+                    inp2.X = inp.X;
+                    inp2.time = inp.time;
+                    inp2.jCellIn = inp.jCellIn;
+                    inp2.jCellOut = int.MinValue;
+                    inp2.EdgeTag = inp.EdgeTag;
 
+                    // Specify Parameters_OUT
+                    // ======================
+                    inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
 
-                        // Specify Parameters_OUT
-                        // ======================
-                        inp2.Parameters_OUT = new double[inp.Parameters_IN.Length];
+                    // Dirichlet value for temperature
+                    double Uout = TempFunction[inp.EdgeTag](inp.X, inp.time);
 
-                        // Dirichlet value for temperature
-                        double Uout = TempFunction[inp.EdgeTag](inp.X, inp.time);
+                    // Outer values for Velocity and VelocityMean
+                    for(int j = 0; j < m_SpatialDimension; j++) {
 
-                        // Outer values for Velocity and VelocityMean
-                        for(int j = 0; j < m_SpatialDimension; j++) {
+                        inp2.Parameters_OUT[j] = inp2.Parameters_IN[j]; //velFunction[inp.EdgeTag, j](inp.X, inp.time);
 
-                            inp2.Parameters_OUT[j] = inp2.Parameters_IN[j]; //velFunction[inp.EdgeTag, j](inp.X, inp.time);
+                        // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
+                        //inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
 
-                            // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
-                            //inp2.Parameters_OUT[m_SpatialDimension + j] = 0.0;
-
-                            // VelocityMeanOut = VelocityMeanIn
-                            inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j];
-                        }
-
-                        // Calculate BorderEdgeFlux as InnerEdgeFlux
-                        // =========================================
-                        r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
-
-                        return r;
-
+                        // VelocityMeanOut = VelocityMeanIn
+                        inp2.Parameters_OUT[m_SpatialDimension + j] = inp.Parameters_IN[m_SpatialDimension + j];
                     }
+
+                    // Calculate BorderEdgeFlux as InnerEdgeFlux
+                    // =========================================
+                    r = InnerEdgeFlux(ref inp2, Uin, new double[] { Uout });
+
+                    return r;
+
+                }
                 case ThermalBcType.ZeroGradient:
                 case ThermalBcType.ConstantHeatFlux: {
 
-                        double r = 0.0;
-                        double u1, u2, u3 = 0, u_d;
+                    double r = 0.0;
+                    double u1, u2, u3 = 0, u_d;
 
-                        u_d = Uin[0];
-                        u1 = inp.Parameters_IN[0];
-                        u2 = inp.Parameters_IN[1];
-                        if(m_SpatialDimension == 3)
-                            u3 = inp.Parameters_IN[2];
+                    u_d = Uin[0];
+                    u1 = inp.Parameters_IN[0];
+                    u2 = inp.Parameters_IN[1];
+                    if(m_SpatialDimension == 3)
+                        u3 = inp.Parameters_IN[2];
 
-                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
-                        if(m_SpatialDimension == 3) {
-                            r += u_d * u3 * inp.Normal[2];
-                        }
-
-                        return r;
+                    r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1]);
+                    if(m_SpatialDimension == 3) {
+                        r += u_d * u3 * inp.Normal[2];
                     }
+
+                    return r;
+                }
                 default:
-                    throw new NotImplementedException("Boundary condition not implemented!");
+                throw new NotImplementedException("Boundary condition not implemented!");
             }
 
 
@@ -336,10 +336,5 @@ namespace BoSSS.Solution.XheatCommon {
             for(int d = 0; d < m_SpatialDimension; d++)
                 output[d] = U[0] * inp.Parameters[d];
         }
-
-
-
     }
-
-
 }

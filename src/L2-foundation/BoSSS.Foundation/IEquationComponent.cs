@@ -643,6 +643,14 @@ namespace BoSSS.Foundation {
         /// Physical time.
         /// </summary>
         public double time;
+
+        /// <summary>
+        /// edge tag for the respective edge (see <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeTags"/>)
+        /// For interior edges, this is 
+        /// - equal to 0 on ordinary edges
+        /// - greater or equal to <see cref="Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/> on periodic edges
+        /// </summary>
+        public byte EdgeTag;
     }
 
     /// <summary>
@@ -702,7 +710,6 @@ namespace BoSSS.Foundation {
                 Debug.Assert(X.Dim == Normal.Dim);
                 Debug.Assert(X.Dim == GridDat.SpatialDimension);
                 return X.Dim;
-
             }
         }
     }

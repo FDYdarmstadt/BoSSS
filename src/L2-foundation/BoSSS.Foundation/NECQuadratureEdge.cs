@@ -321,6 +321,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             BitArray cellMarker = this.SubGridCellsMarker;
 
             int[,] E2C = grid.iGeomEdges.LogicalCellIndices;
+            byte[] tags = grid.iGeomEdges.EdgeTags;
 
             for(int jEdge = 0; jEdge < Length; jEdge++) {
 
@@ -337,9 +338,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     touchCell2 = cellMarker[jCell2];
                 }
 
+                
+                if(tags[jEdge + i0] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+                    if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
+                        touchCell1 = false;
+                    } else if(_PeriodicVectorTrafo == PeriodicVectorTrafo.bck) {
+                        touchCell2 = false;
+                    }
+                }
+                
+
+
                 // Only active in case of Local timestepping:
                 // We save more edgeFluxes than necessary, e.g. across possible MPI-borders.
-                // We filter the relevant edgeFluxes later! Here not possible, becaue we 
+                // We filter the relevant edgeFluxes later! Here not possible, because we 
                 // only have the cellMarker of the own subGrid 
                 bool srgdBndEdge = false;
                 int side = 0;
@@ -358,20 +370,32 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     int f_offset = m_MyMap[f];
                     int mE = m_NoOfTestFunctions[f];
 
-                    for (int m = 0; m < mE; m++) {
+                    int i0in = 0;
+                    if(touchCell1)
+                        i0in = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, 0);
+                    int i0ot = 0;
+                    if(touchCell2)
+                        i0ot = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, 0);
+
+                    for(int m = 0; m < mE; m++) {
                         int idx = f_offset + m;
 
-                        if (touchCell1) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
+                        if(touchCell1) {
+                            Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m) == i0in);
+                            m_Output[i0ot] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
                         }
 
-                        if (touchCell2) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
+                        if(touchCell2) {
+                            Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m) == i0ot);
+                            m_Output[i0in] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
                         }
 
-                        if(srgdBndEdge && m==0) {
-                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
+                        if(srgdBndEdge && m == 0) {
+                            m_outputBndEdge[NoOfFields * (jEdge + i0) + f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
                         }
+
+                        i0in++;
+                        i0ot++;
                     }
                 }
             }
@@ -451,7 +475,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// storage for mean field values at quadrature nodes in the second cell which bounds to the edge;
         /// array index: field index, where field order is defined by <see cref="NECQuadratureCommon.m_DomainFields"/>
         /// if one array entry is null, no mean value evaluation of the corresponding field is needed,
-        /// because ther is no <see cref="INonlinearFluxEx"/>-object which requires it.
+        /// because there is no <see cref="INonlinearFluxEx"/>-object which requires it.
         /// 1st index: local edge index, with some offset;
         /// of course, the mean value is equal on all quadrature nodes on an edge, so there is no index 
         /// for the quadrature node;
@@ -828,7 +852,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             this.ParametersAndNormals.Start();
 
             // evaluate normals and quadrature transformation metric
-            MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length);
+            MultidimensionalArray NormalsGlobalCoords = grid.iGeomEdges.NormalsCache.GetNormals_Edge(qrNodes, i0, Length).CloneAs();
             MultidimensionalArray QuadScalings;
             if(affine) {
                 QuadScalings = grid.iGeomEdges.SqrtGramian.ExtractSubArrayShallow(new int[] { i0 }, new int[] { i0 + Length - 1 });
@@ -851,6 +875,85 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         f < m_MeanFieldValuesIN.Length ? m_MeanFieldValuesIN[f] : null, f < m_MeanFieldValuesOT.Length ? m_MeanFieldValuesOT[f] : null,
                         f < m_FieldGradientIN.Length ? m_FieldGradientIN[f] : null, f < m_FieldGradientOT.Length ? m_FieldGradientOT[f] : null,
                         0, 0.0);
+                }
+            }
+
+
+            if(_PeriodicVectorTrafo != PeriodicVectorTrafo.nix) {
+                // ++++++++++++++++++++++++++++
+                // Periodic transformation
+                // ++++++++++++++++++++++++++++
+
+                // If the grid contains some periodic boundaries which are not parallel (e.g. some cake-pie-subsection of a rotational domain)
+                // periodicity required additional transformations/rotations of vectors for **both** sides of the periodic edge;
+                // Furthermore, these rotations are different (inverse) for the in- and the out-edge, 
+                // therefore the contribution to the out-cell is computed in a second pass, by this integrator.
+
+
+                var EdgeTags = grid.iGeomEdges.EdgeTags;
+
+                for(int i = 0; i < Length; i++) {
+                    int iEdge = i + i0;
+                    var eT = EdgeTags[iEdge];
+                    if(eT >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+
+                        //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 0]))).SaveToTextFile("PerInCell.csv", false);
+                        //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 1]))).SaveToTextFile("PerOtCell.csv", false);
+                                               
+
+                        var Trafo = grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
+
+
+                        if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
+                            var MatrixFW = Trafo.Matrix.TransposeTo(); // transform from IN to OT
+                            MatrixFW.InvertInPlace();
+
+                            Vector Uin = new Vector(D);
+                            Vector N = new Vector(D);
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    Uin[d] = m_FieldValuesIN[d][i, k];
+                                    N[d] = NormalsGlobalCoords[i, k, d];
+                                }
+
+                                Vector UinD = MatrixFW.MtxVecMul(Uin);
+                                Vector ND = MatrixFW.MtxVecMul(N);
+
+                                for(int d = 0; d < D; d++) {
+                                    m_FieldValuesIN[d][i, k] = UinD[d];
+                                    NormalsGlobalCoords[i, k, d] = ND[d];
+                                }
+
+                            }
+                        } else if(_PeriodicVectorTrafo == PeriodicVectorTrafo.bck) {
+                            var MatrixBK = Trafo.Matrix.TransposeTo(); // transform from OT to IN
+
+                            //Vector N = new Vector(D);
+                            Vector Uot = new Vector(D);
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    Uot[d] = m_FieldValuesOT[d][i, k];
+                                    //N[d] = NormalsGlobalCoords[i, k, d];
+                                }
+
+                                Vector UotD = MatrixBK.MtxVecMul(Uot);
+                                
+                                for(int d = 0; d < D; d++) {
+                                    m_FieldValuesOT[d][i, k] = UotD[d];
+                                }
+                                for(int d = 0; d < m_FieldValuesOT.Length; d++) {
+                                    m_FieldValuesOT[d][i, k] = m_FieldValuesIN[d][i, k];
+                                }
+                                for(int d = 0; d < m_MeanFieldValuesOT.Length; d++) {
+                                    if(m_MeanFieldValuesOT[d] != null)
+                                        m_MeanFieldValuesOT[d][i, k] = m_MeanFieldValuesIN[d][i, k];
+                                }
+
+                            }
+                        } else {
+                            throw new NotImplementedException();
+                        }
+                    }
                 }
             }
 
@@ -1149,7 +1252,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             this.Flux_Trafo.Start();
 
 
-            // multiply fluxes with Jacobi determinat (integral transformation metric):
+            // multiply fluxes with Jacobi determinant (integral transformation metric):
             for(int i = 0; i < NoOfEquations; i++) {
                 if (m_FluxValuesIN[i] != null) {
                     m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
@@ -1399,13 +1502,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         static MultidimensionalArray.MultiplyProgram mp_jn_Tjknd_jkd = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)knd", "jkd", true);
         static MultidimensionalArray.MultiplyProgram mp_jn_Tjmn_jm = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)mn", "jm", true);
 
-
-       
-
-        
-
-
-
         private void EvalFlux<T>(EquationComponentArgMapping<T> components, int i0, int Length, IGridData grid, int NoOfSec,
             bool MapAlsoMean, bool MapAlsoGradient, Stopwatch[] timers, 
             Action<T, int, int, int, int, int, MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[], MultidimensionalArray[]> CallInner,
@@ -1584,6 +1680,35 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     timers[iComp].Stop();
                 }
             }
+        }
+
+        /// <summary>
+        /// <see cref="PeriodicVectorTrafo"/>
+        /// </summary>
+        public PeriodicVectorTrafo _PeriodicVectorTrafo = PeriodicVectorTrafo.nix;
+
+        /// <summary>
+        /// Feature to support non-parallel periodic boundaries, e.g. cake-pies of rotational symmetrical domains.
+        /// These must be integrated in two passes, one for the IN and one for the OUT-cell of the respective periodic edges.
+        /// In both passes, a different (inverse) transformation is applied onto vector and normal fields.
+        /// </summary>
+        public enum PeriodicVectorTrafo {
+
+            /// <summary>
+            /// Periodic vector transform turned off.
+            /// Can also be used for parallel periodic boundaries which do **not** require vector transformations.
+            /// </summary>
+            nix = 0,
+
+            /// <summary>
+            /// writes to the OUT-cell, no contribution to IN-cell
+            /// </summary>
+            fwd = 1,
+
+            /// <summary>
+            /// writes to the IN-cell, no contribution to OUT-cell
+            /// </summary>
+            bck = 2
         }
     }
 }

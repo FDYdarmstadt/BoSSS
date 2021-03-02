@@ -1011,6 +1011,27 @@ namespace ilPSP {
 
 
         /// <summary>
+        /// Matrix-Vector product
+        /// </summary>
+        public static Vector MtxVecMul(this IMatrix M, Vector v) {
+            if(M.NoOfCols != v.Dim)
+                throw new ArgumentException();
+
+            var R = new Vector(M.NoOfRows);
+            for(int i = M.NoOfRows - 1; i >= 0; i--) {
+                double acc = 0;
+                for(int j = 0; j < v.Dim; j++) {
+                    acc += M[i, j] * v[j];
+                }
+
+                R[i] = acc;
+            }
+
+            return R;
+        }
+
+
+        /// <summary>
         /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
         /// </summary>
         /// <param name="inp">
