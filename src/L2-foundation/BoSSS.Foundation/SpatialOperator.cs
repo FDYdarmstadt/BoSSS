@@ -1382,15 +1382,15 @@ namespace BoSSS.Foundation {
                                                             edgeQuadRule);
 
                     if(owner.RequiresComplicatedPeriodicity(grdDat)) {
-                        //m_ComplicatedPeriodicEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
-                        //                                    (SpatialOperator) Owner,
-                        //                                    DomainVarMap,
-                        //                                    ParameterMap,
-                        //                                    CodomainVarMap,
-                        //                                    RestrictQr(edgeQuadRule, GetPeriodicEdgesMask(grdDat)));
+                        m_ComplicatedPeriodicEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
+                                                            (SpatialOperator)Owner,
+                                                            DomainVarMap,
+                                                            ParameterMap,
+                                                            CodomainVarMap,
+                                                            RestrictQr(edgeQuadRule, GetPeriodicEdgesMask(grdDat)));
 
                         m_NonlinearEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.bck;
-                        //m_ComplicatedPeriodicEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.fwd;
+                        m_ComplicatedPeriodicEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.fwd;
                     }
 
 

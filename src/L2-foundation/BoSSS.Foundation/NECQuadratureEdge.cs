@@ -338,7 +338,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     touchCell2 = cellMarker[jCell2];
                 }
 
-                
+                /*
                 if(tags[jEdge + i0] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
                     if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
                         touchCell1 = false;
@@ -346,7 +346,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         touchCell2 = false;
                     }
                 }
-                
+                */
 
 
                 // Only active in case of Local timestepping:
@@ -938,6 +938,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                                 Vector UotD = MatrixBK.MtxVecMul(Uot);
                                 
+                                /*
                                 for(int d = 0; d < D; d++) {
                                     m_FieldValuesOT[d][i, k] = UotD[d];
                                 }
@@ -948,7 +949,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                     if(m_MeanFieldValuesOT[d] != null)
                                         m_MeanFieldValuesOT[d][i, k] = m_MeanFieldValuesIN[d][i, k];
                                 }
-
+                                */
                             }
                         } else {
                             throw new NotImplementedException();
