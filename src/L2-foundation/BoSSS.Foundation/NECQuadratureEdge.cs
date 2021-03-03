@@ -889,7 +889,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
                 var EdgeTags = grid.iGeomEdges.EdgeTags;
-
                 int[][] VectorTuples = new int[][] { new[] { 0, 1 }, new[] { 3, 7 }, new[] { 4, 8 }, new[] { 5, 9 }, new[] { 6, 10 }};
                 
                 for(int i = 0; i < Length; i++) {
@@ -905,14 +904,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
 
                         void TransformVector(MultidimensionalArray Mtx, MultidimensionalArray[] Vals) {
-
                             foreach(int[] VecPtr in VectorTuples) {
                                 Debug.Assert(VecPtr.Length == D);
 
                                 Vector Uorg = new Vector(D);
                                 for(int k = 0; k < NoOfNodes; k++) {
-                                    //if(VecPtr[0] > Vals.Length || Vals[VecPtr[0]] == null)
-                                    //    continue;
+                                    if(VecPtr[0] >= Vals.Length || Vals[VecPtr[0]] == null)
+                                        continue;
 
                                     for(int d = 0; d < D; d++) {
                                         Uorg[d] = Vals[VecPtr[d]][i, k];
@@ -927,11 +925,38 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             }
                         }
 
+                        void TransfromGradient(MultidimensionalArray Mtx, MultidimensionalArray[] Gradients) {
+                            foreach(int[] VecPtr in VectorTuples) {
+                                Debug.Assert(VecPtr.Length == D);
+
+                                Vector Uorg = new Vector(D);
+                                for(int k = 0; k < NoOfNodes; k++) {
+                                    if(VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
+                                        continue;
+
+                                    for(int e = 0; e < D; e++) {
+                                        for(int d = 0; d < D; d++) {
+                                            Uorg[d] = Gradients[VecPtr[d]][i, k, e];
+                                        }
+
+                                        Vector Udest = Mtx.MtxVecMul(Uorg);
+
+                                        for(int d = 0; d < D; d++) {
+                                            Gradients[VecPtr[d]][i, k, e] = Udest[d];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+
                         if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
                             var MatrixFW = Trafo.Matrix.TransposeTo(); // transform from IN to OT
                             MatrixFW.InvertInPlace();
 
                             TransformVector(MatrixFW, m_FieldValuesIN);
+                            TransformVector(MatrixFW, m_MeanFieldValuesIN);
+                            TransfromGradient(MatrixFW, m_FieldGradientIN);
                             /*Vector Uin = new Vector(D);
                             for(int k = 0; k < NoOfNodes; k++) {
                                 for(int d = 0; d < D; d++) {
@@ -963,6 +988,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             var MatrixBK = Trafo.Matrix.TransposeTo(); // transform from OT to IN
 
                             TransformVector(MatrixBK, m_FieldValuesOT);
+                            TransformVector(MatrixBK, m_MeanFieldValuesOT);
+                            TransfromGradient(MatrixBK, m_FieldGradientOT);
+
+                            /*for(int k = 0; k < NoOfNodes; k++) {
+                                for(int e = 0; e < D; e++)
+                                    for(int d = 0; d < D; d++)
+                                        m_FieldGradientOT[d][i, k, e] = m_FieldGradientIN[d][i, k, e];
+                            }*/
+
                             /*Vector Uot = new Vector(D);
                             for(int k = 0; k < NoOfNodes; k++) {
                                 for(int d = 0; d < D; d++) {

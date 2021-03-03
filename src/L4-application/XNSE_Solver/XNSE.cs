@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             InitMPI();
             DeleteOldPlotFiles();
-            Tests.ASUnitTest.CurvedElementsTest(1);
+            Tests.ASUnitTest.CurvedElementsTest(3);
             //Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             throw new Exception("Remove me");
 

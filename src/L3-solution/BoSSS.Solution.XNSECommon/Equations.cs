@@ -100,12 +100,13 @@ namespace BoSSS.Solution.XNSECommon {
                     case ViscosityMode.Standard:
                     case ViscosityMode.TransposeTermMissing: {
                         // Bulk operator:
+                        Console.WriteLine("REMINDER: penalty turned off");
+                        double _penalty = 0.0;
                         var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                            penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                            _penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
                             boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                        Console.WriteLine("REMINDER: NO VISCOUS FLUX COMPONENT");
-                        //AddComponent(Visc1);
+                        AddComponent(Visc1);
 
 
                         break;
