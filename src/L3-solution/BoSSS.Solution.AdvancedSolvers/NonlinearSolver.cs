@@ -251,9 +251,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 err.AccV(-1.0, OpEvalRaw);
                 double l2_err = err.MPI_L2Norm();
                 double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
-                if(l2_err > comp) {
-                    throw new ArithmeticException("Mismatch between operator linearization and evaluation.");
-                }
+                // if(l2_err > comp) {
+                //     throw new ArithmeticException("Mismatch between operator linearization and evaluation.");
+                // }
             }
 #endif
             CurrentLin.TransformRhsInto(OpEvalRaw, Output, false);
