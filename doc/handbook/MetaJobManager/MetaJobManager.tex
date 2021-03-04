@@ -45,10 +45,100 @@ restart;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-/// The very first thing we have to do is to initialize the workflow
-/// management tools and to define a project name. The meta job manager, like  
-/// all other workflow management tools strictly enforces the use of a 
-/// project name:
+/// This tutorial illustrates how computations can be executed on large 
+/// (or small) compute servers, aka.
+/// high-performance-computers (HPC), aka. compute clusters, aka. supercomputers, etc.
+///
+/// This means, the computation is not executed on the local workstation 
+/// (or laptop) but on some other computer.
+/// This approach is particulary handy for large computations, which run
+/// for multiple hours or days, since a user can 
+/// e.g. shutdown or restart his personal computer without killing the compute job. 
+///
+/// \BoSSS{} features a set of classes and routines 
+/// (an API, application programing interface) for communication with 
+/// compute clusters. This is especially handy for \emph{scripting},
+/// e.g. for parameter studies, where dozens of computations 
+/// have to be started and monitored.
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Batch Processing}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// First, we have to select a \emph{batch system} that we want to use.
+/// Batch systems are a common approach to organize workloads (aka. compute jobs)
+/// on compute clusters.
+/// On such systems, a user typically does \emph{not} starts a simulation manually.
+/// Instead, he specifies a so-called \emph{compute job}. The \emph{scheduler} 
+/// (aka. \emph{batch system})collects 
+/// compute jobs from all users on the compute cluster, sorts them according to 
+/// some priority and puts the jobs into some queue, also called \emph{batch}.
+/// The jobs in the batch are then executed in order, depending on the 
+/// available hardware and the scheduling policies of the system.
+///
+/// The \BoSSS{} API provides front-ends (clients) for the following 
+/// batch system software:
+/// \begin{itemize}
+/// \item 
+/// \code{BoSSS.Application.BoSSSpad.SlurmClient} for the 
+/// Slurm Workload Manager (very prominent on Linux HPC systems)
+/// 
+/// \item
+/// \code{BoSSS.Application.BoSSSpad.MsHPC2012Client}
+/// for the Microsoft HPC Pack 2012 and higher
+///
+/// \item
+/// \code{BoSSS.Application.BoSSSpad.MiniBatchProcessorClient} for the 
+/// mini batch processor, 
+/// a minimalistic, \BoSSS{}-internal batch system which mimiks 
+/// a supercomputer batch system on the local machine.
+/// \end{itemize}
+ }
+\BoSSSexe
+\BoSSScmd{
+/// A list of clients for various batch systems, which are loaded at the 
+/// \code{restart} command can be configured through the  
+/// {\tt $\sim$/.BoSSS/etc/BatchProcessorConfig.json}-file.
+/// If this file is missing, a default setting, containing a 
+/// mini batch processor, is initialized. 
+///
+/// The list of all execution queues can be accessed through:
+ExecutionQueues;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// For the sake of simplicuity, we pick the first one:
+var myBatch = ExecutionQueues[0];
+ }
+\BoSSSexe
+\BoSSScmd{
+/// Note on the Mini Batch Processor:
+/// The batch processor for local jobs can be started separately (by launching
+/// {\tt MiniBatchProcessor.exe}), or from the worksheet;
+/// In the latter case, it depends on the operating system, whether the 
+/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, 
+/// or not.
+/// If no mini-batch-processor is running, it is started 
+/// at the initialization of the workflow management.
+//MiniBatchProcessor.Server.StartIfNotRunning(false);
+ }
+\BoSSSexe
+\BoSSScmd{
+/// % ==================================================================
+/// \section{Initializing the workflow management}
+/// % ==================================================================
+ }
+\BoSSSexe
+\BoSSScmd{
+/// In order to use the workflow management, 
+/// the very first thing we have to do is to initialize it by defineing 
+/// a project name. 
+/// This is used to generate names for the compute jobs and to 
+/// identify sessions in the database:
 WorkflowMgm.Init("MetaJobManager\_Tutorial");
  }
 \BoSSSexe
@@ -81,29 +171,7 @@ databases;
  }
 \BoSSSexe
 \BoSSScmd{
-/// We have to pick a batch systems that we want to use:
-/// Normally, these are configured in the 
-/// {\tt $\sim$/.BoSSS/etc/BatchProcessorConfig.json}-file and 
-/// can be accessed through:
-ExecutionQueues;
- }
-\BoSSSexe
-\BoSSScmd{
-/// For the sake of simplicuity, we pick the first one:
-var myBatch = ExecutionQueues[0];
- }
-\BoSSSexe
-\BoSSScmd{
-/// The batch processor for local jobs can be started separately (by launching
-/// {\tt MiniBatchProcessor.exe}), or from the worksheet as follows.
-/// In the latter case, it depends on the operating system, whether the 
-/// \newline {\tt MiniBatchProcessor.exe} is terminated with the worksheet, 
-/// or not.
-MiniBatchProcessor.Server.StartIfNotRunning(false);
- }
-\BoSSSexe
-\BoSSScmd{
-/// In this tutorial, we use the workflow management tools to simulate 
+/// As an example, we use the workflow management tools to simulate 
 /// incompressible channel flow, therefore we have to import the namespace,
 /// and repeat the steps from chapter \ref{IBM} in order to setup the
 /// control object:
@@ -229,7 +297,7 @@ c.AddBoundaryValue("Pressure\_Outlet");
 \BoSSSexe
 \BoSSScmd{
 /// % ==================================================================
-/// \section{Deploying the jobs}
+/// \section{Activation and Monitoring of the the Job}
 /// % ==================================================================
  }
 \BoSSSexe
@@ -321,7 +389,7 @@ NUnit.Framework.Assert.IsTrue(\newline
 \BoSSSexeSilent
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
-WorkflowMgm.BlockUntilAllJobsTerminate(360);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{

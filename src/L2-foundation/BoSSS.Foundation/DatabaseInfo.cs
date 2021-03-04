@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using ilPSP;
-using Microsoft.Win32.SafeHandles;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -44,6 +43,7 @@ namespace BoSSS.Foundation.IO {
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MpiRank);
             if(MpiRank == 0) {
+                
                 if(!File.Exists(path) && !Directory.Exists(path)) {
                     DirectoryInfo targetDirectory = new DirectoryInfo(path);
                     if(!targetDirectory.Exists) {
@@ -61,6 +61,7 @@ namespace BoSSS.Foundation.IO {
                     Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "grids"));
                     Directory.CreateDirectory(System.IO.Path.Combine(targetDirectory.FullName, "sessions"));
                 }
+                
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             Thread.Sleep(5000); // allow Network file systems to catch up

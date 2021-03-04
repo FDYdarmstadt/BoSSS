@@ -109,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-
+        [NonSerialized]
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -347,7 +347,7 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = this.SlurmAccount;
+            string slurmAccount = this.SlurmAccount;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
@@ -381,8 +381,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (HHLR_project != null) {
-                    sw.WriteLine("#SBATCH -A " + HHLR_project);
+                if (slurmAccount != null) {
+                    sw.WriteLine("#SBATCH -A " + slurmAccount);
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
