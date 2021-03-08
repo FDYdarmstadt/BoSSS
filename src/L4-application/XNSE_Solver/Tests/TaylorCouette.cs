@@ -297,11 +297,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
-
+            
             config.Add(innerWallTag, new AppControl.BoundaryValueCollection());
             config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", exS.UA1);
             config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", exS.UA2);
-
+            
 
             config.Add(outerWallTag, new AppControl.BoundaryValueCollection());
             if(TestImmersedBoundary) {
