@@ -437,6 +437,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray MassFlux = MultidimensionalArray.Create(Len, K);
                     MultidimensionalArray MassFlux_d = MultidimensionalArray.Create(Len, K);
 
                     for (int dd = 0; dd < D; dd++) {
@@ -444,7 +445,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                     }
                     
-                    //ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
+                    ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
+
                     if (config.isEvaporation) {
                         XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
 
@@ -464,10 +466,26 @@ namespace BoSSS.Application.XNSE_Solver {
 
                         for (int k = 0; k < K; k++) {
                             double uNeg = VelA[j, k, d];
-                            double sNeg = uNeg - (1 / rhoA) * MassFlux_d[j, k, d];
-
                             double uPos = VelB[j, k, d];
-                            double sPos = uPos - (1 / rhoB) * MassFlux_d[j, k, d];
+                            bool useNormal = false;
+                            double sNeg, sPos;
+
+                            if (config.prescribedMassflux != null) {
+                                MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                                levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+                                double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+
+                                sNeg = uNeg - (1 / rhoA) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                                sPos = uPos - (1 / rhoB) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                            } else {
+                                if (!useNormal) {
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux_d[j, k];
+                                    sPos = uPos - (1 / rhoB) * MassFlux_d[j, k];
+                                } else {
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux[j, k] * Normals[j, k, d];
+                                    sPos = uPos - (1 / rhoB) * MassFlux[j, k] * Normals[j, k, d];
+                                }
+                            }
 
                             switch (this.averagingMode) {
                                 case (XNSE_Control.InterfaceVelocityAveraging.mean):
