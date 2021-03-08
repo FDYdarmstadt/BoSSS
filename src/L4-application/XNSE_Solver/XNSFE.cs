@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -12,6 +13,7 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -124,6 +126,16 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+
+            //if (Control.InitialValues_EvaluatorsVec.TryGetValue("Temperature#B", out var scalarFunctionTimeDep) && this.Control.SkipSolveAndEvaluateResidual) {
+            //    ScalarFunction T_ex = null;
+            //    T_ex = scalarFunctionTimeDep.SetTime(phystime);
+            //    ((XDGField)this.CurrentState.Fields.Single(s => s.Identification == "Temperature")).GetSpeciesShadowField("B").ProjectField(T_ex);
+            //}
+
+            return base.RunSolverOneStep(TimestepNo, phystime, dt);
+        }
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             base.PlotCurrentState(physTime, timestepNo, superSampling);
 
@@ -132,7 +144,17 @@ namespace BoSSS.Application.XNSE_Solver {
             //VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
             //GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
 
-            //Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
+            //DGField CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0));
+            //CellNumbers.ProjectField(1.0, delegate(int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+            //    int K = result.GetLength(1); // No nof Nodes
+            //    for (int j = 0; j < Len; j++) {
+            //        for (int k = 0; k < K; k++) {
+            //            result[j, k] = j0 + j;
+            //        }
+            //    }                
+            //}, new CellQuadratureScheme());
+
+            //Tecplot.PlotFields(new List<DGField> { CellNumbers }, "XNSFE_GradT-" + timestepNo, physTime, 3);
         }
 
         /*
