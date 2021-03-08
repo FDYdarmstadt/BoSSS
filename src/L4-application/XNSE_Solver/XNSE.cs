@@ -353,16 +353,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                var fourier = new FourierEvolver(
-                    VariableNames.LevelSetCG,
-                    ls,
-                    Control.FourierLevSetControl,
-                    Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
-                opFactory.AddParameter(fourier);
-                break;
+                    FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+                    var fourier = new FourierEvolver(
+                        VariableNames.LevelSetCG,
+                        ls,
+                        Control.FourierLevSetControl,
+                        Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
+                    //lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
+                    opFactory.AddParameter(fourier);
+                    break;
 
                 default:
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
