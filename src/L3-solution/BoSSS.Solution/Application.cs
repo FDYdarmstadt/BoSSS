@@ -3456,8 +3456,8 @@ namespace BoSSS.Solution {
 
 
             if (this.Control != null && this.Control.RestartInfo != null) {
-                if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
-                    //throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
+                //if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
+                //    throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
 
                 TimestepNo = RestartFromDatabase(out Time);
                 this.CurrentSessionInfo.RestartedFrom = this.Control.RestartInfo.Item1;
