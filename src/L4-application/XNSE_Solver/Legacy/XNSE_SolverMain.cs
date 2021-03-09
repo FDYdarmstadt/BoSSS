@@ -73,6 +73,12 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
     /// </remarks>
     public partial class XNSE_SolverMain : BoSSS.Solution.Application<XNSE_Control> {
 
+        //static void Main(string[] args) {
+        //    _Main(args, false, delegate () {
+        //        var p = new XNSE_SolverMain();
+        //        return p;
+        //    });
+        //}
 
         //=====================================
         // Field declaration and instantiation
@@ -537,11 +543,14 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     }
                 }
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, this.LsTrk, this.MultigridSequence);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, 
+                    this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
 
 
                 if (this.Control.solveKineticEnergyEquation) {
-                    KineticEnergyTimestepper.DataRestoreAfterBalancing(L, this.KineticEnergy.ToEnumerable(), this.ResidualKineticEnergy.ToEnumerable(), this.LsTrk, this.MultigridSequence);
+                    KineticEnergyTimestepper.DataRestoreAfterBalancing(L, 
+                        this.KineticEnergy.ToEnumerable(), this.ResidualKineticEnergy.ToEnumerable(), 
+                        this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
                 }
 
 
@@ -1539,35 +1548,35 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         }
 
 
-        protected override void ResetInitial() {
-            base.SetInitial(0.0);
+        //protected override void ResetInitial() {
+        //    base.SetInitial(0.0);
 
-            this.InitLevelSet();
+        //    this.InitLevelSet();
 
 
-            if (this.Control.solveCoupledHeatEquation) {
-                if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-                    m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature));
-                else
-                    m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux));
-            } else {
-                m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure));
-            }
+        //    if (this.Control.solveCoupledHeatEquation) {
+        //        if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+        //            m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature));
+        //        else
+        //            m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.Temperature, this.HeatFlux));
+        //    } else {
+        //        m_BDF_Timestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure));
+        //    }
 
-            //m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
-            //    // delegate for the initialization of previous timesteps from an analytic solution
-            //    BDFDelayedInitSetIntial);
+        //    //m_BDF_Timestepper.DelayedTimestepperInit(0.0, 0, this.Control.GetFixedTimestep(),
+        //    //    // delegate for the initialization of previous timesteps from an analytic solution
+        //    //    BDFDelayedInitSetIntial);
 
-            //if (this.Control.solveCoupledHeatEquation) {
-            //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
-            //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(this.Temperature.ToEnumerable());
-            //    else
-            //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.Temperature.ToEnumerable(), this.HeatFlux.ToArray()));
+        //    //if (this.Control.solveCoupledHeatEquation) {
+        //    //    if (this.Control.conductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP)
+        //    //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(this.Temperature.ToEnumerable());
+        //    //    else
+        //    //        m_BDF_coupledTimestepper.ResetDataAfterBalancing(ArrayTools.Cat<DGField>(this.Temperature.ToEnumerable(), this.HeatFlux.ToArray()));
 
-            //    m_BDF_coupledTimestepper.SingleInit();
-            //}
+        //    //    m_BDF_coupledTimestepper.SingleInit();
+        //    //}
 
-        }
+        //}
 
         /*
         private void After_SetInitialOrLoadRestart(double PhysTime, int TimestepNo)

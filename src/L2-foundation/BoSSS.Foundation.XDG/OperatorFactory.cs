@@ -22,7 +22,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     foreach(string OtherPname in p.ParameterNames) {
                         if(!parameterNames.Contains(OtherPname)) {
                             //throw new ArgumentException($"Smells like configuration error: an updater for parameter {OtherPname} was added, but none of the equations seem to need this parameter.");
-                            Console.WriteLine($"Warning: smells like configuration error: an updater for parameter {OtherPname} was added, but none of the equations seem to need this parameter.");
+                            //Console.WriteLine($"Warning: smells like configuration error: an updater for parameter {OtherPname} was added, but none of the equations seem to need this parameter.");
                         }
                     }
                 }

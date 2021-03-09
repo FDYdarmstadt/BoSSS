@@ -186,8 +186,7 @@ namespace BoSSS.Foundation.XDG {
                 // =================
                 for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                     var cellVol = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 1);
-                    var spc = species[iSpc];
-
+                    SpeciesId spc = species[iSpc];
 
                     // compute cut edge area
                     // ---------------------
@@ -248,6 +247,7 @@ namespace BoSSS.Foundation.XDG {
                                 int jCell = i + i0;
                                 Debug.Assert(cellVol[jCell] == 0);
                                 cellVol[jCell] = ResultsOfIntegration[i, 0];
+                                //Console.WriteLine("cellVol " + cellVol[jCell] + " of cell " + jCell);
                                 Debug.Assert(!(double.IsNaN(cellVol[jCell]) || double.IsInfinity(cellVol[jCell])));
                             }
                         }).Execute();

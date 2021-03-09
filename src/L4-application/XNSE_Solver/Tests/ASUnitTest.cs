@@ -562,10 +562,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_IBM(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl);
         }
 
         /// <summary>
@@ -573,10 +574,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl);
         }
 
         /// <summary>
@@ -584,10 +586,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Projected(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl);
         }
 
 #endif
@@ -598,7 +601,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest(
             [Values(2, 3)] int FlowSolverDegree = 3,
             [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
+            [Values(false,true)] bool SchurCompl = true
             ) {
 
             double AgglomerationTreshold = 0.3;
@@ -622,12 +626,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+                C.UseSchurBlockPrec = SchurCompl;
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
                 CS[i] = C;
 
                 //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
-                //C.SkipSolveAndEvaluateResidual = true;
+                //C.SkipSolveAndEvaluateResidual = false;
+                //C.UseSchurBlockPrec = true;
                 //XNSESolverTest(Tst, C);
                 //break;
             }
@@ -805,8 +813,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
-            if (Tst.SpatialDimension == 3)
-            {
+            
+            if(Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
             }
@@ -823,15 +831,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //    solver.OperatorAnalysis();
 
                 //-------------------Evaluate Error ---------------------------------------- 
-                XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
                 if (LastErrors.Length != ErrThresh.Length)
                     throw new ApplicationException();
-                for (int i = 0; i < ErrThresh.Length; i++)
-                {
-                    Console.WriteLine("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+                for(int i = 0; i < ErrThresh.Length; i++) {
+                    bool ok = LastErrors[i] <= ErrThresh[i];
+                    Console.Write("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], LastErrors[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ErrThresh[i] + ")");
                 }
 
                 double[] ResThresh = Tst.AcceptableResidual;
@@ -841,14 +854,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 for (int i = 0; i < ResNorms.Length; i++)
                 {
                     ResNorms[i] = solver.CurrentResidual.Fields[i].L2Norm();
-                    Console.WriteLine("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+                    bool ok = ResNorms[i] <= ResThresh[i];
+                    Console.Write("L2 norm, '{0}': \t{1}", solver.CurrentResidual.Fields[i].Identification, ResNorms[i]);
+
+                    if(ok)
+                        Console.WriteLine("   (ok)");
+                    else
+                        Console.WriteLine("   Above Threshold (" + ResThresh[i] + ")");
                 }
 
                 for (int i = 0; i < ErrThresh.Length; i++)
-                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
+                    Assert.LessOrEqual(LastErrors[i], ErrThresh[i], $"Error {solver.CurrentState.Fields[i].Identification} above threshold.");
 
                 for (int i = 0; i < ResNorms.Length; i++)
-                    Assert.LessOrEqual(ResNorms[i], ResThresh[i]);
+                    Assert.LessOrEqual(ResNorms[i], ResThresh[i], $"Residual {solver.CurrentResidual.Fields[i].Identification} above threshold.");
             }
         }
 
@@ -882,7 +901,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         solver.RunSolverMode();
 
                         //-------------------Evaluate Error ---------------------------------------- 
-                        XNSEErrorEvaluator evaluator = new XNSEErrorEvaluator(solver);
+                        var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
                         double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
                         double[] ErrThresh = Tst.AcceptableL2Error;
 
@@ -906,35 +925,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                         errorS.SetRow(k, LastErrors);
                         hS[k] = evaluator.GetGrid_h();
-
-                        // test code start ----------------------------  
-                        /*{
-                            var press = solver.CurrentState.Fields[2];
-                            var presEx = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "ExactPressure");
-                            ScalarFunction presExFunc = Tst.GetPress("A").Vectorize(0.0);                            
-                            presEx.GetSpeciesShadowField("A").ProjectField(presExFunc);
-                            var err = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "Error");
-                            err.AccLaidBack(1.0, presEx);
-                            err.AccLaidBack(-1.0, press);
-
-                            int order = 19;// presEx.Basis.Degree * 2 + 1;
-
-                            var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-                            SpeciesId spId = solver.LsTrk.GetSpeciesId("A");
-                            var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                            var rule = scheme.Compile(solver.GridData, order);
-
-                            double mean = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a, rule);
-                            double vol = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => 1.0, rule);
-                            mean = mean / vol;
-                            Console.WriteLine("Comparison mean val: " + mean);
-                            err.GetSpeciesShadowField("A").AccConstant(-mean);
-
-                            double errNorm = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a.Pow2(), rule).Sqrt();
-                            Console.WriteLine("Comparison Error norm: " + errNorm);
-                            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { press, presEx, err }, "Pressure-" + k, 0.0, 4);
-                        }*/
-                        // ------------------------- test code end
                     }
 
                 }
@@ -990,7 +980,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator evaluator = new XHeatErrorEvaluator(solver);
+                var evaluator = new XHeatErrorEvaluator<XNSE_Control>(solver);
                 if (Tst.CheckT) {                    
                     double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
@@ -1039,7 +1029,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.OperatorAnalysis();
 
                 //-------------------Evaluate Flow Error ---------------------------------------- 
-                XNSEErrorEvaluator flowevaluator = new XNSEErrorEvaluator(solver);
+                var flowevaluator = new XNSEErrorEvaluator<XNSFE_Control>(solver);
                 double[] LastErrors = flowevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
@@ -1052,7 +1042,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
 
                 //-------------------Evaluate Temperature Error ---------------------------------------- 
-                XHeatErrorEvaluator heatevaluator = new XHeatErrorEvaluator(solver);
+                var heatevaluator = new XHeatErrorEvaluator<XNSFE_Control>(solver);
                 if (Tst.CheckT) {
                     LastErrors = LastErrors.Cat(heatevaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C) );
 
@@ -1111,10 +1101,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XNSE_Control : XNSE_Control
-        {
-            public override Type GetSolverType()
-            {
+        class AS_XNSE_Control : XNSE_Control {
+            public override Type GetSolverType() {
                 return typeof(XNSE);
             }
         }
@@ -1247,7 +1235,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        class AS_XHeat_Control : XNSE_Control {
+        class AS_XHeat_Control : XNSFE_Control {
             public override Type GetSolverType() {
                 return typeof(XHeat);
             }

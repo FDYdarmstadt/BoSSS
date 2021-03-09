@@ -45,21 +45,18 @@ WorkflowMgm.Sessions;
 \BoSSScmd{
 using System.Diagnostics;\newline 
 using BoSSS.Foundation.Grid.RefElements;\newline 
-using BoSSS.Application.IBM\_Solver;\newline 
-using BoSSS.Platform.LinAlg;
+using BoSSS.Application.XNSE\_Solver;\newline 
+using BoSSS.Platform.LinAlg;\newline 
+using BoSSS.Solution.XdgTimestepping;
  }
 \BoSSSexe
 \BoSSScmd{
-///Here, we have two choices - either we do the calculations locally 
-///$(\code{myBatch})$ or on the network cluster $(\code{myHPC})$. 
-/// In order to use the network cluster, create a folder "cluster" in "P" 
-///and then set the HPC-Directory to this path.
+/// As an execution queue, we select the first queue defined in 
+/// the {\tt $\sim$/.BoSSS/etc/BatchProcessorConfig.json}-file:
  }
 \BoSSSexe
 \BoSSScmd{
-var myHPC = new MsHPC2012Client(@"\textbackslash \textbackslash dc1\textbackslash userspace\textbackslash yotov\textbackslash cluster","hpccluster",\newline 
-\btab  ComputeNodes : new[] \{"hpccluster"\});\newline 
-var myBatch = new MiniBatchProcessorClient(@"C:\textbackslash tmp");
+var myBatch = ExecutionQueues[0];
  }
 \BoSSSexe
 \BoSSScmd{
@@ -158,7 +155,7 @@ var UY = new Formula \newline
  }
 \BoSSSexe
 \BoSSScmd{
-var ctrl = new IBM\_Control();\newline 
+var ctrl = new XNSE\_Control();\newline 
 //controls.Add(ctrl);\newline 
  \newline 
 ctrl.SessionName = caseName;\newline 
@@ -214,7 +211,7 @@ ctrl.PhysicalParameters.mu\_A  = 1.0/reynolds;
  }
 \BoSSSexe
 \BoSSScmd{
-ctrl.Timestepper\_Scheme = IBM\_Control.TimesteppingScheme.BDF2;\newline 
+ctrl.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;\newline 
 double dt               = 7e-2;\newline 
 ctrl.dtMax              = dt;\newline 
 ctrl.dtMin              = dt;\newline 
@@ -266,8 +263,7 @@ WorkflowMgm.AllJobs.ElementAt(1).Value.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
- ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select(\newline 
-\btab  kv = > kv.Value.LatestSession.Timesteps.Last()).ToArray();
+ ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select(kv => kv.Value.LatestSession.Timesteps.Last()).ToArray();
  }
 \BoSSSexe
 \BoSSScmd{

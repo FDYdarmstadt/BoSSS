@@ -20,7 +20,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
     /// </summary>
-    public class XNSFE : XNSE {
+    public class XNSFE : XNSE<XNSFE_Control> {
 
         private void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
             int D = this.GridData.SpatialDimension;

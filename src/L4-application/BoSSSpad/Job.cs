@@ -611,6 +611,7 @@ namespace BoSSS.Application.BoSSSpad {
             JobStatus? StatusCache = null;
             int? ExitCodeCache = null;
 
+
             /// <summary>
             /// Status of the deployment
             /// </summary>
@@ -624,6 +625,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     var s = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
                     string ExitCodeStr = s.ExitCode.HasValue ? s.ExitCode.Value.ToString() : "null";
+                    this.ExitCodeCache = s.ExitCode;
 
                     if(s.Item1 == JobStatus.FinishedSuccessful) {
                         StatusCache = s.Item1;
@@ -634,7 +636,8 @@ namespace BoSSS.Application.BoSSSpad {
                     if(s.Item1 == JobStatus.FailedOrCanceled) {
                         StatusCache = s.Item1;
                         if(s.ExitCode == null || s.ExitCode == 0)
-                            throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
+                            this.ExitCodeCache = -655321;
+                        //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
 
                     }
 
@@ -1235,15 +1238,19 @@ namespace BoSSS.Application.BoSSSpad {
                 // identify success
                 // ================
 
-                Deployment[] DeploymentsSoFar = this.AllDeployments.ToArray();
-                Deployment[] Success = DeploymentsSoFar.Where(dep => dep.Status == JobStatus.FinishedSuccessful).ToArray();
+                // we have to evaluate the status NOW, and work with this status in order for this method to work correctly.
+                // otherwise, the loophole describes below might happen!
+                (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
+
+
+                Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                 if(SessionReqForSuccess) {
                     ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                     if(SuccessSessions.Length <= 0) {
                         // look twice
                         InteractiveShell.WorkflowMgm.ResetSessionsCache();
-                        DeploymentsSoFar = this.AllDeployments.ToArray();
-                        Success = DeploymentsSoFar.Where(dep => dep.Status == JobStatus.FinishedSuccessful).ToArray();
+                        DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
+                        Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                         SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                     }
                     if(SuccessSessions.Length > 0) {
@@ -1278,27 +1285,35 @@ namespace BoSSS.Application.BoSSSpad {
                 // identify running/waiting
                 // ========================
 
-                var inprog = DeploymentsSoFar.Where(dep => (dep.Status == JobStatus.InProgress)).ToArray();
+                // If we would not use the status evaluated at the top of this method, the 
+                // potential async loophole could happen: job is still 'PendingInExecutionQueue' here...
+
+                var inprog = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.InProgress)).ToArray();
                 if(inprog.Length > 0) {
                     if(WriteHints)
-                        Console.WriteLine($"Info: Job {inprog[0].BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
+                        Console.WriteLine($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
                     return JobStatus.InProgress;
                 }
 
-                var inq = DeploymentsSoFar.Where(dep => (dep.Status == JobStatus.PendingInExecutionQueue)).ToArray();
+                // ... but moves to 'InProgress' somewhere in between here ...
+
+                var inq = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.PendingInExecutionQueue)).ToArray();
                 if(inq.Length > 0) {
                     if(WriteHints)
-                        Console.WriteLine($"Info: Job {inq[0].BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
+                        Console.WriteLine($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
                     return JobStatus.PendingInExecutionQueue;
                 }
+
+                // ... so we reach this line and receive an error here
 
                 // =============
                 // identify fail
                 // =============
-
+                              
                 // if we pass this point, we want to submit to a batch processor,
                 // but only if still allowed.
                 if(this.SubmitCount >= this.RetryCount) {
+                    
                     if(WriteHints) {
                         Console.WriteLine($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
                         Console.WriteLine($"Hint: you might either remove old deployments or increase the 'RetryCount'.");

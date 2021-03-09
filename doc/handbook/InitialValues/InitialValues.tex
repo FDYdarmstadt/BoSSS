@@ -33,7 +33,7 @@ restart
  }
 \BoSSSexe
 \BoSSScmd{
-using BoSSS.Application.IBM\_Solver;
+using BoSSS.Application.XNSE\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -41,7 +41,7 @@ using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
-var C = new IBM\_Control();
+var C = new XNSE\_Control();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -149,7 +149,7 @@ C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
 \BoSSSexe
 \BoSSScmd{
 /// Asssume e.g. the following MATLAB code; obviously, this could  
-/// also be implemented in C\#, we yust use something smple for demonstration: 
+/// also be implemented in C\#, we yust use something smple for demonstration:
  }
 \BoSSSexe
 \BoSSScmd{

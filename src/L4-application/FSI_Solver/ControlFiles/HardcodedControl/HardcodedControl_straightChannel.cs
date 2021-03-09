@@ -28,13 +28,13 @@ using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.FSI_Solver {
     public class HardcodedControl_straightChannel : IBM_Solver.HardcodedTestExamples {
-        public static FSI_Control ActiveRod_noBackroundFlow(int k = 2, int angle = 180, double aspectRatio = 2, double activeStress = -10) {
+        public static FSI_Control ActiveRod_noBackroundFlow(int k = 3, int angle = 20, double aspectRatio = 0.333, double activeStress = 1) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //string ID = "68e35eda-de8b-46fe-af4d-4bbe94a9f49f";
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), 1100);
-            C.IsRestart = true;
+            //C.IsRestart = true;
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
@@ -44,13 +44,13 @@ namespace BoSSS.Application.FSI_Solver {
                 "Pressure_Dirichlet_left"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 2.5, lengthY: 0.5, cellsPerUnitLength: 25, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(3);
+            C.SetGrid(lengthX: 7.5, lengthY: 1.5, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(1);
             C.minDistanceThreshold = 0.005;
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
             C.LevelSetSmoothing = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
@@ -65,10 +65,10 @@ namespace BoSSS.Application.FSI_Solver {
 
             // Particle Properties
             // =============================   
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
-            double particleRadius = 0.05;
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
+            double particleRadius = 0.5;
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, aspectRatio * particleRadius, particleRadius, new double[] { 0, 0.0 }, angle, activeStress)
+                new Particle_Ellipsoid(motion, particleRadius, particleRadius * aspectRatio, new double[] { 0, 0.0 }, angle, activeStress)
             };   
 
             // misc. solver options
@@ -80,46 +80,48 @@ namespace BoSSS.Application.FSI_Solver {
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
-
+            C.FullOutputToConsole = true;
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 1000);
 
             return C;
         }
 
-        public static FSI_Control ActiveRod_noWalls(int k = 3) {
+        public static FSI_Control ActiveRod_noWalls(int k = 2, double aspectRatio = 0.6 ){
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\Channel", savePeriod: 1);
-
+            //C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             // Domain
             // =============================
             List<string> boundaryValues = new List<string> {
-                "Pressure_Outlet"
+                "Wall"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 20, lengthY: 8, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 6);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(amrLevel: 2);
 
             // Coupling Properties
             // =============================
-            C.Timestepper_LevelSetHandling = LevelSetHandling.FSI_LieSplittingFullyCoupled;
-            C.maxIterationsFullyCoupled = 100000;
-            C.hydrodynamicsConvergenceCriterion = 1e-1;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.FSILieSplittingFullyCoupled;
+            C.fullyCoupledSplittingMaxIterations = 100000;
+            C.hydrodynamicsConvergenceCriterion = 1e-12;
 
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.IncludeConvection = true;
-            double particleDensity = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            double particleDensity = 100;
+            C.FullOutputToConsole = true;
+            C.IsStationary = false;
             // Particle Properties
             // =============================   
             
-            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 1.5);
             C.Particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, 0.5, 0.05, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1) 
+                new Particle_Ellipsoid(motion, 1, 1*aspectRatio, new double[] { 0.0, 0.0 }, startAngl: 0, activeStress: 1) 
             };
 
             // Quadrature rules
@@ -140,7 +142,7 @@ namespace BoSSS.Application.FSI_Solver {
             // misc. solver options
             // =============================  
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.LevelSetSmoothing = true;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -150,7 +152,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Timestepping
             // =============================  
             C.Timestepper_Scheme = IBM_Solver.IBM_Control.TimesteppingScheme.BDF2;
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: 1000000000);
+            C.SetTimesteps(dt: 1e8, noOfTimesteps: 1);
 
             return C;
         }

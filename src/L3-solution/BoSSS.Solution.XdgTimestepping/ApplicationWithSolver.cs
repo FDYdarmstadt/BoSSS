@@ -1,11 +1,16 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using ilPSP;
+using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -70,7 +75,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.Timestepping.OperatorAnalysis();
         }      
 
-        abstract internal void CreateTrackerHack();
+        abstract protected void CreateTrackerHack();
 
         /// <summary>
         /// Called on startup and 
@@ -79,7 +84,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            //
             CreateTrackerHack();
 
             // solution:
@@ -193,9 +197,28 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// call the solver
         /// </summary>
-        public void Solve(double phystime, double dt) {
-            this.Timestepping.Solve(phystime, dt);
+        public bool Solve(double phystime, double dt) {
+            return this.Timestepping.Solve(phystime, dt);
         }
+
+        /// <summary>
+        /// setup AMR level indicators
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            base.SetUpEnvironment();
+
+            // AMR level indactors
+            //====================
+            m_AMRLevelIndicators.Clear();
+            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
+                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+            }
+
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                lvlInd.Setup(this);
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -210,16 +233,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
 
+
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                
+
                 // currently, only supported for the BDF timestepper.
-                
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+
+                if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))
+                    throw new ApplicationException();
+
             }
         }
+
 
         /// <summary>
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
@@ -231,6 +260,103 @@ namespace BoSSS.Solution.XdgTimestepping {
             CurrentResidualVector = null;
             ClearOperator();
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TimestepNo"></param>
+        /// <param name="newGrid"></param>
+        /// <param name="old2NewGrid"></param>
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            using (new FuncTrace()) {
+
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if (AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if (AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                    } else {
+
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+
+                } else {
+
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+
+            int J = this.GridData.CellPartitioning.LocalLength;
+            int[] levelChanges = new int[J];
+
+            // combine all results of active level indicators
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                int[] lvls = lvlInd.DesiredCellChanges();
+                levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+            }
+
+            // get desired level 
+            int[] levels = new int[J];
+            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+            for (int j = 0; j < J; j++) {
+                levels[j] = cells[j].RefinementLevel;
+                if (levelChanges[j] > 0)
+                    levels[j] += 1;
+                else if (levelChanges[j] < 0)
+                    levels[j] -= 1;
+            }
+
+            return levels;
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.AMRLevelIndicator"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
+        }
+
+
 
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>;
@@ -365,9 +491,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
             var trk = InstantiateTracker();
-
+            //var test = this.Operator;
             if(base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
@@ -375,15 +501,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
-            foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
-                if(ls is DGField f) {
-                    base.RegisterField(f);
-                }
-            }
+            //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
+            //    if(ls is DGField f) {
+            //        base.RegisterField(f);
+            //    }
+            //}
+
         }
 
-
-        XSpatialOperatorMk2 m_XOperator;
+        private XSpatialOperatorMk2 m_XOperator { 
+            get; 
+            set; 
+        }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
@@ -393,7 +522,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
                     if(!m_XOperator.IsCommited)
-                        throw new ApplicationException("Operator must be comitted by user.");
+                        throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
             }
@@ -479,7 +608,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
                
         }
 

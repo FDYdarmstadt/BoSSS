@@ -124,7 +124,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain)
+                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
                         //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
@@ -564,12 +565,6 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-
-
-
-
-
-
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
@@ -586,7 +581,10 @@ namespace PublicTestRunner {
                     string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
                     try {
                         ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
-                    } catch(IOException) {
+                        using(var wrt = new StreamWriter(ServerMutex)) {
+                            wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
+                        }
+                    } catch(Exception) {
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
@@ -703,7 +701,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 220 * 60;
+                const double TimeOutSec = 24 * 55 * 60;
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
@@ -727,11 +725,23 @@ namespace PublicTestRunner {
 
 
                                 if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    if(s == JobStatus.FailedOrCanceled) {
+                                        Console.WriteLine(" ------------------- Job Failed reason:");
+                                        var s1 = jj.job.GetStatus(true);
+                                        if(s1 != s) {
+                                            Console.WriteLine("changed its mind to: " + s1);
+                                            s = s1;
+                                        }
+                                    }
+
+
                                     // message:
                                     if(s == JobStatus.FinishedSuccessful)
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " (" + DateTime.Now + ")");
                                     else
                                         Console.WriteLine(s + ": " + jj.job.Name + " // " + jj.testname + " at " + jj.job.LatestDeployment.DeploymentDirectory.FullName + " (" + DateTime.Now + ")");
+
+
 
                                     // copy stdout and stderr to logfile
                                     LogResultFile(ot, jj.job, jj.testname, jj.ResFile);
@@ -1058,6 +1068,8 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+
             Assembly[] assln = GetAllAssemblies();
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);

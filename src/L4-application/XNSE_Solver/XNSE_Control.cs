@@ -71,7 +71,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Activation of second level-set.
         /// </summary>
         [DataMember]
-        public bool UseImmersedBoundary = false;
+        virtual public bool UseImmersedBoundary {
+            get;
+            set;
+        }
 
         /// <summary>
         /// - default (false): preconditioning for velocity and pressure is determined by 
@@ -525,20 +528,18 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        /// <summary>
-        /// See <see cref="InterfaceAveraging"/>
-        /// </summary>
-        public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
-
-
 
         /// <summary>
-        /// An explicit expression of the Level-set over time.
+        /// An explicit expression of the Level-set over time: \phi = f(x,y;t).
         /// </summary>
         [NonSerialized]
         [JsonIgnore]
         public Func<double[], double, double> Phi;
 
+        /// <summary>
+        /// See <see cref="InterfaceAveraging"/>
+        /// </summary>
+        public InterfaceVelocityAveraging InterVelocAverage = InterfaceVelocityAveraging.density;
 
         /// <summary>
         /// Exact solution for velocity, for each species (either A or B).
@@ -692,5 +693,27 @@ namespace BoSSS.Application.XNSE_Solver {
             k_A = 1.0,
             k_B = 1.0,
         };
+
+        /// <summary>
+        /// Used to active nonlinear solver even if convection is not included
+        /// </summary>
+        [DataMember]
+        public bool NonlinearCouplingSolidFluid = false;
+
+
+        /// <summary>
+        /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>
+        /// </summary>
+        [JsonIgnore]
+        public override _TimesteppingMode TimesteppingMode {
+            get {
+                return base.TimesteppingMode;
+            }
+            set {
+                base.TimesteppingMode = value;
+                if(value == _TimesteppingMode.Steady)
+                    this.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            }
+        }
     }
 }

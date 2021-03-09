@@ -21,23 +21,26 @@ using ilPSP.Utils;
 using BoSSS.Foundation;
 using FSI_Solver;
 using ilPSP;
+using BoSSS.Application.FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
-        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Func<Vector, FSI_ParameterAtIB> getParticleParams, bool useMovingMesh) {
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Particle[] allParticles, bool useMovingMesh, double minGridLength) {
             m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
-            m_getParticleParams = getParticleParams;
+            this.allParticles = allParticles;
             m_UseMovingMesh = useMovingMesh;
+            this.minGridLength = minGridLength;
             NegFlux = new LinearizedConvection(spatialDim, _bcmap, currentDim);
         }
 
         private readonly LevelSetTracker m_LsTrk;
         private readonly int m_D;
         private readonly int m_d;
-        private readonly Func<Vector, FSI_ParameterAtIB> m_getParticleParams;
+        private readonly Particle[] allParticles;
         private readonly bool m_UseMovingMesh;
+        private readonly double minGridLength;
 
         // Use Fluxes as in Bulk Convection
         private readonly LinearizedConvection NegFlux;
@@ -76,32 +79,44 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
             // Particle parameters
             // =============================
-            FSI_ParameterAtIB coupling = m_getParticleParams(inp.X);
-            Vector orientation = new Vector(Math.Cos(coupling.Angle()), Math.Sin(coupling.Angle()));
-            double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && coupling.ActiveStress() != 0 ? 1 : 0;
+            Particle currentParticle = allParticles[0];
+            for (int p = 0; p < allParticles.Length; p++) {
+                bool containsParticle = allParticles[p].Contains(inp.X, 1.5 * minGridLength);
+                if (containsParticle) {
+                    currentParticle = allParticles[p];
+                    break;
+                }
+            }
+            double angle = currentParticle.Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            double scaleActiveBoundary = orientation * new Vector(inp.Normal) > 0 && currentParticle.ActiveStress != 0 ? 1 : 0;
 
             // Level-set velocity
             // =============================
             double[] uLevSet_temp = new double[1];
+            Vector radialVector = currentParticle.CalculateRadialVector(inp.X);
+            Vector particleVelocity = new Vector(currentParticle.Motion.GetTranslationalVelocity(0)[0] - currentParticle.Motion.GetRotationalVelocity(0) * radialVector[1],
+                              currentParticle.Motion.GetTranslationalVelocity(0)[1] + currentParticle.Motion.GetRotationalVelocity(0) * radialVector[0]);
+
             if (m_d == 0) {
-                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[0];
+                uLevSet_temp[0] = particleVelocity[0];
             }
             else {
-                uLevSet_temp[0] = coupling.VelocityAtPointOnLevelSet()[1];
+                uLevSet_temp[0] = particleVelocity[1];
             }
 
             // Outer values for Velocity and VelocityMean
             // =============================            
             inp.Parameters_OUT = new double[inp.Parameters_IN.Length];
-            inp.Parameters_OUT[0] = coupling.VelocityAtPointOnLevelSet()[0];
-            inp.Parameters_OUT[1] = coupling.VelocityAtPointOnLevelSet()[1];
+            inp.Parameters_OUT[0] = particleVelocity[0];
+            inp.Parameters_OUT[1] = particleVelocity[1];
             // Velocity0MeanVectorOut is set to zero, i.e. always LambdaIn is used.
             inp.Parameters_OUT[2] = 0;
             inp.Parameters_OUT[3] = 0;
 
             // Computing Flux
             // =============================
-            double FlxNeg = m_UseMovingMesh == true
+            double FlxNeg = m_UseMovingMesh
                 ? 0 // Moving mesh
                 : (this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null)) * (1 - scaleActiveBoundary);// Splitting
             return FlxNeg;
