@@ -54,9 +54,25 @@ namespace BoSSS.Foundation.XDG {
                 return m_IsLinear;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("unable to change this after operator is committed.");
                 m_IsLinear = value;
+            }
+        }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// </summary>
+        /// <remarks>
+        /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
+        /// if these names have the same length but differ by **exactly one character**.
+        /// </remarks>
+        public IEnumerable<int[]> VectorFieldIndices {
+            get {
+                if(!this.IsCommitted)
+                    throw new NotSupportedException("Operator must be committed first.");
+
+                return PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar);
             }
         }
 
@@ -212,7 +228,7 @@ namespace BoSSS.Foundation.XDG {
             LevelSetTracker lsTrk,
             UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             int lsTrkHistoryIndex = 1) {
-            if(!IsCommited)
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
@@ -233,7 +249,7 @@ namespace BoSSS.Foundation.XDG {
             LevelSetTracker lsTrk,
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
             int lsTrkHistoryIndex = 1) {
-            if(!IsCommited)
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
@@ -291,7 +307,7 @@ namespace BoSSS.Foundation.XDG {
             int lsTrkHistoryIndex = 1) //
 
         {
-            if(!IsCommited)
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
@@ -1026,7 +1042,7 @@ namespace BoSSS.Foundation.XDG {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if(m_owner.m_IsCommited) {
+                    if(m_owner.m_IsCommitted) {
                         return m_owner.m_EquationComponents[EqnName].AsReadOnly();
                     } else {
                         if(!m_owner.m_CodomainVar.Contains(EqnName)) {
@@ -1078,7 +1094,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_AgglomerationThreshold;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("Not allowed to change the Agglomeration Threshold after operator is committed.");
                 if(value < 0 || value > 1.0)
                     throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (got {value}).");
@@ -1098,10 +1114,10 @@ namespace BoSSS.Foundation.XDG {
 
             this.Verify();
 
-            if(m_IsCommited)
+            if(m_IsCommitted)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
-            m_IsCommited = true;
+            m_IsCommitted = true;
 
             GhostEdgesOperator.Commit();
             SurfaceElementOperator_Ls0.Commit();
@@ -1112,7 +1128,7 @@ namespace BoSSS.Foundation.XDG {
 
             // this is required because we allow equations and variable names to be added _before_ Commit();
             SpatialOperator SyncSlaveOp(SpatialOperator slave, string slaveName) {
-                if(!slave.IsCommited)
+                if(!slave.IsCommitted)
                     throw new ApplicationException();
 
                 foreach(var s in slave.CodomainVar)
@@ -1156,7 +1172,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                if (m_IsCommited) {
+                if (m_IsCommitted) {
                     return m_ParameterUpdates.AsReadOnly();
                 } else {
                     return m_ParameterUpdates;
@@ -1171,7 +1187,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
-                if (IsCommited) {
+                if (IsCommitted) {
                     return m_ParameterFactories.AsReadOnly();
                 } else {
                     return m_ParameterFactories;
@@ -1186,7 +1202,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_HomotopyUpdate.AsReadOnly();
                 } else {
                     return m_HomotopyUpdate;
@@ -1233,7 +1249,7 @@ namespace BoSSS.Foundation.XDG {
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
         public XSpatialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
-            if (!this.IsCommited)
+            if (!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
 
@@ -1401,7 +1417,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_EdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_EdgeQuadraturSchemeProvider = value;
             }
@@ -1432,7 +1448,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_VolumeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_VolumeQuadraturSchemeProvider = value;
             }
@@ -1465,7 +1481,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_GhostEdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_GhostEdgeQuadraturSchemeProvider = value;
             }
@@ -1498,7 +1514,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_SurfaceElementEdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_SurfaceElementEdgeQuadraturSchemeProvider = value;
             }
@@ -1527,7 +1543,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_SurfaceElement_VolumeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_SurfaceElement_VolumeQuadraturSchemeProvider = value;
             }
@@ -1637,7 +1653,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_QuadOrderFunction;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_QuadOrderFunction = value;
             }
@@ -1795,15 +1811,15 @@ namespace BoSSS.Foundation.XDG {
         SortedList<string, List<IEquationComponent>> m_EquationComponents;
 
 
-        bool m_IsCommited = false;
+        bool m_IsCommitted = false;
 
         /// <summary>
         /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
         /// or not.
         /// </summary>
-        public bool IsCommited {
+        public bool IsCommitted {
             get {
-                return m_IsCommited;
+                return m_IsCommitted;
             }
         }
 
@@ -1904,7 +1920,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_TemporalOperator;
             }
             set {
-                if (IsCommited)
+                if (IsCommitted)
                     throw new NotSupportedException("Not allowed to change after operator is committed.");
                 m_TemporalOperator = value;
             }
@@ -1953,7 +1969,7 @@ namespace BoSSS.Foundation.XDG {
                 set {
                     if (!InternalRep.ContainsKey(key))
                         throw new ArgumentException("Must be a name of some domain variable.");
-                    if (owner.IsCommited)
+                    if (owner.IsCommitted)
                         throw new NotSupportedException("Changing is not allowed after operator is committed.");
                     InternalRep[key] = value;
                 }
@@ -1965,7 +1981,7 @@ namespace BoSSS.Foundation.XDG {
 
             public int Count => InternalRep.Count;
 
-            public bool IsReadOnly => owner.IsCommited;
+            public bool IsReadOnly => owner.IsCommitted;
 
 
             public void Add(string key, bool value) {

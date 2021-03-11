@@ -91,11 +91,28 @@ namespace BoSSS.Foundation {
                 return m_IsLinear;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("unable to change this after operator is committed.");
                 m_IsLinear = value;
             }
         }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// </summary>
+        /// <remarks>
+        /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
+        /// if these names have the same length but differ by **exactly one character**.
+        /// </remarks>
+        public IEnumerable<int[]> VectorFieldIndices {
+            get {
+                if(!this.IsCommitted)
+                    throw new NotSupportedException("Operator must be committed first.");
+
+                return Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar);
+            }
+        }
+
 
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
@@ -266,7 +283,7 @@ namespace BoSSS.Foundation {
                 return m_OperatorCoefficientsProvider;
             }
             set {
-                 if(IsCommited)
+                 if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after operator is committed.");
                 m_OperatorCoefficientsProvider = value;
             }
@@ -295,7 +312,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_ParameterUpdates.AsReadOnly();
                 } else {
                     return m_ParameterUpdates;
@@ -310,7 +327,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
-                if(IsCommited) {
+                if(IsCommitted) {
                     return m_ParameterFactories.AsReadOnly();
                 } else {
                     return m_ParameterFactories;
@@ -326,7 +343,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_HomotopyUpdate.AsReadOnly();
                 } else {
                     return m_HomotopyUpdate;
@@ -603,15 +620,14 @@ namespace BoSSS.Foundation {
             }
         }
 
-        bool m_IsCommited = false;
+        bool m_IsCommitted = false;
 
         /// <summary>
-        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
-        /// or not.
+        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>) or not.  
         /// </summary>
-        public bool IsCommited {
+        public bool IsCommitted {
             get {
-                return m_IsCommited;
+                return m_IsCommitted;
             }
         }
 
@@ -637,10 +653,10 @@ namespace BoSSS.Foundation {
                 TemporalOperator.Commit();
             }
 
-            if(m_IsCommited)
+            if(m_IsCommitted)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
-            m_IsCommited = true;
+            m_IsCommitted = true;
 
         }
 
@@ -667,7 +683,7 @@ namespace BoSSS.Foundation {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if(m_owner.m_IsCommited) {
+                    if(m_owner.m_IsCommitted) {
                         return m_owner.m_EquationComponents[EqnName].AsReadOnly();
                     } else {
                         if(!m_owner.m_CodomainVar.Contains(EqnName)) {
@@ -998,7 +1014,7 @@ namespace BoSSS.Foundation {
                 if(ParameterMap == null)
                     ParameterMap = new DGField[0];
 
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
@@ -1019,7 +1035,7 @@ namespace BoSSS.Foundation {
         {
 
             using(new FuncTrace()) {
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
@@ -1089,7 +1105,7 @@ namespace BoSSS.Foundation {
                         throw new ArgumentException("wrong number of parameter variables provided.");
                     }
 
-                    if(!m_Owner.IsCommited)
+                    if(!m_Owner.IsCommitted)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
                 }
             }
@@ -1283,13 +1299,23 @@ namespace BoSSS.Foundation {
             var tags = gd.iGeomEdges.EdgeTags;
             int E = gd.iGeomEdges.Count;
             Debug.Assert(E == tags.Length);
+            /*
             for(int e = 0; e < E; e++) {
                 int tag = tags[e];
                 if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
 
-                    return true;
+                    
 
+
+                    return true;
                 }
+            }*/
+
+            foreach(var Trafo in gd.Grid.PeriodicTrafo) {
+                var Mtx = Trafo.Matrix.CloneAs();
+                Mtx.AccEye(-1.0);
+                if(Mtx.InfNorm() >= 1e-8)
+                    return true;
             }
 
             return false;
@@ -1822,7 +1848,7 @@ namespace BoSSS.Foundation {
             Action<double, IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 
@@ -2839,7 +2865,7 @@ namespace BoSSS.Foundation {
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
         public SpatialOperator _GetJacobiOperator(int SpatialDimension) {
-            if(!this.IsCommited)
+            if(!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
             // parameters and activation flags
@@ -2966,7 +2992,7 @@ namespace BoSSS.Foundation {
                 return m_TemporalOperator;
             }
             set {
-                if (IsCommited)
+                if (IsCommitted)
                     throw new NotSupportedException("Not allowed to change after operator is committed.");
                 m_TemporalOperator = value;
             }
@@ -3015,7 +3041,7 @@ namespace BoSSS.Foundation {
                 set {
                     if (!InternalRep.ContainsKey(key))
                         throw new ArgumentException("Must be a name of some domain variable.");
-                    if (owner.IsCommited)
+                    if (owner.IsCommitted)
                         throw new NotSupportedException("Changing is not allowed after operator is committed.");
                     InternalRep[key] = value;
                 }
@@ -3027,7 +3053,7 @@ namespace BoSSS.Foundation {
 
             public int Count => InternalRep.Count;
 
-            public bool IsReadOnly => owner.IsCommited;
+            public bool IsReadOnly => owner.IsCommitted;
             
 
             public void Add(string key, bool value) {

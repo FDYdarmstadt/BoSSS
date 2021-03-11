@@ -118,7 +118,7 @@ namespace BoSSS.Foundation {
         /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
         /// or not.
         /// </summary>
-        bool IsCommited { get; }
+        bool IsCommitted { get; }
 
         /// <summary>
         /// If set, used to update parameters before evaluation.
@@ -283,6 +283,14 @@ namespace BoSSS.Foundation {
         /// <param name="DomainBasis"></param>
         int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis);
 
+
+        /// <summary>
+        /// Identifies those domain variables which form vector fields:
+        /// E.g. if the <see cref="DomainVar"/> list is `{ VelX, VelY, Pressure, TX, TY }` it will return ` { { 0, 1 } , { 4, 5} }`.
+        /// </summary>
+        IEnumerable<int[]> VectorFieldIndices {
+            get;
+        }
     }
 
     /// <summary>

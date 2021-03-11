@@ -521,7 +521,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
-                    if(!m_XOperator.IsCommited)
+                    if(!m_XOperator.IsCommitted)
                         throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
@@ -644,7 +644,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
-                    if(!m_SOperator.IsCommited)
+                    if(!m_SOperator.IsCommitted)
                         throw new ApplicationException("Operator must be comitted by user.");
 
                 }

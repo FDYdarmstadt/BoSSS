@@ -391,7 +391,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="CutOuts">Optional regions that are not meshed</param>
         /// <param name="type">The type of the cells to be used</param>
         /// <param name="NonlinearGridTrafo">
-        /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differnetiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
+        /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differentiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
         /// </param>
         public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, 
             CellType type = CellType.Square_Linear, 
@@ -400,6 +400,11 @@ namespace BoSSS.Foundation.Grid.Classic {
             params BoundingBox[] CutOuts) {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
+
+                if(NonlinearGridTrafo != null) {
+                    if(type == CellType.Square_Linear)
+                        throw new NotSupportedException($"Not recommended to use a nonlinear transformation of the mesh together with linear square cells - use at least {CellType.Square_4}!");
+                }
 
 
                 // Some Checks
