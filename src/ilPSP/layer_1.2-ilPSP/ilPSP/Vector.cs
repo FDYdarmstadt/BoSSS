@@ -714,31 +714,51 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// inserting an entry, increasing vector dimension until 3D is reached
         /// </summary>
         public void Insert(int index, double item) {
-            throw new NotSupportedException("Read-Only.");
+            if(Dim >= 3)
+                throw new NotSupportedException("Vector is already 3D - adding another dimension is not supported.");
+            if(index < 0 || index >= Dim)
+                throw new ArgumentOutOfRangeException();
+
+            Dim++;
+            for(int i = Dim - 1; i > index; i--) {
+                this[i] = this[i - 1];
+            }
+            this[index] = item;
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// removing some entry, reducing vector dimension
         /// </summary>
         public void RemoveAt(int index) {
-            throw new NotSupportedException("Read-Only.");
+            if(index < 0 || index >= Dim)
+                throw new ArgumentOutOfRangeException();
+
+            for(int i = index; i < Dim - 1; i++) {
+                this[i] = this[i + 1];
+            }
+            this[Dim - 1] = 0;
+            Dim--;
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// adding until 3D is reached, dimension of vector changes
         /// </summary>
         public void Add(double item) {
-            throw new NotSupportedException("Read-Only.");
+            if(Dim >= 3)
+                throw new NotSupportedException("Vector is already 3D - adding another dimension is not supported.");
+
+            Dim++;
+            this[Dim - 1] = item;
         }
 
         /// <summary>
         /// not supported - read-only (<see cref="Dim"/> could be changed)
         /// </summary>
         public void Clear() {
-            throw new NotSupportedException("Read-Only (to set all entries to 0.0, use 'ClearEntries(...)'.");
+            throw new NotSupportedException("Not supported, since it could be misleading (removing all entries and setting dimension to zero vs. setting all entries to 0.0 and keeping spatial dimension).");
         }
 
         /// <summary>

@@ -444,20 +444,65 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte peryTag = 0;
 
                 if (periodicX) {
-                    if (NonlinearGridTrafo != null)
-                        throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
-                    double[][] y = { new double[] { xNodes[nX], yNodes[0] }, new double[] { xNodes[nX], yNodes[nY] } };
-                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
+                    //if (NonlinearGridTrafo != null)
+                    //    throw new NotSupportedException("grid transformation is not supported for periodic domains");
+                    Vector[] x = { new Vector { xNodes[0], yNodes[0] }, new Vector { xNodes[0], yNodes[nY] } };
+                    Vector[] y = { new Vector { xNodes[nX], yNodes[0] }, new Vector { xNodes[nX], yNodes[nY] } };
+                    Vector N = new Vector() { 1.0, 0 };
+                    Vector Nx, Ny;
+
+                    if(NonlinearGridTrafo != null) {
+                        Vector xm = 0.5 * (x[0] + x[1]);
+                        Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
+                        Nx.Normalize();
+
+                        Vector ym = 0.5 * (y[0] + y[1]);
+                        Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
+                        Ny.Normalize();
+
+                        x[0] = NonlinearGridTrafo(x[0]);
+                        x[1] = NonlinearGridTrafo(x[1]);
+                        y[0] = NonlinearGridTrafo(y[0]);
+                        y[1] = NonlinearGridTrafo(y[1]);
+
+                    } else {
+                        Nx = N;
+                        Ny = N;
+                    }
+
+                    
+                    grid.ConstructPeriodicEdgeTrafo(y, Ny, x, Nx, out perxTag);
                     grid.EdgeTagNames.Add(perxTag, "Periodic-X");
                 }
 
                 if (periodicY) {
                     if (NonlinearGridTrafo != null)
                         throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] } };
-                    double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
-                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
+                    Vector[] x = { new Vector { xNodes[0], yNodes[0] }, new Vector { xNodes[nX], yNodes[0] } };
+                    Vector[] y = { new Vector { xNodes[0], yNodes[nY] }, new Vector { xNodes[nX], yNodes[nY] } };
+                    Vector N = new Vector { 0, 1.0 };
+                    Vector Nx, Ny;
+
+                    if(NonlinearGridTrafo != null) {
+                        Vector xm = 0.5 * (x[0] + x[1]);
+                        Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
+                        Nx.Normalize();
+
+                        Vector ym = 0.5 * (y[0] + y[1]);
+                        Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
+                        Ny.Normalize();
+
+                        x[0] = NonlinearGridTrafo(x[0]);
+                        x[1] = NonlinearGridTrafo(x[1]);
+                        y[0] = NonlinearGridTrafo(y[0]);
+                        y[1] = NonlinearGridTrafo(y[1]);
+
+                    } else {
+                        Nx = N;
+                        Ny = N;
+                    }
+
+                    grid.ConstructPeriodicEdgeTrafo(y, Nx, x, Ny, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 
@@ -1020,10 +1065,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="rPoint"></param>
         /// <param name="sPoint"></param>
         /// <returns></returns>
-        internal static double[] Param2XY(double rPoint, double sPoint) {
+        internal static Vector Param2XY(double rPoint, double sPoint) {
 
             // Calculate Coordinates
-            double[] xyPoint = new double[] { 0, 0 };
+            Vector xyPoint = new Vector(2);
             // x-Coordinate
             xyPoint[0] = rPoint * Math.Cos(2 * Math.PI * sPoint);
             // y-Coordinate
@@ -1090,16 +1135,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte persTag = 0;
                 if (PeriodicS == true) {
                     //Periodic Boundary Inlet
-                    double[][] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
+                    Vector[] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
                     // Vector Connecting the two Points of the inlet
                     Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0];//(Param2XY(rNodes.First(), sNodes.First())[0] - Param2XY(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1];//(Param2XY(rNodes.First(), sNodes.First())[1] - Param2XY(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
                     PerBoundInCon.Normalize();
-                    double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
+                    Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x );
                     //Periodic Boundary Inlet
-                    double[][] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
+                    Vector[] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Param2XY(rNodes.First(), sNodes.Last())[0] - Param2XY(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Param2XY(rNodes.First(), sNodes.Last())[1] - Param2XY(rNodes.Last(), sNodes.Last())[1]);
@@ -1233,18 +1278,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// This Method convert Points in the Parametric r-s-Space into Points in the x-y-Space
-        /// </summary>
-        /// <param name="rPoint">
-        /// Coordinate in r-direction
-        /// </param>
-        /// <param name="sPoint">
-        /// Coordinate in s-direction
-        /// </param>
-        /// <returns></returns>
-        public delegate double[] Param2XYTopology(double rPoint, double sPoint);
-
-        /// <summary>
         /// Generates a Grid Consisting of a curved Surface from Coordinates in
         /// Parametric Description<see cref="Grid2D.Param2XY"/>. Later
         /// Arbitrary Transformation Functions might be introduced.
@@ -1261,11 +1294,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="PeriodicR">
         /// Toggle for periodicity in r-direction
         /// </param>
-        /// <param name="Topology"></param>
+        /// <param name="Topology">
+        /// Convert Points in the Parametric r-s-Space (arguments) into Points in the x-y-Space (return value)
+        /// </param>
         /// <returns>
         /// A grid consisting of curved elements forming a curved Surface
         /// </returns>
-        public static Grid2D CurvedSquareGridChannel(double[] rNodes, double[] sNodes, CellType CellType, bool PeriodicR = true, Param2XYTopology Topology = null) {
+        public static Grid2D CurvedSquareGridChannel(double[] rNodes, double[] sNodes, CellType CellType, bool PeriodicR = true, Func<double,double,Vector> Topology = null) {
             using (new FuncTrace()) {
                 if (!(Square.Instance).SupportedCellTypes.Contains(CellType))
                     throw new ArgumentOutOfRangeException("illegal cell type.");
@@ -1291,21 +1326,21 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte persTag = 0;
                 if (PeriodicR == true) {
                     //Periodic Boundary Inlet
-                    double[][] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
+                    Vector[] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
                     // Vector Connecting the two Points of the inlet
                     Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0]; //(Topology(rNodes.First(), sNodes.First())[0] - Topology(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1]; //(Topology(rNodes.First(), sNodes.First())[1] - Topology(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
                     PerBoundInCon.Normalize();
-                    double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
+                    Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x);
                     //Periodic Boundary Inlet
-                    double[][] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
+                    Vector[] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Topology(rNodes.First(), sNodes.Last())[0] - Topology(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Topology(rNodes.First(), sNodes.Last())[1] - Topology(rNodes.Last(), sNodes.Last())[1]);
                     PerBoundOutCon.Normalize();
-                    double[] PerBoundOutNormal = { -PerBoundOutCon.y, +PerBoundOutCon.x };
+                    Vector PerBoundOutNormal = new Vector( -PerBoundOutCon.y, +PerBoundOutCon.x );
                     grid.ConstructPeriodicEdgeTrafo(PerBoundIn, PerBoundInNormal, PerBoundOut, PerBoundOutNormal, out persTag);
                     grid.EdgeTagNames.Add(persTag, "Periodic-R");
                 }
