@@ -279,7 +279,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public virtual IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
-            int resolution = 200; // (int) Math.Pow(2, order);
+            int resolution = 200;
             scheme.Initialize(resolution);
             List<ChunkRulePair<QuadRule>> rule = new List<ChunkRulePair<QuadRule>>();
             foreach(Chunk chunk in mask)
