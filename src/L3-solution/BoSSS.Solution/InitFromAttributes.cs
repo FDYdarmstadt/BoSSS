@@ -442,8 +442,14 @@ namespace BoSSS.Solution {
                 if (cName == iName) {
 
 
-                    if (ops.Count() != 1)
-                        throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
+                    if (ops.Count() != 1) {
+
+                        if (ops.Count() < 1)
+                            throw new ApplicationException("missing DG polynomial degree specification for field '" + cName + "' in control file;");
+
+                        if (ops.Count() > 1)
+                            throw new ApplicationException("too many DG polynomial degree specifications for field '" + cName + "' in control file;");
+                    }
 
                     Deg = (int)(ops.First().Value.Degree);
 

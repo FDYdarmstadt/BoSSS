@@ -197,8 +197,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// call the solver
         /// </summary>
-        public void Solve(double phystime, double dt) {
-            this.Timestepping.Solve(phystime, dt);
+        public bool Solve(double phystime, double dt) {
+            return this.Timestepping.Solve(phystime, dt);
         }
 
         /// <summary>
