@@ -213,11 +213,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
         }
-        
 
-        public double[] AcceptableL2Error {
+
+        public override double[] AcceptableL2Error {
             get {
-                  return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
+                return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
             }
         }
 

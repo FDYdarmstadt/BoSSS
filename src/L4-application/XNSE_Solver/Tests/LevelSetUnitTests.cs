@@ -117,22 +117,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        //[Test]
-        //public static void LevelSetShearingTest(
-        //    [Values(2)] int spatialDimension,
-        //    [Values(2, 3, 4)] int LSdegree,
-        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
-        //    //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
-        //    {
-        //    // Todo: singleInit/multiInit, 
+        [Test]
+        public static void LevelSetShearingTest(
+            [Values(2)] int spatialDimension,
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
+            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
+            {
+            // Todo: singleInit/multiInit, 
 
-        //    var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
-        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
+            var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 4, levelSetEvolution, levelSetHandling);
 
-        //    LevelSetTest(Tst, C);
+            LevelSetTest(Tst, C);
 
-        //}
+        }
 
 
         private static void LevelSetTest(IXNSETest Tst, XNSE_Control C) {
@@ -153,8 +153,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 string[] ErrNames = new string[] { "Phi", "PhiDG", "Gradient PhiDG" };
                 double[] ErrThresh = Tst.AcceptableL2Error;
-                if (LastErrors.Length != ErrThresh.Length)
+                if (LastErrors.Length != ErrThresh.Length) {
+                    Console.WriteLine("LastErrors.Length = {0} not equal to ErrThresh.Length = {1}", LastErrors.Length, ErrThresh.Length);
                     throw new ApplicationException();
+                }
                 for (int i = 0; i < ErrThresh.Length; i++) {
                     Console.WriteLine("L2 error, '{0}': \t{1}", ErrNames[i], LastErrors[i]);
                 }

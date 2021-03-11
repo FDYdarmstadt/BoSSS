@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -44,14 +45,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 16, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 7, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             int D = 3;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
-            bool steadyInterface = true;
+            bool steadyInterface = false;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
             //_DbPath = @"D:\local\local_test_db";
@@ -70,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
-            C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 10 });
+            //C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 10 });
 
             #endregion
 
@@ -366,7 +367,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.Fourier;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.None;
+            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0 * sigma;
@@ -823,7 +824,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 9) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 7) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -831,9 +832,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool quarterDomain = true;
 
-            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_testDB";
             //string _DbPath = @"D:\local\local_test_db2";
-            string _DbPath = null;
+            //string _DbPath = null;
 
             // basic database options
             // ======================
@@ -892,26 +893,27 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double ratio = 0.001;
 
-            C.Tags.Add("Ohnesorge Zahl = 1");
-            C.PhysicalParameters.rho_A = 10;
-            C.PhysicalParameters.rho_B = 10 * ratio;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1 * ratio;
-            C.PhysicalParameters.Sigma = 0.1;
-
-
-            //C.Tags.Add("Ohnesorge Zahl = 0.1");
-            //C.PhysicalParameters.rho_A = 100;
-            //C.PhysicalParameters.rho_B = 100 * ratio;
+            //C.Tags.Add("Ohnesorge Zahl = 1");
+            //C.PhysicalParameters.rho_A = 10;
+            //C.PhysicalParameters.rho_B = 10 * ratio;
             //C.PhysicalParameters.mu_A = 1;
             //C.PhysicalParameters.mu_B = 1 * ratio;
-            //C.PhysicalParameters.Sigma = 1;
+            //C.PhysicalParameters.Sigma = 0.1;
 
-            
+
+            C.Tags.Add("Ohnesorge Zahl = 0.1");
+            C.PhysicalParameters.rho_A = 100;
+            C.PhysicalParameters.rho_B = 100 * ratio;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1 * ratio;
+            C.PhysicalParameters.Sigma = 1;
+
+
             C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
+
 
             // grid generation
             // ===============
@@ -921,80 +923,80 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double L = 6.0 * Lscale;
             double L_drop = 2.0 * Lscale;
 
-            if (!quarterDomain) {
-                C.GridFunc = delegate () {
-                    double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
-                    double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
-                    out_min = out_min.GetSubVector(0, (out_min.Length - 2));
-                    double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
-                    out_max = out_max.GetSubVector(1, (out_max.Length - 1));
-                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
-                    double[] nodes = droplet;
-                    L = L_drop;
+            //if (!quarterDomain) {
+            //    C.GridFunc = delegate () {
+            //        double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
+            //        double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+            //        out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+            //        double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+            //        out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+            //        //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+            //        double[] nodes = droplet;
+            //        L = L_drop;
 
-                    var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
+            //        var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-                    grd.EdgeTagNames.Add(1, "wall");
+            //        grd.EdgeTagNames.Add(1, "wall");
 
-                    grd.DefineEdgeTags(delegate (double[] X) {
-                        byte et = 0;
-                        if (Math.Abs(X[1] + (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[0] + (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
-                            et = 1;
-                        return et;
-                    });
+            //        grd.DefineEdgeTags(delegate (double[] X) {
+            //            byte et = 0;
+            //            if (Math.Abs(X[1] + (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[0] + (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            return et;
+            //        });
 
-                    return grd;
-                };
+            //        return grd;
+            //    };
 
-            } else {
+            //} else {
 
-                C.GridFunc = delegate () {
-                    double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
-                    double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
-                    //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
-                    //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
-                    //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
-                    //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
-                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+            //    C.GridFunc = delegate () {
+            //        double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
+            //        double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
+            //        //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+            //        //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+            //        //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+            //        //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+            //        //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
 
-                    var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
+            //        var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
 
-                    L = L_drop;
+            //        L = L_drop;
 
-                    grd.EdgeTagNames.Add(1, "wall");
-                    grd.EdgeTagNames.Add(2, "slipsymmetry");
+            //        grd.EdgeTagNames.Add(1, "wall");
+            //        grd.EdgeTagNames.Add(2, "slipsymmetry");
 
-                    grd.DefineEdgeTags(delegate (double[] X) {
-                        byte et = 0;
-                        if (Math.Abs(X[1] + (0)) <= 1.0e-8)
-                            et = 2;
-                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[0] + (0)) <= 1.0e-8)
-                            et = 2;
-                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
-                            et = 1;
-                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
-                            et = 1;
-                        return et;
-                    });
+            //        grd.DefineEdgeTags(delegate (double[] X) {
+            //            byte et = 0;
+            //            if (Math.Abs(X[1] + (0)) <= 1.0e-8)
+            //                et = 2;
+            //            if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[0] + (0)) <= 1.0e-8)
+            //                et = 2;
+            //            if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+            //                et = 1;
+            //            if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+            //                et = 1;
+            //            return et;
+            //        });
 
-                    return grd;
-                };
+            //        return grd;
+            //    };
 
-            }
+            //}
 
             #endregion
 
@@ -1025,13 +1027,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 double phi = r - f;
                 return phi;
             };
-            
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            //// restart
-            //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("c95b2833-288e-4014-ba08-affa65a2398e");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            // restart
+            Guid restartID = new Guid("b2086d2b-23ca-46e4-b4a9-fb1a580007cb");
+            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 100);
 
             #endregion
 
@@ -1079,7 +1080,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 80;
@@ -1097,17 +1098,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.InitSignedDistance = true;
 
 
             C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 2;
-            C.AMR_startUpSweeps = 2;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 1;
 
             #endregion
 
@@ -1123,12 +1125,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.TimesteppingMode = compMode;
 
-            double dt = 0.2;
+            double dt = 0.025;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1;
-            C.saveperiod = 2;
+            C.NoOfTimesteps = 1000;
+            C.saveperiod = 4;
 
             #endregion
 
@@ -1252,8 +1254,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;

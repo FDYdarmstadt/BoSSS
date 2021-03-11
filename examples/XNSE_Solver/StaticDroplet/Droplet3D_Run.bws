@@ -6,8 +6,8 @@ restart
 
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
-  0: { Session Count = 11; Grid Count = 13; Path = D:\local\local_test_db2 }
-  1: { Session Count = 2; Grid Count = 6; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 16; Grid Count = 24; Path = D:\local\local_test_db2 }
+  1: { Session Count = 21; Grid Count = 74; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -30,7 +30,7 @@ int exeQ = 1;
 ExecutionQueues[exeQ].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 2; Grid Count = 6; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 21; Grid Count = 74; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 ==============
 var myBatch = ExecutionQueues[exeQ];
@@ -46,9 +46,9 @@ var myDb = ExecutionQueues[exeQ].AllowedDatabases[0];
 ==============
 **************
 ==============
-WorkflowMgm.Init("Droplet3D");   // set project name
+WorkflowMgm.Init("LegendreDroplet3D");   // set project name
 **************
-Project name is set to 'Droplet3D'.
+Project name is set to 'LegendreDroplet3D'.
 
 ==============
 **************
@@ -62,7 +62,7 @@ double f_2 = 0.5; //  amplitude of the initial deformation
 // physical setting
 // ================
 double ratio = 0.001;
-int setup    = 1;
+int setup    = 2;
 
 string setupTag;
 double rhoA;
@@ -101,7 +101,8 @@ break;
 **************
 ==============
 var GridSeq = new IGridInfo[1];
-int[] kelemSeq = new int[]{9};
+int[] kelemSeq = new int[]{5};
+bool quarterDomain = true;
 **************
 ==============
 for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
@@ -109,7 +110,9 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
     int kelem = kelemSeq[iGrid];
     
     GridCommons grd;
-
+    
+if (!quarterDomain) {
+    
     double[] xNodes = GenericBlas.Linspace(-L, L, kelem + 1);
     double[] yNodes = GenericBlas.Linspace(-L, L, kelem + 1);  
     double[] zNodes = GenericBlas.Linspace(-L, L, kelem + 1);    
@@ -134,7 +137,38 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
             return et;
     });
             
-    grd.Name = "Droplet3D_test";        
+    grd.Name = "Droplet3D_test"; 
+    
+} else {
+
+    double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
+    double[] yNodes = GenericBlas.Linspace(0, L, kelem + 1);  
+    double[] zNodes = GenericBlas.Linspace(-L, L, (2*kelem) + 1);    
+    grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+
+    grd.EdgeTagNames.Add(1, "wall");
+    grd.EdgeTagNames.Add(2, "slipsymmetry");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+            if (Math.Abs(X[1] + 0) <= 1.0e-8)
+                et = 2;
+            if (Math.Abs(X[1] - L) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[0] + 0) <= 1.0e-8)
+                et = 2;
+            if (Math.Abs(X[0] - L) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[2] + L) <= 1.0e-8)
+                et = 1;
+            if (Math.Abs(X[2] - L) <= 1.0e-8)
+                et = 1;
+            return et;
+    });
+            
+    grd.Name = "Droplet3D_quarterDomain_test"; 
+    
+}   
 
     myDb.SaveGrid(ref grd);
     
@@ -142,7 +176,7 @@ for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
 }
 **************
 Grid Edge Tags changed.
-An equivalent grid (127cdf8b-5681-46ca-b250-2e1ca0461c21) is already present in the database -- the grid will not be saved.
+An equivalent grid (1fbaae74-ea11-4481-abdf-34b1ba88b658) is already present in the database -- the grid will not be saved.
 
 ==============
 **************
@@ -175,6 +209,7 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
     C.SetGrid(grd);
     C.AddBoundaryValue("wall");
+    C.AddBoundaryValue("slipsymmetry");
 
     C.Tags.Add(setupTag);
     C.PhysicalParameters.rho_A = rhoA;
@@ -186,20 +221,26 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     C.PhysicalParameters.IncludeConvection = false;
 
     
-    C.dtMin         = 0.2;
-    C.dtMax         = 0.2;
+    C.dtMin         = 0.025;
+    C.dtMax         = 0.025;
     C.NoOfTimesteps = 1000;
     
     C.AdaptiveMeshRefinement = true;
-    C.activeAMRlevelIndicators.Add(new BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.AMRonNarrowband() { maxRefinementLevel = 2 });
-    C.AMR_startUpSweeps = 2;
-  
+    C.activeAMRlevelIndicators.Add(new BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.AMRonNarrowband() { maxRefinementLevel = 1 });
+    C.AMR_startUpSweeps = 1;
     
-    C.saveperiod = 5;
+    //C.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.FastMarching;
+    //C.FastMarchingPenaltyTerms = BoSSS.Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+    //C.Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;  
     
-    C.SessionName = "Droplet3D_k" + pDeg + "_mesh" + iGrd + "_testAMR_NoProc"+NoProc;
+    C.saveperiod = 4;
+    
+    C.SessionName = "Droplet3D_k" + pDeg + "_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_DGnormal_StokesExt_pardiso_NoProc"+NoProc;
     
     C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+    //C.LinearSolver.SolverCode          = LinearSolverCode.exp_Kcycle_schwarz;
+    //C.LinearSolver.NoOfMultigridLevels = 3;
+    C.LinearSolver.ConvergenceCriterion = 10e-8;
     
     //controls[iDeg,iGrd] = C;
     controls.Add(C);
@@ -215,7 +256,7 @@ controls.Count;
 ==============
 controls.ElementAt(0).SessionName
 **************
-Droplet3D_k3_mesh0_testAMR_NoProc4
+Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_DGnormal_StokesExt_pardiso_NoProc4
 ==============
 **************
 ==============
@@ -235,7 +276,7 @@ foreach(var cntrl in controls) {
     if(run) {
         Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
         job.NumberOfMPIProcs = NoProc;
-        job.Activate(myBatch);
+        job.Activate(myBatch, false);
     } else {
         Console.WriteLine("Status Session: {0}", cntrl.SessionName);
         var jS = job.Status;
@@ -243,13 +284,15 @@ foreach(var cntrl in controls) {
     }
 }
 **************
-Submitting Session: Droplet3D_k3_mesh0_testAMR_NoProc4
-Deploying job Droplet3D_k3_mesh0_testAMR_NoProc4 ... 
+Submitting Session: Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_DGnormal_StokesExt_pardiso_NoProc4
+ ------------ MSHPC FailedOrCanceled; original Failed
+ ------------ MSHPC FailedOrCanceled; original Failed
+Deploying job Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_DGnormal_StokesExt_pardiso_NoProc4 ... 
 Submitting job with the following database info: 
 Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
 No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\Droplet3D-XNSE_Solver2021Feb17_161342
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\LegendreDroplet3D-XNSE_Solver2021Mar11_105900
 copied 31 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -259,15 +302,74 @@ deployment finished.
 ==============
 **************
 ==============
-databases.Pick(0).Sessions
 **************
-List of 3 instances of ISessionInfo {
-  0: OscillatingDroplet3D	SetupTest	01/15/2021 13:58:42	fcda5435...
-  1: Droplet3D	Droplet3D_k2_mesh0_test3*	01/14/2021 12:37:08	eb3da8db...
-  2: Droplet3D	Droplet3D_k2_mesh0_test2*	01/14/2021 12:32:28	57fd38d7...
+==============
+//databases.Pick(1).Sessions
+**************
+List of 20 instances of ISessionInfo {
+  0: LegendreDroplet3D  Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*   03/10/2021 10:27:11 03043c11...
+  1: Droplet3D  Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.01_CG_pardiso_NoProc1*   02/26/2021 11:17:02 015fbe07...
+  2: Droplet3D  Droplet3D_k3_mesh5_AMR2_Oh0.1_Ratio0.01_CG_pardiso_NoProc1* 02/26/2021 08:58:55 faf4ca4a...
+  3: Droplet3D  Droplet3D_k3_mesh5_AMR1_Oh0.1_Ratio0.01_CG_pardiso_NoProc1* 02/25/2021 19:02:11 5f3f5d13...
+  4: Droplet3D  Droplet3D_k3_mesh6_AMR1_Oh1_Ratio0.01_pardiso_NoProc1*  02/25/2021 17:47:31 12933cc1...
+  5: Droplet3D  Droplet3D_k3_mesh5_AMR1_Oh0.1_Ratio0.01_kCycleSchwarz2_NoProc4* 02/24/2021 19:17:20 ca198e9a...
+  6: Droplet3D  Droplet3D_k3_mesh7_AMR1_Oh0.1_Ratio0.01_pardiso_NoProc8*    02/24/2021 16:25:19 fde37cfc...
+  7: Droplet3D  Droplet3D_k3_mesh7_AMR1_Oh0.1_Ratio0.01_kCycleSchwarz5_NoProc4* 02/24/2021 16:25:18 77e7a05b...
+  8: Droplet3D  Droplet3D_k3_mesh7_AMR1_Oh0.1_Ratio0.01_pardiso_NoProc4*    02/24/2021 15:24:34 918148c0...
+  9: Droplet3D  Droplet3D_k3_mesh7_AMR1_Oh0.1_Ratio0.01_pardiso_NoProc1 02/24/2021 10:23:20 89a769a0...
+  10: Droplet3D Droplet3D_k3_mesh9_AMR1_Oh0.1_Ratio0.01_kcycleschwarz_NoProc1*  02/24/2021 10:12:11 d43dd8df...
+  11: Droplet3D Droplet3D_k3_mesh0_AMR1_Oh1_Ratio0.01_mumps_NoProc2*    02/23/2021 22:13:36 8c799191...
+  12: Droplet3D Droplet3D_k3_mesh0_AMR1_Oh1_Ratio0.01_pardiso_NoProc2*  02/23/2021 22:12:35 6d9dcd5a...
+  13: Droplet3D Droplet3D_k3_mesh0_AMR1_Oh0.1_Ratio0.01_automatic_NoProc1*  02/23/2021 21:50:29 b21d255b...
+  14: Droplet3D Droplet3D_k3_mesh0_AMR1_Oh0.1_Ratio0.01_mumps_NoProc1*  02/23/2021 21:48:25 975b0574...
+  15: Droplet3D Droplet3D_k3_mesh0_AMR1_Oh0.1_Ratio0.01_pardiso_NoProc1*    02/23/2021 21:45:48 2167fb59...
+  16: Droplet3D Droplet3D_k3_mesh0_testAMR_NoProc1* 02/18/2021 13:41:49 fc4f8cda...
+  17: Droplet3D Droplet3D_k3_mesh0_testAMR_NoProc4* 02/17/2021 16:13:52 e9f91ce1...
+  18: Droplet3D Droplet3D_k3_mesh0_test_NoProc8*    01/16/2021 20:12:31 40cf99b4...
+  19: Droplet3D Droplet3D_k3_mesh0_test_NoProc4*    01/16/2021 20:05:01 b85128b3...
 }
 ==============
-databases.Pick(0).Sessions.Pick(0).OpenSessionDirectory()
+//databases.Pick(1).Sessions.Pick(0).Delete()
+**************
+Session: LegendreDroplet3D  Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*   03/10/2021 10:27:11 03043c11...
+Do you really want to delete this session? [y/n]: Session 03043c11-8b69-41ad-b19b-a72d25c7fda7 deleted.
+
+==============
+//databases.Pick(1).Sessions.Pick(0).Export().WithSupersampling(2).Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\Droplet3D__Droplet3D_k3_mesh5_AMR1_Oh0.1_Ratio0.01_CG_pardiso_NoProc1__5f3f5d13-3f69-4b3b-8939-65d47949dcff
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

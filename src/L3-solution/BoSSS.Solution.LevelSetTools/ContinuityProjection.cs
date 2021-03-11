@@ -29,6 +29,8 @@ using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using MPI.Wrappers;
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -132,7 +134,13 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="Domain"></param>
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
+
+            //Console.WriteLine("calling ContinuityProjection.MakeContinuous()");
+
             MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
+
+            double Jnorm = JumpNorm(LevelSet, Domain);
+            Console.WriteLine("jump norm after continuity projection = {0}", Jnorm);
 
             if (myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
                 SetFarField(LevelSet, Domain, PosMask);
@@ -157,6 +165,78 @@ namespace BoSSS.Solution.LevelSetTools {
             LevelSet.Clear(Neg);
             LevelSet.AccConstant(-1, Neg);
         }
+
+
+        /// <summary>
+        /// computes the jump norm of field <paramref name="f"/> at inner edges on <paramref name="mask"/>
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="mask"> if null full mask is chosen </param>
+        /// <returns></returns>
+        static double JumpNorm(DGField f, CellMask mask = null) {
+            GridData grd = (GridData)f.GridDat;
+            int D = grd.SpatialDimension;
+            var e2cTrafo = grd.Edges.Edge2CellTrafos;
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(grd);
+            }
+            SubGrid maskSG = new SubGrid(mask);
+            EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            f.MPIExchange();
+
+            double Unorm = 0;
+
+            EdgeQuadrature.GetQuadrature(
+                new int[] { D + 1 }, grd,
+                (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, f.Basis.Degree * 2),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    NodeSet NS = QR.Nodes;
+                    EvalResult.Clear();
+                    int NoOfNodes = NS.NoOfNodes;
+                    for (int j = 0; j < Length; j++) {
+                        int iEdge = j + i0;
+                        int jCell_IN = grd.Edges.CellIndices[iEdge, 0];
+                        int jCell_OT = grd.Edges.CellIndices[iEdge, 1];
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+
+                        if (jCell_OT >= 0) {
+
+                            int iTrafo_IN = grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
+                            int iTrafo_OT = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
+
+                            MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
+                            MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
+
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+
+                            f.Evaluate(jCell_IN, 1, NS_IN, uIN);
+                            f.Evaluate(jCell_OT, 1, NS_OT, uOT);
+
+                            uDiff.Acc(+1.0, uIN);
+                            uDiff.Acc(-1.0, uOT);
+
+                            if (uDiff.L2Norm() > 1e-10) {
+                                Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                            }
+                        } else {
+                            uDiff.Clear();
+                        }
+                    }
+
+                    EvalResult.ApplyAll(x => x * x);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    Unorm += ResultsOfIntegration.Sum();
+                }).Execute();
+
+            Unorm = Unorm.MPISum();
+
+            return Unorm.Sqrt();
+        }
+
 
     }
 

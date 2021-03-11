@@ -183,16 +183,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             private set;
         }
 
-        public double[] AcceptableL2Error {
-            get {
-                  return new double[] { };
-            }
+        public virtual double[] AcceptableL2Error {
+            get;
         }
 
-        public double[] AcceptableResidual {
-            get {
-                return  new double[] { };
-            }
+        public virtual double[] AcceptableResidual {
+            get;
         }
 
 

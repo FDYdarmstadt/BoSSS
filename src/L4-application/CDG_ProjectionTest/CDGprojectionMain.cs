@@ -4,7 +4,6 @@ using ilPSP;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation;
-using BoSSS.Foundation.SpecFEM;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -12,6 +11,8 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
+using System.Collections;
+using NUnit.Framework;
 
 namespace BoSSS.Application.CDG_ProjectionTest {
 
@@ -19,16 +20,34 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     class CDGprojectionMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {
-            var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            InitMPI();
-            AUT.AllUp();
-            FinalizeMPI();
+
+            //BoSSS.Solution.Application.InitMPI();
+            //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
+            //AUT.AllUp(2, 2, 1);
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //Assert.IsTrue(false, "Remove me");
+            //return;
+
+            BoSSS.Solution.Application._Main(args, true, delegate () {
+                CDGprojectionMain p = new CDGprojectionMain();
+                return p;
+            });
         }
+
+        internal int dimension = 3;
+        internal int degree = 5;
+        internal int gridResolution = 2;
+
+        internal bool periodicX = false;
+        internal bool periodicY = false;
+        internal bool periodicZ = false;
 
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
             if (MPISize <= 1)
                 return null;
+
+            // for debugging purposes
             //int i0 = this.Grid.CellPartitioning.i0;
             //int iE = this.Grid.CellPartitioning.iE;
             //int[] CellDist = new int[iE - i0];
@@ -56,74 +75,40 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         protected override IGrid CreateOrLoadGrid() {
 
-            double[] Xnodes = GenericBlas.Linspace(0, 4, 3);
-            double[] Ynodes = GenericBlas.Linspace(0, 4, 3);
-            var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+            double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
+            //double[] nodeZ = GenericBlas.Linspace(0, 1, 2);
 
-            //double[] Xnodes = GenericBlas.Linspace(0, 3, 5);
-            //double[] Ynodes = GenericBlas.Linspace(0, 3, 5);
-            //double[] Znodes = GenericBlas.Linspace(0, 3, 2);
-            //var grid = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
-
-            //int MeshPara = 32;
-            //double[] nodesX = GenericBlas.Linspace(-2, 2, MeshPara + 1);
-            //double[] nodesY = GenericBlas.Linspace(-3, 3, MeshPara / 2 + 1);
-            //var grid = Grid2D.Cartesian2DGrid(nodesX, nodesY);
-
-            //int kelem = 9;
-            //double[] Xnodes = GenericBlas.Linspace(0, 1, kelem + 1);
-            //double[] Ynodes = GenericBlas.Linspace(-2, 2, kelem + 1);
-            //var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX:true, periodicY:true);
-
-            //int kelem = 9;
-            //double[] Xnodes = Grid1D.TanhSpacing(0, 6, 9, 1.5, false);
-            //double[] Ynodes = Grid1D.TanhSpacing(0, 3, 9, 1.5, false);
-            //var grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
-
-            //var box_outer_p1 = new double[2] { 0, 0 };
-            //var box_outer_p2 = new double[2] { 3, 3 };
-            //var box_outer = new GridCommons.GridBox(box_outer_p1, box_outer_p2, 3, 3);
-
-            //var box_inner_p1 = new double[2] { 1, 1 };
-            //var box_inner_p2 = new double[2] { 2, 2 };
-            //var box_inner = new GridCommons.GridBox(box_inner_p1, box_inner_p2, 2, 2);
-
-            //var grid = Grid2D.HangingNodes2D(box_outer, box_inner);
-
-            //this.m_GridPartitioningType = GridPartType.ParMETIS;
+            GridCommons grid;
+            if (dimension == 2)
+                grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+            else if (dimension == 3)
+                grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+            else
+                throw new NotSupportedException("Not supported spatial dimension");
 
             return grid;
 
         }
 
         SinglePhaseField origin;
-        SinglePhaseField result;
+        SinglePhaseField result0;
+        SinglePhaseField result1;
 
-        ConstrainedDGField cdgField;
+        ConstrainedDGField cdgField0;    // projection on the same DG basis
+        ConstrainedDGField cdgField1;   // projection on a DG basis with degree + 1
 
-        SpecFemField specField;
-        SinglePhaseField specFieldDG;
 
         protected override void CreateFields() {
 
-            int degree = 1;
-
-            //SpecFemBasis specBasis = new SpecFemBasis(this.GridData, degree);
-
-            //Basis dgBasis = specBasis.ContainingDGBasis;
-            //Basis cdgBasis = dgBasis;
-
-            //specField = new SpecFemField(specBasis);
-            //specFieldDG = new SinglePhaseField(dgBasis, "specFEM");
-
             Basis dgBasis = new Basis(this.GridData, degree);
-            Basis cdgBasis = new Basis(this.GridData, degree);
+            Basis cdgBasis0 = new Basis(this.GridData, degree);
+            Basis cdgBasis1 = new Basis(this.GridData, degree + 1);
 
             origin = new SinglePhaseField(dgBasis, "origin");
-            cdgField = new ConstrainedDGField(cdgBasis);
-            result = new SinglePhaseField(cdgBasis, "result");
-
-
+            cdgField0 = new ConstrainedDGField(cdgBasis0);
+            cdgField1 = new ConstrainedDGField(cdgBasis1);
+            result0 = new SinglePhaseField(cdgBasis0, "result0");
+            result1 = new SinglePhaseField(cdgBasis1, "result1");
 
         }
 
@@ -131,79 +116,67 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         }
 
-        public bool passed = false;
+        public bool passed = true;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
-            origin.ProjectField((x, y) => (Math.Sin(x) + Math.Cos(x) + x - (Math.Cos(y) + 1)));   // 2D
-            //origin.ProjectField((x, y, z) => (Math.Sin(x) + Math.Cos(x) + x - (y + 1) + Math.Sin(z))); // 3D
-            //origin.ProjectField((x, y, z) => Math.Sqrt(x.Pow2() + y.Pow2() + z.Pow2()) - 1);
-            //origin.ProjectField((x, y) => x * x + y * y * y - x * y);
-            //origin.ProjectField((x,y) => x + y);
-            //origin.ProjectField((x, y) => Math.Sin(2 * Math.PI * (x / 3.0)));
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            BitArray oneBit = new BitArray(J);
+            oneBit[0] = true;
+            CellMask oneCell = new CellMask(this.GridData, oneBit);
 
 
-            CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData), X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
-            //|| (X[0] > 1.0 && X[0] < 3.0 && X[1] > 1.0 && X[1] < 2.0)
-            //|| (X[0] > 2.0 && X[0] < 4.0 && X[1] > 2.0 && X[1] < 3.0)
-            //|| (X[0] > 3.0 && X[0] < 4.0 && X[1] > 3.0 && X[1] < 4.0));
-            //CellMask msk3D = CellMask.GetCellMask(this.GridData, X => (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 1.5)
-            //|| (X[0] > 0.0 && X[0] < 1.5 && X[1] > 0.0 && X[1] < 3.0 && X[2] > 0.0 && X[2] < 3.0)
-            //|| (X[0] > 0.0 && X[0] < 3.0 && X[1] > 0.0 && X[1] < 1.5 && X[2] > 0.0 && X[2] < 3.0));
-            CellMask test = null;
+            if (this.dimension == 2) {
+                //// for debugging purposes
+                //CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData),
+                //    X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
 
-            cdgField.ProjectDGField(origin, test);
-            cdgField.AccToDGField(1.0, result);
+                Console.WriteLine("Test 2D projection function 1: sin(x) + cos(x) + x - cos(y) - 1");
+                Func<double[], double> projFunc = X => Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (Math.Cos(X[1]) + 1);
+                Console.WriteLine("project on full mask");
+                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //if (this.GridData.MpiRank == 0) {
+                //    Console.WriteLine("project on one cell");
+                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
+                //}
 
-            //specField.ProjectDGField(1.0, origin, test);
-            //specField.AccToDGField(1.0, specFieldDG);
+                // should be exact for p >= 3
+                Console.WriteLine("Test 2D projection function 2: x^2 + y^3 - xy");
+                projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[0] * X[1]);
+                Console.WriteLine("project on full mask");
+                name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //if (this.GridData.MpiRank == 0) {
+                //    Console.WriteLine("project on one cell");
+                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
+                //}
 
-            //MultidimensionalArray n4 = MultidimensionalArray.Create(3, 2);
-            //n4[0, 0] = 0.3;
-            //n4[0, 1] = -1;
-            //n4[1, 0] = 0.6;
-            //n4[1, 1] = -1;
-            //n4[2, 0] = 0.9;
-            //n4[2, 1] = -1;
+            }
 
-            //MultidimensionalArray n11 = MultidimensionalArray.Create(3, 2);
-            //n11[0, 0] = -0.4;
-            //n11[0, 1] = 1;
-            //n11[1, 0] = 0.2;
-            //n11[1, 1] = 1;
-            //n11[2, 0] = 0.8;
-            //n11[2, 1] = 1;
+            if (this.dimension == 3) {
 
-            //NodeSet ns4 = new NodeSet(Grid.GetRefElement(0), n4);
-            //NodeSet ns11 = new NodeSet(Grid.GetRefElement(0), n11);
+                Console.WriteLine("Test 3D projection function 1: sin(x) + cos(x) + x - y + sin(z) - 1");
+                Func<double[], double> projFunc = X => (Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (X[1] + 1) + Math.Sin(X[2]));
+                Console.WriteLine("project on full mask");
+                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //if (this.GridData.MpiRank == 0) {
+                //    Console.WriteLine("project on one cell");
+                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
+                //}
 
-            //MultidimensionalArray res4 = MultidimensionalArray.Create(1, 3);
-            //MultidimensionalArray res11 = MultidimensionalArray.Create(1, 3);
+                // should be exact for p >= 3
+                Console.WriteLine("Test 3D projection function 2: x^2 + y^3 - zx + x - z");
+                projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[2] * X[0]) + X[0] - X[2];
+                Console.WriteLine("project on full mask");
+                name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //if (this.GridData.MpiRank == 0) {
+                //    Console.WriteLine("project on one cell");
+                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
+                //}
 
-            //result.Evaluate(4,1,ns4, res4);
-            //result.Evaluate(11, 1, ns11, res11);
-
-
-
-            PlotCurrentState(0.0, 0, 4);
-
-            //var err = origin.CloneAs();
-            //err.Acc(-1.0, result);
-
-            double L2err = 0.0; //err.L2Norm();
-            double L2jump = JumpNorm(result, test);
-
-            Console.WriteLine("");
-            //double L2jump_specFEM = JumpNorm(specFieldDG, test);             
-            //Console.WriteLine("L2 error =  " + L2err);
-            Console.WriteLine("L2 Norm of [[u]] = " + L2jump);
-            //Console.WriteLine("L2 Norm of [[u]] = " + L2jump_specFEM);
-            if (L2err < 1.0e-10 && L2jump < 1.0e-12) {
-                Console.WriteLine("Test PASSED");
-                passed = true;
-            } else {
-                Console.WriteLine("Test FAILED");
-                passed = false;
             }
 
             base.TerminationKey = true;
@@ -212,7 +185,77 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.PlotFields(new DGField[] { this.origin, this.result }, "CDGproj_" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(new DGField[] { this.origin, this.result0, this.result1 }, "CDGproj_" + timestepNo, physTime, superSampling);
+        }
+
+
+        bool ProjectFieldAndEvaluate(ScalarFunction func, CellMask domain, string name_disc) {
+
+            bool _passed = true;
+
+            origin.Clear();
+            result0.Clear();
+            result1.Clear();
+
+            origin.ProjectField(func);
+
+            // project and check cdgField0
+            cdgField0.ProjectDGField(origin, domain);
+            cdgField0.AccToDGField(1.0, result0, domain);
+
+            var errField = origin.CloneAs();
+            errField.Acc(-1.0, result0, domain);
+
+            double L2err0 = errField.L2Norm(domain);
+            double L2jump = JumpNorm(result0, domain);
+
+            bool checkL2err0 = (gridResolution > 2) ? (L2err0 < 1.0e-2) : true;
+            if (checkL2err0 && L2jump < 1.0e-12) {
+                Console.WriteLine("projection0 PASSED");
+                passed &= true;
+            } else {
+                Console.WriteLine("projection0 FAILED");
+                passed &= false;
+                Console.WriteLine("L2err0 = {0}; L2jump = {1}", L2err0, L2jump);
+                PlotCurrentState(0.0, 0, 3);
+            }
+
+            // project and check cdgField1
+            cdgField1.ProjectDGField(origin, domain);
+            cdgField1.AccToDGField(1.0, result1, domain);
+
+            errField = origin.CloneAs();
+            errField.AccLaidBack(-1.0, result1, domain);
+
+            double L2err1 = errField.L2Norm(domain);
+            L2jump = JumpNorm(result1, domain);
+
+            if (L2err1 <= L2err0 && L2jump < 1.0e-12) {
+                Console.WriteLine("projection1 PASSED");
+                passed &= true;
+            } else {
+                Console.WriteLine("projection1 FAILED");
+                passed &= false;
+                Console.WriteLine("L2err1 = {0}; L2jump = {1}", L2err0, L2jump);
+                PlotCurrentState(0.0, 0, 3);
+            }
+
+
+            // check parallel simulations
+            // ==========================
+            int RefMPIsize = 1;
+            {
+                var projCheck = new TestingIO(this.GridData, $"CDG_Projection-{name_disc}.csv", RefMPIsize);
+                projCheck.AddDGField(this.result0);
+                projCheck.AddDGField(this.result1);
+                projCheck.DoIOnow();
+
+                Assert.Less(projCheck.AbsError(this.result0), 1.0e-15, "Mismatch in projected result0 between single-core and parallel run.");
+                Assert.Less(projCheck.AbsError(this.result1), 1.0e-15, "Mismatch in projected result1 between single-core and parallel run.");
+
+            }
+
+            return _passed;
         }
 
 
@@ -261,7 +304,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                             uDiff.Acc(+1.0, uIN);
                             uDiff.Acc(-1.0, uOT);
 
-                            //Console.WriteLine("Diff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                            if (uDiff.L2Norm() > 1e-10)
+                                Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
                         } else {
                             uDiff.Clear();
                         }
