@@ -390,39 +390,6 @@ namespace BoSSS.Application.XNSE_Solver {
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
 
-
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
-        //    DGField[] plotFields = this.m_RegisteredFields.ToArray();
-        //    void AddPltField(DGField f) {
-        //        bool add = true;
-        //        foreach(var ff in plotFields) {
-        //            if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
-        //                add = false;
-        //                break;
-        //            }
-        //        }
-        //        if(add) {
-        //            f.AddToArray(ref plotFields);
-        //        }
-        //    }
-        //    void AddPltFields(IEnumerable<DGField> fs) {
-        //        foreach(var f in fs)
-        //            AddPltField(f);
-        //    }
-
-        //    if (Timestepping?.Parameters != null) {
-        //        AddPltFields(Timestepping.Parameters);
-        //    }
-        //    if (LsUpdater?.Parameters != null) {
-        //        AddPltFields(LsUpdater.Parameters.Values);
-        //        AddPltFields(LsUpdater.InternalFields.Values);
-        //    }
-
-        //    Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
-        //}
-
-
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
