@@ -200,11 +200,11 @@ namespace BoSSS.Application.DerivativeTest {
         static void Main(string[] args) {
                        
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
-            BoSSS.Solution.Application.InitMPI(args);
-            BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(7, 2, 1024 * 1024 * 128);
+            //BoSSS.Solution.Application.InitMPI(args);
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(7, 2, 1024 * 1024 * 128);
             //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024 * 1024 * 128);
             //BoSSS.Solution.Application.FinalizeMPI();
-            return;
+            //return;
 
             // Build-In Grids
             // ==============

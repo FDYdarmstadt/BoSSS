@@ -356,13 +356,13 @@ namespace PublicTestRunner {
         static Stream tracerfile;
         static TextWriter tracertxt;
 
-        static void InitTraceFile(string basenaem) {
+        static void InitTraceFile(string basename) {
 
             if (logger_output != null)
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
 
-            tracerfile = new FileStream($"trace-PublicTestRunner_{basenaem}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
+            tracerfile = new FileStream($"trace-PublicTestRunner_{basename}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
             tracertxt = new StreamWriter(tracerfile);
 
             TextWriterAppender fa = new TextWriterAppender();
@@ -1084,12 +1084,13 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            InitTraceFile($"Nunit3.{MpiRank}of{MpiSize}");
 
             Assembly[] assln = GetAllAssemblies();
 
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
 
             if (MpiSize != 1) {
                 // this seems some parallel run
