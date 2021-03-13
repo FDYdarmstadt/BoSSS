@@ -580,6 +580,8 @@ namespace PublicTestRunner {
             FileStream ServerMutex;
             string DateNtime = null;
             try {
+                IOsyncMutex.WaitOne();
+
                 var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
                 do {
