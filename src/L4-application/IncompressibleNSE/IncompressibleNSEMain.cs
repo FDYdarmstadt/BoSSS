@@ -142,7 +142,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
                     double penalty_bulk = this.Control.PenaltySafety;
 
-                    var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
+                    var Visc = new SipViscosity_GradU(penalty_bulk, d, D, boundaryCondMap,
                         ViscosityOption.ConstantViscosity,
                         constantViscosityValue: Control.Viscosity);
                     comps.Add(Visc); // bulk component GradUTerm

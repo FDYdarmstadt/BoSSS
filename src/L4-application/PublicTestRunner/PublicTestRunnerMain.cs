@@ -578,7 +578,7 @@ namespace PublicTestRunner {
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
             FileStream ServerMutex;
-            string DateNtime;
+            string DateNtime = null;
             try {
                 var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
@@ -596,6 +596,8 @@ namespace PublicTestRunner {
                     }
                 } while(ServerMutex == null);
                 Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
+                if(DateNtime == null)
+                    throw new ApplicationException("internal error");
             } catch(Exception e) {
                 Console.Error.WriteLine("UNRECOVERABLE EXCEPTION DURING CREATION OF OUTPUT DIRECTORY");
                 Console.Error.WriteLine(e.GetType() + ":  " + e.Message);
