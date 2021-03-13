@@ -1296,20 +1296,18 @@ namespace BoSSS.Foundation {
 
 
         internal bool RequiresComplicatedPeriodicity(IGridData gd) {
+            /*
             var tags = gd.iGeomEdges.EdgeTags;
             int E = gd.iGeomEdges.Count;
             Debug.Assert(E == tags.Length);
-            /*
-            for(int e = 0; e < E; e++) {
-                int tag = tags[e];
-                if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+            
+            //for(int e = 0; e < E; e++) {
+            //    int tag = tags[e];
+            //    if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
 
-                    
-
-
-                    return true;
-                }
-            }*/
+            //        return true;
+            //    }
+            //}
 
             foreach(var Trafo in gd.Grid.PeriodicTrafo) {
                 var Mtx = Trafo.Matrix.CloneAs();
@@ -1317,6 +1315,9 @@ namespace BoSSS.Foundation {
                 if(Mtx.InfNorm() >= 1e-8)
                     throw new NotSupportedException("Non-parallel periodic edges are still not supported.");
             }
+            */
+
+            // feature deactivated for now, because the implementation for linear components sucks so much
 
             return false;
         }
