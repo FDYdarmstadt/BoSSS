@@ -22,8 +22,8 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
 
         static MultidimensionalArray GetRotationMatrixFrom(Vector source, Vector target)
         {
-            source.Normalize();
-            target.Normalize();
+            source.NormalizeInPlace();
+            target.NormalizeInPlace();
             return GetRotationMatrixFromNormal(source, target); 
         }
 

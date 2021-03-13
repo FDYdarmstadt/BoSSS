@@ -576,7 +576,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             // Direction vector of initial shock
             Vector r = new Vector(normalVector.y, -normalVector.x);
-            r.Normalize();
+            r.NormalizeInPlace();
 
             // Distance from a point X to the initial shock
             double[] p = new double[] { 0.5, 0.0 };

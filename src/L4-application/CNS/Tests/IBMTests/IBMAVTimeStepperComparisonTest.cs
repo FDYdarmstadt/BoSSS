@@ -201,7 +201,7 @@ namespace CNS.Tests.IBMTests {
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
-                n.Normalize();
+                n.NormalizeInPlace();
 
                 // Angle between line and x-axis
                 double alpha = shockAngle;

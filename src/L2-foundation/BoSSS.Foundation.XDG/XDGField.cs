@@ -557,7 +557,7 @@ namespace BoSSS.Foundation.XDG {
         BehaveUnder_LevSetMoovement m_UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
 
         /// <summary>
-        /// defines the Behavior of the DG coordinates during a <see cref="LevelSetTracker.UpdateTracker()"/>-call
+        /// defines the Behavior of the DG coordinates during a <see cref="LevelSetTracker.UpdateTracker"/>-call
         /// </summary>
         public BehaveUnder_LevSetMoovement UpdateBehaviour {
             get {

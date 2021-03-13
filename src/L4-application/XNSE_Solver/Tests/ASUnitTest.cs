@@ -652,7 +652,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             var Tst = new TaylorCouette_CurvElm();
             var C = TstObj2CtrlObj(Tst, FlowSolverDegree, 
-                AgglomerationTreshold:0.1, ViscosityMode.Standard, CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, GridResolution: 1);
+                AgglomerationTreshold:0.1, 
+                vmode: ViscosityMode.Standard, 
+                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, 
+                GridResolution: 1);
             C.NoOfMultigridLevels = 1;
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;

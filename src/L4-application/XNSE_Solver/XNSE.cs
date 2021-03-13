@@ -88,7 +88,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
-       
+
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -139,20 +139,27 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
-
-
         
+
+        private IncompressibleMultiphaseBoundaryCondMap m_boundaryMap;
+
+        /// <summary>
+        /// Relation between 
+        /// - edge tags (<see cref="Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>, passed to equation components via <see cref="BoSSS.Foundation.CommonParams.EdgeTag"/>)
+        /// - boundary conditions specified in the control object (<see cref="AppControl.BoundaryValues"/>)
+        /// </summary>
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap {
+            get {
+                if(m_boundaryMap == null)
+                    m_boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+                return m_boundaryMap;
+            }
+        }
 
         /// <summary>
         /// dirty hack...
         /// </summary>
         protected override IncompressibleBoundaryCondMap GetBcMap() {
-            if(boundaryMap == null)
-                boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
             return boundaryMap;
         }
 

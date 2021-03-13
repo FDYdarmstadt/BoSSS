@@ -1315,7 +1315,7 @@ namespace BoSSS.Foundation {
                 var Mtx = Trafo.Matrix.CloneAs();
                 Mtx.AccEye(-1.0);
                 if(Mtx.InfNorm() >= 1e-8)
-                    return true;
+                    throw new NotSupportedException("Non-parallel periodic edges are still not supported.");
             }
 
             return false;
@@ -1656,6 +1656,8 @@ namespace BoSSS.Foundation {
                 ICompositeQuadRule<QuadRule> volQr) //
                  : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
+                owner.RequiresComplicatedPeriodicity(CodomainMapping.GridDat);
+                
                 foreach(string codVarName in owner.CodomainVar) {
                     var comps = owner.EquationComponents[codVarName];
 

@@ -406,7 +406,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new NotSupportedException($"Not recommended to use a nonlinear transformation of the mesh together with linear square cells - use at least {CellType.Square_4}!");
                 }
 
-
+                
                 // Some Checks
                 // ===========
                 CheckMonotonicity(xNodes);
@@ -452,18 +452,26 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Vector Nx, Ny;
 
                     if(NonlinearGridTrafo != null) {
-                        Vector xm = 0.5 * (x[0] + x[1]);
-                        Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
-                        Nx.Normalize();
+                        //Vector xm = 0.5 * (x[0] + x[1]);
+                        //Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
+                        //Nx.Normalize();
 
-                        Vector ym = 0.5 * (y[0] + y[1]);
-                        Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
-                        Ny.Normalize();
+                        //Vector ym = 0.5 * (y[0] + y[1]);
+                        //Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
+                        //Ny.Normalize();
 
                         x[0] = NonlinearGridTrafo(x[0]);
                         x[1] = NonlinearGridTrafo(x[1]);
                         y[0] = NonlinearGridTrafo(y[0]);
                         y[1] = NonlinearGridTrafo(y[1]);
+
+                        var tx = x[1] - x[0];
+                        Nx = tx.Rotate2D(-Math.PI / 2);
+                        Nx.NormalizeInPlace();
+                        
+                        var ty = y[1] - y[0];
+                        Ny = tx.Rotate2D(-Math.PI / 2);
+                        Nx.NormalizeInPlace();
 
                     } else {
                         Nx = N;
@@ -486,11 +494,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if(NonlinearGridTrafo != null) {
                         Vector xm = 0.5 * (x[0] + x[1]);
                         Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
-                        Nx.Normalize();
+                        Nx.NormalizeInPlace();
 
                         Vector ym = 0.5 * (y[0] + y[1]);
                         Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
-                        Ny.Normalize();
+                        Ny.NormalizeInPlace();
 
                         x[0] = NonlinearGridTrafo(x[0]);
                         x[1] = NonlinearGridTrafo(x[1]);
@@ -1141,14 +1149,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0];//(Param2XY(rNodes.First(), sNodes.First())[0] - Param2XY(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1];//(Param2XY(rNodes.First(), sNodes.First())[1] - Param2XY(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
-                    PerBoundInCon.Normalize();
+                    PerBoundInCon.NormalizeInPlace();
                     Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x );
                     //Periodic Boundary Inlet
                     Vector[] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Param2XY(rNodes.First(), sNodes.Last())[0] - Param2XY(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Param2XY(rNodes.First(), sNodes.Last())[1] - Param2XY(rNodes.Last(), sNodes.Last())[1]);
-                    PerBoundOutCon.Normalize();
+                    PerBoundOutCon.NormalizeInPlace();
                     double[] PerBoundOutNormal = { -PerBoundOutCon.y, +PerBoundOutCon.x };
                     grid.ConstructPeriodicEdgeTrafo(PerBoundIn, PerBoundInNormal, PerBoundOut, PerBoundOutNormal, out persTag);
                     grid.EdgeTagNames.Add(persTag, "Periodic-S");
@@ -1332,14 +1340,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0]; //(Topology(rNodes.First(), sNodes.First())[0] - Topology(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1]; //(Topology(rNodes.First(), sNodes.First())[1] - Topology(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
-                    PerBoundInCon.Normalize();
+                    PerBoundInCon.NormalizeInPlace();
                     Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x);
                     //Periodic Boundary Inlet
                     Vector[] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Topology(rNodes.First(), sNodes.Last())[0] - Topology(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Topology(rNodes.First(), sNodes.Last())[1] - Topology(rNodes.Last(), sNodes.Last())[1]);
-                    PerBoundOutCon.Normalize();
+                    PerBoundOutCon.NormalizeInPlace();
                     Vector PerBoundOutNormal = new Vector( -PerBoundOutCon.y, +PerBoundOutCon.x );
                     grid.ConstructPeriodicEdgeTrafo(PerBoundIn, PerBoundInNormal, PerBoundOut, PerBoundOutNormal, out persTag);
                     grid.EdgeTagNames.Add(persTag, "Periodic-R");

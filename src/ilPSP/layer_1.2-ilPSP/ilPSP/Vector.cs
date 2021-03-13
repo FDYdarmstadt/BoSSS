@@ -361,10 +361,10 @@ namespace ilPSP {
                 throw new ArithmeticException("this vector is zero - unable to determine angle");
 
             Vector tn = this;
-            tn.Normalize();
+            tn.NormalizeInPlace();
 
             Vector on = o;
-            on.Normalize();
+            on.NormalizeInPlace();
 
             double inner = tn * on;
 
@@ -392,14 +392,24 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// normalizes this vector
+        /// normalizes this vector (same direction, length is 1); overwrites components
         /// </summary>
-        public void Normalize() {
+        public void NormalizeInPlace() {
             double l = 1.0 / Abs();
             x *= l;
             y *= l;
             z *= l;
         }
+
+        /// <summary>
+        /// returns a normalized (same direction, length is 1) copy of this vector
+        /// </summary>
+        public Vector Normalize() {
+            Vector r = this;
+            r.NormalizeInPlace();
+            return r;
+        }
+
 
         /// <summary>
         /// subtracts <paramref name="v"/> from this vector;

@@ -203,7 +203,7 @@ namespace CNS.IBM {
                     for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                         levelSetNormal[d] = U[offset + d][i + IndexOffset, j];
                     }
-                    levelSetNormal.Normalize();
+                    levelSetNormal.NormalizeInPlace();
                     Debug.Assert(Math.Abs(levelSetNormal.Abs() - 1.0) < 1e-13, "Abnormal normal vector");
 
                     for (int d = 0; d < D; d++) {
