@@ -72,7 +72,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     }
 
-    public class ViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, ISpeciesFilter {
+    public class ViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_GradUtranspTerm, ISpeciesFilter {
 
         public ViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     }
 
-    public class DimensionlessViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_Term2, ISpeciesFilter {
+    public class DimensionlessViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.swipViscosity_GradUtranspTerm, ISpeciesFilter {
 
         public DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
             double _reynoldsA, double _reynoldsB)

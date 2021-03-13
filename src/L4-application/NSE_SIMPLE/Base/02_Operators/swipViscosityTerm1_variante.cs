@@ -14,10 +14,10 @@ namespace NSE_SIMPLE {
     ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term1_variante : swipViscosityBase {
+    public class swipViscosity_Term1_variante : SipViscosityBase {
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
         public swipViscosity_Term1_variante(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)

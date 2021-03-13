@@ -215,7 +215,7 @@ namespace BoSSS.Application.ipViscosity {
                         Operator.EquationComponents[CodNames[d]].Add(flx1);
                     }
                     if((this.whichTerms & Terms.T2) != 0) {
-                        var flx2 = new swipViscosity_Term2(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
+                        var flx2 = new swipViscosity_GradUtranspTerm(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
 
                         flx2.g_Diri_Override = this.solution.U;
                         flx2.g_Neu_Override = this.solution.dU;

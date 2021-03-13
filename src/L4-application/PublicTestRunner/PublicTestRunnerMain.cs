@@ -558,6 +558,11 @@ namespace PublicTestRunner {
             return 0;
         }
 
+        /// <summary>
+        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
+        /// </summary>
+        static Mutex IOsyncMutex = new Mutex(false, "BoSSS_test_runner_IOmutex");
+
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
@@ -574,8 +579,9 @@ namespace PublicTestRunner {
 
             FileStream ServerMutex;
             string DateNtime;
-            {
-                var rnd = new Random();
+            try {
+                var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
+                Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
                 do {
                     DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
                     string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
@@ -590,6 +596,14 @@ namespace PublicTestRunner {
                     }
                 } while(ServerMutex == null);
                 Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
+            } catch(Exception e) {
+                Console.Error.WriteLine("UNRECOVERABLE EXCEPTION DURING CREATION OF OUTPUT DIRECTORY");
+                Console.Error.WriteLine(e.GetType() + ":  " + e.Message);
+                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine("TERMINATING APPLICATION");
+                System.Environment.Exit(-666);
+            } finally {
+                IOsyncMutex.ReleaseMutex();
             }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile(DateNtime);

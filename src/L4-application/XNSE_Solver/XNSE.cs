@@ -65,11 +65,11 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            Tests.ASUnitTest.CurvedElementsTest(3);
-            //Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            throw new Exception("Remove me");
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //Tests.ASUnitTest.CurvedElementsTest(3);
+            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);

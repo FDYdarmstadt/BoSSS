@@ -116,7 +116,7 @@ namespace NSE_SIMPLE {
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
-            return (new swipViscosity_Term2(SolverConf.PenaltyViscMomentum,
+            return (new swipViscosity_GradUtranspTerm(SolverConf.PenaltyViscMomentum,
                 //base.GridData.Cells.cj,
                 SpatialDirection,
                 SolverConf.SpatialDimension,

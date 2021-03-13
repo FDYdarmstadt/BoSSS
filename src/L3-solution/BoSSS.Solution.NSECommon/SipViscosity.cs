@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
-    /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
+    /// A configuration switch to <see cref="SipViscosityBase"/> and decendants, to
     /// switch constant / variable viscosity
     /// and non-dimensionless / dimensionless formulation.
     /// </summary>
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.NSECommon {
         /// as a function of the level-set.
         /// Only available for <see cref="ViscosityOption.VariableViscosity"/> and <see cref="ViscosityOption.VariableViscosityDimensionless"/>.
         /// </param>
-        protected swipViscosityBase(double _penaltyBase,
+        protected SipViscosityBase(double _penaltyBase,
                                     int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
             this.m_penalty_base = _penaltyBase;
@@ -433,12 +433,12 @@ namespace BoSSS.Solution.NSECommon {
     ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term1 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class swipViscosity_Term1 : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
         public swipViscosity_Term1(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
@@ -911,19 +911,19 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// \f[ 
-    ///   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right)
+    ///   - \operatorname{div} \left( \mu (\partial_d \vec{u})^T \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term2 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class swipViscosity_GradUtranspTerm : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
         private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term2(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public swipViscosity_GradUtranspTerm(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized =false)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
@@ -1351,14 +1351,14 @@ namespace BoSSS.Solution.NSECommon {
     ///   \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term3 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class swipViscosity_Term3 : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
         private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
         public swipViscosity_Term3(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
