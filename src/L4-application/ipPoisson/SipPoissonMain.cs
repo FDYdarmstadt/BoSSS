@@ -158,6 +158,7 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Application.InitMPI();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
@@ -194,22 +195,6 @@ namespace BoSSS.Application.SipPoisson {
 
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
-
-        ///// <summary>
-        ///// Hack - some precise solution on a finer grid.
-        ///// </summary>
-        //SinglePhaseField TexactFine;
-
-        ///// <summary>
-        ///// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
-        ///// </summary>
-        //BlockMsrMatrix LaplaceMtx;
-
-        ///// <summary>
-        ///// Part of the RHS which contains e.g. boundary conditions; still on LHS, must be subtracted from RHS of the equation.
-        ///// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
-        ///// </summary>
-        //double[] LaplaceAffine;
 
         /// <summary>
         /// Spatial operator to assemble <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>.
@@ -338,12 +323,12 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         
-
+        /*
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
             
         }
-
+        */
         
         /// <summary>
         /// Single run of the solver
@@ -381,25 +366,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
-                //ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-
                 this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
-
-                /*
-                Console.WriteLine("finished; " + NoOfIterations + " iterations.");
-                Console.WriteLine("converged? " + converged);
-                Console.WriteLine("Timespan: " + mintime + " to " + maxtime + " seconds");
-
-
-                base.QueryHandler.ValueQuery("minSolRunT", mintime, true);
-                base.QueryHandler.ValueQuery("maxSolRunT", maxtime, true);
-                base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
-                base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
-                base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength, true);
-                base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
-                base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
-                */
-                
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
