@@ -1,47 +1,33 @@
-﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
-using System;
-using System.Diagnostics;
-using System.IO;
-using BoSSS.Foundation.IO;
-using Mono.CSharp;
-using System.Collections.Generic;
-using System.Reflection;
-using BoSSS.Solution.Gnuplot;
-using System.Linq;
-using ilPSP;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation;
-using ilPSP.Utils;
+using BoSSS.Foundation.IO;
+using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
+using ilPSP;
+using ilPSP.Utils;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
-
+    
     /// <summary>
-    /// Extends/replaces the standard commands provided by
-    /// <see cref="InteractiveBase"/> by some BoSSSPad-specific stuff.
+    /// Standard commands to be used in the Jupyter Notebooks
     /// </summary>
-    public class InteractiveShell : InteractiveBase {
+    static public class BoSSSshell {
 
         /// <summary>
         /// Provides a help text
         /// </summary>
-        new public static string help {
+        public static string help {
             get {
                 try {
                     string dbeCommandOverviewDocPath = Path.Combine(
@@ -65,6 +51,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /*
         /// <summary>
         /// Holds the last exception that has been thrown during the execution.
         /// </summary>
@@ -88,6 +75,30 @@ namespace BoSSS.Application.BoSSSpad {
         public static object ans {
             get;
             internal set;
+        }
+        */
+
+        public static void Init() {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            BoSSS.Solution.Application.InitMPI();
+            try {
+
+
+
+                databases = DatabaseController.LoadDatabaseInfosFromXML();
+
+                ReloadExecutionQueues();
+                string summary = databases.Summary();
+                Console.WriteLine("Databases loaded: ");
+                Console.WriteLine(summary);
+            } catch(Exception e) {
+                Console.WriteLine();
+                Console.WriteLine(
+                    "{0} occurred with message '{1}' while loading the databases.",
+                     e.GetType(),
+                     e.Message);
+                InteractiveShell.LastError = e;
+            }
         }
 
         /// <summary>
@@ -123,10 +134,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.Clear();
         }
 
-        private static WorkflowMgm m_WorkflowMgm {
-            get { return BoSSSshell.WorkflowMgm; }
-            set { BoSSSshell.m_WorkflowMgm = value; }
-        }
+        internal static WorkflowMgm m_WorkflowMgm;
 
         /// <summary>
         /// Link to the workflow-management facility
@@ -142,7 +150,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Reset states which survive a restart of the interpreter.
         /// </summary>
-        static internal void Reset() {
+        static void Reset() {
             databases = new IDatabaseInfo[0];
             m_WorkflowMgm = null;
             executionQueues = null;
@@ -243,10 +251,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases {
-            get { return BoSSSshell.databases; }
-            set { BoSSSshell.databases = value; }
-        }
+        public static IList<IDatabaseInfo> databases = new IDatabaseInfo[0];
 
         /// <summary>
         /// Sessions in all Databases
@@ -706,10 +711,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        static List<BatchProcessorClient> executionQueues {
-            get { return BoSSSshell.executionQueues; }
-            set { BoSSSshell.executionQueues = value; }
-        }
+        internal static List<BatchProcessorClient> executionQueues = null;
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.
@@ -737,4 +739,3 @@ namespace BoSSS.Application.BoSSSpad {
         }
     }
 }
-

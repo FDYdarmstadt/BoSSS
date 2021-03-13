@@ -356,13 +356,13 @@ namespace PublicTestRunner {
         static Stream tracerfile;
         static TextWriter tracertxt;
 
-        static void InitTraceFile(string basenaem) {
+        static void InitTraceFile(string basename) {
 
             if (logger_output != null)
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
 
-            tracerfile = new FileStream($"trace-PublicTestRunner_{basenaem}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
+            tracerfile = new FileStream($"trace-PublicTestRunner_{basename}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
             tracertxt = new StreamWriter(tracerfile);
 
             TextWriterAppender fa = new TextWriterAppender();
@@ -558,6 +558,11 @@ namespace PublicTestRunner {
             return 0;
         }
 
+        /// <summary>
+        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
+        /// </summary>
+        static Mutex IOsyncMutex = new Mutex(false, "BoSSS_test_runner_IOmutex");
+
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
@@ -573,9 +578,12 @@ namespace PublicTestRunner {
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
             FileStream ServerMutex;
-            string DateNtime;
-            {
-                var rnd = new Random();
+            string DateNtime = null;
+            try {
+                IOsyncMutex.WaitOne();
+
+                var rnd = new Random(DateTime.Now.Millisecond + typeof(PublicTestRunnerMain).Assembly.Location.GetHashCode() + Directory.GetCurrentDirectory().GetHashCode());
+                Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
                 do {
                     DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
                     string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
@@ -590,6 +598,16 @@ namespace PublicTestRunner {
                     }
                 } while(ServerMutex == null);
                 Console.WriteLine($"Using prefix'{DateNtime}' for all jobs.");
+                if(DateNtime == null)
+                    throw new ApplicationException("internal error");
+            } catch(Exception e) {
+                Console.Error.WriteLine("UNRECOVERABLE EXCEPTION DURING CREATION OF OUTPUT DIRECTORY");
+                Console.Error.WriteLine(e.GetType() + ":  " + e.Message);
+                Console.Error.WriteLine(e.StackTrace);
+                Console.Error.WriteLine("TERMINATING APPLICATION");
+                System.Environment.Exit(-666);
+            } finally {
+                IOsyncMutex.ReleaseMutex();
             }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile(DateNtime);
@@ -1069,10 +1087,13 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            Assembly[] assln = GetAllAssemblies();
-
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            InitTraceFile($"Nunit3.{MpiRank}of{MpiSize}");
+
+            Assembly[] assln = GetAllAssemblies();
+
 
             if (MpiSize != 1) {
                 // this seems some parallel run

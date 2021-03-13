@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
-    /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
+    /// A configuration switch to <see cref="SipViscosityBase"/> and decendants, to
     /// switch constant / variable viscosity
     /// and non-dimensionless / dimensionless formulation.
     /// </summary>
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.NSECommon {
         /// as a function of the level-set.
         /// Only available for <see cref="ViscosityOption.VariableViscosity"/> and <see cref="ViscosityOption.VariableViscosityDimensionless"/>.
         /// </param>
-        protected swipViscosityBase(double _penaltyBase,
+        protected SipViscosityBase(double _penaltyBase,
                                     int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
             this.m_penalty_base = _penaltyBase;
@@ -433,14 +433,14 @@ namespace BoSSS.Solution.NSECommon {
     ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term1 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_GradU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term1(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public SipViscosity_GradU(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
             //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
@@ -894,41 +894,27 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    /// <summary>
-    /// Solver mode for Swip2 and Swip3 terms.
-    /// </summary>
-    public enum ViscositySolverMode {
-        /// <summary>
-        /// Coupled solving for all velocity components.
-        /// </summary>
-        FullyCoupled,
-
-        /// <summary>
-        /// Segregated solving of single velocity components.
-        /// </summary>
-        Segregated
-    }
 
     /// <summary>
     /// \f[ 
-    ///   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right)
+    ///   - \operatorname{div} \left( \mu (\partial_d \vec{u})^T \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term2 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_GradUtransp : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
-        private ViscositySolverMode ViscSolverMode;
+        //private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term2(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-                                   ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
+        public SipViscosity_GradUtransp(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+                                   ViscosityOption _ViscosityMode, /*ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,*/
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized =false)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
-            this.ViscSolverMode = ViscSolverMode;
+            //this.ViscSolverMode = ViscSolverMode;
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -954,17 +940,17 @@ namespace BoSSS.Solution.NSECommon {
                 // consistency term
                 Acc += 0.5 * (muA * _Grad_uA[i, m_iComp] + muB * _Grad_uB[i, m_iComp]) * (_vA - _vB) * inp.Normal[i];
                 // symmetry term
-                switch(ViscSolverMode) {
-                    case ViscositySolverMode.FullyCoupled:
+                //switch(ViscSolverMode) {
+                //    case ViscositySolverMode.FullyCoupled:
                         Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
-                        break;
-                    case ViscositySolverMode.Segregated:
-                        if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                //        break;
+                //    case ViscositySolverMode.Segregated:
+                //        if(i == m_iComp)
+                //            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
+                //        break;
+                //    default:
+                //        throw new NotImplementedException();
+                //}
             }
             Acc *= base.m_alpha;
 
@@ -1014,17 +1000,17 @@ namespace BoSSS.Solution.NSECommon {
                         // consistency
                         Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                         // symmetry
-                        switch(ViscSolverMode) {
-                            case ViscositySolverMode.FullyCoupled:
+                        //switch(ViscSolverMode) {
+                        //    case ViscositySolverMode.FullyCoupled:
                                 Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
-                                break;
-                            case ViscositySolverMode.Segregated:
-                                if(i == m_iComp)
-                                    Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
+                        //        break;
+                        //    case ViscositySolverMode.Segregated:
+                        //        if(i == m_iComp)
+                        //            Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
+                        //        break;
+                        //    default:
+                        //        throw new NotImplementedException();
+                        //}
                     }
                     Acc *= base.m_alpha;
 
@@ -1044,15 +1030,15 @@ namespace BoSSS.Solution.NSECommon {
                             // consistency
                             Acc += muA * (inp.Normal[dN] * _Grad_uA[dD, dN] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                             // symmetry
-                            switch(ViscSolverMode) {
-                                case ViscositySolverMode.FullyCoupled:
+                            //switch(ViscSolverMode) {
+                            //    case ViscositySolverMode.FullyCoupled:
                                     g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
                                     Acc += muA * (inp.Normal[dN] * _Grad_vA[dN] * inp.Normal[m_iComp]) * (_uA[dD] - g_D) * inp.Normal[dD] * base.m_alpha;
-                                    break;
-                                case ViscositySolverMode.Segregated:
-                                default:
-                                    throw new NotImplementedException();
-                            }
+                            //        break;
+                            //    case ViscositySolverMode.Segregated:
+                            //    default:
+                            //        throw new NotImplementedException();
+                            //}
                         }
                         g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
                         // penalty
@@ -1149,21 +1135,21 @@ namespace BoSSS.Solution.NSECommon {
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
                     double n = efp.Normals[edges, node, m_iComp];
-                    switch(ViscSolverMode) {
-                        case ViscositySolverMode.FullyCoupled:
+                    //switch(ViscSolverMode) {
+                    //    case ViscositySolverMode.FullyCoupled:
                             for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
                                 fIN[edges, node, d] -= 0.5 * viscosityIN * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha;
                                 fOT[edges, node, d] -= 0.5 * viscosityOT * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha;
                             }
-                            break;
-                        case ViscositySolverMode.Segregated:
-                            fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
-                            fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
-                            break;
-                        default:
-                            throw new NotImplementedException();
-
-                    }
+                    //        break;
+                    //    case ViscositySolverMode.Segregated:
+                    //        fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
+                    //        fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
+                    //        break;
+                    //    default:
+                    //        throw new NotImplementedException();
+                    //
+                    //}
                 }
             }
         }
@@ -1351,21 +1337,21 @@ namespace BoSSS.Solution.NSECommon {
     ///   \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term3 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_divU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
-        private ViscositySolverMode ViscSolverMode;
+        //private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term3(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-                                   ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
+        public SipViscosity_divU(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+                                   ViscosityOption _ViscosityMode/*, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled*/,
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
-            this.ViscSolverMode = ViscSolverMode;
+            //this.ViscSolverMode = ViscSolverMode;
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -1389,17 +1375,17 @@ namespace BoSSS.Solution.NSECommon {
                 // consistency term
                 Acc += 0.5 * (muA * _Grad_uA[i, i] + muB * _Grad_uB[i, i]) * (_vA - _vB) * inp.Normal[m_iComp];
                 // symmetry term
-                switch(ViscSolverMode) {
-                    case ViscositySolverMode.FullyCoupled:
+                //switch(ViscSolverMode) {
+                //    case ViscositySolverMode.FullyCoupled:
                         Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
-                        break;
-                    case ViscositySolverMode.Segregated:
-                        if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                //        break;
+                //    case ViscositySolverMode.Segregated:
+                //        if(i == m_iComp)
+                //            Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
+                //        break;
+                //    default:
+                //        throw new NotImplementedException();
+                //}
             }
             Acc *= base.m_alpha;
 
@@ -1448,17 +1434,17 @@ namespace BoSSS.Solution.NSECommon {
                         // consistency
                         Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normal[m_iComp];
                         // symmetry
-                        switch(ViscSolverMode) {
-                            case ViscositySolverMode.FullyCoupled:
+                        //switch(ViscSolverMode) {
+                        //    case ViscositySolverMode.FullyCoupled:
                                 Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
-                                break;
-                            case ViscositySolverMode.Segregated:
-                                if(i == m_iComp)
-                                    Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
+                        //        break;
+                        //    case ViscositySolverMode.Segregated:
+                        //        if(i == m_iComp)
+                        //            Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
+                        //        break;
+                        //    default:
+                        //        throw new NotImplementedException();
+                        //}
                     }
                     Acc *= base.m_alpha;
 
@@ -1536,23 +1522,23 @@ namespace BoSSS.Solution.NSECommon {
                     double viscosityIN = Viscosity(ParametersIN);
                     double viscosityOT = Viscosity(ParametersOT);
                     double n;
-                    switch(ViscSolverMode) {
-                        case ViscositySolverMode.FullyCoupled:
+                    //switch(ViscSolverMode) {
+                    //    case ViscositySolverMode.FullyCoupled:
                             for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
                                 n = efp.Normals[edges, node, d];
                                 fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
                                 fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
                             }
-                            break;
-                        case ViscositySolverMode.Segregated:
-                            n = efp.Normals[edges, node, m_iComp];
-                            fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                            fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                            break;
-                        default:
-                            throw new NotImplementedException();
+                    //        break;
+                    //    case ViscositySolverMode.Segregated:
+                    //        n = efp.Normals[edges, node, m_iComp];
+                    //        fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
+                    //        fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
+                    //        break;
+                    //    default:
+                    //        throw new NotImplementedException();
 
-                    }
+                    //}
                 }
             }
         }

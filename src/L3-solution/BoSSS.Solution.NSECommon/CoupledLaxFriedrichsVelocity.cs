@@ -56,7 +56,7 @@ namespace BoSSS.Solution.NSECommon {
             this.bcmap = bcmap;
 
             velFunction = new Func<double[], double, double>[GridCommons.FIRST_PERIODIC_BC_TAG, SpatDimension];
-            for (int d = 0; d < SpatDimension; d++)
+            for(int d = 0; d < SpatDimension; d++)
                 velFunction.SetColumn(bcmap.bndFunction[VariableNames.Velocity_d(d)], d);
 
             scalarFunction = bcmap.bndFunction[VariableNames.LevelSet];
@@ -66,58 +66,58 @@ namespace BoSSS.Solution.NSECommon {
 
             IncompressibleBcType edgeType = bcmap.EdgeTag2Type[inp.EdgeTag];
 
-            switch (edgeType) {
+            switch(edgeType) {
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.Velocity_Inlet: {
-                        Foundation.CommonParams inp2;
-                        inp2.GridDat = inp.GridDat;
-                        inp2.Normal = inp.Normal;
-                        inp2.iEdge = inp.iEdge;
-                        inp2.Parameters_IN = inp.Parameters_IN;
-                        inp2.X = inp.X;
-                        inp2.time = inp.time;
-                        inp2.jCellIn = inp.jCellIn;
-                        inp2.jCellOut = int.MinValue;
+                    Foundation.CommonParams inp2;
+                    inp2.GridDat = inp.GridDat;
+                    inp2.Normal = inp.Normal;
+                    inp2.iEdge = inp.iEdge;
+                    inp2.Parameters_IN = inp.Parameters_IN;
+                    inp2.X = inp.X;
+                    inp2.time = inp.time;
+                    inp2.jCellIn = inp.jCellIn;
+                    inp2.jCellOut = int.MinValue;
+                    inp2.EdgeTag = inp.EdgeTag;
 
+                    // Boundary conditions velocity
+                    // ============================
 
-                        // Boundary conditions velocity
-                        // ============================
+                    double u_i_Out = velFunction[inp.EdgeTag, SpatComponent](inp.X, inp.time);
 
-                        double u_i_Out = velFunction[inp.EdgeTag, SpatComponent](inp.X, inp.time);
+                    inp2.Parameters_OUT = new double[2 * SpatDimension + 2];
 
-                        inp2.Parameters_OUT = new double[2 * SpatDimension + 2];
-
-                        for (int j = 0; j < SpatDimension; j++) {
-                            inp2.Parameters_OUT[j] = velFunction[inp.EdgeTag, j](inp.X, inp.time);
-                            // VelocityMeanOut = VelocityMeanIn
-                            inp2.Parameters_OUT[SpatDimension + j] = inp.Parameters_IN[SpatDimension + j];
-                        }
-
-                        // Boundary conditions scalar
-                        // ==========================
-
-                        inp2.Parameters_OUT[2 * SpatDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
-                        // TempMeanOut = TempMeanIn
-                        inp2.Parameters_OUT[2 * SpatDimension + 1] = inp.Parameters_IN[2 * SpatDimension + 1];
-
-                        return InnerEdgeFlux(ref inp2, Uin, new double[] { u_i_Out });
+                    for(int j = 0; j < SpatDimension; j++) {
+                        inp2.Parameters_OUT[j] = velFunction[inp.EdgeTag, j](inp.X, inp.time);
+                        // VelocityMeanOut = VelocityMeanIn
+                        inp2.Parameters_OUT[SpatDimension + j] = inp.Parameters_IN[SpatDimension + j];
                     }
+
+                    // Boundary conditions scalar
+                    // ==========================
+
+                    inp2.Parameters_OUT[2 * SpatDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
+                    // TempMeanOut = TempMeanIn
+                    inp2.Parameters_OUT[2 * SpatDimension + 1] = inp.Parameters_IN[2 * SpatDimension + 1];
+
+                    return InnerEdgeFlux(ref inp2, Uin, new double[] { u_i_Out });
+                }
                 case IncompressibleBcType.Pressure_Outlet: {
-                        double r = 0.0;
+                    double r = 0.0;
 
-                        double Temp0 = inp.Parameters_IN[2 * SpatDimension];
-                        double rho = EoS.GetDensity(Temp0);
-                        double u_i = Uin[0];
+                    double Temp0 = inp.Parameters_IN[2 * SpatDimension];
+                    double rho = EoS.GetDensity(Temp0);
+                    double u_i = Uin[0];
 
-                        for (int j = 0; j < SpatDimension; j++) {
-                            double u_j = inp.Parameters_IN[j];
-                            r += rho * u_i * u_j * inp.Normal[j];
-                        }
-
-                        return r;
+                    for(int j = 0; j < SpatDimension; j++) {
+                        double u_j = inp.Parameters_IN[j];
+                        r += rho * u_i * u_j * inp.Normal[j];
                     }
+
+                    return r;
+                }
                 default:
-                    throw new NotImplementedException("Boundary condition not implemented!");
+                throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
 
@@ -129,7 +129,7 @@ namespace BoSSS.Solution.NSECommon {
 
             IList<double> _VelocityMeanIn = new List<double>();
             IList<double> _VelocityMeanOut = new List<double>();
-            for (int d = 0; d < SpatDimension; d++) {
+            for(int d = 0; d < SpatDimension; d++) {
                 _VelocityMeanIn.Add(inp.Parameters_IN[SpatDimension + d]);
                 _VelocityMeanOut.Add(inp.Parameters_OUT[SpatDimension + d]);
             }
@@ -156,7 +156,7 @@ namespace BoSSS.Solution.NSECommon {
             double u_i_In = Uin[0];
             double u_i_Out = Uout[0];
 
-            for (int j = 0; j < SpatDimension; j++) {
+            for(int j = 0; j < SpatDimension; j++) {
                 double u_j_In = inp.Parameters_IN[j];
                 double u_j_Out = inp.Parameters_OUT[j];
                 res += 0.5 * rhoIn * u_i_In * u_j_In * inp.Normal[j];
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.NSECommon {
             output[0] = rho * u_i * u_1;
             output[1] = rho * u_i * u_2;
 
-            if (SpatDimension == 3) {
+            if(SpatDimension == 3) {
                 double u_3 = inp.Parameters[2];
                 output[2] = rho * u_i * u_3;
             }

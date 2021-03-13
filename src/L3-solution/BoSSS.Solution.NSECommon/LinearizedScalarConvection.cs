@@ -130,6 +130,7 @@ namespace BoSSS.Solution.NSECommon
                     inp2.time = inp.time;
                     inp2.jCellIn = inp.jCellIn;
                     inp2.jCellOut = int.MinValue;
+                    inp2.EdgeTag = inp.EdgeTag;
 
                     // Dirichlet value for scalar
                     // ==========================

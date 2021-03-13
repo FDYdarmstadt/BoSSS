@@ -66,7 +66,7 @@ namespace BoSSS.Application.DerivativeTest {
 #if DEBUG
         public static void DerivativeTest_BuildInGrid([Range(1, 13)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 17)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 19)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -181,10 +181,10 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 3;
+        public static int GRID_CASE = 19;
 
         /// <summary>
-        /// Testing <see cref="SpatialOperator.GetFDJacobianBuilder(IList{DGField}, IList{DGField}, UnsetteledCoordinateMapping, DelPartialParameterUpdate, EdgeQuadratureScheme, CellQuadratureScheme)"/>;
+        /// Testing of the finite-difference Jacobian (<see cref="LinearizationHint.FDJacobi"/>
         /// can be expensive (if caching turned off), thus this can be de-activated
         /// </summary>
         public static bool TestFDJacobian = true;
@@ -198,9 +198,10 @@ namespace BoSSS.Application.DerivativeTest {
         /// Application entry point.
         /// </summary>
         static void Main(string[] args) {
+                       
             //Quadrature_Bulksize.BULKSIZE_LIMIT_OVERRIDE = 1;
-            BoSSS.Solution.Application.InitMPI(args);
-            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024);
+            //BoSSS.Solution.Application.InitMPI(args);
+            //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(7, 2, 1024 * 1024 * 128);
             //BoSSS.Application.DerivativeTest.Tests.DerivativeTest_BuildInGrid(1, 1, 1024 * 1024 * 128);
             //BoSSS.Solution.Application.FinalizeMPI();
             //return;
@@ -211,7 +212,7 @@ namespace BoSSS.Application.DerivativeTest {
             //Quadrature_Bulksize.CHUNK_DATA_LIMIT = 1;
             //BoSSS.Foundation.Caching.Cache.MaxMem = 1024;
 
-            for (int i = 1; i <= 5; i++) {
+            for (int i = 19; i <= 19; i++) {
                 BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -505,6 +506,33 @@ namespace BoSSS.Application.DerivativeTest {
                         break;
                     }
 
+                case 19: {
+                    // grid with transformation
+                    double[] xNodes = GenericBlas.Linspace(-0.5, 0.5, 8);
+                    double[] yNodes = GenericBlas.Linspace(0, 1, 8);
+
+                    Vector Trafo(Vector Q) {
+                        double xi = Q.x;
+                        double nu = Q.y;
+
+                        double WalzenHoehe = 50.1; // Lager der Walze in Y-Richtung
+                        double Radius = WalzenHoehe - WalzenHoehe*0.4;
+                        double y = Math.Sqrt(Radius * Radius - xi * xi);
+                        double ChannelHeightAtX = WalzenHoehe - y;
+
+                        var R = new Vector(2);
+                        R.x = xi;
+                        R.y = ChannelHeightAtX * nu;
+                        return R;
+                    }
+
+                    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, NonlinearGridTrafo: Trafo, type: CellType.Square_25);
+
+                    //Plot2dGridGnuplot(grd as GridCommons);
+
+                    return grd;
+                }
+
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -609,6 +637,10 @@ namespace BoSSS.Application.DerivativeTest {
             return grd;
         }
 
+
+        /// <summary>
+        /// if true, a solution for the rotation of rotational curved grids is used
+        /// </summary>
         public bool AltRefSol = false;
 
 

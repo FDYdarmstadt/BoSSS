@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             int d, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -109,7 +109,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         public static void AddInterfaceContinuityEq_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;

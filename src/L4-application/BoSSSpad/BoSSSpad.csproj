@@ -114,6 +114,8 @@
     <Compile Include="AppControlExtensions.cs" />
     <Compile Include="BatchProcessorConfig.cs" />
     <Compile Include="BoSSSpadGnuplotExtensions.cs" />
+    <Compile Include="BoSSSshell.cs" />
+    <Compile Include="TemporalConvergence.cs" />
     <Compile Include="SshClient.cs" />
     <Compile Include="ResolvableAssembly.cs" />
     <Compile Include="autonomuousPlotter.cs" />

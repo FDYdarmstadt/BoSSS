@@ -506,7 +506,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
-
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             CommonParams cp;
             cp.Normal = new Vector(D);
@@ -518,6 +518,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
@@ -590,6 +591,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IInnerEdgeform_UxGradV.InternalEdge_UxGradV(ref EdgeFormParams efp, MultidimensionalArray UxGradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             Debug.Assert(L == efp.Len);
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
@@ -610,6 +612,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             for(int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
@@ -640,6 +643,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IInnerEdgeform_GradUxGradV.InternalEdge_GradUxGradV(ref EdgeFormParams efp, MultidimensionalArray GradUxGradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             Debug.Assert(L == efp.Len);
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
@@ -661,6 +665,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             for (int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
@@ -789,6 +794,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IInnerEdgeSource_V.InternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             CommonParams cp;
             cp.Normal = new Vector(D);
@@ -798,10 +804,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
-
+            
             for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
@@ -864,7 +870,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IInnerEdgeSource_GradV.InternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
-
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
+            
             CommonParams cp;
             cp.Normal = new Vector(D);
             cp.X = new Vector(D);
@@ -873,10 +880,10 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             cp.GridDat = efp.GridDat;
             cp.time = efp.time;
 
-            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             for(int l = 0; l < L; l++) { // loop over edges
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 
@@ -943,6 +950,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         void IInnerEdgeform_UxV.InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
             var E2C = efp.GridDat.iGeomEdges.CellIndices;
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             Debug.Assert(efp.ParameterVars_IN.Length == NoParams);
             Debug.Assert(efp.ParameterVars_OUT.Length == NoParams);
@@ -957,6 +965,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
             for (int l = 0; l < L; l++) { // loop over edges 
                 cp.iEdge = efp.e0 + l;
+                cp.EdgeTag = _EdgeTags[cp.iEdge];
                 cp.jCellIn = E2C[cp.iEdge, 0];
                 cp.jCellOut = E2C[cp.iEdge, 1];
 

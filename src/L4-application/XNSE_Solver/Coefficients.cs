@@ -33,7 +33,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// provides some (scalar) predefined MassFlux
     /// </summary>
-    class PrescribedMassFlux : Coefficient {
+    public class PrescribedMassFlux : Coefficient {
         XNSFE_OperatorConfiguration config;
         public override IList<string> CoefficientsNames => new string[] { "PrescribedMassFlux" };
         public override DelCoefficientFactory Factory => PrescribedMassFluxFactory;

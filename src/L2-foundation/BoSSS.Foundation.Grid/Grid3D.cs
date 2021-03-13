@@ -135,40 +135,40 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte perzTag = 0;
 
                 if (periodicX) {
-                    double[][] Inlet = { new double[] { xNodes[0], yNodes[0], zNodes[0] },
-                                         new double[] { xNodes[0], yNodes[nY], zNodes[0] },
-                                         new double[] { xNodes[0], yNodes[0], zNodes[nZ] }
+                    Vector[] Inlet = { new Vector { xNodes[0], yNodes[0], zNodes[0] },
+                                       new Vector { xNodes[0], yNodes[nY], zNodes[0] },
+                                       new Vector { xNodes[0], yNodes[0], zNodes[nZ] }
                                        };
-                    double[][] Outlet = { new double[] { xNodes[nX], yNodes[0], zNodes[0] },
-                                          new double[] { xNodes[nX], yNodes[nY], zNodes[0] },
-                                          new double[] { xNodes[nX], yNodes[0], zNodes[nZ] } 
+                    Vector[] Outlet = { new Vector { xNodes[nX], yNodes[0], zNodes[0] },
+                                        new Vector { xNodes[nX], yNodes[nY], zNodes[0] },
+                                        new Vector { xNodes[nX], yNodes[0], zNodes[nZ] } 
                                         };
                     grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 1.0, 0, 0 }, Inlet, new double[] { 1.0, 0, 0 }, out perxTag);
                     grid.EdgeTagNames.Add(perxTag, "Periodic-X");
                 }
 
                 if (periodicY) {
-                    double[][] Inlet = { new double[] { xNodes[0], yNodes[0], zNodes[0] },
-                                         new double[] { xNodes[nX], yNodes[0], zNodes[0] },
-                                         new double[] { xNodes[0], yNodes[0], zNodes[nZ] }
+                    Vector[] Inlet = { new Vector { xNodes[0], yNodes[0], zNodes[0] },
+                                       new Vector { xNodes[nX], yNodes[0], zNodes[0] },
+                                       new Vector { xNodes[0], yNodes[0], zNodes[nZ] }
                                        };
-                    double[][] Outlet = { new double[] { xNodes[0], yNodes[nY], zNodes[0] },
-                                          new double[] { xNodes[nX], yNodes[nY], zNodes[0] },
-                                          new double[] { xNodes[0], yNodes[nY], zNodes[nZ] }
+                    Vector[] Outlet = { new Vector { xNodes[0], yNodes[nY], zNodes[0] },
+                                        new Vector { xNodes[nX], yNodes[nY], zNodes[0] },
+                                        new Vector { xNodes[0], yNodes[nY], zNodes[nZ] }
                                         };
                     grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.00, 0 }, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 
                 if (periodicZ) {
-                    double[][] Inlet = { new double[] { xNodes[0], yNodes[0], zNodes[0] },
-                                         new double[] { xNodes[0], yNodes[nY], zNodes[0] },
-                                         new double[] { xNodes[nX], yNodes[0], zNodes[0] }
+                    Vector[] Inlet = { new Vector { xNodes[0], yNodes[0], zNodes[0] },
+                                       new Vector { xNodes[0], yNodes[nY], zNodes[0] },
+                                       new Vector { xNodes[nX], yNodes[0], zNodes[0] }
                                        };
-                    double[][] Outlet = { new double[] { xNodes[0], yNodes[0], zNodes[nZ] },
-                                          new double[] { xNodes[0], yNodes[nY], zNodes[nZ] },
-                                          new double[] { xNodes[nX], yNodes[0], zNodes[nZ] } };
-                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 0, 1.0 }, Inlet, new double[] { 0, 0, 1.0 }, out perzTag);
+                    Vector[] Outlet = { new Vector { xNodes[0], yNodes[0], zNodes[nZ] },
+                                        new Vector { xNodes[0], yNodes[nY], zNodes[nZ] },
+                                        new Vector { xNodes[nX], yNodes[0], zNodes[nZ] } };
+                    grid.ConstructPeriodicEdgeTrafo(Outlet, new Vector { 0, 0, 1.0 }, Inlet, new Vector { 0, 0, 1.0 }, out perzTag);
                     grid.EdgeTagNames.Add(perzTag, "Periodic-Z");
                 }
 
@@ -497,46 +497,46 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // =============================================
                 byte persTag = 0;
                 if (PeriodicS) {
-                    double[][] Inlet = {
-                        new double[] {
+                    Vector[] Inlet = {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.First())[0],
                             Param2XY(rNodes.First(), sNodes.First())[1],
                             zNodes.First()
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.Last(), sNodes.First())[0],
                             Param2XY(rNodes.Last(), sNodes.First())[1],
                             zNodes.First()
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.First())[0],
                             Param2XY(rNodes.First(), sNodes.First())[1],
                             zNodes.Last()
                         }
                      };
-                    double[] InletNormal = {
+                    Vector InletNormal = new Vector { 
                             Param2XY(rNodes.Last(), sNodes.First())[1] - Param2XY(rNodes.First(), sNodes.First())[1],
                             -(Param2XY(rNodes.Last(), sNodes.First())[0] - Param2XY(rNodes.First(), sNodes.First())[0]),
                             0.0
                         };
-                    double[][] Outlet = {
-                        new double[] {
+                    Vector[] Outlet = {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.Last())[0],
                             Param2XY(rNodes.First(), sNodes.Last())[1],
                             zNodes.First()
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.Last(), sNodes.Last())[0],
                             Param2XY(rNodes.Last(), sNodes.Last())[1],
                             zNodes.First()
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.Last())[0],
                             Param2XY(rNodes.First(), sNodes.Last())[1],
                             zNodes.Last()
                         }
                     };
-                    double[] OutletNormal = {
+                    Vector OutletNormal = new Vector {
                             Param2XY(rNodes.Last(), sNodes.Last())[1] - Param2XY(rNodes.First(), sNodes.Last())[1],
                             -(Param2XY(rNodes.Last(), sNodes.Last())[0] - Param2XY(rNodes.First(), sNodes.Last())[0]),
                             0.0
@@ -547,32 +547,32 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
                 byte perzTag = 0;
                 if (PeriodicZ) {
-                    double[][] Inlet = {
-                        new double[] {
+                    Vector[] Inlet = {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.First())[0],
                             Param2XY(rNodes.First(), sNodes.First())[1],
                             zNodes[0]
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.Last(), sNodes.First())[0],
                             Param2XY(rNodes.Last(), sNodes.First())[1],
                             zNodes[0] },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.Last())[0],
                             Param2XY(rNodes.First(), sNodes.Last())[1],
                             zNodes[0] }
                         };
-                    double[][] Outlet = {
-                        new double[] {
+                    Vector[] Outlet = {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.First())[0],
                             Param2XY(rNodes.First(), sNodes.First())[1],
                             zNodes.Last() },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.Last(), sNodes.First())[0],
                             Param2XY(rNodes.Last(), sNodes.First())[1],
                             zNodes.Last()
                         },
-                        new double[] {
+                        new Vector {
                             Param2XY(rNodes.First(), sNodes.Last())[0],
                             Param2XY(rNodes.First(), sNodes.Last())[1],
                             zNodes.Last()
