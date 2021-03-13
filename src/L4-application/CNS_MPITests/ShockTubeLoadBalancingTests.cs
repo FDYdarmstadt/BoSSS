@@ -150,6 +150,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
                 dgDegree: dgDegree,
                 explicitScheme: explicitScheme,
                 explicitOrder: explicitOrder);
+            control.TracingNamespaces = "*";
 
             Console.WriteLine(System.Reflection.MethodBase.GetCurrentMethod().Name);
             CheckRunsProduceSameResults(control);
