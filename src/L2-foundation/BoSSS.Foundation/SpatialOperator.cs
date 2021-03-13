@@ -109,7 +109,7 @@ namespace BoSSS.Foundation {
                 if(!this.IsCommitted)
                     throw new NotSupportedException("Operator must be committed first.");
 
-                return Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar);
+                return Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar, 3);
             }
         }
 

@@ -15,20 +15,30 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// <see cref="ISpatialOperator.VectorFieldIndices"/>
         /// </summary>
-        static public IEnumerable<int[]> GetVectorFieldIndices(IEnumerable<string> DomVar) {
+        static public IEnumerable<int[]> GetVectorFieldIndices(IEnumerable<string> DomVar, int Dim) {
 
             var ret = new List<int[]>();
 
-            var difference = new char[][] {
-                    new char[] { 'X', 'Y', 'Z' },
-                    new char[] { 'x', 'y', 'z' },
-                    new char[] { '0', '1', '2' }
+            var difference = new string[][] {
+                    new string[] { "X", "Y", "Z" },
+                    new string[] { "x", "y", "z" },
+                    new string[] { "[0]", "[1]", "[2]" }
                 };
 
-            bool IsComponentChar( int d, char c) {
-                foreach(char[] V in difference) {
-                    if(V[d] == c)
-                        return true;
+            bool IsComponentChar(int d, string c, int DiffPosition) {
+                if(d >= Dim)
+                    return false;
+
+                foreach(string[] V in difference) {
+                    if(V[d].Length == 1) {
+                        if(V[d] == c)
+                            return true;
+                    } else {
+                        int subpos = c.IndexOf(V[d]);
+
+                        if(subpos >= 0 && subpos <= DiffPosition && DiffPosition < subpos + V[d].Length)
+                            return true;
+                    }
                 }
 
                 return false;
@@ -43,10 +53,6 @@ namespace BoSSS.Foundation.Quadrature {
                     continue;
                 var curList = new List<int>();
                 curList.Add(iVar);
-
-
-
-
 
 
                 for(int jVar = iVar + 1; jVar < _DomVar.Length; jVar++) {
@@ -69,11 +75,11 @@ namespace BoSSS.Foundation.Quadrature {
 
                         bool ok = true;
                         for(int d = 0; d < curList.Count; d++) {
-                            if(!IsComponentChar(d, _DomVar[curList[d]][DiffPosition])) {
+                            if(!IsComponentChar(d, _DomVar[curList[d]], DiffPosition)) {
                                 ok = false;
                             }
                         }
-                        if(!IsComponentChar(curList.Count, DVj[DiffPosition])) {
+                        if(!IsComponentChar(curList.Count, DVj, DiffPosition)) {
                             ok = false;
                         }
 

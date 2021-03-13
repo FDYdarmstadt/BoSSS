@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 ValueRequired[i] = true; // parameters are always required!
             }
 
-            this.VectorComponentIndices = PeriodicBoundaryUtils.GetVectorFieldIndices(DiffOp.DomainVar.Cat(DiffOp.ParameterVar)).ToArray();
+            this.VectorComponentIndices = PeriodicBoundaryUtils.GetVectorFieldIndices(DiffOp.DomainVar.Cat(DiffOp.ParameterVar), context.SpatialDimension).ToArray();
 
             // ---------
             // profiling

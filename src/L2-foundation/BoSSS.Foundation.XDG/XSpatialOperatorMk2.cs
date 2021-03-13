@@ -72,7 +72,7 @@ namespace BoSSS.Foundation.XDG {
                 if(!this.IsCommitted)
                     throw new NotSupportedException("Operator must be committed first.");
 
-                return PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar);
+                return PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar, 3);
             }
         }
 

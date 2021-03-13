@@ -894,23 +894,6 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    /*
-    /// <summary>
-    /// Solver mode for Swip2 and Swip3 terms.
-    /// </summary>
-    public enum ViscositySolverMode {
-        /// <summary>
-        /// Coupled solving for all velocity components.
-        /// </summary>
-        FullyCoupled,
-
-        /// <summary>
-        /// Segregated solving of single velocity components.
-        /// </summary>
-        Segregated
-    }
-    */
-
 
     /// <summary>
     /// \f[ 
