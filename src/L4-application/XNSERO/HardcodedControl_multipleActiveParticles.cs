@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 1);
+            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
             int j = 0;
@@ -70,7 +70,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //C.UsePhoreticField = true;
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.MinSolverIterations = 1;

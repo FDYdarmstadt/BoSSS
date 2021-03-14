@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 }
                 sum /= Math.Pow(gradient[heightDirection] - delta[heightDirection], 2);
 
-                suitable &= sum < 4;
+                suitable &= sum < 2;
 
                 return suitable;
             }
