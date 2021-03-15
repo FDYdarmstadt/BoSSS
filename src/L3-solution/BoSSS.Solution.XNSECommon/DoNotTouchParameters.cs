@@ -407,7 +407,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public object Clone() {
-            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value types
+            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value type memebers
             return cl;
         }
     }

@@ -278,12 +278,21 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.LinearizationHint = NonlinearSolMode;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
             return XOP;
+        }
+
+        /// <summary>
+        /// temporary hack, to be allowed to use different nonlinear solvers 
+        /// (e.g. fixpoint vs. Newton)
+        /// in this 'base' solver and in derived solvers.
+        /// </summary>
+        virtual protected LinearizationHint NonlinearSolMode {
+            get { return LinearizationHint.AdHoc; }
         }
 
         /// <summary>
@@ -295,13 +304,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+                DefineMomentumEquation(opFactory, config, d, D);
 
                 // Add Gravitation
-                if(config.isGravity){
+                if(config.isGravity) {
                     var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
                     opFactory.AddParameter(GravA);
                     var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
@@ -309,7 +315,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // Add additional volume forces
-                if (config.isVolForce) {
+                if(config.isVolForce) {
                     var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
                     opFactory.AddParameter(VolForceA);
                     var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
@@ -377,6 +383,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+        }
+
+        /// <summary>
+        /// Override this method to customize the assembly of the momentum equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="d">Momentum component index</param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+            opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
         }
 
         /// <summary>

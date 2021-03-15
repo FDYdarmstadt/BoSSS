@@ -31,7 +31,7 @@ namespace NSE_SIMPLE {
         }
 
         public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double visc = Viscosity(cpv.Parameters);
+            double visc = Viscosity(cpv.Parameters, U, GradU);
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 acc -= GradU[d, d] * GradV[base.m_iComp] * visc * base.m_alpha;
@@ -43,8 +43,8 @@ namespace NSE_SIMPLE {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
 
             for(int i = 0; i < inp.D; i++) {
@@ -96,7 +96,7 @@ namespace NSE_SIMPLE {
         public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {

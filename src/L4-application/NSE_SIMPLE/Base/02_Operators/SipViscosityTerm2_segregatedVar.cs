@@ -31,7 +31,7 @@ namespace NSE_SIMPLE {
 
         public override double VolumeForm(ref BoSSS.Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
-            double visc = Viscosity(cpv.Parameters);
+            double visc = Viscosity(cpv.Parameters, U, GradU);
             for(int d = 0; d < cpv.D; d++)
                 // we want to:
                 //    sum(  \partial_{m_iComp} u_d  * \partial_{d} v, d=0..D-1)
@@ -44,8 +44,8 @@ namespace NSE_SIMPLE {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
 
             for(int i = 0; i < inp.D; i++) {
@@ -97,7 +97,7 @@ namespace NSE_SIMPLE {
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {
