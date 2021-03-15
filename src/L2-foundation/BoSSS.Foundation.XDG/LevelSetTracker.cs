@@ -2025,7 +2025,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Dirty Hack to support dynamic load balancing,
-        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers
+        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext"/> for all observers
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {

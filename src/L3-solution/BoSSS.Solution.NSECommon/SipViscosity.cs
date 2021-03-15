@@ -253,13 +253,23 @@ namespace BoSSS.Solution.NSECommon {
             if(m_VelocityGrad == null) 
                 m_VelocityGrad = new double[NoOfVelocities, D];
 
+            
             for(int f = 0; f < noOfParams; f++) {
                 m_Parameters[f] = Parameters[f][i, n];
             }
             for(int f = 0; f < NoOfVelocities; f++) {
-                m_Velocity[f] = Velocity[f][i, n];
-                for(int d = 0; d < D; d++) {
-                    m_VelocityGrad[f, d] = VelocityGrad[f][i, n, d];
+                if(Velocity[f] != null)
+                    m_Velocity[f] = Velocity[f][i, n];
+                else
+                    m_Velocity[f] = 0.0;
+                if(VelocityGrad[f] != null) {
+                    for(int d = 0; d < D; d++) {
+                        m_VelocityGrad[f, d] = VelocityGrad[f][i, n, d];
+                    }
+                } else {
+                    for(int d = 0; d < D; d++) {
+                        m_VelocityGrad[f, d] = 0.0;
+                    }
                 }
             }
 
@@ -826,8 +836,8 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(fot.GetLength(0) == NumOfCells);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-            for(int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                int iEdge = efp.e0 + cell;
+            for(int i = 0; i < NumOfCells; i++) { // loop over cells...
+                int iEdge = efp.e0 + i;
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
@@ -842,8 +852,8 @@ namespace BoSSS.Solution.NSECommon {
                     //    ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
                     //    ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
                     //}
-                    double viscosityIN = Viscosity(iEdge, node, efp.ParameterVars_IN, Uin, GradUin);
-                    double viscosityOT = Viscosity(iEdge, node, efp.ParameterVars_OUT, Uout, GradUout);
+                    double viscosityIN = Viscosity(i, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(i, node, efp.ParameterVars_OUT, Uout, GradUout);
 
                     Debug.Assert(!double.IsNaN(viscosityIN));
                     Debug.Assert(!double.IsNaN(viscosityOT));
@@ -852,13 +862,13 @@ namespace BoSSS.Solution.NSECommon {
 
                     double flux = 0.0;
                     for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                        double n = efp.Normals[cell, node, d];
-                        flux -= 0.5 * (viscosityIN * GradUin[m_iComp][cell, node, d] + viscosityOT * GradUout[m_iComp][cell, node, d]) * n * base.m_alpha;
+                        double n = efp.Normals[i, node, d];
+                        flux -= 0.5 * (viscosityIN * GradUin[m_iComp][i, node, d] + viscosityOT * GradUout[m_iComp][i, node, d]) * n * base.m_alpha;
                     }
-                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][cell, node] - Uout[m_iComp][cell, node]) * pnlty;
+                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][i, node] - Uout[m_iComp][i, node]) * pnlty;
                 
-                    fin[cell, node] += flux;
-                    fot[cell, node] -= flux;
+                    fin[i, node] += flux;
+                    fot[i, node] -= flux;
                 }
             }
         }

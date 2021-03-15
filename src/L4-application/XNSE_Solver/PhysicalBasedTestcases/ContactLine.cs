@@ -43,6 +43,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         /// <returns></returns>
         public static XNSE_Control StaticDroplet_OnPlate(int p = 2, int kelem = 21, string _DbPath = null) {
+            // BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.ContactLine.StaticDroplet_OnPlate()
+
 
             XNSE_Control C = new XNSE_Control();
 
@@ -245,6 +247,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Pressure#A", X => pJump);
             C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
+
+            C.InitialValues_Evaluators.Add("VelocityX", X => 1.1);
 
             if(D == 3) {
                 center = new double[] { 0, 0, -h };
