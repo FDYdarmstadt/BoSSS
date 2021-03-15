@@ -567,7 +567,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetGravity(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d), out ret);
             return ret;
         }
 
