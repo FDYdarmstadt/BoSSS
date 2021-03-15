@@ -1529,8 +1529,6 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
             this.InitLevelSet();
 
-            Tecplot.PlotFields(new DGField[] { this.DGLevSet.Current, this.LevSet, this.CurrentVel[0], this.CurrentVel[1] }, "futinger", 0.0, 3);
-
             this.CreateEquationsAndSolvers(null);
 
             // =========================================
