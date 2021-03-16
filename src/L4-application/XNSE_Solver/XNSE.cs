@@ -126,6 +126,17 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// Current velocity
+        /// </summary>
+        public VectorField<XDGField> Velocity {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return new VectorField<XDGField>(this.CurrentState.Fields.Take(D).Select(f => ((XDGField)f)).ToArray());
+            }
+        }
+
+
+        /// <summary>
         /// Usually, the term "DG order of the calculation" means the velocity degree.
         /// </summary>
         protected int VelocityDegree() {

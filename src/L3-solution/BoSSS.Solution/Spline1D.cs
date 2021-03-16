@@ -252,6 +252,9 @@ namespace BoSSS.Solution.Control {
             return spline;
         }
 
+        [NonSerialized]
+        int binS_mem = -1;
+
         /// <summary>
         /// this function finds the interval which x belongs to
         /// </summary>
@@ -262,6 +265,9 @@ namespace BoSSS.Solution.Control {
         /// To which interval this node belongs taking into account the interpolation points
         /// </returns>
         private int binarySearch(double x) {
+            if(binS_mem >= 0 && this.nodes[binS_mem + 1] >= x && this.nodes[binS_mem] < x)
+                return binS_mem;
+
             int min = 0;
             int max = this.nodes.Length - 1;
             int mid = 0;
@@ -275,8 +281,10 @@ namespace BoSSS.Solution.Control {
             }
             while (mid > 0 && min <= max && (!(this.nodes[mid] >= x && this.nodes[mid - 1] < x)) && (!(this.nodes[mid] < x && this.nodes[mid + 1] >= x)));
             if (mid > 0 && this.nodes[mid] >= x && this.nodes[mid - 1] < x) {
+                binS_mem = mid - 1;
                 return (mid - 1);
             }
+            binS_mem = mid;
             return mid;
         }
 
