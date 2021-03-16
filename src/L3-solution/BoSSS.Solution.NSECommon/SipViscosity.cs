@@ -99,6 +99,8 @@ namespace BoSSS.Solution.NSECommon {
                                     int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
             this.m_penalty_base = _penaltyBase;
+            if(m_penalty_base.IsNaNorInf() || m_penalty_base < 0)
+                throw new ArgumentOutOfRangeException();
             this.m_iComp = iComp;
             this.m_D = D;
             velFunction = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_d(d)]);
