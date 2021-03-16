@@ -1595,7 +1595,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_ContactLine_VolumeQuadraturSchemeProvider;
             }
             set {
-                if (IsCommited)
+                if (IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_ContactLine_VolumeQuadraturSchemeProvider = value;
             }
