@@ -819,7 +819,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 N[d] = param[d];
             }
 
-            N.Normalize();
+            N.NormalizeInPlace();
 
             return N;
         }
@@ -858,7 +858,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 }
             }
 
-            tau.Normalize();
+            tau.NormalizeInPlace();
             return tau;
         }
     }

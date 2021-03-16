@@ -106,14 +106,6 @@ namespace BoSSS.Solution.XNSECommon {
                             boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
                         AddComponent(Visc1);
 
-                        //if (dntParams.UseGhostPenalties) {
-                        //    if (dntParams.UseGhostPenalties) {
-                        //        var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                        //            penalty, 0.0,
-                        //            boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                        //        AddGhostComponent(Visc1Penalty);
-                        //    }
-                        //}
 
                         break;
                     }

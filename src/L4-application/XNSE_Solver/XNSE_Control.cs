@@ -65,6 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
+            base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
         }
 
         /// <summary>

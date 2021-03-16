@@ -91,7 +91,7 @@
     <Compile Include="MaterialLawMultiphase.cs" />
     <Compile Include="PressureStabilization.cs" />
     <Compile Include="swipHeatConduction.cs" />
-    <Compile Include="swipViscosity.cs" />
+    <Compile Include="SipViscosity.cs" />
     <Compile Include="Divergence_DerivativeSource.cs" />
     <Compile Include="IncompressibleBcType.cs" />
     <Compile Include="IncompressibleBoundaryCondMap.cs" />

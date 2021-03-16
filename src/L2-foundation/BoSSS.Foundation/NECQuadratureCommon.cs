@@ -238,8 +238,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         //protected Basis m_MaxCodBasis;
 
         /// <summary>
-        /// equal to the <see cref="BoSSS.Foundation.CoordinateMapping.Fields"/>-member
-        /// of <see cref="m_CodomainMapping"/>
+        /// domain fields AND parameters (for the evaluation, there is no real difference between a domain field and a parameter)
         /// </summary>
         protected DGField[] m_DomainFields;
 

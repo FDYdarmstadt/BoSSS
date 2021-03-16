@@ -94,7 +94,7 @@ namespace MPITest {
                 
                 var D = MultidimensionalArray.CreateDiagMtx(EigVal);
 
-                var Test = EigVec.GEMM(D, EigVec.Transpose());
+                var Test = EigVec.GEMM(D, EigVec.TransposeTo());
                 Test.Acc(-1.0, SomeMtx);
                 double err = Test.InfNorm();
                 Assert.LessOrEqual(err, 1e-8);

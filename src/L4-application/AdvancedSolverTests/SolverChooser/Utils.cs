@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.Grid.Aggregation;
+﻿using AdvancedSolverTests.SubBlocking;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Solution.AdvancedSolvers;
 using System;
 using System.Collections.Generic;
@@ -12,15 +13,17 @@ namespace AdvancedSolverTests.SolverChooser
     class Utils
     {
 
-        public static MultigridOperator CreateTestMGOperator(out AggregationGridData[] MGSeq, XDGusage UseXdg = XDGusage.all, int DGOrder = 2, MatrixShape MShape = MatrixShape.laplace, int Resolution = 4) {
-            MultigridOperator retMGOp;
-            using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
-                solver.Init(null);
-                solver.RunSolverMode();
-                retMGOp = solver.MGOp;
-                MGSeq = solver.MgSeq;
-            }
-            return retMGOp;
+        public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.all, int DGOrder = 2, MatrixShape MShape = MatrixShape.laplace, int Resolution = 4) {
+            //MultigridOperator retMGOp;
+            //using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
+            var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution };
+            solver.Init(null);
+            solver.RunSolverMode();
+            //retMGOp = solver.MGOp;
+            //MGSeq = solver.MgSeq;
+            //}
+            //return retMGOp;
+            return new MgoSolverPair(solver);
         }
 
         public static ChangeOfBasisConfig[][] GetAllMGConfig(MultigridOperator mgo) {

@@ -401,7 +401,7 @@ namespace BoSSS.Application.Rheology {
                             throw new ArithmeticException("Illegal setting in control object: 'Reynolds' is out of range, must be strictly positive.");
                         }
                         if (this.Control.beta > 0.0) {
-                            var Visc = new swipViscosity_Term1(
+                            var Visc = new SipViscosity_GradU(
                                 this.Control.ViscousPenaltyScaling,
                                 d,
                                 D,

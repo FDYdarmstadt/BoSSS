@@ -643,6 +643,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
         }
 
+        /// <summary>
+        /// <see cref="TaylorCouette_CurvElm"/>
+        /// </summary>
+        public static void CurvedElementsTest(
+            [Values(2, 3)] int FlowSolverDegree = 1
+            ) {
+
+            var Tst = new TaylorCouette_CurvElm();
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, 
+                AgglomerationTreshold:0.1, 
+                vmode: ViscosityMode.Standard, 
+                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, 
+                GridResolution: 1);
+            C.NoOfMultigridLevels = 1;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 4;
+            C.SkipSolveAndEvaluateResidual = true;
+            XNSESolverTest(Tst, C);
+            
+        }
+
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>

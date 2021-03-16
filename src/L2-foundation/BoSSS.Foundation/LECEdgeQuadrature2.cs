@@ -767,11 +767,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 
                                                 // test function gradient ( \/V ) transform:
                                                 if(AffineEdge) {
+                                                    // linear edge
                                                     m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, invJacobi, m_UxGradVSumBuffer[gamma, delta, cr, cc], 0.0, ref mp_ika_Tiad_ikd,
                                                         pEdge2Cell, pEdge2Cell,
                                                         trfPreOffset_A: (2 * i0 + cr), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
 
                                                 } else {
+                                                    // curved edge
                                                     m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, invJacobi_V, m_UxGradVSumBuffer[gamma, delta, cr, cc], 0.0, ref mp_ika_ikad_ikd);
                                                 }
 
@@ -825,8 +827,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 if(!AffineEdge)
                                                     m_Trf_GradUxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, sqrtGram, m_Trf_GradUxGradVSumBuffer[gamma, delta, cr, cc], 0.0, "ikde", "ik", "ikde");
                                             }
-
-
                                         }
                                     }
                                 }

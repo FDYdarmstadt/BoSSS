@@ -80,7 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 M.ReadBlock(i0, i0, temp);
                 Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
 
-                temp.Invert();
+                temp.InvertInPlace();
 
                 invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
             }
