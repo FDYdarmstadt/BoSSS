@@ -30,9 +30,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     public class ViscosityInSpeciesBulk_GradUTerm : BoSSS.Solution.NSECommon.SipViscosity_GradU, ISpeciesFilter {
 
-        public ViscosityInSpeciesBulk_GradUTerm(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
+        public ViscosityInSpeciesBulk_GradUTerm(double penalty_safety, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
-            : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
+            : base(penalty_safety, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
 
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
@@ -45,7 +45,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             }
 
             double muFactor = Math.Max(currentMu, complementMu) / currentMu;
-            base.m_penalty_base = penalty * muFactor;
+            base.m_penalty_base = penalty_safety * muFactor;
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
@@ -65,7 +65,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
 
 
-        protected override double Viscosity(double[] Parameters) {
+        protected override double Viscosity(double[] Parameters, double[] Velocity, double[,] VelocityGrad) {
             return currentMu;
         }
 
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         IncompressibleMultiphaseBoundaryCondMap m_bcMap;
 
 
-        protected override double Viscosity(double[] Parameters) {
+        protected override double Viscosity(double[] Parameters, double[] Velocity, double[,] VelocityGrad) {
             return currentMu;
         }
 

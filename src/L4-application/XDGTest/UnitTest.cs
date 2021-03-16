@@ -97,13 +97,6 @@ namespace BoSSS.Application.XDGTest {
 
         [Test]
         public static void AllUp() {
-            //XDGTestMain p = null;
-            //XDGTestMain._Main(new string[] { "--control", "cs:BoSSS.Application.XDGTest.UnitTest.AllUpTestControl()" /*"--delplt", "--implt", "1", "-u4"*/}, false, delegate() {
-            //    p = new XDGTestMain();
-            //    return p;
-            //});
-
-
             var ctrl = BoSSS.Application.XDGTest.UnitTest.AllUpTestControl();
             using(var p = new XDGTestMain()) {
                 p.Init(ctrl);

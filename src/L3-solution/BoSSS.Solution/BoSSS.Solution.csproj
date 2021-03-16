@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="AMRLevelIndicator.cs" />
     <Compile Include="ConstantSource.cs" />
+    <Compile Include="ConstantValue.cs" />
     <Compile Include="InSituPostProcessingModule.cs" />
     <Compile Include="ScalarEquationForm.cs" />
     <Compile Include="CommandLineOptions.cs" />
