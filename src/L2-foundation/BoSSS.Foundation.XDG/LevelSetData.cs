@@ -1229,7 +1229,6 @@ namespace BoSSS.Foundation.XDG {
                 this.m_SpeciesMask = null;
                 this.m_SpeciesSubGrids = null;
                 this.m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
-                this.m_LevSetRegions_b4Update = null;
             }
 
 
