@@ -66,8 +66,9 @@ namespace BoSSS.Application.XDGTest {
         static void Main(string[] args) {
             InitMPI();
             DeleteOldPlotFiles();
-            UnitTest.AllUp();
-            UnitTest.RestartTest();
+            VariousTests.MultipleTrackerUpdateCalls(1);
+            //UnitTest.AllUp();
+            //UnitTest.RestartTest();
             FinalizeMPI();
 
             /*
