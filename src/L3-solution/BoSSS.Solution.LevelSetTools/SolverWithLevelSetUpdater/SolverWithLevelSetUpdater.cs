@@ -90,21 +90,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// 
-        /// </summary>
-        //protected override void CreateTrackerHack() {
-        //    base.CreateTrackerHack();
-
-        //    foreach (DualLevelSet ls in LsUpdater.LevelSets.Values) {
-        //        if (ls.DGLevelSet is DGField f) {
-        //            base.RegisterField(ls.DGLevelSet);
-        //        }
-        //    }
-
-        //}
-
-
-        /// <summary>
         /// Number of different interfaces 
         /// </summary>
         protected abstract int NoOfLevelSets {
@@ -181,7 +166,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
-                    case LevelSetEvolution.Fourier: 
+                    case LevelSetEvolution.Fourier:
+                        FourierLevelSet fourierLevelSetDG = new FourierLevelSet(this.Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), LevelSetDG);
+                        DGlevelSets[iLevSet] = fourierLevelSetDG;
+                        break;
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
                     case LevelSetEvolution.FastMarching:
@@ -195,7 +183,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.RigidObject: {
-                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
+                        DGlevelSets[iLevSet] = SetRigidLevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
                         break;
                     }
                     default:
@@ -233,6 +221,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // create evolver:
                 switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
+                        FourierLevelSet ls = (FourierLevelSet)DGlevelSets[iLevSet];
+                        var fourier = new FourierEvolver(
+                            VariableNames.LevelSetCG,
+                            ls,
+                            Control.FourierLevSetControl,
+                            Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+
+                        lsUpdater.AddEvolver(LevelSetCG, fourier);             
                         break;
                     }
                     case LevelSetEvolution.FastMarching: {
@@ -327,11 +323,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
-                        FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                        fourierLevelSet.Clear();
+                        pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
-                            fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
-                        pair.DGLevelSet = fourierLevelSet;
+                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
                         break;
                     }
                     case LevelSetEvolution.Prescribed:

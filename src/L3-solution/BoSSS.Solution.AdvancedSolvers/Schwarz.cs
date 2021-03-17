@@ -614,7 +614,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(hiBlocks != null) {
                             foreach(var block in hiBlocks) {
                                 try {
-                                    block.Invert();
+                                    block.InvertInPlace();
                                 } catch(Exception e) {
                                     Console.WriteLine(e);
                                 }
@@ -626,7 +626,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(fullBlocks != null) {
                             foreach(var block in fullBlocks) {
                                 try {
-                                    block.Invert();
+                                    block.InvertInPlace();
                                 } catch(Exception e) {
                                     Console.WriteLine(e);
                                 }

@@ -132,6 +132,7 @@ namespace BoSSS.Solution.NSECommon {
         protected override void InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOutCell) {
             double u_j_In = Uin[0];
             double u_j_Out = Uout[0];
+                      
 
             FluxInCell = -0.5 * (u_j_In - u_j_Out) * inp.Normal[component];
             FluxOutCell = FluxInCell;

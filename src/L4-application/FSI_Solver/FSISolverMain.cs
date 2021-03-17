@@ -406,7 +406,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // The bulk
                 // -----------------------------
-                swipViscosity_Term1 viscousBulk = new swipViscosity_Term1(penalty, d, spatialDim, boundaryCondMap, ViscosityOption.ConstantViscosity, FluidViscosity, double.NaN, null);
+                SipViscosity_GradU viscousBulk = new SipViscosity_GradU(penalty, d, spatialDim, boundaryCondMap, ViscosityOption.ConstantViscosity, FluidViscosity, double.NaN, null);
                 comps.Add(viscousBulk);
 
                 // Immersed boundary

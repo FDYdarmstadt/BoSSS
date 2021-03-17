@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
-    /// A configuration switch to <see cref="swipViscosityBase"/> and decendants, to
+    /// A configuration switch to <see cref="SipViscosityBase"/> and decendants, to
     /// switch constant / variable viscosity
     /// and non-dimensionless / dimensionless formulation.
     /// </summary>
@@ -64,12 +64,14 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
         /// </summary>
-        /// <param name="_penaltyBase"></param>
+        /// <param name="_penaltyBase">
+        /// base/safety factor for the penalty factor; should **not** depend on geometry or DG degree, these contributions are factored in by <see cref="penalty(IGridData, int, int, int)"/>
+        /// </param>
         /// <param name="iComp">
         /// component index
         /// </param>
@@ -93,7 +95,7 @@ namespace BoSSS.Solution.NSECommon {
         /// as a function of the level-set.
         /// Only available for <see cref="ViscosityOption.VariableViscosity"/> and <see cref="ViscosityOption.VariableViscosityDimensionless"/>.
         /// </param>
-        protected swipViscosityBase(double _penaltyBase,
+        protected SipViscosityBase(double _penaltyBase,
                                     int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
             this.m_penalty_base = _penaltyBase;
@@ -202,35 +204,79 @@ namespace BoSSS.Solution.NSECommon {
         PhysicsMode m_PhysicsMode;
 
         /// <summary>
-        /// the molecular viscosity
+        /// Viscosity term coefficient - in dependence of the equation this could be one-over-Reynolds, molecular viscosity, etc.;
+        /// Dependence on <paramref name="Velocity"/> and <paramref name="VelocityGrad"/> allows non-linear viscosity models.
         /// </summary>
-        virtual protected double Viscosity(double[] Parameters) {
+        virtual protected double Viscosity(double[] Parameters, double[] Velocity, double[,] VelocityGrad) {
             switch(m_ViscosityMode) {
                 case ViscosityOption.ConstantViscosity:
-                    return m_constantViscosityValue;
+                return m_constantViscosityValue;
                 case ViscosityOption.ConstantViscosityDimensionless:
-                    return (1.0 / m_reynolds);
+                return (1.0 / m_reynolds);
                 case ViscosityOption.VariableViscosity:
-                    if(m_EoS == null) {
-                        return Parameters[0];
+                if(m_EoS == null) {
+                    return Parameters[0];
+                } else {
+                    if(Parameters.Length > 1) {
+                        return m_EoS.GetViscosity(Parameters);
                     } else {
-                        if (Parameters.Length > 1) {
-                            return m_EoS.GetViscosity(Parameters);
-                        } else {
-                            return m_EoS.GetViscosity(Parameters[0]);
-                        }
+                        return m_EoS.GetViscosity(Parameters[0]);
                     }
+                }
                 case ViscosityOption.VariableViscosityDimensionless:
-                    if(m_EoS == null) {
-                        return (Parameters[0] / m_reynolds);
-                    } else {
-                        return (m_EoS.GetViscosity(Parameters[0]) / m_reynolds);
-                    }
+                if(m_EoS == null) {
+                    return (Parameters[0] / m_reynolds);
+                } else {
+                    return (m_EoS.GetViscosity(Parameters[0]) / m_reynolds);
+                }
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
+
         }
 
+        // store instances of object used in 'Viscosity' -- theoretically, this should produce less stress on the garbage collector
+        double[] m_Parameters;
+        double[] m_Velocity;
+        double[,] m_VelocityGrad;
+
+        protected double Viscosity(int i, int n, MultidimensionalArray[] Parameters, MultidimensionalArray[] Velocity, MultidimensionalArray[] VelocityGrad) {
+            int noOfParams = Parameters != null ? Parameters.Length : 0;
+            if(m_Parameters == null)
+                m_Parameters = new double[noOfParams];
+
+            int NoOfVelocities = Velocity.Length;
+            Debug.Assert(VelocityGrad.Length == NoOfVelocities);
+            if(m_Velocity == null)
+                m_Velocity = new double[NoOfVelocities];
+            int D = VelocityGrad[0].GetLength(2);
+            if(m_VelocityGrad == null) 
+                m_VelocityGrad = new double[NoOfVelocities, D];
+
+            
+            for(int f = 0; f < noOfParams; f++) {
+                m_Parameters[f] = Parameters[f][i, n];
+            }
+            for(int f = 0; f < NoOfVelocities; f++) {
+                if(Velocity[f] != null)
+                    m_Velocity[f] = Velocity[f][i, n];
+                else
+                    m_Velocity[f] = 0.0;
+                if(VelocityGrad[f] != null) {
+                    for(int d = 0; d < D; d++) {
+                        m_VelocityGrad[f, d] = VelocityGrad[f][i, n, d];
+                    }
+                } else {
+                    for(int d = 0; d < D; d++) {
+                        m_VelocityGrad[f, d] = 0.0;
+                    }
+                }
+            }
+
+            return Viscosity(m_Parameters, m_Velocity, m_VelocityGrad);
+        }
+
+        
         /// <summary>
         /// Linear component - returns this object itself.
         /// </summary>
@@ -242,8 +288,9 @@ namespace BoSSS.Solution.NSECommon {
 
                 case ViscosityOption.VariableViscosity:
                 case ViscosityOption.VariableViscosityDimensionless:
-                    //throw new NotImplementedException("Nonlinear dependence - todo.");
-                   return new IEquationComponent[] { this };
+                    throw new NotImplementedException("Nonlinear dependence - todo.");
+                   
+                    return new IEquationComponent[] { this };
 
 
                 default:
@@ -430,20 +477,19 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// \f[ 
-    ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
+    ///   -\mathrm{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term1 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_GradU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term1(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public SipViscosity_GradU(double _penalty_safety, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
-            //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
-            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
+            : base(_penalty_safety, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
             
         }
 
@@ -456,7 +502,7 @@ namespace BoSSS.Solution.NSECommon {
                 acc -= GradU[m_iComp, d] * GradV[d];
 
             if(acc != 0.0)
-                acc *= Viscosity(cpv.Parameters) * base.m_alpha;
+                acc *= Viscosity(cpv.Parameters, U, GradU) * base.m_alpha;
             return -acc;
         }
 
@@ -466,8 +512,8 @@ namespace BoSSS.Solution.NSECommon {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
 
             for(int d = 0; d < inp.D; d++) {
@@ -505,7 +551,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {
@@ -648,17 +694,16 @@ namespace BoSSS.Solution.NSECommon {
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
             Debug.Assert(f.GetLength(0) == NumofCells);
-            int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
+            //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+            //double[] Parameters = new double[_NOParams];
 
 
             for(int cell = 0; cell < NumofCells; cell++) { // loop over cells...
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes... 
-
-                    for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = prm.ParameterVars[np][cell, node];
-                    }
-                    double viscosity = Viscosity(Parameters) * base.m_alpha;
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    Parameters[np] = prm.ParameterVars[np][cell, node];
+                    //}
+                    double viscosity = Viscosity(cell, node, prm.ParameterVars, U, GradU) * base.m_alpha;
                     Debug.Assert(!double.IsNaN(viscosity));
                     Debug.Assert(!double.IsInfinity(viscosity));
 
@@ -675,8 +720,8 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(fOT.GetLength(0) == NumOfEdges);
             int NumOfNodes = fIN.GetLength(1); // no of nodes per cell
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] ParametersIN = new double[_NOParams];
-            double[] ParametersOT = new double[_NOParams];
+            //double[] ParametersIN = new double[_NOParams];
+            //double[] ParametersOT = new double[_NOParams];
 
             //int NumOfArguments = 1;
             //Debug.Assert(NumOfArguments == Uin.Length);
@@ -689,13 +734,14 @@ namespace BoSSS.Solution.NSECommon {
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
                     double uJump = 0.5 * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]);
 
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
+                    //}
+                    double viscosityIN = Viscosity(edges, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(edges, node, efp.ParameterVars_OUT, Uout, GradUout);
 
-                    }
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
+
                     Debug.Assert(!double.IsNaN(viscosityIN));
                     Debug.Assert(!double.IsNaN(viscosityOT));
                     Debug.Assert(!double.IsInfinity(viscosityIN));
@@ -790,25 +836,25 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(fot.GetLength(0) == NumOfCells);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-            for(int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                int iEdge = efp.e0 + cell;
+            for(int i = 0; i < NumOfCells; i++) { // loop over cells...
+                int iEdge = efp.e0 + i;
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
                 double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
-                int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-                double[] ParametersIN = new double[_NOParams];
-                double[] ParametersOT = new double[_NOParams];
+                //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+                //double[] ParametersIN = new double[_NOParams];
+                //double[] ParametersOT = new double[_NOParams];
                 for(int node = 0; node < NumOfNodes; node++) {
                     // SIPG Flux Loops
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
+                    //}
+                    double viscosityIN = Viscosity(i, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(i, node, efp.ParameterVars_OUT, Uout, GradUout);
 
-                    }
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
                     Debug.Assert(!double.IsNaN(viscosityIN));
                     Debug.Assert(!double.IsNaN(viscosityOT));
                     Debug.Assert(!double.IsInfinity(viscosityIN));
@@ -816,13 +862,13 @@ namespace BoSSS.Solution.NSECommon {
 
                     double flux = 0.0;
                     for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                        double n = efp.Normals[cell, node, d];
-                        flux -= 0.5 * (viscosityIN * GradUin[m_iComp][cell, node, d] + viscosityOT * GradUout[m_iComp][cell, node, d]) * n * base.m_alpha;
+                        double n = efp.Normals[i, node, d];
+                        flux -= 0.5 * (viscosityIN * GradUin[m_iComp][i, node, d] + viscosityOT * GradUout[m_iComp][i, node, d]) * n * base.m_alpha;
                     }
-                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][cell, node] - Uout[m_iComp][cell, node]) * pnlty;
+                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][i, node] - Uout[m_iComp][i, node]) * pnlty;
                 
-                    fin[cell, node] += flux;
-                    fot[cell, node] -= flux;
+                    fin[i, node] += flux;
+                    fot[i, node] -= flux;
                 }
             }
         }
@@ -894,46 +940,32 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    /// <summary>
-    /// Solver mode for Swip2 and Swip3 terms.
-    /// </summary>
-    public enum ViscositySolverMode {
-        /// <summary>
-        /// Coupled solving for all velocity components.
-        /// </summary>
-        FullyCoupled,
-
-        /// <summary>
-        /// Segregated solving of single velocity components.
-        /// </summary>
-        Segregated
-    }
 
     /// <summary>
     /// \f[ 
-    ///   - \operatorname{div} \left( \mu (\partial_d \vec{u}) \right)
+    ///   - \mathrm{div} \left( \mu (\partial_d \vec{u})^T \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term2 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_GradUtransp : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
-        private ViscositySolverMode ViscSolverMode;
+        //private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term2(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-                                   ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
+        public SipViscosity_GradUtransp(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+                                   ViscosityOption _ViscosityMode, /*ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,*/
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized =false)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
-            this.ViscSolverMode = ViscSolverMode;
+            //this.ViscSolverMode = ViscSolverMode;
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
-            double visc = Viscosity(cpv.Parameters);
+            double visc = Viscosity(cpv.Parameters, U, GradU);
             for(int d = 0; d < cpv.D; d++)
                 // we want to:
                 //    sum(  \partial_{m_iComp} u_d  * \partial_{d} v, d=0..D-1)
@@ -946,25 +978,25 @@ namespace BoSSS.Solution.NSECommon {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
 
             for(int i = 0; i < inp.D; i++) {
                 // consistency term
                 Acc += 0.5 * (muA * _Grad_uA[i, m_iComp] + muB * _Grad_uB[i, m_iComp]) * (_vA - _vB) * inp.Normal[i];
                 // symmetry term
-                switch(ViscSolverMode) {
-                    case ViscositySolverMode.FullyCoupled:
+                //switch(ViscSolverMode) {
+                //    case ViscositySolverMode.FullyCoupled:
                         Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
-                        break;
-                    case ViscositySolverMode.Segregated:
-                        if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                //        break;
+                //    case ViscositySolverMode.Segregated:
+                //        if(i == m_iComp)
+                //            Acc += 0.5 * (muA * _Grad_vA[i] + muB * _Grad_vB[i]) * (_uA[i] - _uB[i]) * inp.Normal[m_iComp];
+                //        break;
+                //    default:
+                //        throw new NotImplementedException();
+                //}
             }
             Acc *= base.m_alpha;
 
@@ -999,7 +1031,7 @@ namespace BoSSS.Solution.NSECommon {
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {
@@ -1014,17 +1046,17 @@ namespace BoSSS.Solution.NSECommon {
                         // consistency
                         Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                         // symmetry
-                        switch(ViscSolverMode) {
-                            case ViscositySolverMode.FullyCoupled:
+                        //switch(ViscSolverMode) {
+                        //    case ViscositySolverMode.FullyCoupled:
                                 Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
-                                break;
-                            case ViscositySolverMode.Segregated:
-                                if(i == m_iComp)
-                                    Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
+                        //        break;
+                        //    case ViscositySolverMode.Segregated:
+                        //        if(i == m_iComp)
+                        //            Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
+                        //        break;
+                        //    default:
+                        //        throw new NotImplementedException();
+                        //}
                     }
                     Acc *= base.m_alpha;
 
@@ -1044,15 +1076,15 @@ namespace BoSSS.Solution.NSECommon {
                             // consistency
                             Acc += muA * (inp.Normal[dN] * _Grad_uA[dD, dN] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                             // symmetry
-                            switch(ViscSolverMode) {
-                                case ViscositySolverMode.FullyCoupled:
+                            //switch(ViscSolverMode) {
+                            //    case ViscositySolverMode.FullyCoupled:
                                     g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dD);
                                     Acc += muA * (inp.Normal[dN] * _Grad_vA[dN] * inp.Normal[m_iComp]) * (_uA[dD] - g_D) * inp.Normal[dD] * base.m_alpha;
-                                    break;
-                                case ViscositySolverMode.Segregated:
-                                default:
-                                    throw new NotImplementedException();
-                            }
+                            //        break;
+                            //    case ViscositySolverMode.Segregated:
+                            //    default:
+                            //        throw new NotImplementedException();
+                            //}
                         }
                         g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
                         // penalty
@@ -1110,17 +1142,16 @@ namespace BoSSS.Solution.NSECommon {
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
             Debug.Assert(f.GetLength(0) == NumofCells);
-            int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
-
+            //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+            //double[] Parameters = new double[_NOParams];
 
             for(int cell = 0; cell < NumofCells; cell++) { // loop over cells...
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes... 
 
-                    for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = prm.ParameterVars[np][cell, node];
-                    }
-                    double viscosity = Viscosity(Parameters) *base.m_alpha;
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    Parameters[np] = prm.ParameterVars[np][cell, node];
+                    //}
+                    double viscosity = Viscosity(cell, node, prm.ParameterVars, U, GradU) * base.m_alpha;
 
                     for(int d = 0; d < prm.GridDat.SpatialDimension; d++) {
                         f[cell, node, d] += viscosity * GradU[d][cell, node, m_iComp];
@@ -1134,36 +1165,36 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(fIN.GetLength(0) == NumOfEdges);
             Debug.Assert(fOT.GetLength(0) == NumOfEdges);
             int NumOfNodes = fIN.GetLength(1); // no of nodes per cell
-            int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] ParametersIN = new double[_NOParams];
-            double[] ParametersOT = new double[_NOParams];
+            //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+            //double[] ParametersIN = new double[_NOParams];
+            //double[] ParametersOT = new double[_NOParams];
 
             for(int edges = 0; edges < NumOfEdges; edges++) { // loop over edges...
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
-                    }
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
+                    //}
+                    double viscosityIN = Viscosity(edges, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(edges, node, efp.ParameterVars_OUT, Uout, GradUout);
 
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
                     double n = efp.Normals[edges, node, m_iComp];
-                    switch(ViscSolverMode) {
-                        case ViscositySolverMode.FullyCoupled:
+                    //switch(ViscSolverMode) {
+                    //    case ViscositySolverMode.FullyCoupled:
                             for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
                                 fIN[edges, node, d] -= 0.5 * viscosityIN * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha;
                                 fOT[edges, node, d] -= 0.5 * viscosityOT * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha;
                             }
-                            break;
-                        case ViscositySolverMode.Segregated:
-                            fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
-                            fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
-                            break;
-                        default:
-                            throw new NotImplementedException();
-
-                    }
+                    //        break;
+                    //    case ViscositySolverMode.Segregated:
+                    //        fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
+                    //        fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha;
+                    //        break;
+                    //    default:
+                    //        throw new NotImplementedException();
+                    //
+                    //}
                 }
             }
         }
@@ -1248,17 +1279,16 @@ namespace BoSSS.Solution.NSECommon {
                 double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-                double[] ParametersIN = new double[_NOParams];
-                double[] ParametersOT = new double[_NOParams];
+                //double[] ParametersIN = new double[_NOParams];
+                //double[] ParametersOT = new double[_NOParams];
                 for(int node = 0; node < NumOfNodes; node++) {
                     // SIPG Flux Loops
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
-
-                    }
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
+                    //}
+                    double viscosityIN = Viscosity(cell, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(cell, node, efp.ParameterVars_OUT, Uout, GradUout);
 
 
                     double flux = 0.0;
@@ -1348,28 +1378,28 @@ namespace BoSSS.Solution.NSECommon {
 
     /// <summary>
     /// \f[ 
-    ///   \frac{2}{3} \operatorname{div} \left( \mu \myMatrix{I} \operatorname{div} ( \vec{u} )  \right)
+    ///   \frac{2}{3} \mathrm{div} \left( \mu \myMatrix{I} \mathrm{div} ( \vec{u} )  \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term3 : swipViscosityBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_divU : SipViscosityBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
 
-        private ViscositySolverMode ViscSolverMode;
+        //private ViscositySolverMode ViscSolverMode;
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term3(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
-                                   ViscosityOption _ViscosityMode, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,
+        public SipViscosity_divU(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+                                   ViscosityOption _ViscosityMode/*, ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled*/,
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
-            this.ViscSolverMode = ViscSolverMode;
+            //this.ViscSolverMode = ViscSolverMode;
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double visc = Viscosity(cpv.Parameters);
+            double visc = Viscosity(cpv.Parameters, U, GradU);
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 acc -= GradU[d, d] * GradV[base.m_iComp] * visc * base.m_alpha;
@@ -1381,25 +1411,15 @@ namespace BoSSS.Solution.NSECommon {
             double Acc = 0.0;
 
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
-            double muB = this.Viscosity(inp.Parameters_OUT);
-
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
             for(int i = 0; i < inp.D; i++) {
                 // consistency term
                 Acc += 0.5 * (muA * _Grad_uA[i, i] + muB * _Grad_uB[i, i]) * (_vA - _vB) * inp.Normal[m_iComp];
                 // symmetry term
-                switch(ViscSolverMode) {
-                    case ViscositySolverMode.FullyCoupled:
-                        Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
-                        break;
-                    case ViscositySolverMode.Segregated:
-                        if(i == m_iComp)
-                            Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
-                        break;
-                    default:
-                        throw new NotImplementedException();
-                }
+                Acc += 0.5 * (muA * _Grad_vA[m_iComp] + muB * _Grad_vB[m_iComp]) * (_uA[i] - _uB[i]) * inp.Normal[i];
+
             }
             Acc *= base.m_alpha;
 
@@ -1434,7 +1454,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {
@@ -1448,17 +1468,7 @@ namespace BoSSS.Solution.NSECommon {
                         // consistency
                         Acc += (muA * _Grad_uA[i, i]) * (_vA) * inp.Normal[m_iComp];
                         // symmetry
-                        switch(ViscSolverMode) {
-                            case ViscositySolverMode.FullyCoupled:
-                                Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
-                                break;
-                            case ViscositySolverMode.Segregated:
-                                if(i == m_iComp)
-                                    Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
-                                break;
-                            default:
-                                throw new NotImplementedException();
-                        }
+                        Acc += (muA * _Grad_vA[m_iComp]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[i];
                     }
                     Acc *= base.m_alpha;
 
@@ -1497,17 +1507,14 @@ namespace BoSSS.Solution.NSECommon {
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
             Debug.Assert(f.GetLength(0) == NumofCells);
-            int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] Parameters = new double[_NOParams];
-
-
+            //int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
+            //double[] Parameters = new double[_NOParams];
             for(int cell = 0; cell < NumofCells; cell++) { // loop over cells...
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes... 
-
-                    for(int np = 0; np < _NOParams; np++) {
-                        Parameters[np] = prm.ParameterVars[np][cell, node];
-                    }
-                    double viscosity = Viscosity(Parameters);
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    Parameters[np] = prm.ParameterVars[np][cell, node];
+                    //}
+                    double viscosity = Viscosity(cell, node, prm.ParameterVars, U, GradU);
                     for(int d = 0; d < prm.GridDat.SpatialDimension; d++) {
                         f[cell, node, m_iComp] -= viscosity * GradU[d][cell, node, d] * (2.0 / 3.0) * base.m_alpha;
                     }
@@ -1522,36 +1529,25 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(fOT.GetLength(0) == NumOfEdges);
             int NumOfNodes = fIN.GetLength(1); // no of nodes per cell
             int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-            double[] ParametersIN = new double[_NOParams];
-            double[] ParametersOT = new double[_NOParams];
+            //double[] ParametersIN = new double[_NOParams];
+            //double[] ParametersOT = new double[_NOParams];
 
             for(int edges = 0; edges < NumOfEdges; edges++) { // loop over edges...
                 for(int node = 0; node < NumOfNodes; node++) { // loop over nodes...
 
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
-                    }
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][edges, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][edges, node];
+                    //}
 
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
+                    double viscosityIN = Viscosity(edges, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(edges, node, efp.ParameterVars_OUT, Uout, GradUout);
+
                     double n;
-                    switch(ViscSolverMode) {
-                        case ViscositySolverMode.FullyCoupled:
-                            for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                                n = efp.Normals[edges, node, d];
-                                fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                                fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                            }
-                            break;
-                        case ViscositySolverMode.Segregated:
-                            n = efp.Normals[edges, node, m_iComp];
-                            fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                            fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[m_iComp][edges, node] - Uout[m_iComp][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
-                            break;
-                        default:
-                            throw new NotImplementedException();
-
+                    for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
+                        n = efp.Normals[edges, node, d];
+                        fIN[edges, node, m_iComp] -= 0.5 * viscosityIN * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
+                        fOT[edges, node, m_iComp] -= 0.5 * viscosityOT * (Uin[d][edges, node] - Uout[d][edges, node]) * n * base.m_alpha * (-2.0 / 3.0);
                     }
                 }
             }
@@ -1624,41 +1620,40 @@ namespace BoSSS.Solution.NSECommon {
 
 
         void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot) {
-            int NumOfCells = efp.Len;
-            Debug.Assert(fin.GetLength(0) == NumOfCells);
-            Debug.Assert(fot.GetLength(0) == NumOfCells);
+            int NumOfEdges = efp.Len;
+            Debug.Assert(fin.GetLength(0) == NumOfEdges);
+            Debug.Assert(fot.GetLength(0) == NumOfEdges);
             int NumOfNodes = fin.GetLength(1); // no of nodes per cell
 
-            for(int cell = 0; cell < NumOfCells; cell++) { // loop over cells...
-                int iEdge = efp.e0 + cell;
+            for(int i = 0; i < NumOfEdges; i++) { // loop over cells...
+                int iEdge = efp.e0 + i;
 
                 int jCellIn = efp.GridDat.iGeomEdges.CellIndices[iEdge, 0];
                 int jCellOut = efp.GridDat.iGeomEdges.CellIndices[iEdge, 1];
                 double pnlty = penalty(efp.GridDat, jCellIn, jCellOut, iEdge);
 
                 int _NOParams = this.ParameterOrdering == null ? 0 : this.ParameterOrdering.Count;
-                double[] ParametersIN = new double[_NOParams];
-                double[] ParametersOT = new double[_NOParams];
+                //double[] ParametersIN = new double[_NOParams];
+                //double[] ParametersOT = new double[_NOParams];
                 for(int node = 0; node < NumOfNodes; node++) {
                     // SIPG Flux Loops
-                    for(int np = 0; np < _NOParams; np++) {
-                        ParametersIN[np] = efp.ParameterVars_IN[np][cell, node];
-                        ParametersOT[np] = efp.ParameterVars_OUT[np][cell, node];
-
-                    }
-                    double viscosityIN = Viscosity(ParametersIN);
-                    double viscosityOT = Viscosity(ParametersOT);
+                    //for(int np = 0; np < _NOParams; np++) {
+                    //    ParametersIN[np] = efp.ParameterVars_IN[np][i, node];
+                    //    ParametersOT[np] = efp.ParameterVars_OUT[np][i, node];
+                    //}
+                    double viscosityIN = Viscosity(i, node, efp.ParameterVars_IN, Uin, GradUin);
+                    double viscosityOT = Viscosity(i, node, efp.ParameterVars_OUT, Uout, GradUout);
 
 
                     double flux = 0.0;
                     for(int d = 0; d < efp.GridDat.SpatialDimension; d++) {
-                        double n = efp.Normals[cell, node, m_iComp];
-                        flux -= 0.5 * (viscosityIN * GradUin[d][cell, node, d] + viscosityOT * GradUout[d][cell, node, d]) * n * base.m_alpha;
+                        double n = efp.Normals[i, node, m_iComp];
+                        flux -= 0.5 * (viscosityIN * GradUin[d][i, node, d] + viscosityOT * GradUout[d][i, node, d]) * n * base.m_alpha;
                     }
-                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][cell, node] - Uout[m_iComp][cell, node]) * pnlty;
+                    flux += Math.Max(viscosityIN, viscosityOT) * (Uin[m_iComp][i, node] - Uout[m_iComp][i, node]) * pnlty;
 
-                    fin[cell, node] += flux * (-2.0 / 3.0);
-                    fot[cell, node] -= flux * (-2.0 / 3.0);
+                    fin[i, node] += flux * (-2.0 / 3.0);
+                    fot[i, node] -= flux * (-2.0 / 3.0);
                 }
             }
         }

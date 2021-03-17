@@ -64,11 +64,12 @@ namespace BoSSS.Application.XNSE_Solver {
         //===========
         static void Main(string[] args) {
 
+
             //InitMPI();
             //DeleteOldPlotFiles();
-
+            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
+            //Tests.ASUnitTest.CurvedElementsTest(3);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-
             //throw new Exception("Remove me");
 
             void KatastrophenPlot(DGField[] dGFields) {
@@ -88,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
-       
+
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -139,20 +140,27 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap;
-
-
         
+
+        private IncompressibleMultiphaseBoundaryCondMap m_boundaryMap;
+
+        /// <summary>
+        /// Relation between 
+        /// - edge tags (<see cref="Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>, passed to equation components via <see cref="BoSSS.Foundation.CommonParams.EdgeTag"/>)
+        /// - boundary conditions specified in the control object (<see cref="AppControl.BoundaryValues"/>)
+        /// </summary>
+        protected IncompressibleMultiphaseBoundaryCondMap boundaryMap {
+            get {
+                if(m_boundaryMap == null)
+                    m_boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+                return m_boundaryMap;
+            }
+        }
 
         /// <summary>
         /// dirty hack...
         /// </summary>
         protected override IncompressibleBoundaryCondMap GetBcMap() {
-            if(boundaryMap == null)
-                boundaryMap = new IncompressibleMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
             return boundaryMap;
         }
 
@@ -271,12 +279,21 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.LinearizationHint = NonlinearSolMode;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
 
             return XOP;
+        }
+
+        /// <summary>
+        /// temporary hack, to be allowed to use different nonlinear solvers 
+        /// (e.g. fixpoint vs. Newton)
+        /// in this 'base' solver and in derived solvers.
+        /// </summary>
+        virtual protected LinearizationHint NonlinearSolMode {
+            get { return LinearizationHint.AdHoc; }
         }
 
         /// <summary>
@@ -288,13 +305,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+                DefineMomentumEquation(opFactory, config, d, D);
 
                 // Add Gravitation
-                if(config.isGravity){
+                if(config.isGravity) {
                     var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
                     opFactory.AddParameter(GravA);
                     var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
@@ -302,7 +316,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // Add additional volume forces
-                if (config.isVolForce) {
+                if(config.isVolForce) {
                     var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
                     opFactory.AddParameter(VolForceA);
                     var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
@@ -352,16 +366,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
-                FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                var fourier = new FourierEvolver(
-                    VariableNames.LevelSetCG,
-                    ls,
-                    Control.FourierLevSetControl,
-                    Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
-                lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
-                opFactory.AddParameter(fourier);
-                break;
+                    FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+                    var fourier = new FourierEvolver(
+                        VariableNames.LevelSetCG,
+                        ls,
+                        Control.FourierLevSetControl,
+                        Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
+                    //lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
+                    opFactory.AddParameter(fourier);
+                    break;
 
                 default:
                 throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
@@ -370,6 +384,20 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+        }
+
+        /// <summary>
+        /// Override this method to customize the assembly of the momentum equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="d">Momentum component index</param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+            opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
         }
 
         /// <summary>
@@ -426,9 +454,9 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");
+            Console.WriteLine($"Done with time step {TimestepNo}.");
             return dt;
         }
     }

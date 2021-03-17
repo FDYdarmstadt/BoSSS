@@ -21,13 +21,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.BoSSSpad {
+namespace BoSSS.Foundation.IO {
+
+
+    /// <summary>
+    /// Creation, Verification and Deletion of databases
+    /// </summary>
     public static class DatabaseUtils {
 
         /// <summary>
-        /// Create the BoSSS database directory structure in
-        /// <see cref="targetDirectory"/> and registers the directory in the
-        /// DBE config (<see cref="register_db.Program"/>). The structure is:
+        /// Create the BoSSS database directory structure in <paramref name="dbDir"/>;
+        /// The structure is:
         ///  - `./data`
         ///  - `./timesteps`
         ///  - `./grids`

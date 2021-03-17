@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
 
             this.m_penalty_base = penalty_base;
             this.m_LsTrk = t;
@@ -39,6 +39,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
             this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+            this.m_UsePhoretic = UsePhoretic;
+            this.AllParticles = AllParticles;
         }
         readonly int m_iLevSet;
         readonly string m_FluidSpc;
@@ -46,6 +48,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         readonly int Component;
         readonly int m_D;
         readonly bool m_UseLevelSetVelocityParameter;
+        readonly bool m_UsePhoretic;
 
         /// <summary>
         /// Viskosity in species A
@@ -82,6 +85,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             m_penalty_degree = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             NegLengthScaleS = csA.CellLengthScales;
+
+            IdentifyParticleCache_P = null;
         }
 
 
@@ -110,6 +115,77 @@ namespace BoSSS.Application.XNSERO_Solver {
             active = 1
         }
 
+        static public bool write = true;
+
+        Particle[] AllParticles;
+
+        // caching/acceleration 
+        Vector IdentifyParticleCache_X;
+        int IdentifyParticleCache_jCell;
+        Particle IdentifyParticleCache_P;
+
+
+        /// <summary>
+        /// For a given position <paramref name="X"/>, 
+        /// on the surface of some particle, this method returns the respective particle.
+        /// </summary>
+        /// <remarks>
+        /// Note:
+        /// - this is a brute-force approach which may be costly if a large number of particles is used
+        /// - some primitive caching is used to accelerate the method
+        /// </remarks>
+        Particle IdentifyParticle(Vector X, int jCell) {
+            if(AllParticles == null || AllParticles.Length < 0)
+                return null;
+
+            double h = NegLengthScaleS[jCell] * 2;
+            double eps = h*h*1e-10;
+
+            if(IdentifyParticleCache_P != null) {
+                if((jCell == IdentifyParticleCache_jCell) &&  (X - IdentifyParticleCache_X).AbsSquare() < eps) {
+                    return IdentifyParticleCache_P;
+                }
+            }
+
+            // first, sort the particles according to distance;
+            // it is most likely that the particle with closest distance is a "hit"
+            // however, I have doubts that this actually accelerates this method
+            var PartDist = new (Particle P, double dist)[AllParticles.Length];
+            for(int i = 0; i < AllParticles.Length; i++) {
+                Particle P = AllParticles[i];
+                var Pos = P.Motion.GetPosition();
+                double dist = (X - Pos).L2Norm();
+                PartDist[i] = (P, dist);
+            }
+            Array.Sort(PartDist, (T1, T2) => Math.Sign(T1.dist - T2.dist));
+
+            // test if the particle contains the point 
+            for(int i = 0; i < AllParticles.Length; i++) {
+                if(PartDist[i].P.Contains(X, h)) {
+                    IdentifyParticleCache_jCell = jCell;
+                    IdentifyParticleCache_X = X;
+                    IdentifyParticleCache_P = PartDist[i].P;
+                    return IdentifyParticleCache_P;
+                }
+            }
+
+            // Fallback; something is weird anyway.
+            return PartDist[0].P;
+        }
+
+        double GetAngle(Vector X, int jCell, out Particle P) {
+            P = IdentifyParticle(X, jCell);
+            if(P == null)
+                return double.NaN;
+
+            Vector R = X - P.Motion.GetPosition(0);
+            double alpha = R.Angle2D();
+
+            return alpha - P.Motion.GetAngle(0);
+        }
+
+
+
         /// <summary>
         /// default-implementation
         /// </summary>
@@ -120,7 +196,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             int dim = normalVector.Dim;
 
             
-            Debug.Assert(ArgumentOrdering.Count == dim);
+
+            Debug.Assert(uA.Length == ArgumentOrdering.Count);
+            Debug.Assert(uB.Length == ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(0) == ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == dim);
@@ -136,6 +214,25 @@ namespace BoSSS.Application.XNSERO_Solver {
             BoundaryConditionType bcType = activeStressVector.Abs() <= 1e-8 ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             
+            if(m_UsePhoretic) {
+
+                double alpha = GetAngle(inp.X, inp.jCellIn, out var Particle);
+
+
+                Debug.Assert(ArgumentOrdering.Count == dim + 1);
+                double phoreticVal = uA[dim];
+                Vector tangential = normalVector.Rotate2D(Math.PI * 0.5);
+
+                // todo: add computation of slip velocity.
+                // Note: if the relation is non-linear, special treatment is required!
+                if(write) {
+                    Console.WriteLine($"todo: add computation of slip velocity; phoretic value is {phoreticVal}, angle is {alpha}");
+                    write = false; // prevent end-less output; 
+                }
+            } else {
+                Debug.Assert(ArgumentOrdering.Count == dim);
+            }
+
 
             // Gradient of u and v 
             // =====================
@@ -214,7 +311,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public IList<string> ArgumentOrdering {
-            get { return VariableNames.VelocityVector(this.m_D); }
+            get { 
+                var ret = VariableNames.VelocityVector(this.m_D); 
+                if(this.m_UsePhoretic) {
+                    ret = ret.Append(VariableNames.Phoretic).ToArray();
+                }
+                return ret;
+            }
         }
 
         /// <summary>

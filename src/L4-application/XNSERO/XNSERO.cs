@@ -16,7 +16,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 
 
 namespace BoSSS.Application.XNSERO_Solver {
@@ -48,11 +47,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow();
+            //TestProgram.TestParticleInShearFlow_Phoretic();
             //throw new Exception("remove me");
-
-
-            
 
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
@@ -67,19 +63,20 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// An array of all particles (rigid objects). Particles are only added at the initialization of the simulation. 
         /// </summary>
-        [DataMember]
         public Particle[] Particles { get; private set; }
 
         /// <summary>
         /// Spatial dimension
         /// </summary>
-        [DataMember]
-        private int SpatialDimension;
+        private int SpatialDimension {
+            get {
+                return GridData.SpatialDimension;
+            }
+        }
 
         /// <summary>
         /// FluidViscosity Phase A
         /// </summary>
-        [DataMember]
         private double[] FluidViscosity => new double[] { Control.PhysicalParameters.mu_A, Control.PhysicalParameters.mu_B };
 
         /// <summary>
@@ -89,32 +86,30 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// First entry: vertical [0] or horizontal [1]
         /// Second entry: left/lower wall [0] or right/upper wall [1]
         /// </remarks>
-        [DataMember]
         private double[][] BoundaryCoordinates => Control.BoundaryPositionPerDimension;
 
         /// <summary>
         /// Array with two entries (2D). [0] true: x-Periodic, [1] true: y-Periodic
         /// </summary>
-        [DataMember]
         private bool[] IsPeriodic => Control.BoundaryIsPeriodic;
 
         /// <summary>
         /// Grid length parameter used as tolerance measurement for particles.
         /// </summary>
-        [DataMember]
         private double MaxGridLength => Control.MaxGridLength;
 
-        [DataMember]
         private bool ContainsSecondFluidSpecies => Control.ContainsSecondFluidSpecies;
 
-        [DataMember]
+
         private Vector Gravity => Control.GetGravity();
 
-        [DataMember]
+
         private bool AllParticlesFixed => Control.fixPosition;
 
-        [DataMember]
-        private double CoefficientOfRestitution => ((XNSERO_Control)Control).CoefficientOfRestitution;
+
+        private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
+
+        public static IGridData Cunk { get; private set; }
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -144,7 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
 
-            Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
+            var ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for(int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
             }
@@ -164,15 +159,15 @@ namespace BoSSS.Application.XNSERO_Solver {
 
 
         /// <summary>
-        /// Definition of the boundary condition on the immersed boundary, i.e. at the surface of the particles, <see cref="XNSE_Control.UseImmersedBoundary"/>;
-        /// Override to customize.
+        /// Definition of the boundary condition on the immersed boundary, i.e. at the surface of the particles, 
+        /// <see cref="XNSE_Control.UseImmersedBoundary"/>;
         /// </summary>
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             using(new FuncTrace()) {
                 XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
                 for(int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
+                    opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
                 }
 
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
@@ -196,7 +191,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns></returns>
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
             using(new FuncTrace()) {
-                SpatialDimension = GridData.SpatialDimension;
                 if(IsFluidInterface(iLevSet)) {
                     ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
                     return levelSetVelocity;
@@ -328,7 +322,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 foreach(Particle p in Particles) {
                     p.IsCollided = false;
                 }
-                ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, ((XNSERO_Control)Control).WallPositionPerDimension, ((XNSERO_Control)Control).BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
+                ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
                 Collision.Calculate(Particles);
             }
         }
@@ -369,7 +363,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             using(new FuncTrace()) {
                 if((MPIRank == 0) && (logPhysicalDataParticles != null)) {
                     for(int p = 0; p < Particles.Length; p++) {
-                        logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", timestepNo, p, phystime, Particles[p].Motion.GetPosition(0)[0], Particles[p].Motion.GetPosition(0)[1], Particles[p].Motion.GetAngle(0), Particles[p].Motion.GetTranslationalVelocity(0)[0], Particles[p].Motion.GetTranslationalVelocity(0)[1], Particles[p].Motion.GetRotationalVelocity(0), Particles[p].Motion.GetHydrodynamicForces(0)[0], Particles[p].Motion.GetHydrodynamicForces(0)[1], Particles[p].Motion.GetHydrodynamicTorque(0)));
+                        logPhysicalDataParticles.WriteLine($"{timestepNo},{p},{phystime},{Particles[p].Motion.GetPosition(0).x},{Particles[p].Motion.GetPosition(0).y},{Particles[p].Motion.GetAngle(0)},{Particles[p].Motion.GetTranslationalVelocity(0).x},{Particles[p].Motion.GetTranslationalVelocity(0).y},{Particles[p].Motion.GetRotationalVelocity(0)},{Particles[p].Motion.GetHydrodynamicForces(0).x},{Particles[p].Motion.GetHydrodynamicForces(0).y},{Particles[p].Motion.GetHydrodynamicTorque(0)}");
                         logPhysicalDataParticles.Flush();
                     }
                 }
@@ -392,5 +386,18 @@ namespace BoSSS.Application.XNSERO_Solver {
                 configsLevel.Add(configPres);
             }
         }
+
+        /*
+        /// <summary>
+        /// In addition to the base-implementation, this method updates the mapping from cells to particles.
+        /// </summary>
+        public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
+            double resi = base.UpdateLevelset(domainFields, time, dt, UnderRelax, incremental);
+
+            
+
+            return resi;
+        }
+        */
     }
 }

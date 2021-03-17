@@ -64,10 +64,6 @@ WorkflowMgm.Init("Demo\_BoundaryAndInitialData");
  }
 \BoSSSexe
 \BoSSScmd{
-MiniBatchProcessor.Server.StartIfNotRunning(false);
- }
-\BoSSSexe
-\BoSSScmd{
 /// % ======================================
 /// \section{Textual and Embedded formulas}
 /// % ======================================
@@ -147,7 +143,7 @@ LastError;
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.BlockUntilAllJobsTerminate(300);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -216,7 +212,7 @@ var J2 = c2.RunBatch();
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.BlockUntilAllJobsTerminate(300);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -313,7 +309,7 @@ var J3 = c3.RunBatch();
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.BlockUntilAllJobsTerminate(300);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -402,7 +398,7 @@ var J4 = c4.RunBatch();
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.BlockUntilAllJobsTerminate(300);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{

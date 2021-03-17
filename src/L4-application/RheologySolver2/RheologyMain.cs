@@ -377,7 +377,7 @@ namespace BoSSS.Application.Rheology {
                             Console.WriteLine("Using Stokes Equation - no convective term.");
                             
                         } else {
-                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0));
+                            comps.Add(new LocalLaxFriedrichsConvection(D, BcMap, d, 1.0, null));
                         }
 
 
@@ -401,7 +401,7 @@ namespace BoSSS.Application.Rheology {
                             throw new ArithmeticException("Illegal setting in control object: 'Reynolds' is out of range, must be strictly positive.");
                         }
                         if (this.Control.beta > 0.0) {
-                            var Visc = new swipViscosity_Term1(
+                            var Visc = new SipViscosity_GradU(
                                 this.Control.ViscousPenaltyScaling,
                                 d,
                                 D,

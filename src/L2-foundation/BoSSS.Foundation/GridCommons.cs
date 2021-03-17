@@ -430,7 +430,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="PeriodicTrafo_Tag">
         /// The edge tag for the periodic transformation
         /// </param>
-        public void ConstructPeriodicEdgeTrafo(double[][] X1, double[] N1, double[][] X2, double[] N2, out byte PeriodicTrafo_Tag) {
+        public void ConstructPeriodicEdgeTrafo(Vector[] X1, Vector N1, Vector[] X2, Vector N2, out byte PeriodicTrafo_Tag) {
 
             // check for right usage
             // ---------------------
@@ -445,14 +445,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             if (X2.Length != D)
                 throw new ArgumentException("must contain exactly " + D + " elements in " + D + "D.", "y");
             for (int i = 0; i < D; i++) {
-                if (X1[i].Length != D)
+                if (X1[i].Dim != D)
                     throw new ArgumentException("vectors must be " + D + "-dimensional.", "x");
-                if (X2[i].Length != D)
+                if (X2[i].Dim != D)
                     throw new ArgumentException("vectors must be " + D + "-dimensional.", "y");
             }
-            if (N1.Length != D)
+            if (N1.Dim != D)
                 throw new ArgumentException("vectors must be " + D + "-dimensional.", "x");
-            if (N2.Length != D)
+            if (N2.Dim != D)
                 throw new ArgumentException("vectors must be " + D + "-dimensional.", "y");
 
             MultidimensionalArray preImage = MultidimensionalArray.Create(D + 1, D);

@@ -690,7 +690,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private void ComputeMomentumBalanceCollision(int particleID, int secondObjectID, double threshold) {
             double distance = DistanceVector[particleID][secondObjectID].Abs();
             Vector normalVector = DistanceVector[particleID][secondObjectID];
-            normalVector.Normalize();
+            normalVector.NormalizeInPlace();
             if (distance > threshold && !Overlapping[particleID][secondObjectID])
                 return;
             if (Overlapping[particleID][secondObjectID])
