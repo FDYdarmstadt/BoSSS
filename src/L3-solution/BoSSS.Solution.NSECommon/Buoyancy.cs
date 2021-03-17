@@ -22,6 +22,7 @@ using BoSSS.Foundation;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.NSECommon {
     
@@ -139,7 +140,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Froude">Dimensionless Froude number.</param>
         /// <param name="physicsMode"></param>
         /// <param name="EoS">Equation of state for calculating density.</param>
-        public BuoyancyJacobi(Vector GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS) {
+        public BuoyancyJacobi(Vector GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS, int noOfChemComponents) {
             // Check direction
             if((GravityDirection.Abs() - 1.0) > 1.0e-13)
                 throw new ArgumentException("Length of GravityDirection vector has to be 1.0");
@@ -162,7 +163,8 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = null;
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3};
+                string[] MFs = VariableNames.MassFractions(noOfChemComponents);
+                this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs );
                     break;
                 default:
                     throw new ApplicationException("wrong physicsmode");

@@ -263,7 +263,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Combustion:
                     if(NumberOfSpecies == -1)
                         throw new ArgumentException("NumberOfSpecies must be specified for combustion flows.");
-                    string[] Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies-1));
+                    string[] Parameters = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfSpecies));
                     this.NumberOfSpecies = NumberOfSpecies;
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), Parameters);
                     break;
@@ -310,10 +310,10 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Combustion: {
                                     // opt1:
                                     TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                    double[] argsa = new double[NumberOfSpecies - 1 + 1];
+                                    double[] argsa = new double[NumberOfSpecies + 1];
                                     argsa[0] = TemperatureOut;
-                                    for (int n = 1; n < NumberOfSpecies; n++) {
-                                        argsa[n] = Bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
+                                    for (int n = 0; n < NumberOfSpecies; n++) {
+                                        argsa[n+1] = Bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
                                     }
                                     res = EoS.GetDensity(argsa) * Uout * inp.Normal[Component];
                                     break;
@@ -340,7 +340,7 @@ namespace BoSSS.Solution.NSECommon {
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.Combustion:
-                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                                DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies+1);
                                 res = EoS.GetDensity(DensityArgumentsIn) * Uin[Component] * inp.Normal[Component];
                                 break;
                             default:
@@ -381,8 +381,8 @@ namespace BoSSS.Solution.NSECommon {
                     res = 0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies);
-                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies);
+                    DensityArguments_In = Uin.GetSubVector(m_SpatialDimension, NumberOfSpecies+1);
+                    DensityArguments_Out = Uout.GetSubVector(m_SpatialDimension, NumberOfSpecies+1);
                     densityIn = (EoS.GetDensity(DensityArguments_In));
                     densityOut = (EoS.GetDensity(DensityArguments_Out));
                     if (double.IsNaN(densityIn) || double.IsInfinity(densityIn) || double.IsNaN(densityOut) || double.IsInfinity(densityOut))
@@ -413,7 +413,7 @@ namespace BoSSS.Solution.NSECommon {
                     output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments = U.GetSubVector(m_SpatialDimension, NumberOfSpecies ); //MassFraction4 does not exist as a variable, because it is just calculated at the end of each iteration
+                    DensityArguments = U.GetSubVector(m_SpatialDimension, NumberOfSpecies+1 ); //MassFraction4 does not exist as a variable, because it is just calculated at the end of each iteration
                     output[Component] = EoS.GetDensity(DensityArguments) * U[Component];
                     break;
                 default:
@@ -476,6 +476,7 @@ namespace BoSSS.Solution.NSECommon {
         virtual public TermActivationFlags InnerEdgeTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
+                //return TermActivationFlags.AllOn;
             }
         }
 
@@ -485,6 +486,7 @@ namespace BoSSS.Solution.NSECommon {
         virtual public TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
+                //return TermActivationFlags.AllOn;
             }
         }
     }

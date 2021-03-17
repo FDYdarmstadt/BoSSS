@@ -562,7 +562,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// set to 0.0 to turn the Lax-Friedrichs scheme into an central difference scheme.
         /// </summary>
-        protected double LaxFriedrichsSchemeSwitch = 0.0;
+        protected double LaxFriedrichsSchemeSwitch = 1.0;
 
         /// <summary>
         /// Ctor for incompressible flows.
@@ -633,7 +633,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Combustion:
                     if(NumberOfComponents == -1)
                         throw new ArgumentException("NumberOfReactants needs to be specified!");
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature, VariableNames.MassFractions(NumberOfComponents -1 )); // VelocityX,VelocityY,(VelocityZ), Temperature  and MassFractions as variables. 
+                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature, VariableNames.MassFractions(NumberOfComponents)); // VelocityX,VelocityY,(VelocityZ), Temperature  and MassFractions as variables. 
                     break;
                 case PhysicsMode.Viscoelastic:
                     throw new ApplicationException("Using of wrong constructor for viscoelastic flows.");
@@ -716,21 +716,21 @@ namespace BoSSS.Solution.NSECommon {
                                         case IncompressibleBcType.Velocity_Inlet:
                                             // opt1: (using Dirichlet values)
                                             Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                            for(int n = 1; n < NumberOfReactants ; n++) {
+                                            for(int n = 0; n < NumberOfReactants ; n++) {
                                                 // opt1: (using Dirichlet values)
-                                                Uout[m_SpatialDimension + n] =  m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
+                                                Uout[m_SpatialDimension + n + 1] =  m_bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
                                             }
                                             break;
                                         case IncompressibleBcType.Wall: // Dirichlet for temperature and neumann = 0 for mass Fractions
                                             // opt1: (using Dirichlet values for the temperature)
                                             Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                            for(int n = 1; n < NumberOfReactants ; n++) {
+                                            for(int n = 1; n < NumberOfReactants +1 ; n++) {
                                                 // using inner values for the mass fractions
                                                 Uout[m_SpatialDimension + n] = Uin[m_SpatialDimension + n];
                                             }
                                             break;
                                         case IncompressibleBcType.NoSlipNeumann:
-                                            for(int n = 0; n < NumberOfReactants ; n++) {
+                                            for(int n = 0; n < NumberOfReactants + 1 ; n++) {
                                                 // using inner values for the temperature and the mass fractions
                                                 Uout[m_SpatialDimension + n] = Uin[m_SpatialDimension + n];
                                             }
@@ -783,7 +783,7 @@ namespace BoSSS.Solution.NSECommon {
                                 rho = EoS.GetDensity(densityArguments);
                                 break;
                             case PhysicsMode.Combustion:
-                                densityArguments = Uin.GetSubVector(m_SpatialDimension, NumberOfReactants - 1 + 1); // T,Y0,Y1,Y2 and ??Y3??
+                                densityArguments = Uin.GetSubVector(m_SpatialDimension, NumberOfReactants + 1); // T,Y0,Y1,Y2 and ??Y3??
                                 rho = EoS.GetDensity(densityArguments);
                                 break;
                             default:
@@ -829,8 +829,8 @@ namespace BoSSS.Solution.NSECommon {
                     rhoOut = EoS.GetDensity(DensityArgumentsOut);
                     break; 
                 case PhysicsMode.Combustion:
-                    DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants-1) + 1); 
-                    DensityArgumentsOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants-1) + 1);
+                    DensityArgumentsIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants) + 1); 
+                    DensityArgumentsOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants) + 1);
 
                     rhoIn = EoS.GetDensity(DensityArgumentsIn);
                     rhoOut = EoS.GetDensity(DensityArgumentsOut);
@@ -883,8 +883,8 @@ namespace BoSSS.Solution.NSECommon {
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, TemperatureMeanOut);
                     break;
                 case PhysicsMode.Combustion:
-                    double[] ScalarMeanIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1);
-                    double[] ScalarMeanOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1);
+                    double[] ScalarMeanIn = Uin.GetSubVector(m_SpatialDimension, (NumberOfReactants ) + 1);
+                    double[] ScalarMeanOut = Uout.GetSubVector(m_SpatialDimension, (NumberOfReactants ) + 1);
                     LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, ScalarMeanIn);
                     LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, ScalarMeanOut);
                     break;
@@ -931,7 +931,7 @@ namespace BoSSS.Solution.NSECommon {
                     rho = EoS.GetDensity(DensityArguments);
                     break;
                 case PhysicsMode.Combustion:
-                    DensityArguments = U.GetSubVector(m_SpatialDimension, (NumberOfReactants - 1) + 1); // Temperature, Y0,Y1 and Y2. Y3 is calculated in GetDensity.
+                    DensityArguments = U.GetSubVector(m_SpatialDimension, (NumberOfReactants ) + 1); // Temperature, Y0,Y1 and Y2. Y3 is calculated in GetDensity.
                     rho = EoS.GetDensity(DensityArguments);
                     break;
                 default:

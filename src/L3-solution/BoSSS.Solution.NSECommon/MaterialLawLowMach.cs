@@ -127,6 +127,18 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure
+        /// </summary>
+        /// <param name="ThermodynamicPressure"></param>
+        public void Initialize(double ThermodynamicPressureValue) {
+            if (!IsInitialized) {
+                this.ThermodynamicPressureValue = ThermodynamicPressureValue;
+            } else {
+                throw new ApplicationException("Initialize() can be called only once.");
+            }
+        }
         /// <summary>
         /// Dimensionless ideal gas law - returns density as function of
         /// thermodynamic pressure (i.e. p0) and temperature.

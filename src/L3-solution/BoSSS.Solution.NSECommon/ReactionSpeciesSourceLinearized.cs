@@ -137,7 +137,7 @@ namespace BoSSS.Solution.NSECommon {
         int SpeciesIndex; //Species index, not to be confused with alpha = SpeciesIndex + 1
         double[] MolarMasses;
         double rho;
-        MaterialLawCombustion EoS;
+        MaterialLaw EoS;
         double m_Da;
         double TRef;
         double cpRef;
@@ -152,8 +152,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="EoS">MaterialLawCombustion</param>  
         /// <param name="NumberOfReactants">The number of reactants (i.e. ns)</param> 
         /// <param name="SpeciesIndex">Index of the species being balanced. (I.e. 0 for fuel, 1 for oxidizer, 2 for CO2, 3 for water)</param> 
-        public ReactionSpeciesSourceJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLawCombustion EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) {
-            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants - 1));// Y4 is not a variable!!!!;
+        public ReactionSpeciesSourceJacobi(double[] ReactionRateConstants, double[] StoichiometricCoefficients , double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) {
+            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants));// Y4 is not a variable!!!!;
             this.StoichiometricCoefficients = StoichiometricCoefficients;
             this.ReactionRateConstants = ReactionRateConstants;
             this.SpeciesIndex = SpeciesIndex;
@@ -174,7 +174,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Temperature, MassFraction0, MassFraction1, MassFraction 2, MassFraction 3 at the linearization point.
+        /// 
         /// </summary>
         public virtual IList<string> ParameterOrdering {
             get {
@@ -219,7 +219,7 @@ namespace BoSSS.Solution.NSECommon {
             double MM_O = MolarMasses[1];
  
             if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
-                Ta = EoS.getTa(YF, YO) / TRef;                
+                Ta = ((MaterialLawCombustion)EoS).getTa(YF, YO) / TRef;                
             }
 
              rho = EoS.GetDensity(U);
