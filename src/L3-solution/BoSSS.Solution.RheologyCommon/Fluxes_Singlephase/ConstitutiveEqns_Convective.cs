@@ -24,6 +24,7 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
 using System.Diagnostics;
 using ilPSP;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.RheologyCommon {
 

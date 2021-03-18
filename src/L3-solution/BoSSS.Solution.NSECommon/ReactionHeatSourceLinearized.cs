@@ -21,6 +21,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 
 

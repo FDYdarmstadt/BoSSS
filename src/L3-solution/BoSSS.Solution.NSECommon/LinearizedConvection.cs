@@ -25,6 +25,7 @@ using BoSSS.Foundation;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.NSECommon {
 

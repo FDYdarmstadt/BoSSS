@@ -47,6 +47,7 @@
     <Compile Include="CellAgglomerator.cs" />
     <Compile Include="CoefficientsList.cs" />
     <Compile Include="CutCellMetrics.cs" />
+    <Compile Include="FormDifferentiator.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
     <Compile Include="LevelSetTracker_Caches.cs" />
     <Compile Include="MappingExtensions.cs" />

@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
-                    if(iec is ISpeciesFilter fiec) {
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null) {
                         string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {

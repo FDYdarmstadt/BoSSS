@@ -93,16 +93,19 @@ namespace BoSSS.Application.BoSSSpad {
         IScheduler m__scheduler;
 
         [DataMember]
-        string Username;
+        public string Username;
 
         [DataMember]
-        string Password;
+        public string Password;
 
         [DataMember]
-        string ServerName;
+        public string ServerName;
 
         [DataMember]
-        string[] ComputeNodes;
+        public string[] ComputeNodes;
+
+        [DataMember]
+        public JobPriority DefaultJobPriority = JobPriority.Normal;
 
         /// <summary>
         /// Jobs are forced to run on a single node.
@@ -256,6 +259,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.SingleNode = this.SingleNode;
+                MsHpcJob.Priority = this.DefaultJobPriority;
 
                 MsHpcJob.UserName = Username;
 
