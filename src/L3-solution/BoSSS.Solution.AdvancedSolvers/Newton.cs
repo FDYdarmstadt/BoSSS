@@ -263,8 +263,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         terminateLoop = true;
                     } else {
                         //Console.WriteLine("but continue as long as we make progress");
-                        success = true;
-                        terminateLoop = true;
+                        //success = true;
+                        //terminateLoop = true;
                     }
                 }
 

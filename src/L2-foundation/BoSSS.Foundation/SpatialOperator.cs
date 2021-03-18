@@ -1050,6 +1050,9 @@ namespace BoSSS.Foundation {
             }
         }
 
+        public static bool DoEdge = true;
+        public static bool DoVolume = true;
+
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
         /// </summary>
@@ -1579,7 +1582,7 @@ namespace BoSSS.Foundation {
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if(m_NonlinearVolume != null) {
+                    if(m_NonlinearVolume != null && DoVolume) {
                         using(new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
@@ -1606,8 +1609,8 @@ namespace BoSSS.Foundation {
 
 
                     void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
-                        if(ne != null) {
-                            using(new BlockTrace("Edge_Integration_NonLin", tr)) {
+                        if(ne != null && DoEdge) {
+                            using(new BlockTrace(name, tr)) {
 
                                 ne.m_Output = output;
                                 ne.m_alpha = alpha;
@@ -1784,7 +1787,7 @@ namespace BoSSS.Foundation {
                     // volume integration
                     // ------------------
                     SpatialOperator _Owner = (SpatialOperator)this.Owner;
-                    if(volRule.Any()) {
+                    if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
@@ -1799,7 +1802,7 @@ namespace BoSSS.Foundation {
 
                     // edge integration
                     // ----------------
-                    if(!edgeRule.IsNullOrEmpty()) {
+                    if(!edgeRule.IsNullOrEmpty() && DoEdge) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;

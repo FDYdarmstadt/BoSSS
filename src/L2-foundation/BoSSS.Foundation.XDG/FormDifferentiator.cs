@@ -245,6 +245,9 @@ namespace BoSSS.Foundation {
             int D = cpv.D;
             Debug.Assert(D == m_SpatialDimension, "Spatial Dimension Mismatch.");
 
+           
+
+
             double delta = GetTmpTrialVals(cpv.Parameters, out var Utmp, out var GradUtmp);
             
             CommonParamsVol clonedParams = cpv;
@@ -271,6 +274,8 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+
+            
 
             return ret;
         }
@@ -356,8 +361,10 @@ namespace BoSSS.Foundation {
             base(ef, ef.InnerEdgeTerms | ef.BoundaryEdgeTerms, SpatialDimension) //
         {
             m_EdgForm = ef;
+           
         }
 
+       
         /// <summary>
         /// %
         /// </summary>
@@ -395,6 +402,8 @@ namespace BoSSS.Foundation {
             double deltaOt = GetTmpTrialVals(inp.Parameters_OUT, out var U_OT_temp, out var GradU_OT_temp);
             double delta = Math.Max(deltaIn, deltaOt);
 
+
+            
 
             //SetDir = 0;
             
@@ -448,6 +457,13 @@ namespace BoSSS.Foundation {
                 }
 
             }
+
+            //if(debug) {
+            //    double retAlt = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN, U_OT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            //    if(retAlt != 0.0)
+            //        Console.Write("");
+            //    Debug.Assert((ret - retAlt).Abs() <= 1e-10);
+            //}
 
             //Dir = 0;
             return ret;
@@ -523,6 +539,13 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+
+            //if(debug) {
+            //    double retAlt = m_EdgForm.BoundaryEdgeForm(ref clonedParams, U_IN, _Grad_uIn, _vIN, _Grad_vIN);
+            //    if(retAlt != 0.0)
+            //        Console.Write("");
+            //    Debug.Assert((ret - retAlt).Abs() <= 1e-10);
+            //}
 
             return ret;
         }
