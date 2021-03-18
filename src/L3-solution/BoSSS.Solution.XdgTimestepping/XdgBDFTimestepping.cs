@@ -1574,8 +1574,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if(distL2 >= refL2 * 1.0e-5) {
                         double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
 
-                        base.Residuals.AccV(-1.0, checkResidual);
-                        Tecplot.Tecplot.PlotFields(Residuals.Fields, "ResidualDiff", 0.0, 4);
+                        //base.Residuals.AccV(-1.0, checkResidual);
+                        //Tecplot.Tecplot.PlotFields(Residuals.Fields, "ResidualDiff", 0.0, 4);
                     }
 
                     Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");

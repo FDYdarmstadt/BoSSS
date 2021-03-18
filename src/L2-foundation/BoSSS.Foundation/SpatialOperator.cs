@@ -1050,7 +1050,14 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// Only for debugging, should not be in master branch; if it is, feel free to delete
+        /// </summary>
         public static bool DoEdge = true;
+
+        /// <summary>
+        /// Only for debugging, should not be in master branch; if it is, feel free to delete
+        /// </summary>
         public static bool DoVolume = true;
 
         /// <summary>

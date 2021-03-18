@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.XDG {
            
         }
 
-        List<string> m_SpeciesList = new List<string>();
+        public List<string> m_SpeciesList = new List<string>();
 
         private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 

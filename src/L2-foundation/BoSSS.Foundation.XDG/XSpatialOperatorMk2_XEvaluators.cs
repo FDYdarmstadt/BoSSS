@@ -659,6 +659,11 @@ namespace BoSSS.Foundation.XDG {
                     // compile quadrature rules & create matrix builders for each species 
                     // ------------------------------------------------------------------
                     foreach (var SpeciesId in ReqSpecies) {
+                        //if(lsTrk.GetSpeciesName(SpeciesId) != "A") {
+                        //    Console.WriteLine("REM: !!!!!!!!!!!!!!!!!!!!!!!1   species integration deact");
+                        //    continue;
+                        //}
+
                         int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
                         // parameters for species
