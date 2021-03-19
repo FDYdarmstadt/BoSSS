@@ -11,6 +11,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
     [TestFixture]
     static public class AllUpTest {
 
+        /*
         /// <summary>
         /// MPI init
         /// </summary>
@@ -18,7 +19,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         public static void SetUp() {
             BoSSS.Solution.Application.InitMPI();
         }
-
+        */
        
         /// <summary>
         /// Da Test!
@@ -41,7 +42,7 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
                 });
         }
         
-
+        /*
         /// <summary>
         /// MPI shutdown.
         /// </summary>
@@ -49,5 +50,6 @@ namespace BoSSS.Application.AdaptiveMeshRefinementTest {
         public static void OneTimeTearDown() {
             csMPI.Raw.mpiFinalize();
         }
+        */
     }
 }

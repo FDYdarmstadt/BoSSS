@@ -1142,22 +1142,25 @@ namespace PublicTestRunner {
                         r = tr.Execute(args);
                     }
 
-                    using(new BlockTrace("StdOut/StdErr reset", ftr)) {
+                    using(var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
                         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
                         Console.SetError(new StreamWriter(Console.OpenStandardError()));
-                    }
-
-                    Console.WriteLine("Waiting for all processors to catch up AFTER running test(s)...");
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                    Console.WriteLine("All Here.");
 
 
-                    //var ar = new AutoRun(a);
-                    //int r = ar.Execute(args);
 
-                    int[] all_rS = r.MPIAllGather();
-                    for(int rnk = 0; rnk < all_rS.Length; rnk++) {
-                        Console.WriteLine($"Rank {rnk}: NUnit returned code " + r);
+                        bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        bt.Info("All Here.");
+
+                        
+                        //var ar = new AutoRun(a);
+                        //int r = ar.Execute(args);
+
+                        int[] all_rS = r.MPIAllGather();
+                        for(int rnk = 0; rnk < all_rS.Length; rnk++) {
+                            bt.Info($"Rank {rnk}: NUnit returned code " + r);
+                        }
+                        
                     }
 
                     ret = ret | (r != 0);
