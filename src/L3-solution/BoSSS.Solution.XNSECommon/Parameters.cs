@@ -201,6 +201,7 @@ namespace BoSSS.Solution.XNSECommon {
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            this.LsTrk = ((XDGBasis)DomainVarFields.First().Value.Basis).Tracker;
             var velocity0Mean = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
                 XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
@@ -332,8 +333,8 @@ namespace BoSSS.Solution.XNSECommon {
             //}
 
             int gravityDegree;
-            if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
-                gravityDegree = opts.Degree;
+            if (control.FieldOptions.TryGetValue(gravity, out FieldOpts opts)) {
+                gravityDegree = Math.Max(0, opts.Degree);                
             } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 gravityDegree = velOpts.Degree;
             } else {
@@ -394,7 +395,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             int volForceDegree;
             if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
-                volForceDegree = opts.Degree;
+                volForceDegree = Math.Max(0, opts.Degree);
             } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 volForceDegree = velOpts.Degree;
             } else {
@@ -581,7 +582,8 @@ namespace BoSSS.Solution.XNSECommon {
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < lsParameters.Length - 1; ++i) {
                 ParameterVarFields[lsParameters[i]].Clear();
-                ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                if(filtLevSetGradient != null)
+                    ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
             }
         }
     }
