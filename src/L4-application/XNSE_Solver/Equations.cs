@@ -98,6 +98,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // from XNSFE_OperatorComponents
             if (config.isTransport) {
+                //if (config.MassfluxCoupling != XNSFE_Control.Coupling.weak) throw new NotImplementedException();
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
                 AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
                 if (!config.isMovingMesh) {
@@ -112,11 +113,19 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             } else {
                 //  ... and when the convective terms are turned off we still need the contribution below
-                AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
+                if(config.MassfluxCoupling == XNSFE_Control.Coupling.strong) {
+                    AddComponent(new MassFluxAtLevelSet_withMassFlux_StrongCoupling(d, D, lsTrk, config.getThermParams, config.isMovingMesh));
+                } else {
+                    AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
+                }
             }           
 
             if (config.isViscous) {
-                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));
+                if (config.MassfluxCoupling == XNSFE_Control.Coupling.strong) {
+                    AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux_StrongCoupling(lsTrk, dntParams.PenaltySafety, d, config.getThermParams, physParams));
+                } else {
+                    AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));
+                }
             }            
         }
 
@@ -193,9 +202,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
             PhysicalParameters physicalParameters = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
-
-            var divEvap = new DivergenceAtLevelSet_withMassFlux(D, lsTrk, -1, false, physicalParameters);
-            AddComponent(divEvap);
+            if (config.MassfluxCoupling == XNSFE_Control.Coupling.strong) {
+                AddComponent(new DivergenceAtLevelSet_withMassFlux_StrongCoupling(D, lsTrk, -1, false, config.getThermParams));
+            } else {
+                AddComponent(new DivergenceAtLevelSet_withMassFlux(D, lsTrk, -1, false, physicalParameters));
+            }            
         }
 
         public override string FirstSpeciesName => phaseA;
@@ -275,7 +286,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk, kA, kB, penalty * 1.0, Tsat);                
                 AddComponent(Visc);
             } else {
                 throw new NotImplementedException();

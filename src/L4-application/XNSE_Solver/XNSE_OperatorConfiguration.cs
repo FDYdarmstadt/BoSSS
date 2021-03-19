@@ -318,6 +318,10 @@ namespace BoSSS.Application.XNSE_Solver {
             DomBlocks.SetAll(true);
         }
 
+        public XNSFE_OperatorConfiguration(XNSFE_Control control) : this((XNSE_Control) control) {
+            MassfluxCoupling = control.MassfluxCoupling;
+        }
+
         /// <summary>
         /// taken from <see cref="DoNotTouchParameters.CellAgglomerationThreshold"/>
         /// </summary>
@@ -357,6 +361,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// include evaporation
         /// </summary>
         public bool Evaporation;
+
+        /// <summary>
+        /// Coupling of the massflux
+        /// </summary>
+        public XNSFE_Control.Coupling MassfluxCoupling;
 
         /// <summary>
         /// 

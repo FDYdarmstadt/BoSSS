@@ -627,7 +627,7 @@ namespace BoSSS.Solution.XheatCommon {
             Ret -= 0.5 * (vA + vB) * (kA * Grad_uA_xN - kB * Grad_uB_xN);
 
             // extension of penalty
-            Ret += pnlty * wPenalty * vA * (uB[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uA[0]);   
+            Ret += pnlty * wPenalty * vA * (uB[0] - Tsat) - pnlty * wPenalty * vB * (uA[0] - Tsat);   
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
@@ -727,5 +727,6 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
     }
+    
 
 }

@@ -24,7 +24,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
     /// </summary>
-    public class XNSFE : XNSE<XNSFE_Control> {
+    public class XNSFE : XNSE {
 
         private void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
             int D = this.GridData.SpatialDimension;
@@ -125,6 +125,24 @@ namespace BoSSS.Application.XNSE_Solver {
                 return base.GetLevelSetVelocity(iLevSet);
             }
         }
+        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+
+            OperatorFactory opFactory = new OperatorFactory();
+
+            DefineSystem(D, opFactory, levelSetUpdater);
+
+            //Get Spatial Operator
+            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+
+            //final settings
+            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || Control.MassfluxCoupling != XNSFE_Control.Coupling.weak);
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            XOP.Commit();
+
+            return XOP;
+        }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
@@ -139,10 +157,10 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             base.PlotCurrentState(physTime, timestepNo, superSampling);
 
-            //XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
-            //XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
-            //VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
-            //GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
+            XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
+            XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
+            VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
+            GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
 
             //DGField CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0));
             //CellNumbers.ProjectField(1.0, delegate(int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -155,6 +173,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //}, new CellQuadratureScheme());
 
             //Tecplot.PlotFields(new List<DGField> { CellNumbers }, "XNSFE_GradT-" + timestepNo, physTime, 3);
+            Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
+
         }
 
         /*
