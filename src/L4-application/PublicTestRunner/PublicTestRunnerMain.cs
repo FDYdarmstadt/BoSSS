@@ -1061,6 +1061,10 @@ namespace PublicTestRunner {
         }
 
 
+        /// <summary>
+        /// Copies additional files required for some test;
+        /// these files are identified via the <see cref="NUnitFileToCopyHackAttribute"/>.
+        /// </summary>
         static void MegaMurxPlusPlus(Assembly a) {
             using (new FuncTrace()) {
                 var r = GetTestsInAssembly(a);
@@ -1070,12 +1074,8 @@ namespace PublicTestRunner {
                 foreach (var fOrigin in r.RequiredFiles) {
                     if (File.Exists(fOrigin)) {
                         string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
-
                         File.Copy(fOrigin, fDest, true);
-
-
                     }
-
                 }
             }
         }
