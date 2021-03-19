@@ -25,6 +25,7 @@ using System.Collections;
 using ilPSP;
 using System.Diagnostics;
 using BoSSS.Foundation;
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
@@ -49,6 +50,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
+            base.g_Neu_GradU = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_GradientVector(_D).GetRow(_d)[d] + "#" + spcName]);
 
             m_beta = _betaS;
         }
@@ -94,6 +96,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
+            base.g_Neu_GradU = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_GradientVector(_D).GetRow(d)[_d]]);
 
             m_beta = _betaS;
         }

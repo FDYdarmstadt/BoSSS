@@ -376,6 +376,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public Func<int, double[], int, double> g_Neu_Override;
 
+        /// <summary>
+        /// Velocity gradient part for stress boundary condition
+        /// - 1st index: spatial dimension 
+        /// - 2nd index: edge tag
+        /// </summary>
+        public Func<double[], double, double>[][] g_Neu_GradU;
+
 
         /// <summary>
         /// Dirichlet boundary value: the given velocity at the boundary.
@@ -445,6 +452,7 @@ namespace BoSSS.Solution.NSECommon {
             //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
             
+            //g_Neu_GradU = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_GradientVector(D).GetRow(iComp)[d]]);
         }
 
         
@@ -489,11 +497,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Neumann boundary value;
         /// </summary>
-        double g_Neu(double[] X, double[] N, int EdgeTag) {
+        double g_Neu(double[] X, double[] N, int EdgeTag, double t = 0.0) {
             if(base.g_Neu_Override == null) {
-                return 0.0;
+                double Acc = 0.0;
+                if (!g_Neu_GradU.IsNullOrEmpty()) {
+                    for (int i = 0; i < base.m_D; i++) {
+                        Acc += N[i] * g_Neu_GradU[i][EdgeTag](X, t);
+                    }
+                }
+                return Acc;
             } else {
-                double Acc = 0;
+                double Acc = 0.0;
                 for(int i = 0; i < base.m_D; i++) {
                     Acc += N[i] * g_Neu_Override(base.m_iComp, X, i);
                 }
@@ -617,7 +631,12 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Outlet: {
                     // Atmospheric outlet/pressure outflow: hom. Neumann
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
-                    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag, inp.time);
+
+                    //for (int d = 0; d < inp.D; d++) {
+                        //Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];
+                        //Acc += (muA * g_N[d]) * (_vA) * inp.Normal[d];
+                    //}
 
                     Acc += muA * g_N * _vA * base.m_alpha;
 
@@ -929,6 +948,7 @@ namespace BoSSS.Solution.NSECommon {
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
 
             this.ViscSolverMode = ViscSolverMode;
+            //g_Neu_GradU = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_GradientVector(D).GetRow(d)[iComp]]);
         }
 
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -979,10 +999,16 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Neumann boundary value;
         /// </summary>
-        double g_Neu(double[] X, double[] N, int EdgeTag) {
+        double g_Neu(double[] X, double[] N, int EdgeTag, double t = 0.0) {
             if(base.g_Neu_Override == null) {
                 //return 0.0;
-
+               
+                //double Acc = 0;
+                //for (int i = 0; i < base.m_D; i++) {
+                //    Acc += N[i] * g_Neu_GradU[i][EdgeTag](X, t);
+                //}
+                //return Acc;
+                
                 throw new NotSupportedException("Neumann BC. for the \\/U^T -- term is problematic!");
 
             } else {
@@ -1080,14 +1106,25 @@ namespace BoSSS.Solution.NSECommon {
 
                 //        break;
                 //    }
-                case IncompressibleBcType.Pressure_Dirichlet: 
+                case IncompressibleBcType.Pressure_Dirichlet:                    
+                    // Inner values of velocity gradient are taken, i.e.
+                    // no boundary condition for the velocity (resp. velocity gradient) is imposed.                        
+                    for (int i = 0; i < inp.D; i++) {
+                        Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                    }                    
+                    Acc *= base.m_alpha;
+                    break;
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet: {
-
+                    //if (!base.g_Neu_GradU.IsNullOrEmpty()) {
+                    //    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                    //    Acc += muA * g_N * _vA;
+                    //} else
                     if (base.g_Neu_Override == null) {
+                        // !!!!! for now B.C. is only imposed via the GradU Term explicitly !!!!!
                         // Inner values of velocity gradient are taken, i.e.
                         // no boundary condition for the velocity (resp. velocity gradient) is imposed.
-                        for(int i = 0; i < inp.D; i++) {
+                        for (int i = 0; i < inp.D; i++) {
                             Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
                         }
                     } else {
@@ -1095,7 +1132,6 @@ namespace BoSSS.Solution.NSECommon {
                         Acc += muA * g_N * _vA;
                     }
                     Acc *= base.m_alpha;
-
                     break;
                 }
                 default:
