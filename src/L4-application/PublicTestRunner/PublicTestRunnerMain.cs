@@ -1146,9 +1146,10 @@ namespace PublicTestRunner {
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                     Console.WriteLine("All Here.");
 
-
-                    Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
-                    Console.SetError(new StreamWriter(Console.OpenStandardError()));
+                    using(new BlockTrace("StdOut/StdErr reset", ftr)) {
+                        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
+                        Console.SetError(new StreamWriter(Console.OpenStandardError()));
+                    }
 
                     //var ar = new AutoRun(a);
                     //int r = ar.Execute(args);
