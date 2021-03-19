@@ -53,6 +53,7 @@
     <Compile Include="PlotControl.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ZwoLsSinglePhaseSolver.cs" />
     <Compile Include="ZwoLsCoupledSolver.cs" />
     <Compile Include="ZwoLsSolver.cs" />
   </ItemGroup>
