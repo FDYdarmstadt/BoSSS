@@ -1142,14 +1142,15 @@ namespace PublicTestRunner {
                         r = tr.Execute(args);
                     }
 
-                    Console.WriteLine("Waiting for all processors to catch up AFTER running test(s)...");
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                    Console.WriteLine("All Here.");
-
                     using(new BlockTrace("StdOut/StdErr reset", ftr)) {
                         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
                         Console.SetError(new StreamWriter(Console.OpenStandardError()));
                     }
+
+                    Console.WriteLine("Waiting for all processors to catch up AFTER running test(s)...");
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    Console.WriteLine("All Here.");
+
 
                     //var ar = new AutoRun(a);
                     //int r = ar.Execute(args);
