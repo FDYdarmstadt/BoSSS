@@ -54,6 +54,21 @@ namespace BoSSS.Solution.NSECommon
             this.i = speciesIndex;
         }
 
+        /// <summary>
+        /// Ctor for Species transport equations
+        /// </summary>
+        /// <param name="Coefficient">Coefficient Function in \nabla \dot (Coefficient \nabla u)</param>
+        /// <param name="PenaltyBase">C.f. Calculation of SIP penalty base, cf. Chapter 3 in 
+        /// K. Hillewaert, “Development of the discontinuous Galerkin method for high-resolution, large scale CFD and acoustics in industrial geometries”,
+        /// Université catholique de Louvain, 2013.</param>
+        /// <param name="BcMap">Boundary condition map</param>
+        /// <param name="Argument">The argument of the flux. Must be compatible with the DiffusionMode.</param>
+        /// <param name="PenaltyLengthScales"></param>
+        protected SIPDiffusionBase(double PenaltyBase, bool ParametersOK = false, int speciesIndex = 0) {
+            this.PenaltyBase = PenaltyBase;
+            this.prmsOK = ParametersOK;
+            this.i = speciesIndex;
+        }
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {

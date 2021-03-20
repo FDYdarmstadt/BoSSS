@@ -137,8 +137,8 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case PhysicsMode.LowMach:
                     double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension, 1);
-                    rho = EoS.GetDensity(DensityArgumentsIn);
-                    break;
+                rho = EoS.GetDensity(DensityArgumentsIn);
+                break;
                 case PhysicsMode.Combustion:
                     double[] DensityArgumentsIn2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants);
                     rho = EoS.GetDensity(DensityArgumentsIn2);
