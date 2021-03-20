@@ -135,6 +135,17 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// <summary>
+        /// Current Pressure
+        /// </summary>
+        public XDGField Pressure {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return (XDGField)this.CurrentState.Fields[D];
+            }
+        }
+
+
 
         /// <summary>
         /// Usually, the term "DG order of the calculation" means the velocity degree.

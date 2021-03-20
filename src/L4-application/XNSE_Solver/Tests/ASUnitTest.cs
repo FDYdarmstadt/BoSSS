@@ -627,8 +627,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
                 C.UseSchurBlockPrec = SchurCompl;
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
                 CS[i] = C;
 
                 //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
@@ -990,6 +990,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             for(int i = 0; i < errorS.GetLength(1); i++) {
                 var slope = LogLogRegression(hS, errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+
+            foreach(var s in solvers) {
+                s.Dispose();
             }
         }
 
