@@ -183,7 +183,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T"></param>
         /// <returns>
         /// The viscosity of air at a given temperature in Kg/(m.s)
-        /// <see</returns>
+        /// </returns>
         public double getViscosityDim(double T) {
             double S = 110.56;
             double T0 = 273.15; // 

@@ -27,6 +27,7 @@ using BoSSS.Foundation;
 using ilPSP;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.NSECommon {
 
