@@ -1051,12 +1051,12 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Only for debugging, should not be in master branch; if it is, feel free to delete
+        /// Only for debugging;  can be used to turn all edge integration in spatial operators off.
         /// </summary>
         public static bool DoEdge = true;
 
         /// <summary>
-        /// Only for debugging, should not be in master branch; if it is, feel free to delete
+        /// Only for debugging; can be used to turn all volume integration in spatial operators off.
         /// </summary>
         public static bool DoVolume = true;
 
