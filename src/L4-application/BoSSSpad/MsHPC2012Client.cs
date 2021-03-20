@@ -92,18 +92,33 @@ namespace BoSSS.Application.BoSSSpad {
         [NonSerialized]
         IScheduler m__scheduler;
 
+        /// <summary>
+        /// Active Directory user name used on HPC cluster
+        /// </summary>
         [DataMember]
         public string Username;
 
+        /// <summary>
+        /// Unsafely stored password
+        /// </summary>
         [DataMember]
         public string Password;
 
+        /// <summary>
+        /// Active directory computer name of head node
+        /// </summary>
         [DataMember]
         public string ServerName;
 
+        /// <summary>
+        /// optional: a list of compute node on which some job should run
+        /// </summary>
         [DataMember]
         public string[] ComputeNodes;
 
+        /// <summary>
+        /// 
+        /// </summary>
         [DataMember]
         public JobPriority DefaultJobPriority = JobPriority.Normal;
 

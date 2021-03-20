@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.BoSSSpad {
     
     /// <summary>
-    /// Standard commands to be used in the Jupyter Notebooks
+    /// Standard commands to be used in the Jupyter Notebooks **with a C# - kernel**, of course.
     /// </summary>
     static public class BoSSSshell {
 
@@ -51,33 +51,18 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /*
+        
         /// <summary>
-        /// Holds the last exception that has been thrown during the execution.
+        /// Called on top of the Jupyter notebook, to initialize the BoSSS functionality
         /// </summary>
-        public static Exception LastError {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Holds the result of the last operation
-        /// </summary>
-        public static object LastResult {
-            get {
-                return ans;
-            }
-        }
-
-        /// <summary>
-        /// Holds the result of the last operation
-        /// </summary>
-        public static object ans {
-            get;
-            internal set;
-        }
-        */
-
+        /// <remarks>
+        /// The following startup command in a Jupyter notebook are recommended:
+        /// ```csharp
+        /// #r "C:\  ....  \Release\BoSSSpad.exe"
+        /// using static BoSSS.Application.BoSSSpad.BoSSSshell;
+        /// Init();
+        /// ```
+        /// </remarks>
         public static void Init() {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();

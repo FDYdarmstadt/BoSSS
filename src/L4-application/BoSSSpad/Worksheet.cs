@@ -84,6 +84,10 @@ namespace BoSSS.Application.BoSSSpad {
         private System.Windows.Forms.ToolStripMenuItem MenuItem_unqueuePending;
         private System.Windows.Forms.ToolStripMenuItem MenuItem_autocomplete;
 
+
+        /// <summary>
+        /// ctor
+        /// </summary>
         public Worksheet(string fileToOpen = null) {
 
             this.components = new System.ComponentModel.Container();
