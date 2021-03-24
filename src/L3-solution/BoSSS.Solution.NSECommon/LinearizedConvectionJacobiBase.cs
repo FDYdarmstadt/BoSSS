@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
 

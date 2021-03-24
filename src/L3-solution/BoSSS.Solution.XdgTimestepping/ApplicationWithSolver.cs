@@ -24,6 +24,8 @@ namespace BoSSS.Solution.XdgTimestepping {
     abstract public class ApplicationWithSolver<T> : Application<T>
         where T : AppControlSolver, new() {
 
+
+
         /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateSolutionFields"/>
         /// </summary>
@@ -33,21 +35,61 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
            
         }
+        CoordinateVector m_CurrentStateVector;
 
         /// <summary>
         /// DG coordinates of <see cref="CurrentState"/> in a single vector
         /// </summary>
         public virtual CoordinateVector CurrentStateVector {
-            get;
-            protected set;
+            get {
+                if(!object.ReferenceEquals(m_CurrentStateVector.Mapping.GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
+
+                return m_CurrentStateVector;
+            }
+            protected set {
+                 if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                    throw new ArgumentException("Grid data object mismatch.");
+
+                m_CurrentStateVector = value;
+            }
         }
+
+        List<DGField> m_Parameters;
 
         /// <summary>
         /// List for parameter fields can be set by <see cref="CreateAdditionalFields"/>
         /// </summary>
         public virtual IList<DGField> Parameters {
-            get;
-            protected set;
+            get {
+                if(m_Parameters != null) {
+                    foreach(var p in m_Parameters) {
+                        if( p != null) {
+                            if(!object.ReferenceEquals(p.GridDat, this.GridData))
+                                throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
+                        }
+                    }
+                }
+
+                return m_Parameters;
+            }
+            protected set {
+                if(value != null) {
+                    foreach(var p in value) {
+                        if( p != null) {
+                            if(!object.ReferenceEquals(p.GridDat, this.GridData))
+                                throw new ArgumentException("Grid data object mismatch.");
+                        }
+                    }
+                }
+
+
+                if(m_Parameters == null)
+                    m_Parameters = new List<DGField>();
+                else
+                    m_Parameters.Clear();
+                m_Parameters.AddRange(value);
+            }
 
         }
 
@@ -60,12 +102,24 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        CoordinateVector m_CurrentResidualVector;
+
         /// <summary>
         /// DG coordinates of <see cref="CurrentResidual"/> in a single vector
         /// </summary>
         public virtual CoordinateVector CurrentResidualVector {
-            get;
-            protected set;
+            get {
+                if(!object.ReferenceEquals(m_CurrentResidualVector.Mapping.GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
+
+                return m_CurrentResidualVector;
+            }
+            protected set {
+                if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                    throw new ArgumentException("Grid data object mismatch.");
+
+                m_CurrentResidualVector = value;
+            }
         }
 
         /// <summary>
@@ -197,8 +251,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// call the solver
         /// </summary>
-        public void Solve(double phystime, double dt) {
-            this.Timestepping.Solve(phystime, dt);
+        public bool Solve(double phystime, double dt) {
+            return this.Timestepping.Solve(phystime, dt);
         }
 
         /// <summary>
@@ -521,7 +575,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
-                    if(!m_XOperator.IsCommited)
+                    if(!m_XOperator.IsCommitted)
                         throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
@@ -644,7 +698,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
-                    if(!m_SOperator.IsCommited)
+                    if(!m_SOperator.IsCommitted)
                         throw new ApplicationException("Operator must be comitted by user.");
 
                 }

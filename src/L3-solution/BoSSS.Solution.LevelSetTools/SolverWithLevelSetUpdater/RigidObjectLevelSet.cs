@@ -40,7 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
             ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(ObjectsLevelSet, 0.0);
             levelSet.Clear(Region);
-            levelSet.ProjectField( 1.0, Function, new BoSSS.Foundation.Quadrature.CellQuadratureScheme(true, Region));
+            levelSet.ProjectField(1.0, Function, new BoSSS.Foundation.Quadrature.CellQuadratureScheme(true, Region));
         }
     }
 

@@ -59,11 +59,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
             //throw new ApplicationException("deactivate me");
-            //return;
+            return;
 
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
-                return new XdgTimesteppingMain();
-            });
+            //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
+            //    return new XdgTimesteppingMain();
+            //});
         }
 #pragma warning disable 649
 

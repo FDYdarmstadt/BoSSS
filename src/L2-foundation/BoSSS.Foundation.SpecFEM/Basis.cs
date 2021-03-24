@@ -1399,7 +1399,7 @@ namespace BoSSS.Foundation.SpecFEM {
                 var Mass = MultidimensionalArray.Create(K, K);
 
                 var MR = m_Modal2Nodal[iKref];
-                var ML = MR.Transpose();
+                var ML = MR.TransposeTo();
 
                 Mass.GEMM(1.0, ML, MR, 0.0);
 

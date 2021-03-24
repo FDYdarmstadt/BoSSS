@@ -233,12 +233,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Returns surface points (for distance calc)
         /// </summary>
         /// <param name="hMin"></param>
+        /// <param name="searchAngle"></param>
+        /// <param name="subParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
         public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) => throw new NotImplementedException();
 
         /// <summary>
         /// Calculates the support point with an analytic formula (if applicable)
         /// </summary>
         /// <param name="supportVector"></param>
+        /// <param name="SubParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
+        /// <param name="Position"></param>
         public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
             int spatialDim = Position.Dim;
             Vector currentSupportPoint = new Vector(spatialDim);

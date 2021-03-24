@@ -282,7 +282,7 @@ namespace CNS {
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
-                n.Normalize();
+                n.NormalizeInPlace();
 
                 // Angle between line and x-axis
                 //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));
@@ -576,7 +576,7 @@ namespace CNS {
 
             // Direction vector of initial shock
             Vector r = new Vector(normalVector.y, -normalVector.x);
-            r.Normalize();
+            r.NormalizeInPlace();
 
             // Distance from a point X to the initial shock
             double[] point = new double[] { 0.5, 0.0 };
@@ -812,7 +812,7 @@ namespace CNS {
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
-                n.Normalize();
+                n.NormalizeInPlace();
 
                 // angle between line and x-axis
                 //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));

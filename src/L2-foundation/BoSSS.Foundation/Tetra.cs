@@ -2602,8 +2602,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
             Vector e1 = b - a;
             Vector e2 = c - 0.5 * (a + b);
 
-            e1.Normalize();
-            e2.Normalize();
+            e1.NormalizeInPlace();
+            e2.NormalizeInPlace();
             // Test code: passed ok 31.5.2010
             //double scp = e1* e2;
             //if (Math.Abs(scp) > 1.0e-8)

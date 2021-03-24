@@ -496,11 +496,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(!OpMtx.ColPartition.EqualsPartition(Mapping))
                     throw new ArgumentException("Domain/Matrix column mapping mismatch.");
             }
-
-            if(Operator.IsLinear && Operator.LinearizationHint != LinearizationHint.AdHoc)
-                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
-
-
+                    
             if(XdgOperator != null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++
                 // XDG Branch: still requires length-scale-hack

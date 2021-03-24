@@ -636,7 +636,7 @@ namespace BoSSS.Foundation.XDG {
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
 
 
-                    if (!m_Owner.IsCommited)
+                    if (!m_Owner.IsCommitted)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
 
                     int quadOrder = ownr.GetOrderFromQuadOrderFunction(DomainMapping.BasisS, GetBasisS(ParameterMap), CodomainVarMap.BasisS);
@@ -659,6 +659,11 @@ namespace BoSSS.Foundation.XDG {
                     // compile quadrature rules & create matrix builders for each species 
                     // ------------------------------------------------------------------
                     foreach (var SpeciesId in ReqSpecies) {
+                        //if(lsTrk.GetSpeciesName(SpeciesId) != "A") {
+                        //    Console.WriteLine("REM: !!!!!!!!!!!!!!!!!!!!!!!1   species integration deact");
+                        //    continue;
+                        //}
+
                         int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
 
                         // parameters for species

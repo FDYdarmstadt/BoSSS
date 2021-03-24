@@ -167,7 +167,7 @@ namespace CNS.Tests.IBMTests {
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
-                n.Normalize();
+                n.NormalizeInPlace();
 
                 // angle between line and x-axis
                 //double alpha = Math.Atan(Math.Abs((p2.y - p1.y)) / Math.Abs((p2.x - p1.x)));

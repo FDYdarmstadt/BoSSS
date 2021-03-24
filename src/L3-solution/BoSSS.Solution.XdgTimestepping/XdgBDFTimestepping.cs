@@ -795,15 +795,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // in case of steady level set the xdgAggBasis need to be updated
                 if (this.Config_LevelSetHandling == LevelSetHandling.None && OneTimeMgInit == false) {
-                    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                    Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                    Debug.Assert(m_CurrentAgglomeration == null || object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
 
                     // matrix used for precond (must be agglomerated)
                     if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsIdentity) {
                         MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder).MassMatrixFactory;
                         m_PrecondMassMatrix = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                        m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        if (this.m_CurrentAgglomeration != null) {
+                            m_CurrentAgglomeration.ManipulateMatrixAndRHS(m_PrecondMassMatrix, default(double[]), CurrentStateMapping, CurrentStateMapping);
+                        }
                     }
                 }
 
@@ -1545,22 +1547,39 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 base.Residuals.Clear();
                 base.Residuals.SetV(Affine, -1.0);
-                //System.SpMV(-1.0, m_Stack_u[0], +1.0, base.Residuals);
 
                 success = true;
+
+                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! testcode im teimschtepper");
+                //string suffix = "_correcto.txt";
+                //string suffix = "_falscho.txt";
+                //base.Residuals.SaveToTextFile("ResEval" + suffix);
+                //m_Stack_u[0].SaveToTextFile("Sol" + suffix);
 #if DEBUG
                 {
 
                     this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
+                    //checkAffine.SaveToTextFile("ChkAff" + suffix);
+                    //checkSystem.SaveToTextFileSparse("Matrix" + suffix);
 
                     double[] checkResidual = new double[checkAffine.Length];
                     checkResidual.SetV(checkAffine, -1.0);
                     checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
 
+                    //checkResidual.SaveToTextFile("ResLinz" + suffix);
+
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
-                    Assert.Less(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
+                    if(distL2 >= refL2 * 1.0e-5) {
+                        double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
+
+                        //base.Residuals.AccV(-1.0, checkResidual);
+                        //Tecplot.Tecplot.PlotFields(Residuals.Fields, "ResidualDiff", 0.0, 4);
+                    }
+
+                    Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
+                    //Debug.Assert(distL2 < refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
 
                 }
 #endif

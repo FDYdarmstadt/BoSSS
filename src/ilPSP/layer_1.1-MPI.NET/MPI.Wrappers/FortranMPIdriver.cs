@@ -104,13 +104,14 @@ namespace MPI.Wrappers {
         /// </summary>
         /// <returns></returns>
         static PlatformID[] Helper() {
-            PlatformID[] p = new PlatformID[6];
+            PlatformID[] p = new PlatformID[7];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
 			p[2] = PlatformID.Unix;
 			p[3] = PlatformID.Unix;
             p[4] = PlatformID.Unix;
-            p[5] = PlatformID.MacOSX;
+            p[5] = PlatformID.Unix;
+            p[6] = PlatformID.MacOSX;
             return p;
         }
 
@@ -143,12 +144,12 @@ namespace MPI.Wrappers {
         /// </summary>
         internal FortranMPIdriver()
             : base(
-				new string[] { "msmpi.dll", "libmpi_f77.so", "libfmpich.so", "libmpi_mpifh.so", "openmpi/libmpi_mpifh.so", "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" },
-                new string[6][][], 
-				new GetNameMangling[] { Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, MacOsMangling  },
+				new string[] { "msmpi.dll", "libmpi_f77.so", "libfmpich.so", "libmpi_mpifh.so", "libmpifort.so", "openmpi/libmpi_mpifh.so", "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" },
+                new string[7][][],
+				new GetNameMangling[] { Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, MacOsMangling  },
                 //new PlatformID[] {PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
                 Helper(),
-                new int[] { -1, -1, -1, -1, -1, -1 }) {
+                new int[] { -1, -1, -1, -1, -1, -1, -1 }) {
 
             // depending on the MPI flavor, we define the Datatype
             // ---------------------------------------------------

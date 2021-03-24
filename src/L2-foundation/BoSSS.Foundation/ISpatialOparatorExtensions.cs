@@ -19,7 +19,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public static DGField[] InvokeParameterFactory(this ISpatialOperator op, IEnumerable<DGField> __DomainFields) {
 
-            if (!op.IsCommited)
+            if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             var _DomainFields = __DomainFields.ToArray();
             if (_DomainFields.Length != op.DomainVar.Count)
@@ -112,7 +112,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public static void InvokeParameterUpdate(this ISpatialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
 
-            if (!op.IsCommited)
+            if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             if (__DomainFields.Length != op.DomainVar.Count)
                 throw new ArgumentException("Mismatch in number of domain variables.");

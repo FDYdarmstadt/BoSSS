@@ -562,10 +562,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_IBM(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl);
         }
 
         /// <summary>
@@ -573,10 +574,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl);
         }
 
         /// <summary>
@@ -584,10 +586,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Projected(
-            [Values(2, 3)] int FlowSolverDegree = 3
+            [Values(2, 3)] int FlowSolverDegree = 3,
+            [Values(false,true)] bool SchurCompl = true
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
-            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl);
         }
 
 #endif
@@ -598,7 +601,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest(
             [Values(2, 3)] int FlowSolverDegree = 3,
             [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux,
+            [Values(false,true)] bool SchurCompl = true
             ) {
 
             double AgglomerationTreshold = 0.3;
@@ -622,17 +626,43 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+                C.UseSchurBlockPrec = SchurCompl;
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
                 CS[i] = C;
 
                 //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
-                //C.SkipSolveAndEvaluateResidual = true;
+                //C.SkipSolveAndEvaluateResidual = false;
+                //C.UseSchurBlockPrec = true;
                 //XNSESolverTest(Tst, C);
                 //break;
             }
 
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
+        }
+
+        /// <summary>
+        /// <see cref="TaylorCouette_CurvElm"/>
+        /// </summary>
+        public static void CurvedElementsTest(
+            [Values(2, 3)] int FlowSolverDegree = 1
+            ) {
+
+            var Tst = new TaylorCouette_CurvElm();
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, 
+                AgglomerationTreshold:0.1, 
+                vmode: ViscosityMode.Standard, 
+                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, 
+                GridResolution: 1);
+            C.NoOfMultigridLevels = 1;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 4;
+            C.SkipSolveAndEvaluateResidual = true;
+            XNSESolverTest(Tst, C);
+            
         }
 
 
@@ -805,8 +835,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
-            if (Tst.SpatialDimension == 3)
-            {
+            
+            if(Tst.SpatialDimension == 3) {
                 Console.WriteLine($"Reminder: skipping 3D test for now...");
                 return;
             }
@@ -917,35 +947,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                         errorS.SetRow(k, LastErrors);
                         hS[k] = evaluator.GetGrid_h();
-
-                        // test code start ----------------------------  
-                        /*{
-                            var press = solver.CurrentState.Fields[2];
-                            var presEx = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "ExactPressure");
-                            ScalarFunction presExFunc = Tst.GetPress("A").Vectorize(0.0);                            
-                            presEx.GetSpeciesShadowField("A").ProjectField(presExFunc);
-                            var err = new XDGField(new XDGBasis(solver.LsTrk, press.Basis.Degree + 1), "Error");
-                            err.AccLaidBack(1.0, presEx);
-                            err.AccLaidBack(-1.0, press);
-
-                            int order = 19;// presEx.Basis.Degree * 2 + 1;
-
-                            var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
-                            SpeciesId spId = solver.LsTrk.GetSpeciesId("A");
-                            var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                            var rule = scheme.Compile(solver.GridData, order);
-
-                            double mean = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a, rule);
-                            double vol = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => 1.0, rule);
-                            mean = mean / vol;
-                            Console.WriteLine("Comparison mean val: " + mean);
-                            err.GetSpeciesShadowField("A").AccConstant(-mean);
-
-                            double errNorm = err.GetSpeciesShadowField(spId).LxError(presExFunc, (X, a, b) => a.Pow2(), rule).Sqrt();
-                            Console.WriteLine("Comparison Error norm: " + errNorm);
-                            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { press, presEx, err }, "Pressure-" + k, 0.0, 4);
-                        }*/
-                        // ------------------------- test code end
                     }
 
                 }
@@ -989,6 +990,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             for(int i = 0; i < errorS.GetLength(1); i++) {
                 var slope = LogLogRegression(hS, errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+
+            foreach(var s in solvers) {
+                s.Dispose();
             }
         }
 

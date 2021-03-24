@@ -123,7 +123,10 @@ namespace BoSSS.Application.BoSSSpad {
             Console.Clear();
         }
 
-        private static WorkflowMgm m_WorkflowMgm;
+        private static WorkflowMgm m_WorkflowMgm {
+            get { return BoSSSshell.WorkflowMgm; }
+            set { BoSSSshell.m_WorkflowMgm = value; }
+        }
 
         /// <summary>
         /// Link to the workflow-management facility
@@ -240,7 +243,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases = new IDatabaseInfo[0];
+        public static IList<IDatabaseInfo> databases {
+            get { return BoSSSshell.databases; }
+            set { BoSSSshell.databases = value; }
+        }
 
         /// <summary>
         /// Sessions in all Databases
@@ -459,7 +465,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Simple plotting interface
         /// </summary>
-        /// <returns>Output of <see cref="GnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        /// <returns>Output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/></returns>
         static public object Plot(IEnumerable<double> X1, IEnumerable<double> Y1, string Name1 = null, string Format1 = null,
             IEnumerable<double> X2 = null, IEnumerable<double> Y2 = null, string Name2 = null, string Format2 = null,
             IEnumerable<double> X3 = null, IEnumerable<double> Y3 = null, string Name3 = null, string Format3 = null,
@@ -470,7 +476,7 @@ namespace BoSSS.Application.BoSSSpad {
             bool logX = false, bool logY = false) {
 
             using (var gp = new Gnuplot()) {
-
+                
 
                 IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
                 IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };
@@ -700,7 +706,10 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        static List<BatchProcessorClient> executionQueues = null;
+        static List<BatchProcessorClient> executionQueues {
+            get { return BoSSSshell.executionQueues; }
+            set { BoSSSshell.executionQueues = value; }
+        }
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.

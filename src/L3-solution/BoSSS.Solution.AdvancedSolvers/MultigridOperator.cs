@@ -420,102 +420,123 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return;
                 setupdone = true;
 
-                if (this.FinerLevel != null)
-                    this.FinerLevel.Setup();
+                using(new BlockTrace("FinerLevel", tr)) {
 
+                    bool bCheck = (this.FinerLevel != null);
+                    bool bCheckGlob = bCheck.MPIOr();
+                    if(bCheck != bCheckGlob)
+                        throw new ApplicationException("Inconsistent data structure among MPI processes.");
+
+                    if(this.FinerLevel != null)
+                        this.FinerLevel.Setup();
+                }
 
                 // Construct intermediate 'raw' restriction and prolongation operators
                 // ===================================================================
 
                 BlockMsrMatrix RawRestriction, RawProlongation;
-                if (this.FinerLevel == null) {
-                    RawRestriction = null;
-                    RawProlongation = null;
-                } else {
-//#if DEBUG
-//                    var __PrlgOperator_Check = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
-//#endif
-                    var __PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
-                    //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
-                    Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
-                    Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
+                using(new BlockTrace("ComputeProlongationAndRestriction", tr)) {
+                    if(this.FinerLevel == null) {
+                        RawRestriction = null;
+                        RawProlongation = null;
+                    } else {
+                        //#if DEBUG
+                        //                    var __PrlgOperator_Check = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
+                        //#endif
+                        var __PrlgOperator = this.Mapping.GetProlongationOperator(this.FinerLevel.Mapping);
+                        //var __PrlgOperator = this.FinerLevel.Mapping.FromOtherLevelMatrix(this.Mapping);
+                        Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == this.FinerLevel.Mapping.LocalLength);
+                        Debug.Assert(__PrlgOperator.ColPartition.LocalLength == this.Mapping.LocalLength);
 
 
-                    if (this.FinerLevel.RightChangeOfBasis_Inverse != null)
-                        RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, __PrlgOperator);
-                    else
-                        RawProlongation = __PrlgOperator;
+                        if(this.FinerLevel.RightChangeOfBasis_Inverse != null)
+                            RawProlongation = BlockMsrMatrix.Multiply(this.FinerLevel.RightChangeOfBasis_Inverse, __PrlgOperator);
+                        else
+                            RawProlongation = __PrlgOperator;
 
-                    RawRestriction = RawProlongation.Transpose();
+                        RawRestriction = RawProlongation.Transpose();
+                    }
+                    this.m_PrologateOperator = RawProlongation;
+                    this.m_RestrictionOperator = RawRestriction;
                 }
-                this.m_PrologateOperator = RawProlongation;
-                this.m_RestrictionOperator = RawRestriction;
-
 
                 // Construct intermediate 'raw' operator and mass matrix (before change of basis)
                 // ==============================================================================
 
                 // operator matrix before change of basis
                 BlockMsrMatrix RawOpMatrix;
-                if (this.FinerLevel == null) {
-                    RawOpMatrix = this.m_RawOperatorMatrix;
-                } else {
-                    BlockMsrMatrix Op = FinerLevel.OperatorMatrix;
-                    RawOpMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(Op, RawProlongation));
+                using(new BlockTrace("RawOpMatrix", tr)) {
+                    if(this.FinerLevel == null) {
+                        RawOpMatrix = this.m_RawOperatorMatrix;
+                    } else {
+                        BlockMsrMatrix Op = FinerLevel.OperatorMatrix;
+                        RawOpMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(Op, RawProlongation));
+                    }
+                    this.m_RawOperatorMatrix = null;
                 }
-                this.m_RawOperatorMatrix = null;
 
                 // mass matrix before change of basis
                 BlockMsrMatrix RawMassMatrix;
-                if (this.FinerLevel == null) {
-                    RawMassMatrix = this.m_RawMassMatrix;
-                } else {
-                    BlockMsrMatrix MM = FinerLevel.MassMatrix;
-                    RawMassMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(MM, RawProlongation));
+                using(new BlockTrace("RawMassMatrix", tr)) {
+                    if(this.FinerLevel == null) {
+                        RawMassMatrix = this.m_RawMassMatrix;
+                    } else {
+                        BlockMsrMatrix MM = FinerLevel.MassMatrix;
+                        RawMassMatrix = BlockMsrMatrix.Multiply(RawRestriction, BlockMsrMatrix.Multiply(MM, RawProlongation));
+                    }
+                    this.m_RawMassMatrix = null;
                 }
-                this.m_RawMassMatrix = null;
-
-                Debug.Assert(RawOpMatrix.RowPartitioning.LocalLength == this.Mapping.LocalLength);
+                
+                if(RawOpMatrix.RowPartitioning.LocalLength != this.Mapping.LocalLength) {
+                    throw new ApplicationException("internal error");
+                }
 
                 // compute change of basis
                 // =======================
-                long[] IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
+                long[] IndefRows;
+                using(new BlockTrace("ComputeChangeOfBasis", tr)) {
+                    IndefRows = this.ComputeChangeOfBasis(RawOpMatrix, RawMassMatrix, out m_LeftChangeOfBasis, out m_RightChangeOfBasis, out m_LeftChangeOfBasis_Inverse, out m_RightChangeOfBasis_Inverse);
+                }
 
-              
 
                 // apply change of basis to operator matrix
                 // ========================================
-                {
+                { 
                     var Lpc = this.m_LeftChangeOfBasis;
                     var Rpc = this.m_RightChangeOfBasis;
 
                     BlockMsrMatrix O1;
-                    if (Lpc != null) {
-                        O1 = BlockMsrMatrix.Multiply(Lpc, RawOpMatrix);
-                    } else {
-                        O1 = RawOpMatrix;
+                    using(new BlockTrace("ApplyChangeOfBasis_left", tr)) {
+                        if(Lpc != null) {
+                            O1 = BlockMsrMatrix.Multiply(Lpc, RawOpMatrix);
+                        } else {
+                            O1 = RawOpMatrix;
+                        }
                     }
 
-                    if (Rpc != null) {
-                        this.m_OperatorMatrix = BlockMsrMatrix.Multiply(O1, Rpc);
-                    } else {
-                        this.m_OperatorMatrix = O1;
+                    using(new BlockTrace("ApplyChangeOfBasis_right", tr)) {
+                        if(Rpc != null) {
+                            this.m_OperatorMatrix = BlockMsrMatrix.Multiply(O1, Rpc);
+                        } else {
+                            this.m_OperatorMatrix = O1;
+                        }
                     }
-
 
                     // fix zero rows 
                     // (possible result from the Mode.IdMass_DropIndefinite or Mode.SymPart_DiagBlockEquilib_DropIndefinite -- option)
 
-                    foreach (int _iRow in IndefRows) {
-                        int iRow = Math.Abs(_iRow);
-                        Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) == 0);
-                        this.m_OperatorMatrix[iRow, iRow] = 1.0;
-                    }
+                    using(new BlockTrace("ApplyChangeOfBasis_indefRowFix", tr)) {
+                        foreach(int _iRow in IndefRows) {
+                            int iRow = Math.Abs(_iRow);
+                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) == 0);
+                            this.m_OperatorMatrix[iRow, iRow] = 1.0;
+                        }
 #if DEBUG
-                for (long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
-                    Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
-                }
+                        for(long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
+                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
+                        }
 #endif
+                    }
                 }
 
                 // apply change of basis to mass matrix
@@ -527,33 +548,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (RawMassMatrix != null) {
 
                         BlockMsrMatrix O1;
-                        if (Lpc != null) {
-                            O1 = BlockMsrMatrix.Multiply(Lpc, RawMassMatrix);
-                        } else {
-                            O1 = RawMassMatrix;
+                        using(new BlockTrace("ApplyChangeOfBasisMass_left", tr)) {
+                            if(Lpc != null) {
+                                O1 = BlockMsrMatrix.Multiply(Lpc, RawMassMatrix);
+                            } else {
+                                O1 = RawMassMatrix;
+                            }
                         }
 
-                        if (Rpc != null) {
-                            this.m_MassMatrix = BlockMsrMatrix.Multiply(O1, Rpc);
-                        } else {
-                            this.m_MassMatrix = O1;
+                        using(new BlockTrace("ApplyChangeOfBasisMass_right", tr)) {
+                            if(Rpc != null) {
+                                this.m_MassMatrix = BlockMsrMatrix.Multiply(O1, Rpc);
+                            } else {
+                                this.m_MassMatrix = O1;
+                            }
                         }
-
                     } else {
-                        if (Lpc != null && Rpc != null) {
-                            this.m_MassMatrix = BlockMsrMatrix.Multiply(Lpc, Rpc);
-                        } else if (Lpc != null) {
-                            Debug.Assert(Rpc == null);
-                            this.m_MassMatrix = Lpc;
-                        } else if (Rpc != null) {
-                            Debug.Assert(Lpc == null);
-                            this.m_MassMatrix = Rpc;
-                        } else {
-                            Debug.Assert(Lpc == null);
-                            Debug.Assert(Rpc == null);
-                            this.m_MassMatrix = null;
+                        using(new BlockTrace("MassMatrixComp", tr)) {
+                            if(Lpc != null && Rpc != null) {
+                                this.m_MassMatrix = BlockMsrMatrix.Multiply(Lpc, Rpc);
+                            } else if(Lpc != null) {
+                                Debug.Assert(Rpc == null);
+                                this.m_MassMatrix = Lpc;
+                            } else if(Rpc != null) {
+                                Debug.Assert(Lpc == null);
+                                this.m_MassMatrix = Rpc;
+                            } else {
+                                Debug.Assert(Lpc == null);
+                                Debug.Assert(Rpc == null);
+                                this.m_MassMatrix = null;
+                            }
                         }
-
                     }
 
                     //{

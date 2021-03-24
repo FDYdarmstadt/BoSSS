@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -196,7 +197,7 @@ namespace BoSSS.Solution.NSECommon {
     /// Upwind-based convection operator for the momentum equation;
     /// nonlinear implementation, but supports <see cref="SpatialOperator.GetJacobiOperator"/>.
     /// </summary>
-    public class LocalLaxFriedrichsConvection : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
+    public class LocalLaxFriedrichsConvection : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, ISpeciesFilter {
 
         /// <summary>
         /// Spatial dimension;
@@ -240,11 +241,16 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor for common part of incompressible and low Mach number flows.
         /// </summary>
-        public LocalLaxFriedrichsConvection(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double __rho) {
+        public LocalLaxFriedrichsConvection(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double __rho, string Species) {
+            if(SpatDim < 2 || SpatDim > 3)
+                throw new ArgumentException("unknown spatial dimension");
+            if(_component < 0 || _component >= SpatDim)
+                throw new ArgumentException("component index out of range");
             m_SpatialDimension = SpatDim;
             m_bcmap = _bcmap;
             m_component = _component;
             m_rho = __rho;
+            this.ValidSpecies = Species;
 
             velFunction = new Func<double[], double, double>[m_bcmap.MaxEdgeTagNo, SpatDim];
             for (int d = 0; d < SpatDim; d++)
@@ -384,5 +390,13 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public string ValidSpecies {
+            get;
+            private set;
+        }
     }
 }

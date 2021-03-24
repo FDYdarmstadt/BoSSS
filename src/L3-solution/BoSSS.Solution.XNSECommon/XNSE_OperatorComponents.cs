@@ -55,7 +55,7 @@ namespace BoSSS.Solution.XNSECommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
-            if(XOp.IsCommited)
+            if(XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already committed. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -231,7 +231,7 @@ namespace BoSSS.Solution.XNSECommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -342,7 +342,7 @@ namespace BoSSS.Solution.XNSECommon {
             out bool NormalsRequired, out bool CurvatureRequired) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -523,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
             string spcName, SpeciesId spcId, IncompressibleMultiphaseBoundaryCondMap BcMap) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;
@@ -561,7 +561,7 @@ namespace BoSSS.Solution.XNSECommon {
         public static void AddInterfaceContinuityEq(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;
@@ -658,7 +658,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
     /// <summary>
-    /// extended configuration options for interface discretizations
+    /// extended configuration options for interface discretization
     /// </summary>
     public interface IXNSE_Configuration : INSE_Configuration {
 
@@ -672,9 +672,9 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         bool isMatInt { get; }
 
-        /// <summary>
-        /// true if the interface pressure is prescribed i.e. for evaporation
-        /// </summary>
+        ///// <summary>
+        ///// true if the interface pressure is prescribed i.e. for evaporation
+        ///// </summary>
         //bool isPInterfaceSet { get; }
 
     }

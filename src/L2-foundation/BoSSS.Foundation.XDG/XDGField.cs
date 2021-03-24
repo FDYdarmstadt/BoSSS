@@ -115,9 +115,9 @@ namespace BoSSS.Foundation.XDG {
             // -------------------------------------
             //this.m_TrackerVersionCnt = m_CCBasis.Tracker.Regions.Version;
             m_CCBasis.Tracker.Subscribe(this);
-            this.m_TrackerPushCount = m_CCBasis.Tracker.PushCount - 1;
+            this.m_TrackerVersion = m_CCBasis.Tracker.VersionCnt;
             this.OnNext(m_CCBasis.Tracker.Regions); // initialize data structures.
-            Debug.Assert(this.m_TrackerPushCount == m_CCBasis.Tracker.PushCount);
+            Debug.Assert(this.m_TrackerVersion == m_CCBasis.Tracker.VersionCnt);
         }
 
         XDGBasis m_CCBasis;
@@ -557,7 +557,7 @@ namespace BoSSS.Foundation.XDG {
         BehaveUnder_LevSetMoovement m_UpdateBehaviour = BehaveUnder_LevSetMoovement.PreserveMemory;
 
         /// <summary>
-        /// defines the Behavior of the DG coordinates during a <see cref="LevelSetTracker.UpdateTracker()"/>-call
+        /// defines the Behavior of the DG coordinates during a <see cref="LevelSetTracker.UpdateTracker"/>-call
         /// </summary>
         public BehaveUnder_LevSetMoovement UpdateBehaviour {
             get {
@@ -898,6 +898,35 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
         }
+
+        /// <summary>
+        /// performs the projection of <paramref name="func"/> for each species.
+        /// </summary>
+        public override void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params DGField[] U) {
+            
+            using (new FuncTrace()) {
+                var lsTrk = this.Basis.Tracker;
+
+                foreach (var spc in lsTrk.SpeciesIdS) {
+                    var domain = lsTrk.Regions.GetSpeciesSubGrid(spc).VolumeMask;
+                    CellQuadratureScheme _scheme;
+                    if (scheme == null) {
+                        _scheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: domain);
+                    } else {
+                        if (scheme.Domain != null)
+                            domain = domain.Intersect(scheme.Domain);
+                        _scheme = new CellQuadratureScheme(UseDefaultFactories: false, domain: domain);
+                        scheme.FactoryChain.ForEach(fact_dom => _scheme.AddFactory(fact_dom.RuleFactory, fact_dom.Domain));
+                    }
+
+                    this.GetSpeciesShadowField(spc).ProjectFunction(alpha, f, _scheme, U);
+                }
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// Add a constant to this field
@@ -1306,9 +1335,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// most recent entry for <see cref="LevelSetTracker.PushCount"/>
+        /// most recent entry for <see cref="LevelSetTracker.VersionCnt"/>
         /// </summary>
-        int m_TrackerPushCount;
+        int m_TrackerVersion;
 
         /// <summary>
         /// Updated the data structure of this cut-cell DG field to reflect the
@@ -1318,9 +1347,9 @@ namespace BoSSS.Foundation.XDG {
         public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
             int J = this.GridDat.iLogicalCells.Count;
             LevelSetTracker trk = m_CCBasis.Tracker;
-            int oldTrackerPushCount = m_TrackerPushCount;
-            int newTrackerPushCount = m_CCBasis.Tracker.PushCount;
-            m_TrackerPushCount = newTrackerPushCount;
+
+            int oldTrackerVersion = m_TrackerVersion;
+            m_TrackerVersion = trk.VersionCnt;
 
             m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
@@ -1329,28 +1358,23 @@ namespace BoSSS.Foundation.XDG {
                     throw new NotSupportedException("LevelSettracker must have at a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
             }
 
-
-            // application check
-            //if (m_TrackerVersionCnt < (levelSetStatus.Version - 1))
-            //    throw new ApplicationException("missed at least one memory update; field can't be updated anymore with arg. \"Preserve=true\"");
-
             // rearrange DG coordinates if regions have changed
             // ================================================
             if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
-                && trk.PopulatedHistoryLength >= 1) {
+                && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
 
-                if((newTrackerPushCount - oldTrackerPushCount) != 1) {
-                    //string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call.";
+                if((m_TrackerVersion - oldTrackerVersion) > 1) {
+                    string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call.";
                     //Console.WriteLine(message);
-                    //throw new NotSupportedException(message);
+                    throw new NotSupportedException(message);
                 }
 
                 // rearrange DG coordinates, preserve State of each species 
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 double[] coordsFull = new double[m_CCBasis.MaximalLength];
-                ushort[] OldRegionCode = trk.RegionsHistory[0].RegionsCode;
-                ushort[] NewRegionCode = trk.RegionsHistory[1].RegionsCode;
+                ushort[] OldRegionCode = levelSetStatus.m_LevSetRegions_b4Update;
+                ushort[] NewRegionCode = levelSetStatus.RegionsCode;
                 Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
 
                 int Nsep = m_CCBasis.DOFperSpeciesPerCell;

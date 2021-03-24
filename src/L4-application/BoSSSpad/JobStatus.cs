@@ -27,7 +27,7 @@ namespace BoSSS.Application.BoSSSpad {
     public enum JobStatus {
 
         /// <summary>
-        /// Job is prior to submission to a batch system; see <see cref="Job.Activate(BatchProcessorClient)"/>.
+        /// Job is prior to submission to a batch system; see <see cref="Job.Activate"/>.
         /// </summary>
         PreActivation = 0, 
 

@@ -147,7 +147,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        // <summary>
+        /// <summary>
         /// Correlation of session, job and control object is done <see cref="AppControl.Equals(object)"/>
         /// </summary>
         public void SetEqualityBasedSessionJobControlCorrelation() {
@@ -211,6 +211,10 @@ namespace BoSSS.Application.BoSSSpad {
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
+
+
+            //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
+            //    MiniBatchProcessor.Server.StartIfNotRunning();
         }
 
         IDatabaseInfo m_DefaultDatabase;
@@ -261,9 +265,9 @@ namespace BoSSS.Application.BoSSSpad {
                     if (InteractiveShell.databases != null) {
                         foreach (var db in InteractiveShell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
-#if DEBUG 
-                                return si.ProjectName.Equals(this.CurrentProject);
-#else
+//#if DEBUG 
+//                                return si.ProjectName.Equals(this.CurrentProject);
+//#else
                                 Guid g = Guid.Empty;
                                 try {
                                     g = si.ID;
@@ -272,7 +276,7 @@ namespace BoSSS.Application.BoSSSpad {
                                     Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
                                     return false;
                                 }
-#endif
+//#endif
                             });
                             ret.AddRange(SS);
                         }
@@ -421,7 +425,9 @@ namespace BoSSS.Application.BoSSSpad {
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
-                MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
+
+                //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
+                //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 
                 Thread.Sleep((int)PollingIntervallSeconds);
 
