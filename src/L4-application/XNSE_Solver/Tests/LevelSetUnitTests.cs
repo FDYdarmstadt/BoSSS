@@ -86,61 +86,61 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
-        public static void LevelSetAdvectionTest3D(
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(0, 1, 2)] int AMRlevel,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling, 
-            [Values(false, true)] bool reversed)
-            {
+        //[Test]
+        //public static void LevelSetAdvectionTest3D(
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(0, 1, 2)] int AMRlevel,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling, 
+        //    [Values(false, true)] bool reversed)
+        //    {
 
-            var Tst = new LevelSetAdvectionTest(3, LSdegree, reversed);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 20, levelSetEvolution, levelSetHandling, 1);
-            C.SkipSolveAndEvaluateResidual = true;
+        //    var Tst = new LevelSetAdvectionTest(3, LSdegree, reversed);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 20, levelSetEvolution, levelSetHandling, 1);
+        //    C.SkipSolveAndEvaluateResidual = true;
 
-            LevelSetTest(Tst, C);
+        //    LevelSetTest(Tst, C);
 
-        }
+        //}
 
-
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
-        [Test]
-        public static void LevelSetAdvectionOnWallTest2D(
-            [Values(Math.PI/4, Math.PI/3, Math.PI/6)] double contactAngle,
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(0, 1, 2)] int AMRlevel,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
-
-            var Tst = new LevelSetAdvectionOnWallTest(2, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
-            C.SkipSolveAndEvaluateResidual = true;
-
-            LevelSetTest(Tst, C);
-
-        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
-        public static void LevelSetAdvectionOnWallTest3D(
-            [Values(Math.PI / 4, Math.PI / 3, Math.PI / 6)] double contactAngle,
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(0, 1, 2)] int AMRlevel,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+        //[Test]
+        //public static void LevelSetAdvectionOnWallTest2D(
+        //    [Values(Math.PI/4, Math.PI/3, Math.PI/6)] double contactAngle,
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(0, 1, 2)] int AMRlevel,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
 
-            var Tst = new LevelSetAdvectionOnWallTest(3, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
-            C.SkipSolveAndEvaluateResidual = true;
+        //    var Tst = new LevelSetAdvectionOnWallTest(2, LSdegree);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
+        //    C.SkipSolveAndEvaluateResidual = true;
 
-            LevelSetTest(Tst, C);
+        //    LevelSetTest(Tst, C);
 
-        }
+        //}
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        //[Test]
+        //public static void LevelSetAdvectionOnWallTest3D(
+        //    [Values(Math.PI / 4, Math.PI / 3, Math.PI / 6)] double contactAngle,
+        //    [Values(2, 3, 4)] int LSdegree,
+        //    [Values(0, 1, 2)] int AMRlevel,
+        //    [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+        //    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+
+        //    var Tst = new LevelSetAdvectionOnWallTest(3, LSdegree);
+        //    var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
+        //    C.SkipSolveAndEvaluateResidual = true;
+
+        //    LevelSetTest(Tst, C);
+
+        //}
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetScalingTest"/>
@@ -189,22 +189,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
-        public static void LevelSetShearingTest(
-            [Values(2)] int spatialDimension,
-            [Values(2, 3, 4)] int LSdegree,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
-            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
-            {
-            // Todo: singleInit/multiInit, 
-
-            var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1);
-
-            LevelSetTest(Tst, C);
-
-        }
+ 
 
 
         private static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {

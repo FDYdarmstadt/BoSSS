@@ -1279,6 +1279,7 @@ namespace BoSSS.Solution {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
+                CreateTracker();
                 CreateFields(); // full user control                
 
                 
@@ -1724,6 +1725,12 @@ namespace BoSSS.Solution {
             }
 
             return tsi_toLoad_ID;
+        }
+
+        /// <summary>
+        /// override this method to create the level-set tracker
+        /// </summary>
+        protected virtual void CreateTracker() {
         }
 
         /// <summary>
@@ -2466,7 +2473,6 @@ namespace BoSSS.Solution {
                         // sent data around the world
                         // ==========================
 
-
                         remshDat.Resort(old2newGridCorr, newGridData);
 
                         // re-init simulation
@@ -2476,28 +2482,20 @@ namespace BoSSS.Solution {
                         this.m_RegisteredFields.Clear();
                         this.m_IOFields.Clear();
 
+                        // re-set Level-Set tracker
+                        this.CreateTracker();
+                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+
                         // re-create fields
                         if (this.Control != null) {
                             InitFromAttributes.CreateFieldsAuto(
                                 this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                         }
                         CreateFields(); // full user control   
-                        PostRestart(physTime, TimeStepNo);
+                        //PostRestart(physTime, TimeStepNo);
 
                         if (plotAdaption)
                             PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
-
-                        // re-set Level-Set tracker
-                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
-                        //if(this.LsTrk != null) {
-                        //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
-                        //    foreach(var f in m_RegisteredFields) {
-                        //        if(f is XDGField) {
-                        //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                        //        }
-                        //    }
-                        //}
 
                         //set dg coordinates
                         foreach (var f in m_RegisteredFields) {
@@ -2506,11 +2504,6 @@ namespace BoSSS.Solution {
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            //if(f.Identification == "Phi")
-                            //    //throw new ApplicationException("ask Smuda why he did this");
-                            //    continue;
-                            ////f.Clear();
-
                             remshDat.RestoreDGField(f);
                         }
 
@@ -2777,6 +2770,10 @@ namespace BoSSS.Solution {
                         this.m_RegisteredFields.Clear();
                         this.m_IOFields.Clear();
 
+                        // re-set Level-Set tracker
+                        this.CreateTracker();
+                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+
                         // re-create fields
                         if (this.Control != null) {
                             InitFromAttributes.CreateFieldsAuto(
@@ -2784,46 +2781,18 @@ namespace BoSSS.Solution {
                         }
                         CreateFields(); // full user control   
                         //PostRestart(physTime, TimeStepNo);
-                        SetInitial(physTime);
+                        if (this.Control.RestartInfo == null)
+                            SetInitial(physTime);
 
-                        if (plotAdaption)
-                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
+                        //if (plotAdaption)
+                        //    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
-                        // re-set Level-Set tracker
-                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
-                        //if(this.LsTrk != null) {
-                        //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
-                        //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
-                        //    foreach(var f in m_RegisteredFields) {
-                        //        if(f is XDGField) {
-                        //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
-                        //        }
-                        //    }
-                        //}
-
-                        ////set dg coordinates
-                        //foreach (var f in m_RegisteredFields) {
-                        //    if (f is XDGField) {
-                        //        XDGBasis xb = ((XDGField)f).Basis;
-                        //        if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                        //            throw new ApplicationException();
-                        //    }
-                        //    //if(f.Identification == "Phi")
-                        //    //    //throw new ApplicationException("ask Smuda why he did this");
-                        //    //    continue;
-                        //    ////f.Clear();
-
-                        //    remshDat.RestoreDGField(f);
-                        //}
-
-                        //// re-create solvers, etc.
-                        //CreateEquationsAndSolvers(remshDat);
                     }
                 } //end of adapt mesh branch
 
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
                 if (plotAdaption)
-                    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
+                    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
                 return true;
             }
