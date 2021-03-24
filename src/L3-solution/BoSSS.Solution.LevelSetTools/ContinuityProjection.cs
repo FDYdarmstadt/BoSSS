@@ -218,9 +218,9 @@ namespace BoSSS.Solution.LevelSetTools {
                             uDiff.Acc(+1.0, uIN);
                             uDiff.Acc(-1.0, uOT);
 
-                            if (uDiff.L2Norm() > 1e-10) {
-                                Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
-                            }
+                            //if (uDiff.L2Norm() > 1e-10) {
+                            //    Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                            //}
                         } else {
                             uDiff.Clear();
                         }

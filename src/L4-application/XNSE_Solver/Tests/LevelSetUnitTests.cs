@@ -31,6 +31,8 @@ using BoSSS.Solution.AdvancedSolvers.Testing;
 using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Foundation;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -38,10 +40,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     interface IXNSElsTest : IXNSETest {
 
         /// <summary>
-        /// compute a suitable timestep for various combinationa of grid resolutions and level-set degrees
+        /// compute a suitable timestep for various combinations of grid resolutions and level-set degrees
         /// </summary>
         /// <returns></returns>
-        double ComputeTimestep(int gridResolution, int lsDegree);
+        double ComputeTimestep(int gridResolution, int lsDegree, int AMRlevel);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        double getEndTime();
 
     }
 
@@ -51,6 +59,88 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class LevelSetUnitTests {
 
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionTest2D(
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
+            [Values(false, true)] bool reversed)
+            {
+            int gridResolution = 1;
+
+            var Tst = new LevelSetAdvectionTest(2, LSdegree, reversed);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
+
+            LevelSetTest(Tst, C, IO);
+
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionTest3D(
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling, 
+            [Values(false, true)] bool reversed)
+            {
+
+            var Tst = new LevelSetAdvectionTest(3, LSdegree, reversed);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 20, levelSetEvolution, levelSetHandling, 1);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            LevelSetTest(Tst, C);
+
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionOnWallTest2D(
+            [Values(Math.PI/4, Math.PI/3, Math.PI/6)] double contactAngle,
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+
+            var Tst = new LevelSetAdvectionOnWallTest(2, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            LevelSetTest(Tst, C);
+
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionOnWallTest3D(
+            [Values(Math.PI / 4, Math.PI / 3, Math.PI / 6)] double contactAngle,
+            [Values(2, 3, 4)] int LSdegree,
+            [Values(0, 1, 2)] int AMRlevel,
+            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
+            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+
+            var Tst = new LevelSetAdvectionOnWallTest(3, LSdegree);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1, AMRlevel);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            LevelSetTest(Tst, C);
+
+        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetScalingTest"/>
@@ -93,25 +183,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         //}
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
-        [Test]
-        public static void LevelSetAdvectionTest(
-            [Values(2)] int spatialDimension,
-            [Values(2,3,4)] int LSdegree,
-            [Values(LevelSetEvolution.FastMarching)] LevelSetEvolution levelSetEvolution,
-            [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling)
-            //[Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timeSteppingScheme) 
-            {
-                // Todo: singleInit/multiInit, 
 
-            var Tst = new LevelSetAdvectionTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling);
-
-            LevelSetTest(Tst, C);
-
-        }
 
 
         /// <summary>
@@ -128,14 +200,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             // Todo: singleInit/multiInit, 
 
             var Tst = new LevelSetShearingTest(spatialDimension, LSdegree);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 4, levelSetEvolution, levelSetHandling);
+            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, 1);
 
             LevelSetTest(Tst, C);
 
         }
 
 
-        private static void LevelSetTest(IXNSETest Tst, XNSE_Control C) {
+        private static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {
 
             using (var solver = new XNSE()) {
 
@@ -151,7 +223,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 var evaluator = new LevelSetErrorEvaluator<XNSE_Control>(solver);
                 double[] LastErrors = evaluator.ComputeL2Error(C.Endtime, C);
 
-                string[] ErrNames = new string[] { "Phi", "PhiDG", "Gradient PhiDG" };
+                //string[] ErrNames = new string[] { "Phi", "PhiDG", "Gradient PhiDG" };
+                string[] ErrNames = new string[] { "Phi", "PhiDG", "Gradient PhiDG", "Interface size", "Interface Area #A", "Interface Area #B" };
                 double[] ErrThresh = Tst.AcceptableL2Error;
                 if (LastErrors.Length != ErrThresh.Length) {
                     Console.WriteLine("LastErrors.Length = {0} not equal to ErrThresh.Length = {1}", LastErrors.Length, ErrThresh.Length);
@@ -164,6 +237,23 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 for (int i = 0; i < ErrThresh.Length; i++)
                     Assert.LessOrEqual(LastErrors[i], ErrThresh[i]);
 
+
+                //-------------------check parallel simulations ---------------------------------------- 
+                int RefMPIsize = 1;
+                if (IO != null) {
+                    LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+                    LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", RefMPIsize);
+                    projCheck.AddDGField(PhiDG);
+                    projCheck.AddDGField(PhiCG);
+                    projCheck.DoIOnow();
+
+                    Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
+                    Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
+
+                }
+
             }
         }
 
@@ -175,9 +265,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        static ASLS_XNSE_Control LSTstObj2CtrlObj(IXNSElsTest tst, int FlowSolverDegree, int NoTimesteps,
-            LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
-            int GridResolution = 2) {
+        static ASLS_XNSE_Control LSTstObj2CtrlObj(IXNSElsTest tst, int FlowSolverDegree, int maxNoTimesteps,
+            LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling, 
+            int GridResolution = 1, int AMRlevel = 0) {
 
             ASLS_XNSE_Control C = new ASLS_XNSE_Control();
             int D = tst.SpatialDimension;
@@ -283,10 +373,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
 
-            C.NoOfTimesteps = NoTimesteps;
-            double dt = tst.ComputeTimestep(GridResolution, FlowSolverDegree);
+            // adaptive mesh refinement
+            if (AMRlevel > 0) {
+                C.AdaptiveMeshRefinement = true;
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
+                C.AMR_startUpSweeps = AMRlevel;
+            }
+
+
+            double dt = tst.ComputeTimestep(GridResolution, FlowSolverDegree, AMRlevel);
             C.dtFixed = dt;
-            C.Endtime = (double) (NoTimesteps * dt);
+            double T = tst.getEndTime();
+            int timesteps = (int)(T / dt);
+            C.NoOfTimesteps = (timesteps > maxNoTimesteps) ? maxNoTimesteps : timesteps;
+            C.Endtime = dt * C.NoOfTimesteps;
 
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;

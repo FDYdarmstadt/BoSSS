@@ -21,12 +21,12 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
 
-            //BoSSS.Solution.Application.InitMPI();
-            //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            //AUT.AllUp(2, 2, 1);
-            //BoSSS.Solution.Application.FinalizeMPI();
-            //Assert.IsTrue(false, "Remove me");
-            //return;
+            BoSSS.Solution.Application.InitMPI();
+            var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
+            AUT.AllUp(3, 2, 4);
+            BoSSS.Solution.Application.FinalizeMPI();
+            Assert.IsTrue(false, "Remove me");
+            return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 CDGprojectionMain p = new CDGprojectionMain();
@@ -76,7 +76,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         protected override IGrid CreateOrLoadGrid() {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
-            //double[] nodeZ = GenericBlas.Linspace(0, 1, 2);
+            double[] node2 = GenericBlas.Linspace(0, 1, 2);
+            //double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
 
             GridCommons grid;
             if (dimension == 2)
@@ -136,21 +137,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 Console.WriteLine("project on full mask");
                 string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
                 passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
-                //if (this.GridData.MpiRank == 0) {
-                //    Console.WriteLine("project on one cell");
-                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
-                //}
 
-                // should be exact for p >= 3
-                Console.WriteLine("Test 2D projection function 2: x^2 + y^3 - xy");
-                projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[0] * X[1]);
-                Console.WriteLine("project on full mask");
-                name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
-                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
-                //if (this.GridData.MpiRank == 0) {
-                //    Console.WriteLine("project on one cell");
-                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
-                //}
+
+                //// should be exact for p >= 3
+                //Console.WriteLine("Test 2D projection function 2: x^2 + y^3 - xy");
+                //projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[0] * X[1]);
+                //Console.WriteLine("project on full mask");
+                //name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
 
             }
 
@@ -161,21 +156,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 Console.WriteLine("project on full mask");
                 string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
                 passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
-                //if (this.GridData.MpiRank == 0) {
-                //    Console.WriteLine("project on one cell");
-                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
-                //}
 
-                // should be exact for p >= 3
-                Console.WriteLine("Test 3D projection function 2: x^2 + y^3 - zx + x - z");
-                projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[2] * X[0]) + X[0] - X[2];
-                Console.WriteLine("project on full mask");
-                name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
-                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
-                //if (this.GridData.MpiRank == 0) {
-                //    Console.WriteLine("project on one cell");
-                //    passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), oneCell);
-                //}
+
+                //// should be exact for p >= 3
+                //Console.WriteLine("Test 3D projection function 2: x^2 + y^3 - zx + x - z");
+                //projFunc = X => (X[0] * X[0]) + (X[1] * X[1] * X[1]) - (X[2] * X[0]) + X[0] - X[2];
+                //Console.WriteLine("project on full mask");
+                //name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func2";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
 
             }
 
@@ -198,6 +187,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             result1.Clear();
 
             origin.ProjectField(func);
+            double L2jumpOrigin = JumpNorm(origin, domain);
+            Console.WriteLine("L2 jump origin field = {0}", L2jumpOrigin);
+
 
             // project and check cdgField0
             cdgField0.ProjectDGField(origin, domain);
@@ -212,48 +204,50 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             bool checkL2err0 = (gridResolution > 2) ? (L2err0 < 1.0e-2) : true;
             if (checkL2err0 && L2jump < 1.0e-12) {
                 Console.WriteLine("projection0 PASSED");
-                passed &= true;
+                _passed &= true;
             } else {
                 Console.WriteLine("projection0 FAILED");
-                passed &= false;
+                _passed &= false;
                 Console.WriteLine("L2err0 = {0}; L2jump = {1}", L2err0, L2jump);
                 PlotCurrentState(0.0, 0, 3);
             }
+            Console.WriteLine("L2 jump result0 field = {0}", L2jump);
 
-            // project and check cdgField1
-            cdgField1.ProjectDGField(origin, domain);
-            cdgField1.AccToDGField(1.0, result1, domain);
+            //// project and check cdgField1
+            //cdgField1.ProjectDGField(origin, domain);
+            //cdgField1.AccToDGField(1.0, result1, domain);
 
-            errField = origin.CloneAs();
-            errField.AccLaidBack(-1.0, result1, domain);
+            //errField = origin.CloneAs();
+            //errField.AccLaidBack(-1.0, result1, domain);
 
-            double L2err1 = errField.L2Norm(domain);
-            L2jump = JumpNorm(result1, domain);
+            //double L2err1 = errField.L2Norm(domain);
+            //L2jump = JumpNorm(result1, domain);
 
-            if (L2err1 <= L2err0 && L2jump < 1.0e-12) {
-                Console.WriteLine("projection1 PASSED");
-                passed &= true;
-            } else {
-                Console.WriteLine("projection1 FAILED");
-                passed &= false;
-                Console.WriteLine("L2err1 = {0}; L2jump = {1}", L2err0, L2jump);
-                PlotCurrentState(0.0, 0, 3);
-            }
+            //if (L2err1 <= L2err0 && L2jump < 1.0e-12) {
+            //    Console.WriteLine("projection1 PASSED");
+            //    _passed &= true;
+            //} else {
+            //    Console.WriteLine("projection1 FAILED");
+            //    _passed &= false;
+            //    Console.WriteLine("L2err1 = {0}; L2err0 = {1}; L2jump = {1}", L2err1, L2err0, L2jump);
+            //    PlotCurrentState(0.0, 0, 3);
+            //}
+            //Console.WriteLine("L2 jump result1 field = {0}", L2jump);
 
 
-            // check parallel simulations
-            // ==========================
-            int RefMPIsize = 1;
-            {
-                var projCheck = new TestingIO(this.GridData, $"CDG_Projection-{name_disc}.csv", RefMPIsize);
-                projCheck.AddDGField(this.result0);
-                projCheck.AddDGField(this.result1);
-                projCheck.DoIOnow();
+            //// check parallel simulations
+            //// ==========================
+            //int RefMPIsize = 1;
+            //{
+            //    var projCheck = new TestingIO(this.GridData, $"CDG_Projection-{name_disc}.csv", RefMPIsize);
+            //    projCheck.AddDGField(this.result0);
+            //    projCheck.AddDGField(this.result1);
+            //    projCheck.DoIOnow();
 
-                Assert.Less(projCheck.AbsError(this.result0), 1.0e-15, "Mismatch in projected result0 between single-core and parallel run.");
-                Assert.Less(projCheck.AbsError(this.result1), 1.0e-15, "Mismatch in projected result1 between single-core and parallel run.");
+            //    Assert.Less(projCheck.AbsError(this.result0), 1.0e-15, "Mismatch in projected result0 between single-core and parallel run.");
+            //    Assert.Less(projCheck.AbsError(this.result1), 1.0e-15, "Mismatch in projected result1 between single-core and parallel run.");
 
-            }
+            //}
 
             return _passed;
         }
@@ -304,8 +298,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                             uDiff.Acc(+1.0, uIN);
                             uDiff.Acc(-1.0, uOT);
 
-                            if (uDiff.L2Norm() > 1e-10)
-                                Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                            //if (uDiff.L2Norm() > 1e-10)
+                            //    Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
                         } else {
                             uDiff.Clear();
                         }

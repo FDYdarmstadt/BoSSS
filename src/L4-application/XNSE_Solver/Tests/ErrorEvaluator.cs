@@ -15,6 +15,8 @@ using BoSSS.Solution.Utils;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
@@ -216,6 +218,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             }
         }
 
+
+        LevelSet exactPhi;
+
+        LevelSetTracker exactLsTrk;
+
+        void SetExactPhiAndLevelSetTracker(double time) {
+            // exact level-set field
+            Func<double[], double, double> phiExactFunc = solver.Control.Phi;
+            exactPhi = new LevelSet(new Basis(solver.GridData, 8), "exactLevelSet");
+            exactPhi.Clear();
+            exactPhi.ProjectField(NonVectorizedScalarFunction.Vectorize(phiExactFunc, time));
+            // exact level-set tracker
+            exactLsTrk = new LevelSetTracker((GridData)solver.GridData,
+            XQuadFactoryHelper.MomentFittingVariants.Saye, 1, solver.LsTrk.SpeciesNames.ToArray(), exactPhi);
+            exactLsTrk.UpdateTracker(time);
+        }
+
+
         /// <summary>
         /// computes the error against the continuous level set field "Phi"
         /// </summary>
@@ -223,14 +243,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <param name="time"></param>
         /// <param name="cm"></param>
         /// <returns></returns>
-        public double ComputeLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
+        public double ComputeLevelSetError(CellMask cm) {
 
-            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
-            SinglePhaseField exactLevelSet = PhiDG.CloneAs();
-            exactLevelSet.Clear();
-            exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
 
-            double L2Error = PhiDG.L2Error(exactLevelSet, cm);
+            double L2Error = PhiCG.L2Error(exactPhi, cm);
 
             solver.QueryHandler.ValueQuery("L2err_Phi", L2Error, true);
 
@@ -244,14 +261,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// <param name="time"></param>
         /// <param name="cm"></param>
         /// <returns></returns>
-        public double ComputeDGLevelSetError(Func<double[], double, double> exactLevelSetFunc, double time, CellMask cm) {
+        public double ComputeDGLevelSetError(CellMask cm) {
+
 
             SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-            SinglePhaseField exactLevelSet = PhiDG.CloneAs();
-            exactLevelSet.Clear();
-            exactLevelSet.ProjectField(NonVectorizedScalarFunction.Vectorize(exactLevelSetFunc, time));
 
-            double L2Error = PhiDG.L2Error(exactLevelSet, cm);
+            double L2Error = PhiDG.L2Error(exactPhi, cm);
 
             solver.QueryHandler.ValueQuery("L2err_PhiDG", L2Error, true);
 
@@ -277,6 +292,57 @@ namespace BoSSS.Application.XNSE_Solver.Tests
             return L2error;
         }
 
+        /// <summary>
+        /// computes the error of the interface points with respect to the given interface form
+        /// </summary>
+        /// <returns></returns>
+        public double ComputeInterfacePointsError(double time) {
+
+            SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+            SubGrid sbgrd = solver.LsTrk.Regions.GetCutCellSubGrid();
+            MultidimensionalArray interfaceP = XNSEUtils.GetInterfacePoints(solver.LsTrk, PhiCG, sbgrd);
+
+            Func<double[], double, double> phiExact = solver.Control.Phi;
+            double error = 0.0;
+            for (int i = 0; i < interfaceP.Lengths[0]; i++) {
+                double dist = phiExact(interfaceP.ExtractSubArrayShallow(i, -1).To1DArray(), time);
+                error += dist.Pow2();
+            }
+
+            return error.Sqrt();
+        }
+
+
+        /// <summary>
+        /// computes the interface length in 2D and area in 3D
+        /// </summary>
+        /// <returns></returns>
+        public double ComputeInterfaceSizeError() {
+
+            double exactInterfaceSize = XNSEUtils.GetInterfaceLength(exactLsTrk);
+            double interfaceSize = XNSEUtils.GetInterfaceLength(solver.LsTrk);
+
+            return Math.Abs(interfaceSize- exactInterfaceSize);
+        }
+
+        /// <summary>
+        /// computes the species area
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<SpeciesId, double> ComputeSpeciesDomainSizeError() {
+
+            Dictionary<SpeciesId, double> spcArea = new Dictionary<SpeciesId, double>();
+
+            foreach (SpeciesId spcId in solver.LsTrk.SpeciesIdS) {
+                double exactArea = XNSEUtils.GetSpeciesArea(exactLsTrk, spcId);
+                double area = XNSEUtils.GetSpeciesArea(solver.LsTrk, spcId);
+                double error = Math.Abs(area - exactArea);
+                spcArea.Add(spcId, error);
+            }
+
+            return spcArea;
+        }
+
 
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object 
@@ -284,16 +350,29 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// </summary>
         public override double[] ComputeL2Error(double time, XNSE_Control control) {
 
+            SetExactPhiAndLevelSetTracker(time);
+
             CellMask cm = solver.LsTrk.Regions.GetCutCellMask();
             //CellMask cm = solver.LsTrk.Regions.GetNearFieldMask(1);
 
-            double[] Ret = new double[3];
+            var spcIds = solver.LsTrk.SpeciesIdS;
+
+            double[] Ret = new double[4 + spcIds.Count];
 
             if (control.Phi != null) {
-                Ret[0] = ComputeLevelSetError(control.Phi, time, cm);
-                Ret[1] = ComputeDGLevelSetError(control.Phi, time, cm);
+                //Ret[0] = ComputeInterfacePointsError(time);
+                Ret[0] = ComputeLevelSetError(cm);
+                Ret[1] = ComputeDGLevelSetError(cm);
             }
             Ret[2] = ComputeDGLevelSetGradientError(cm);
+            Ret[3] = ComputeInterfaceSizeError();
+
+            Dictionary<SpeciesId, double> spcArea = ComputeSpeciesDomainSizeError();
+            int n = 4;
+            foreach (SpeciesId spc in spcIds) {
+                Ret[n] = spcArea[spc];
+                n++;
+            }
 
             return Ret;
         }
