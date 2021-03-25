@@ -31,7 +31,6 @@ using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
-using Mono.CSharp;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
@@ -399,7 +398,7 @@ namespace BoSSS.Solution {
                 }
             }
 
-            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
+            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib")).Where(a => a.IsDynamic == false).ToArray();
         }
 
         /// <summary>
