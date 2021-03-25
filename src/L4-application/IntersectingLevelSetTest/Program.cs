@@ -11,7 +11,7 @@ namespace IntersectingLevelSetTest
             BoSSS.Solution.Application<PlotControl>._Main(
                 args,
                 true,
-                () => new ZwoLsSinglePhaseSolver<PlotControl>() {MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
+                () => new ZwoLsCoupledSolver<PlotControl>() {MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
         }
     }
 }
