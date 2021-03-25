@@ -993,46 +993,46 @@ namespace BoSSS.Foundation {
                     // 
                     int maxCondAtVert = (D == 2) ? 4 : 12;
                     int OverdeterminedCondAtVertice = 0;
-                    for (int i = 0; i < vertAtCell1.Length; i++) {
-                        int vert = vertAtCell1[i];
-                        if (vertAtCell2.Contains(vert)) {
-                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                            //geomVertAtEdge.Add(gVert);
-                            gVert.IncreaseNoOfConditions();
-                            int condAtVert = gVert.GetNoOfConditions();
-                            //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
-                            Debug.Assert(condAtVert <= maxCondAtVert);
-                            if (condAtVert == maxCondAtVert)
-                                OverdeterminedCondAtVertice++;
-                        }
-                    }
-                    //Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
+                    //for (int i = 0; i < vertAtCell1.Length; i++) {
+                    //    int vert = vertAtCell1[i];
+                    //    if (vertAtCell2.Contains(vert)) {
+                    //        GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
+                    //        //geomVertAtEdge.Add(gVert);
+                    //        gVert.IncreaseNoOfConditions();
+                    //        int condAtVert = gVert.GetNoOfConditions();
+                    //        //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
+                    //        Debug.Assert(condAtVert <= maxCondAtVert);
+                    //        if (condAtVert == maxCondAtVert)
+                    //            OverdeterminedCondAtVertice++;
+                    //    }
+                    //}
+                    ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
 
                     // 
                     int OverdeterminedCondAtGeomEdge = 0;
-                    int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
-                    if (D == 3) {
-                        List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
-                        List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
-                        foreach (var gEdge1 in edgesAtFace1) {
-                            if (edgesAtFace2.Contains(gEdge1)) {
-                                GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
-                                //geomEdgeAtEdge.Add(gEdge);
-                                gEdge.IncreaseNoOfConditions();
-                                int condAtEdge = gEdge.GetNoOfConditions();
-                                //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
-                                Debug.Assert(condAtEdge <= 4);
-                                if (condAtEdge == 4) {
-                                    //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                                    //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
-                                    //if (dir1 != dir2)
-                                    //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
-                                    OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                                    OverdeterminedCondAtGeomEdge++;
-                                }
-                            }
-                        }
-                    }
+                    //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
+                    //if (D == 3) {
+                    //    List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
+                    //    List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
+                    //    foreach (var gEdge1 in edgesAtFace1) {
+                    //        if (edgesAtFace2.Contains(gEdge1)) {
+                    //            GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
+                    //            //geomEdgeAtEdge.Add(gEdge);
+                    //            gEdge.IncreaseNoOfConditions();
+                    //            int condAtEdge = gEdge.GetNoOfConditions();
+                    //            //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
+                    //            Debug.Assert(condAtEdge <= 4);
+                    //            if (condAtEdge == 4) {
+                    //                //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                    //                //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
+                    //                //if (dir1 != dir2)
+                    //                //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
+                    //                OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                    //                OverdeterminedCondAtGeomEdge++;
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
 
                     //if (!isInterprocEdge) 

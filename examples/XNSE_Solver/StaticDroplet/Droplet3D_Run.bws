@@ -7,7 +7,7 @@ restart
 Databases loaded:
 List of 2 instances of IDatabaseInfo {
   0: { Session Count = 16; Grid Count = 24; Path = D:\local\local_test_db2 }
-  1: { Session Count = 21; Grid Count = 83; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  1: { Session Count = 21; Grid Count = 85; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -30,7 +30,7 @@ int exeQ = 1;
 ExecutionQueues[exeQ].AllowedDatabases;
 **************
 List of 1 instances of IDatabaseInfo {
-  0: { Session Count = 21; Grid Count = 83; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  0: { Session Count = 21; Grid Count = 85; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 }
 ==============
 var myBatch = ExecutionQueues[exeQ];
@@ -49,9 +49,9 @@ var myDb = ExecutionQueues[exeQ].AllowedDatabases[0];
 ==============
 **************
 ==============
-WorkflowMgm.Init("LegendreDroplet3D_ver2");   // set project name
+WorkflowMgm.Init("LegendreDroplet3D_ver3");   // set project name
 **************
-Project name is set to 'LegendreDroplet3D_ver2'.
+Project name is set to 'LegendreDroplet3D_ver3'.
 
 ==============
 **************
@@ -293,7 +293,7 @@ Submitting job with the following database info:
 Primary: \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB
 No alternative paths specified.
 Deploying executables and additional files ...
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\LegendreDroplet3D_ver2-XNSE_Solver2021Mar19_145124
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\LegendreDroplet3D_ver3-XNSE_Solver2021Mar25_091914
 copied 31 files.
    written file: control.obj
    copied 'amd64' runtime.
@@ -318,6 +318,8 @@ Do you really want to delete this session? [y/n]: Session b2086d2b-23ca-46e4-b4a
 **************
 Starting export process... Data will be written to the following directory:
 C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\Droplet3D__Droplet3D_k3_mesh5_AMR1_Oh0.1_Ratio0.01_CG_pardiso_NoProc1__5f3f5d13-3f69-4b3b-8939-65d47949dcff
+==============
+**************
 ==============
 **************
 ==============
