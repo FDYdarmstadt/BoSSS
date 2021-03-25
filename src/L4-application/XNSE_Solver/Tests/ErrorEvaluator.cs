@@ -17,6 +17,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.Grid.Classic;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.XNSE_Solver.Tests
 {
@@ -278,19 +279,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests
         /// </summary>
         /// <param name="cm"></param>
         /// <returns></returns>
-        public double ComputeDGLevelSetGradientError(CellMask cm) {
+        //public double ComputeDGLevelSetGradientError(CellMask cm) {
 
-            SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+        //    SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;          
 
-            int D = solver.GridData.SpatialDimension;
-            var GradientPhiDG = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(PhiDG.Basis, "dPhiDG_dx[" + d + "]")));
-            GradientPhiDG.Gradient(1.0, PhiDG, cm);
+        //    int D = solver.GridData.SpatialDimension;
+        //    var GradientPhiDG = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(PhiDG.Basis, "dPhiDG_dx[" + d + "]")));
+        //    GradientPhiDG.Gradient(1.0, PhiDG, cm);
 
-            double L2Norm = GradientPhiDG.L2Norm();
-            double L2error = L2Norm - 1.0;
+        //    double GradientNorm = 0;
 
-            return L2error;
-        }
+        //    double L2error = GradientNorm - 1.0;
+
+        //    return L2error;
+        //}
 
         /// <summary>
         /// computes the error of the interface points with respect to the given interface form
@@ -357,22 +359,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests
 
             var spcIds = solver.LsTrk.SpeciesIdS;
 
-            double[] Ret = new double[4 + spcIds.Count];
+            double[] Ret = new double[2]; //4 + spcIds.Count];
 
             if (control.Phi != null) {
                 //Ret[0] = ComputeInterfacePointsError(time);
                 Ret[0] = ComputeLevelSetError(cm);
                 Ret[1] = ComputeDGLevelSetError(cm);
             }
-            Ret[2] = ComputeDGLevelSetGradientError(cm);
-            Ret[3] = ComputeInterfaceSizeError();
+            //Ret[2] = ComputeDGLevelSetGradientError(cm);
+            //Ret[3] = ComputeInterfaceSizeError();
 
-            Dictionary<SpeciesId, double> spcArea = ComputeSpeciesDomainSizeError();
-            int n = 4;
-            foreach (SpeciesId spc in spcIds) {
-                Ret[n] = spcArea[spc];
-                n++;
-            }
+            //Dictionary<SpeciesId, double> spcArea = ComputeSpeciesDomainSizeError();
+            //int n = 4;
+            //foreach (SpeciesId spc in spcIds) {
+            //    Ret[n] = spcArea[spc];
+            //    n++;
+            //}
 
             return Ret;
         }

@@ -68,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //DeleteOldPlotFiles();
 
-            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 1, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting, false);
+            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(2, 0, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //throw new Exception("Remove me");
