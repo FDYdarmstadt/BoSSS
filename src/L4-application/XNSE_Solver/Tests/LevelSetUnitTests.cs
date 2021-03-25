@@ -69,8 +69,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(0, 1, 2)] int AMRlevel,
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
             [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
-            [Values(false, true)] bool reversed)
-            {
+            [Values(false, true)] bool reversed) {
             int gridResolution = 1;
 
             var Tst = new LevelSetAdvectionTest(2, LSdegree, reversed);
@@ -79,7 +78,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
 
-            LevelSetTest(Tst, C, IO);
+            LevelSetTest(Tst, C);
 
         }
 
@@ -189,16 +188,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
- 
+
 
 
         private static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {
 
             using (var solver = new XNSE()) {
 
-                Console.WriteLine("Warning! - enabled immediate plotting");
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //Console.WriteLine("Warning! - enabled immediate plotting");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();

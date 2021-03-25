@@ -96,7 +96,7 @@ namespace PublicTestRunner {
                         typeof(CutCellQuadrature.Program),
                         typeof(BoSSS.Application.XDGTest.UnitTest),
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
-                        typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
+                        //typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
                         typeof(BoSSS.Application.MultigridTest.MultigridMain),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
