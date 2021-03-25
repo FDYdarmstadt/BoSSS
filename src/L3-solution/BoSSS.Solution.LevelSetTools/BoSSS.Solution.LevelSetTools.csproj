@@ -139,7 +139,6 @@
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\XStokesExtensionEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />
-    <Compile Include="StokesExtension\ImmersedBoundary.cs" />
     <Compile Include="StokesExtension\InteriorVelocityBoundary.cs" />
     <Compile Include="StokesExtension\ScalarTransport.cs" />
     <Compile Include="StokesExtension\StokesExtension.cs" />

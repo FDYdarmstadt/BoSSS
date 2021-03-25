@@ -313,17 +313,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // -----------------------
 
                     using(new BlockTrace("Mass_Matrix_comp", tr)) {
-                        if(op.TemporalOperator != null) {
-                            if (LsTrk != null) {
+                        if (LsTrk != null) {
 
 
-                                var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
-                                MassMatrix = massFact.GetMassMatrix(Solution, NoOfVar.ForLoop(iVar => 1.0), false, spcIDs);
+                            var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
+                            MassMatrix = massFact.GetMassMatrix(Solution, NoOfVar.ForLoop(iVar => 1.0), false, spcIDs);
 
-                                Op_Agglomeration.ManipulateMatrixAndRHS(MassMatrix, default(double[]), Solution, Solution);
-                            } else {
-                                MassMatrix = null;
-                            }
+                            Op_Agglomeration.ManipulateMatrixAndRHS(MassMatrix, default(double[]), Solution, Solution);
                         } else {
                             MassMatrix = null;
                         }
