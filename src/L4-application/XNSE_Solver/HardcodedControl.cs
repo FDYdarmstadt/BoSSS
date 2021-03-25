@@ -521,16 +521,16 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 30, int SpaceDim = 2) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 10, int SpaceDim = 2, bool useAMR = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
             //C.DbPath = @"D:\trash_db";
-            C.AlternateDbPaths = new[] {
-                (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
-                (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-            //C.savetodb = C.DbPath != null;
+            //C.AlternateDbPaths = new[] {
+            //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
+            //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+            ////C.savetodb = C.DbPath != null;
             C.savetodb = false;
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
@@ -623,31 +623,45 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                int power = 10;
+                double power = 10;
                 //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (SpaceDim) {
                     case 2:
-                    return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    + Math.Pow(particleRad, power)) * 1e6;
+                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
+                    //+ particleRad; // 1e6
+
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                        + particleRad;
+
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //+ Math.Abs(particleRad);
                     //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
-                    return (-Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    - Math.Pow(X[2] - pos[2], power)
-                    + Math.Pow(particleRad, power)) * Math.Pow(10, power);
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
+
+                    //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    //+ Math.Pow(X[2] - pos[2], power),1.0/power)
+                    //+ particleRad;
+
+                    //return -Math.Max(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power))
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    //+ Math.Pow(X[2] - pos[2], power), 1.0 / power)
+                    //+ particleRad;
 
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //- Math.Abs(X[2] - pos[2])
                     //+ Math.Abs(particleRad);
 
-                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
@@ -718,15 +732,18 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.TargetBlockSize = 100;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
+            
+            C.AdaptiveMeshRefinement = useAMR;
+            if (useAMR) {
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+                C.AMR_startUpSweeps = 1;
+            }
 
             // Timestepping
             // ============
@@ -738,7 +755,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 10;
+            C.NoOfTimesteps = 1;
 
             // haben fertig...
             // ===============

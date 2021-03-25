@@ -218,7 +218,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         for (int i = 0; i < m_DgDegree.Length; i++) {
                             S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
                         }
-
+                        //if (S == 0) Console.WriteLine("zero at j="+jag);
                         if (jag < JAGGloc - 1)
                             __i0Tmp[jag + 1] = __i0Tmp[jag] + S;
                         else

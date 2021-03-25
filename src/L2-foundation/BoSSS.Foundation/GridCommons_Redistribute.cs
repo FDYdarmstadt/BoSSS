@@ -902,15 +902,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Note: The identification of barycenter only works for rectangular-shaped cells.
         /// </summary>
         public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement=false) {
-#if DEBUG
-            System.Threading.Thread.Sleep(5000);
-#endif
 
             //CONSTRUCTIONSITE: GetShortestDistance will be called from here, the return argument will be used to calculate a refinement order
             //This refinement order has to be stored once and is available in here during runtime
 
             //Functype: Constraint mapping (0) or direct Costmapping (1)
             //Notice: Functype=1 will lead to bad behavior, when using Clusters
+
+            int[] local_Rank_RedistributionList;
 
             if (this.Size > 1) {
                 int D = this.SpatialDimension;
@@ -1083,12 +1082,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Array.Sort(CellIndex, RankIndex);
                 }
                 //Scatter Rank-Array for local Process
-                int[] local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
-                return local_Rank_RedistributionList;
+                local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
             } else {
-                int[] local_Rank_RedistributionList = new int[NoOfUpdateCells];
-                return local_Rank_RedistributionList;
+                local_Rank_RedistributionList = new int[NoOfUpdateCells];
             }
+            return local_Rank_RedistributionList;
         }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {

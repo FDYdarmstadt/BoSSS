@@ -3,6 +3,7 @@ using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
@@ -14,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-       
+
     /// <summary>
     /// p-Multigrid on a single grid level
     /// </summary>
@@ -68,7 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException();
         }
 
-        MultigridOperator m_op;
+        private MultigridOperator m_op;
 
         /// <summary>
         /// - 1st index: cell
@@ -76,24 +77,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultidimensionalArray[] HighOrderBlocks_LU;
         int[][] HighOrderBlocks_LUpivots;
 
-        public int CoarseLowOrder {
-            get { return m_CoarseLowOrder; }
-            set { m_CoarseLowOrder = value; }
+        public int OrderOfCoarseSystem {
+            get { return m_LowOrder; }
+            set { m_LowOrder = value; }
         }
 
 
         /// <summary>
         /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
         /// </summary>
-        private int m_CoarseLowOrder = 1;
+        private int m_LowOrder = 1;
 
         /// <summary>
         /// If true multispecies blocks are assigned to low order block solver.
         /// This hopefully is better than the default approach
         /// </summary>
-        public bool AssignXdGCellsToLowBlocks {
+        public bool FullSolveOfCutcells {
             get;
             set;
+        }
+
+        private bool AnyHighOrderTerms {
+            get {
+                Debug.Assert(m_op != null, "there is no matrix given yet!");
+                return m_op.Mapping.DgDegree.Any(p => p > m_LowOrder);
+            }
         }
 
         /// <summary>
@@ -106,7 +114,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             m_op = op;
 
-            if (m_CoarseLowOrder > m_op.Mapping.DgDegree.Max())
+            if (m_LowOrder > m_op.Mapping.DgDegree.Max())
                 throw new ArgumentOutOfRangeException("CoarseLowOrder is higher than maximal DG degree");
 
 #if TEST
@@ -119,21 +127,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder? CoarseLowOrder : CoarseLowOrder - 1);
+            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
             DGlowSelect.ModeSelector(lowFilter);
 
-            if (AssignXdGCellsToLowBlocks)
+            if (FullSolveOfCutcells)
                 ModifyLowSelector(DGlowSelect, op);
 
             lMask = new BlockMask(DGlowSelect);
             m_lowMaskLen = lMask.GetNoOfMaskedRows;
 
-            if (UseHiOrderSmoothing) {
+            if (UseHiOrderSmoothing && AnyHighOrderTerms) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? CoarseLowOrder : CoarseLowOrder - 1);
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
                 DGhighSelect.ModeSelector(highFilter);
 
-                if (AssignXdGCellsToLowBlocks)
+                if (FullSolveOfCutcells)
                     ModifyHighSelector(DGhighSelect, op);
 
                 hMask = new BlockMask(DGhighSelect);
@@ -165,13 +173,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.WORLD);
 
-            intSolver = new PARDISOSolver() {
+            lowSolver = new PARDISOSolver() {
                 CacheFactorization = true,
                 UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
                 Parallelism = Parallelism.OMP
             };
-            intSolver.DefineMatrix(P01SubMatrix);
-            
+            lowSolver.DefineMatrix(P01SubMatrix);
+
+
+            Debug.Assert(UseDiagonalPmg && lowSolver != null);
+            Debug.Assert(UseDiagonalPmg || (!UseDiagonalPmg && hiSolver != null));
+            Debug.Assert(m_lowMaskLen > 0);
+            Debug.Assert(AnyHighOrderTerms && m_highMaskLen > 0);
 #if TEST
             P01SubMatrix.SaveToTextFileSparseDebug("lowM");
             P01SubMatrix.SaveToTextFileSparse("lowM_full");
@@ -218,8 +231,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             sbs.ModeSelector(Modification);
         }
 
-        ISparseSolver intSolver;
-        ISparseSolver hiSolver;
+        /// <summary>
+        /// Solver of low order system.
+        /// The low order system is defined by <see cref="OrderOfCoarseSystem"/>
+        /// </summary>
+        private ISparseSolver lowSolver;
+
+        /// <summary>
+        /// experimental, used if <see cref="UseDiagonalPmg"/> is not set.
+        /// Then low order and high order blocks are both solved by direct solver.
+        /// </summary>
+        private ISparseSolver hiSolver;
 
         int m_Iter = 0;
 
@@ -268,16 +290,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double[] Res_c = lMask.GetSubVec(Res_f);
 
             // low-p solve
-            intSolver.Solve(Cor_c, Res_c);
+            lowSolver.Solve(Cor_c, Res_c);
 
             // accumulate low-p correction
             lMask.AccSubVec(Cor_c, Cor_f);
 
-            if (UseHiOrderSmoothing) {
+            // compute residual of low-order solution
+            Res_f.SetV(B);
+            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+
+            if (UseHiOrderSmoothing && AnyHighOrderTerms) {
                 // solver high-order 
-                // compute residual of low-order solution
-                Res_f.SetV(B);
-                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                
                 if (UseDiagonalPmg) {
                     var Map = m_op.Mapping;
                     int NoVars = Map.AggBasis.Length;
@@ -312,11 +336,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         hMask.AccSubVec(hi_Cor_c, X);
                     }
                 }
-            }
 
-            //compute residual for Callback
-            Res_f.SetV(B);
-            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                //compute residual for Callback
+                Res_f.SetV(B);
+                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+            }
 
             X.AccV(1.0,Cor_f);
 
@@ -324,6 +348,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             m_Iter++;
         }
+
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;

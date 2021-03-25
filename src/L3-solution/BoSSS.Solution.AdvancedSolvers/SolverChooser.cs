@@ -478,8 +478,8 @@ namespace BoSSS.Solution {
                     break;
 
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, CoarseLowOrder = m_lc.pMaxOfCoarseSolver, AssignXdGCellsToLowBlocks = true};
-                    SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).AssignXdGCellsToLowBlocks ? 1 : 0, true);
+                    precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver, FullSolveOfCutcells = true};
+                    SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).FullSolveOfCutcells ? 1 : 0, true);
                     break;
 
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
@@ -769,7 +769,7 @@ namespace BoSSS.Solution {
             Console.WriteLine("preconditioner : {0}", solvername);
             List<string> solverinfotxt = new List<string>();
             if (solver.GetType() == typeof(LevelPmg)) {
-                solverinfotxt.Add("entries upto p=" + ((LevelPmg)solver).CoarseLowOrder + " are assigned to low order blocks");
+                solverinfotxt.Add("entries upto p=" + ((LevelPmg)solver).OrderOfCoarseSystem + " are assigned to low order blocks");
             }
             if (solver.GetType() == typeof(Schwarz)) {
                 if (((Schwarz)solver).UsePMGinBlocks) {
@@ -1783,7 +1783,7 @@ namespace BoSSS.Solution {
 
                     var CoarseSolver = new LevelPmg() {
                         UseHiOrderSmoothing = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
+                        OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver,
                     };
 
                     levelSolver = new OrthonormalizationMultigrid() {
@@ -1908,7 +1908,7 @@ namespace BoSSS.Solution {
                     }
 
                     CompareAttributes("UseHiOrderSmoothing", true, TGP.UseHiOrderSmoothing);
-                    CompareAttributes("CoarseLowOrder", 1, TGP.CoarseLowOrder);
+                    CompareAttributes("CoarseLowOrder", 1, TGP.OrderOfCoarseSystem);
                     CompareAttributes("UseDiagonalPmg", true, TGP.UseDiagonalPmg);
                     break;
                 case LinearSolverCode.classic_pardiso:

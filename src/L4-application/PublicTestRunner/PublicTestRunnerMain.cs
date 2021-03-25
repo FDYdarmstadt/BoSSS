@@ -138,7 +138,8 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4)
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
+                        (typeof(IBM_MPI_Tests.Program),4)
                     };
             }
         }

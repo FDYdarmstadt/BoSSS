@@ -782,7 +782,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
-                int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be concidered, you know ...
+                int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be considered, you know ...
                 emptysel &= !CellInstruction(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
                 if (!CellInstruction(jLoc))
                     continue;
@@ -815,10 +815,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         Globalint.Add(newNi0.Gi0 + i);
                                         Localint.Add(newNi0.Li0 + i);
                                         SubBlockIdx.Add(newNi0.Si0 + i);
-                                        MaskLen++;
+                                    MaskLen++;
                                     }
-                                    // Fill Ni0 Lists
-                                    tmpMod.Add(newNi0);
+                                // Fill Ni0 Lists
+                                tmpMod.Add(newNi0);
                                     Ni0Length++;
                                     ListNi0.Add(newNi0);
                                 Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
