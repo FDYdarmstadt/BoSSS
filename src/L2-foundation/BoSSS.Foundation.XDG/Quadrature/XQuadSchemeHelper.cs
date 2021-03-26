@@ -825,7 +825,7 @@ namespace BoSSS.Foundation.XDG {
                         if (doublyCut.Count() > 0) {
                             IntegrationDom = IntegrationDom.Except(doublyCut);
 
-                            //Ist das so in Ordnung?
+                            //Ist das so in Ordnung? Scheint keine Invariante zu verletzen.
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
 
