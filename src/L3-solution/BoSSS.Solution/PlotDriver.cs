@@ -1093,10 +1093,14 @@ namespace BoSSS.Solution {
                 MPI_prefix = "MPI" + (gridData.MpiRank + 1) + "of" + size + ".";
             }
 
-            string filename = MPI_prefix + fileNameBase + "." + FileEnding;
+            string Dir = Path.GetDirectoryName(fileNameBase);
+            string FileN = Path.GetFileName(fileNameBase);
+            string filename = Path.Combine(Dir, MPI_prefix + FileN + "." + FileEnding);
+                       
+            
             int cnt = 2;
             while (File.Exists(filename)) {
-                filename = fileNameBase + "." + cnt + MPI_prefix + "." + FileEnding;
+                filename = Path.Combine(Dir, MPI_prefix + FileN + "." + FileEnding);
                 cnt++;
             }
 
