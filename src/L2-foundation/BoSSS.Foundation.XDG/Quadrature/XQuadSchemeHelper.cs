@@ -810,7 +810,7 @@ namespace BoSSS.Foundation.XDG {
             return LevSetQrIns;
         }
 
-        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, SpeciesId spA, SpeciesId spB, CellMask IntegrationDom, int? fixedOrder = null) {
+        public CellQuadratureScheme GetLevelSetquadScheme(int iLevSet, SpeciesId spA, CellMask IntegrationDom, int? fixedOrder = null) {
             if (IntegrationDom.MaskType == MaskType.Logical)
                 IntegrationDom = IntegrationDom.ToGeometicalMask();
 
