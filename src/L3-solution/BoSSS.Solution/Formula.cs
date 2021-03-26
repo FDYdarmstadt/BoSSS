@@ -204,7 +204,10 @@ namespace BoSSS.Solution.Control {
                     script = scriptWrt.ToString();
                 }
 
-                Assembly[] allAssis = BoSSS.Solution.Application.GetAllAssemblies().ToArray();
+                Assembly[] allAssis = BoSSS.Solution.Application.GetAllAssemblies(typeof(Formula)).ToArray();
+                //foreach(var a in allAssis) {
+                //    Console.WriteLine("---" + a.FullName + "   " + (a.Location != null ? a.Location: "NULL"));
+                //}
                 var scriptOptions = ScriptOptions.Default;
                 scriptOptions = scriptOptions.AddReferences(allAssis);
 

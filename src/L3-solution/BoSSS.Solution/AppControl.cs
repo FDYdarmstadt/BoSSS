@@ -1218,7 +1218,7 @@ namespace BoSSS.Solution.Control {
             //            Evaluator eval = new Evaluator(cmpCont);
             //            eval.InteractiveBaseClass = t;
 
-            var allAssis = Application.GetAllAssemblies();
+            var allAssis = Application.GetAllAssemblies(null);
             //foreach (var assi in allAssis) {
             //    eval.ReferenceAssembly(assi);
             //}

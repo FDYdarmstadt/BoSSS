@@ -26,7 +26,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         static Type[] TypesToExport { 
             get {
                 if (s_TypesToExport == null) {
-                    var assis = BoSSS.Solution.Application.GetAllAssemblies();
+                    var assis = BoSSS.Solution.Application.GetAllAssemblies(typeof(CodeGenMain));
                     List<Type> classes = new List<Type>();
                     foreach (var a in assis) {
                         foreach (var t in a.GetTypes()) {

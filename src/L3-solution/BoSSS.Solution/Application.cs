@@ -381,22 +381,27 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Recursive collection of all dependencies of some assembly.
         /// </summary>
-        public static IEnumerable<Assembly> GetAllAssemblies() {
+        public static IEnumerable<Assembly> GetAllAssemblies(Type EntryType) {
             StackTrace stackTrace = new StackTrace();
             List<Assembly> allAssis = new List<Assembly>();
 
-            // Start from entry assembly and _not_
-            // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-            // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-            // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
+            if(EntryType == null) {
+                // Start from entry assembly and _not_
+                // - don't use typeof(T).Assembly since T might be located different assembly than the control file
+                // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
+                // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
-            for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tuepe != null) {
-                    Assembly entryAssembly = Tuepe.Assembly;
-                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                for(int i = 0; i < stackTrace.FrameCount; i++) {
+                    Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                    if(Tuepe != null) {
+                        Assembly entryAssembly = Tuepe.Assembly;
+                        GetAllAssembliesRecursive(entryAssembly, allAssis);
+                    }
                 }
+            } else {
+                GetAllAssembliesRecursive(EntryType.Assembly, allAssis);
             }
+            
 
             return allAssis.Where(a => !a.FullName.StartsWith("mscorlib")).Where(a => a.IsDynamic == false).ToArray();
         }
@@ -412,8 +417,11 @@ namespace BoSSS.Solution {
             if (a.GlobalAssemblyCache)
                 return;
 
+
             if (assiList.Contains(a))
                 return;
+
+
 
             assiList.Add(a);
 
