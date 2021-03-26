@@ -78,7 +78,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //case 4: gridResolution = 1; break;
                 default:
                     gridResolution = 1; break;
-            } 
+            }
+
+            if (LSdegree == 4 && AMRlevel == 2 && levelSetEvolution == LevelSetEvolution.StokesExtension)
+                return;
 
             var Tst = new LevelSetAdvectionTest(2, LSdegree, reversed);
             var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
@@ -203,9 +206,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             using (var solver = new XNSE()) {
 
-                Console.WriteLine("Warning! - enabled immediate plotting");
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //Console.WriteLine("Warning! - enabled immediate plotting");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();
