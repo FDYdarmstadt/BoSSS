@@ -21,7 +21,7 @@ namespace IntersectingLevelSetTest {
 
             double edge = EvaluateEdges(LsTrk.GridDat, quadOrder, schemes, id);
             double volume = EvaluateVolume(LsTrk.GridDat, quadOrder, schemes, id);
-            double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id, id1);
+            double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id);
         }
 
         double EvaluateEdges(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
@@ -80,10 +80,10 @@ namespace IntersectingLevelSetTest {
             return ret;
         }
 
-        double EvaluateSurface(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id, SpeciesId id2) {
+        double EvaluateSurface(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             double integral = 0;
             for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
-                CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(i, id, id2, lsTrkr.Regions.GetCutCellMask4LevSet(i));
+                CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(i, id, lsTrkr.Regions.GetCutCellMask4LevSet(i));
                 var surf = CellQuadrature(surfScheme.Compile(lsTrkr.GridDat, quadOrder), lsTrkr.GridDat);
                 integral += surf.Sum();
             }
