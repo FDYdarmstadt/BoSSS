@@ -80,7 +80,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     gridResolution = 1; break;
             }
 
-            if (LSdegree == 4 && AMRlevel == 2 && levelSetEvolution == LevelSetEvolution.StokesExtension)
+            if (LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
                 return;
 
             var Tst = new LevelSetAdvectionTest(2, LSdegree, reversed);
