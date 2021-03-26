@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
@@ -78,25 +79,36 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
 
-        private RungeKutta GetTimestepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
+        private XdgTimestepping.XdgTimestepping GetTimestepper(LevelSetTracker lsTrkr, SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+            var diffOp = new XSpatialOperatorMk2(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
-                QuadOrderFunc.NonLinear(1));
+                QuadOrderFunc.NonLinear(1), 
+                new string[] { "A", "B"});
             diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap));
-            diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, 1);
+            diffOp.TemporalOperator = new ConstantXTemporalOperator(diffOp, 1);
             diffOp.IsLinear = true;
             diffOp.Commit();
 
+            XdgTimestepping.XdgTimestepping Timestepper = 
+                new XdgTimestepping.XdgTimestepping(
+                    diffOp, 
+                    levelSet.Mapping, 
+                    residualLevelSet.Mapping, 
+                    XdgTimestepping.TimeSteppingScheme.ExplicitEuler, 
+                    _AgglomerationThreshold: 0.0,
+                    _optTracker: lsTrkr,
+                    _Parameters: extensionVelocity);
             
 
-
-            var Timestepper = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
+            //var Timestepper = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
             return Timestepper;
 
         }
 
         SinglePhaseField[] extensionVelocity;
+
+        SinglePhaseField residualLevelSet;
 
         /// <summary>
         /// 
@@ -120,12 +132,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 foreach(var f in extensionVelocity)
                     f.Clear();
             }
+            if (residualLevelSet == null) {
+                residualLevelSet = new SinglePhaseField(levelSet.DGLevelSet.Basis, $"levelSetResidual");
+            }
 
-            var ExtVelBuilder = new StokesExtension.XStokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
+                var ExtVelBuilder = new StokesExtension.XStokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
             ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extensionVelocity);
 
-            var rk = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
-            rk.Perform(dt);
+            var rk = GetTimestepper(levelSet.Tracker, levelSet.DGLevelSet, extensionVelocity);
+            rk.Solve(time ,dt);
 
         }
     }
