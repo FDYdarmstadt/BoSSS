@@ -55,11 +55,15 @@
   <ItemGroup>
     <Compile Include="Buoyancy.cs" />
     <Compile Include="ChemicalParameters.cs" />
+    <Compile Include="ReactionParameters.cs" />
     <Compile Include="Resource1.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resource1.resx</DependentUpon>
     </Compile>
+    <Compile Include="SIPDiffusionMassFractions.cs" />
+    <Compile Include="SIPDiffusionTemperature.cs" />
+    <Compile Include="swipViscosity_new.cs" />
     <Compile Include="ThermodynamicalPropertiesNASA.cs" />
     <Compile Include="ConvectionAtIB.cs" />
     <Compile Include="DivergenceAtIB.cs" />
@@ -138,6 +142,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram1.cd" />
     <None Include="thermo30.dat.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

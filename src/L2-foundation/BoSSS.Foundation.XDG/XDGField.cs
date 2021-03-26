@@ -900,6 +900,35 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// performs the projection of <paramref name="func"/> for each species.
+        /// </summary>
+        public override void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params DGField[] U) {
+            
+            using (new FuncTrace()) {
+                var lsTrk = this.Basis.Tracker;
+
+                foreach (var spc in lsTrk.SpeciesIdS) {
+                    var domain = lsTrk.Regions.GetSpeciesSubGrid(spc).VolumeMask;
+                    CellQuadratureScheme _scheme;
+                    if (scheme == null) {
+                        _scheme = new CellQuadratureScheme(UseDefaultFactories: true, domain: domain);
+                    } else {
+                        if (scheme.Domain != null)
+                            domain = domain.Intersect(scheme.Domain);
+                        _scheme = new CellQuadratureScheme(UseDefaultFactories: false, domain: domain);
+                        scheme.FactoryChain.ForEach(fact_dom => _scheme.AddFactory(fact_dom.RuleFactory, fact_dom.Domain));
+                    }
+
+                    this.GetSpeciesShadowField(spc).ProjectFunction(alpha, f, _scheme, U);
+                }
+            }
+        }
+
+
+
+
+
+        /// <summary>
         /// Add a constant to this field
         /// </summary>
         public override void AccConstant(double a, CellMask cm) {

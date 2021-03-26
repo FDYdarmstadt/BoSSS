@@ -7,6 +7,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XNSECommon.Operator {
+
+
+    /// <summary>
+    /// Minimal volume source term
+    /// </summary>
     public class ParameterSource : IVolumeForm, ISupportsJacobianComponent {
         string[] parameterName;
 

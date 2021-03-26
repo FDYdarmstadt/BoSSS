@@ -198,29 +198,31 @@ namespace PublicTestRunner {
 
 
         static Assembly[] GetAllAssemblies() {
-            var R = new HashSet<Assembly>();
+            using(new FuncTrace()) {
+                var R = new HashSet<Assembly>();
 
-            if (TestTypeProvider.FullTest != null) {
-                foreach (var t in TestTypeProvider.FullTest) {
-                    //Console.WriteLine("test type: " + t.FullName);
-                    var a = t.Assembly;
-                    //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
-                    bool added = R.Add(a);
-                    //Console.WriteLine("  added? " + added);
-                }
-            }
-
-
-
-            if(discoverRelease) {
-                if(TestTypeProvider.ReleaseOnlyTests != null) {
-                    foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
-                        R.Add(t.Assembly);
+                if(TestTypeProvider.FullTest != null) {
+                    foreach(var t in TestTypeProvider.FullTest) {
+                        //Console.WriteLine("test type: " + t.FullName);
+                        var a = t.Assembly;
+                        //Console.WriteLine("  assembly: " + a.FullName + " @ " + a.Location);
+                        bool added = R.Add(a);
+                        //Console.WriteLine("  added? " + added);
                     }
                 }
-            }
 
-            return R.ToArray();
+
+
+                if(discoverRelease) {
+                    if(TestTypeProvider.ReleaseOnlyTests != null) {
+                        foreach(var t in TestTypeProvider.ReleaseOnlyTests) {
+                            R.Add(t.Assembly);
+                        }
+                    }
+                }
+
+                return R.ToArray();
+            }
         }
 
         //static bool IsReleaseOnlyAssembly
@@ -1061,6 +1063,10 @@ namespace PublicTestRunner {
         }
 
 
+        /// <summary>
+        /// Copies additional files required for some test;
+        /// these files are identified via the <see cref="NUnitFileToCopyHackAttribute"/>.
+        /// </summary>
         static void MegaMurxPlusPlus(Assembly a) {
             using (new FuncTrace()) {
                 var r = GetTestsInAssembly(a);
@@ -1070,12 +1076,8 @@ namespace PublicTestRunner {
                 foreach (var fOrigin in r.RequiredFiles) {
                     if (File.Exists(fOrigin)) {
                         string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
-
                         File.Copy(fOrigin, fDest, true);
-
-
                     }
-
                 }
             }
         }
@@ -1091,68 +1093,90 @@ namespace PublicTestRunner {
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile($"Nunit3.{MpiRank}of{MpiSize}");
 
-            Assembly[] assln = GetAllAssemblies();
+            Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
+
+            using(var ftr = new FuncTrace()) {
+                Assembly[] assln = GetAllAssemblies();
+                
+                if(MpiSize != 1) {
+                    // this seems some parallel run
+                    // we have to fix the result argument
+
+                    if(args.Where(a => a.StartsWith("--result=")).Count() != 1) {
+                        throw new ArgumentException("MPI-parallel NUnit runs require the '--result' argument.");
+                    }
+
+                    int i = args.IndexWhere(a => a.StartsWith("--result="));
+                    string arg_i = args[i];
+                    string resFileName = arg_i.Replace("--result=", "");
+                    args[i] = "--result=" + MpiResFileNameMod(MpiRank, MpiSize, resFileName);
 
 
-            if (MpiSize != 1) {
-                // this seems some parallel run
-                // we have to fix the result argument
-
-                if (args.Where(a => a.StartsWith("--result=")).Count() != 1) {
-                    throw new ArgumentException("MPI-parallel NUnit runs require the '--result' argument.");
+                    var parAssis = GetAllMpiAssemblies();
+                    foreach(var t in parAssis) {
+                        t.Asbly.AddToArray(ref assln);
+                    }
                 }
 
-                int i = args.IndexWhere(a => a.StartsWith("--result="));
-                string arg_i = args[i];
-                string resFileName = arg_i.Replace("--result=", "");
-                args[i] = "--result=" + MpiResFileNameMod(MpiRank, MpiSize, resFileName);
+                int count = 0;
+                bool ret = false;
+                foreach(var a in assln) {
+                    if(!FilterAssembly(a, AssemblyFilter)) {
+                        continue;
+                    }
+                    Console.WriteLine("Matching assembly: " + a.Location);
+
+                    count++;
+
+                    if(MpiRank == 0) {
+                        MegaMurxPlusPlus(a);
+                    }
+
+                    Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                    Console.WriteLine("All Here.");
+
+                    int r;
+                    using(new BlockTrace("RUNNING_TEST", ftr)) {
+                        var tr = new TextRunner(a);
+                        r = tr.Execute(args);
+                    }
+
+                    using(var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
+                        Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
+                        Console.SetError(new StreamWriter(Console.OpenStandardError()));
 
 
-                var parAssis = GetAllMpiAssemblies();
-                foreach (var t in parAssis) {
-                    t.Asbly.AddToArray(ref assln);
+
+                        bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        bt.Info("All Here.");
+
+                        
+                        //var ar = new AutoRun(a);
+                        //int r = ar.Execute(args);
+
+                        int[] all_rS = r.MPIAllGather();
+                        for(int rnk = 0; rnk < all_rS.Length; rnk++) {
+                            bt.Info($"Rank {rnk}: NUnit returned code " + r);
+                        }
+                        
+                    }
+
+                    ret = ret | (r != 0);
                 }
+
+                {
+                    if(count <= 0) {
+                        Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                        return -1;
+                    }
+                }
+
+
+                Console.WriteLine();
+                return ret ? -1 : 0;
             }
-
-            int count = 0;
-            bool ret = false;
-            foreach (var a in assln) {
-                if (!FilterAssembly(a, AssemblyFilter)) {
-                    continue;
-                }
-                Console.WriteLine("Matching assembly: " + a.Location);
-
-                count++;
-
-                if (MpiRank == 0) {
-                    MegaMurxPlusPlus(a);
-                }
-
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                var tr = new TextRunner(a);
-                int r = tr.Execute(args);
-
-                Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
-                Console.SetError(new StreamWriter(Console.OpenStandardError()));
-
-                //var ar = new AutoRun(a);
-                //int r = ar.Execute(args);
-
-                Console.WriteLine("NUnit returned code " + r);
-
-                ret = ret | (r != 0);
-            }
-
-            {
-                if (count <= 0) {
-                    Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
-                    return -1;
-                }
-            }
-
-
-            return ret ? -1 : 0;
         }
 
         private static string MpiResFileNameMod(int MpiRank, int MpiSize, string resFileName) {

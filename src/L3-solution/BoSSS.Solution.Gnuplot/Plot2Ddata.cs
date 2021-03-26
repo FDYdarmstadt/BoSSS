@@ -743,10 +743,17 @@ namespace BoSSS.Solution.Gnuplot {
             newPath = pathWithoutExt + "Rgrs.txt";
             var regressionData = this.Regression();
             using (StreamWriter stw = new StreamWriter(newPath)) {
-                stw.WriteLine("\\$\\degree$ \t EOC");
-                foreach (var item in regressionData) {
-                    stw.WriteLine(item.Key + "\t" + item.Value);
+                if (writeGroupName) {
+                    stw.WriteLine("\\$\\degree$ \t EOC");
+                    foreach (var item in regressionData) {
+                        stw.WriteLine(item.Key + "\t" + item.Value);
+                    }
+                } else {
+                    foreach (var item in regressionData) {
+                        stw.WriteLine( item.Value);
+                    }
                 }
+
                 stw.Close();
             }
         }
@@ -819,7 +826,7 @@ namespace BoSSS.Solution.Gnuplot {
                 s.Write(@"%\end{figure} 
 %\end{document}
 ");
-                s.Close();
+                s.Close(); 
             }
         }
 

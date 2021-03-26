@@ -97,7 +97,6 @@
     <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
-    <Compile Include="FormDifferentiator.cs" />
     <Compile Include="GridComparer.cs" />
     <Compile Include="GridCommons_Comparer.cs" />
     <Compile Include="GridCommons_Merge.cs" />

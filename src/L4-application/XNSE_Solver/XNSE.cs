@@ -126,6 +126,28 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// Current velocity
+        /// </summary>
+        public VectorField<XDGField> Velocity {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return new VectorField<XDGField>(this.CurrentState.Fields.Take(D).Select(f => ((XDGField)f)).ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Current Pressure
+        /// </summary>
+        public XDGField Pressure {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return (XDGField)this.CurrentState.Fields[D];
+            }
+        }
+
+
+
+        /// <summary>
         /// Usually, the term "DG order of the calculation" means the velocity degree.
         /// </summary>
         protected int VelocityDegree() {
@@ -269,31 +291,30 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
-            
+
             OperatorFactory opFactory = new OperatorFactory();
-            
+
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = NonlinearSolMode;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
-            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            FinalOperatorSettings(XOP);
             XOP.Commit();
 
             return XOP;
         }
 
         /// <summary>
-        /// temporary hack, to be allowed to use different nonlinear solvers 
-        /// (e.g. fixpoint vs. Newton)
-        /// in this 'base' solver and in derived solvers.
+        /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
-        virtual protected LinearizationHint NonlinearSolMode {
-            get { return LinearizationHint.AdHoc; }
+        /// <param name="XOP"></param>
+        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
+            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
+            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
+            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
         }
 
         /// <summary>

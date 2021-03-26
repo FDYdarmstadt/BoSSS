@@ -174,13 +174,17 @@ namespace BoSSS.Foundation.IO {
         /// <param name="session">
         /// The selected session.
         /// </param>
-        public static void OpenDeployDirectory(this ISessionInfo session, int Clientidx=-1) {
+        /// <param name="Clientidx">
+        /// index into <see cref="BatchProcessorConfig.AllQueues"/>, <see cref="BoSSSshell.ExecutionQueues"/>.
+        /// </param>
+        public static void OpenDeployDirectory(this ISessionInfo session, int Clientidx = -1) {
             string deployname = session.DeployPath.Split('/', '\\').Last();
             var bpc = BatchProcessorConfig.LoadOrDefault();
             int idx = -1;
 
-            if (Clientidx < 0) {
-                for (int i = 0; i < bpc.AllQueues.Length; i++) Console.WriteLine(i + " : " + bpc.AllQueues[i].ToString());
+            if(Clientidx < 0) {
+                for(int i = 0; i < bpc.AllQueues.Length; i++) 
+                    Console.WriteLine(i + " : " + bpc.AllQueues[i].ToString());
                 Console.WriteLine("Choose Client-Config:");
                 string usrinput = Console.ReadLine();
                 idx = Convert.ToInt32(usrinput);
@@ -188,14 +192,14 @@ namespace BoSSS.Foundation.IO {
                 idx = Clientidx;
             }
 
-            if (idx > bpc.AllQueues.Length)
+            if(idx > bpc.AllQueues.Length)
                 throw new IndexOutOfRangeException();
 
             var bpclnt = bpc.AllQueues[idx];
             string deploydir = bpclnt.DeploymentBaseDirectory;
             string deploypath = Path.Combine(deploydir, deployname);
 
-            if (!deploydir.IsEmptyOrWhite() && Directory.Exists(deploypath))
+            if(!deploydir.IsEmptyOrWhite() && Directory.Exists(deploypath))
                 Process.Start(deploypath);
             else
                 Console.WriteLine("Attempt failed. Search directory via DeployPath-Attribute");
@@ -485,8 +489,8 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Prints the methods with the highest Imbalance of runtime over MPI-ranks,
         /// which reflects load imbalance. Runtime of FuncTraces are taken.
-        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
-        /// NOTE: this consideres no idle time within methods!
+        /// Uses <see cref="ISessionInfoExtensions.GetProfiling"/> internally, which means this can be expensive.
+        /// NOTE: this considered no idle time within methods!
         /// </summary>
         /// <param name="SI"></param>
         /// <param name="printcnt"></param>
@@ -498,7 +502,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Prints the methods with the highest Imbalance within MPI blocking methods,
         /// which reflects communication delay.
-        /// Uses <see cref="GetProfiling()"/> internally, which means this can be expensive.
+        /// Uses <see cref="ISessionInfoExtensions.GetProfiling"/> internally, which means this can be expensive.
         /// NOTE: Nonblocking MPI-Methods are not included! Refer to this as a hint rather beeing accurate
         /// If <see cref="PrintTotalImbalance"/> and this show same tendency, it is likley,
         /// that <see cref="PrintTotalImbalance"/> is dominated by communication delays.
@@ -2034,9 +2038,10 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="sess"> List of sessions to be evaluated </param>
         /// <param name="logName"> which log values to be evaluated </param>
+        /// <param name="evalName"></param>
+        /// <param name="keyName"></param>
         /// <returns></returns>
-        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, 
-            string evalName = null, string keyName = null) {
+        public static List<Plot2Ddata> ReadLogDataForXNSE(this List<ISessionInfo> sess, string logName, string evalName = null, string keyName = null) {
 
 
             string[] values;
@@ -2151,7 +2156,9 @@ namespace BoSSS.Foundation.IO {
 
         }
 
-
+        /// <summary>
+        /// special purpose method, most likely legacy stuff
+        /// </summary>
         public static List<Plot2Ddata>[] ReadLogDataForMovingContactLine(this IEnumerable<ISessionInfo> sess) {
 
             string[] values = new string[] { "#timestep", "time", "contact-pointX", "contact-pointY", "contact-VelocityX", "contact-VelocityY", "contact-angle" };
@@ -2216,7 +2223,9 @@ namespace BoSSS.Foundation.IO {
 
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
         public static List<Plot2Ddata> LogDataToConvergenceData(List<Plot2Ddata> LogData, double[] abscissa, double[] _refAbs = null, double[] _refVal = null) {
 
             List<Plot2Ddata> convData = new List<Plot2Ddata>();
@@ -2306,7 +2315,9 @@ namespace BoSSS.Foundation.IO {
             return convData;
         }
 
-
+        /// <summary>
+        /// ???
+        /// </summary>
         public static Tuple<List<double>, List<double>> ComputeOscillationProperties(XYvalues waveData, bool twoPiPeriodic) {
 
             List<double> maxValues = new List<double>();
@@ -2361,7 +2372,9 @@ namespace BoSSS.Foundation.IO {
 
         }
 
-
+        /// <summary>
+        /// ???
+        /// </summary>
         public static void CheckForEnergyLogging(this IEnumerable<ISessionInfo> pSessions) {
 
             int numberSessions = pSessions.Count();
@@ -2392,6 +2405,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="pSessions">List of sessions to be evaluated</param> 
         /// <param name="energytype"> Energytypes to be plotted, can be partial</param>
+        /// <param name="singlePlot"></param>
         public static Plot2Ddata[] EvalEnergy(this IEnumerable<ISessionInfo> pSessions, string[] energytype, bool singlePlot) {
             int numberSessions = pSessions.Count();
             //List<Gnuplot> Plots = new List<Gnuplot>();
@@ -2478,6 +2492,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="pltDat"></param>
         /// <param name="xLabel"></param>
         /// <param name="yLabel"></param>
+        /// <param name="convData">
+        /// if true, a log-log plot is performed
+        /// </param>
         public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel, bool convData = false) {
 
             int lineColor = 0;
@@ -2591,9 +2608,9 @@ namespace BoSSS.Foundation.IO {
 
 
 
-        /// <summary>
-        /// Plots the temperature profile if a  "Evaporation.txt" exists.
-        /// </summary>
+        // <summary>
+        // Plots the temperature profile if a  "Evaporation.txt" exists.
+        // </summary>
         //public static void PlotTemperatureProfileAt(this ISessionInfo pSession, int[] timestepIndex) {
 
         //    int numberTimesteps = timestepIndex.Count();

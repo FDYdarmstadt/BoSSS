@@ -55,6 +55,7 @@
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FastColoredTextBox">

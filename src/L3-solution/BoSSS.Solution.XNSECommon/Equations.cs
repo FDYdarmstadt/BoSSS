@@ -118,6 +118,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+        /// <summary>
+        /// Convective component of the momentum equation
+        /// </summary>
         protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, double rhoSpc, double LFFSpc, LevelSetTracker LsTrk) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
             AddComponent(conv);
@@ -125,6 +128,9 @@ namespace BoSSS.Solution.XNSECommon {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
         }
 
+        /// <summary>
+        /// Viscous component of the momentum equation
+        /// </summary>
         protected virtual void DefineViscous(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, PhysicalParameters physParams, DoNotTouchParameters dntParams, double penalty) {
             switch(dntParams.ViscosityMode) {
                 case ViscosityMode.Standard:

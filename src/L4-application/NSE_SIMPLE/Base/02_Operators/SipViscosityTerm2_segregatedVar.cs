@@ -23,8 +23,8 @@ namespace NSE_SIMPLE {
         /// </summary>
         public SipViscosity_Term2_segregatedVar(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, /*ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,*/
-                                   double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized =false)
-            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
+                                   double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
+            : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
             //this.ViscSolverMode = ViscSolverMode;
         }

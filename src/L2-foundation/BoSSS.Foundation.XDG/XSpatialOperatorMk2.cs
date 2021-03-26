@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.XDG {
            
         }
 
-        List<string> m_SpeciesList = new List<string>();
+        public List<string> m_SpeciesList = new List<string>();
 
         private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
-                    if(iec is ISpeciesFilter fiec) {
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null) {
                         string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {
@@ -1741,8 +1741,8 @@ namespace BoSSS.Foundation.XDG {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
-            if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
-                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+            //if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
+            //    throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
 
             foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {

@@ -31,12 +31,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     /// </summary>
     public class PressureInSpeciesBulk : PressureGradientLin_d, ISpeciesFilter {
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcMap;
+        IncompressibleBoundaryCondMap m_bcMap;
 
         //string m_spcName;
         SpeciesId m_spcId;
 
-        public PressureInSpeciesBulk(int _d, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId)
+        public PressureInSpeciesBulk(int _d, IncompressibleBoundaryCondMap bcMap, string spcName, SpeciesId spcId)
             : base(_d, bcMap) {
             base.pressureFunction = bcMap.bndFunction[VariableNames.Pressure + "#" + spcName];
             this.m_bcMap = bcMap;
