@@ -234,12 +234,12 @@ namespace BoSSS.Application.XNSERO_Solver {
                 double phoreticVal = uA[dim];
                 //Vector tangential = normalVector.Rotate2D(Math.PI * 0.5);
 
-                uAFict = uAFict + GradPhoreticTangential * 0.7;
+                //uAFict = uAFict + GradPhoreticTangential * 0.7;
 
                 // todo: add computation of slip velocity.
                 // Note: if the relation is non-linear, special treatment is required!
                 if(write) {
-                    Console.WriteLine($"todo: add computation of slip velocity; phoretic value is {phoreticVal}");
+                    Console.WriteLine($"todo: add computation of slip velocity; phoretic value is {phoreticVal}, gradient absolute value is {GradPhoretic.Abs()}");
                     write = false; // prevent end-less output; 
                 }
             } else {
