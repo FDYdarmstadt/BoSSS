@@ -1100,7 +1100,7 @@ namespace BoSSS.Solution {
             
             int cnt = 2;
             while (File.Exists(filename)) {
-                filename = Path.Combine(Dir, MPI_prefix + FileN + "." + FileEnding);
+                filename = Path.Combine(Dir, MPI_prefix+ FileN + "." + cnt  + "." + FileEnding);
                 cnt++;
             }
 
