@@ -157,7 +157,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="myJob">Job to submit.</param>
         /// <param name="DeploymentDirectory">Where the executable is.</param>
         /// <returns>
-        /// An identifier token (<see cref="Job.BatchProcessorIdentifierToken"/>)
+        /// An identifier token (<see cref="Job.Deployment.BatchProcessorIdentifierToken"/>)
         /// as well as an optional (internal) object
         /// </returns>
         abstract public (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory);
@@ -167,7 +167,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="idToken">Identification within batch processor</param>
         /// <param name="optInfo">
-        /// Optional internal job object, returned form <see cref="Submit(Job)"/>
+        /// Optional internal job object, returned form <see cref="Submit"/>
         /// </param>
         /// <param name="DeployDir"></param>
         public abstract (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir);

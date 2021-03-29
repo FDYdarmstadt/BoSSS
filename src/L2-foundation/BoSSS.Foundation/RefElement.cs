@@ -514,10 +514,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int f = 0;
                 for (int i = 0; i < EdgeVertices.GetLength(0); i++) {
 
-                    for(int d = 0; d < D; d++) {
-                        
-                        //Console.WriteLine("    Face {0}: {1} \t{2}", FaceIndex, d, VolumeVertices[i, d]);
-                    }
+
 
                     for (int j = 0; j < this.Vertices.GetLength(0); j++) {
 
@@ -527,17 +524,17 @@ namespace BoSSS.Foundation.Grid.RefElements {
                             double delta = VolumeVertices[i, d] - Vertices[j, d];
                             dist += delta * delta;
 
-                            //Console.WriteLine("    {0}: {1} \t{2}", d, VolumeVertices[i, d],Vertices[j, d]);
+                           
                         }
 
-                        //Console.Write("{3}: {0}-{1} dist = {2}", i, j, dist, FaceIndex);
+                       
 
                         if(dist < 1.0e-6) {
                             m_FaceToVertexIndices[FaceIndex, f] = j;
                             f++;
-                            //Console.WriteLine(" BINGO! f = " + f);
+
                         } else {
-                            //Console.WriteLine(" leider nein!"); 
+
                         }
 
 
@@ -545,7 +542,6 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 }
 
                 if(f != this.FaceRefElement.NoOfVertices) {
-                    //Console.WriteLine("f = " + f);
                     throw new ApplicationException("internal error: unable to find indices of all edge vertices;");
                 }
 

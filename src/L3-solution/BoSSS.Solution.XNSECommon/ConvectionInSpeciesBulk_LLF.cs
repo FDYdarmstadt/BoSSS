@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     public class ConvectionInSpeciesBulk_LLF : LinearizedConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
-        public ConvectionInSpeciesBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, int _component, 
+        public ConvectionInSpeciesBulk_LLF(int SpatDim, IncompressibleBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, int _component, 
             double _rho, double _LFF, LevelSetTracker _lsTrk) :
             base(SpatDim, _bcmap, _component, false) {
             //
@@ -56,7 +56,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(spcId).VolumeMask.GetBitMaskWithExternal();
         }
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+        IncompressibleBoundaryCondMap m_bcmap;
         LevelSetTracker lsTrk;
 
         double LFF;

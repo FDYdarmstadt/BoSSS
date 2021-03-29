@@ -1515,7 +1515,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             MultidimensionalArray system = MultidimensionalArray.Create(usableRowsE.Count + varCount, usableRowsE.Count + varCount);
             system.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { varCount - 1, varCount - 1 }).DGEMM(1.0, hQ, hQ, 0.0, true);
             system.ExtractSubArrayShallow(new int[] { varCount, 0 }, new int[] { varCount + usableRowsE.Count - 1, varCount - 1 }).Acc(1.0, E);
-            system.ExtractSubArrayShallow(new int[] { 0, varCount }, new int[] { varCount - 1, varCount + usableRowsE.Count - 1 }).Acc(1.0, E.Transpose());
+            system.ExtractSubArrayShallow(new int[] { 0, varCount }, new int[] { varCount - 1, varCount + usableRowsE.Count - 1 }).Acc(1.0, E.TransposeTo());
 
 
             double[] systemrhs = new double[usableRowsE.Count + varCount];
@@ -1901,7 +1901,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             // accumulate system matrix
             MultidimensionalArray S = MultidimensionalArray.Create(basisIndex + 1 + currentDegree + 1, basisIndex + 1 + currentDegree + 1);
             S.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { basisIndex, basisIndex }).Acc(1.0, Q);
-            S.ExtractSubArrayShallow(new int[] { 0, basisIndex + 1 }, new int[] { basisIndex, basisIndex + 1 + currentDegree }).Acc(1.0, aggE1.Transpose());
+            S.ExtractSubArrayShallow(new int[] { 0, basisIndex + 1 }, new int[] { basisIndex, basisIndex + 1 + currentDegree }).Acc(1.0, aggE1.TransposeTo());
             S.ExtractSubArrayShallow(new int[] { basisIndex + 1, 0 }, new int[] { basisIndex + 1 + currentDegree, basisIndex }).Acc(1.0, aggE1);
 
             // accumulate rhs
@@ -2382,7 +2382,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             int cols = E.NoOfCols;
             List<int> usableRows = new List<int>();
 
-            int[] pivot = IMatrixExtensions.ReducedRowEchelonForm(E.ExtractSubArrayShallow(new int[] { offset, 0 }, new int[] { offset + rows - 1, cols - 1 }).Transpose()).Item2;
+            int[] pivot = IMatrixExtensions.ReducedRowEchelonForm(E.ExtractSubArrayShallow(new int[] { offset, 0 }, new int[] { offset + rows - 1, cols - 1 }).TransposeTo()).Item2;
 
             for (int i = 0; i < pivot.Length; i++) pivot[i] += offset;
 

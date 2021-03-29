@@ -192,6 +192,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
+            /// <summary>
+            /// walk back in region stack
+            /// </summary>
             LevelSetRegions GetPreviousRegion() {
                 int L = 1 - m_owner.RegionsHistory.GetPopulatedLength();
 
@@ -1151,6 +1154,13 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
+            /// Level set region code, before the most recent call to <see cref="LevelSetTracker.UpdateTracker"/>
+            /// for locally updated and external cells
+            /// </summary>
+            internal ushort[] m_LevSetRegions_b4Update;
+
+
+            /// <summary>
             /// Handling of special cases, when the level-set coincides with a cell face;
             /// It can be null, if there is no such face in the entire mesh;
             /// - 1st index: local cell index
@@ -1753,6 +1763,7 @@ namespace BoSSS.Foundation.XDG {
 
                 L.m_LenToNextChange = this.m_LenToNextChange.CloneAs();
                 L.m_LevSetRegions = this.m_LevSetRegions.CloneAs();
+                L.m_LevSetRegions_b4Update = this.m_LevSetRegions_b4Update?.CloneAs();
                 L.Version = this.Version;
                 L.Time = this.Time;
                 L.m_ColorMap4Spc = this.m_ColorMap4Spc.CloneNonShallow(L);

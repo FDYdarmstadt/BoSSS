@@ -15,8 +15,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
     /// <summary>
-    /// Two-phase Taylor Couette flow, used also as a testscase in publication;
-    /// 
+    /// Two-phase Taylor Couette flow, used also as a testscase in publication:
+    /// Kummer, F. (2017). Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization. International Journal for Numerical Methods in Engineering, 109(2):259–289
     /// </summary>
     public class TaylorCouette : IXNSETest {
 
@@ -109,7 +109,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// 
         /// </summary>
-        class ExactSol {
+        internal class ExactSol {
             public const double Ui = 2; // inner radius tangential speed
             public const double Ua = 1; // outer radius tangential speed
             
@@ -379,4 +379,168 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
     }
+
+
+    /// <summary>
+    /// Single-phase Taylor Couette flow, using a curved element grid.
+    /// </summary>
+    public class TaylorCouette_CurvElm : IXNSETest {
+
+
+
+
+        public TaylorCouette_CurvElm() {
+
+            double Ra = double.NaN, Ri = double.NaN, Rm = double.NaN;
+            double rhoA, rhoB, muA, muB, sigma;
+
+
+            Ri = 5; // aussen;
+            Rm = 6; // weiter draussen
+            Ra = 7; // noch weiter draussen
+            rhoA = 0.1;
+            rhoB = 0.1;
+            muA = 0.1;
+            muB = 0.1;
+            sigma = 0.0;
+            exS = new TaylorCouette.ExactSol(Ri, Rm, Ra, rhoA, rhoB, muA, muB, sigma);
+
+
+        }
+
+
+        public double mu_A => exS.muA;
+
+        public double mu_B => exS.muB;
+
+        public double Sigma => exS.sigma;
+
+        public bool TestImmersedBoundary {
+            get {
+                return false;
+            }
+        }
+
+
+
+        public int SpatialDimension => 2;
+
+        public double dt => throw new NotImplementedException();
+
+        public double rho_A => exS.rhoA;
+
+        public double rho_B => exS.rhoB;
+
+        public bool Material => true;
+
+        public bool steady => true;
+
+        public bool IncludeConvection => true;
+
+        public int LevelsetPolynomialDegree => 2;
+
+
+        TaylorCouette.ExactSol exS;
+
+    
+
+        public double[] AcceptableL2Error => new double[] { 1, 1, 1 };
+
+        public double[] AcceptableResidual => new double[] { 1, 1, 1 };
+
+        string innerWallTag = IncompressibleBcType.Velocity_Inlet.ToString() + "_inner";
+        
+        string outerWallTag = IncompressibleBcType.Velocity_Inlet.ToString() + "_outer";
+        
+        public GridCommons CreateGrid(int Resolution) {
+            double[] rNodes = GenericBlas.Linspace(1, 2,  Resolution + 1);
+            double[] sNodes = GenericBlas.Linspace(0, 0.125, 12 * Resolution + 1);
+
+            var grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, Foundation.Grid.RefElements.CellType.Square_36, true);
+
+            //var grd = Grid2D.Cartesian2DGrid(rNodes, sNodes, periodicY: true);
+
+            grd.DefineEdgeTags(delegate (double[] X) {
+                double r = X.L2Norm();
+
+                if(r < 1.5)
+                    return innerWallTag;
+                else 
+                    return outerWallTag;
+
+                throw new ArgumentOutOfRangeException("error in DefineEdgeTags");
+            });
+
+            return grd;
+        }
+
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
+
+            
+            config.Add(innerWallTag, new AppControl.BoundaryValueCollection());
+            config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(0), exS.UA1);
+            config[innerWallTag].Evaluators.Add(VariableNames.Velocity_d(1), exS.UA2);
+
+            config.Add(outerWallTag, new AppControl.BoundaryValueCollection());
+            config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(0), exS.UA1);
+            config[outerWallTag].Evaluators.Add(VariableNames.Velocity_d(1), exS.UA2);
+
+            return config;
+        }
+
+        public Func<double[], double> GetF(string species, int d) {
+            return (double[] X) => 0.0;
+        }
+
+        /// <summary>
+        /// set to -1, i.e. species A is everywhere
+        /// </summary>
+        /// <returns></returns>
+        public Func<double[], double, double> GetPhi() {
+            Func<double[], double, double> phiFunc =  (X, t) => -1.0;  // quadratic form
+            return phiFunc;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException();
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
+
+        public Func<double[], double, double> GetPress(string species) {
+            switch(species) {
+                case "A": return exS.PA;
+                case "B": return exS.PB;
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        public Func<double[], double, double> GetU(string species, int d) {
+            
+            switch(d) {
+                case 0:
+                switch(species) {
+                    case "A": return exS.UA1;
+                    case "B": return exS.UB1;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+
+                case 1:
+                switch(species) {
+                    case "A": return exS.UA2;
+                    case "B": return exS.UB2;
+                    default: throw new ArgumentOutOfRangeException();
+                }
+
+                default: throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
 }

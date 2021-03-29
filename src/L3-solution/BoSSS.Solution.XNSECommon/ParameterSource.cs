@@ -6,24 +6,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution.XNSECommon.Operator
-{
-    public class ParameterSource : IVolumeForm
-    {
+namespace BoSSS.Solution.XNSECommon.Operator {
+
+
+    /// <summary>
+    /// Minimal volume source term
+    /// </summary>
+    public class ParameterSource : IVolumeForm, ISupportsJacobianComponent {
         string[] parameterName;
 
-        public ParameterSource(string parameter)
-        {
+        public ParameterSource(string parameter) {
             parameterName = new string[]
             {
                 parameter
             };
         }
 
-        public TermActivationFlags VolTerms
-        {
-            get
-            {
+        public TermActivationFlags VolTerms {
+            get {
                 return TermActivationFlags.V;
             }
         }
@@ -32,18 +32,19 @@ namespace BoSSS.Solution.XNSECommon.Operator
 
         public IList<string> ParameterOrdering => parameterName;
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             return cpv.Parameters[0] * V;
         }
     }
 
-    public class MultiPhaseSource : ParameterSource, ISpeciesFilter
-    {
+    public class MultiPhaseSource : ParameterSource, ISpeciesFilter {
         string species;
 
-        public MultiPhaseSource(string parameter, string species) : base(parameter)
-        {
+        public MultiPhaseSource(string parameter, string species) : base(parameter) {
             this.species = species;
         }
 

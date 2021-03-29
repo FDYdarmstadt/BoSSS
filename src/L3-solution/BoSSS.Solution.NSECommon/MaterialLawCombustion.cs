@@ -61,14 +61,13 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         /// <param name="Prandtl"></param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
+        public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double gasConstant, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
             : base(T_ref_Sutherland, MatParamsMode, rhoOne, Prandtl) {
             this.MatParamsMode = MatParamsMode;
             this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
             this.rhoOne = rhoOne;
             this.cpOne = _cpOne;
-            this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
             this.YF0 = YF0;
@@ -96,8 +95,8 @@ namespace BoSSS.Solution.NSECommon {
                 double rho;
 
                 if (!rhoOne) {
-                    if (phi.Length < 5)
-                        throw new ArgumentException("Error in density computation. Number of reactants needs to be atleast 4.");
+                    if (phi.Length < 2 )
+                        throw new ArgumentException("Error in density computation. Number of chemical component needs to be atleast 1.");
 
                     double MassFractionsOverMolarFractions = 0.0;
                     double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
@@ -112,7 +111,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     rho = ThermodynamicPressureValue / (R * phi[0] * MassFractionsOverMolarFractions);
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
-                    Debug.Assert((rho > 0.0));
+                    //Debug.Assert((rho > 0.0));
                 } else {
                     rho = 1.0;
                 }
@@ -160,7 +159,8 @@ namespace BoSSS.Solution.NSECommon {
 
         public override IList<string> ParameterOrdering {
             get {
-                return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
+                //return new string[] { VariableNames.Temperature0 , VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 }; 
+                return null;
             }
         }
 

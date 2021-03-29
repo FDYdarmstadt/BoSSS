@@ -627,8 +627,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
                 C.UseSchurBlockPrec = SchurCompl;
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
                 CS[i] = C;
 
                 //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
@@ -641,6 +641,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 } ); // be **very** generous with the expected slopes
+        }
+
+        /// <summary>
+        /// <see cref="TaylorCouette_CurvElm"/>
+        /// </summary>
+        public static void CurvedElementsTest(
+            [Values(2, 3)] int FlowSolverDegree = 1
+            ) {
+
+            var Tst = new TaylorCouette_CurvElm();
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, 
+                AgglomerationTreshold:0.1, 
+                vmode: ViscosityMode.Standard, 
+                CutCellQuadratureType: XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, 
+                SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, 
+                GridResolution: 1);
+            C.NoOfMultigridLevels = 1;
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 4;
+            C.SkipSolveAndEvaluateResidual = true;
+            XNSESolverTest(Tst, C);
+            
         }
 
 
@@ -969,6 +991,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 var slope = LogLogRegression(hS, errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
             }
+
+            foreach(var s in solvers) {
+                s.Dispose();
+            }
         }
 
 
@@ -1089,7 +1115,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             double AgglomerationTreshold = 0.1;
 
-            var LaLa = new List<AS_XNSE_Control>();
+            var LaLa = new List<XNSE_Control>();
             foreach (var Res in ResolutionS)
             {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode, GridResolution: Res);
@@ -1100,18 +1126,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif
         }
 
-
-        class AS_XNSE_Control : XNSE_Control {
-            public override Type GetSolverType() {
-                return typeof(XNSE);
-            }
-        }
-
-        static AS_XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
+        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1) {
-            AS_XNSE_Control C = new AS_XNSE_Control();
+            XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
 
 

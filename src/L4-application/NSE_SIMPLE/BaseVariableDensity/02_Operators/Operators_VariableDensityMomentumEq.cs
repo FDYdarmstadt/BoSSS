@@ -85,7 +85,7 @@ namespace NSE_SIMPLE {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, SolverConf.ConfigVariableDensity.EoS)).Operator();
-            return (new swipViscosity_Term1_variante(SolverConf.PenaltyViscMomentum,
+            return (new SipViscosity_Term1_segregatedVar(SolverConf.PenaltyViscMomentum,
                 SpatialComponent,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
@@ -116,13 +116,12 @@ namespace NSE_SIMPLE {
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
-            return (new swipViscosity_Term2(SolverConf.PenaltyViscMomentum,
+            return (new SipViscosity_Term2_segregatedVar(SolverConf.PenaltyViscMomentum,
                 //base.GridData.Cells.cj,
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
                 ViscosityOption.VariableViscosityDimensionless,
-                ViscositySolverMode.Segregated,
                 reynolds: varDensConf.Reynolds,
                 EoS: varDensConf.EoS)).Operator(2);
         }
@@ -148,12 +147,11 @@ namespace NSE_SIMPLE {
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             VariableDensitySIMPLEControl varDensConf = SolverConf.Control as VariableDensitySIMPLEControl;
 
-            return (new swipViscosity_Term3(SolverConf.PenaltyViscMomentum,
+            return (new SipViscosity_Term3_segregatedVar(SolverConf.PenaltyViscMomentum,
                 SpatialDirection,
                 SolverConf.SpatialDimension,
                 SolverConf.BcMap,
                 ViscosityOption.VariableViscosityDimensionless,
-                ViscositySolverMode.Segregated,
                 reynolds: SolverConf.Control.Reynolds,
                 EoS: varDensConf.EoS)).Operator(2);
         }

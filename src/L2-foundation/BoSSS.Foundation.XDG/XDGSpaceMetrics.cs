@@ -167,6 +167,18 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        SpeciesId[] m_TotalSpeciesList;
+
+        /// <summary>
+        /// All species <see cref="LevelSetTracker.SpeciesIdS"/>.
+        /// </summary>
+        public IList<SpeciesId> TotalSpeciesList {
+            get {
+                return Tracker.SpeciesIdS;
+            }
+        }
+
+
         CutCellMetrics m_CutCellMetrics;
 
         /// <summary>

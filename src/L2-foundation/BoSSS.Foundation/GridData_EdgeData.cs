@@ -890,7 +890,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         this.m_Edge2CellTrafos_SqrtGramian = MultidimensionalArray.Create(Edge2CellTrafos.Count);
                         for (int i = 0; i < Edge2CellTrafos.Count; i++) {
                             var tr = this.Edge2CellTrafos[i];
-                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.Transpose(), tr.Matrix).Determinant().Sqrt();
+                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.TransposeTo(), tr.Matrix).Determinant().Sqrt();
                         }
                     }
                     return m_Edge2CellTrafos_SqrtGramian;

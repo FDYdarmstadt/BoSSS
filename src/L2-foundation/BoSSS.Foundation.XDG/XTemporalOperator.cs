@@ -298,6 +298,7 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;
             InternalRepresentation.SurfaceElement_VolumeQuadraturSchemeProvider = owner.SurfaceElement_VolumeQuadraturSchemeProvider;
             InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
+            InternalRepresentation.ContactLine_VolumeQuadratureSchemeProvider = owner.ContactLine_VolumeQuadratureSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
@@ -314,6 +315,7 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;
             InternalRepresentation.SurfaceElement_VolumeQuadraturSchemeProvider = owner.SurfaceElement_VolumeQuadraturSchemeProvider;
             InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
+            InternalRepresentation.ContactLine_VolumeQuadratureSchemeProvider = owner.ContactLine_VolumeQuadratureSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;

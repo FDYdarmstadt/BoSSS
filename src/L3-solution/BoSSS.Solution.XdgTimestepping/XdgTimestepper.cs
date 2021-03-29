@@ -331,7 +331,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // =================================
             if(_MultigridOperatorConfig == null) {
                 int NoOfVar = Fields.Count();
-                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[0][];
+                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[1][];
                 _MultigridOperatorConfig[0] = new MultigridOperator.ChangeOfBasisConfig[NoOfVar];
                 for(int iVar = 0; iVar < NoOfVar; iVar++) {
                     _MultigridOperatorConfig[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {
@@ -496,11 +496,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(!OpMtx.ColPartition.EqualsPartition(Mapping))
                     throw new ArgumentException("Domain/Matrix column mapping mismatch.");
             }
-
-            if(Operator.IsLinear && Operator.LinearizationHint != LinearizationHint.AdHoc)
-                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
-
-
+                    
             if(XdgOperator != null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++
                 // XDG Branch: still requires length-scale-hack

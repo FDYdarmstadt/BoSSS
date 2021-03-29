@@ -85,7 +85,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Creates a job for the control object <paramref name="ctrl"/>.
         /// The method returns immediately.
-        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)
+        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate"/>)
         /// to run on a batch system.
         /// </summary>
         /// <param name="ctrl"></param>

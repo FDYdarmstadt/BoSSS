@@ -322,7 +322,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 }
 
 #if DEBUG
-                var Test = DiffMtx.Transpose();
+                var Test = DiffMtx.TransposeTo();
                 Test.Acc(-1.0, DiffMtx);
                 Debug.Assert(Test.InfNorm() <= 1.0e-8);
 #endif

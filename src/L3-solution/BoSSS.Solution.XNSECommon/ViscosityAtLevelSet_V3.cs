@@ -31,7 +31,11 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     /// <summary>
-    /// 
+    /// Coupling of the fully symmetric viscous stress, i.e.
+    /// ```math
+    ///    - \mu \left( \nabla \vec{u} + \nabla \vec{u}^T \right) .
+    /// ```
+    /// Must be used together with <see cref="ViscosityInSpeciesBulk_GradUTerm"/> **and** <see cref="ViscosityInSpeciesBulk_GradUtranspTerm"/> in the bulk.
     /// </summary>
     public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 

@@ -49,11 +49,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="LowMachCombustionConvectionInSpeciesBulk_LLF.cs" />
     <Compile Include="Coefficients.cs" />
     <Compile Include="ConvectionAtLevelSet_LLF.cs" />
     <Compile Include="ConvectionInBulk_LLF.cs" />
     <Compile Include="ConvectionInBulk_Localized.cs" />
     <Compile Include="CutCellBoundingBoxes.cs" />
+    <Compile Include="LowMachCombustionMultiphaseBoundaryCondMap.cs" />
+    <Compile Include="LowMachSourceTerms.cs" />
+    <Compile Include="MassFluxAtLevelSet.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="ParameterSource.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />

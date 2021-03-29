@@ -29,6 +29,9 @@ namespace BoSSS.Application.BoSSSpad{
             BoSSS.Solution.Application.InitMPI();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Tuple<string, string> RunCommand(string command) {
             Document.Tuple singleCommandAndResult = new Document.Tuple {
                 Command = command
@@ -58,6 +61,9 @@ namespace BoSSS.Application.BoSSSpad{
             return base64Result;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Save(string path, string[] commands, string[] results) {
             //build document 
             Document document = new Document();
@@ -81,6 +87,9 @@ namespace BoSSS.Application.BoSSSpad{
                 InteractiveShell._CurrentDocFile = null;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Tuple<string[], string[]> Load(string path){
 
             Document document = Document.Deserialize(path);
@@ -100,6 +109,9 @@ namespace BoSSS.Application.BoSSSpad{
             return new Tuple<string[], string[]>(commands, results);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public string[] GetAutoCompleteSuggestions(string textToBeCompleted){
             
             string[] completions = null;

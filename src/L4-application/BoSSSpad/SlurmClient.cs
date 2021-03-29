@@ -333,8 +333,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// build batch script with all necessary parameters
         /// </summary>
-        /// <param name="myJob"></param>
-        /// <param name="moduleLoad"></param>
         void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
 
             //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);

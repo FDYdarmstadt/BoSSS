@@ -14,12 +14,12 @@ namespace NSE_SIMPLE {
     ///   -\operatorname{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class swipViscosity_Term1_variante : swipViscosityBase {
+    public class SipViscosity_Term1_segregatedVar : SipViscosityBase {
 
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityBase.SipViscosityBase"/>.
         /// </summary>
-        public swipViscosity_Term1_variante(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
+        public SipViscosity_Term1_segregatedVar(double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap,
             ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
 
@@ -34,7 +34,7 @@ namespace NSE_SIMPLE {
         public override double VolumeForm(ref BoSSS.Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
-                acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
+                acc -= GradU[0, d] * GradV[d] * Viscosity(cpv.Parameters, U, GradU) * base.m_alpha;
             //acc -= GradU[m_iComp, d] * GradV[d] * Viscosity(cpv.Parameters) * base.m_alpha;
             return -acc;
         }
@@ -45,8 +45,8 @@ namespace NSE_SIMPLE {
             double Acc = 0.0;
 
             double pnlty = base.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = base.Viscosity(inp.Parameters_IN);
-            double muB = base.Viscosity(inp.Parameters_OUT);
+            double muA = base.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
+            double muB = base.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
 
             //switch (base.m_implMode) {
@@ -108,7 +108,7 @@ namespace NSE_SIMPLE {
             double Acc = 0.0;
 
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            double muA = this.Viscosity(inp.Parameters_IN);
+            double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgType) {

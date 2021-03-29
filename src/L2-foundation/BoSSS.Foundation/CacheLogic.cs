@@ -1393,6 +1393,19 @@ namespace BoSSS.Foundation.Caching {
 
         Dictionary<int,CacheEntry> m_LinkToCache = new Dictionary<int, CacheEntry>();
 
+        /// <summary>
+        /// Evaluation of basis values for all ege-to-cell transformation within a specific range of edges
+        /// </summary>
+        /// <param name="NS">Node-Set</param>
+        /// <param name="e0">start of edge-range to consider</param>
+        /// <param name="Len">length of range to consider</param>
+        /// <param name="Degree"></param>
+        /// <returns>
+        /// - 1st index: edge-to-cell transformation index, for some specific edge obtained throug <see cref="IGeometricalEdgeData.Edge2CellTrafoIndex"/>
+        /// - 2nd index: node index, correlates with nodes in <paramref name="NS"/>
+        /// - 3rd index: DG mode index
+        /// - 4th index (if available): spatial direction
+        /// </returns>
         public MultidimensionalArray GetValues(NodeSet NS, int e0, int Len, int Degree) {
             // argcheck
             // ========
@@ -1442,7 +1455,7 @@ namespace BoSSS.Foundation.Caching {
                     Array.Clear(CE.ValueAvail, 0, CE.ValueAvail.Length);
             }
             
-            // allocate memmory (if necessary) and store it in cache...
+            // allocate memory (if necessary) and store it in cache...
             int Nmax = -1;
             Degree = Math.Max(CE.Degree, Degree);
             CE.Degree = Degree;
@@ -1467,7 +1480,7 @@ namespace BoSSS.Foundation.Caching {
             // recompute values if necessary
             // =============================
                         
-            for(int e = 0; e < Len; e++) { // for all edges in the chung from 'e0' to 'e0 + Len - 1'...
+            for(int e = 0; e < Len; e++) { // for all edges in the chunk from 'e0' to 'e0 + Len - 1'...
                 int iEdge = e + e0;
 
                 // compute the value for the respective edge-to-cell trafo, if necessary:

@@ -55,6 +55,7 @@
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FastColoredTextBox">
@@ -114,6 +115,7 @@
     <Compile Include="AppControlExtensions.cs" />
     <Compile Include="BatchProcessorConfig.cs" />
     <Compile Include="BoSSSpadGnuplotExtensions.cs" />
+    <Compile Include="BoSSSshell.cs" />
     <Compile Include="TemporalConvergence.cs" />
     <Compile Include="SshClient.cs" />
     <Compile Include="ResolvableAssembly.cs" />

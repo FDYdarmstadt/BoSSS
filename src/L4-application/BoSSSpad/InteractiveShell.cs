@@ -123,7 +123,10 @@ namespace BoSSS.Application.BoSSSpad {
             Console.Clear();
         }
 
-        private static WorkflowMgm m_WorkflowMgm;
+        private static WorkflowMgm m_WorkflowMgm {
+            get { return BoSSSshell.WorkflowMgm; }
+            set { BoSSSshell.m_WorkflowMgm = value; }
+        }
 
         /// <summary>
         /// Link to the workflow-management facility
@@ -240,7 +243,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases = new IDatabaseInfo[0];
+        public static IList<IDatabaseInfo> databases {
+            get { return BoSSSshell.databases; }
+            set { BoSSSshell.databases = value; }
+        }
 
         /// <summary>
         /// Sessions in all Databases
@@ -700,7 +706,10 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        static List<BatchProcessorClient> executionQueues = null;
+        static List<BatchProcessorClient> executionQueues {
+            get { return BoSSSshell.executionQueues; }
+            set { BoSSSshell.executionQueues = value; }
+        }
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.

@@ -91,11 +91,28 @@ namespace BoSSS.Foundation {
                 return m_IsLinear;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("unable to change this after operator is committed.");
                 m_IsLinear = value;
             }
         }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// </summary>
+        /// <remarks>
+        /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
+        /// if these names have the same length but differ by **exactly one character**.
+        /// </remarks>
+        public IEnumerable<int[]> VectorFieldIndices {
+            get {
+                if(!this.IsCommitted)
+                    throw new NotSupportedException("Operator must be committed first.");
+
+                return Quadrature.PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar, 3);
+            }
+        }
+
 
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
@@ -266,7 +283,7 @@ namespace BoSSS.Foundation {
                 return m_OperatorCoefficientsProvider;
             }
             set {
-                 if(IsCommited)
+                 if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after operator is committed.");
                 m_OperatorCoefficientsProvider = value;
             }
@@ -295,7 +312,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_ParameterUpdates.AsReadOnly();
                 } else {
                     return m_ParameterUpdates;
@@ -310,7 +327,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
-                if(IsCommited) {
+                if(IsCommitted) {
                     return m_ParameterFactories.AsReadOnly();
                 } else {
                     return m_ParameterFactories;
@@ -326,7 +343,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_HomotopyUpdate.AsReadOnly();
                 } else {
                     return m_HomotopyUpdate;
@@ -603,15 +620,14 @@ namespace BoSSS.Foundation {
             }
         }
 
-        bool m_IsCommited = false;
+        bool m_IsCommitted = false;
 
         /// <summary>
-        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
-        /// or not.
+        /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>) or not.  
         /// </summary>
-        public bool IsCommited {
+        public bool IsCommitted {
             get {
-                return m_IsCommited;
+                return m_IsCommitted;
             }
         }
 
@@ -637,10 +653,10 @@ namespace BoSSS.Foundation {
                 TemporalOperator.Commit();
             }
 
-            if(m_IsCommited)
+            if(m_IsCommitted)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
-            m_IsCommited = true;
+            m_IsCommitted = true;
 
         }
 
@@ -667,7 +683,7 @@ namespace BoSSS.Foundation {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if(m_owner.m_IsCommited) {
+                    if(m_owner.m_IsCommitted) {
                         return m_owner.m_EquationComponents[EqnName].AsReadOnly();
                     } else {
                         if(!m_owner.m_CodomainVar.Contains(EqnName)) {
@@ -998,7 +1014,7 @@ namespace BoSSS.Foundation {
                 if(ParameterMap == null)
                     ParameterMap = new DGField[0];
 
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 var rulz = CompileQuadratureRules(DomainFields.Select(f=>f.Basis), 
@@ -1019,7 +1035,7 @@ namespace BoSSS.Foundation {
         {
 
             using(new FuncTrace()) {
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 var rulz = CompileQuadratureRules((Basis[])DomainVarMap, 
@@ -1033,6 +1049,16 @@ namespace BoSSS.Foundation {
                 return e;
             }
         }
+
+        /// <summary>
+        /// Only for debugging;  can be used to turn all edge integration in spatial operators off.
+        /// </summary>
+        public static bool DoEdge = true;
+
+        /// <summary>
+        /// Only for debugging; can be used to turn all volume integration in spatial operators off.
+        /// </summary>
+        public static bool DoVolume = true;
 
         /// <summary>
         /// Container for the evaluation of nonlinear fluxes/sources
@@ -1089,7 +1115,7 @@ namespace BoSSS.Foundation {
                         throw new ArgumentException("wrong number of parameter variables provided.");
                     }
 
-                    if(!m_Owner.IsCommited)
+                    if(!m_Owner.IsCommitted)
                         throw new ApplicationException("operator assembly must be finalized before by calling 'Commit' before this method can be called.");
                 }
             }
@@ -1279,6 +1305,33 @@ namespace BoSSS.Foundation {
         }
 
 
+        internal bool RequiresComplicatedPeriodicity(IGridData gd) {
+            /*
+            var tags = gd.iGeomEdges.EdgeTags;
+            int E = gd.iGeomEdges.Count;
+            Debug.Assert(E == tags.Length);
+            
+            //for(int e = 0; e < E; e++) {
+            //    int tag = tags[e];
+            //    if(tag >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+
+            //        return true;
+            //    }
+            //}
+
+            foreach(var Trafo in gd.Grid.PeriodicTrafo) {
+                var Mtx = Trafo.Matrix.CloneAs();
+                Mtx.AccEye(-1.0);
+                if(Mtx.InfNorm() >= 1e-8)
+                    throw new NotSupportedException("Non-parallel periodic edges are still not supported.");
+            }
+            */
+
+            // feature deactivated for now, because the implementation for linear components sucks so much
+
+            return false;
+        }
+
 
         /// <summary>
         /// evaluation of operators
@@ -1298,6 +1351,15 @@ namespace BoSSS.Foundation {
             /// otherwise, this member is null;
             /// </summary>
             BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_NonlinearEdge;
+
+
+            /// <summary>
+            /// If the grid contains some periodic boundaries which are not parallel (e.g. some cake-pie-subsection of a rotational domain)
+            /// periodicity required additional transformations/rotations of vectors for **both** sides of the periodic edge;
+            /// Furthermore, these rotations are different (inverse) for the in- and the out-edge, 
+            /// therefore the contribution to the out-cell is computed in a second pass, by this integrator.
+            /// </summary>
+            BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge m_ComplicatedPeriodicEdge;
 
             /// <summary>
             /// if the right-hand-side is present and contains nonlinear components, 
@@ -1356,6 +1418,17 @@ namespace BoSSS.Foundation {
                                                             CodomainVarMap,
                                                             edgeQuadRule);
 
+                    if(owner.RequiresComplicatedPeriodicity(grdDat)) {
+                        m_ComplicatedPeriodicEdge = new BoSSS.Foundation.Quadrature.NonLin.NECQuadratureEdge(grdDat,
+                                                            (SpatialOperator)Owner,
+                                                            DomainVarMap,
+                                                            ParameterMap,
+                                                            CodomainVarMap,
+                                                            RestrictQr(edgeQuadRule, GetPeriodicEdgesMask(grdDat)));
+
+                        m_NonlinearEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.bck;
+                        m_ComplicatedPeriodicEdge._PeriodicVectorTrafo = Foundation.Quadrature.NonLin.NECQuadratureEdge.PeriodicVectorTrafo.fwd;
+                    }
 
 
                 }
@@ -1368,11 +1441,96 @@ namespace BoSSS.Foundation {
                                                                 CodomainVarMap,
                                                                 volQuadRule);
 
+
                 }
 
 
                 base.MPITtransceive = true;
             }
+
+            static EdgeMask GetPeriodicEdgesMask(IGridData gd) {
+                var tags = gd.iGeomEdges.EdgeTags;
+                int E = gd.iGeomEdges.Count;
+                Debug.Assert(E == tags.Length);
+                var bmsk = new BitArray(E);
+                for(int e = 0; e < E; e++) {
+                    if(tags[e] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG)
+                        bmsk[e] = true;
+                }
+                return new EdgeMask(gd, bmsk);
+            }
+
+            /// <summary>
+            /// Removes all edes from a quadrature rule <paramref name="Qr"/> which are not contained in the mask <paramref name="Restriction"/>
+            /// </summary>
+            /// <remarks>
+            /// Brute-force implementation, not very sophisticated; should be ok for now.
+            /// </remarks>
+            static ICompositeQuadRule<QuadRule> RestrictQr(ICompositeQuadRule<QuadRule> Qr, EdgeMask Restriction) {
+                
+                int E = Restriction.GridData.iGeomEdges.Count;
+                var RestrictionBMask = Restriction.GetBitMask();
+                Debug.Assert(RestrictionBMask.Length == E);
+
+                QuadRule[] temp = new QuadRule[E];
+                foreach(var pair in Qr) {
+                    for(int i = pair.Chunk.i0; i < pair.Chunk.JE; i++) {
+                        if(RestrictionBMask[i])
+                            temp[i] = pair.Rule;
+                    }
+                }
+
+                var fQr = new CompositeQuadRule<QuadRule>();
+                for(int i = 0; i < E; i++) {
+                    if(temp[i] != null) {
+                        int iLast = fQr.chunkRulePairs.Count - 1;
+                        if(fQr.chunkRulePairs.Count > 0
+                            && fQr.chunkRulePairs[iLast].Chunk.JE == i
+                            && object.ReferenceEquals(fQr.chunkRulePairs[iLast].Rule, temp[i])) {
+                            var lastShit = fQr.chunkRulePairs[iLast].Chunk;
+                            var enlargedChunk = new Chunk();
+                            enlargedChunk.i0 = lastShit.i0;
+                            enlargedChunk.Len = lastShit.Len + 1;
+
+                            var newShit = new ChunkRulePair<QuadRule>(enlargedChunk, temp[i]);
+                            fQr.chunkRulePairs[iLast] = newShit;
+                        } else {
+                            var next = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(i), temp[i]);
+                            fQr.chunkRulePairs.Add(next);
+                        }
+
+                        Debug.Assert(fQr.chunkRulePairs.Last().Chunk.JE == i + 1);
+                    }
+
+                }
+
+#if DEBUG
+                {
+                    QuadRule[] check = new QuadRule[E];
+                    foreach(var pair in fQr) {
+                        for(int i = pair.Chunk.i0; i < pair.Chunk.JE; i++) {
+                            if(RestrictionBMask[i])
+                                check[i] = pair.Rule;
+                        }
+                    }
+
+                    for(int i = 0; i < E; i++) {
+                        if(check[i] != null) {
+                            Debug.Assert(RestrictionBMask[i] == true);
+                            Debug.Assert(object.ReferenceEquals(check[i], temp[i]));
+                        } else {
+                            Debug.Assert(RestrictionBMask[i] == false || temp[i] == null);
+                        }
+                    }
+
+                }
+
+#endif
+
+                return fQr;
+            }
+
+
 
             /// <summary>
             /// DG fields which serve a input for the spatial operator.
@@ -1431,7 +1589,7 @@ namespace BoSSS.Foundation {
                     output.CheckForNanOrInfV(true, true, true);
 #endif
 
-                    if(m_NonlinearVolume != null) {
+                    if(m_NonlinearVolume != null && DoVolume) {
                         using(new BlockTrace("Volume_Integration_NonLin", tr)) {
                             // volume integrals can be evaluated without knowing external cells
                             m_NonlinearVolume.m_Output = output;
@@ -1457,29 +1615,33 @@ namespace BoSSS.Foundation {
 
 
 
+                    void CallEdge(Quadrature.NonLin.NECQuadratureEdge ne, string name) {
+                        if(ne != null && DoEdge) {
+                            using(new BlockTrace(name, tr)) {
 
-                    if(m_NonlinearEdge != null) {
-                        using(new BlockTrace("Edge_Integration_NonLin", tr)) {
+                                ne.m_Output = output;
+                                ne.m_alpha = alpha;
+                                ne.Time = time;
+                                ne.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
+                                ne.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
 
-                            m_NonlinearEdge.m_Output = output;
-                            m_NonlinearEdge.m_alpha = alpha;
-                            m_NonlinearEdge.Time = time;
-                            m_NonlinearEdge.SubGridBoundaryTreatment = base.SubGridBoundaryTreatment;
-                            m_NonlinearEdge.SubGridCellsMarker = (base.m_SubGrid_InCells != null) ? base.m_SubGrid_InCells.GetBitMaskWithExternal() : null;
-
-                            m_NonlinearEdge.m_outputBndEdge = outputBndEdge;
-
-
-                            m_NonlinearEdge.Execute();
-
-                            m_NonlinearEdge.m_Output = null;
-                            m_NonlinearEdge.m_outputBndEdge = null;
-                            m_NonlinearEdge.m_alpha = 1.0;
-                            m_NonlinearEdge.SubGridCellsMarker = null;
+                                ne.m_outputBndEdge = outputBndEdge;
 
 
+                                ne.Execute();
+
+                                ne.m_Output = null;
+                                ne.m_outputBndEdge = null;
+                                ne.m_alpha = 1.0;
+                                ne.SubGridCellsMarker = null;
+                            }
                         }
                     }
+
+                    CallEdge(m_NonlinearEdge, "Edge_Integration_NonLin");
+                    CallEdge(m_ComplicatedPeriodicEdge, "Edge_Integration_NonLin_periodic");
+
+
 #if DEBUG
                     output.CheckForNanOrInfV(true, true, true);
 #endif
@@ -1505,6 +1667,8 @@ namespace BoSSS.Foundation {
                 ICompositeQuadRule<QuadRule> volQr) //
                  : base(owner, DomainVarMap, ParameterMap, CodomainVarMap) //
             {
+                owner.RequiresComplicatedPeriodicity(CodomainMapping.GridDat);
+                
                 foreach(string codVarName in owner.CodomainVar) {
                     var comps = owner.EquationComponents[codVarName];
 
@@ -1630,7 +1794,7 @@ namespace BoSSS.Foundation {
                     // volume integration
                     // ------------------
                     SpatialOperator _Owner = (SpatialOperator)this.Owner;
-                    if(volRule.Any()) {
+                    if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
                             mtxBuilder.m_alpha = alpha;
@@ -1645,7 +1809,7 @@ namespace BoSSS.Foundation {
 
                     // edge integration
                     // ----------------
-                    if(!edgeRule.IsNullOrEmpty()) {
+                    if(!edgeRule.IsNullOrEmpty() && DoEdge) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
@@ -1697,7 +1861,7 @@ namespace BoSSS.Foundation {
             Action<double, IEnumerable<DGField>, IEnumerable<DGField>> legayc_delParameterUpdate) //
         {
             using(new FuncTrace()) {
-                if(!IsCommited)
+                if(!IsCommitted)
                     throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
                 
@@ -2714,7 +2878,7 @@ namespace BoSSS.Foundation {
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
         public SpatialOperator _GetJacobiOperator(int SpatialDimension) {
-            if(!this.IsCommited)
+            if(!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
             // parameters and activation flags
@@ -2841,7 +3005,7 @@ namespace BoSSS.Foundation {
                 return m_TemporalOperator;
             }
             set {
-                if (IsCommited)
+                if (IsCommitted)
                     throw new NotSupportedException("Not allowed to change after operator is committed.");
                 m_TemporalOperator = value;
             }
@@ -2890,7 +3054,7 @@ namespace BoSSS.Foundation {
                 set {
                     if (!InternalRep.ContainsKey(key))
                         throw new ArgumentException("Must be a name of some domain variable.");
-                    if (owner.IsCommited)
+                    if (owner.IsCommitted)
                         throw new NotSupportedException("Changing is not allowed after operator is committed.");
                     InternalRep[key] = value;
                 }
@@ -2902,7 +3066,7 @@ namespace BoSSS.Foundation {
 
             public int Count => InternalRep.Count;
 
-            public bool IsReadOnly => owner.IsCommited;
+            public bool IsReadOnly => owner.IsCommitted;
             
 
             public void Add(string key, bool value) {

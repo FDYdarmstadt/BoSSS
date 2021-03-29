@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 #if DEBUG
 
                         MultidimensionalArray B = NonlinOrtho.ExtractSubArrayShallow(j, -1, -1);
-                        MultidimensionalArray Bt = B.Transpose();
+                        MultidimensionalArray Bt = B.TransposeTo();
                         double MjNorm = MjClone.InfNorm();
                         double Bnorm = B.InfNorm();
 

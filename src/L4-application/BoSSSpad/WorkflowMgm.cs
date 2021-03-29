@@ -147,7 +147,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        // <summary>
+        /// <summary>
         /// Correlation of session, job and control object is done <see cref="AppControl.Equals(object)"/>
         /// </summary>
         public void SetEqualityBasedSessionJobControlCorrelation() {
