@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// 
     /// </summary>
-    public class HeatConvectionAtLevelSet_LLF_material : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class HeatConvectionAtLevelSet_LLF_material : ILevelSetForm, ILevelSetEquationComponentCoefficient{
 
         LevelSetTracker m_LsTrk;
 
@@ -126,44 +126,48 @@ namespace BoSSS.Solution.XheatCommon {
             //Flux for negative side
             double FlxNeg, FlxPos, LLF;
 
+            // NEGATIVE
             // central part
-
-            FlxNeg = U_Neg[0] * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+            double Tavg = U_Neg[0];
+            FlxNeg = Tavg * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
             if (m_D == 3) {
-                FlxNeg += U_Neg[0] * ParamsNeg[2] * cp.Normal[2];
+                FlxNeg += Tavg * ParamsNeg[2] * cp.Normal[2];
             }
-
-            FlxPos = U_Pos[0] * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
-            if (m_D == 3) {
-                FlxPos += U_Pos[0] * ParamsPos[2] * cp.Normal[2];
-            }
-
-            LLF = 0.5 * (FlxNeg + FlxPos);
 
             // dissipative part
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
                 VelocityMeanIn[d] = ParamsNeg[m_D + d];
             }
-
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+            double uJump = U_Neg[0] - U_Pos[0];
+            //FlxNeg += uJump * LambdaIn * LFFA;
+            FlxNeg *= capA;
+
+            // POSITIVE
+            Tavg = U_Pos[0];
+            FlxPos = Tavg * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+            if (m_D == 3) {
+                FlxPos += Tavg * ParamsPos[2] * cp.Normal[2];
+            }
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
                 VelocityMeanOut[d] = ParamsPos[m_D + d];
             }
-
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+            uJump = U_Neg[0] - U_Pos[0];
+            //FlxPos += uJump * LambdaOut * LFFB;
+            FlxPos *= capB;
 
-            double Lambda = Math.Max(LambdaIn, LambdaOut);
-            double uJump = U_Neg[0] - U_Pos[0];
+            LLF = FlxNeg * v_Neg - FlxPos * v_Pos;
 
-            LLF += uJump * Lambda;
+            //LLF = 0.5 * (FlxNeg + FlxPos) * (capA * v_Neg - capB * v_Neg);
 
             if (movingmesh)
                 return 0.0;
             else
-                return LLF * ( capA * v_Neg - capB * v_Pos);
+                return LLF;
         }
 
 
@@ -284,22 +288,23 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                VelocityMeanIn[d] = ParamsNeg[1 + m_D + d];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanOut[d] = ParamsPos[m_D + d];
+                VelocityMeanOut[d] = ParamsPos[1 + m_D + d];
             }
 
-
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
             double Lambda = Math.Max(LambdaIn, LambdaOut);
-                
-            
-            double Flx = Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
+
+
+            double Flx = 0;
+            //Flx += Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
 
             //double FlxNeg, FlxPos;
             //{
@@ -352,7 +357,289 @@ namespace BoSSS.Solution.XheatCommon {
             // contribution due to massflux
             {
                 double M = MassFlux(cp);
-                Flx += Tsat * M * (1/base.m_rhoA - 1/base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
+                Flx += Tsat * M * (1 / base.m_rhoA - 1 / base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
+
+                //double FlxNeg = Tsat * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+                //if (m_D == 3) {
+                //    FlxNeg += Tsat * ParamsNeg[2] * cp.Normal[2];
+                //}
+                //double FlxPos = Tsat * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+                //if (m_D == 3) {
+                //    FlxPos += Tsat * ParamsPos[2] * cp.Normal[2];
+                //}
+                //Flx -= 0.5 * (FlxNeg + FlxPos) * (capA * v_Neg - capB * v_Pos);
+
+                //double FlxNeg = 0, FlxPos = 0;
+                //for(int d = 0; d < m_D; d++) {
+                //    FlxNeg += ParamsNeg[1 + d] * cp.Normal[d];
+                //    FlxPos += ParamsPos[1 + d] * cp.Normal[d];
+                //}
+                //FlxNeg *= U_Neg[0];
+                //FlxPos *= U_Pos[0];
+                //Flx += (FlxNeg - FlxPos) * 0.5 * (capA * v_Neg + capB * v_Pos);
+
+            }
+            if (movingmesh)
+                return 0.0;
+            else
+                return Flx;
+        }
+
+
+        public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature };
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Extension for dissipative part of LLF to ensure $T=T_sat$ at the interface
+    /// </summary>
+    public class HeatConvectionAtLevelSet_Direct : ILevelSetForm {
+
+        bool movingmesh;
+        LevelSetTracker m_LsTrk;
+        SpeciesId m_spcId;
+
+        public HeatConvectionAtLevelSet_Direct(int _D, LevelSetTracker LsTrk, double _capA, double _capB,
+            double _Tsat, PhysicalParameters _physicalParameters, SpeciesId spcId)  {
+
+            m_D = _D;
+
+            m_LsTrk = LsTrk;
+            m_spcId = spcId;
+
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+        }
+
+        int m_D;
+
+        double capA;
+        double capB;
+
+        double Tsat;     
+
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double Flx = 0;
+            if(m_spcId == this.NegativeSpecies) {
+                Flx += cp.Parameters_IN[0] * cp.Normal[0] + cp.Parameters_IN[1] * cp.Normal[1];
+                if(m_D == 3)
+                    Flx += cp.Parameters_IN[2] * cp.Normal[2];
+                Flx *= U_Neg[0];
+                Flx *= capA * v_Neg;
+            } else {
+                Flx -= cp.Parameters_OUT[0] * cp.Normal[0] + cp.Parameters_OUT[1] * cp.Normal[1];
+                if (m_D == 3)
+                    Flx -= cp.Parameters_OUT[2] * cp.Normal[2];
+                Flx *= U_Pos[0];
+                Flx *= capB * v_Pos;
+            }
+            return Flx;
+        }  
+
+       
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature };
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+        public int LevelSetIndex => 0;
+
+        public SpeciesId PositiveSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        }
+    }
+
+    /// <summary>
+    /// Extension for dissipative part of LLF to ensure $T=T_sat$ at the interface
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat, ThermalParameters thermParams) : base(_D, LsTrk, thermParams) {
+
+            m_D = _D;
+
+            m_LsTrk = LsTrk;
+
+            //MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
+            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
+            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+
+
+            //DirichletCond = _DiriCond;
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+        }
+
+        //bool MaterialInterface;
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        //bool DirichletCond;
+        double Tsat;
+
+        // Use Fluxes as in Bulk Convection
+        HeatConvectionInBulk NegFlux;
+        HeatConvectionInBulk PosFlux;
+
+
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
+
+
+
+
+            // Calculate dissipative part
+            // ==========================
+            double[] VelocityMeanIn = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = ParamsNeg[m_D + d];
+            }
+
+            double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+            double[] VelocityMeanOut = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanOut[d] = ParamsPos[m_D + d];
+            }
+
+
+            double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+
+
+            double Flx = Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
+
+            //double FlxNeg, FlxPos;
+            //{
+            //    double r = 0.0;
+
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanIn = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanIn[d] = ParamsNeg[m_D + d];
+            //    }
+
+            //    double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+            //    double uJump = U_Neg[0] - Tsat;
+
+            //    r += LambdaIn * uJump * LFFA;
+
+            //    FlxNeg = capA * r;
+
+            //}
+
+            ////Flux for positive side
+            //{
+            //    double r = 0.0;
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanOut = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanOut[d] = ParamsPos[m_D + d];
+            //    }
+
+
+            //    double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+            //    double uJump = Tsat - U_Pos[0];
+
+            //    r += LambdaOut * uJump * LFFB;
+
+            //    FlxPos = capB * r;
+
+            //}
+
+            //double Flx = FlxNeg * v_Neg - FlxPos * v_Pos;
+
+            // contribution due to massflux
+            {
+                double M = MassFlux(cp, Grad_uA, Grad_uB);
+                Flx += Tsat * M * (1 / base.m_rhoA - 1 / base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
             }
 
             if (movingmesh)

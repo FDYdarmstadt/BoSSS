@@ -32,7 +32,7 @@ using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionAtLevelSet_LLF : ILevelSetForm {
+    public class ConvectionAtLevelSet_LLF : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -200,6 +200,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 return 0.0;
             else 
                 return FlxNeg * v_Neg - FlxPos * v_Pos;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
         public IList<string> ArgumentOrdering {

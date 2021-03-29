@@ -624,7 +624,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// IsotropicSurfaceTension_LaplaceBeltrami with max sigma as parameter
     /// </summary>
-    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm {
+    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
         int m_comp;
 
         int m_D;
@@ -675,6 +675,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             m_edgeTag2Type = edgeTag2Type;
             velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
             //m_staticInt = _staticInt;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
         public virtual IList<string> ParameterOrdering {

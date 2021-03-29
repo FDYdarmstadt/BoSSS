@@ -105,9 +105,15 @@ namespace BoSSS.Application.XNSE_Solver {
                     // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
                     // for the moving mesh discretization this condition is already contained in the convective terms
                     // therefore we only need these terms when using splitting...
-                    AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
-                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
-                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, -1, false, physParams));
+                    if (config.MassfluxCoupling == XNSFE_Control.Coupling.strong) {
+                        AddComponent(new MassFluxAtLevelSet_withMassFlux_StrongCoupling(d, D, lsTrk, config.getThermParams, config.isMovingMesh));
+                        AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux_StrongCoupling(d, D, lsTrk, config.getThermParams));
+                        AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling(d, D, lsTrk, -1, false, config.getThermParams));
+                    } else {
+                        AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
+                        AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
+                        AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, -1, false, physParams));
+                    } 
                 } else {
                     AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, lsTrk, physParams));
                 }
@@ -227,7 +233,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXHeat_Configuration config) : base() {
+            XNSFE_OperatorConfiguration config) : base() {
 
             this.phaseA = phaseA;
             this.phaseB = phaseB;
@@ -251,7 +257,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
-            IXHeat_Configuration config) {
+            XNSFE_OperatorConfiguration config) {
 
             PhysicalParameters physParams = config.getPhysParams;
             ThermalParameters thermParams = config.getThermParams;
@@ -276,7 +282,13 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (config.isMovingMesh) {
                     AddComponent(new HeatConvectionAtLevelSet_MovingMesh_withMassflux(dimension, LsTrk, Tsat, config.getPhysParams, thermParams));
                 } else {
-                    AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat, physParams));
+                    if (config.MassfluxCoupling == XNSFE_Control.Coupling.strong) {
+                        //AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat, thermParams));
+                    } else {
+                        //AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat, physParams));
+                        //AddComponent(new HeatConvectionAtLevelSet_Direct(dimension, LsTrk, capA, capB, Tsat, physParams, LsTrk.GetSpeciesId(phaseA)));
+                        //AddComponent(new HeatConvectionAtLevelSet_Direct(dimension, LsTrk, capA, capB, Tsat, physParams, LsTrk.GetSpeciesId(phaseB)));
+                    }
                 }
             }
 

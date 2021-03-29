@@ -271,7 +271,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
+            XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             XOP.Commit();
@@ -311,7 +311,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if (config.physParams.IncludeConvection && config.isTransport) {
+            if ((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -329,27 +329,27 @@ namespace BoSSS.Application.XNSE_Solver {
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
             switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
-                break;
+                    MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                    opFactory.AddParameter(maxSigmaParameter);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
+                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
-                break;
+                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                BeltramiGradientAndCurvature lsGradientAndCurvature =
-                    FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
-                opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
-                break;
+                    BeltramiGradientAndCurvature lsGradientAndCurvature =
+                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientAndCurvature);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
                     FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
