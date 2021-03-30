@@ -1092,17 +1092,17 @@ namespace BoSSS.Solution {
 
             m_Database = GetDatabase();
 
-            if (this.Control != null) {
+            if(this.Control != null) {
                 this.passiveIo = !this.Control.savetodb;
-                if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
+                if(this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                if (this.Control.TracingNamespaces == null) {
+                if(this.Control.TracingNamespaces == null) {
                     Tracer.NamespacesToLog = new string[0];
                 } else {
                     var NamespacesToLog = this.Control.TracingNamespaces.Split(new char[] { ',', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (NamespacesToLog.Any(s => s.Equals("*"))) {
+                    if(NamespacesToLog.Any(s => s.Equals("*"))) {
                         Tracer.NamespacesToLog = new string[] { "" };
                     } else {
                         Tracer.NamespacesToLog = NamespacesToLog;
@@ -1112,18 +1112,18 @@ namespace BoSSS.Solution {
                 this.passiveIo = true;
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            if (!passiveIo) {
+            if(!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
 
-                if (this.Control != null) {
+                if(this.Control != null) {
                     CurrentSessionInfo.Name = String.IsNullOrWhiteSpace(this.Control.SessionName) ? "empty-session-name" : this.Control.SessionName;
                     CurrentSessionInfo.ProjectName = String.IsNullOrWhiteSpace(this.Control.ProjectName) ? "empty-project-name" : this.Control.ProjectName;
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
-                    if (this.Control.ProjectName != null)
+                    if(this.Control.ProjectName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
-                    if (this.Control.SessionName != null)
+                    if(this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
 
@@ -1142,12 +1142,12 @@ namespace BoSSS.Solution {
             }
 
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
-            using (var ht = new FuncTrace()) {
+            using(var ht = new FuncTrace()) {
                 // create or load grid
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null) {
+                if(Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -1163,7 +1163,7 @@ namespace BoSSS.Solution {
                     && MPIRank == 0
                     && DatabaseDriver != null
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
-                if (DoDbLogging && this.Control != null) {
+                if(DoDbLogging && this.Control != null) {
                     //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
                     //if (this.Control.ControlFileText != null)
                     //    tw.WriteLine(this.Control.ControlFileText);
@@ -1182,14 +1182,14 @@ namespace BoSSS.Solution {
                     //}
                     //tw.Close();
 
-                    if (this.Control.GeneratedFromCode) {
-                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
+                    if(this.Control.GeneratedFromCode) {
+                        using(var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
                             tw.WriteLine("//" + this.Control.GetType().AssemblyQualifiedName);
                             tw.Write(this.Control.ControlFileText);
                             tw.Close();
                         }
                     } else {
-                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
+                        using(var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
                             tw.Write(this.Control.Serialize());
                             tw.Close();
                         }
@@ -1200,11 +1200,11 @@ namespace BoSSS.Solution {
                     Dictionary<string, object> KV = new Dictionary<string, object>();
                     FindKeys(KV, this.Control);
 
-                    foreach (var kv in KV) {
+                    foreach(var kv in KV) {
                         try {
-                            if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
+                            if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
                                 this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
-                        } catch (Exception e) {
+                        } catch(Exception e) {
                             Console.WriteLine("Exception " + e.GetType().Name + " during logging of key/value [" + kv.Key + "," + kv.Value + "].");
                         }
 
@@ -1212,13 +1212,13 @@ namespace BoSSS.Solution {
                 }
 
                 // Basic session init
-                if (DatabaseDriver != null) {
+                if(DatabaseDriver != null) {
                     string DBpath = this.CurrentSessionInfo.Database.Path;
-                    if (DBpath.Length <= 0)
+                    if(DBpath.Length <= 0)
                         DBpath = "EMPTY";
-                    if (DBpath == null)
+                    if(DBpath == null)
                         DBpath = "NULL";
-                    if (DatabaseDriver.MyRank == 0) {
+                    if(DatabaseDriver.MyRank == 0) {
                         Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
                     }
                 } else {
@@ -1231,14 +1231,14 @@ namespace BoSSS.Solution {
 
                 {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
+                    if(!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
                         DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                    if(this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
@@ -1248,19 +1248,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (this.CurrentSessionInfo != null) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
 
                     try //ToDo
                     {
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
                             this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
                             this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    } catch (InvalidCastException e) {
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1275,20 +1275,20 @@ namespace BoSSS.Solution {
                 // create fields
                 // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                if (this.Control != null) {
+                if(this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
 
-                
+
 
                 // load queries from control file
                 //========================
                 m_queryHandler = QueryHandlerFactory();
 
-                if (this.Control != null && this.Control.Queries != null) {
-                    foreach (var queryIdPair in this.Control.Queries) {
+                if(this.Control != null && this.Control.Queries != null) {
+                    foreach(var queryIdPair in this.Control.Queries) {
                         m_queryHandler.AddQuery(queryIdPair.Key, queryIdPair.Value);
                     }
                 }
@@ -1303,7 +1303,7 @@ namespace BoSSS.Solution {
 
                 // save session information
                 // ========================
-                if (DatabaseDriver.FsDriver != null
+                if(DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
