@@ -227,7 +227,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// </summary>
             internal void EnforceContinuity() {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
-                CellMask Near1 = Tracker.Regions.GetPresenceMask4LevSet(phaseInterface.LevelSetIndex, 1);
+                CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);

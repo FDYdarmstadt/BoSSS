@@ -1452,7 +1452,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// caches the values returned by <see cref="GetPresenceMask4LevSet"/>;
+            /// caches the values returned by <see cref="GetSpeciesRestrictedNearMask4LevSet"/>;
             /// <br/>
             /// 1st index: Level Set - index <br/>
             /// 2nd index: width of subgrid around the cut cells
@@ -1461,15 +1461,16 @@ namespace BoSSS.Foundation.XDG {
 
             /// <summary>
             /// gets a cell-mask of width <paramref name="FieldWidth"/>, around level set No. <paramref name="levSetIdx"/>;
-            /// The mask only contains the entries, where the levelset's phases are present, as defined in <see cref="m_SpeciesTable"/>. 
+            /// The mask only contains the entries, where the phases that the level set separates are present, as defined in <see cref="m_SpeciesTable"/>. 
             /// </summary>
             /// <remarks>
             /// In contrast to <see cref="SubGrid"/>'s, <see cref="CellMask"/>'s are not MPI-collective, and should therefore be preferred.
             /// </remarks>
-            public CellMask GetPresenceMask4LevSet(int levSetIdx, int FieldWidth) {
+            public CellMask GetSpeciesRestrictedNearMask4LevSet(int levSetIdx, int FieldWidth) {
                 if(m_owner.NoOfLevelSets == 1) {
                     return GetNearMask4LevSet(levSetIdx, FieldWidth);
                 } else {
+                    Debug.Assert(m_owner.NoOfLevelSets == 2, "This method is untested for level set number > 2. Should work though. Proceed carefully.");
                     if (m_PresenceMask4LevelSet == null || m_PresenceMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
                         m_PresenceMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
                     }
@@ -1492,7 +1493,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             /// <summary>
-            /// Returns species that are separated by levelSet with Index <paramref name="levSetIdx"/>
+            /// Returns species that are separated by levelSet with No. <paramref name="levSetIdx"/>
             /// </summary>
             LinkedList<string> FindSeparatedSpecies(int levSetIdx) {
                 int[] levelSetSigns = new int[SpeciesTable.Rank];
