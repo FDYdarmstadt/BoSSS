@@ -156,12 +156,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double dt,
                 double underRelax,
                 bool incremental) {
+                LevelSet ls = phaseInterface.CGLevelSet;
+                LevelSet lsBkUp = ls.CloneAs();
 
+                //Move LevelSet and update Params
                 if (dt > 0 && lsMover != null) {
-                    LevelSet ls = phaseInterface.CGLevelSet;
-                    LevelSet lsBkUp = ls.CloneAs();
-
-                    //Move LevelSet and update Params
                     MoveLevelSet(
                         phaseInterface,
                         DomainVarFields,
@@ -170,16 +169,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         dt,
                         underRelax,
                         incremental);
-                    //Calculate Residual
-                    CellMask oldCC = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
-                    var newCC = phaseInterface.Tracker.Regions.GetCutCellMask();
-                    lsBkUp.Acc(-1.0, ls);
-                    double levSetResidual = lsBkUp.L2Norm(newCC.Union(oldCC));
-                    return levSetResidual;
-                } else {
-                    return 0.0;
                 }
-                
+                //Make Continuous
+                EnforceContinuity();
+
+                //Calculate Residual
+                CellMask oldCC = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
+                var newCC = phaseInterface.Tracker.Regions.GetCutCellMask();
+                lsBkUp.Acc(-1.0, ls);
+                double levSetResidual = lsBkUp.L2Norm(newCC.Union(oldCC));
+                return levSetResidual;
             }
 
             /// <summary>
@@ -215,10 +214,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     dgLs.Scale(underRelax);
                     dgLs.Acc((1.0 - underRelax), dglsBkUp);
                 }
-
-                //Make Continuous
-                EnforceContinuity();
-
             }
 
 
