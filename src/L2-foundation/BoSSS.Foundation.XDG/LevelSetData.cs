@@ -1452,6 +1452,66 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// caches the values returned by <see cref="GetPresenceMask4LevSet"/>;
+            /// <br/>
+            /// 1st index: Level Set - index <br/>
+            /// 2nd index: width of subgrid around the cut cells
+            /// </summary>
+            CellMask[,] m_PresenceMask4LevelSet;
+
+            /// <summary>
+            /// gets a cell-mask of width <paramref name="FieldWidth"/>, around level set No. <paramref name="levSetIdx"/>;
+            /// The mask only contains the entries, where the levelset's phases are present, as defined in <see cref="m_SpeciesTable"/>. 
+            /// </summary>
+            /// <remarks>
+            /// In contrast to <see cref="SubGrid"/>'s, <see cref="CellMask"/>'s are not MPI-collective, and should therefore be preferred.
+            /// </remarks>
+            public CellMask GetPresenceMask4LevSet(int levSetIdx, int FieldWidth) {
+                if (m_PresenceMask4LevelSet == null || m_PresenceMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
+                    m_PresenceMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
+                }
+                if (m_PresenceMask4LevelSet[levSetIdx, FieldWidth] == null) {
+                    CellMask nearMask = GetNearMask4LevSet(levSetIdx, FieldWidth);
+                    
+                    int[] levelSetSigns = new int[SpeciesTable.Rank];
+                    LinkedList<string> speciesOfLevelSet = new LinkedList<string>();
+                    FindSpecies(levelSetSigns, 0, levSetIdx, speciesOfLevelSet);
+
+                    CellMask support = CellMask.GetEmptyMask(m_owner.GridDat);
+                    foreach (string speciesName in speciesOfLevelSet) {
+                        CellMask species = GetSpeciesMask(speciesName);
+                        support = support.Union(species);
+                    }
+                    m_PresenceMask4LevelSet[levSetIdx, FieldWidth] = nearMask.Intersect(support);
+                }
+                return m_PresenceMask4LevelSet[levSetIdx, FieldWidth];
+            }
+
+            void FindSpecies(int[] levelSetSigns, int level, int levSetIdx, LinkedList<string> species) {
+                if (level == levelSetSigns.Length) {
+                    levelSetSigns[levSetIdx] = 0;
+                    string speciesNameA = (string)SpeciesTable.GetValue(levelSetSigns);
+                    levelSetSigns[levSetIdx] = 1;
+                    string speciesNameB = (string)SpeciesTable.GetValue(levelSetSigns);
+                    if (speciesNameA != speciesNameB) {
+                        if(!species.Contains(speciesNameA))
+                            species.AddLast(speciesNameA);
+                        if(!species.Contains(speciesNameB))
+                            species.AddLast(speciesNameB);
+                    }
+                } else if (level == levSetIdx) {
+                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                } else {
+                    levelSetSigns[level] = 0;
+                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                    levelSetSigns[level] = 1;
+                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                }
+            }
+
+
+
+            /// <summary>
             /// Equivalent to <see cref="GetSpeciesSubGrid(string)"/>
             /// </summary>
             public SubGrid GetSpeciesSubGrid(SpeciesId specId) {
