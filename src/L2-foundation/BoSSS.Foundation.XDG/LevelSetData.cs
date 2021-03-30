@@ -1467,27 +1467,41 @@ namespace BoSSS.Foundation.XDG {
             /// In contrast to <see cref="SubGrid"/>'s, <see cref="CellMask"/>'s are not MPI-collective, and should therefore be preferred.
             /// </remarks>
             public CellMask GetPresenceMask4LevSet(int levSetIdx, int FieldWidth) {
-                if (m_PresenceMask4LevelSet == null || m_PresenceMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
-                    m_PresenceMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
-                }
-                if (m_PresenceMask4LevelSet[levSetIdx, FieldWidth] == null) {
-                    CellMask nearMask = GetNearMask4LevSet(levSetIdx, FieldWidth);
-                    
-                    int[] levelSetSigns = new int[SpeciesTable.Rank];
-                    LinkedList<string> speciesOfLevelSet = new LinkedList<string>();
-                    FindSpecies(levelSetSigns, 0, levSetIdx, speciesOfLevelSet);
-
-                    CellMask support = CellMask.GetEmptyMask(m_owner.GridDat);
-                    foreach (string speciesName in speciesOfLevelSet) {
-                        CellMask species = GetSpeciesMask(speciesName);
-                        support = support.Union(species);
+                if(m_owner.NoOfLevelSets == 1) {
+                    return GetNearMask4LevSet(levSetIdx, FieldWidth);
+                } else {
+                    if (m_PresenceMask4LevelSet == null || m_PresenceMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
+                        m_PresenceMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
                     }
-                    m_PresenceMask4LevelSet[levSetIdx, FieldWidth] = nearMask.Intersect(support);
+                    if (m_PresenceMask4LevelSet[levSetIdx, FieldWidth] == null) {
+                        CellMask nearMask = GetNearMask4LevSet(levSetIdx, FieldWidth);
+
+                        LinkedList<string> speciesOfLevelSet = FindSeparatedSpecies(levSetIdx);
+
+                        CellMask support = CellMask.GetEmptyMask(m_owner.GridDat);
+                        foreach (string speciesName in speciesOfLevelSet) {
+                            CellMask species = GetSpeciesMask(speciesName);
+                            support = support.Union(species);
+                        }
+                        m_PresenceMask4LevelSet[levSetIdx, FieldWidth] = nearMask.Intersect(support);
+                    }
+                    return m_PresenceMask4LevelSet[levSetIdx, FieldWidth];
                 }
-                return m_PresenceMask4LevelSet[levSetIdx, FieldWidth];
             }
 
-            void FindSpecies(int[] levelSetSigns, int level, int levSetIdx, LinkedList<string> species) {
+
+
+            /// <summary>
+            /// Returns species that are separated by levelSet with Index <paramref name="levSetIdx"/>
+            /// </summary>
+            LinkedList<string> FindSeparatedSpecies(int levSetIdx) {
+                int[] levelSetSigns = new int[SpeciesTable.Rank];
+                LinkedList<string> speciesOfLevelSet = new LinkedList<string>();
+                FindSeparatedSpecies(levelSetSigns, 0, levSetIdx, speciesOfLevelSet);
+                return speciesOfLevelSet;
+            }
+
+            void FindSeparatedSpecies(int[] levelSetSigns, int level, int levSetIdx, LinkedList<string> species) {
                 if (level == levelSetSigns.Length) {
                     levelSetSigns[levSetIdx] = 0;
                     string speciesNameA = (string)SpeciesTable.GetValue(levelSetSigns);
@@ -1500,12 +1514,12 @@ namespace BoSSS.Foundation.XDG {
                             species.AddLast(speciesNameB);
                     }
                 } else if (level == levSetIdx) {
-                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
                 } else {
                     levelSetSigns[level] = 0;
-                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
                     levelSetSigns[level] = 1;
-                    FindSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
                 }
             }
 
