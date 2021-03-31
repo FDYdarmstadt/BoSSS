@@ -402,7 +402,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int LocalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
             Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
-            Debug.Assert(n >= 0 && n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]));
+            Debug.Assert((n >= 0 && (n < this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]))) || this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld])==0); // 0<= n < n_max oder empty cell in case of IBM
 
             int S;
             if(this.m_i0 != null) {

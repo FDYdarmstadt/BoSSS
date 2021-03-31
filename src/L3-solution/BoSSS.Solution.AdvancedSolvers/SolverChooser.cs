@@ -1459,7 +1459,6 @@ namespace BoSSS.Solution {
                 }
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
                 int TotalNoOfSchwarzBlocks = LocalNoOfSchwarzBlocks.MPISum();
-                //SetQuery("LocalSblocks at Lvl" + iLevel, LocalNoOfSchwarzBlocks, true);
                 SetQuery("GlobalSblocks at Lvl" + iLevel, TotalNoOfSchwarzBlocks, true);
                 SetQuery("SblockSize at Lvl"+ iLevel, SchwarzblockSize(iLevel), true);
 
@@ -1483,7 +1482,6 @@ namespace BoSSS.Solution {
                         TestSolution = false
                     };
                 } else {
-
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
@@ -1495,39 +1493,7 @@ namespace BoSSS.Solution {
                         UsePMGinBlocks = false,
                         CoarseSolveOfCutcells = true,
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
-                        //CoarseLowOrder = Math.Min(maxDG, 1 + iLevel),
-                        //CoarseLowOrder = Math.Max(1,maxDG - iLevel)
                     };
-
-                    //var solve1 = new Schwarz() {
-                    //    FixedNoOfIterations = 1,
-                    //    CoarseSolver = null,
-                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //        //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                    //        NoOfPartsPerProcess = 2
-                    //    },
-                    //    Overlap = 1, // overlap seems to help; more overlap seems to help more
-                    //    EnableOverlapScaling = true,
-                    //    UsePMGinBlocks = true,
-                    //    CoarseSolveOfCutcells = true,
-                    //    OnlyLowOrderSolve = true,
-                    //    CoarseLowOrder = m_lc.pMaxOfCoarseSolver
-                    //};
-
-                    //var solve2 = new Schwarz() {
-                    //    FixedNoOfIterations = 1,
-                    //    CoarseSolver = null,
-                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //        //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                    //        NoOfPartsPerProcess = 2
-                    //    },
-                    //    Overlap = 1, // overlap seems to help; more overlap seems to help more
-                    //    EnableOverlapScaling = true,
-                    //    UsePMGinBlocks = true,
-                    //    CoarseSolveOfCutcells = false,
-                    //    OnlyLowOrderSolve = false,
-                    //    CoarseLowOrder = m_lc.pMaxOfCoarseSolver
-                    //};
 
                     //var solve1 = new LevelPmg() {
                     //    CoarseLowOrder = 1,

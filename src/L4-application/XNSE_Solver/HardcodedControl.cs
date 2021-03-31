@@ -34,6 +34,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -521,12 +522,12 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 10, int SpaceDim = 2, bool useAMR = false) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
+            C.DbPath = @"D:\trash_db";
             //C.AlternateDbPaths = new[] {
             //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
             //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
@@ -541,7 +542,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==========
 
             C.SetFieldOptions(k, Math.Max(6,k*2));
-            C.GridPartType = GridPartType.Hilbert;
+            C.GridPartType = GridPartType.METIS;
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             //C.TracingNamespaces = "*";
@@ -643,7 +644,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     case 3:
                     return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
                                             + particleRad;
 
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
@@ -732,7 +734,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 100;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
@@ -741,7 +743,7 @@ namespace BoSSS.Application.XNSE_Solver {
             
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
-                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
                 C.AMR_startUpSweeps = 1;
             }
 
@@ -751,9 +753,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.01;
-            C.dtMax = dt;
-            C.dtMin = dt;
+            double dt = 0.001;
+            //C.dtMax = dt;
+            //C.dtMin = dt*1E-2;
             C.dtFixed = dt;
             C.NoOfTimesteps = 1;
 

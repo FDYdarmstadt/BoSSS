@@ -588,38 +588,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // compute correction
                         double[] PreCorr = new double[L];
                         //var oldRl = rl.CloneAs();
-                        PreSmoother.Solve(PreCorr, Res); // Vorglättung
-                                                         //if (Corr != null) // only for plotting/debugging
-                                                         //    Corr.SetV(PreCorr);
 
-                        //{
-                        //    var checkPreCor = new double[L];
-                        //    DebugSmoother.Solve(checkPreCor, oldRl);
+                        if (PreSmoother != null) {
+                            PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
-                        //    var diffCorr = PreCorr.CloneAs(); diffCorr.AccV(-1.0, checkPreCor);
 
-                        //    this.viz.PlotVectors(new double[][] {
-                        //        PreCorr, checkPreCor, diffCorr
-                        //    }, new[] { "preSmoother", "debugSmoother", "diff" });
-                        //}
+                            //if (Corr != null) // only for plotting/debugging
+                            //    Corr.SetV(PreCorr);
 
-#if TEST
-                        CatchThisExclamationmark(Res, "Res", pos);
-                        CatchThisExclamationmark(X, "Sol", pos);
-                        pos++;
-#endif
+                            //{
+                            //    var checkPreCor = new double[L];
+                            //    DebugSmoother.Solve(checkPreCor, oldRl);
 
-                        //tmpX.SetV(X);
-                        //tmpX.AccV(1.0, PreCorr);
+                            //    var diffCorr = PreCorr.CloneAs(); diffCorr.AccV(-1.0, checkPreCor);
 
-                        //SpecAnalysisSample(iIter, PreCorr, "smooth1");
+                            //    this.viz.PlotVectors(new double[][] {
+                            //        PreCorr, checkPreCor, diffCorr
+                            //    }, new[] { "preSmoother", "debugSmoother", "diff" });
+                            //}
 
-                        // orthonormalization and residual minimization
-                        AddSol(ref PreCorr);
-                        //if (Xprev != null)
-                        //    Xprev.SetV(X);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+                            //tmpX.SetV(X);
+                            //tmpX.AccV(1.0, PreCorr);
 
+                            //SpecAnalysisSample(iIter, PreCorr, "smooth1");
+
+                            // orthonormalization and residual minimization
+                            AddSol(ref PreCorr);
+                            //if (Xprev != null)
+                            //    Xprev.SetV(X);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+                        }
 #if TEST
                         CatchThisExclamationmark(Res, "Res", pos);
                         CatchThisExclamationmark(X, "Sol", pos);
@@ -628,7 +626,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //SpecAnalysisSample(iIter, X, "ortho1");
 
-                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }

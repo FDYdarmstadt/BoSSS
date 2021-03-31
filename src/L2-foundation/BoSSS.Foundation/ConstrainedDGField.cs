@@ -37,6 +37,7 @@ namespace BoSSS.Foundation {
     public class myCG : IDisposable {
         public void Init(BlockMsrMatrix M) {
             m_Matrix = M;
+            M.SaveToTextFileSparse("fullM");
             //var M_test = M.CloneAs();
             //M_test.Acc(-1.0, M.Transpose());
             //Console.WriteLine("Symm-test: " + M_test.InfNorm());
@@ -48,11 +49,36 @@ namespace BoSSS.Foundation {
 
         private BlockMsrMatrix ILU_M;
         public void ILUInit() {
-            ILU_M = m_Matrix.CloneAs();
+            int rank;
+            MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
+            
+            var LocBlocki0s = new List<long>();
+            var LocBlockLen = new List<int>();
+            long IdxOffset = m_Matrix._RowPartitioning.i0;
+            for (int i=0;i< m_Matrix._RowPartitioning.LocalNoOfBlocks; i++) {
+                long iBlock = i + m_Matrix._RowPartitioning.FirstBlock;
+                long i0 = m_Matrix._RowPartitioning.GetBlockI0(iBlock)- IdxOffset;
+                int Len = m_Matrix._RowPartitioning.GetBlockLen(iBlock);
+                LocBlocki0s.Add(i0);
+                LocBlockLen.Add(Len);
+            }
+            long[] RowISrc = m_Matrix._RowPartitioning.LocalLength.ForLoop(i => i + IdxOffset);
+
+            var part = new BlockPartitioning(m_Matrix._RowPartitioning.LocalLength, LocBlocki0s, LocBlockLen, csMPI.Raw._COMM.SELF);
+            BlockMsrMatrix localMatrix = new BlockMsrMatrix(part);
+
+            m_Matrix.WriteSubMatrixTo(localMatrix, RowISrc, default(long[]), RowISrc, default(long[]));
+            ILU_M = localMatrix;
+            //ILU_M.SaveToTextFileSparse("ILU_"+ rank);
         }
+
         public void ILUSolve<P, Q>(P X, Q B)
             where P : IList<double>
             where Q : IList<double> {
+
+            int rank;
+            MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
+
 
             long n = ILU_M.RowPartitioning.LocalLength;
             double sum = 0;
@@ -60,20 +86,22 @@ namespace BoSSS.Foundation {
             var tempMtx = ILU_M;
 
             // Zeros on diagonal elements because of saddle point structure
-            //for (int bla = 0; bla < n; bla++) {
-            //    if (ILU_M.GetDiagonalElement(bla) == 0)
-            //        throw new Exception("One or more diagonal elements are zero, ILU cannot work");
-            //    ILU_M.SetDiagonalElement(bla, 1);
-            //}
+            for (int bla = 0; bla < n; bla++) {
+                if (ILU_M.GetDiagonalElement(bla) == 0)
+                    throw new Exception("One or more diagonal elements are zero, ILU cannot work");
+                ILU_M.SetDiagonalElement(bla, 1);
+            }
 
-            // ILU decomposition of matrix
-            for (long k = 0; k < n - 1; k++) {
-                for (long i = k; i < n; i++) {
-                    if (tempMtx[i, k] == 0) { i = n; } else {
+            // ILU(0) decomposition of matrix
+            for (long i = 1; i < n; i++) {
+                for (long k = 0; k < i; k++) {
+                    if (ILU_M[i, k] == 0)
+                        continue;
+                    else {
                         ILU_M[i, k] = ILU_M[i, k] / ILU_M[k, k];
                         for (long j = k + 1; j < n; j++) {
-                            if (tempMtx[i, j] == 0) {
-                                j = n;
+                            if (ILU_M[i, j] == 0) {
+                                continue;
                             } else {
                                 ILU_M[i, j] = ILU_M[i, j] - ILU_M[i, k] * ILU_M[k, j];
                             }
@@ -81,6 +109,21 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+
+            //for (long k = 0; k < n - 1; k++) {
+            //    for (long i = k; i < n; i++) {
+            //        if (tempMtx[i, k] == 0) { i = n; } else {
+            //            ILU_M[i, k] = ILU_M[i, k] / ILU_M[k, k];
+            //            for (long j = k + 1; j < n; j++) {
+            //                if (tempMtx[i, j] == 0) {
+            //                    j = n;
+            //                } else {
+            //                    ILU_M[i, j] = ILU_M[i, j] - ILU_M[i, k] * ILU_M[k, j];
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
 
             if (this.ILU_M.RowPartitioning.MpiSize != 1)
                 throw new NotSupportedException();
@@ -91,7 +134,7 @@ namespace BoSSS.Foundation {
                 sum = 0;
                 for (int k = 0; k < i; k++)
                     sum += ILU_M[i, k] * y[k];
-                y[i] = B[i] - sum;
+                y[i] = (B[i] - sum);
             }
             // find solution of Ux = y
             for (long i = n - 1; i >= 0; i--) {
@@ -100,7 +143,7 @@ namespace BoSSS.Foundation {
                     sum += ILU_M[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
                 X[(int)i] = (1 / ILU_M[i, i]) * (y[i] - sum);
             }
-
+            ILU_M.SaveToTextFileSparse("ILU_solved_" + rank);
         }
         public void BlockJacInit() {
             BlockMsrMatrix M = m_Matrix;
@@ -174,9 +217,7 @@ namespace BoSSS.Foundation {
 
                 int L = x.Length;
 
-                double[] P = new double[L];
-
-                //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
+            double[] P = new double[L];
                 double[] V = new double[L];
                 double[] Z = new double[L];
 
@@ -189,7 +230,7 @@ namespace BoSSS.Foundation {
                 GenericBlas.dswap(L, x, 1, P, 1);
 
             //P.SetV(R);
-            BlockJacSolve(Z, R);
+            ILUSolve(Z, R);
             P.SetV(Z);
 
             double alpha = R.InnerProd(P).MPISum();
@@ -209,10 +250,10 @@ namespace BoSSS.Foundation {
                     Xdummy.SetV(x);
                     ResReal.SetV(R);
                     m_Matrix.SpMV(-1.0, Xdummy, 1.0, ResReal);
-                    //Console.WriteLine("Res real at n"+n+":"+ResReal.MPI_L2Norm());
+                    Console.WriteLine("Res real at n"+n+":"+ResReal.MPI_L2Norm());
                 }
 
-                //Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
+                Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
                     if (ResNorm / ResNorm0 + ResNorm < 1E-8 || ResNorm < 1E-16 || n > 100) {
                         if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not converged.");    
                         break;
@@ -238,9 +279,8 @@ namespace BoSSS.Foundation {
                     R.AccV(-lambda, V);
 
                 //Z.SetV(R);
-
                 Z.Clear();
-                BlockJacSolve(Z, R);
+                ILUSolve(Z, R);
 
                 double alpha_neu = R.InnerProd(Z).MPISum();
 
@@ -563,17 +603,17 @@ namespace BoSSS.Foundation {
 
             //OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
 
-            //var Solver = new myCG();
-            //Solver.Init(AAT);
-            //Solver.Solve(v, RHS);
-            //Solver.Dispose();
+            var Solver = new myCG();
+            Solver.Init(AAT);
+            Solver.Solve(v, RHS);
+            Solver.Dispose();
 
 
-            OpSolver.DefineMatrix(AAT);
-            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            OpSolver.Solve(v, RHS);
-            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            OpSolver.Dispose();
+            //OpSolver.DefineMatrix(AAT);
+            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
+            //OpSolver.Solve(v, RHS);
+            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
+            //OpSolver.Dispose();
 
             //A.Transpose().SpMVpara(-1.0, v, 0.0, x);
             AT.SpMV(-1.0, v, 0.0, x);
