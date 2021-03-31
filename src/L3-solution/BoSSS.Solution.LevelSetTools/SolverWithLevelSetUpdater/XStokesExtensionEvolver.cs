@@ -85,7 +85,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 new string[] { "codom1" },
                 QuadOrderFunc.NonLinear(1), 
                 new string[] { "A", "B"});
-            diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap));
+            diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap, this.SpatialDimension));
             diffOp.TemporalOperator = new ConstantXTemporalOperator(diffOp, 1);
             diffOp.IsLinear = true;
             diffOp.Commit();
