@@ -509,7 +509,7 @@ namespace BoSSS.Solution {
 
                         m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
 
-                        if(iH < 1) {
+                        if (iH < 1) {
                             m_NewTracker.PushStacks();
                         }
                     }

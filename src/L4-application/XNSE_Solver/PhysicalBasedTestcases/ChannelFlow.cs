@@ -48,13 +48,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// control object for various testing
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 5, int wallBC = 1) {
+        public static XNSE_Control ChannelFlow_WithInterface(int p = 2, int kelem = 7, int wallBC = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
             string _DbPath = null; // @"D:\local\local_test_db";
 
-            int D = 2;
+            int D = 3;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             //if (D == 3)
@@ -201,7 +201,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             } else {
 
                 C.GridFunc = delegate () {
-                    double[] Xnodes = GenericBlas.Linspace(0, L, 2 * kelem + 1);
+                    double[] Xnodes = GenericBlas.Linspace(0, L, kelem + 1);
                     double[] Ynodes = GenericBlas.Linspace(0, H, kelem + 1);
                     double[] Znodes = GenericBlas.Linspace(0, H, kelem + 1);
                     var grd = Grid3D.Cartesian3DGrid(Xnodes, Ynodes, Znodes);
@@ -254,9 +254,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double radius = 0.4;
 
             if (D == 2) {
-                C.InitialValues_Evaluators.Add("Phi",
-                    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
-                    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //C.InitialValues_Evaluators.Add("Phi",
+                //    //(X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2())   // quadratic form
+                //    (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
+                //    );
+                C.InitialValues_Evaluators_TimeDep.Add("Phi",
+                    ((X, t) => ((X[0] - (center[0] + t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius)  // signed-distance form
                     );
             } else {
                 C.InitialValues_Evaluators.Add("Phi",
@@ -412,25 +415,30 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
             //C.useFiltLevSetGradientForEvolution = true;
             //C.ReInitPeriod = 1;
             //C.ReInitOnRestart = true;  
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+
+            //C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
+            //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.ExtensionVelocity;
             //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
             //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
             //C.fullReInit;
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = true;
 
 
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
-            C.AMR_startUpSweeps = 2;
+            C.AdaptiveMeshRefinement = false;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 1;
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
             //C.BaseRefinementLevel = 2;
             //C.RefinementLevel = 2;
@@ -455,7 +463,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 20; // 500;
+            C.NoOfTimesteps = 100; // 500;
             C.saveperiod = 10;
 
             #endregion

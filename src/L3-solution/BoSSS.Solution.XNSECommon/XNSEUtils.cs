@@ -1393,7 +1393,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, LevelSet LevSet, SubGrid sgrd = null, int quadRuleOrderForNodeSet = -1) {
+        public static MultidimensionalArray GetInterfacePoints(LevelSetTracker LsTrk, SinglePhaseField LevSet, SubGrid sgrd = null, int quadRuleOrderForNodeSet = -1) {
 
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
