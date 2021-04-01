@@ -26,7 +26,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
+namespace BoSSS.Application.IBM_Solver {
 
     public class IBM_ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent {
 

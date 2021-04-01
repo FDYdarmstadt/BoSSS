@@ -95,9 +95,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="SshNet.Security.Cryptography">
-      <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\SshNet.Security.Cryptography.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />

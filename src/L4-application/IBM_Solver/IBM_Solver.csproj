@@ -78,6 +78,7 @@
     <Compile Include="IBM_ConvectionAtIB.cs" />
     <Compile Include="IBM_DivergenceAtIB.cs" />
     <Compile Include="FluxDifferentiator.cs" />
+    <Compile Include="ParticleParameters.cs" />
     <Compile Include="PhysicalParameters.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />

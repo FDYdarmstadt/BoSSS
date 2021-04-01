@@ -205,7 +205,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (hiBlocks != null) {
                 foreach (var block in hiBlocks) {
                     try {
-                        block.Invert();
+                        block.InvertInPlace();
                     } catch (Exception e) {
                         Console.WriteLine(e);
                     }

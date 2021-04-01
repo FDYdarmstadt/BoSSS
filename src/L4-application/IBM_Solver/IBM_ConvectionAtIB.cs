@@ -25,7 +25,7 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.NSECommon.Operator.Convection {
+namespace BoSSS.Application.IBM_Solver {
     public class IBM_ConvectionAtIB : ILevelSetForm {
 
 

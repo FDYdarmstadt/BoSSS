@@ -26,7 +26,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
 
-namespace BoSSS.Solution.NSECommon.Operator.Continuity {
+namespace BoSSS.Application.IBM_Solver {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
