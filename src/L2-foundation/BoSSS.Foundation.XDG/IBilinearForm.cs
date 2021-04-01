@@ -45,7 +45,8 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// the species in which the bulk equation component is valid
+        /// the species in which the bulk equation component is valid;
+        /// Null deactivates the Filter, i.e. the component is integrated for all species.
         /// </summary>
         string ValidSpecies { get; }
     }

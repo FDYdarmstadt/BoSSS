@@ -276,54 +276,78 @@ namespace BoSSS.Solution.XheatCommon {
             double[] ParamsPosFict, ParamsNegFict;
             this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
 
-            //Flux for negativ side
-            double FlxNeg, FlxPos;
-            {
-                double r = 0.0;
 
 
-                // Calculate dissipative part
-                // ==========================
 
-                double[] VelocityMeanIn = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanIn[d] = ParamsNeg[m_D + d];
-                }
 
-                double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
-
-                double uJump = U_Neg[0] - Tsat;
-
-                r += LambdaIn * uJump * LFFA;
-
-                FlxNeg = capA * r;
-
+            // Calculate dissipative part
+            // ==========================
+            double[] VelocityMeanIn = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = ParamsNeg[m_D + d];
             }
 
-            //Flux for positive side
-            {
-                double r = 0.0;
+            double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
-                // Calculate dissipative part
-                // ==========================
-
-                double[] VelocityMeanOut = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanOut[d] = ParamsPos[m_D + d];
-                }
-
-
-                double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
-
-                double uJump = Tsat - U_Pos[0];
-
-                r += LambdaOut * uJump * LFFB;
-
-                FlxPos = capB * r;
-
+            double[] VelocityMeanOut = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanOut[d] = ParamsPos[m_D + d];
             }
 
-            double Flx = FlxNeg * v_Neg - FlxPos * v_Pos;
+
+            double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+                
+            
+            double Flx = Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
+
+            //double FlxNeg, FlxPos;
+            //{
+            //    double r = 0.0;
+
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanIn = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanIn[d] = ParamsNeg[m_D + d];
+            //    }
+
+            //    double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+            //    double uJump = U_Neg[0] - Tsat;
+
+            //    r += LambdaIn * uJump * LFFA;
+
+            //    FlxNeg = capA * r;
+
+            //}
+
+            ////Flux for positive side
+            //{
+            //    double r = 0.0;
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanOut = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanOut[d] = ParamsPos[m_D + d];
+            //    }
+
+
+            //    double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+            //    double uJump = Tsat - U_Pos[0];
+
+            //    r += LambdaOut * uJump * LFFB;
+
+            //    FlxPos = capB * r;
+
+            //}
+
+            //double Flx = FlxNeg * v_Neg - FlxPos * v_Pos;
 
             // contribution due to massflux
             {
@@ -597,7 +621,7 @@ namespace BoSSS.Solution.XheatCommon {
             double Ret = 0.0;
 
             // enforce saturation temperature
-            Ret += (Tsat - 0.5 * (uA[0] + uB[0])) * (kA * Grad_vA_xN - kB * Grad_vB_xN);
+            //Ret += (Tsat - 0.5 * (uA[0] + uB[0])) * (kA * Grad_vA_xN - kB * Grad_vB_xN);
 
             // incorporate massflux
             Ret -= 0.5 * (vA + vB) * (kA * Grad_uA_xN - kB * Grad_uB_xN);

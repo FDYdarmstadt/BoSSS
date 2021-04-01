@@ -166,7 +166,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
-                    case LevelSetEvolution.Fourier: 
+                    case LevelSetEvolution.Fourier:
+                        FourierLevelSet fourierLevelSetDG = new FourierLevelSet(this.Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), LevelSetDG);
+                        DGlevelSets[iLevSet] = fourierLevelSetDG;
+                        break;
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
                     case LevelSetEvolution.FastMarching:
@@ -218,6 +221,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // create evolver:
                 switch(Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
+                        FourierLevelSet ls = (FourierLevelSet)DGlevelSets[iLevSet];
+                        var fourier = new FourierEvolver(
+                            VariableNames.LevelSetCG,
+                            ls,
+                            Control.FourierLevSetControl,
+                            Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+
+                        lsUpdater.AddEvolver(LevelSetCG, fourier);             
                         break;
                     }
                     case LevelSetEvolution.FastMarching: {
@@ -312,11 +323,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
                     case LevelSetEvolution.Fourier: {
-                        FourierLevelSet fourierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                        fourierLevelSet.Clear();
+                        pair.DGLevelSet.Clear();
                         if (Phi_InitialValue != null)
-                            fourierLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
-                        pair.DGLevelSet = fourierLevelSet;
+                            pair.DGLevelSet.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(time));
                         break;
                     }
                     case LevelSetEvolution.Prescribed:
@@ -516,20 +525,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            if (!this.Control.AdaptiveMeshRefinement) {
+            // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
 
-                Console.WriteLine("PostRestart temporarily switched off for AMR");
+            // set restart time, used later in the intial tracker updates
+            restartTime = time;
 
-                // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
-                if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
-                    this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+            // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+            this.LsUpdater.Tracker.PushStacks();
 
-                // set restart time, used later in the intial tracker updates
-                restartTime = time;
-
-                // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
-                this.LsUpdater.Tracker.PushStacks();
-            }
         }
 
     }

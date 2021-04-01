@@ -41,9 +41,9 @@ namespace BoSSS.Solution.Statistic {
         /// <summary>
         /// ctor
         /// </summary>
-        public FieldEvaluation(GridData ctx) {
-            m_Context = ctx;
-            CellLoc = new CellLocalization(ctx);
+        public FieldEvaluation(IGridData ctx) {
+            m_Context = (Foundation.Grid.Classic.GridData)ctx;
+            CellLoc = new CellLocalization(m_Context);
         }
 
         CellLocalization CellLoc;

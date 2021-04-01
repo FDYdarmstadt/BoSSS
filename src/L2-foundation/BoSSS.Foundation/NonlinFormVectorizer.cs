@@ -334,6 +334,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             Debug.Assert(_NOargs == GradUin.Length);
             Debug.Assert(_NOargs == Uout.Length);
             Debug.Assert(_NOargs == GradUout.Length);
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             CommonParams cpv;
             cpv.GridDat = efp.GridDat;
@@ -372,6 +373,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             for (int l = 0; l < L; l++) { // loop over edges...
                 cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = _EdgeTags[cpv.iEdge];
                 cpv.jCellIn = E2C[cpv.iEdge, 0];
                 cpv.jCellOut = E2C[cpv.iEdge, 1];
 
@@ -528,6 +530,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             Debug.Assert(_NOargs == GradUin.Length);
             Debug.Assert(_NOargs == Uout.Length);
             Debug.Assert(_NOargs == GradUout.Length);
+            var _EdgeTags = efp.GridDat.iGeomEdges.EdgeTags;
 
             CommonParams cpv;
             cpv.GridDat = efp.GridDat;
@@ -566,6 +569,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             for (int l = 0; l < L; l++) { // loop over edges...
                 cpv.iEdge = efp.e0 + l;
+                cpv.EdgeTag = _EdgeTags[cpv.iEdge];
                 cpv.jCellIn = E2C[cpv.iEdge, 0];
                 cpv.jCellOut = E2C[cpv.iEdge, 1];
 

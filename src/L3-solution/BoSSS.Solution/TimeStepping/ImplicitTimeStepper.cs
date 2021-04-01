@@ -99,7 +99,7 @@ namespace BoSSS.Solution.Timestepping {
         public ImplicitTimeStepper(ISparseSolverExt solver, bool[] temporalOp, SpatialOperator spatialOp, CoordinateMapping fields) {
             
             // check operator and arguments
-            if (!spatialOp.IsCommited)
+            if (!spatialOp.IsCommitted)
                 throw new ArgumentException("operator must be committed first.", "spatialOp");
             if (spatialOp.ContainsNonlinear)
                 throw new ArgumentException("spatial differential operator cannot contain nonlinear components for implicit euler.", "spatialOp");
@@ -152,7 +152,7 @@ namespace BoSSS.Solution.Timestepping {
         /// </param>
         public static void ComputeMatrix(SpatialOperator spatialOp, CoordinateMapping fields, bool OnlyAffine, out MsrMatrix matrix, out double[] affineOffset) {
             // Check operator and arguments
-            if (!spatialOp.IsCommited)
+            if (!spatialOp.IsCommitted)
                 throw new ArgumentException("operator must be committed first.", "spatialOp");
             if (spatialOp.ContainsNonlinear)
                 throw new ArgumentException("spatial differential operator cannot contain nonlinear components for implicit euler.", "spatialOp");

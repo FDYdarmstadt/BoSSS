@@ -156,20 +156,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double dt,
                 double underRelax,
                 bool incremental) {
-
-                //UpdateCurrentInterfaces(phaseInterface);
                 LevelSet ls = phaseInterface.CGLevelSet;
                 LevelSet lsBkUp = ls.CloneAs();
 
                 //Move LevelSet and update Params
-                MoveLevelSet(
-                    phaseInterface,
-                    DomainVarFields,
-                    ParameterVarFields,
-                    time,
-                    dt,
-                    underRelax,
-                    incremental);  
+                if (dt > 0 && lsMover != null) {
+                    MoveLevelSet(
+                        phaseInterface,
+                        DomainVarFields,
+                        ParameterVarFields,
+                        time,
+                        dt,
+                        underRelax,
+                        incremental);
+                }
+                //Make Continuous
+                EnforceContinuity();
+
                 //Calculate Residual
                 CellMask oldCC = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
                 var newCC = phaseInterface.Tracker.Regions.GetCutCellMask();
@@ -194,29 +197,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if(underRelax < 1.0) {
                     dglsBkUp = phaseInterface.DGLevelSet.CloneAs();
                 }
-                if(dt > 0 && lsMover != null) {
-                    AssertAllRequiredFieldsArePresent(lsMover.ParameterNames, DomainVarFields, ParameterVarFields);
-                    AssertAllRequiredFieldsArePresent(lsMover.VariableNames, DomainVarFields, ParameterVarFields);
+                AssertAllRequiredFieldsArePresent(lsMover.ParameterNames, DomainVarFields, ParameterVarFields);
+                AssertAllRequiredFieldsArePresent(lsMover.VariableNames, DomainVarFields, ParameterVarFields);
                     
-                    lsMover.MovePhaseInterface(
-                        phaseInterface,
-                        time,
-                        dt,
-                        incremental,
-                        DomainVarFields,
-                        ParameterVarFields);
+                lsMover.MovePhaseInterface(
+                    phaseInterface,
+                    time,
+                    dt,
+                    incremental,
+                    DomainVarFields,
+                    ParameterVarFields);
 
-                    //UnderRelax
-                    if(underRelax < 1.0) {
-                        LevelSet dgLs = phaseInterface.DGLevelSet;
-                        dgLs.Scale(underRelax);
-                        dgLs.Acc((1.0 - underRelax), dglsBkUp);
-                    }
+                //UnderRelax
+                if(underRelax < 1.0) {
+                    LevelSet dgLs = phaseInterface.DGLevelSet;
+                    dgLs.Scale(underRelax);
+                    dgLs.Acc((1.0 - underRelax), dglsBkUp);
                 }
-
-                //Make Continuous
-                EnforceContinuity();
-
             }
 
 
@@ -225,15 +222,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             /// </summary>
             internal void EnforceContinuity() {
                 LevelSetTracker Tracker = phaseInterface.Tracker;
-                CellMask Near1 = Tracker.Regions.GetNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
+                CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
-                //enforcer.SetFarField(phaseInterface.DGLevelSet, Near1, PosFF);
-                double normB4 = phaseInterface.DGLevelSet.L2Norm();
-                double CGnormB4 = phaseInterface.CGLevelSet.L2Norm();
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
-                double normAf = phaseInterface.DGLevelSet.L2Norm();
-                double CGnormAf = phaseInterface.CGLevelSet.L2Norm();
             }
 
 

@@ -42,7 +42,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;
@@ -146,7 +146,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;

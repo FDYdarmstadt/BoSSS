@@ -65,6 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
+            base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
         }
 
         /// <summary>
@@ -566,7 +567,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetGravity(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d), out ret);
             return ret;
         }
 

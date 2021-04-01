@@ -120,7 +120,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityX)],
                 (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName,BoSSS.Solution.NSECommon.VariableNames.VelocityY)],
             };
-            
+
+            Fourier_Timestepper.updateFourierLevSet();
             Fourier_Timestepper.moveLevelSet(dt, meanVelocity, levelSet.Tracker.Regions.GetNearFieldMask(1));
             if (incremental)
                 Fourier_Timestepper.updateFourierLevSet();

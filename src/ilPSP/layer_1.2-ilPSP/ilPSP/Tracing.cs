@@ -44,6 +44,15 @@ namespace ilPSP.Tracing {
                 return ((string[])(m_NamespacesToLog.Clone()));
             }
             set {
+                //Console.Write("Resetting logging namespaces: ");
+                //if(value == null || value.Length <= 0) {
+                //    Debugger.Launch();
+                //    Console.WriteLine("NIX2LOG.");
+                //} else {
+                //    foreach(string s in value)
+                //        Console.Write($"<{s}> ");
+                //    Console.WriteLine();
+                //}
                 var NameSpaceList = value;
                 if (NameSpaceList == null)
                     throw new ArgumentNullException();

@@ -158,6 +158,7 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Application.InitMPI();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
@@ -167,9 +168,6 @@ namespace BoSSS.Application.SipPoisson {
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
             
-
-
-
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
@@ -198,22 +196,6 @@ namespace BoSSS.Application.SipPoisson {
             //TexactFine = (SinglePhaseField)(GetDatabase().Sessions.First().Timesteps.Last().Fields.Where(fi => fi.Identification == "T"));
         }
 
-        ///// <summary>
-        ///// Hack - some precise solution on a finer grid.
-        ///// </summary>
-        //SinglePhaseField TexactFine;
-
-        ///// <summary>
-        ///// LHS of the equation <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>.
-        ///// </summary>
-        //BlockMsrMatrix LaplaceMtx;
-
-        ///// <summary>
-        ///// Part of the RHS which contains e.g. boundary conditions; still on LHS, must be subtracted from RHS of the equation.
-        ///// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
-        ///// </summary>
-        //double[] LaplaceAffine;
-
         /// <summary>
         /// Spatial operator to assemble <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>.
         /// </summary>
@@ -237,173 +219,7 @@ namespace BoSSS.Application.SipPoisson {
                 LapaceIp.Commit();
             }
         }
-
-        /*
-        /// <summary>
-        /// computes <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>
-        /// </summary>
-        private void UpdateMatrices() {
-            using (var tr = new FuncTrace()) {
-                             
-                // time measurement for matrix assembly
-                Stopwatch stw = new Stopwatch();
-                stw.Start();
-
-                // Stats:
-                {
-                    int BlkSize = T.Mapping.MaxTotalNoOfCoordinatesPerCell;
-                    int NoOfMtxBlocks = 0;
-                    foreach (int[] Neigs in this.GridData.iLogicalCells.CellNeighbours) {
-                        NoOfMtxBlocks++; //               diagonal block
-                        NoOfMtxBlocks += Neigs.Length; // off-diagonal block
-                    }
-                    NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
-
-                    int MtxBlockSize = BlkSize * BlkSize;
-                    int MtxSize = MtxBlockSize * NoOfMtxBlocks;
-
-                    double MtxStorage = MtxSize * (8.0 + 4.0) / (1024 * 1024); // 12 bytes (double+int) per entry
-
-                    Console.WriteLine("   System size:                 {0}", T.Mapping.TotalLength);
-                    Console.WriteLine("   No of blocks:                {0}", T.Mapping.TotalNoOfBlocks);
-                    Console.WriteLine("   No of blocks in matrix:      {0}", NoOfMtxBlocks);
-                    Console.WriteLine("   DG coordinates per cell:     {0}", BlkSize);
-                    Console.WriteLine("   Non-zeros per matrix block:  {0}", MtxBlockSize);
-                    Console.WriteLine("   Total non-zeros in matrix:   {0}", MtxSize);
-                    Console.WriteLine("   Approx. matrix storage (MB): {0}", MtxStorage);
-
-
-                    base.QueryHandler.ValueQuery("MtxBlkSz", MtxBlockSize, true);
-                    base.QueryHandler.ValueQuery("NNZMtx", MtxSize, true);
-                    base.QueryHandler.ValueQuery("NNZblk", NoOfMtxBlocks, true);
-                    base.QueryHandler.ValueQuery("MtxMB", MtxStorage, true);
-                }
-
-
-                Console.WriteLine("creating sparse system for {0} DOF's ...", T.Mapping.Ntotal);
-
-
-                // quadrature domain
-                var volQrSch = new CellQuadratureScheme(true, CellMask.GetFullMask(this.GridData, MaskType.Geometrical));
-                var edgQrSch = new EdgeQuadratureScheme(true, EdgeMask.GetFullMask(this.GridData, MaskType.Geometrical));
-
-#if DEBUG
-                // in DEBUG mode, we compare 'MsrMatrix' (old, reference implementation) and 'BlockMsrMatrix' (new standard)
-                var RefLaplaceMtx = new MsrMatrix(T.Mapping);
-#endif
-                using (new BlockTrace("SipMatrixAssembly", tr)) {
-                    LaplaceMtx = new BlockMsrMatrix(T.Mapping);
-                    LaplaceAffine = new double[T.Mapping.LocalLength];
-
-                    LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                             LaplaceMtx, LaplaceAffine,
-                                             volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                }
-#if DEBUG
-                LaplaceAffine.ClearEntries();
-                LapaceIp.ComputeMatrixEx(T.Mapping, null, T.Mapping,
-                                         RefLaplaceMtx, LaplaceAffine,
-                                         volQuadScheme: volQrSch, edgeQuadScheme: edgQrSch);
-                MsrMatrix ErrMtx = RefLaplaceMtx.CloneAs();
-                ErrMtx.Acc(-1.0, LaplaceMtx);
-                double err = ErrMtx.InfNorm();
-                double infNrm = LaplaceMtx.InfNorm();
-                Assert.Less(err, infNrm * 1e-10, "MsrMatrix2 comparison failed.");
-#endif
-                stw.Stop();
-                Console.WriteLine("done {0} sec.", stw.Elapsed.TotalSeconds);
-
-                LaplaceMtx.GetMemoryInfo(out long AllocatedMem, out long UsedMem);
-                Console.WriteLine("   Used   matrix storage (MB): {0}", UsedMem /(1024.0*1024));
-                Console.WriteLine("   Alloc. matrix storage (MB): {0}", AllocatedMem/(1024.0*1024));
-            }
-        }
-        */
-
-        ///// <summary>
-        ///// Ad-hoc performance measurement routines for <see cref="BlockMsrMatrix"/> operations
-        ///// </summary>
-        //void MatrixOpPerf() {
-        //    var M = LaplaceMtx;
-        //    var M2 = M.CloneAs();
-
-        //    double MatlabSpMMtime = 0.0, MatlabSpMVtime = 0.0;
-        //    /*
-        //    using (var MatlabRef = new BatchmodeConnector()) {
-        //        MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 4);
-
-        //        MatlabRef.PutSparseMatrix(M, "M");
-        //        MatlabRef.Cmd("M2 = M;");
-
-        //        // bench SpMM
-        //        MatlabRef.Cmd("Mprod1 = M * M2;");
-        //        MatlabRef.Cmd("tic");
-        //        MatlabRef.Cmd("Mprod = M * M2;");
-        //        MatlabRef.Cmd("SpMMtime = toc;");
-
-        //        // bench SpMV
-        //        MatlabRef.Cmd("[L,I] = size(M);");
-        //        MatlabRef.Cmd("x = sin(1:L)';");
-        //        MatlabRef.Cmd("a1 = M*x;");
-        //        MatlabRef.Cmd("tic");
-        //        MatlabRef.Cmd("a = M*x;");
-        //        MatlabRef.Cmd("SpMVtime = toc;");
-
-        //        MatlabRef.Cmd("CheckRes = [0, 0, SpMVtime, SpMMtime];");
-        //        MatlabRef.Cmd("CheckRes");
-        //        MatlabRef.GetMatrix(CheckRes, "CheckRes");
-
-        //        MatlabRef.Execute();
-
-        //        MatlabSpMMtime = CheckRes[0, 3];
-        //        MatlabSpMVtime = CheckRes[0, 2];
-
-
-
-        //    }
-        //    */
-
-        //    //BlockMsrMatrix.Multiply(M, M2);
-
-
-        //    Stopwatch BoSSsSpMMtime = new Stopwatch();
-        //    BoSSsSpMMtime.Start();
-        //    //BlockMsrMatrix.Multiply(M, M2);
-        //    BoSSsSpMMtime.Stop();
-
-
-        //    double[] accu = new double[M.RowPartitioning.LocalLength];
-        //    double[] x = new double[M.ColPartition.LocalLength];
-        //    for (int i = 0; i < x.Length; i++) {
-        //        x[i] = Math.Sin(i);
-        //    }
-        //    M.SpMV(1.0, x, 0.0, accu);
-
-        //    Stopwatch BoSSsSpMVtime = new Stopwatch();
-        //    BoSSsSpMVtime.Start();
-        //    M.SpMV(1.0, x, 0.0, accu);
-        //    BoSSsSpMVtime.Stop();
-
-
-        //    Console.WriteLine("Matlab SpMM time: [sec]   " + MatlabSpMMtime);
-        //    Console.WriteLine("BoSSS  SpMM time: [sec]   " + BoSSsSpMMtime.Elapsed.TotalSeconds);
-
-        //    Console.WriteLine("Matlab SpMV time: [sec]   " + MatlabSpMVtime);
-        //    Console.WriteLine("BoSSS  SpMV time: [sec]   " + BoSSsSpMVtime.Elapsed.TotalSeconds);
-
-        //    Console.WriteLine("    SpMV total      : [msec] " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV   sending  : [msec]    " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV   local    : [msec]    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV     inner  : [msec]        " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV   receive  : [msec]    " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV   external : [msec]    " + BlockMsrMatrix.SpMV_external.Elapsed.TotalMilliseconds);
-        //    Console.WriteLine("    SpMV     idx trf: [msec]        " + BlockMsrMatrix.SpMV_indextrans.Elapsed.TotalMilliseconds);
-
-
-        //    Console.WriteLine("entering infinte loop...");
-        //    while (true) ;
-            
-        //}
+     
 
         /// <summary>
         /// control of mesh adaptation
@@ -507,12 +323,12 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         
-
+        /*
         protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
             //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
             
         }
-
+        */
         
         /// <summary>
         /// Single run of the solver
@@ -550,25 +366,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
-                //ExperimentalSolve(out mintime, out maxtime, out converged, out NoOfIterations);
-
                 this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
-
-                /*
-                Console.WriteLine("finished; " + NoOfIterations + " iterations.");
-                Console.WriteLine("converged? " + converged);
-                Console.WriteLine("Timespan: " + mintime + " to " + maxtime + " seconds");
-
-
-                base.QueryHandler.ValueQuery("minSolRunT", mintime, true);
-                base.QueryHandler.ValueQuery("maxSolRunT", maxtime, true);
-                base.QueryHandler.ValueQuery("Conv", converged ? 1.0 : 0.0, true);
-                base.QueryHandler.ValueQuery("NoIter", NoOfIterations, true);
-                base.QueryHandler.ValueQuery("NoOfCells", this.GridData.CellPartitioning.TotalLength, true);
-                base.QueryHandler.ValueQuery("DOFs", T.Mapping.TotalLength, true);
-                base.QueryHandler.ValueQuery("BlockSize", T.Basis.Length, true);
-                */
-                
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -588,6 +386,8 @@ namespace BoSSS.Application.SipPoisson {
                     //if (this.Control.InitialValues_Evaluators.ContainsKey("RHS")) {
                     //    this.ResiualKP1.ProjectField(this.Control.InitialValues_Evaluators["RHS"]);
                     //}
+
+
 
                     var ev = this.LapaceIp.GetEvaluatorEx(T.Mapping, new[] { RHS }, ResiualKP1.Mapping);
                     ev.Evaluate(-1.0, 1.0, ResiualKP1.CoordinateVector);
@@ -628,176 +428,6 @@ namespace BoSSS.Application.SipPoisson {
 
         }
 
-        /*
-        /// <summary>
-        /// Solution of the system
-        /// <see cref="LaplaceMtx"/>*<see cref="T"/> + <see cref="LaplaceAffine"/> = <see cref="RHS"/>
-        /// using the modular solver framework.
-        /// </summary>
-        private void ExperimentalSolve(out double mintime, out double maxtime, out bool Converged, out int NoOfIter) {
-            using (var tr = new FuncTrace()) {
-                
-                int p = this.T.Basis.Degree;
-                var MgSeq = this.MultigridSequence;
-                mintime = double.MaxValue;
-                maxtime = 0;
-                Converged = false;
-                NoOfIter = int.MaxValue;
-
-                Console.WriteLine("Construction of Multigrid basis...");
-                Stopwatch mgBasis = new Stopwatch();
-                mgBasis.Start();
-                AggregationGridBasis[][] AggBasis;
-                using (new BlockTrace("Aggregation_basis_init", tr)) {
-                    AggBasis = AggregationGridBasis.CreateSequence(MgSeq, new Basis[] { this.T.Basis });
-                }
-                mgBasis.Stop();
-                Console.WriteLine("done. (" + mgBasis.Elapsed.TotalSeconds + " sec)");
-          
-               
-                for (int irun = 0; irun < base.Control.NoOfSolverRuns; irun++) {
-                    Stopwatch stw = new Stopwatch();
-                    stw.Reset();
-                    stw.Start();
-
-                    Console.WriteLine("Setting up multigrid operator...");
-                    var mgsetup = new Stopwatch();
-                    mgsetup.Start();
-                    var MultigridOp = new MultigridOperator(AggBasis, this.T.Mapping, this.LaplaceMtx, null, MgConfig, LapaceIp.DomainVar.Select(varName => LapaceIp.FreeMeanValue[varName]).ToArray());
-                    //double[] condests;
-                    //int[] DOFs, Level;
-                    //GimmeKondnumber(MultigridOp, out condests, out DOFs, out Level);
-                    mgsetup.Stop();
-                    Console.WriteLine("done. (" + mgsetup.Elapsed.TotalSeconds + " sec)");
-
-
-                    Console.WriteLine("Setting up solver...");
-                    var solverSetup = new Stopwatch();
-                    solverSetup.Start();
-                    ISolverSmootherTemplate solver;
-
-                    SolverFactory SF = new SolverFactory(this.Control.NonLinearSolver, this.Control.LinearSolver, this.m_queryHandler);
-
-                    T.Clear();
-                    T.AccLaidBack(1.0, Tex);
-
-
-                    List<Action<int, double[], double[], MultigridOperator>> ItCallbacks_Kollekte = new List<Action<int, double[], double[], MultigridOperator>>();
-                    ItCallbacks_Kollekte.Add(CustomItCallback);
-
-                    ////Check if output analysis path is set, if invalid change to current directory ...
-                    //if (this.Control.WriteMeSomeAnalyse != null)
-                    //{
-                    //    Console.WriteLine("===Analysis-Setup===");
-                    //    AnalyseOutputpath = this.Control.WriteMeSomeAnalyse;
-                    //    CO = new ConvergenceObserver(MultigridOp, null, T.CoordinateVector.ToArray(), SF);
-                    //    CO.TecplotOut = String.Concat(AnalyseOutputpath, "Poisson");
-                    //    ItCallbacks_Kollekte.Add(CO.ResItCallbackAtDownstep);
-                    //    DeletePreviousOutput();
-                    //    Console.WriteLine("Analysis output will be written to: {0}", AnalyseOutputpath);
-                    //    Console.WriteLine("====================");
-                    //}
-                    
-                    SF.GenerateLinear(out solver, AggBasis, MgConfig, ItCallbacks_Kollekte);
-
-                    using (new BlockTrace("Solver_Init", tr)) {
-                        solver.Init(MultigridOp);
-                    }
-                    solverSetup.Stop();
-                    Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
-
-                    MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
-                    Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
-
-
-                    Console.WriteLine("Running solver...");
-                    var solverIteration = new Stopwatch();
-                    solverIteration.Start();
-                    T.Clear();
-                    double[] T2 = this.T.CoordinateVector.ToArray();
-                    using (new BlockTrace("Solver_Run", tr)) {
-                        solver.ResetStat();
-                        //Random rnd = new Random();
-                        //for(int i = 0; i < T2.Length; i++) {
-                        //    T2[i] = rnd.NextDouble();
-                        //}
-                        //T2.ClearEntries();
-                        
-                        var RHSvec = RHS.CoordinateVector.ToArray();
-                        BLAS.daxpy(RHSvec.Length, -1.0, this.LaplaceAffine, 1, RHSvec, 1);
-
-                        MultigridOp.UseSolver(solver, T2, RHSvec);
-                        T.CoordinateVector.SetV(T2);
-                    }
-                    solverIteration.Stop();
-                    Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
-
-                    Console.WriteLine("  Pardiso phase 11: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_11.Elapsed.TotalSeconds);
-                    Console.WriteLine("  Pardiso phase 22: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_22.Elapsed.TotalSeconds);
-                    Console.WriteLine("  Pardiso phase 33: " + ilPSP.LinSolvers.PARDISO.PARDISOSolver.Phase_33.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv total " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv inner " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
-                    Console.WriteLine("  spmv outer " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
-
-                    // time measurement, statistics
-                    stw.Stop();
-                    mintime = Math.Min(stw.Elapsed.TotalSeconds, mintime);
-                    maxtime = Math.Max(stw.Elapsed.TotalSeconds, maxtime);
-                    Converged = solver.Converged;
-                    NoOfIter = solver.ThisLevelIterations;
-
-                }
-            }
-        }
-        */
-        /*
-        private void DeletePreviousOutput() {
-            DirectoryInfo Dinfo = new DirectoryInfo(AnalyseOutputpath);
-            IEnumerable<FileInfo> Files1 = Dinfo.GetFiles("*.plt");
-            IEnumerable<FileInfo> Files2 = Dinfo.GetFiles("*condnum*.txt");
-            IEnumerable<FileInfo> Files=Files1.Concat(Files2);
-            FileInfo[] FilesToDelete=Files.ToArray();
-            Console.Write("delete previous analysisfiles: ");
-            foreach (FileInfo file in FilesToDelete)
-            {
-                File.Delete(file.FullName);
-                Console.Write("{0}, ",file.Name);
-            }
-        }
-
-        /*
-        private void HierStimmtWasNichtJens(ConvergenceObserver CO, double[] condests, int[] DOFs, int[] Level) {
-            //Do the Convergency Analysis plz ...
-            string identify = String.Format("_Res{0}_p{1}_{2}", T.Mapping.TotalLength, T.Basis.Degree, this.Control.LinearSolver.SolverCode.ToString());
-            //string analysedatapath = @"E:\Analysis\CCpoisson\Study0_vary_Mlevel_n_blocks\";
-            string bla = String.Concat(AnalyseOutputpath, "SIP", identify);
-            Console.WriteLine("plotting convergency data ...");
-            if (CO != null) {
-                //CO.PlotTrend(false, false, true);
-                //CO.PlotTrend(true, false, true);
-                //CO.PlotDecomposition(T.CoordinateVector.ToArray(),"decomposition"+bla);
-                //CO.WriteTrendToCSV(false, true, true, bla + "_res");
-                //CO.WriteTrendToCSV(true, true, true, bla + "_err");
-            }
-           
-            string condfile = String.Concat(AnalyseOutputpath, "condnum", identify, ".txt");
-
-            using (StreamWriter CondStream = new StreamWriter(condfile)) {
-                string header = String.Format("Level estCond total_DOFs");
-                CondStream.WriteLine(header);
-                for (int i = 0; i < condests.Length; i++) {
-                    string line = String.Format("{0} {1} {2}", Level[i], condests[i], DOFs[i]);
-                    Console.WriteLine(line);
-                    CondStream.WriteLine(line);
-                }
-            }
-            TimestepNumber tsn = new TimestepNumber(new int[]{0});
-            PlotCurrentState(0.0,tsn,0);
-        }
-        */
-        
         /// <summary>
         /// Shutdown function
         /// </summary>

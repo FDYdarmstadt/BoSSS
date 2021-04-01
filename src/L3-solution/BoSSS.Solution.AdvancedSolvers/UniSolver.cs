@@ -27,7 +27,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class MatrixAssembler {
 
-            public MatrixAssembler(ISpatialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence, QueryHandler __queryHandler, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig) {
+            public MatrixAssembler(ISpatialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence = null, QueryHandler __queryHandler = null, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig = null) {
                 using(var tr = new FuncTrace()) {
                     // init
                     // ====
@@ -313,7 +313,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // -----------------------
 
                     using(new BlockTrace("Mass_Matrix_comp", tr)) {
-                        if(LsTrk != null) {
+                        if (LsTrk != null) {
 
 
                             var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
@@ -559,7 +559,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     G.verbose = verbose;
                     G.AssembleMatrix(out var opMtx, out double[] opAff, out var MassMatrix, G.SolutionFields, true, out _);
                    
-
                     // setup of multigrid operator
                     // ---------------------------
 
@@ -578,7 +577,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
                                         
                     using(new BlockTrace("Solver_Init", tr)) {
-                        solver.Init(MultigridOp);
+                         solver.Init(MultigridOp);
                     }
 
                     solverSetup.Stop();

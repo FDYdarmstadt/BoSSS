@@ -63,57 +63,58 @@ namespace BoSSS.Solution.NSECommon {
 
             IncompressibleBcType edgeType = bcmap.EdgeTag2Type[inp.EdgeTag];
 
-            switch (edgeType) {
+            switch(edgeType) {
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.Velocity_Inlet: {
 
-                        Foundation.CommonParams inp2;
-                        inp2.GridDat = inp.GridDat;
-                        inp2.Normal = inp.Normal;
-                        inp2.iEdge = inp.iEdge;
-                        inp2.Parameters_IN = inp.Parameters_IN;
-                        inp2.X = inp.X;
-                        inp2.time = inp.time;
-                        inp2.jCellIn = inp.jCellIn;
-                        inp2.jCellOut = inp.jCellIn;
+                    Foundation.CommonParams inp2;
+                    inp2.GridDat = inp.GridDat;
+                    inp2.Normal = inp.Normal;
+                    inp2.iEdge = inp.iEdge;
+                    inp2.Parameters_IN = inp.Parameters_IN;
+                    inp2.X = inp.X;
+                    inp2.time = inp.time;
+                    inp2.jCellIn = inp.jCellIn;
+                    inp2.jCellOut = inp.jCellIn;
+                    inp2.EdgeTag = inp.EdgeTag;
 
-                        // Boundary conditions scalar
-                        // ==========================
+                    // Boundary conditions scalar
+                    // ==========================
 
-                        inp2.Parameters_OUT = new double[2 * SpatDimension + 2];
+                    inp2.Parameters_OUT = new double[2 * SpatDimension + 2];
 
-                        double ScalarOut = scalarFunction[inp.EdgeTag](inp.X, 0.0);
-                        inp2.Parameters_OUT[2 * SpatDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
-                        // ScalarMeanOut = ScalarMeanIn
-                        inp2.Parameters_OUT[2 * SpatDimension + 1] = inp.Parameters_IN[2 * SpatDimension + 1];
+                    double ScalarOut = scalarFunction[inp.EdgeTag](inp.X, 0.0);
+                    inp2.Parameters_OUT[2 * SpatDimension] = scalarFunction[inp.EdgeTag](inp.X, inp.time);
+                    // ScalarMeanOut = ScalarMeanIn
+                    inp2.Parameters_OUT[2 * SpatDimension + 1] = inp.Parameters_IN[2 * SpatDimension + 1];
 
-                        // Boundary conditions velocity
-                        // ============================
+                    // Boundary conditions velocity
+                    // ============================
 
-                        for (int j = 0; j < SpatDimension; j++) {
-                            inp2.Parameters_OUT[j] = velFunction[inp.EdgeTag, j](inp.X, inp.time);
-                            // VelocityMeanOut = VelocityMeanIn
-                            inp2.Parameters_OUT[SpatDimension + j] = inp.Parameters_IN[SpatDimension + j];
-                        }
-
-                        return InnerEdgeFlux(ref inp2, Uin, new double[] { ScalarOut });
+                    for(int j = 0; j < SpatDimension; j++) {
+                        inp2.Parameters_OUT[j] = velFunction[inp.EdgeTag, j](inp.X, inp.time);
+                        // VelocityMeanOut = VelocityMeanIn
+                        inp2.Parameters_OUT[SpatDimension + j] = inp.Parameters_IN[SpatDimension + j];
                     }
+
+                    return InnerEdgeFlux(ref inp2, Uin, new double[] { ScalarOut });
+                }
                 case IncompressibleBcType.Pressure_Outlet: {
-                        double r = 0.0;
+                    double r = 0.0;
 
-                        double Scalar0 = inp.Parameters_IN[2 * SpatDimension];
-                        double rho = EoS.GetDensity(Scalar0);
-                        double Scalar = Uin[0];
+                    double Scalar0 = inp.Parameters_IN[2 * SpatDimension];
+                    double rho = EoS.GetDensity(Scalar0);
+                    double Scalar = Uin[0];
 
-                        for (int j = 0; j < SpatDimension; j++) {
-                            double u_j = inp.Parameters_IN[j];
-                            r += rho * Scalar * u_j * inp.Normal[j];
-                        }
-
-                        return r;
+                    for(int j = 0; j < SpatDimension; j++) {
+                        double u_j = inp.Parameters_IN[j];
+                        r += rho * Scalar * u_j * inp.Normal[j];
                     }
+
+                    return r;
+                }
                 default:
-                    throw new NotImplementedException("Boundary condition not implemented!");
+                throw new NotImplementedException("Boundary condition not implemented!");
             }
         }
 

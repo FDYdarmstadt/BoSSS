@@ -1138,7 +1138,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             double AgglomerationTreshold = 0.1;
 
-            var LaLa = new List<AS_XNSE_Control>();
+            var LaLa = new List<XNSE_Control>();
             foreach (var Res in ResolutionS)
             {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode, GridResolution: Res);
@@ -1149,14 +1149,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif
         }
 
-
-        class AS_XNSE_Control : XNSE_Control {
-            public override Type GetSolverType() {
-                return typeof(XNSE);
-            }
-        }
-
-        static AS_XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
+        static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {

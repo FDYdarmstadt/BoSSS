@@ -430,26 +430,33 @@ namespace BoSSS.Solution.XNSECommon {
     /// - computed from broken derivatives, i.e. un-filtered
     /// </summary>
     public class Normals : ParameterS, ILevelSetParameter {
-        int D;
 
+        int D;
         int degree;
+        IList<string> parameterNames;
 
         public Normals(int D, int degree) {
             this.D = D;
             this.degree = degree;
+            parameterNames = BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        }
+
+        public Normals(int D, int degree, string levelSetName) : this(D, degree){
+            parameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable( 
+                levelSetName, BoSSS.Solution.NSECommon.VariableNames.NormalVector(D));
         }
 
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        public override IList<string> ParameterNames => parameterNames;
 
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            LevelSet Phi = levelSet.DGLevelSet;
+            LevelSet Phi = levelSet.CGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i) {
-                Normals[i] = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[i]];
+                Normals[i] = ParameterVarFields[parameterNames[i]];
             }
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
             normalVector.Clear();
@@ -459,11 +466,11 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, "Normal", SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
-                normals[d] = (BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d], Normals[d]);
+                normals[d] = (parameterNames[d], Normals[d]);
             }
             return normals;
         }

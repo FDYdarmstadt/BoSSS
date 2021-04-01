@@ -432,7 +432,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
                     //var Visc = new Solution.XNSECommon.Operator.Viscosity.ViscosityInBulk_GradUTerm(penalty, 1.0, BcMap, d, D, this.Control.PhysicalParameters.mu_A, 1, ViscosityImplementation.H);
-                    var Visc = new swipViscosity_Term1(penalty_bulk, d, D, boundaryCondMap,
+                    var Visc = new SipViscosity_GradU(penalty_bulk, d, D, boundaryCondMap,
                         ViscosityOption.ConstantViscosity,
                         this.Control.PhysicalParameters.mu_A,// / this.Control.PhysicalParameters.rho_A
                         double.NaN, null);

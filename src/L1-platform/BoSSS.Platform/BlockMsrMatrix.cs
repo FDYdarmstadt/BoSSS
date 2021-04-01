@@ -5787,7 +5787,7 @@ namespace ilPSP.LinSolvers {
                                         if (SymmetricalInversion)
                                             tmp.InvertSymmetrical();
                                         else
-                                            tmp.Invert();
+                                            tmp.InvertInPlace();
 
                                         // Write inverse of FullMatrix to current block
                                         res.AccBlock(i0 + RowSblk_i0[sblkRow], j0 + ColSblk_i0[sblkCol], 1.0, tmp);
@@ -5819,7 +5819,7 @@ namespace ilPSP.LinSolvers {
                                 if (SymmetricalInversion)
                                     tmp.InvertSymmetrical();
                                 else
-                                    tmp.Invert();
+                                    tmp.InvertInPlace();
 
                                 // Write inverse of FullMatrix to current block
                                 res.AccBlock(i0, j0, 1.0, tmp);
