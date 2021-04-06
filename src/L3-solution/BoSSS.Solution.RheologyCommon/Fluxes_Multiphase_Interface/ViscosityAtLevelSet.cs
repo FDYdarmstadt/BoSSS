@@ -36,18 +36,16 @@ namespace BoSSS.Solution.RheologyCommon {
         protected double betaA;
         protected double betaB;
         protected double[] pen1;
-        bool weighted;
 
         /// <summary>
         /// Initialize viscosity part
         /// </summary>
-        public ViscosityAtLevelSet(LevelSetTracker lstrk, int Component, double beta_a, double beta_b, double[] Penalty1, bool _weighted) {
+        public ViscosityAtLevelSet(LevelSetTracker lstrk, int Component, double beta_a, double beta_b, double[] Penalty1) {
             this.m_LsTrk = lstrk;
             this.Component = Component;
             this.betaA = 1.0 - beta_a;
             this.betaB = 1.0 - beta_b;
             this.pen1 = Penalty1;
-            this.weighted = _weighted;
         }
 
         /// <summary>
@@ -103,15 +101,9 @@ namespace BoSSS.Solution.RheologyCommon {
             double wA;
             double wB;
             double wPenalty;
-            if (!weighted) {
-                wA = 0.5;
-                wB = 0.5;
-                wPenalty = (Math.Abs(betaA) > Math.Abs(betaB)) ? betaA : betaB;
-            } else {
-                wA = betaB / (betaA + betaB);
-                wB = betaA / (betaA + betaB);
-                wPenalty = betaA * betaB / (betaA + betaB);
-            }
+            wA = 0.5;
+            wB = 0.5;
+            wPenalty = (Math.Abs(betaA) > Math.Abs(betaB)) ? betaA : betaB;
 
             double res = 0;
 

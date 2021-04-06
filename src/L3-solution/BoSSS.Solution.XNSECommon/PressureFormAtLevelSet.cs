@@ -31,31 +31,39 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
 
         LevelSetTracker m_LsTrk;
 
-        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
+        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, 
+            double _wA = 1.0, double _wB = 1.0, 
+            bool _freeSurface = false, double _pFree = 0.0) {
+
             m_d = _d;
             m_D = _D;
             m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
 
-            weighted = _weighted;
             wA = _wA;
             wB = _wB;
+
+            freeSurface = _freeSurface;
+            pFree = _pFree;
         }
 
         int m_d;
         int m_D;
 
-        bool weighted;
         double wA;
         double wB;
 
+        bool freeSurface;
+        double pFree;
+
         public double InnerEdgeForm(ref CommonParams inp, double[] pA, double[] pB, double[,] Grad_pA, double[,] Grad_pB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
 
-            if (!weighted) {
+            if (!freeSurface) {
                 return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
             } else {
-                return -(vB - vA) * inp.Normal[m_d] * (wA * pB[0] + wB * pA[0]) / (wA + wB);
+                //return -(pFree * vB - pA[0] * vA) * inp.Normal[m_d];
+                return -(vB - vA) * inp.Normal[m_d] * 0.5 * (pB[0] + pA[0]);
             }
             
         }

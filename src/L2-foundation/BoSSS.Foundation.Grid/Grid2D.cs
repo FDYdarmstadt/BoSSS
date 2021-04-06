@@ -391,7 +391,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="CutOuts">Optional regions that are not meshed</param>
         /// <param name="type">The type of the cells to be used</param>
         /// <param name="NonlinearGridTrafo">
-        /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differnetiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
+        /// Arbitrary transformation (i.e. a diffeomorphism, i.e. bijective and differentiable) applied to <paramref name="xNodes"/> and <paramref name="yNodes"/>, optioanl
         /// </param>
         public static Grid2D Cartesian2DGrid(double[] xNodes, double[] yNodes, 
             CellType type = CellType.Square_Linear, 
@@ -401,7 +401,12 @@ namespace BoSSS.Foundation.Grid.Classic {
             using (var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
 
+                if(NonlinearGridTrafo != null) {
+                    if(type == CellType.Square_Linear)
+                        throw new NotSupportedException($"Not recommended to use a nonlinear transformation of the mesh together with linear square cells - use at least {CellType.Square_4}!");
+                }
 
+                
                 // Some Checks
                 // ===========
                 CheckMonotonicity(xNodes);
@@ -439,20 +444,73 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte peryTag = 0;
 
                 if (periodicX) {
-                    if (NonlinearGridTrafo != null)
-                        throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[0], yNodes[nY] } };
-                    double[][] y = { new double[] { xNodes[nX], yNodes[0] }, new double[] { xNodes[nX], yNodes[nY] } };
-                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 1.0, 0 }, x, new double[] { 1.0, 0 }, out perxTag);
+                    //if (NonlinearGridTrafo != null)
+                    //    throw new NotSupportedException("grid transformation is not supported for periodic domains");
+                    Vector[] x = { new Vector { xNodes[0], yNodes[0] }, new Vector { xNodes[0], yNodes[nY] } };
+                    Vector[] y = { new Vector { xNodes[nX], yNodes[0] }, new Vector { xNodes[nX], yNodes[nY] } };
+                    Vector N = new Vector() { 1.0, 0 };
+                    Vector Nx, Ny;
+
+                    if(NonlinearGridTrafo != null) {
+                        //Vector xm = 0.5 * (x[0] + x[1]);
+                        //Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
+                        //Nx.Normalize();
+
+                        //Vector ym = 0.5 * (y[0] + y[1]);
+                        //Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
+                        //Ny.Normalize();
+
+                        x[0] = NonlinearGridTrafo(x[0]);
+                        x[1] = NonlinearGridTrafo(x[1]);
+                        y[0] = NonlinearGridTrafo(y[0]);
+                        y[1] = NonlinearGridTrafo(y[1]);
+
+                        var tx = x[1] - x[0];
+                        Nx = tx.Rotate2D(-Math.PI / 2);
+                        Nx.NormalizeInPlace();
+                        
+                        var ty = y[1] - y[0];
+                        Ny = tx.Rotate2D(-Math.PI / 2);
+                        Nx.NormalizeInPlace();
+
+                    } else {
+                        Nx = N;
+                        Ny = N;
+                    }
+
+                    
+                    grid.ConstructPeriodicEdgeTrafo(y, Ny, x, Nx, out perxTag);
                     grid.EdgeTagNames.Add(perxTag, "Periodic-X");
                 }
 
                 if (periodicY) {
                     if (NonlinearGridTrafo != null)
                         throw new NotSupportedException("grid transformation is not supported for periodic domains");
-                    double[][] x = { new double[] { xNodes[0], yNodes[0] }, new double[] { xNodes[nX], yNodes[0] } };
-                    double[][] y = { new double[] { xNodes[0], yNodes[nY] }, new double[] { xNodes[nX], yNodes[nY] } };
-                    grid.ConstructPeriodicEdgeTrafo(y, new double[] { 0, 1.0 }, x, new double[] { 0, 1.0 }, out peryTag);
+                    Vector[] x = { new Vector { xNodes[0], yNodes[0] }, new Vector { xNodes[nX], yNodes[0] } };
+                    Vector[] y = { new Vector { xNodes[0], yNodes[nY] }, new Vector { xNodes[nX], yNodes[nY] } };
+                    Vector N = new Vector { 0, 1.0 };
+                    Vector Nx, Ny;
+
+                    if(NonlinearGridTrafo != null) {
+                        Vector xm = 0.5 * (x[0] + x[1]);
+                        Nx = NonlinearGridTrafo(xm + N) - NonlinearGridTrafo(xm);
+                        Nx.NormalizeInPlace();
+
+                        Vector ym = 0.5 * (y[0] + y[1]);
+                        Ny = NonlinearGridTrafo(ym + N) - NonlinearGridTrafo(ym);
+                        Ny.NormalizeInPlace();
+
+                        x[0] = NonlinearGridTrafo(x[0]);
+                        x[1] = NonlinearGridTrafo(x[1]);
+                        y[0] = NonlinearGridTrafo(y[0]);
+                        y[1] = NonlinearGridTrafo(y[1]);
+
+                    } else {
+                        Nx = N;
+                        Ny = N;
+                    }
+
+                    grid.ConstructPeriodicEdgeTrafo(y, Nx, x, Ny, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 
@@ -560,7 +618,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // cell neighbourship
                             // ==================
-                            C_cnt.NodeIndices = new int[4];
+                            C_cnt.NodeIndices = new long[4];
                             C_cnt.NodeIndices[0] = i + j * xNodes.Length;
                             C_cnt.NodeIndices[1] = (i + 1) + j * xNodes.Length;
                             C_cnt.NodeIndices[2] = i + (j + 1) * xNodes.Length;
@@ -840,7 +898,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             // cell neighbourship
                             // ==================
-                            C_cnt.NodeIndices = new int[4];
+                            C_cnt.NodeIndices = new long[4];
                             C_cnt.NodeIndices[0] = i + j * NoOfNodesX;
                             C_cnt.NodeIndices[1] = (i + 1) + j * NoOfNodesX;
                             C_cnt.NodeIndices[2] = i + (j + 1) * NoOfNodesX;
@@ -931,7 +989,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Bild0[3, 1] = 4;
 
                         grid.Cells[0] = Cj0;
-                        grid.Cells[0].NodeIndices = new int[] { 0, 1, 2, 3 };
+                        grid.Cells[0].NodeIndices = new long[] { 0, 1, 2, 3 };
 
                     } else {
 
@@ -986,7 +1044,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (pf != null)
                                     pf(Bild0);
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*xNodes.Length + i,          // unten, links
                                     k*xNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*xNodes.Length + i,    // oben, links
@@ -1015,10 +1073,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="rPoint"></param>
         /// <param name="sPoint"></param>
         /// <returns></returns>
-        internal static double[] Param2XY(double rPoint, double sPoint) {
+        internal static Vector Param2XY(double rPoint, double sPoint) {
 
             // Calculate Coordinates
-            double[] xyPoint = new double[] { 0, 0 };
+            Vector xyPoint = new Vector(2);
             // x-Coordinate
             xyPoint[0] = rPoint * Math.Cos(2 * Math.PI * sPoint);
             // y-Coordinate
@@ -1035,7 +1093,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Vector consisting of Points in radial direction, must be greater than 0.
         /// </param>
         /// <param name="sNodes">
-        /// Vector consisting of Points in rotational direction.
+        /// Vector consisting of Points in rotational direction (1.0 represents 2Pi)
         /// </param>
         /// <param name="CellType">
         /// Type of Elements. Currently only Quads supported.
@@ -1080,26 +1138,25 @@ namespace BoSSS.Foundation.Grid.Classic {
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
 
 
-
                 // define periodic transformations
                 // =============================================
                 byte persTag = 0;
                 if (PeriodicS == true) {
                     //Periodic Boundary Inlet
-                    double[][] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
+                    Vector[] PerBoundIn = { Param2XY(rNodes.First(), sNodes.First()), Param2XY(rNodes.Last(), sNodes.First()) };
                     // Vector Connecting the two Points of the inlet
                     Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0];//(Param2XY(rNodes.First(), sNodes.First())[0] - Param2XY(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1];//(Param2XY(rNodes.First(), sNodes.First())[1] - Param2XY(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
-                    PerBoundInCon.Normalize();
-                    double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
+                    PerBoundInCon.NormalizeInPlace();
+                    Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x );
                     //Periodic Boundary Inlet
-                    double[][] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
+                    Vector[] PerBoundOut = { Param2XY(rNodes.First(), sNodes.Last()), Param2XY(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Param2XY(rNodes.First(), sNodes.Last())[0] - Param2XY(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Param2XY(rNodes.First(), sNodes.Last())[1] - Param2XY(rNodes.Last(), sNodes.Last())[1]);
-                    PerBoundOutCon.Normalize();
+                    PerBoundOutCon.NormalizeInPlace();
                     double[] PerBoundOutNormal = { -PerBoundOutCon.y, +PerBoundOutCon.x };
                     grid.ConstructPeriodicEdgeTrafo(PerBoundIn, PerBoundInNormal, PerBoundOut, PerBoundOutNormal, out persTag);
                     grid.EdgeTagNames.Add(persTag, "Periodic-S");
@@ -1165,7 +1222,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // ------------------ //
 
                             if (fullcircle == false || k != nS - 1) {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*rNodes.Length + i,          // unten, links
                                     k*rNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*rNodes.Length + i,    // oben, links
@@ -1173,7 +1230,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                };
                             }
                             else {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         k*rNodes.Length + i,          // unten, links
                                         k*rNodes.Length + (i + 1),    // unten, rechts
                                         i,    // oben, links //  Periodic BC
@@ -1229,18 +1286,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
         /// <summary>
-        /// This Method convert Points in the Parametric r-s-Space into Points in the x-y-Space
-        /// </summary>
-        /// <param name="rPoint">
-        /// Coordinate in r-direction
-        /// </param>
-        /// <param name="sPoint">
-        /// Coordinate in s-direction
-        /// </param>
-        /// <returns></returns>
-        public delegate double[] Param2XYTopology(double rPoint, double sPoint);
-
-        /// <summary>
         /// Generates a Grid Consisting of a curved Surface from Coordinates in
         /// Parametric Description<see cref="Grid2D.Param2XY"/>. Later
         /// Arbitrary Transformation Functions might be introduced.
@@ -1257,11 +1302,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="PeriodicR">
         /// Toggle for periodicity in r-direction
         /// </param>
-        /// <param name="Topology"></param>
+        /// <param name="Topology">
+        /// Convert Points in the Parametric r-s-Space (arguments) into Points in the x-y-Space (return value)
+        /// </param>
         /// <returns>
         /// A grid consisting of curved elements forming a curved Surface
         /// </returns>
-        public static Grid2D CurvedSquareGridChannel(double[] rNodes, double[] sNodes, CellType CellType, bool PeriodicR = true, Param2XYTopology Topology = null) {
+        public static Grid2D CurvedSquareGridChannel(double[] rNodes, double[] sNodes, CellType CellType, bool PeriodicR = true, Func<double,double,Vector> Topology = null) {
             using (new FuncTrace()) {
                 if (!(Square.Instance).SupportedCellTypes.Contains(CellType))
                     throw new ArgumentOutOfRangeException("illegal cell type.");
@@ -1287,21 +1334,21 @@ namespace BoSSS.Foundation.Grid.Classic {
                 byte persTag = 0;
                 if (PeriodicR == true) {
                     //Periodic Boundary Inlet
-                    double[][] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
+                    Vector[] PerBoundIn = { Topology(rNodes.First(), sNodes.First()), Topology(rNodes.First(), sNodes.Last()) };
                     // Vector Connecting the two Points of the inlet
                     Vector PerBoundInCon = new Vector(2);
                     PerBoundInCon.x = PerBoundIn[1][0] - PerBoundIn[0][0]; //(Topology(rNodes.First(), sNodes.First())[0] - Topology(rNodes.Last(), sNodes.First())[0]);
                     PerBoundInCon.y = PerBoundIn[1][1] - PerBoundIn[0][1]; //(Topology(rNodes.First(), sNodes.First())[1] - Topology(rNodes.Last(), sNodes.First())[1]);
                     // Normal onto Inlet Pointing outwards
-                    PerBoundInCon.Normalize();
-                    double[] PerBoundInNormal = { -PerBoundInCon.y, +PerBoundInCon.x };
+                    PerBoundInCon.NormalizeInPlace();
+                    Vector PerBoundInNormal = new Vector(-PerBoundInCon.y, +PerBoundInCon.x);
                     //Periodic Boundary Inlet
-                    double[][] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
+                    Vector[] PerBoundOut = { Topology(rNodes.Last(), sNodes.First()), Topology(rNodes.Last(), sNodes.Last()) };
                     Vector PerBoundOutCon = new Vector(2);
                     PerBoundOutCon.x = PerBoundOut[1][0] - PerBoundOut[0][0];//(Topology(rNodes.First(), sNodes.Last())[0] - Topology(rNodes.Last(), sNodes.Last())[0]);
                     PerBoundOutCon.y = PerBoundOut[1][1] - PerBoundOut[0][1];//(Topology(rNodes.First(), sNodes.Last())[1] - Topology(rNodes.Last(), sNodes.Last())[1]);
-                    PerBoundOutCon.Normalize();
-                    double[] PerBoundOutNormal = { -PerBoundOutCon.y, +PerBoundOutCon.x };
+                    PerBoundOutCon.NormalizeInPlace();
+                    Vector PerBoundOutNormal = new Vector( -PerBoundOutCon.y, +PerBoundOutCon.x );
                     grid.ConstructPeriodicEdgeTrafo(PerBoundIn, PerBoundInNormal, PerBoundOut, PerBoundOutNormal, out persTag);
                     grid.EdgeTagNames.Add(persTag, "Periodic-R");
                 }
@@ -1358,7 +1405,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // ------------------ //
 
                             if (i != nR) {
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*rNodes.Length + i,          // unten, links
                                     k*rNodes.Length + (i + 1),    // unten, rechts
                                     (k + 1)*rNodes.Length + i,    // oben, links
@@ -1490,7 +1537,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes[i + 1] + xDelta[i + 1, k + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[k + 1] + yDelta[i + 1, k + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                     k*xNodes.Length + i,
                                     k*xNodes.Length + i + 1,
                                     (k + 1)*xNodes.Length + i + 1
@@ -1514,7 +1561,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj1.TransformationParams[2, 0] = xNodes[i] + xDelta[i, k + 1];
                                 Cj1.TransformationParams[2, 1] = yNodes[k + 1] + yDelta[i, k + 1];
 
-                                Cj1.NodeIndices = new int[] {
+                                Cj1.NodeIndices = new long[] {
                                     k*xNodes.Length + i,
                                     (k + 1)*xNodes.Length + i + 1,
                                     (k + 1)*xNodes.Length + i
@@ -1599,7 +1646,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx,
                                         nIdx2 + sjIdx + 1 };
@@ -1613,7 +1660,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx + 1,
                                         nIdx1 + sjIdx + 1 };
@@ -1697,7 +1744,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes2[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s + 1];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx,
                                         nIdx2 + sjIdx + 1 };
@@ -1711,7 +1758,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Cj0.TransformationParams[2, 0] = xNodes1[sjIdx + 1];
                                 Cj0.TransformationParams[2, 1] = yNodes[s];
 
-                                Cj0.NodeIndices = new int[] {
+                                Cj0.NodeIndices = new long[] {
                                         nIdx1 + sjIdx,
                                         nIdx2 + sjIdx + 1,
                                         nIdx1 + sjIdx + 1 };
@@ -2010,7 +2057,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             // node indices (neighborship via cell face tags
-                            Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                            Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                             PtCount += 4;
 
                             // neigborship
@@ -2211,7 +2258,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
 
                                 // node indices (neighborship via cell face tags
-                                Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                                Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                                 PtCount += 4;
 
                                 // neigborship
@@ -2473,7 +2520,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
 
                         // node indices (neighborship via cell face tags
-                        Cj.NodeIndices = new int[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
+                        Cj.NodeIndices = new long[] { PtCount, PtCount + 1, PtCount + 2, PtCount + 3 };
                         PtCount += 4;
 
                         // cell neighborship

@@ -45,15 +45,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 BoSSS.Foundation.Grid.IGridData GridData = LsTrk.GridDat;
                 int JE = GridData.iLogicalCells.Count;
                 int Jup = GridData.iLogicalCells.NoOfLocalUpdatedCells;
-                int cell_j0 = GridData.CellPartitioning.i0;
+                long cell_j0 = GridData.CellPartitioning.i0;
 
                 // build index mappings
                 // ====================
-                int[,] _old2NewRows, _old2NewCols;
+                long[,] _old2NewRows, _old2NewCols;
                 {
-                    List<Tuple<int, int>> old2NewRows = new List<Tuple<int, int>>();
-                    List<Tuple<int, int>> old2NewCols = new List<Tuple<int, int>>();
-                    List<Tuple<int, int>> old2NewColsExt = new List<Tuple<int, int>>();
+                    List<(long, long)> old2NewRows = new List<(long, long)>();
+                    List<(long, long)> old2NewCols = new List<(long, long)>();
+                    List<(long, long)> old2NewColsExt = new List<(long, long)>();
 
                     // loop over cells
                     for (int j = 0; j < JE; j++) {
@@ -70,15 +70,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //Debug.Assert(RowMap.GetBlockLen(cell_j0 + j) == RowMap.MaxTotalNoOfCoordinatesPerCell);
                             //Debug.Assert(RowIdxUpdate.Length == RowMap.GetBlockLen(cell_j0 + j));
 
-                            int i0 = RowMap.GetBlockI0(cell_j0 + j);
+                            long i0 = RowMap.GetBlockI0(cell_j0 + j);
 
                             int II = RowIdxUpdate.Length;
                             for (int ii = 0; ii < II; ii++) {
-                                int iOld = ii + i0;
-                                int iNew = RowIdxUpdate[ii] + i0;
+                                long iOld = ii + i0;
+                                long iNew = RowIdxUpdate[ii] + i0;
                                 if (RowIdxUpdate[ii] >= 0) {
                                     Debug.Assert(old2NewRows.Count == 0 || old2NewRows[old2NewRows.Count - 1].Item1 < iOld);
-                                    old2NewRows.Add(new Tuple<int, int>(iOld, iNew));
+                                    old2NewRows.Add((iOld, iNew));
                                 }
                             }
                         }
@@ -96,19 +96,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //    jLoc = j;
                             //else 
                             //    jLoc = LsTrk.GridDat.iParallel.Global2LocalIdx[cell_j0 + j];
-                            int i0 = ColMap.GlobalUniqueCoordinateIndex(0, j, 0);
+                            long i0 = ColMap.GlobalUniqueCoordinateIndex(0, j, 0);
                             //Debug.Assert()
                             
                             int II = ColIdxUpdate.Length;
                             for (int ii = 0; ii < II; ii++) {
-                                int iOld = ii + i0;
-                                int iNew = ColIdxUpdate[ii] + i0;
+                                long iOld = ii + i0;
+                                long iNew = ColIdxUpdate[ii] + i0;
                                 if (ColIdxUpdate[ii] >= 0) {
                                     if (j < Jup) {
                                         Debug.Assert(old2NewCols.Count == 0 || old2NewCols[old2NewCols.Count - 1].Item1 < iOld);
-                                        old2NewCols.Add(new Tuple<int, int>(iOld, iNew));
+                                        old2NewCols.Add((iOld, iNew));
                                     } else {
-                                        old2NewColsExt.Add(new Tuple<int, int>(iOld, iNew));
+                                        old2NewColsExt.Add((iOld, iNew));
                                     }
                                 }
                             }
@@ -117,20 +117,20 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // data conversion
                     int I = old2NewRows.Count;
-                    _old2NewRows = new int[I, 2];
+                    _old2NewRows = new long[I, 2];
                     for (int i = 0; i < I; i++) {
                         var t = old2NewRows[i];
                         _old2NewRows[i, 0] = t.Item1;
                         _old2NewRows[i, 1] = t.Item2;
                     }
                     int J = old2NewCols.Count + old2NewColsExt.Count;
-                    old2NewColsExt.Sort((a, b) => a.Item1 - b.Item1);
-                    _old2NewCols = new int[J, 2];
+                    old2NewColsExt.Sort((a, b) => (int)Math.Min(int.MaxValue, Math.Max(int.MinValue, a.Item1 - b.Item1)));
+                    _old2NewCols = new long[J, 2];
                     int ja = 0, jb = 0;
                     for (int j = 0; j < J; j++) {
-                        Tuple<int, int> t;
+                        ValueTuple<long, long> t;
                         if (ja < old2NewCols.Count && jb < old2NewColsExt.Count) {
-                            Tuple<int, int> t1, t2;
+                            ValueTuple<long, long> t1, t2;
                             t1 = old2NewCols[ja];
                             t2 = old2NewColsExt[jb];
                             Debug.Assert(t1.Item1 != t2.Item1);
@@ -189,7 +189,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //int ColBlockSize = ColMap.MaxTotalNoOfCoordinatesPerCell;
                 int RowBlockSize = RowMap.MaxTotalNoOfCoordinatesPerCell;
 
-                int Gj0 = GridData.CellPartitioning.i0;
+                long Gj0 = GridData.CellPartitioning.i0;
 
                 int NoOfSpc = LsTrk.TotalNoOfSpecies;
 

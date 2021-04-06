@@ -94,9 +94,9 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        public override double LevelSetFunction(double[] X) {
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
             double angle = Motion.GetAngle(0);
-            double[] position = Motion.GetPosition(0);
+            double[] position = Postion;
             double[] tempX = X.CloneAs();
             tempX[0] = X[0] * Math.Cos(angle) + X[1] * Math.Sin(angle);
             tempX[1] = X[0] * Math.Sin(angle) + X[1] * Math.Cos(angle);
@@ -115,7 +115,7 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="tolerance">
         /// tolerance length.
         /// </param>
-        public override bool Contains(Vector point, double tolerance = 0) {
+        protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), -Math.Sin(Motion.GetAngle(0)));
             Vector normalOrientation = new Vector(Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
             Vector position = Motion.GetPosition(0);
@@ -131,14 +131,14 @@ namespace BoSSS.Application.FSI_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             Vector supportPoint = new Vector(supportVector);
             double angle = Motion.GetAngle(0);
-            Vector position = new Vector(Motion.GetPosition(0));
+            Vector position = new Vector(Position);
             Vector rotVector = new Vector(supportVector);
             rotVector[0] = supportVector[0] * Math.Cos(angle) - supportVector[1] * Math.Sin(angle);
             rotVector[1] = supportVector[0] * Math.Sin(angle) + supportVector[1] * Math.Cos(angle);

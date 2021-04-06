@@ -70,7 +70,7 @@ namespace BoSSS.Application.ZwoLsTest {
             Array.Sort(grd.Cells, (C1, C2) => (int)(C1.GlobalID - C2.GlobalID));
 
             int J = grd.Cells.Length;
-            int j0 = grd.CellPartitioning.i0;
+            long j0 = grd.CellPartitioning.i0;
             for (int jCell = 0; jCell < J; jCell++) {
                 Debug.Assert(jCell + j0 == grd.Cells[jCell].GlobalID);
             }
@@ -197,8 +197,8 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u.ProjectField((x, y) => x);
             du_dx_Exact.ProjectField((x, y) => 1.0);
@@ -219,7 +219,7 @@ namespace BoSSS.Application.ZwoLsTest {
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new [] { "B" },
                 __varnames: new[] { "u", "c1" });
-
+            Op.AgglomerationThreshold = this.THRESHOLD;
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)
@@ -748,7 +748,7 @@ namespace BoSSS.Application.ZwoLsTest {
             var map = new UnsetteledCoordinateMapping(new Basis(this.GridData, 0));
             var FConMatrix = new XSpatialOperatorMk2.SpeciesFrameMatrix<MsrMatrix>(ConMatrix2, this.LsTrk.Regions, this.LsTrk.GetSpeciesId("B"), map, map);
 
-            int jCell0 = this.GridData.CellPartitioning.i0;
+            long jCell0 = this.GridData.CellPartitioning.i0;
 
 
 
@@ -757,17 +757,17 @@ namespace BoSSS.Application.ZwoLsTest {
                 int j0 = e2c[e, 0];
                 int j1 = e2c[e, 1];
 
-                int j0G;
+                long j0G;
                 if (j0 >= J) {
-                    j0G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j0 - J]);
+                    j0G = (this.GridData.iParallel.GlobalIndicesExternalCells[j0 - J]);
                 } else {
                     j0G = j0 + jCell0;
                 }
 
-                int j1G;
+                long j1G;
                 if (j1 >= 0) {
                     if (j1 >= J) {
-                        j1G = (int)(this.GridData.iParallel.GlobalIndicesExternalCells[j1 - J]);
+                        j1G = (this.GridData.iParallel.GlobalIndicesExternalCells[j1 - J]);
                     } else {
                         j1G = j1 + jCell0;
                     }

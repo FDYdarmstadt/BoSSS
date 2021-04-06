@@ -53,14 +53,14 @@ namespace ilPSP {
         /// <summary>
         /// the first global index that is stored on the actual MPI process
         /// </summary>
-        int i0 {
+        long i0 {
             get;
         }
 
         /// <summary>
         /// The first global index that is stored on the NEXT MPI process
         /// </summary>
-        int iE {
+        long iE {
             get;
         }
 
@@ -72,7 +72,7 @@ namespace ilPSP {
         /// rank +1); In this case, the <see cref="TotalLength"/> is returned.
         /// </param>
         /// <returns>index of the first permutation entry stored by processor <paramref name="proc"/></returns>
-        int GetI0Offest(int proc);
+        long GetI0Offest(int proc);
 
         /// <summary>
         /// returns the number of entries which are stored by
@@ -85,7 +85,7 @@ namespace ilPSP {
         /// <summary>
         /// Total length of the partition over all processes, i.e. sum of <see cref="LocalLength"/> over all MPI processors.
         /// </summary>
-        int TotalLength {
+        long TotalLength {
             get;
         }
 
@@ -103,14 +103,6 @@ namespace ilPSP {
         /// </summary>
         IPartitioning GetImmutablePartition();
 
-
-        /// <summary>
-        /// Returns the process rank which stores the <paramref name="index"/>-th entry;
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        int FindProcess(int index);
-
         /// <summary>
         /// returns the process rank which stores the <paramref name="index"/>-th entry;
         /// </summary>
@@ -122,7 +114,13 @@ namespace ilPSP {
         /// true, if some index <paramref name="i"/> is within the local range of this MPI Process,
         /// i.e <paramref name="i"/> is greater or equal to <see cref="i0"/> and smaller than <see cref="i0"/>+<see cref="LocalLength"/>;
         /// </summary>
-        bool IsInLocalRange(int i);
+        bool IsInLocalRange(long i);
+
+
+        /// <summary>
+        /// transforms a global index int a local one 
+        /// </summary>
+        int Global2Local(long i);
 
         /// <summary>
         /// Returns the number of entries which are stored by

@@ -27,9 +27,8 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
-
     /// <summary>
-    /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server.
+    /// A <see cref="BatchProcessorClient"/>-implementation which uses a Microsoft HPC 2012 server (or later).
     /// </summary>
     [DataContract]
     [Serializable]
@@ -40,6 +39,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         private MsHPC2012Client() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
+
+            if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+                throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
+            }
         }
 
         /// <summary>
@@ -63,6 +66,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
         public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) {
+            if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
+                throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
+            }
+
+            
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
 
@@ -84,17 +92,35 @@ namespace BoSSS.Application.BoSSSpad {
         [NonSerialized]
         IScheduler m__scheduler;
 
+        /// <summary>
+        /// Active Directory user name used on HPC cluster
+        /// </summary>
         [DataMember]
-        string Username;
+        public string Username;
 
+        /// <summary>
+        /// Unsafely stored password
+        /// </summary>
         [DataMember]
-        string Password;
+        public string Password;
 
+        /// <summary>
+        /// Active directory computer name of head node
+        /// </summary>
         [DataMember]
-        string ServerName;
+        public string ServerName;
 
+        /// <summary>
+        /// optional: a list of compute node on which some job should run
+        /// </summary>
         [DataMember]
-        string[] ComputeNodes;
+        public string[] ComputeNodes;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember]
+        public JobPriority DefaultJobPriority = JobPriority.Normal;
 
         /// <summary>
         /// Jobs are forced to run on a single node.
@@ -119,8 +145,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Job status.
         /// </summary>
-        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
-            using (var tr = new FuncTrace()) {
+        public override (BoSSSpad.JobStatus, int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) {
+            //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+            using(var tr = new FuncTrace()) {
                 int id = int.Parse(idToken);
 
 
@@ -129,10 +156,10 @@ namespace BoSSS.Application.BoSSSpad {
                 //if (optInfo != null && optInfo is ISchedulerJob _JD) {
                 //    JD = _JD;
                 //} else {
-                using (new BlockTrace("Scheduler.OpenJob", tr)) {
+                using(new BlockTrace("Scheduler.OpenJob", tr)) {
                     JD = Scheduler.OpenJob(id);
                 }
-                
+
                 //}
                 /*
                  * the following seems really slow:
@@ -169,46 +196,44 @@ namespace BoSSS.Application.BoSSSpad {
                 */
 
 
-                using (new BlockTrace("TASK_FILTERING", tr)) {
+                int ExitCode = int.MinValue;
+                using(new BlockTrace("TASK_FILTERING", tr)) {
                     ISchedulerCollection tasks = JD.GetTaskList(null, null, false);
-                    ExitCode = int.MinValue;
-                    foreach (ISchedulerTask t in tasks) {
+                    foreach(ISchedulerTask t in tasks) {
                         DeployDir = t.WorkDirectory;
                         ExitCode = t.ExitCode;
                     }
                 }
 
-                using (new BlockTrace("STATE_EVAL", tr)) {
-                    switch (JD.State) {
+                using(new BlockTrace("STATE_EVAL", tr)) {
+                    var JDstate = JD.State;
+
+                    switch(JDstate) {
                         case JobState.Configuring:
                         case JobState.Submitted:
                         case JobState.Validating:
                         case JobState.ExternalValidation:
                         case JobState.Queued:
-                            isRunning = false;
-                            isTerminated = false;
-                            break;
+                        return (JobStatus.PendingInExecutionQueue, null);
 
                         case JobState.Running:
                         case JobState.Finishing:
-                            isRunning = true;
-                            isTerminated = false;
-                            break;
+                        case JobState.Canceling:
+                        return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
-                            isRunning = false;
-                            isTerminated = true;
-                            break;
+                        var retCode = (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
+                        if(retCode.Item1 != JobStatus.FinishedSuccessful)
+                            Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate + ", Exit code = " + ExitCode);
+                        return retCode;
 
                         case JobState.Failed:
                         case JobState.Canceled:
-                        case JobState.Canceling:
-                            isRunning = false;
-                            isTerminated = true;
-                            break;
+                        Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate);
+                        return (JobStatus.FailedOrCanceled, ExitCode);
 
                         default:
-                            throw new NotImplementedException("Unknown job state: " + JD.State);
+                        throw new NotImplementedException("Unknown job state: " + JD.State);
                     }
                 }
             }
@@ -218,15 +243,15 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Path to standard error file.
         /// </summary>
-        public override string GetStderrFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+        public override string GetStderrFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
         /// <summary>
         /// Path to standard output file.
         /// </summary>
-        public override string GetStdoutFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+        public override string GetStdoutFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
             
         }
@@ -234,7 +259,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Submits the job to the Microsoft HPC server.
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             using (new FuncTrace()) {
                 string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
 
@@ -249,6 +274,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.SingleNode = this.SingleNode;
+                MsHpcJob.Priority = this.DefaultJobPriority;
 
                 MsHpcJob.UserName = Username;
 
@@ -256,7 +282,7 @@ namespace BoSSS.Application.BoSSSpad {
                 task.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 task.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
                 
-                task.WorkDirectory = myJob.DeploymentDirectory;
+                task.WorkDirectory = DeploymentDirectory;
 
                 using (var str = new StringWriter()) {
                     str.Write("mpiexec ");
@@ -274,8 +300,8 @@ namespace BoSSS.Application.BoSSSpad {
                     task.SetEnvironmentVariable(name, valu);
                 }
 
-                task.StdOutFilePath = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
-                task.StdErrFilePath = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+                task.StdOutFilePath = Path.Combine(DeploymentDirectory, "stdout.txt");
+                task.StdErrFilePath = Path.Combine(DeploymentDirectory, "stderr.txt");
 
                 if (ComputeNodes != null) {
                     foreach (string node in ComputeNodes)

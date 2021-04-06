@@ -27,6 +27,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.IBM_Solver {
     public class HardcodedPerformance {
@@ -44,27 +45,15 @@ namespace BoSSS.Application.IBM_Solver {
         /// <param name="load_Grid"></param>
         /// <param name="_GridGuid"></param>
         /// <returns></returns>
-        static public IBM_Control SphereFlow_BWS(string _DbPath = null, int k = 2, int cells_x = 30, int cells_yz = 10, bool only_channel = false, int no_p = 1, int no_it = 1, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
+        static public IBM_Control SpinningCube(string _DbPath = null, int k = 2, int cells_x = 150, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim=2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
-            C.OperatorMatrixAnalysis = false;
+            
 
-            // basic database options
-            // ======================
-            //C.DbPath = _DbPath;
-
-
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"\\dc1\userspace\krause\BoSSS_DBs\Bug";
             //C.DbPath = @"/home/ws35kire/test_db/";
 
             C.savetodb = C.DbPath != null;
-
-            //C.DynamicLoadBalancing_Period = 1;
-            //C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
-            //    Console.WriteLine("i was called");
-            //    int[] map = new int[] { 1, 5, 100 };
-            //    return new StaticCellCostEstimator(map);
-            //});
 
             C.GridPartType = GridPartType.METIS;
             C.SetDGdegree(k);
@@ -72,9 +61,11 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Assign correct names
             if (only_channel) {
-                C.SessionName = "Channel_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
+                C.SessionName = "Channel_k" + k + "_" +cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
             } else {
-                C.SessionName = "Sphere_Mumps_k" + k + cells_x + "x" + cells_yz + "x" + cells_yz + "_no_p" + no_p + "_run" + no_it;
+                C.SessionName = "Cube_k" + k + "_" + cells_x + "x" + cells_yz;
+                if (SpaceDim==3)
+                    C.SessionName += "x" + cells_yz;
             }
 
             C.saveperiod = 1;
@@ -90,38 +81,39 @@ namespace BoSSS.Application.IBM_Solver {
             C.Tags.Add("cells_yz " + cells_yz);
             C.Tags.Add("restart " + restart);
 
-            //// Create Fields
-
-
-            //if (restart)
-            //{
-            //    C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid(restartSession), -1);
-            //    C.GridGuid = new Guid(restartGrid);
-            //}
-            // Load Grid
             if (!restart) {
 
                 if (load_Grid == true) {
                     Console.WriteLine("...loading grid");
                     C.GridGuid = new Guid(_GridGuid);
                 } else {
-                    #region Creates grid () and sets BC
                     //// Create Grid
                     Console.WriteLine("...generating grid");
                     C.GridFunc = delegate {
 
                         // x-direction
                         var _xNodes = GenericBlas.Linspace(0, 3, cells_x + 1);
-
+                        //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                         // y-direction
                         var _yNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
-
                         // z-direction
                         var _zNodes = GenericBlas.Linspace(-0.5, 0.5, cells_yz + 1);
 
-                        // Cut Out
-                        var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, false, false);
 
+                        GridCommons grd;
+                        switch (SpaceDim) {
+                            case 2:
+                                grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+                                break;
+
+                            case 3:
+                                grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, CellType.Cube_Linear, false, false, false);
+                                break;
+
+                            default:
+                                throw new ArgumentOutOfRangeException();
+                        }
+                       
                         grd.EdgeTagNames.Add(1, "Velocity_inlet");
                         grd.EdgeTagNames.Add(2, "Wall");
                         grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -130,7 +122,6 @@ namespace BoSSS.Application.IBM_Solver {
                             var X = _X;
                             double x = X[0];
                             double y = X[1];
-                            double z = X[2];
 
                             if (Math.Abs(x - (0)) < 1.0e-6)
                                 // inlet
@@ -147,222 +138,117 @@ namespace BoSSS.Application.IBM_Solver {
                             if (Math.Abs(y - (0.5)) < 1.0e-6)
                                 // right
                                 return 2;
+                            if (SpaceDim == 3) {
+                                double z = X[2];
+                                if (Math.Abs(z - (-0.5)) < 1.0e-6)
+                                    // top
+                                    return 2;
 
-                            if (Math.Abs(z - (-0.5)) < 1.0e-6)
-                                // top
-                                return 2;
-
-                            if (Math.Abs(z - (0.5)) < 1.0e-6)
-                                // bottom
-                                return 2;
-
+                                if (Math.Abs(z - (0.5)) < 1.0e-6)
+                                    // bottom
+                                    return 2;
+                            }
                             throw new ArgumentOutOfRangeException();
                         });
 
                         return grd;
+                        
                     };
                 }
-                #endregion
+                
 
-                //// Create Grid with HANGING NODES
-                //Console.WriteLine("...generating grid");
-                //C.GridFunc = delegate {
-
-                //    // Box1
-                //    var box1_p1 = new double[3] { -10, -10, -10 };
-                //    var box1_p2 = new double[3] { 30, 10, 10 };
-                //    var box1 = new GridCommons.GridBox(box1_p1, box1_p2,10,5,5);
-
-                //    // Box2
-                //    var box2_p1 = new double[3] { 0, -5, -5 };
-                //    var box2_p2 = new double[3] { 20, 5, 5 };
-                //    var box2 = new GridCommons.GridBox(box2_p1, box2_p2, 10, 6, 6);
-
-                //    // Cut Out
-                //    var grd = Grid3D.HangingNodes3D(false, true, true, box1, box2);
-
-                //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
-                //    grd.EdgeTagNames.Add(3, "Wall");
-
-                //    grd.DefineEdgeTags(delegate (double[] _X) {
-                //        var X = _X;
-                //        double x = X[0];
-                //        double y = X[1];
-                //        double z = X[2];
-
-                //        if (Math.Abs(x - (-10)) < 1.0e-6)
-                //            // inlet
-                //            return 1;
-
-                //        if (Math.Abs(x - (30)) < 1.0e-6)
-                //            // outlet
-                //            return 2;
-
-                //        if (Math.Abs(y - (-10)) < 1.0e-6)
-                //            // left
-                //            return 1;
-
-                //        if (Math.Abs(y - (10)) < 1.0e-6)
-                //            // right
-                //            return 1;
-
-                //        if (Math.Abs(z - (-10)) < 1.0e-6)
-                //            // top left
-                //            return 1;
-
-                //        if (Math.Abs(z - (10)) < 1.0e-6)
-                //            // top right
-                //            return 1;
-
-                //        throw new ArgumentOutOfRangeException();
-                //    });
-
-                //    Console.WriteLine("Cells:    {0}", grd.NumberOfCells);
-
-                //    return grd;
-                //};
-
-                #region Creates grid (17710 Cells) and sets BC
-                //// Create Grid
-                //Console.WriteLine("...generating grid");
-                //C.GridFunc = delegate {
-
-                //    // x-direction
-                //    var _xNodes1 = Grid1D.ExponentialSpaceing(-9.5, -3, 11, 0.98);
-                //    _xNodes1 = _xNodes1.GetSubVector(0, (_xNodes1.Length - 1));
-                //    var _xNodes2 = Grid1D.ExponentialSpaceing(-3, -1, 9, 0.95);
-                //    _xNodes2 = _xNodes2.GetSubVector(0, (_xNodes2.Length - 1));
-                //    var _xNodes3 = Grid1D.ExponentialSpaceing(-1, 0, 8, 1);
-                //    _xNodes3 = _xNodes3.GetSubVector(0, (_xNodes3.Length - 1));
-                //    var _xNodes4 = Grid1D.ExponentialSpaceing(0, 2, 9, 1.05);
-                //    _xNodes4 = _xNodes4.GetSubVector(0, (_xNodes4.Length - 1));
-                //    var _xNodes5 = Grid1D.ExponentialSpaceing(2, 8.5, 16, 1.02);
-                //    _xNodes5 = _xNodes5.GetSubVector(0, (_xNodes5.Length - 1));
-                //    var _xNodes6 = Grid1D.ExponentialSpaceing(8.5, 12.5, 5, 1);
-
-                //    var _xNodes = ArrayTools.Cat(_xNodes1, _xNodes2, _xNodes3, _xNodes4, _xNodes5, _xNodes6);
-
-                //    // y-direction
-                //    var _yNodes1 = Grid1D.ExponentialSpaceing(-9, -2.5, 8, 0.91);
-                //    _yNodes1 = _yNodes1.GetSubVector(0, (_yNodes1.Length - 1));
-                //    var _yNodes2 = Grid1D.ExponentialSpaceing(-2.5, -0.5, 8, 0.95);
-                //    _yNodes2 = _yNodes2.GetSubVector(0, (_yNodes2.Length - 1));
-                //    var _yNodes3 = Grid1D.ExponentialSpaceing(-0.5, 0.5, 8, 1.0);
-                //    _yNodes3 = _yNodes3.GetSubVector(0, (_yNodes3.Length - 1));
-                //    var _yNodes4 = Grid1D.ExponentialSpaceing(0.5, 2.5, 8, 1.05);
-                //    _yNodes4 = _yNodes4.GetSubVector(0, (_yNodes4.Length - 1));
-                //    var _yNodes5 = Grid1D.ExponentialSpaceing(2.5, 9, 8, 1.1);
-
-                //    var _yNodes = ArrayTools.Cat(_yNodes1, _yNodes2, _yNodes3, _yNodes4, _yNodes5);
-
-                //    // z-direction
-                //    var _zNodes = GenericBlas.Linspace(-3, 3, 11);
-
-                //    // Cut Out
-                //    double[] CutOutPoint1 = new double[3];
-                //    CutOutPoint1[0] = -1;
-                //    CutOutPoint1[1] = -0.5;
-                //    CutOutPoint1[2] = -3;
-
-                //    double[] CutOutPoint2 = new double[3];
-                //    CutOutPoint2[0] = 0;
-                //    CutOutPoint2[1] = 0.5;
-                //    CutOutPoint2[2] = 3;
-
-                //    var CutOut = new BoundingBox(3);
-                //    CutOut.AddPoint(CutOutPoint1);
-                //    CutOut.AddPoint(CutOutPoint2);
-
-                //    var grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, false, false, true, CellType.Cube_Linear, CutOut);
-
-                //    grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                //    grd.EdgeTagNames.Add(2, "Pressure_Outlet");
-                //    grd.EdgeTagNames.Add(3, "Wall");
-
-                //    grd.DefineEdgeTags(delegate(double[] _X) {
-                //        var X = _X;
-                //        double x = X[0];
-                //        double y = X[1];
-                //        double z = X[2];
-
-                //        if (Math.Abs(x - (-9.5)) < 1.0e-6)
-                //            // inlet
-                //            return 1;
-
-                //        if (Math.Abs(x - (12.5)) < 1.0e-6)
-                //            // outlet
-                //            return 2;
-
-                //        if (Math.Abs(z - (-3)) < 1.0e-6)
-                //            // left
-                //            return 2;
-
-                //        if (Math.Abs(z - (3)) < 1.0e-6)
-                //            // right
-                //            return 2;
-
-                //        if (Math.Abs(x - (-1)) < 1.0e-6)
-                //            // Cube front
-                //            return 3;
-
-                //        if (Math.Abs(x - (0)) < 1.0e-6)
-                //            // cube back
-                //            return 3;
-
-                //        if (Math.Abs(y - (-0.5)) < 1.0e-6)
-                //            // cube left
-                //            return 3;
-
-                //        if (Math.Abs(y - (0.5)) < 1.0e-6)
-                //            // cube right
-                //            return 3;
-
-                //        throw new ArgumentOutOfRangeException();
-                //    });
-
-                //    return grd;
-                //};
-                #endregion
+                
 
                 // Set Initial Conditions
                 C.InitialValues_Evaluators.Add("VelocityX", X => 0);
                 C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-                C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
+                if(SpaceDim==3)
+                    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
                 C.InitialValues_Evaluators.Add("Pressure", X => 0);
 
-                if (only_channel) {
+                // Phi (X,t): p-norm cube with forced rotation
+
+                Func<double[],double,double> PhiFunc = delegate (double[] X, double t) {
+                
+                    int power = 10;
+                    double anglev = 1;
+                    double angle = (anglev * t) % (2 * Math.PI);
+                        double[] pos;
+
+                    switch (SpaceDim) {
+                        case 2:
+                            pos = new double[] { 1, 0 };
+                            return -Math.Pow(((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)), power)
+                        - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                        + Math.Pow(C.particleRadius, power);
+                    
+                        case 3:
+                            pos = new double[] { 1, 0 , 0};
+                            return -Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                        - Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                        - Math.Pow(X[2] - pos[2],power) + Math.Pow(C.particleRadius, power);
+                        default:
+                            throw new NotImplementedException();
+                    }
+                };
+
+
+
+            if (only_channel) {
                     C.InitialValues_Evaluators.Add("Phi", X => -1);
                 } else {
-                    C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]).Pow2() + -(X[1]).Pow2() + -(X[2]).Pow2() + C.particleRadius.Pow2());
+                    C.InitialValues_Evaluators.Add("Phi", X => PhiFunc(X, 0.0));
+                    C.ForcedPhi = PhiFunc;
+                    //C.InitialValues_Evaluators.Add("Phi", X => -(X[0]) + -(X[1]) + -(X[2]) + C.particleRadius);
                 }
-
             }
-            Console.WriteLine("...starting calculation of Sphere3D");
+
+            // Some Info Output
+            switch (SpaceDim) {
+                case 2:
+                    Console.WriteLine("...starting calculation of Cube2D");
+                    break;
+                case 3:
+                    Console.WriteLine("...starting calculation of Cube3D");
+                    break;
+            }
+            
 
             // Initial Solution
 
             // Physical values
-            C.particleRadius = 0.1;
+            C.particleRadius = 0.15;
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.0001 / 1;
 
             // Boundary conditions
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => 100 - 400 * (X[2] * X[2]) - 400 * (X[1] * X[1]));
+
+            double Vmax = 1000;
+            
             C.AddBoundaryValue("Velocity_inlet", "VelocityY", (X, t) => 0);
-            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+            if (SpaceDim == 3) {
+                C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (X, t) => 0);
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1- 4 * (X[2] * X[2]) - 4 * (X[1] * X[1])));
+            } else {
+                C.AddBoundaryValue("Velocity_inlet", "VelocityX", (X, t) => Vmax*(1 - 4 * (X[1] * X[1])));
+            }
+
+               
             C.AddBoundaryValue("Wall");
             C.AddBoundaryValue("Pressure_Outlet");
 
+            C.OperatorMatrixAnalysis = false;
 
             // misc. solver options
             // ====================
             C.PhysicalParameters.IncludeConvection = false;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LevelSetSmoothing = false;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.LevelSetSmoothing = true;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 200;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
@@ -371,6 +257,9 @@ namespace BoSSS.Application.IBM_Solver {
             C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.ConvergenceCriterion = 1E-10;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.AdaptiveMeshRefinement = true;
+
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
             // Timestepping
             // ============

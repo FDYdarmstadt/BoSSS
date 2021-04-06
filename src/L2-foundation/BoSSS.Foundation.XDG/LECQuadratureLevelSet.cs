@@ -57,9 +57,33 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// index of the level set to evaluate
         /// </summary>
-        int m_LevSetIdx;
+        internal int m_LevSetIdx {
+            get;
+            private set;
+        }
 
+        
+        /// <summary>
+        /// les tracker
+        /// </summary>
         LevelSetTracker m_lsTrk;
+
+        /// <summary>
+        /// index into <see cref="LevelSetTracker.RegionsHistory"/>, etc.
+        /// </summary>
+        int m_LsTrkHistoryIndex;
+
+        /*
+        /// <summary>
+        /// Normals, etc.
+        /// </summary>
+        LevelSetTracker.LevelSetData m_lsData;
+
+        /// <summary>
+        /// cut-cell masks, etc.
+        /// </summary>
+        LevelSetTracker.LevelSetRegions m_lsRegions;
+        */
 
         /// <summary>
         /// Negative and positive (with respect to level-set) species.
@@ -94,7 +118,7 @@ namespace BoSSS.Foundation.XDG {
                                      XSpatialOperatorMk2 DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
-                                     LevelSetTracker lsTrk, int _iLevSet, 
+                                     LevelSetTracker lsTrk, int _iLevSet, int TrackerHistoryIndex,
                                      Tuple<SpeciesId,SpeciesId> SpeciesPair,
                                      //Tuple<CoefficientSet,CoefficientSet> NegPosCoeff,
                                      ICompositeQuadRule<QuadRule> domAndRule) //
@@ -121,6 +145,7 @@ namespace BoSSS.Foundation.XDG {
 
             int Gamma = m_RowMap.BasisS.Count;
             m_lsTrk = lsTrk;
+            m_LsTrkHistoryIndex = TrackerHistoryIndex;
 
             if (Matrix != null && (Matrix.RowPartitioning.LocalLength != RowMap.LocalLength))
                 throw new ArgumentException("mismatch between matrix number of rows and row mapping.");
@@ -165,7 +190,7 @@ namespace BoSSS.Foundation.XDG {
             //ColXbSw = m_ColMap.XorNonXbasis().Select(b => b ? 1 : 0).ToArray();
 
 
-            TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, SpeciesA, SpeciesB, m_LevSetIdx);
+            TestNegativeAndPositiveSpecies(domAndRule, m_lsTrk, m_LsTrkHistoryIndex, SpeciesA, SpeciesB, m_LevSetIdx);
 
             // ------------------------
             // sort equation components
@@ -422,7 +447,7 @@ namespace BoSSS.Foundation.XDG {
             int GAMMA = m_RowMap.BasisS.Count;  // GAMMA: number of codom variables
 
 
-            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
+            TestNegativeAndPositiveSpecies(i0, Len, m_lsTrk, m_LsTrkHistoryIndex, this.SpeciesA, this.SpeciesB,  this.m_LevSetIdx);
 
 
 
@@ -452,8 +477,7 @@ namespace BoSSS.Foundation.XDG {
 
             // Evaluate level sets and normals
             // -------------------------------
-            var NoOfLevSets = m_lsTrk.LevelSets.Count;
-            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx].Current.GetLevelSetNormals(QuadNodes, i0, Len);
+            MultidimensionalArray Normals = m_lsTrk.DataHistories[m_LevSetIdx][m_LsTrkHistoryIndex].GetLevelSetNormals(QuadNodes, i0, Len);
             base.CustomTimers[3].Stop();
 
             // Evaluate basis and test functions
@@ -535,6 +559,7 @@ namespace BoSSS.Foundation.XDG {
                 // set Nodes Global
                 _inParams.Nodes = NodesGlobal;
                 _inParams.time = this.time;
+                _inParams.GridDat = this.GridDat;
 
                 Debug.Assert(i0 == _inParams.e0);
                 Debug.Assert(Len == _inParams.Len);
@@ -640,6 +665,9 @@ namespace BoSSS.Foundation.XDG {
                 else
                     N = 0;
 
+                if(N <= 0)
+                    continue; // nothing to do for codomain/row variable 'gamma'
+
                 base.CustomTimers[2].Start();
 
                 // loop over domain variables/basis variables ...
@@ -655,13 +683,16 @@ namespace BoSSS.Foundation.XDG {
                     else
                         M = 0;
 
-                    Debug.Assert(NnonxDom[delta] == M);
                     Debug.Assert(NnonxCod[gamma] == N);
 
                     // Das Schleifenmonster: ---------------------------------------------
                     for (int cr = 0; cr < 2; cr++) {  // loop over neg/pos species, row...
                         for (int cc = 0; cc < 2; cc++) {  // loop over neg/pos species, column...
 
+                            if(M <= 0)
+                                continue; // nothing to do for domain/column variable 'delta'
+                            Debug.Assert(NnonxDom[delta] == M);
+                                                        
                             int[] extr0 = new int[] { 0, 0, 
                                 cr * N + offsetCod[gamma], // row
                                 cc * M + 1 + offsetDom[delta] }; // col
@@ -685,7 +716,7 @@ namespace BoSSS.Foundation.XDG {
                                 SubRes.Multiply(1.0, Sum_Koeff_UxNablaV_CrCc, BasisVal, TestGradVal, 1.0, "jknm", "jkd", "jkm", "jknd");
                             }
                             if (Sum_Koeff_NablaUxNablaV[gamma, delta] != null) {
-                                var Sum_Koeff_NablaUxNablaV_CrCc = Sum_Koeff_NablaUxNablaV[gamma, delta].ExtractSubArrayShallow(-1, -1, delta, cr, cc, -1, -1);
+                                var Sum_Koeff_NablaUxNablaV_CrCc = Sum_Koeff_NablaUxNablaV[gamma, delta].ExtractSubArrayShallow(-1, -1, cr, cc, -1, -1);
                                 SubRes.Multiply(1.0, Sum_Koeff_NablaUxNablaV_CrCc, BasisGradVal, TestGradVal, 1.0, "jknm", "jkde", "jkmd", "jkne");
                             }
                         }
@@ -724,10 +755,10 @@ namespace BoSSS.Foundation.XDG {
         /// Test for the correct configuration of positive and negative species.
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
-        internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+        internal static void TestNegativeAndPositiveSpecies(ICompositeQuadRule<QuadRule> rule, LevelSetTracker lsTrk, int HistoryIndex, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
             foreach(var crp in rule) {
 
-                TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, spcNeg, spcPos, iLevSet);
+                TestNegativeAndPositiveSpecies(crp.Chunk.i0, crp.Chunk.Len, lsTrk, HistoryIndex, spcNeg, spcPos, iLevSet);
             }
         }
 
@@ -736,17 +767,18 @@ namespace BoSSS.Foundation.XDG {
         /// Test for the correct configuration of positive and negative species.
         /// Should be pretty quick, so we can do this also in Release.
         /// </summary>
-        internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
+        internal static void TestNegativeAndPositiveSpecies(int i0, int Len, LevelSetTracker lsTrk, int HistoryIndex, SpeciesId spcNeg, SpeciesId spcPos, int iLevSet) {
             //var negSignCodes = lsTrk.GetLevelSetSignCodes(spcNeg);
             //var posSignCodes = lsTrk.GetLevelSetSignCodes(spcPos);
 
+            var Regions = lsTrk.RegionsHistory[HistoryIndex];
 
             for(int j = i0; j < (i0 + Len); j++) {
-                lsTrk.Regions.GetSpeciesIndex(spcNeg, j);
-                lsTrk.Regions.GetSpeciesIndex(spcPos, j);
+                Regions.GetSpeciesIndex(spcNeg, j);
+                Regions.GetSpeciesIndex(spcPos, j);
 
                 //ushort RegionCode = m_lsTrk.Regions.m_LevSetRegions[j];
-                LevelsetCellSignCode csc = lsTrk.Regions.GetCellSignCode(j);
+                LevelsetCellSignCode csc = Regions.GetCellSignCode(j);
 
                 if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
                     throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
@@ -939,7 +971,6 @@ namespace BoSSS.Foundation.XDG {
             
 
             SpeciesId[] spcS = new[] { this.SpeciesA, this.SpeciesB };
-            var _regions = m_lsTrk.Regions;
 
             int[] _i0 = new int[3];// { int.MaxValue, 0, 1 };
             int[] _iE = new int[3];// { -1, Nmax - 1, _i0[2] + Mmax - 1 };
@@ -972,7 +1003,7 @@ namespace BoSSS.Foundation.XDG {
                     for(int cr = 0; cr < 2; cr++) { // loop over neg/pos species row...
                         SpeciesId rowSpc = spcS[cr];
                         int Row0 = m_RowMap.LocalUniqueCoordinateIndex(m_lsTrk, gamma, jCell, rowSpc, 0);
-                        int Row0_g = m_RowMap.i0 + Row0;
+                        long Row0_g = m_RowMap.i0 + Row0;
 
                         //_i0aff[1] = offsetRow[gamma] + RowXbSw[gamma] * RowNonxN[gamma] * cr; // the 'RowXbSw' is 0 for non-xdg, so both species will be added
                         _i0aff[1] = offsetRow[gamma] + RowNonxN[gamma] * cr;
@@ -987,7 +1018,7 @@ namespace BoSSS.Foundation.XDG {
                                 for(int cc = 0; cc < 2; cc++) {
                                     SpeciesId colSpc = spcS[cc];
                                     int Col0 = m_ColMap.LocalUniqueCoordinateIndex(m_lsTrk, delta, jCell, colSpc, 0);
-                                    int Col0_g = m_ColMap.i0 + Col0;
+                                    long Col0_g = m_ColMap.i0 + Col0;
 
                                     //_i0[2] = offsetCol[delta] + ColXbSw[delta] * ColNonxN[delta] * cc + 1;
                                     _i0[2] = offsetCol[delta] + ColNonxN[delta] * cc + 1;

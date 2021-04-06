@@ -40,7 +40,7 @@ namespace BoSSS.Solution.XheatCommon {
             string spcName, SpeciesId spcId, ThermalMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.HeatEquation;
@@ -90,16 +90,17 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 var Visc = new ConductivityInSpeciesBulk(
-                    dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                    penalty, // ntParams.UseGhostPenalties ? 0.0 : penalty, 
+                    1.0,
                     BcMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
 
                 comps.Add(Visc);
 
-                if (dntParams.UseGhostPenalties) {
-                    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, BcMap, D,
-                        spcName, spcId, thermParams.k_A, thermParams.k_B);
-                    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(ViscPenalty);
-                }
+                //if (dntParams.UseGhostPenalties) {
+                //    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, BcMap, D,
+                //        spcName, spcId, thermParams.k_A, thermParams.k_B);
+                //    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(ViscPenalty);
+                //}
 
             } else {
 
@@ -125,7 +126,7 @@ namespace BoSSS.Solution.XheatCommon {
             ThermalMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.HeatEquation;
@@ -160,15 +161,15 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-
-                ILevelSetForm conv;
-                conv = new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat);
-                //conv = new HeatConvectionAtLevelSet_WithEvaporation(D, LsTrk, LFFA, LFFB, thermParams, config.getPhysParams.Sigma);
+                Console.WriteLine("include heat convection");
+                //ILevelSetForm conv;
+                comps.Add(new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
+                //if (config.isMovingMesh)
+                //    comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
                 //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);
-
-                comps.Add(conv);
             }
 
+            //comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
 
             // viscous operator (laplace)
             // ==========================
@@ -179,8 +180,8 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 comps.Add(Visc);
 
-                var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
-                comps.Add(qJump);
+                //var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
+                //comps.Add(qJump);
 
             } else {
 

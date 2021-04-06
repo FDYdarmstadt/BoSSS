@@ -2,6 +2,7 @@
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -23,6 +24,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <summary>
         /// Easy-to-use driver routine
         /// </summary>
+        /// <param name="controls">
+        /// a set of control object over which the scaling is investigated
+        /// </param>
+        /// <param name="plotAndWait">
+        /// if true, an interactive Gnuplot session is opened
+        /// </param>
+        /// <param name="title">
+        /// Gnuplot title/output filename
+        /// </param>
         static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false, string title = "") {
             var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);
@@ -124,7 +134,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double>>();
 
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.2));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.35));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5));
@@ -237,20 +247,29 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             tw.WriteLine("Condition Number Scaling Test slopes:");
 
+            IDictionary<string, IEnumerable<double>> testData = new Dictionary<string, IEnumerable<double>>();
+
             foreach (var ttt in ExpectedSlopes) {
                 double[] xVals = data[ttt.Item1.ToString()];
                 string[] allYNames = data.Keys.Where(name => ttt.Item2.WildcardMatch(name)).ToArray();
 
+                if (!testData.ContainsKey(ttt.Item1.ToString())) 
+                    testData.Add(ttt.Item1.ToString(), xVals);
+
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
                     double Slope = LogLogRegression(xVals, yVals);
+
+                    testData.Add(yName, yVals);
 
                     string tstPasses = Slope <= ttt.Item3 ? "passed" : $"FAILED (threshold is {ttt.Item3})";
                     tw.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
 
-           
+            //CSVFile.SaveToCSVFile<IEnumerable<double>, double>(testData, "ConditionNumberScalingTest_dataSet.txt");
+            Console.WriteLine("warning no output-file - ToDo");
+
         }
 
 

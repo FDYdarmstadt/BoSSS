@@ -1,0 +1,399 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 6 instances of IDatabaseInfo {
+  0: { Session Count = 145; Grid Count = 23156; Path = \\hpccluster\hpccluster-scratch\smuda\CapillaryRise_studyDB }
+  1: { Session Count = 175; Grid Count = 253; Path = D:\local\local_test_db }
+  2: { Session Count = 79; Grid Count = 777; Path = \\hpccluster\hpccluster-scratch\smuda\XNSFE_testDB }
+  3: { Session Count = 483; Grid Count = 12423; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  4: { Session Count = 156; Grid Count = 151; Path = D:\local\local_XNSE_StudyDB }
+  5: { Session Count = 67; Grid Count = 301; Path = \\terminal03\Users\smuda\local\terminal03_XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+//var myDb = OpenOrCreateDefaultDatabase();
+var myDb = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\smuda\XNSE_studyDB")
+**************
+==============
+ExecutionQueues;
+**************
+List of 3 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @D:\local\binaries
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\smuda\binaries
+  2: MiniBatchProcessor client @\\hpccluster\hpccluster-scratch\smuda\binaries
+}
+==============
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\smuda\binaries", "hpccluster");
+var myBatch = ExecutionQueues[1];
+**************
+==============
+//var myDb = ExecutionQueues[1].AllowedDatabases[0];
+**************
+==============
+**************
+==============
+WorkflowMgm.Init("CapillaryWave");   // set project name
+**************
+Project name is set to 'CapillaryWave'.
+
+==============
+//WorkflowMgm.Sessions.Pick(1).OpenSessionDirectory()
+**************
+==============
+//databases.Pick(3).Sessions.Pick(0).Delete()
+**************
+==============
+// ===========================
+// Grids for Convergence Study
+// ===========================
+**************
+==============
+var GridSeq = new IGridInfo[3];
+int[] kelemSeq = new int[]{ 8, 16, 32, 64 };
+**************
+==============
+double L = 1;    // equals lambda
+**************
+==============
+for(int iGrid = 0; iGrid < GridSeq.Length; iGrid++) {
+    
+    int kelem = kelemSeq[iGrid];
+    
+    GridCommons grd;
+
+    if(iGrid <= 2) {
+        double[] xNodes = GenericBlas.Linspace(0, L, kelem + 1);
+        double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, (3.0/2.0)*L, (3 * kelem) * 1); 
+        grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+    } else {
+        double[] xNodes = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        double[] yNodes = GenericBlas.Linspace(-(3.0/2.0)*L, -(1.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_lower = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        xNodes        = GenericBlas.Linspace(0, L, (kelem/2) + 1);
+        yNodes        = GenericBlas.Linspace((1.0/2.0)*L, (3.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_upper = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        xNodes         = GenericBlas.Linspace(0, L, kelem + 1);
+        yNodes         = GenericBlas.Linspace(-(1.0/2.0)*L, (1.0/2.0)*L, (1 * kelem) * 1); 
+        var grd_center = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: true);
+        
+        var grdMrgd = GridCommons.MergeLogically(new GridCommons[] {grd_lower, grd_center, grd_upper});
+        grd         = GridCommons.Seal(grdMrgd, 4);
+    }   
+
+
+    grd.EdgeTagNames.Add(1, "wall");
+ 
+    grd.DefineEdgeTags(delegate (double[] X) {
+        byte et = 0;
+        if (Math.Abs(X[1] + (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        if (Math.Abs(X[1] - (3.0/2.0)*L) <= 1.0e-8)
+            et = 1;
+        return et;
+    });
+
+    grd.Name = "CapillaryWave_studyMesh"+kelem;
+    myDb.SaveGrid(ref grd);
+    
+    GridSeq[iGrid] = grd;
+}
+**************
+Grid Edge Tags changed.
+An equivalent grid (052b658a-8c52-4239-9c05-e7e3c3bc8c35) is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (ba7ff02e-2525-46e7-8bfc-807b5ebeda2a) is already present in the database -- the grid will not be saved.
+Grid Edge Tags changed.
+An equivalent grid (4aa84e5e-dc52-42e5-bd84-98bebba6f277) is already present in the database -- the grid will not be saved.
+
+==============
+**************
+==============
+// ======================
+// Create Control objects
+// ======================
+**************
+==============
+using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
+**************
+==============
+int[] degS = new int[] { 2, 3 };
+**************
+==============
+**************
+==============
+// physical parameter setups
+
+double rho;               
+double mu;
+double sigma;
+
+double[,] dts;
+double t_end;
+bool dt_fixed = true;    // smallest timestep is chosen for convergence study
+ 
+int setup = 0;
+switch(setup) {
+    case 0: {
+        // Capillary wave: Laplace number La = 3e5: 
+        rho   = 1e-3;
+        mu    = 1e-5;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 1: {
+        // Capillary wave: Laplace number La = 3000: 
+        rho   = 1e-3;
+        mu    = 1e-4;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 2: {
+        // Capillary wave: Laplace number La = 120: 
+        rho   = 1e-3;
+        mu    = 5e-4;
+        sigma = 3e-2;
+        dts   = new double[,] {{8e-4, 3e-4, 1e-4, 4e-5}, {5e-4, 2e-4, 7e-5, 2e-5}};
+        t_end = 0.4;
+        break;
+    }
+    case 3: {
+        // Capillary wave: Laplace number La = 3: 
+        rho   = 1e-3;
+        mu    = 1e-3;
+        sigma = 3e-3;
+        dts   = new double[,] {{2e-3, 1e-3, 3e-4, 2e-4}, {1e-3, 6e-4, 2e-4, 8e-5}};
+        t_end = 1.3;
+        break;
+    }
+}
+**************
+==============
+string restartStudyName = "_Setup0_convStudy_k3";
+List<ISessionInfo> restartStudySess = new List<ISessionInfo>();
+foreach(var sess in WorkflowMgm.Sessions) {
+    if(sess.Name.Contains(restartStudyName)) {
+        if(!Convert.ToBoolean(sess.SuccessfulTermination))
+            restartStudySess.Add(sess);  
+    }        
+}
+restartStudySess
+**************
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+List of 2 instances of ISessionInfo {
+  0: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh3*	04/18/2020 13:26:29	d3a3171d...
+  1: CapillaryWave	CapillaryWave_Setup0_convStudy_k3_mesh2*	04/18/2020 13:26:07	7f9130d3...
+}
+==============
+bool restart = true;
+Guid[] restartID = new Guid[3];
+//restartID[1] = restartStudySess.ElementAt(2).ID;
+restartID[2] = restartStudySess.ElementAt(1).ID;
+//restartID[3] = restartStudySess.ElementAt(0).ID;
+restartID
+**************
+List of 3 instances of Guid {
+  0: 00000000-0000-0000-0000-000000000000
+  1: 00000000-0000-0000-0000-000000000000
+  2: 7f9130d3-eaab-4ac2-9844-fd91be6f1edf
+}
+==============
+int deg0 = 1;
+int grd0 = 2;
+//XNSE_Control[,] controls = new XNSE_Control[degS.Length - deg0, GridSeq.Length - grd0];
+List<XNSE_Control> controls = new List<XNSE_Control>();
+**************
+==============
+for(int iDeg = deg0; iDeg < degS.Length; iDeg++) {
+for(int iGrd = grd0; iGrd < GridSeq.Length; iGrd++) {
+    
+    var C    = CapillaryWave.CW_forWorksheet();
+    
+    int pDeg = degS[iDeg];   
+    var grd  = GridSeq[iGrd];
+
+    C.SetDGdegree(pDeg);
+    
+    C.SetGrid(grd);
+    C.AddBoundaryValue("wall");
+    
+    string L_str  = L.ToString();
+    double A0     = L/100;
+    string A0_str = A0.ToString();
+    if(restart) {
+        if(restartID[iGrd] == Guid.Empty)
+            continue;
+        else
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(restartID[iGrd], null);
+    } else {
+        C.AddInitialValue("Phi", "X => X[1] - "+A0_str+" * Math.Sin(X[0] * 2.0 * Math.PI / "+L_str+")", false);
+    }
+    
+    double[] param = new double[4];
+    param[0] = 1;        // wavenumber;
+    param[1] = L;        // wavelength
+    param[2] = A0;       // initial disturbance
+    param[3] = 0.0;      // y-gravity
+    C.AdditionalParameters = param;
+
+    C.PhysicalParameters.rho_A = rho;
+    C.PhysicalParameters.rho_B = rho;
+    C.PhysicalParameters.mu_A  = mu;
+    C.PhysicalParameters.mu_B  = mu;
+    C.PhysicalParameters.Sigma = sigma;
+    
+    double dt       = (dt_fixed) ? dts[iDeg, GridSeq.Length-1] : dts[iDeg, iGrd];
+    C.dtMin         = dt;
+    C.dtMax         = dt;
+    C.NoOfTimesteps = (int)(t_end/dt); 
+    
+    C.saveperiod = 10;
+    C.LogPeriod  = 10;
+    
+    C.SessionName = "CapillaryWave_Setup"+setup+"_convStudy_k" + pDeg + "_mesh" + iGrd + "_restart";
+    
+    //controls[iDeg-deg0,iGrd-grd0] = C;
+    controls.Add(C);
+    C.CreateJob(); // job will be permanently linked to control object
+}
+}
+**************
+Info: setting database path to: \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB
+
+==============
+//Info(controls[0,0]);
+controls.ElementAt(0).SessionName
+**************
+CapillaryWave_Setup0_convStudy_k3_mesh2_restart
+==============
+//var j00 = controls[0,0].GetJob();
+**************
+==============
+//j00.Activate(myBatch);
+**************
+==============
+//j00.Status;
+**************
+==============
+//j00.Stdout;
+**************
+==============
+//j00.Stderr;
+**************
+==============
+foreach(var cntrl in controls) {
+    Console.WriteLine("Submitting Session: {0}", cntrl.SessionName);
+    var job = cntrl.GetJob();
+    job.Activate(myBatch);
+}
+**************
+Submitting Session: CapillaryWave_Setup0_convStudy_k3_mesh2_restart
+Microsoft.Hpc.Scheduler.Properties.SchedulerException occurred: The specified Job ID is not valid. Check your Job ID and try again.. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection.
+Parameter name: index
+   at System.ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument argument, ExceptionResource resource)
+   at System.Collections.Generic.List`1.get_Item(Int32 index)
+   at System.Linq.Enumerable.ElementAt[TSource](IEnumerable`1 source, Int32 index)
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in D:\BoSSS-experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 353
+==============
+//WorkflowMgm.AllJobs.ElementAt(0).Value.Activate(myBatch)
+**************
+System.Collections.Generic.KeyNotFoundException occurred: The given key was not present in the dictionary.. Type 'LastError' for details.
+
+==============
+GridSeq
+**************
+List of 1 instances of IGridInfo {
+  0: { Guid = 052b658a-8c52-4239-9c05-e7e3c3bc8c35; Name = CapillaryWave_studyMesh8; Cell Count = 184; Dim = 2 }
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+//databases.Pick(3).Sessions
+**************
+==============
+**************
+==============
+//databases.Pick(2).Sessions.Pick(0).Delete()
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

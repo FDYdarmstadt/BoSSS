@@ -29,6 +29,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using System.Collections.ObjectModel;
+using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -319,13 +320,13 @@ namespace BoSSS.Foundation.XDG {
         ///  - 2nd index: <em>SIGN</em>: <see cref="LevelsetCellSignCode.lsSig"/>;
         /// Content: true, if species with given <em>ID</em> is contained in a cell with level set sign code <em>SIGN</em>;
         /// </summary>
-        bool[][] m_GhostTable;
+        bool[,] m_GhostTable;
 
         /// <summary>
         /// initializes <see cref="m_GhostTable"/>
         /// </summary>
         void ComputeGhostTable() {
-            m_GhostTable = new bool[this.m_SpeciesNames.Count][];
+            m_GhostTable = new bool[this.m_SpeciesNames.Count,81];
             int NoOfLevSets = this.NoOfLevelSets;
 
             foreach (String specNmn in this.m_SpeciesNames) {
@@ -333,7 +334,6 @@ namespace BoSSS.Foundation.XDG {
                 LevelSetSignCode[] speciesCodes = GetLevelSetSignCodes(specNmn);
 
                 bool[] Table = new bool[81];
-                m_GhostTable[specId.cntnt - ___SpeciesIDOffest] = Table;
 
                 LevelsetCellSignCode cd;
                 for (cd.lsSig = 0; cd.lsSig < 81; cd.lsSig++) {
@@ -343,6 +343,7 @@ namespace BoSSS.Foundation.XDG {
                             Table[cd.lsSig] = true;
                     }
                 }
+                m_GhostTable.SetRow(specId.cntnt - ___SpeciesIDOffest, Table);
             }
         }
 
@@ -361,7 +362,7 @@ namespace BoSSS.Foundation.XDG {
         /// for the species;
         /// </returns>
         public bool ContainesSpecies(SpeciesId id, LevelsetCellSignCode cd) {
-            return m_GhostTable[id.cntnt - ___SpeciesIDOffest][cd.lsSig];
+            return m_GhostTable[id.cntnt - ___SpeciesIDOffest, cd.lsSig];
         }
 
 
@@ -581,13 +582,13 @@ namespace BoSSS.Foundation.XDG {
         Array m_SpeciesTable;
 
         /// <summary>
-        /// Gets a copy of the species table, a multidimensional string-array.<br/>
+        /// Gets a copy of the species table, a multidimensional string-array.
+        /// 
         /// The species table defines, which species corresponds with 
         /// which combination of level set - signs.
         /// </summary>
         /// <remarks>
-        /// The rank (number of dimensions) of this array is equal to the number of 
-        /// level-sets (<see cref="LevelSets"/>).
+        /// The rank (number of dimensions) of this array is equal to the number of level-sets (<see cref="LevelSets"/>).
         /// Valid indices are only 0 and 1, 0 corresponds to a negative sign an 1 to the positive sign.
         /// E.g. if there are two level sets <em>G</em><sub>1</sub> and <em>G</em><sub>1</sub>
         /// and for some point in space, their sign is -1 and 1, than the species 
@@ -1098,15 +1099,97 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// index: reference element index
+        /// Node-set for determination of cut-cells.
+        /// - index: reference element index
         /// </summary>
+        /// <remarks>
+        /// Structured as follows:
+        /// - a set of quadrature nodes on each face
+        /// - nodes slightly exterior to the cell
+        /// </remarks>
         NodeSet[] TestNodes;
 
         /// <summary>
-        /// 1st index: reference element index, correlates with 1st index of <see cref="TestNodes"/><br/>
-        /// 2nd index: face index
+        /// Quadrature weights 
+        /// - index: reference element index, correlates with 1st index of <see cref="TestNodes"/>
+        /// </summary>
+        MultidimensionalArray[] TestNodes_QuadWeights;
+
+        /// <summary>
+        /// Fore each node set in <see cref="TestNodes"/>, their correlation to the element faces
+        /// - 1st index: reference element index, correlates with 1st index of <see cref="TestNodes"/>
+        /// - 2nd index: face index
         /// </summary>
         int[][] TestNodesPerFace;
+
+
+        private void DefineTestNodes() {
+            int D = this.GridDat.SpatialDimension;
+            var Krefs = m_gDat.Grid.RefElements;
+            int MaxLsDegree = this.LevelSets.Select(LevSet => (LevSet is DGField dgLS ? dgLS.Basis.Degree : 2)).Max();
+
+            if(TestNodes == null) { // only the first time in app lifetime ...
+                TestNodes = new NodeSet[Krefs.Length];
+                TestNodesPerFace = new int[Krefs.Length][];
+                TestNodes_QuadWeights = new MultidimensionalArray[Krefs.Length];
+
+                for(int iKref = 0; iKref < Krefs.Length; iKref++) {
+                    var Kref = Krefs[iKref];
+                    int myD = Math.Max(GridDat.Grid.GetRefElement(0).FaceRefElement.SpatialDimension, 1);
+                    int NoOfFaces = Kref.NoOfFaces;
+                    TestNodesPerFace[iKref] = new int[NoOfFaces];
+                    
+                    // transformation from face to reference element
+                    int TransformFaceNodes(double scaling, int iFace, MultidimensionalArray FaceNodesIn, MultidimensionalArray TstVtxOut, int OffsetIntoTestVtx) {
+                        int NN = FaceNodesIn.GetLength(0);
+                        var Res = TstVtxOut.ExtractSubArrayShallow(
+                                        new int[] { OffsetIntoTestVtx, 0 },
+                                        new int[] { OffsetIntoTestVtx + NN - 1, D - 1 });
+
+                        Kref.GetFaceTrafo(iFace).Transform(FaceNodesIn, Res);
+
+                        Res.Scale(scaling);
+                        return NN;
+                    }
+
+                    // various sets on faces
+                    QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2); // brute-force rule on face
+                    NodeSet corners = Kref.FaceRefElement.Vertices;
+                    QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
+                    TestNodes_QuadWeights[iKref] = GaussRule.Weights;
+
+                    // allocate memory form test node set 
+                    int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
+                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes * Kref.NoOfFaces, D);
+                    int offset = 0;
+
+
+                    // step 1: place gauss rules on edges
+                    // ----------------------------------
+                    for(int iFace = 0; iFace < NoOfFaces; iFace++) {
+                        int NN = TransformFaceNodes(1.0, iFace, GaussRule.Nodes, TstVtx, offset);
+                        TestNodesPerFace[iKref][iFace] = NN;
+                        offset += NN;
+                    }
+                                       
+                    
+                    // step 2: Place knots slightly outside the perimeter of the element
+                    // ----------------------------------
+                    for(int iFace = 0; iFace < NoOfFaces; iFace++) {
+                        offset += TransformFaceNodes(1.005, iFace, corners, TstVtx, offset);
+                        offset += TransformFaceNodes(1.005, iFace, BruteRule.Nodes, TstVtx, offset);
+                    }
+
+                    // record the newly created node set
+                    // ---------------------------------
+                    TstVtx.LockForever();
+                    TestNodes[iKref] = TstVtx;
+                }
+            }
+        }
+
+
+
 
         /// <summary>
         /// a counter that is increased every time when <see cref="UpdateTracker()"/>
@@ -1200,13 +1283,24 @@ namespace BoSSS.Foundation.XDG {
         /// Can be used as input for <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], int)"/> or <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], ushort[], int)"/>.
         /// - 1st item: clone of the level-set fields, <see cref="m_LevelSetHistories"/>
         /// - 2nd item: region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
-        /// - 3rd item: level-set version index, <see cref="LevelSetRegions.Version"/>
-        /// - 4th item: associated physical time, <see cref="LevelSetRegions.Time"/>
+        /// - 3rd item: <see cref="LevelSetRegions.m_LevSetCoincidingFaces"/>
+        /// - 4th item: level-set version index, <see cref="LevelSetRegions.Version"/>
+        /// - 5th item: associated physical time, <see cref="LevelSetRegions.Time"/>
         /// </returns>
-        public (LevelSet[] LevelSets, ushort[] Regions, int Version, double time) BackupTimeLevel(int iHistory) {
+        public (LevelSet[] LevelSets, ushort[] Regions, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int Version, double time) BackupTimeLevel(int iHistory) {
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
+            
             ushort[] RegionClone = new ushort[Jup];
             Array.Copy(this.RegionsHistory[iHistory].RegionsCode, 0, RegionClone, 0, Jup);
+
+            var LSCF = this.RegionsHistory[iHistory].m_LevSetCoincidingFaces;
+            (int iLevSet, int iFace)[][] _LevSetCoincidingFaces;
+            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[Jup][];
+            if(LSCF != null) {
+                for(int j = 0; j < Jup; j++) {
+                    _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                }
+            }
 
             int NoOfLevelSets = this.NoOfLevelSets;
             LevelSet[] LevSetClones = new LevelSet[NoOfLevelSets];
@@ -1215,7 +1309,7 @@ namespace BoSSS.Foundation.XDG {
                 LevSetClones[iLs] = Ls;
             }
 
-            return (LevSetClones, RegionClone, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
+            return (LevSetClones, RegionClone, _LevSetCoincidingFaces, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
         }
 
         /// <summary>
@@ -1268,9 +1362,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="LevSet">Level-Sets</param>
         /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
-        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>#
+        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>
+        /// <param name="LevSetCoincidingFaces"><see cref="LevelSetRegions.LevSetCoincidingFaces"/></param>
         /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, int VersionCounter, double time) {
+        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int VersionCounter, double time) {
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -1302,6 +1397,12 @@ namespace BoSSS.Foundation.XDG {
             // ==================
 
             Array.Copy(RegionCode, 0, this.Regions.m_LevSetRegions, 0, RegionCode.Length);
+            if(LevSetCoincidingFaces.Any(e => e != null && e.Length > 0)) {
+                this.Regions.m_LevSetCoincidingFaces = new (int iLevSet, int iFace)[RegionCode.Length][];
+                Array.Copy(LevSetCoincidingFaces, 0, this.Regions.m_LevSetCoincidingFaces, 0, RegionCode.Length);
+            } else {
+                this.Regions.m_LevSetCoincidingFaces = null;
+            }
             this.Regions.Version = VersionCounter;
             this.m_VersionCnt = VersionCounter;
             this.Regions.Time = time;
@@ -1315,7 +1416,7 @@ namespace BoSSS.Foundation.XDG {
         /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
-        /// new width of near region;
+        /// new width of near region; if smaller than 0, unchanged
         /// </param>
         /// <param name="__LevSetAllowedMovement">
         /// new values for the allowed level-set movement.
@@ -1327,7 +1428,7 @@ namespace BoSSS.Foundation.XDG {
         /// If true, the distance of near-cells can only increase by one.
         /// E.g., if the level-set leaves the domain, setting this parameter to true ensures that the respective 
         /// boundary cells are treated as near-cells for one 
-        /// <see cref="UpdateTracker(int, bool, int[])"/>-cycle.
+        /// <see cref="UpdateTracker(double, int, bool, int[])"/>-cycle.
         /// This maintains a 'correct' near field when level-set leaves domain, which is necessary e.g. for operator matrix update.
         /// 
         /// Furthermore, it speeds up the detection of cut cells: the detection of cut cells is limited to the near-region,
@@ -1386,6 +1487,7 @@ namespace BoSSS.Foundation.XDG {
                 ushort[] VertexMarker, LevSetRegions, LevSetRegionsUnsigned;
                 BitArray[] LevSetNeg;
                 ushort[,] VertexMarkerExternal;
+                (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
 
                 // init & first time calls
                 // =======================
@@ -1394,87 +1496,37 @@ namespace BoSSS.Foundation.XDG {
 
                     // init memory
                     // -----------
+                    Regions.m_LevSetRegions_b4Update = Regions.m_LevSetRegions;
                     Regions.m_LevSetRegions = new ushort[JA];
                     LevSetRegions = Regions.m_LevSetRegions;
                     Regions.InvalidateCaches();
                     LevSetRegionsUnsigned = new ushort[JA];
-
+                    Regions.m_LevSetCoincidingFaces = null;
 
                     // necessary to avoid a 'LevelSetCFLException' on the first
                     // call to this method
-                    for (int i = 0; i < JA; i++) {
+                    for(int i = 0; i < JA; i++) {
                         LevSetRegions[i] = AllCut;
                     }
 
                     // initialize everything to FAR = +7
-                    for (int i = 0; i < JA; i++)
+                    for(int i = 0; i < JA; i++)
                         LevSetRegionsUnsigned[i] = AllFARplus;
 
                     VertexMarker = new ushort[m_gDat.Vertices.Count];
-                    for (int i = VertexMarker.Length - 1; i >= 0; i--)
+                    for(int i = VertexMarker.Length - 1; i >= 0; i--)
                         VertexMarker[i] = AllFARplus;
                     VertexMarkerExternal = new ushort[JA - J, Krefs.Max(Kref => Kref.NoOfVertices)];
 
                     LevSetNeg = new BitArray[NoOfLevSets]; // true marks a cell in which the level set field is completely negative
-                    for (int i = 0; i < LevSetNeg.Length; i++)
+                    for(int i = 0; i < LevSetNeg.Length; i++)
                         LevSetNeg[i] = new BitArray(J);
 
                     // define test vertices
-                    // --------------------
-                    if (TestNodes == null) { // only the first time in app lifetime ...
-                        TestNodes = new NodeSet[Krefs.Length];
-                        TestNodesPerFace = new int[Krefs.Length][];
-
-                        for (int iKref = 0; iKref < Krefs.Length; iKref++) {
-                            var Kref = Krefs[iKref];
-
-                            QuadRule rule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2);
-
-                            int myD = Math.Max(GridDat.Grid.GetRefElement(0).FaceRefElement.SpatialDimension, 1);
-                            int noOfNodesPerEdge = Kref.FaceRefElement.NoOfVertices + rule.NoOfNodes;
-
-                            var FaceNodes = MultidimensionalArray.Create(noOfNodesPerEdge, myD);
-                            for (int i = 0; i < Kref.FaceRefElement.NoOfVertices; i++) {
-                                for (int d = 0; d < myD; d++) {
-                                    FaceNodes[i, d] = Kref.FaceRefElement.Vertices[i, d];
-                                }
-                            }
-
-                            int offset = Kref.FaceRefElement.NoOfVertices;
-                            for (int i = 0; i < Kref.NoOfFaces; i++) {
-                                for (int j = 0; j < rule.NoOfNodes; j++) {
-                                    for (int d = 0; d < myD; d++) {
-                                        FaceNodes[offset + j, d] = rule.Nodes[j, d];
-                                    }
-                                }
-                            }
-
-                            TestNodesPerFace[iKref] = new int[Kref.NoOfFaces];
-                            TestNodesPerFace[iKref].SetAll(noOfNodesPerEdge);
-
-                            MultidimensionalArray TstVtx = MultidimensionalArray.Create(noOfNodesPerEdge * Kref.NoOfFaces, D);
-                            for (int iFace = 0; iFace < Kref.NoOfFaces; iFace++) {
-                                Kref.GetFaceTrafo(iFace).Transform(
-                                    FaceNodes, TstVtx.ExtractSubArrayShallow(
-                                        new int[] { iFace * noOfNodesPerEdge, 0 },
-                                        new int[] { (iFace + 1) * noOfNodesPerEdge - 1, D - 1 }));
-                            }
-
-
-                            // Guarantees that both cells are recognized if the level
-                            // set directly passes through an edge.
-                            // WARNING: This factor is completely arbitrary. This check
-                            // should be replaced by something more sophisticated soon
-                            // since it does not cover certain corner cases.
-                            TstVtx.Scale(1.005);
-                            TestNodes[iKref] = new NodeSet(Kref, TstVtx);
-                        }
-                    }
-
-
+                    DefineTestNodes();
 
                     // clear cached level set values (level set may has changed)
-                    foreach (var lsdh in DataHistories) {
+                    foreach(var lsdh in DataHistories) {
                         lsdh.Current.ClearCaches();
                     }
 
@@ -1485,15 +1537,15 @@ namespace BoSSS.Foundation.XDG {
                 // ====================================
                 #region UpdateTracker_FIND_CUT_CELLS
                 using (new BlockTrace("FIND_CUT_CELLS", tr)) {
-
-
-
-                    // 1st sweep: find cut cells
-                    // =========================
+                    // cell sweep: find cut cells
+                    // ==========================
 
                     CellMask SearchMask;
+                    var TempCutCellsBitmaskS = NoOfLevSets.ForLoop(iLs => new BitArray(J));
                     if (incremental) {
-
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // incremental update: use the old Near-Band as a search-mask
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                         ushort[] __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
@@ -1507,37 +1559,46 @@ namespace BoSSS.Foundation.XDG {
 
                         SearchMask = oldNearMask;
                     } else {
+                        // ++++++++++++++++++++++++++++++++++++
+                        // Full update: search in entire domain
+                        // ++++++++++++++++++++++++++++++++++++
                         SearchMask = CellMask.GetFullMask(m_gDat);
                     }
 
                     int MaxVecLen = (int)Math.Ceiling(16000.0 / ((double)TestNodes.Max(ns => ns.NoOfNodes)));
                     MaxVecLen = Math.Max(1, MaxVecLen);
+                    var eps = BLAS.MachineEps*10;
 
-
-                    foreach (var t_j0_Len in SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask)) { // loop over all cells in the search mask...
+                    var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
+                    foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
                         int VecLen = t_j0_Len.Item2;
 
 
                         int iKref = m_gDat.Cells.GetRefElementIndex(j);
                         var Kref = Krefs[iKref];
-                        int noOfEdges = Kref.NoOfFaces;
+                        int noOfFaces = Kref.NoOfFaces;
+                        int NoOfNodes = TestNodes[iKref].NoOfNodes;
                         int[] _TestNodesPerFace = this.TestNodesPerFace[iKref];
+                        var quadWeights = TestNodes_QuadWeights[iKref];
 
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var data = this.m_DataHistories[levSetind].Current;
                             MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
-
+                            var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
+ 
                             for (int jj = 0; jj < VecLen; jj++) {
                                 bool Pos = false;
                                 bool Neg = false;
 
+                                // loop over nodes on edges...
                                 int nodeIndex = 0;
-                                for (int e = 0; e < noOfEdges; e++) {
+                                for (int e = 0; e < noOfFaces; e++) {
                                     bool PosEdge = false;
                                     bool NegEdge = false;
 
+                                    double quadResult = 0.0;
                                     for (int k = 0; k < _TestNodesPerFace[e]; k++) {
                                         double v = levSetVal[jj, nodeIndex];
 
@@ -1547,37 +1608,46 @@ namespace BoSSS.Foundation.XDG {
                                             PosEdge = true;
                                         }
 
+                                        quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
+
                                         nodeIndex++;
                                     }
 
                                     Pos |= PosEdge;
                                     Neg |= NegEdge;
 
-                                    // Save sign of the edge
-                                    {
-                                        int edge = -1;
-                                        for (int ee = 0; ee < GridDat.Cells.Cells2Edges[j + jj].Length; ee++) {
-                                            int signedEdgeIndex = GridDat.Cells.Cells2Edges[j + jj][ee];
-                                            int edgeIndex = Math.Abs(signedEdgeIndex) - 1;
-                                            int inOut = signedEdgeIndex > 0 ? 0 : 1;
-                                            if (GridDat.Edges.FaceIndices[edgeIndex, inOut] == e) {
-                                                edge = edgeIndex;
-                                            }
-                                        }
-
-                                        if (edge < 0) {
-                                            throw new Exception(
-                                                "Could not determine edge index; This should not have happened");
-                                        }
+                                    // detect an edge which coincides with the zero-level-set
+                                    if(quadResult < eps) {
+                                        if(_LevSetCoincidingFaces == null)
+                                            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                        (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[j + jj]);
                                     }
+
+                                } // end of edges loop
+
+                                // loop over remaining Nodes...
+                                for(; nodeIndex < NoOfNodes; nodeIndex++) {
+                                    double v = levSetVal[jj, nodeIndex];
+
+                                    bool PosNode = false;
+                                    bool NegNode = false;
+                                    if(v < 0) {
+                                        NegNode = true;
+                                    } else if(v > 0) {
+                                        PosNode = true;
+                                    }
+
+                                    Pos |= PosNode;
+                                    Neg |= NegNode;
                                 }
+
 
                                 if ((Pos && Neg) || (!Pos && !Neg)) {
                                     // cell j+jj is cut by level set
 
                                     // code cell:
                                     EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-
+                                    TempCutCellsBitmask[j + jj] = true;
                                 }
 
                                 if (Neg == true && Pos == false) {
@@ -1589,6 +1659,12 @@ namespace BoSSS.Foundation.XDG {
                         }
                         j += VecLen;
                     }
+
+
+                    if(_LevSetCoincidingFaces != null)
+                        Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
+
+                   
 
                 }
 
@@ -1628,107 +1704,137 @@ namespace BoSSS.Foundation.XDG {
 
                 // find near and far regions
                 // =========================
-                {
+                using (new BlockTrace("NEAR_SWEEPS", tr)) {
                     
                     int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
-                    
-                    for (int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                        // Pre-sweep: ensure correct distance in the vertex markers
-                        // --------------------------------------------------------
+                    for(int dist = 1; dist <= m_NearRegionWidth; dist++) { // loop over near region bands...
 
-                        // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
-                        // there is certainly a smarter way to integrate the loops
+                        long NumberOfChanges = 1;
+                        while(NumberOfChanges > 0) { // sweep until we have no more updates
+                            NumberOfChanges = 0;
 
-                        // ensures that the distance of each vertex is lower or equal to the cell distance
-                        for (int j = 0; j < J; j++) { // sweep over cells;
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
-                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
-                                if(dJ <= dist) {
-                                    foreach (int kk in VerticeInd[j]) {
-                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
-                                        dVk = Math.Min(dVk, dJ);
-                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                            // Pre-sweep: ensure correct distance in the vertex markers
+                            // --------------------------------------------------------
+
+                            // rem: this pre-sweep is only to handle periodic & MPI-parallel cases
+                            // there is certainly a smarter way to integrate the loops
+
+                            // ensures that the distance of each vertex is lower or equal to the cell distance
+                            for(int j = 0; j < J; j++) { // sweep over cells;
+                                for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                                    int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
+                                    if(dJ <= dist) {
+                                        foreach(int kk in VerticeInd[j]) {
+                                            int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                            dVk = Math.Min(dVk, dJ);
+                                            EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        // MPI update
-                        // ----------
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets); 
+                            //using(var stw = new StreamWriter("Vertice-" + dist + ".csv")) {
+                            //    var vCoords = m_gDat.Vertices.Coordinates;
+                            //    for(int k = 0; k < m_gDat.Vertices.Count; k++) {
+                            //        stw.Write(vCoords[k, 0]);
+                            //        stw.Write(" ");
+                            //        stw.Write(vCoords[k, 1]);
+                            //        stw.Write(" ");
+                            //        double dVk = DecodeLevelSetDist(VertexMarker[k], 0);
+                            //        stw.Write(dVk);
+                            //        stw.WriteLine();
+                            //    }
+                            //}
 
-                        // Main sweep: set cells and neighbors
-                        // -----------------------------------
-                        for (int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
-                            int[] _VerticeInd = VerticeInd[j];
-                            int _NoOfSmplxVertice = _VerticeInd.Length;
-                            Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
 
-                            //for (int k = 0; k < NoOfSmplxVertice; k++)
-                            //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
-                            ushort[] __PrevLevSetRegions = null;
-                            if (incremental)
-                                __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
+                            // MPI update
+                            // ----------
+                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
 
-                            for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
+                            // Main sweep: set cells and neighbors
+                            // -----------------------------------
+                            for(int j = 0; j < J; j++) { // sweep over cells; in this sweep, we are setting band 'dist'
+                                int[] _VerticeInd = VerticeInd[j];
+                                int _NoOfSmplxVertice = _VerticeInd.Length;
+                                Debug.Assert(_NoOfSmplxVertice == m_gDat.Cells.GetRefElement(j).NoOfVertices);
 
-                                int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd);
-                                if (dJ >= dist) {
-                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                                    // cell has not been assigned to band 'dist' or closer yet
-                                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                //for (int k = 0; k < NoOfSmplxVertice; k++)
+                                //    vtxMarkers[k] = VertexMarker[VerticeInd[j, k]];
+                                ushort[] __PrevLevSetRegions = null;
+                                if(incremental)
+                                    __PrevLevSetRegions = RegionsHistory[0].m_LevSetRegions;
 
-                                    // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
-                                    int mindv = int.MaxValue;
-                                    for (int k = 0; k < _NoOfSmplxVertice; k++)
-                                        mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
-                                    if (incremental) {
-                                        // The following line ensures that when the level-set is leaving the computational domain,
-                                        // we still have a near-cell on the boundary.
-                                        int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
-                                        mindv = Math.Min(mindv, prevDist);
-                                    }
-                                    mindv++; // increase layer
+                                for(int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) { // loop over level sets...
 
-                                    if (mindv == dist) {
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
-                                        
-                                        // propagate back form cells to vertices
-                                        for (int k = 0; k < _NoOfSmplxVertice; k++) {
-                                            int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
-                                            dVk = Math.Min(dVk, mindv);
-                                            EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
-                                        }
+                                    int dJ = DecodeLevelSetDist(LevSetRegionsUnsigned[j], levSetInd); // distance of 'cell j'
+                                    if(dJ >= dist) {
+                                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                        // cell has not been assigned to band 'dist' or closer yet
+                                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                                        // treatment of neighbor cells: robustness against 
-                                        //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
-                                        //  - periodic boundary conditions
                                         int[] jNeighs = Neighbours[j];
+
+
+                                        // vertex-to-cell propagation; find minimum of: { distance of all vertices, cell distance so far }
+                                        int mindv = int.MaxValue;
+                                        for(int k = 0; k < _NoOfSmplxVertice; k++)
+                                            mindv = Math.Min(mindv, DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd));
+                                        // cell-to-cell propagation; find minimum of: { distance of neighbor cells, cell distance so far }
                                         foreach(int jN in jNeighs) {
                                             int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
-                                            if (distN > dist + 1) {
-                                                EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+                                            mindv = Math.Min(mindv, distN);
+                                        }
+                                        if(incremental) {
+                                            // The following line ensures that when the level-set is leaving the computational domain,
+                                            // we still have a near-cell on the boundary.
+                                            int prevDist = Math.Abs(DecodeLevelSetDist(__PrevLevSetRegions[j], levSetInd));
+                                            mindv = Math.Min(mindv, prevDist);
+                                        }
+                                        mindv++; // increase layer
 
-                                                if(jN < J) {
-                                                    foreach(int kk in VerticeInd[jN]) {
-                                                        int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
-                                                        dVk = Math.Min(dVk, dist + 1);
-                                                        EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                        if(mindv == dist) {
+                                            EncodeLevelSetDist(ref LevSetRegionsUnsigned[j], mindv, levSetInd);
+                                            if(mindv != dJ)
+                                                NumberOfChanges++;
+
+                                            // propagate back form cells to vertices
+                                            for(int k = 0; k < _NoOfSmplxVertice; k++) {
+                                                int dVk = DecodeLevelSetDist(VertexMarker[_VerticeInd[k]], levSetInd);
+                                                dVk = Math.Min(dVk, mindv);
+                                                EncodeLevelSetDist(ref VertexMarker[_VerticeInd[k]], dVk, levSetInd);
+                                            }
+
+                                            // treatment of neighbor cells: robustness against 
+                                            //  - hanging nodes (for e.g. 3:1 cell neighborship at an edge) and 
+                                            //  - periodic boundary conditions
+                                            foreach(int jN in jNeighs) {
+                                                int distN = DecodeLevelSetDist(LevSetRegionsUnsigned[jN], levSetInd);
+                                                if(distN > dist + 1) {
+                                                    EncodeLevelSetDist(ref LevSetRegionsUnsigned[jN], dist + 1, levSetInd);
+
+                                                    if(jN < J) {
+                                                        foreach(int kk in VerticeInd[jN]) {
+                                                            int dVk = DecodeLevelSetDist(VertexMarker[kk], levSetInd);
+                                                            dVk = Math.Min(dVk, dist + 1);
+                                                            EncodeLevelSetDist(ref VertexMarker[kk], dVk, levSetInd);
+                                                        }
                                                     }
-                                                }
 
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                        }
+                            } // end of cell loop
 
-                        // MPI update
-                        // ----------
-                        MPIUpdate(LevSetRegionsUnsigned, m_gDat);
-                        MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
+                            // MPI update
+                            // ----------
+                            MPIUpdate(LevSetRegionsUnsigned, m_gDat);
+                            MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
+
+                            NumberOfChanges = NumberOfChanges.MPISum();
+                        }
                     }
                 }
 
@@ -1798,20 +1904,37 @@ namespace BoSSS.Foundation.XDG {
 
                 // throw exception, if levelset CFL violated
                 // =========================================
-                //if (throwCFL) {
-                //    LevelSetCFLException exception = new LevelSetCFLException(fail);
-                //    foreach (var reference in m_Observers) {
-                //        IObserver<LevelSetRegions> observer = reference.Target;
-                //        if (observer != null) {
-                //            observer.OnError(exception);
-                //        }
-                //    }
-                //    throw exception;
-                //}
+
+                //
+                // Ein schöner Gruß von Florian
+                // an jeden, der nochmal daran denken sollte die `LevelSetCFLException` auszukommentieren
+                // und das Ganze dann in den Hauptzweig pusht: 
+                // Du hast einen Freiflug gewonnen, vom Dach des Maschinenbau-Gebäudes!
+                // Herzlichen Glückwunsch!
+                //
+                // A big Salute
+                // from Florian to everyone who should dare to comment out the `LevelSetCFLException` 
+                // and push it into the main branch: 
+                // You have won a free flight, from the roof of the mechanical engineering building! 
+                // Congratulations!
+                //
+
+
+                if (throwCFL) {
+                    LevelSetCFLException exception = new LevelSetCFLException(fail);
+                    foreach(var reference in m_Observers) {
+                        IObserver<LevelSetRegions> observer = reference.Target;
+                        if(observer != null) {
+                            observer.OnError(exception);
+                        }
+                    }
+                    throw exception;
+                }
             }
         }
 
-        
+      
+
 
 
 
@@ -1835,7 +1958,9 @@ namespace BoSSS.Foundation.XDG {
             this.m_QuadFactoryHelpersHistory = null;
             this.m_SpeciesId2Index = null;
             this.TestNodes = null;
+            this.TestNodes_QuadWeights = null;
             this.TestNodesPerFace = null;
+            this.m_LevelSets = null;
         }
 
         /// <summary>
@@ -1901,7 +2026,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Dirty Hack to support dynamic load balancing,
-        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers
+        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext"/> for all observers
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {

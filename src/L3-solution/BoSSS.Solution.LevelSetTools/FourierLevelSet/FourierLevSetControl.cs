@@ -77,12 +77,12 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// <summary>
         /// See <see cref="Interpolationtype"/>
         /// </summary>
-        public Interpolationtype InterpolationType = Interpolationtype.LinearSplineInterpolation;
+        public Interpolationtype InterpolationType = Interpolationtype.CubicSplineInterpolation;
 
         /// <summary>
         /// See <see cref="FourierLevelSet_Timestepper"/>
         /// </summary>
-        public FourierLevelSet_Timestepper Timestepper = FourierLevelSet_Timestepper.ExplicitEuler;
+        public FourierLevelSet_Timestepper Timestepper = FourierLevelSet_Timestepper.TVD3;
 
         /// <summary>
         /// underrelaxation factor for the coupled/implicit level-set evolution
@@ -108,6 +108,11 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// curvature on the DG field extended from interface or not 
         /// </summary>
         public bool curvComp_extended = true;
+
+        /// <summary>
+        /// enforce global mass conservation (only for polar type)
+        /// </summary>
+        public bool enforceMassConservation = false;
 
 
         /// <summary>

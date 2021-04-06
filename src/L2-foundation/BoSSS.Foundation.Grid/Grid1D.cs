@@ -166,10 +166,10 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 byte periodicTag = 0;
                 if (periodic) {
-                    double[][] left = { new double[] { nodeSets.First().First() } };
-                    double[][] right = { new double[] { nodeSets.Last().Last() } };
+                    Vector[] left = { new Vector(nodeSets.First().First()) };
+                    Vector[] right = { new Vector(nodeSets.Last().Last()) };
                     grid.ConstructPeriodicEdgeTrafo(
-                        right, new double[] { 1.0 }, left, new double[] { 1.0 }, out periodicTag);
+                        right, new Vector(1.0), left, new Vector(1.0), out periodicTag);
                     grid.EdgeTagNames.Add(periodicTag, "Periodic-X");
                 }
                 
@@ -201,7 +201,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         cell.TransformationParams[0, 0] = nodesInSegment[i];
                         cell.TransformationParams[1, 0] = nodesInSegment[i + 1];
 
-                        cell.NodeIndices = new int[] {
+                        cell.NodeIndices = new long[] {
                             globalCellIndex,
                             globalCellIndex + 1
                         };

@@ -164,6 +164,13 @@ namespace BoSSS.Solution.Utils {
             u.ProjectField(f.Vectorize());
         }
 
+        ///// <summary>
+        ///// Projection of a function <paramref name="f"/> onto a DG-Field
+        ///// </summary>
+        //public static void ProjectField(this DGField u, Func<Vector, double> f) {
+        //    u.ProjectField(f.Vectorize());
+        //}
+
         /// <summary>
         /// Projection of a function <paramref name="f"/> onto a DG-Field
         /// </summary>
@@ -205,6 +212,13 @@ namespace BoSSS.Solution.Utils {
         public static double L2Error(this DGField u, Func<double[], double> f) {
             return u.L2Error(f.Vectorize());
         }
+
+        ///// <summary>
+        ///// L2Error w.r.t. a function <paramref name="f"/> of a DG-Field
+        ///// </summary>
+        //public static double L2Error(this DGField u, Func<Vector, double> f) {
+        //    return u.L2Error(f.Vectorize());
+        //}
 
 
         /// <summary>
@@ -351,6 +365,29 @@ namespace BoSSS.Solution.Utils {
             });
         }
 
+//        /// <summary>
+//        /// Vectorized function (<see cref="ScalarFunction"/>) from a scalar implementation
+//        /// </summary>
+//        /// <param name="f">calling sequence: f(x,y,z)</param>
+//        /// <returns></returns>
+//        public static ScalarFunction Vectorize(this Func<Vector, double> f) {
+//            return (delegate(MultidimensionalArray inp, MultidimensionalArray res) {
+//                int D = inp.GetLength(1);
+//                double[] X = new double[D];
+
+//                for (int i = 0; i < inp.GetLength(0); i++) {
+//                    for (int d = 0; d < D; d++)
+//                        X[d] = inp[i, d];
+
+//                    res[i] = f(X);
+//#if DEBUG
+//                    if (res[i].IsNaN())
+//                        throw new ArithmeticException("Vectorizing returns invalid values");
+//#endif
+//                }
+//            });
+//        }
+
         /// <summary>
         /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
         /// implementation
@@ -360,6 +397,26 @@ namespace BoSSS.Solution.Utils {
         /// <returns></returns>
         public static ScalarFunction Vectorize(this Func<double[], double, double> f, double time) {
             return (delegate(MultidimensionalArray inp, MultidimensionalArray res) {
+                int D = inp.GetLength(1);
+                double[] X = new double[D];
+
+                for (int i = 0; i < inp.GetLength(0); i++) {
+                    for (int d = 0; d < D; d++)
+                        X[d] = inp[i, d];
+
+                    res[i] = f(X, time);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Vectorized function (<see cref="ScalarFunction"/>) from a scala
+        /// implementation
+        /// </summary>
+        /// <param name="f">calling sequence: f(x,y,z,t)</param>
+        /// <returns></returns>
+        public static ScalarFunctionTimeDep Vectorize(this Func<double[], double, double> f) {
+            return (delegate(MultidimensionalArray inp, double time, MultidimensionalArray res) {
                 int D = inp.GetLength(1);
                 double[] X = new double[D];
 

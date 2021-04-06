@@ -273,9 +273,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </returns>
         public static AggregationGridBasis[][] CreateSequence(IEnumerable<AggregationGridData> _agSeq, IEnumerable<Basis> dgBasisS) {
 
-            if (_agSeq.Count() <= 0)
+            if(_agSeq.Count() <= 0)
                 return new AggregationGridBasis[0][];
-                    
+
             // check input
             // -----------
 
@@ -305,18 +305,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     AnyNonX = true;
                 }
             }
-            
+
             AggregationGridData[] agSeq = _agSeq.ToArray();
-            if (agSeq.Length <= 0)
+            if(agSeq.Length <= 0)
                 throw new ArgumentException();
-            if (!object.ReferenceEquals(agSeq[0].ParentGrid, agSeq[0].AncestorGrid))
+            if(!object.ReferenceEquals(agSeq[0].ParentGrid, agSeq[0].AncestorGrid))
                 throw new ArgumentException("Parent and Ancestor of 0th grid level must be equal.");
             GridData baseGrid = (GridData)(agSeq[0].AncestorGrid);
-            
+
             for(int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
-                if (agSeq[iLevel].MgLevel != iLevel)
+                if(agSeq[iLevel].MgLevel != iLevel)
                     throw new ArgumentException("Grid levels must be provided in order.");
-                if (!object.ReferenceEquals(agSeq[iLevel].AncestorGrid, baseGrid))
+                if(!object.ReferenceEquals(agSeq[iLevel].AncestorGrid, baseGrid))
                     throw new ArgumentException("Mismatch in ancestor grid.");
                 if(iLevel > 0) {
                     if(!object.ReferenceEquals(agSeq[iLevel].ParentGrid, agSeq[iLevel - 1])) {
@@ -325,10 +325,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            if (baseGrid.CellPartitioning.TotalLength != agSeq[0].CellPartitioning.TotalLength)
+            if(baseGrid.CellPartitioning.TotalLength != agSeq[0].CellPartitioning.TotalLength)
                 throw new ArgumentException("Mismatch in number of cells for level 0.");
 
-            if (!object.ReferenceEquals(baseGrid, maxDgBasis.GridDat))
+            if(!object.ReferenceEquals(baseGrid, maxDgBasis.GridDat))
                 throw new ArgumentException("Mismatch between DG basis grid and multi-grid ancestor.");
 
             // Project Bounding-Box basis
@@ -361,20 +361,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[][] Ag2Pt = agSeq[0].iLogicalCells.AggregateCellToParts;
                 Debug.Assert(Jagg == Jbase);
 
-                for (int j = 0; j < Jagg; j++)
-                {
+                for(int j = 0; j < Jagg; j++) {
                     int jGeom;
-                    if (Ag2Pt == null || Ag2Pt[j] == null)
-                    {
+                    if(Ag2Pt == null || Ag2Pt[j] == null) {
                         jGeom = j;
-                    }
-                    else
-                    {
-                        if (Ag2Pt[j].Length != 1)
+                    } else {
+                        if(Ag2Pt[j].Length != 1)
                             throw new ArgumentException();
                         jGeom = Ag2Pt[j][0];
                     }
-                    if (jGeom != j)
+                    if(jGeom != j)
                         throw new NotSupportedException("todo");
 
                     InjectorsBase.ExtractSubArrayShallow(j, -1, -1).AccEye(1.0);
@@ -383,14 +379,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             // check if aggregation is performed on a curved or affine linear grid
-            if (((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell())
-            {
-                if (agSeq.Length >= 2)
-                {
+            if(((GridData)maxDgBasis.GridDat).Cells.ContainsNonlinearCell()) {
+                // ++++++++++++++++++
+                // curved cell branch
+                // ++++++++++++++++++
+
+
+                if(agSeq.Length >= 2) {
                     // directly compute the Injector for the coarsest level
                     //int ilevel = agSeq.Length - 1;
 
-                    if (!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
+                    if(!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
 
                     // compute the direct Injector for the coarsest mesh
                     MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq[0].iLogicalCells.NoOfLocalUpdatedCells];
@@ -412,14 +411,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     AggregationGridCurvedInjector.ProjectBasis(agSeq, maxDgBasis, Injectors, InjectorCoarse, 0);
 
                     stop.Stop();
-                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");                    
+                    Console.WriteLine($"Construction of curved MG operators took: {stop.Elapsed}");
                 }
-            }
-            else
-            {       
+            } else {
+                // ++++++++++++++++++
+                // linear cell branch
+                // ++++++++++++++++++
+
+
+
+
                 // level 1
-                if (agSeq.Length >= 2)
-                {
+                if(agSeq.Length >= 2) {
                     int iLevel = 1;
 
                     int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
@@ -442,15 +445,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //    Debug.Assert(err < Math.Max(InjCheck[jAgg].L2Norm(), Injectors[iLevel][jAgg].L2Norm()) * 1e-8);
                     //}
 #endif
-                }
-                else
-                {
+                } else {
                     //ortho_Level = null;
                 }
 
                 // all other levels
-                for (int iLevel = 2; iLevel < agSeq.Length; iLevel++)
-                { // loop over levels...
+                for(int iLevel = 2; iLevel < agSeq.Length; iLevel++) { // loop over levels...
                     int Jagg = agSeq[iLevel].iLogicalCells.NoOfLocalUpdatedCells;
                     int[][] Ag2Pt = agSeq[iLevel].iLogicalCells.AggregateCellToParts;
                     int[][] Ag2Pt_Fine = agSeq[iLevel - 1].iLogicalCells.AggregateCellToParts;
@@ -479,21 +479,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 AggregationGridBasis[][] ret = new AggregationGridBasis[agSeq.Length][];
                 AggregationGridBasis[] Abs = new AggregationGridBasis[agSeq.Length];
                 XdgAggregationBasis[] XAbs = new XdgAggregationBasis[agSeq.Length];
-                for (int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
-                    if (AnyNonX) {
+                for(int iLevel = 0; iLevel < agSeq.Length; iLevel++) {
+                    if(AnyNonX) {
                         Abs[iLevel] = new AggregationGridBasis(maxDgBasis, iLevel > 0 ? Abs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
                     }
-                    if (AnyX) {
+                    if(AnyX) {
                         XAbs[iLevel] = new XdgAggregationBasis(maxXdgBasis, iLevel > 0 ? XAbs[iLevel - 1] : null, agSeq[iLevel], Injectors[iLevel]);
                     }
 
                     ret[iLevel] = new AggregationGridBasis[UseX.Length];
-                    for (int i = 0; i < UseX.Length; i++)
+                    for(int i = 0; i < UseX.Length; i++)
                         ret[iLevel][i] = UseX[i] ? XAbs[iLevel] : Abs[iLevel];
                 }
                 return ret;
             }
         }
+
 
         /// <summary>
         /// computes the injector for multigrid level 2 and higher 
@@ -901,7 +902,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             //Partitioning RowMap = new Partitioning(JAGG * NR);
-            int MpiOffset_row = rest.RowPartitioning.i0;
+            long MpiOffset_row = rest.RowPartitioning.i0;
             
             for(int jagg = 0; jagg < JAGG; jagg++) {
                 int[] agCl = agCls[jagg];
@@ -916,8 +917,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //for(int f = 0; f < NoFld; f++) { // loop over DG fields in mapping...
 
-                    int i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
-                    int i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
+                    long i0Col = fullmap.GlobalUniqueCoordinateIndex(iFld, jCell, 0);
+                    long i0Row = jagg * NR + RestOffset[iFld] + MpiOffset_row;
 
                     //rest.AccBlock(i0Row, i0Col, 1.0, Block);
                     for (int m = 0; m < M; m++) {
@@ -987,6 +988,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public virtual int GetMaximalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
+            if (DGBasis.MaximalLength == 0)
+                throw new Exception(" DGBasis.MaximalLength nee das ist 0");
             return this.GetLength(0, p);
         }
 
@@ -997,6 +1000,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         public virtual int GetLength(int jCell, int p) {
             GetNp();
+            if (m_Lengths[p] == 0)
+                throw new Exception("jkfafsasf");
             return m_Lengths[p];
         }
 
@@ -1009,6 +1014,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
        
         /// <summary>
+        /// **Note: the internal computation of this member is quite expensive and may lead to non-linear runtime behavior w.r.t. the number of cells.
+        /// Use <see cref="GetCompositeBasis"/> if the transformation is only required for a certain cell.**
         /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
         /// onto the DG space on the aggregate grid.
         /// - array index: aggregate cell index; 
@@ -1022,12 +1029,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </remarks>
         public MultidimensionalArray[] CompositeBasis {
             get {
-                if(m_CompositeBasis == null) {
-                    SetupCompositeBasis();
+                if(m_CompositeBasis == null || m_CompositeBasis.Any(entry => entry == null)) {
+                    SetupCompositeBasis(-1);
+
+                    for(int j = 0; j < m_CompositeBasis.Length; j++) {
+                        Debug.Assert(m_CompositeBasis[j] != null);
+                    }
                 }
                 return m_CompositeBasis;
             }
         }
+
+        /// <summary>
+        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// onto the DG space on the aggregate grid.
+        /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
+        /// making this more efficient if only s singe cell is required.**
+        /// </summary>
+        /// <param name="jAgg"></param>
+        /// <returns>
+        /// - 1st index into <see cref="MultidimensionalArray"/>: index within aggregation basis 
+        /// - 2nd index into <see cref="MultidimensionalArray"/>: row
+        /// - 3rd index into <see cref="MultidimensionalArray"/>: column
+        /// </returns>
+        public MultidimensionalArray GetCompositeBasis(int jAgg) {
+            if(m_CompositeBasis == null || m_CompositeBasis[jAgg] == null) {
+                SetupCompositeBasis(jAgg);
+            }
+            return m_CompositeBasis[jAgg];
+        }
+
+
         
         MultidimensionalArray CA(int _jAgg) {
             AggregationGridData ag = this.AggGrid;
@@ -1035,6 +1067,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int thisMgLevel = ag.MgLevel;
             int Np = this.DGBasis.Length;
 
+           
             var R = MultidimensionalArray.Create(compCell.Length, Np, Np);
             for(int i = 0; i < compCell.Length; i++) {
                 for(int n = 0; n < Np; n++) {
@@ -1133,10 +1166,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultidimensionalArray[] m_CompositeBasis;
 
-        void SetupCompositeBasis() {
+        void SetupCompositeBasis(int _jAgg) {
             using(new FuncTrace()) {
 
-
+                //if(_jAgg < 0)
+                //    Console.WriteLine("Warning: you are using a Method which is known to scale bad (worse than linear) with the number-of-cells.");
 
                 Basis b = this.DGBasis;
                 AggregationGridData ag = this.AggGrid;
@@ -1145,10 +1179,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
 
                 int JAGG = ag.iLogicalCells.NoOfLocalUpdatedCells;
-                m_CompositeBasis = new MultidimensionalArray[JAGG];
+                if(_jAgg < 0 || m_CompositeBasis == null)
+                    m_CompositeBasis = new MultidimensionalArray[JAGG];
 
                 int totalMem = 0;
-                for(int jAgg = 0; jAgg < JAGG; jAgg++) { // loop over agglomerated cells...
+                int i0 = _jAgg > 0 ? _jAgg : 0;
+                int iE = _jAgg > 0 ? _jAgg + 1 : JAGG;
+                for(int jAgg = i0; jAgg < iE; jAgg++) { // loop over agglomerated cells...
+
+                    if(m_CompositeBasis[jAgg] != null)
+                        continue;
 
                     m_CompositeBasis[jAgg] = CA(jAgg);
                     totalMem += m_CompositeBasis[jAgg].Length * sizeof(double);
@@ -1236,6 +1276,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Lengths = new int[this.DGBasis.Degree + 1];
                 for(int pp = 0; pp < m_Lengths.Length; pp++) {
                     m_Lengths[pp] = this.DGBasis.Polynomials[0].Where(poly => poly.AbsoluteDegree <= pp).Count();
+                    if (m_Lengths[pp] == 0)
+                        throw new Exception(" nee das ist 0");
                 }
             }
             return m_Lengths.CloneAs();
@@ -1253,7 +1295,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// for XDG, the cell mode index <paramref name="n"/> may not be equal
+        /// This is the DG implementation, which is just the identity.
+        /// For XDG, the cell mode index <paramref name="n"/> may not be equal
         /// in the full and the aggregated grid. This method performs the transformation.
         /// </summary>
         virtual internal int N_Murks(int j, int n, int N) {

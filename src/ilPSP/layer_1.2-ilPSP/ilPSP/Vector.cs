@@ -327,9 +327,27 @@ namespace ilPSP {
         /// </summary>
         public double Angle2D() {
             if(this.Dim != 2)
-                throw new NotSupportedException();
+                throw new NotSupportedException("Only supported for 2D vectors.");
             return Math.Atan2(this.y, this.x);
         }
+
+        /// <summary>
+        /// Rotates a 2D vector in the xy-plane.
+        /// </summary>
+        public Vector Rotate2D(double angle) {
+            if(this.Dim != 2)
+                throw new NotSupportedException("Only supported for 2D vectors.");
+
+            double cs = Math.Cos(angle);
+            double ss = Math.Sin(angle);
+
+            Vector r = default(Vector);
+            r.Dim = 2;
+            r.x = cs * this.x - ss * this.y;
+            r.y = ss * this.x + cs * this.y;
+            return r;
+        }
+
 
         /// <summary>
         /// The angle, in radians, between this vector and vector <paramref name="o"/>
@@ -343,10 +361,10 @@ namespace ilPSP {
                 throw new ArithmeticException("this vector is zero - unable to determine angle");
 
             Vector tn = this;
-            tn.Normalize();
+            tn.NormalizeInPlace();
 
             Vector on = o;
-            on.Normalize();
+            on.NormalizeInPlace();
 
             double inner = tn * on;
 
@@ -374,14 +392,24 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// normalizes this vector
+        /// normalizes this vector (same direction, length is 1); overwrites components
         /// </summary>
-        public void Normalize() {
+        public void NormalizeInPlace() {
             double l = 1.0 / Abs();
             x *= l;
             y *= l;
             z *= l;
         }
+
+        /// <summary>
+        /// returns a normalized (same direction, length is 1) copy of this vector
+        /// </summary>
+        public Vector Normalize() {
+            Vector r = this;
+            r.NormalizeInPlace();
+            return r;
+        }
+
 
         /// <summary>
         /// subtracts <paramref name="v"/> from this vector;
@@ -573,6 +601,18 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// empty/default vector of dimension <paramref name="D"/>
+        /// </summary>
+        public static Vector Empty(int D) {
+            if(D < 0 || D > 3)
+                throw new ArgumentOutOfRangeException("Invalid spatial dimension for vector: " + D);
+            Vector e = default(Vector);
+            e.Dim = D;
+            return e;
+        }
+
+
+        /// <summary>
         /// the <paramref name="d"/>-th standard basis
         /// </summary>
         /// <param name="D">spatial dimension</param>
@@ -684,31 +724,51 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// inserting an entry, increasing vector dimension until 3D is reached
         /// </summary>
         public void Insert(int index, double item) {
-            throw new NotSupportedException("Read-Only.");
+            if(Dim >= 3)
+                throw new NotSupportedException("Vector is already 3D - adding another dimension is not supported.");
+            if(index < 0 || index >= Dim)
+                throw new ArgumentOutOfRangeException();
+
+            Dim++;
+            for(int i = Dim - 1; i > index; i--) {
+                this[i] = this[i - 1];
+            }
+            this[index] = item;
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// removing some entry, reducing vector dimension
         /// </summary>
         public void RemoveAt(int index) {
-            throw new NotSupportedException("Read-Only.");
+            if(index < 0 || index >= Dim)
+                throw new ArgumentOutOfRangeException();
+
+            for(int i = index; i < Dim - 1; i++) {
+                this[i] = this[i + 1];
+            }
+            this[Dim - 1] = 0;
+            Dim--;
         }
 
         /// <summary>
-        /// not supported - read-only (<see cref="Dim"/> could be changed)
+        /// adding until 3D is reached, dimension of vector changes
         /// </summary>
         public void Add(double item) {
-            throw new NotSupportedException("Read-Only.");
+            if(Dim >= 3)
+                throw new NotSupportedException("Vector is already 3D - adding another dimension is not supported.");
+
+            Dim++;
+            this[Dim - 1] = item;
         }
 
         /// <summary>
         /// not supported - read-only (<see cref="Dim"/> could be changed)
         /// </summary>
         public void Clear() {
-            throw new NotSupportedException("Read-Only (to set all entries to 0.0, use 'ClearEntries(...)'.");
+            throw new NotSupportedException("Not supported, since it could be misleading (removing all entries and setting dimension to zero vs. setting all entries to 0.0 and keeping spatial dimension).");
         }
 
         /// <summary>
@@ -977,6 +1037,27 @@ namespace ilPSP {
                 default:
                 throw new ArgumentException("Matrix has " + inp.NoOfCols + " columns, this cannot be a spatial dimension.");
             }
+        }
+
+
+        /// <summary>
+        /// Matrix-Vector product
+        /// </summary>
+        public static Vector MtxVecMul(this IMatrix M, Vector v) {
+            if(M.NoOfCols != v.Dim)
+                throw new ArgumentException();
+
+            var R = new Vector(M.NoOfRows);
+            for(int i = M.NoOfRows - 1; i >= 0; i--) {
+                double acc = 0;
+                for(int j = 0; j < v.Dim; j++) {
+                    acc += M[i, j] * v[j];
+                }
+
+                R[i] = acc;
+            }
+
+            return R;
         }
 
 

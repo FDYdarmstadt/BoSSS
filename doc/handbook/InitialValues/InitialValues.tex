@@ -33,7 +33,7 @@ restart
  }
 \BoSSSexe
 \BoSSScmd{
-using BoSSS.Application.IBM\_Solver;
+using BoSSS.Application.XNSE\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -41,7 +41,7 @@ using BoSSS.Application.IBM\_Solver;
  }
 \BoSSSexe
 \BoSSScmd{
-var C = new IBM\_Control();
+var C = new XNSE\_Control();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -96,7 +96,7 @@ C.AddInitialValue("VelocityX", GetFormulaObject(MyInitialValue.VelocityX));
 /// \begin{itemize}
 /// \item use a static class
 /// \item no dependence on any external parameters
-/// \end[itemize}
+/// \end{itemize}
 /// E.g. the following code would only change the behavior in BoSSSpad,
 /// but not the code that is passed to the solver:
  }
@@ -132,7 +132,7 @@ C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
 /// Jacobian elliptic functions $\text{sn}(u|m)$, $\text{cn}(u|m)$ and $\text{dn}(u|m)$
 /// are available throug the GNU Scientific Library, for which BoSSS provides
 /// bindings, see e.g.
-/// \code{BoSSS.Platform.GSL.gsl_sf_elljac_e}.
+/// \code{BoSSS.Platform.GSL.gsl\_sf\_elljac\_e}.
  }
 \BoSSSexe
 \BoSSScmd{
@@ -149,7 +149,7 @@ C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
 \BoSSSexe
 \BoSSScmd{
 /// Asssume e.g. the following MATLAB code; obviously, this could  
-/// also be implemented in C\#, we yust use something smple for demonstration: 
+/// also be implemented in C\#, we yust use something smple for demonstration:
  }
 \BoSSSexe
 \BoSSScmd{

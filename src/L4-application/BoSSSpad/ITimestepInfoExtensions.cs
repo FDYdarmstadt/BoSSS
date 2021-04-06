@@ -682,7 +682,7 @@ namespace BoSSS.Application.BoSSSpad {
             Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
             foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
 
-                Dictionary<string, int[]> DOFs;
+                Dictionary<string, long[]> DOFs;
                 Dictionary<string, double[]> errors;
                 double[] resolution;
                 Guid[] tsiIds;

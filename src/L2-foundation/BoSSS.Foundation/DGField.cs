@@ -496,12 +496,42 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// Set mean value to mean value of field
+        /// </summary>
+        /// <param name="field"></param>
+        public void SetMeanValueTo(DGField field, CellMask mask = null)
+        {
+            if(field.GridDat.GridID != this.GridDat.GridID)
+            {
+                throw new Exception("Requires equal grids.");
+            }
+            
+            if(mask != null && mask.GridData.GridID != this.GridDat.GridID)
+            {
+                throw new Exception("Mask must belong to grid.");
+            }
+            else
+            {
+                mask = CellMask.GetFullMask(field.GridDat);
+            }
+
+            foreach(Chunk chunk in mask)
+            {
+                for(int iCell = 0; iCell < chunk.Len; ++iCell)
+                {
+                    double mean = field.GetMeanValue(iCell);
+                    this.SetMeanValue(iCell, mean);
+                }
+            }
+        }
+
+        /// <summary>
         /// overwrites the mean value in one cell
         /// </summary>
         /// <param name="j">a local cell index</param>
         /// <param name="v">the new mean value in this cell</param>
         virtual public void SetMeanValue(int j, double v) {
-            if (j < 0 || j >= Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+            if (j < 0 || j >= this.GridDat.CellPartitioning.LocalLength)
                 throw new ArgumentException("j must be in the range of locally updated cells.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);
@@ -1025,7 +1055,7 @@ namespace BoSSS.Foundation {
         /// <see cref="Basis"/>);
         /// </summary>
         /// <param name="other"></param>
-        virtual public void AverageWith(DGField other, double alpha = 0.5) {
+        virtual public void ScaleAndAcc(DGField other, double alpha = 0.5) {
             if (!other.Basis.Equals(this.Basis)) {
                 throw new ApplicationException(
                     "unable to copy because the DG polynomial basis of other field is different.");

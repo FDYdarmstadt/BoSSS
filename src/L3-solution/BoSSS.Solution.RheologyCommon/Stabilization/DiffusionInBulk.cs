@@ -28,19 +28,13 @@ namespace BoSSS.Solution.RheologyCommon {
     public class DiffusionInBulk : ConstitutiveEqns_Diffusion, ISpeciesFilter {
 
         SpeciesId m_spcId;
-        int order;
-        int dimension;
-        MultidimensionalArray cj;
         string variable;
 
         /// <summary>
         /// Initialize Diffusion for artificial diffusion
         /// </summary>
-        public DiffusionInBulk(int _order, int _dimension, MultidimensionalArray _cj, string _variable, string spcName, SpeciesId spcId) : base(_order, _dimension, 
-            _cj, _variable) {
-            this.order = _order;
-            this.dimension = _dimension;
-            this.cj = _cj;
+        public DiffusionInBulk(double orderOfOne, string _variable, string spcName, SpeciesId spcId) 
+            : base(orderOfOne, _variable) {
             this.variable = _variable;
             this.m_spcId = spcId;
             this.ValidSpecies = spcName;

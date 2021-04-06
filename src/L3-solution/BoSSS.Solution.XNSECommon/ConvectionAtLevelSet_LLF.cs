@@ -32,7 +32,7 @@ using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    class ConvectionAtLevelSet_LLF : ILevelSetForm {
+    public class ConvectionAtLevelSet_LLF : ILevelSetForm {
 
         LevelSetTracker m_LsTrk;
 

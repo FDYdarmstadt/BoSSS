@@ -87,12 +87,12 @@ namespace BoSSS.Application.Rheology {
             C.SetInitialPressure = true;
             C.SetParamsAnalyticalSol = false;
             C.ComputeL2Error = false;
-            C.UsePerssonSensor = true;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = true;
+            //C.SensorLimit = 1e-4;
             C.AdaptiveMeshRefinement = true;
             C.RefinementLevel = 4;
             //C.AMR_startUpSweeps = 1;
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             //Physical Params
             C.Stokes = false;
@@ -381,7 +381,7 @@ namespace BoSSS.Application.Rheology {
         /// </summary>
         static public RheologyControl ConfinedCylinder(
             string path = null,
-            int degree = 3) {
+            int degree = 1) {
 
             RheologyControl C = new RheologyControl();
 
@@ -394,23 +394,24 @@ namespace BoSSS.Application.Rheology {
 
             C.AlternateDbPaths = new[] {
                 (@"\\dc1\userspace\kikker\cluster\cluster_db\ConfinedCylinder_Drag", "hpccluster"), // Anne's Account
-                (@"d:\Users\kummer\default_bosss_db", "terminal03"),     // Florian#s account on Terminal03
+                (@"d:\Users\kummer\default_bosss_db", "terminal03"),     // Florian's account on Terminal03
                 (@"c:\Users\florian\default_bosss_db", "rennmaschin"),   // Florian's old Laptop
                 (@"c:\Users\flori\default_bosss_db", "stormbreaker")     // Florian's new Laptop
             };
 
-            C.savetodb = false;
+            C.savetodb = true;
             C.DbPath = path;
             C.ProjectName = "Cylinder";
-
+            C.SessionName = "with continuation";
 
             // stationary calculation
             // ======================
-            /*
+            
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
-            */
+            
 
+            /*
             // transient calculation
             // =====================
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
@@ -418,31 +419,27 @@ namespace BoSSS.Application.Rheology {
             C.dt = 0.1;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
-
+            */
             // linear solver config 
             // ====================
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
 
-            /*
             C.LinearSolver.MaxSolverIterations = 500;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.TargetBlockSize = 10000;//100000;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;//LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
             C.LinearSolver.NoOfMultigridLevels = 4;
-            */
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+           
 
             // nonlinear solver config
             // =======================
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-7;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-5;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady; //Transient;//   Steady;
-            C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
 
             // more solver options
             // ===================
@@ -450,19 +447,19 @@ namespace BoSSS.Application.Rheology {
             C.ObjectiveParam = 1.0;
             C.useFDJacobianForOperatorMatrix = false;
 
-            C.UsePerssonSensor = false;
-            C.SensorLimit = 1e-4;
+            //C.UsePerssonSensor = false;
+            //C.SensorLimit = 1e-4;
 
             C.AdaptiveMeshRefinement = false;
             C.RefinementLevel = 10;
 
-            C.UseArtificialDiffusion = false;
+            //C.UseArtificialDiffusion = false;
 
             C.Bodyforces = true;
 
             // Homotopy:
             C.RaiseWeissenberg = false;
-            C.WeissenbergIncrement = 0.1;
+            //C.WeissenbergIncrement = 0.1;
 
             //Debugging and Solver Analysis
             C.SkipSolveAndEvaluateResidual = false;
@@ -481,7 +478,7 @@ namespace BoSSS.Application.Rheology {
             C.FixedStreamwisePeriodicBC = false;
             C.beta = 0.59;
             C.Reynolds = 0.1;
-            C.Weissenberg = 0.70000; //aim Weissenberg number!
+            C.Weissenberg = 0.00000; //aim Weissenberg number!
             C.giesekusfactor = 0.0;
 
             //Penalties
@@ -517,45 +514,14 @@ namespace BoSSS.Application.Rheology {
 
             // Create Grid
             // grids used by florian
-            //string grid = "445bf1e8-5082-4100-83db-a53f2d2aeb97"; // Florian new laptop (full, level 0); Cell Count = 640; Dim = 2 }
+            string grid = "445bf1e8-5082-4100-83db-a53f2d2aeb97"; // Florian new laptop (full, level 0); Cell Count = 640; Dim = 2 }
             //string grid = "b87b95c1-10d8-4b99-bc82-9c5fec70219d"; // Florian new laptop (full, level 1); Cell Count = 2416; Dim = 2 }
-            string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
+            //string grid = "3cfced02-dbe6-4449-a3d0-d9e258813608"; // Florian new laptop (full, level 2); Cell Count = 8504; Dim = 2 }
             //string grid = "70c0393d-62b9-4c32-9c86-1173251617da"; // Florian new laptop (full, level 3); Cell Count = 29424; Dim = 2 }
             //string grid = "c88c914b-c387-4894-9697-a78bad31f2da"; // florian terminal03 (full, level 0)
             //string grid = "061e7cfb-7ffe-4540-bc74-bfffce824fef"; // florian terminal03 (full, level 1)
             //string grid = "51aadb49-e3d5-4e88-897e-13b6b329995b"; // florian terminal03 (full, level 2)
             //string grid = "ab9b8f9a-e1aa-469d-8eea-b56a88e672a4"; // florian terminal03 (full, level 3)
-
-            // grids Matthias
-            //string grid = "5cce8f67-adbd-4aba-976f-c900a1f934c3"; // (full, level 0)
-            //string grid = "7fdc59c1-3e10-4817-8fb3-1807d97bac2a"; // (full, level 1)
-            //string grid = "3a4bf165-6464-4450-b7e2-b7d9d2436556"; // (full, level 2)
-            //string grid = "8dfdf2cd-952c-4394-a141-ae42e88b5ed7"; // (full, level 3)
-
-            // half channel mesh3 for cond tests
-            //string grid = "962bc97f-0298-4e2f-ac18-06940cb84956"; // anne
-
-            // half channel mesh0 for cond tests - schneller?
-            //string grid = "55c34774-1769-4f6b-bfc8-cc6c4d74076a";
-
-            // full channel mesh0 for cond tests comparison - schneller?
-            //string grid = "ecd6444f-ddfe-46c4-9df5-a1390f9371d7";
-
-            //fine grid - only on cluster!           
-            //string grid = "70797022-eba0-4c77-b179-334c665044b5";
-
-            //more refined in wake of cylinder - only on cluster!
-            //string grid = "3637610b-bcdf-4cdd-a647-cd7f91e373e8";
-
-
-            //coarser grid - works without cluster!
-            //string grid = "f9aa12dc-53bb-4e2c-81b3-ffccc251a3f7";
-
-            //very coarse grid as starting point for refinement
-            //string grid = "e296a1b2-98f9-4fdf-8a32-04e0954ff369";
-
-            //Dennis Zylinder for drag validation
-            //string grid = "a67192f5-6b59-4caf-a95a-0a08730c3365";
 
 
             Guid gridGuid;

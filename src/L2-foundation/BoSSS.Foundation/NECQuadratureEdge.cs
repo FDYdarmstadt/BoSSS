@@ -130,6 +130,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
+            //foreach(var C in m_EdgeForm_V[0].m_AllComponentsOfMyType) {
+            //    Console.WriteLine($"    {C.GetType()} :: {C.ToString()}");
+            //}
+
 
             // determine for which fields evaluation is required.
             bool[] GradientRequired = new bool[_DomainFields.Count];
@@ -153,6 +157,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             for(int i = _DomainFields.Count; i < m_DomainFields.Length; i++) {
                 ValueRequired[i] = true; // parameters are always required!
             }
+
+            this.VectorComponentIndices = PeriodicBoundaryUtils.GetVectorFieldIndices(DiffOp.DomainVar.Cat(DiffOp.ParameterVar), context.SpatialDimension).ToArray();
 
             // ---------
             // profiling
@@ -279,7 +285,13 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
-        
+
+        /// <summary>
+        /// - Describes which tuples of the domain and parameter variables form vector fields
+        /// - Required mainly for non-parallel periodic edges;
+        /// </summary>
+        int[][] VectorComponentIndices;
+
 
         Basis maxTestBasis = null;
         Basis maxTestGradientBasis = null;
@@ -295,6 +307,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         EquationComponentArgMapping<INonlinEdgeForm_V>[] m_EdgeForm_V;
 
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        override protected bool IsNonEmpty {
+            get {
+                return 
+                    base.IsNonEmpty ||
+                    m_EdgeForm_GradV.IsNonEmpty() || 
+                    m_EdgeForm_V.IsNonEmpty();
+            }
+        }
+
 
         /// <summary>
         /// Stores the result of the quadrature.
@@ -309,6 +333,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             BitArray cellMarker = this.SubGridCellsMarker;
 
             int[,] E2C = grid.iGeomEdges.LogicalCellIndices;
+            byte[] tags = grid.iGeomEdges.EdgeTags;
 
             for(int jEdge = 0; jEdge < Length; jEdge++) {
 
@@ -325,9 +350,18 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     touchCell2 = cellMarker[jCell2];
                 }
 
+                
+                if(tags[jEdge + i0] >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+                    if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
+                        touchCell1 = false;
+                    } else if(_PeriodicVectorTrafo == PeriodicVectorTrafo.bck) {
+                        touchCell2 = false;
+                    }
+                }
+
                 // Only active in case of Local timestepping:
                 // We save more edgeFluxes than necessary, e.g. across possible MPI-borders.
-                // We filter the relevant edgeFluxes later! Here not possible, becaue we 
+                // We filter the relevant edgeFluxes later! Here not possible, because we 
                 // only have the cellMarker of the own subGrid 
                 bool srgdBndEdge = false;
                 int side = 0;
@@ -346,20 +380,32 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     int f_offset = m_MyMap[f];
                     int mE = m_NoOfTestFunctions[f];
 
-                    for (int m = 0; m < mE; m++) {
+                    int i0in = 0;
+                    if(touchCell1)
+                        i0in = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, 0);
+                    int i0ot = 0;
+                    if(touchCell2)
+                        i0ot = m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, 0);
+
+                    for(int m = 0; m < mE; m++) {
                         int idx = f_offset + m;
 
-                        if (touchCell1) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m)] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
+                        if(touchCell1) {
+                            Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell1, m) == i0in);
+                            m_Output[i0in] += ResultsOfIntegration[jEdge, idx, 0] * alpha;
                         }
 
-                        if (touchCell2) {
-                            m_Output[m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m)] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
+                        if(touchCell2) {
+                            Debug.Assert(m_CodomainMapping.LocalUniqueCoordinateIndex(f, jCell2, m) == i0ot);
+                            m_Output[i0ot] += ResultsOfIntegration[jEdge, idx, 1] * alpha;
                         }
 
-                        if(srgdBndEdge && m==0) {
-                            m_outputBndEdge[NoOfFields*(jEdge + i0)+f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
+                        if(srgdBndEdge && m == 0) {
+                            m_outputBndEdge[NoOfFields * (jEdge + i0) + f] += ResultsOfIntegration[jEdge, idx, side] * alpha;
                         }
+
+                        i0in++;
+                        i0ot++;
                     }
                 }
             }
@@ -439,7 +485,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// storage for mean field values at quadrature nodes in the second cell which bounds to the edge;
         /// array index: field index, where field order is defined by <see cref="NECQuadratureCommon.m_DomainFields"/>
         /// if one array entry is null, no mean value evaluation of the corresponding field is needed,
-        /// because ther is no <see cref="INonlinearFluxEx"/>-object which requires it.
+        /// because there is no <see cref="INonlinearFluxEx"/>-object which requires it.
         /// 1st index: local edge index, with some offset;
         /// of course, the mean value is equal on all quadrature nodes on an edge, so there is no index 
         /// for the quadrature node;
@@ -638,7 +684,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             int NoOfSec = -1;
             {
                 // array for test functions
-                bool[] marker_TstFuncXwgt= null;
+                bool[] marker_TstFuncXwgt = null;
                 MultidimensionalArray TstFunc = null;         // value of test functions
                 MultidimensionalArray TstFuncGrad = null; // value of test function gradient
 
@@ -651,7 +697,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     TstFunc = grid.ChefBasis.EdgeEval.GetValues(qrNodes, i0, Length, maxTestBasis.Degree);
                     Debug.Assert(TstFunc.Dimension == 3);
                     Debug.Assert(TstFunc.GetLength(2) >= Nmax);
-                    if (TstFunc.GetLength(2) > Nmax) {
+                    if(TstFunc.GetLength(2) > Nmax) {
                         int[] I0 = new int[] { 0, 0, 0 };
                         int[] IE = new int[] { TstFunc.GetLength(0) - 1, qrNodes.NoOfNodes - 1, Nmax - 1 };
                         TstFunc = TstFunc.ExtractSubArrayShallow(I0, IE);
@@ -666,7 +712,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     TstFuncGrad = grid.ChefBasis.EdgeGradientEval.GetValues(qrNodes, i0, Length, maxTestBasis.Degree);
                     Debug.Assert(TstFuncGrad.Dimension == 4);
                     Debug.Assert(TstFuncGrad.GetLength(2) >= Nmax);
-                    if (TstFuncGrad.GetLength(2) > Nmax) {
+                    if(TstFuncGrad.GetLength(2) > Nmax) {
                         int[] I0 = new int[] { 0, 0, 0, 0 };
                         int[] IE = new int[] { TstFuncGrad.GetLength(0) - 1, qrNodes.NoOfNodes - 1, Nmax - 1, D - 1 };
                         TstFuncGrad = TstFuncGrad.ExtractSubArrayShallow(I0, IE);
@@ -825,7 +871,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             // nodes in global coordinates
-            MultidimensionalArray NodesGlobalCoords =  grid.GlobalNodes.GetValue_EdgeSV(qrNodes, i0, Length);
+            MultidimensionalArray NodesGlobalCoords = grid.GlobalNodes.GetValue_EdgeSV(qrNodes, i0, Length);
 
             this.ParametersAndNormals.Stop();
 
@@ -841,6 +887,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         0, 0.0);
                 }
             }
+
+            NormalsGlobalCoords = PeriodicTransform(i0, Length, grid, D, NoOfNodes, NormalsGlobalCoords);
 
 
 #if DEBUG
@@ -899,7 +947,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // -------------------------------
 
                 EvalFlux(m_NonlinFluxes[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesWatches[e],
-                    delegate(INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         nonlinFlx.InnerEdgeFlux(m_Time, _jEdge,
                           NodesGlobalCoords,
                           NormalsGlobalCoords,
@@ -907,7 +955,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                           _IndexOffset, _L,
                           FluxValuesIN);
                     },
-                    delegate(INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate (INonlinearFlux nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         nonlinFlx.BorderEdgeFlux(m_Time, _jEdge,
                                                  NodesGlobalCoords,
                                                  NormalsGlobalCoords, flipNormal,
@@ -925,7 +973,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // All INonlinearFluxEx - Components
                 // ---------------------------------
                 EvalFlux(m_NonlinFluxesEx[e], i0, Length, grid, NoOfSec, true, false, base.m_NonlinFluxesExWatches[e],
-                    delegate(INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         nonlinFlx.InnerEdgeFlux(m_Time, _jEdge,
                                                 NodesGlobalCoords,
                                                 NormalsGlobalCoords,
@@ -933,7 +981,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                                                 _IndexOffset, _L,
                                                 FluxValuesIN);
                     },
-                    delegate(INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate (INonlinearFluxEx nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         nonlinFlx.BorderEdgeFlux(m_Time, _jEdge,
                                                  NodesGlobalCoords,
                                                  NormalsGlobalCoords, flipNormal,
@@ -956,9 +1004,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 // All INonlinEdgeform_V - components
                 // ----------------------------------
 
-//bla 1
+                //bla 1
                 EvalFlux(m_EdgeForm_V[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_V_Watches[e],
-                    delegate(INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate (INonlinEdgeForm_V edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -966,7 +1014,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.time = this.m_Time;
                         Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
                         Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-                        
+
                         int[] I0vec = new int[] { _IndexOffset, 0, 0 };
                         int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
                         int[] I0scl = new int[] { _IndexOffset, 0 };
@@ -993,7 +1041,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         edgeform.NonlinInternalEdge_V(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _FluxValuesIN, _FluxValuesOT);
                     },
-                    delegate(INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate (INonlinEdgeForm_V nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
@@ -1001,7 +1049,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         efp.time = this.m_Time;
                         Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
                         Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
-                        
+
                         int[] I0vec = new int[] { _IndexOffset, 0, 0 };
                         int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
                         int[] I0scl = new int[] { _IndexOffset, 0 };
@@ -1045,15 +1093,15 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     m_GradientFluxValuesOT[e].Clear();
                 }
 
-                
+
                 EvalFlux(m_EdgeForm_GradV[e], i0, Length, grid, NoOfSec, false, true, this.m_EdgeForm_GradV_Watches[e],
-                    delegate(INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
+                    delegate (INonlinEdgeForm_GradV edgeform, int _jEdge, int _IndexOffset, int _L, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] UinMean, MultidimensionalArray[] UoutMean, MultidimensionalArray[] UinGrad, MultidimensionalArray[] UoutGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
                         efp.e0 = _jEdge;
                         efp.time = this.m_Time;
-                        
+
                         Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
                         Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
                         int[] I0vec = new int[] { _IndexOffset, 0, 0 };
@@ -1082,19 +1130,19 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
                         edgeform.NonlinInternalEdge_GradV(ref efp, _Uin.GetSubVector(0, NoArgs), _Uout.GetSubVector(0, NoArgs), _UinGrad, _UoutGrad, _GradFluxIN, _GradFluxOT);
                     },
-                    delegate(INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
+                    delegate (INonlinEdgeForm_GradV nonlinFlx, int _jEdge, int _IndexOffset, int _L, int _EdgeTagsOffset, bool flipNormal, int NoArgs, int NoParams, MultidimensionalArray[] Uin, MultidimensionalArray[] UinMean, MultidimensionalArray[] UinGrad) {
                         EdgeFormParams efp;
                         efp.GridDat = this.GridDat;
                         efp.Len = _L;
                         efp.e0 = _jEdge;
-                        efp.time = this.m_Time; 
+                        efp.time = this.m_Time;
                         Debug.Assert(NoOfNodes == NormalsGlobalCoords.GetLength(1));
                         Debug.Assert(NoOfNodes == NodesGlobalCoords.GetLength(1));
                         int[] I0vec = new int[] { _IndexOffset, 0, 0 };
                         int[] IEvec = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1, D - 1 };
                         int[] I0scl = new int[] { _IndexOffset, 0 };
                         int[] IEscl = new int[] { _IndexOffset + _L - 1, NoOfNodes - 1 };
-                        
+
                         efp.Normals = NormalsGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
                         efp.Nodes = NodesGlobalCoords.ExtractSubArrayShallow(I0vec, IEvec);
 
@@ -1137,9 +1185,9 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             this.Flux_Trafo.Start();
 
 
-            // multiply fluxes with Jacobi determinat (integral transformation metric):
+            // multiply fluxes with Jacobi determinant (integral transformation metric):
             for(int i = 0; i < NoOfEquations; i++) {
-                if (m_FluxValuesIN[i] != null) {
+                if(m_FluxValuesIN[i] != null) {
                     m_FluxValuesIN[i].Multiply(1.0, m_FluxValuesIN[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
                     m_FluxValuesOT[i].Multiply(1.0, m_FluxValuesOT[i], QuadScalings, 0.0, "jk", "jk", affine ? "j" : "jk");
                 }
@@ -1167,7 +1215,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     unsafe {
                         fixed(int* pEdge2Cell = Edge2Cell) {
                             for(int i = 0; i < NoOfEquations; i++) {
-                                
+
                                 if(m_GradientFluxValuesINtrf[i] != null) {
                                     m_GradientFluxValuesINtrf[i].Multiply(1.0, m_GradientFluxValuesIN[i], invJacobi, 0.0, ref mp_jke_jkd_Tjed,
                                         pEdge2Cell, pEdge2Cell,
@@ -1239,11 +1287,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         } else {
                             _TestFunction = TstFuncXwgt;
                         }
-                        if (m_FluxValuesIN[gamma] != null) {
+                        if(m_FluxValuesIN[gamma] != null) {
                             int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
-                            unsafe
-                            {
-                                fixed (int* pTrfIdx = trfIdx) {
+                            unsafe {
+                                fixed(int* pTrfIdx = trfIdx) {
                                     // QuadResultIN[j,n] = sum_{k}  _TestFunction[T(j),k,n]*m_FluxValuesIN[gamma][j,k] 
                                     //    where j: edge index,
                                     //          n: DG mode index/test function index
@@ -1262,7 +1309,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             }
                             cF = 1;
                         }
-                        
+
                     }
 
                     if(maxTestGradientBasis != null) {
@@ -1277,7 +1324,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         if(m_GradientFluxValuesINtrf[gamma] != null) {
                             int[,] trfIdx = grid.iGeomEdges.Edge2CellTrafoIndex;
                             unsafe {
-                                fixed (int* pTrfIdx = trfIdx) {
+                                fixed(int* pTrfIdx = trfIdx) {
                                     // QuadResultIN[j,n] = sum_{k,d}  _TestFunctionGradient[T(j),k,n,d]*m_GradientFluxValuesINtrf[gamma][j,k,d] 
                                     //   ansonsten wie oben
                                     QuadResultIN.Multiply(1.0, _TstFuncGradXwgt, m_GradientFluxValuesINtrf[gamma], cF, ref mp_jn_Tjknd_jkd,
@@ -1291,7 +1338,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                             cF = 1;
                         }
 
-                       
+
                     }
 
                     if(cF == 0) {
@@ -1379,6 +1426,200 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 #endif
         }
 
+        private MultidimensionalArray PeriodicTransform(int i0, int Length, IGridData grid, int D, int NoOfNodes, MultidimensionalArray NormalsGlobalCoords) {
+            if(_PeriodicVectorTrafo != PeriodicVectorTrafo.nix) {
+                // ++++++++++++++++++++++++++++
+                // Periodic transformation
+                // ++++++++++++++++++++++++++++
+
+                // If the grid contains some periodic boundaries which are not parallel (e.g. some cake-pie-subsection of a rotational domain)
+                // periodicity required additional transformations/rotations of vectors for **both** sides of the periodic edge;
+                // Furthermore, these rotations are different (inverse) for the in- and the out-edge, 
+                // therefore the contribution to the out-cell is computed in a second pass, by this integrator.
+
+
+                var EdgeTags = grid.iGeomEdges.EdgeTags;
+                int[][] VectorTuples = this.VectorComponentIndices;
+                List<int> ScalarIndices = new List<int>(this.m_DomainFields.Length.ForLoop(i => i));
+                foreach(int[] tt in VectorTuples) {
+                    foreach(int iVar in tt) {
+                        ScalarIndices.Remove(iVar);
+                    }
+                }
+                
+
+
+
+                for(int i = 0; i < Length; i++) {
+                    int iEdge = i + i0;
+                    var eT = EdgeTags[iEdge];
+                    if(eT >= Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG) {
+
+                        //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 0]))).SaveToTextFile("PerInCell.csv", false);
+                        //(new CellMask(GridDat, Chunk.GetSingleElementChunk(GridDat.iLogicalEdges.CellIndices[iEdge, 1]))).SaveToTextFile("PerOtCell.csv", false);
+
+
+                        var Trafo = grid.Grid.PeriodicTrafo[eT - Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG];
+
+
+                        void TransformVector(MultidimensionalArray Mtx, MultidimensionalArray[] Vals) {
+                            Vector Uorg = new Vector(D);
+                            foreach(int[] VecPtr in VectorTuples) {
+                                Debug.Assert(VecPtr.Length == D);
+
+                                for(int k = 0; k < NoOfNodes; k++) {
+                                    if(VecPtr[0] >= Vals.Length || Vals[VecPtr[0]] == null)
+                                        continue;
+
+                                    for(int d = 0; d < D; d++) {
+                                        Uorg[d] = Vals[VecPtr[d]][i, k];
+                                    }
+
+                                    Vector Udest = Mtx.MtxVecMul(Uorg);
+
+                                    for(int d = 0; d < D; d++) {
+                                        Vals[VecPtr[d]][i, k] = Udest[d];
+                                    }
+                                }
+                            }
+                        }
+
+                        void TransfromGradientTensor(MultidimensionalArray Mtx, MultidimensionalArray[] Gradients) {
+
+                            var MtxT = Mtx.TransposeTo();
+                            var GT = MultidimensionalArray.Create(D, D);
+
+                            foreach(int[] VecPtr in VectorTuples) {
+                                Debug.Assert(VecPtr.Length == D);
+
+                                /*
+                                Vector Uorg = new Vector(D);
+                                for(int k = 0; k < NoOfNodes; k++) {
+                                    if(VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
+                                        continue;
+
+                                    for(int e = 0; e < D; e++) {
+                                        for(int d = 0; d < D; d++) {
+                                            Uorg[d] = Gradients[VecPtr[d]][i, k, e];
+                                        }
+
+                                        Vector Udest = Mtx.MtxVecMul(Uorg);
+
+                                        for(int d = 0; d < D; d++) {
+                                            Gradients[VecPtr[d]][i, k, e] = Udest[d];
+                                        }
+                                    }
+                                }
+                                */
+
+                                for(int k = 0; k < NoOfNodes; k++) {
+                                    if(VecPtr[0] >= Gradients.Length || Gradients[VecPtr[0]] == null)
+                                        continue;
+
+                                    for(int e = 0; e < D; e++) {
+                                        for(int d = 0; d < D; d++) {
+                                            GT[e, d] = Gradients[VecPtr[e]][i, k, d];
+                                        }
+                                    }
+
+                                    var GTD = Mtx.GEMM(GT, MtxT);
+
+
+                                    for(int e = 0; e < D; e++) {
+                                        for(int d = 0; d < D; d++) {
+                                            Gradients[VecPtr[e]][i, k, d] = GTD[e, d];
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        void TransfromGradientVector(MultidimensionalArray Mtx, MultidimensionalArray[] Gradients) {
+
+                            //var MtxT = Mtx.TransposeTo();
+                            //var GT = MultidimensionalArray.Create(D, D);
+
+                            foreach(int iVar in ScalarIndices) {
+                                if(iVar >= Gradients.Length)
+                                    continue;
+                                MultidimensionalArray Gradient = Gradients[iVar];
+                                if(Gradient == null)
+                                    continue;
+                                                                
+                                Vector Uorg = new Vector(D);
+                                for(int k = 0; k < NoOfNodes; k++) {
+
+
+                                    for(int d = 0; d < D; d++) {
+                                        Uorg[d] = Gradient[i, k, d];
+                                    }
+
+                                    Vector Udest = Mtx.MtxVecMul(Uorg);
+
+                                    for(int d = 0; d < D; d++) {
+                                        Gradient[i, k, d] = Udest[d];
+                                    }
+
+                                }
+                                
+                            }
+                        }
+
+
+                        if(_PeriodicVectorTrafo == PeriodicVectorTrafo.fwd) {
+                            var MatrixFW = Trafo.Matrix.TransposeTo(); // transform from IN to OT
+                            MatrixFW.InvertInPlace();
+
+                            TransformVector(MatrixFW, m_FieldValuesIN);
+                            TransformVector(MatrixFW, m_MeanFieldValuesIN);
+                            TransfromGradientTensor(MatrixFW, m_FieldGradientIN);
+                            TransfromGradientVector(MatrixFW, m_FieldGradientIN);
+
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    //m_FieldGradientIN[0][i, k, d] = m_FieldGradientOT[0][i, k, d];
+                                }
+                            }
+
+
+                            // transform normal
+                            Vector N = new Vector(D);
+                            NormalsGlobalCoords = NormalsGlobalCoords.CloneAs(); // Don't mess with cached normals.
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    N[d] = NormalsGlobalCoords[i, k, d];
+                                }
+
+                                Vector ND = MatrixFW.MtxVecMul(N);
+
+                                for(int d = 0; d < D; d++) {
+                                    NormalsGlobalCoords[i, k, d] = ND[d];
+                                }
+                            }
+                        } else if(_PeriodicVectorTrafo == PeriodicVectorTrafo.bck) {
+                            var MatrixBK = Trafo.Matrix.TransposeTo(); // transform from OT to IN
+
+                            TransformVector(MatrixBK, m_FieldValuesOT);
+                            TransformVector(MatrixBK, m_MeanFieldValuesOT);
+                            TransfromGradientTensor(MatrixBK, m_FieldGradientOT);
+                            TransfromGradientVector(MatrixBK, m_FieldGradientOT);
+
+                            for(int k = 0; k < NoOfNodes; k++) {
+                                for(int d = 0; d < D; d++) {
+                                    //m_FieldGradientOT[0][i, k, d] = m_FieldGradientIN[0][i, k, d];
+                                }
+                            }
+
+                        } else {
+                            throw new NotImplementedException();
+                        }
+                    }
+                }
+            }
+
+            return NormalsGlobalCoords;
+        }
+
         static MultidimensionalArray.MultiplyProgram mp_in_in_Ti = MultidimensionalArray.MultiplyProgram.Compile("in", "in", "T(i)", true);
         static MultidimensionalArray.MultiplyProgram mp_kn_k_kn = MultidimensionalArray.MultiplyProgram.Compile("kn", "k", "kn");
         static MultidimensionalArray.MultiplyProgram mp_knd_k_knd = MultidimensionalArray.MultiplyProgram.Compile("knd", "k", "knd");
@@ -1386,13 +1627,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         static MultidimensionalArray.MultiplyProgram mp_jn_Tjkn_jk = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)kn", "jk", true);
         static MultidimensionalArray.MultiplyProgram mp_jn_Tjknd_jkd = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)knd", "jkd", true);
         static MultidimensionalArray.MultiplyProgram mp_jn_Tjmn_jm = MultidimensionalArray.MultiplyProgram.Compile("jn", "T(j)mn", "jm", true);
-
-
-       
-
-        
-
-
 
         private void EvalFlux<T>(EquationComponentArgMapping<T> components, int i0, int Length, IGridData grid, int NoOfSec,
             bool MapAlsoMean, bool MapAlsoGradient, Stopwatch[] timers, 
@@ -1572,6 +1806,35 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                     timers[iComp].Stop();
                 }
             }
+        }
+
+        /// <summary>
+        /// <see cref="PeriodicVectorTrafo"/>
+        /// </summary>
+        public PeriodicVectorTrafo _PeriodicVectorTrafo = PeriodicVectorTrafo.nix;
+
+        /// <summary>
+        /// Feature to support non-parallel periodic boundaries, e.g. cake-pies of rotational symmetrical domains.
+        /// These must be integrated in two passes, one for the IN and one for the OUT-cell of the respective periodic edges.
+        /// In both passes, a different (inverse) transformation is applied onto vector and normal fields.
+        /// </summary>
+        public enum PeriodicVectorTrafo {
+
+            /// <summary>
+            /// Periodic vector transform turned off.
+            /// Can also be used for parallel periodic boundaries which do **not** require vector transformations.
+            /// </summary>
+            nix = 0,
+
+            /// <summary>
+            /// writes to the OUT-cell, no contribution to IN-cell
+            /// </summary>
+            fwd = 1,
+
+            /// <summary>
+            /// writes to the IN-cell, no contribution to OUT-cell
+            /// </summary>
+            bck = 2
         }
     }
 }

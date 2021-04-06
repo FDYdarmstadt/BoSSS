@@ -36,8 +36,8 @@ namespace ilPSP.LinSolvers {
         /// <returns>
         /// The column indices of non-zero/allocated entries.
         /// </returns>
-        static public int[] GetOccupiedColumnIndices(this IMutableMatrixEx M, int iRow) {
-            int[] idx = null;
+        static public long[] GetOccupiedColumnIndices(this IMutableMatrixEx M, long iRow) {
+            long[] idx = null;
             int L = M.GetOccupiedColumnIndices(iRow, ref idx);
             if (L != idx.Length)
                 Array.Resize(ref idx, L);
@@ -48,8 +48,8 @@ namespace ilPSP.LinSolvers {
         /// Sets all entries in a row to 0
         /// </summary>
         /// <param name="i">row index in global indices</param>
-        static public void ClearRow(this IMutableMatrixEx M, int i) {
-            int[] ColIdx = null;
+        static public void ClearRow(this IMutableMatrixEx M, long i) {
+            long[] ColIdx = null;
             double[] Values = null;
             int L = M.GetRow(i, ref ColIdx, ref Values);
             Array.Clear(Values, 0, L);
@@ -69,10 +69,10 @@ namespace ilPSP.LinSolvers {
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
         /// <returns></returns>
-        static public int GetNoOfNonZerosPerRow(this IMutableMatrixEx M, int iRow) {
+        static public int GetNoOfNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
 
             int cnt = 0;
-            int[] col = null;
+            long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for (int l = 0; l < L; l++) {
@@ -91,9 +91,9 @@ namespace ilPSP.LinSolvers {
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
         /// <returns></returns>
-        static public int GetNoOfUpperTriangualNonZerosPerRow(this IMutableMatrixEx M, int iRow) {
+        static public int GetNoOfUpperTriangualNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
             int cnt = 0;
-            int[] col = null;
+            long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for(int l = 0; l < L; l++) {
@@ -109,10 +109,10 @@ namespace ilPSP.LinSolvers {
         /// <param name="iRow">local row index</param>
         /// <param name="M">matrix to operate on</param>
         /// <returns></returns>
-        static public int GetNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M, int iRow) {
+        static public int GetNoOfOffDiagonalNonZerosPerRow(this IMutableMatrixEx M, long iRow) {
 
             int cnt = 0;
-            int[] col = null;
+            long[] col = null;
             double[] val = null;
             int L = M.GetRow(iRow, ref col, ref val);
             for (int l = 0; l < L; l++) {
@@ -177,9 +177,9 @@ namespace ilPSP.LinSolvers {
         /// in the upper triangle.
         /// </summary>
         /// <returns></returns>
-        static public int GetGlobalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
+        static public long GetGlobalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
 
-            int odnz = M.GetLocalNoOfUpperTriangularNonZeros();
+            long odnz = M.GetLocalNoOfUpperTriangularNonZeros();
 
             odnz = odnz.MPISum(M.MPI_Comm);
 
@@ -193,7 +193,7 @@ namespace ilPSP.LinSolvers {
         /// Number of non-zero elements  
         /// in the upper triangle.
         /// <returns></returns>
-        static public int GetLocalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
+        static public long GetLocalNoOfUpperTriangularNonZeros(this IMutableMatrixEx M) {
 
             int odnz = 0;
             var rowPart = M.RowPartitioning;
@@ -210,7 +210,7 @@ namespace ilPSP.LinSolvers {
         /// returns the number of non-zero elements in the matrix on the current MPI process.
         /// </summary>
         /// <returns></returns>
-        static public int GetTotalNoOfNonZerosPerProcess(this IMutableMatrixEx M) {
+        static public long GetTotalNoOfNonZerosPerProcess(this IMutableMatrixEx M) {
           
 
             int odnz = 0;
@@ -228,10 +228,10 @@ namespace ilPSP.LinSolvers {
         /// (on the current MPI process);
         /// </summary>
         /// <returns></returns>
-        static public int GetTotalNoOfNonZeros(this IMutableMatrixEx M) {
+        static public long GetTotalNoOfNonZeros(this IMutableMatrixEx M) {
             MPICollectiveWatchDog.Watch(M.RowPartitioning.MPI_Comm);
-            int odnz = M.GetTotalNoOfNonZerosPerProcess();
-            int odnz_global = odnz.MPISum(M.MPI_Comm);
+            long odnz = M.GetTotalNoOfNonZerosPerProcess();
+            long odnz_global = odnz.MPISum(M.MPI_Comm);
             return odnz_global;
         }
 
@@ -239,18 +239,21 @@ namespace ilPSP.LinSolvers {
         /// checks all (nonzero) matrix entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public void CheckForNanOrInfM<T>(this T M)
+        static public void CheckForNanOrInfM<T>(this T M, string messageprefix = null)
             where T : IMutableMatrixEx //
         {
-            int[] col = null;
+            if(messageprefix == null)
+                messageprefix = "";
+
+            long[] col = null;
             double[] val = null;
-            for (int i = M.RowPartitioning.i0; i < M.RowPartitioning.iE; i++) {
+            for (long i = M.RowPartitioning.i0; i < M.RowPartitioning.iE; i++) {
                 int L = M.GetRow(i, ref col, ref val);
                 for (int l = 0; l < L; l++) {
                     if (double.IsInfinity(val[l]))
-                        throw new ArithmeticException("element (" + i + "," + col[l] + ") is infinity.");
+                        throw new ArithmeticException($"{messageprefix}element ({i},{col[l]}) is infinity.");
                     if (double.IsNaN(val[l]))
-                        throw new ArithmeticException("element (" + i + "," + col[l] + ") is NAN.");
+                        throw new ArithmeticException($"{messageprefix}element ({i},{col[l]}) is NAN.");
                 }
             }
         }
@@ -265,7 +268,7 @@ namespace ilPSP.LinSolvers {
 
                 MsrMatrix R = new MsrMatrix(M.RowPartitioning, M.ColPartition);
 
-                int[] col = null;
+                long[] col = null;
                 double[] val = null;
                 int i0 = (int)R.RowPartitioning.i0, L = R.RowPartitioning.LocalLength;
                 for (int i = 0; i < L; i++) {
@@ -310,7 +313,7 @@ namespace ilPSP.LinSolvers {
             int i0 = (int)Acc.RowPartitioning.i0;
 
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
             int L;
             for (int i = 0; i < I; i++) {
 
@@ -336,15 +339,15 @@ namespace ilPSP.LinSolvers {
         /// <param name="MaxRow">output: the row index, where <paramref name="Max"/> is located</param>
         /// <param name="MaxCol">output: the column index, where <paramref name="Max"/> is located</param>
         public static void GetMinimumAndMaximum_MPILocal(this IMutableMatrixEx M,
-            out double Min, out int MinRow, out int MinCol,
-            out double Max, out int MaxRow, out int MaxCol) {
+            out double Min, out long MinRow, out long MinCol,
+            out double Max, out long MaxRow, out long MaxCol) {
 
             Min = double.MaxValue;
             Max = double.MinValue;
-            MinRow = int.MinValue;
-            MinCol = int.MinValue;
-            MaxRow = int.MinValue;
-            MaxCol = int.MinValue;
+            MinRow = long.MinValue;
+            MinCol = long.MinValue;
+            MaxRow = long.MinValue;
+            MaxCol = long.MinValue;
 
             MsrMatrix _M = M as MsrMatrix;
 
@@ -352,7 +355,7 @@ namespace ilPSP.LinSolvers {
             int I = M.RowPartitioning.LocalLength;
             int i0 = (int)M.RowPartitioning.i0;
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
             int L;
             for (int i = 0; i < I; i++) {
 
@@ -363,7 +366,7 @@ namespace ilPSP.LinSolvers {
                 for(int l = 0; l < L; l++) {
                     t = true;
 
-                    int ColIndex = col[l];
+                    long ColIndex = col[l];
                     double Value = val[l];
 
                     if (Value > Max) {
@@ -399,7 +402,7 @@ namespace ilPSP.LinSolvers {
             MsrMatrix.MatrixEntry[][] ret = new MsrMatrix.MatrixEntry[L][];
 
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
             int Lr;
 
             for (int i = 0; i < L; i++) {
@@ -489,7 +492,7 @@ namespace ilPSP.LinSolvers {
 
                 SerialisationMessenger sms = new SerialisationMessenger(M.MPI_Comm);
 
-                int NoOfNonZeros = M.GetTotalNoOfNonZeros();
+                long NoOfNonZeros = M.GetTotalNoOfNonZeros();
                 
                 if (rank == 0) {
                     sms.CommitCommPaths();
@@ -573,28 +576,28 @@ namespace ilPSP.LinSolvers {
 
                 var entries = M.GetAllEntries();
 
-                int NoOfNonZeros = M.GetTotalNoOfNonZerosPerProcess();
+                long NoOfNonZeros = M.GetTotalNoOfNonZerosPerProcess();
 
-                    // open file
-                    StreamWriter stw = new StreamWriter(String.Concat(path,"_",rank));
+                // open file
+                using(StreamWriter stw = new StreamWriter(String.Concat(path, "_", rank))) {
 
                     // serialize matrix data
                     stw.WriteLine(M.RowPartitioning.LocalLength); // number of rows
                     stw.WriteLine(M.NoOfCols);           // number of columns
                     stw.WriteLine(NoOfNonZeros);                 // number of non-zero entries in Matrix (over all MPI-processors)
 
-                    for (int i = 0; i < entries.Length; i++) {
+                    for(int i = 0; i < entries.Length; i++) {
                         MsrMatrix.MatrixEntry[] row = entries[i];
 
                         int NonZPRow = 0;
-                        foreach (MsrMatrix.MatrixEntry e in row) {
-                            if (e.ColIndex >= 0 && e.Value != 0.0) NonZPRow++;
+                        foreach(MsrMatrix.MatrixEntry e in row) {
+                            if(e.ColIndex >= 0 && e.Value != 0.0) NonZPRow++;
                         }
                         stw.Write(NonZPRow);
                         stw.Write(" ");
 
-                        foreach (MsrMatrix.MatrixEntry e in row) {
-                            if (e.ColIndex >= 0 && e.Value != 0.0) {
+                        foreach(MsrMatrix.MatrixEntry e in row) {
+                            if(e.ColIndex >= 0 && e.Value != 0.0) {
                                 stw.Write(e.ColIndex);
                                 stw.Write(" ");
                                 stw.Write(e.Value.ToString("E16", NumberFormatInfo.InvariantInfo));
@@ -608,7 +611,7 @@ namespace ilPSP.LinSolvers {
                     // finalize
                     stw.Flush();
                     stw.Close();
-
+                }
             }
         }
 
@@ -644,10 +647,10 @@ namespace ilPSP.LinSolvers {
             if(tis.ColPartition.TotalLength != FullMtx.NoOfCols)
                 throw new ArgumentException("Mismatch in number of columns.");
 
-            int i0 = tis.RowPartitioning.i0;
+            long i0 = tis.RowPartitioning.i0;
             int I = tis.RowPartitioning.LocalLength;
-            int J = tis.ColPartition.TotalLength;
-            int[] col = null;
+            int J = checked((int)(tis.ColPartition.TotalLength));
+            long[] col = null;
             double[] val = null;
 
             for(int i = 0; i < I; i++) {
@@ -659,7 +662,7 @@ namespace ilPSP.LinSolvers {
                     oldRow[i].Value = val[lr];
                 }
 
-                List<int> NewColIdx = new List<int>(J);
+                List<long> NewColIdx = new List<long>(J);
                 List<double> NewVals = new List<double>(J);
                 for(int j = 0; j < J; j++) {
                     double FMij = FullMtx[i, j];
@@ -672,8 +675,8 @@ namespace ilPSP.LinSolvers {
                 Array.Sort<MsrMatrix.MatrixEntry>(oldRow);
                 int k1 = 0, k2 = 0, K1 = oldRow.Length, K2 = NewVals.Count;
                 while(k1 < K1 && k2 < K2) {
-                    int j1 = oldRow[k1].m_ColIndex;
-                    int j2 = NewColIdx[k2];
+                    long j1 = oldRow[k1].m_ColIndex;
+                    long j2 = NewColIdx[k2];
 
                     if(j1 < 0)
                         // should also chrash in RELEASE, therefor -> Exception.
@@ -717,17 +720,17 @@ namespace ilPSP.LinSolvers {
                 sms.SetCommPath(0);
             sms.CommitCommPaths();
 
-            Tuple<int,int[],double[]>[] data;
+            Tuple<int,long[],double[]>[] data;
             {
                 int L = tis.RowPartitioning.LocalLength;
-                data = new Tuple<int, int[], double[]>[L];
+                data = new Tuple<int, long[], double[]>[L];
 
                 int i0 = (int)tis.RowPartitioning.i0;
                 for (int i = 0; i < L; i++) {
                     double[] val = null; // this mem. must be inside the loop/allocated for every i and cannot be reused because we need all rows later.
-                    int[] col = null;
+                    long[] col = null;
                     int Lr = tis.GetRow(i + i0, ref col, ref val);
-                    data[i] = new Tuple<int, int[], double[]>(Lr, col, val);
+                    data[i] = new Tuple<int, long[], double[]>(Lr, col, val);
                 }
             }
 
@@ -747,7 +750,7 @@ namespace ilPSP.LinSolvers {
                         //        ret[i + i0, entry.m_ColIndex] = entry.Value;
                         //}
                         int Lr = data[i].Item1;
-                        int[] col = data[i].Item2;
+                        long[] col = data[i].Item2;
                         double[] val = data[i].Item3;
                         for (int lr = 0; lr < Lr; lr++)
                             ret[i + i0, col[lr]] = val[lr];
@@ -783,13 +786,13 @@ namespace ilPSP.LinSolvers {
             string OutputString = "";
 
             double[] val = null;
-            int[] col = null;
+            long[] col = null;
             int L;
 
             for (int i = 0; i < tis.RowPartitioning.LocalLength; i++) {
 
                 L = tis.GetRow(i + tis.RowPartitioning.i0, ref col, ref val);
-                int currentColumn = -1;
+                long currentColumn = -1;
 
                 string separator = "";
                 for (int j = 0; j < L; j++) {
@@ -798,7 +801,7 @@ namespace ilPSP.LinSolvers {
 
                     // Add zeros for missing columns (the sparse format does
                     // not store zero values)
-                    for (int k = currentColumn + 1; k < col[j]; k++) {
+                    for (long k = currentColumn + 1; k < col[j]; k++) {
                         OutputString += String.Format(separator + "{0,14:F0}", 0.0);
                         separator = "\t";
                     }
@@ -811,7 +814,7 @@ namespace ilPSP.LinSolvers {
                 }
 
                 // Add zeros for columns following after the last entry
-                for (int j = currentColumn + 1; j < tis.NoOfCols; j++) {
+                for (long j = currentColumn + 1; j < tis.NoOfCols; j++) {
                     OutputString += String.Format(separator + "{0,14:F0}", 0.0);
                 }
 
@@ -859,7 +862,7 @@ namespace ilPSP.LinSolvers {
                 double normLoc = 0;
 
                 int L = M.RowPartitioning.LocalLength;
-                int[] col = null;
+                long[] col = null;
                 double[] val = null;
                 int Lr;
                 for (int i = 0; i < L; i++) {
@@ -887,7 +890,7 @@ namespace ilPSP.LinSolvers {
         /// extracts the diagonal vector from a matrix.
         /// </summary>
         static public double[] GetDiagVector(this IMutableMatrix M) {
-            int i0 = M.RowPartitioning.i0;
+            long i0 = M.RowPartitioning.i0;
             int L = M.RowPartitioning.LocalLength;
             double[] diag = new double[L];
             for(int i = 0; i < L; i++) {

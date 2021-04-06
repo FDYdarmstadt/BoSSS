@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>PublicTestRunner</RootNamespace>
     <AssemblyName>PublicTestRunner</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -45,7 +45,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+    <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
@@ -200,6 +200,10 @@
     <ProjectReference Include="..\XdgTimesteppingTest\XdgTimesteppingTest.csproj">
       <Project>{efbeff7a-abc0-4007-be79-53612307fadc}</Project>
       <Name>XdgTimesteppingTest</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj">
+      <Project>{08b50efe-e463-4bae-8d29-bc109b86290e}</Project>
+      <Name>XNSERO_Solver</Name>
     </ProjectReference>
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
       <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>

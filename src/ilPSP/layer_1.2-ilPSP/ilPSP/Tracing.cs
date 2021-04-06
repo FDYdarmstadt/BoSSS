@@ -44,6 +44,15 @@ namespace ilPSP.Tracing {
                 return ((string[])(m_NamespacesToLog.Clone()));
             }
             set {
+                //Console.Write("Resetting logging namespaces: ");
+                //if(value == null || value.Length <= 0) {
+                //    Debugger.Launch();
+                //    Console.WriteLine("NIX2LOG.");
+                //} else {
+                //    foreach(string s in value)
+                //        Console.Write($"<{s}> ");
+                //    Console.WriteLine();
+                //}
                 var NameSpaceList = value;
                 if (NameSpaceList == null)
                     throw new ArgumentNullException();
@@ -96,14 +105,20 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
+        private static readonly object padlock = new object();
+
+
         internal static void Push_MethodCallRecord(string _name) {
             Debug.Assert(InstrumentationSwitch == true);
             
+
             //if (Tracer.Current != null) {
             MethodCallRecord mcr;
-            if (!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
-                mcr = new MethodCallRecord(Tracer.Current, _name);
-                Tracer.Current.Calls.Add(_name, mcr);
+            lock(padlock) {
+                if(!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
+                    mcr = new MethodCallRecord(Tracer.Current, _name);
+                    Tracer.Current.Calls.Add(_name, mcr);
+                }
             }
             Tracer.Current = mcr;
             mcr.CallCount++;
@@ -334,9 +349,11 @@ namespace ilPSP.Tracing {
 
 
         /// <summary>
-        /// writes information about system memory usage to trace file
+        /// writes information about system memory usage to trace file;
+        /// This seems to have a severe performance impact on server OS, therefore deactivated (fk,21dec20)
         /// </summary>
         public void LogMemoryStat() {
+            /*
             if(!Tracer.InstrumentationSwitch)
                 return;
 
@@ -403,7 +420,7 @@ namespace ilPSP.Tracing {
                 }
                 Info(s);
             }
-
+            */
         }
 
         /*

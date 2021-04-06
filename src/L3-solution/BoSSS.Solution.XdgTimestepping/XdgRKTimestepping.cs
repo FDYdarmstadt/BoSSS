@@ -157,6 +157,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         CoordinateVector m_CurrentState;
 
+        /// <summary>
+        /// Coordinate mapping for most recent solution approximation
+        /// </summary>
         public override CoordinateMapping CurrentStateMapping {
             get {
                 return m_CurrentState.Mapping;
@@ -350,7 +353,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Performs one timestep, on the DG fields in <see cref="XdgTimesteppingBase.CurrentStateMapping"/>.
         /// </summary>
-        public void Solve(double phystime, double dt) {
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        public bool Solve(double phystime, double dt) {
 
             Debug.Assert(m_RKscheme.c.Length == m_RKscheme.a.GetLength(0));
             Debug.Assert(m_RKscheme.b.Length == m_RKscheme.a.GetLength(1));
@@ -436,8 +443,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // loop over Runge-Kutta stages...
             double[][] k = new double[m_RKscheme.Stages][];
+            bool success = true;
             for (int s = 0; s < m_RKscheme.Stages; s++) {
-                RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                success = success && RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
             }
@@ -472,10 +480,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                     oldTs__AgglomerationTreshold: new double[] { 0.0 });
                 SplittingAgg.Extrapolate(this.CurrentStateMapping);
             }
+
+            m_CurrentPhystime = phystime + dt;
+            
+            return success;
         }
 
+        double m_CurrentPhystime;
 
-        private void RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
+        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
             double ActualLevSetRelTime) {
 
             // detect whether the stage s is explicit or not: (implicit schemes can have some explicit stages too)
@@ -496,18 +509,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++
 
                 RKstageExplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
+                return true;
             } else {
                 // +++++++++++++++++++++
                 // Implicit stage branch
                 // +++++++++++++++++++++
 
-                RKstageImplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
+                return RKstageImplicit(PhysTime, dt, k, s, Mass, u0, ActualLevSetRelTime, RK_as, RelTime);
             }
 
 
         }
 
-        private void RKstageImplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
+        private bool RKstageImplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
             Debug.Assert(s < m_RKscheme.Stages);
             Debug.Assert(m_RKscheme.c[s] > 0);
             Debug.Assert(RK_as[s] != 0);
@@ -540,13 +554,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISolverSmootherTemplate linearSolver;
             GetSolver(out nonlinSolver, out linearSolver);
 
-
+            bool success;
             if (RequiresNonlinearSolver) {
 
                 // Nonlinear Solver (Navier-Stokes)
                 // --------------------------------
 
-                nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
+                success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
             } else {
                 // Linear Solver (Stokes)
@@ -570,6 +584,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // try to solve the saddle-point system.
                 mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
+                success = linearSolver.Converged;
 
                 // 'revert' agglomeration
                 m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
@@ -579,6 +594,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // reset
             // ================
             m_ImplStParams = null;
+            return success;
         }
 
         ImplicitStage_AssiParams m_ImplStParams = null;
@@ -602,16 +618,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
 
             abstractOp = base.AbstractOperator;
-            if (Linearization == false)
-                throw new NotImplementedException("todo");
-
+           
             int Ndof = m_CurrentState.Count;
 
             // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
-            // -----------------------------------------------------------
+            // ----------------------------------------------------------------
             DGField[] locCurSt = CurrentStateMapping.Fields.ToArray();
             if (locCurSt.Length != argCurSt.Length) {
                 throw new ApplicationException();
@@ -706,10 +720,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // - the operator matrix depends on these values
             this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-            var OpMatrix = new BlockMsrMatrix(CurrentStateMapping);
-            var OpAffine = new double[Ndof];
+            BlockMsrMatrix OpMatrix = Linearization ? new BlockMsrMatrix(CurrentStateMapping) : null; 
+            double[] OpAffine = new double[Ndof];
+            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime, 1);
 
-            this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_ImplStParams.m_CurrentPhystime + m_ImplStParams.m_CurrentDt * m_ImplStParams.m_RelTime);
+            
+
+            //if (Linearization == false)
+            //    throw new NotImplementedException("todo");
 
 
             // assemble system
@@ -756,12 +774,25 @@ namespace BoSSS.Solution.XdgTimestepping {
             Affine.AccV(m_ImplStParams.m_RK_as[m_ImplStParams.m_s], OpAffine);
 
             // left-hand-side
-            System = OpMatrix.CloneAs();
-            System.Scale(m_ImplStParams.m_RK_as[m_ImplStParams.m_s]);
-            if (MamaLHS != null) {
-                System.Acc(1.0 / dt, MamaLHS);
+            if(Linearization) {
+                System = OpMatrix.CloneAs();
+                System.Scale(m_ImplStParams.m_RK_as[m_ImplStParams.m_s]);
+                if(MamaLHS != null) {
+                    System.Acc(1.0 / dt, MamaLHS);
+                } else {
+                    System.AccEyeSp(1.0 / dt);
+                }
             } else {
-                System.AccEyeSp(1.0 / dt);
+                System = null;
+
+                for(int iVar = 0; iVar < argCurSt.Length; iVar++)
+                Debug.Assert(object.ReferenceEquals(CurrentStateMapping.Fields[iVar], m_CurrentState.Fields[iVar])); // ensure that we use the actual current state
+
+                if(MamaLHS != null) {
+                    MamaLHS.SpMV(1 / dt, m_CurrentState, 1.0, Affine);
+                } else {
+                    Affine.AccV(1 / dt, m_CurrentState);
+                }
             }
 
             // perform agglomeration
@@ -769,9 +800,24 @@ namespace BoSSS.Solution.XdgTimestepping {
             Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
             m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
 
+            if(Linearization) {
+                m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+            } else {
+                m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
+            }
+
+
             // increase iteration counter         
             // --------------------------
             m_ImplStParams.m_IterationCounter++;
+        }
+
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public override double GetSimulationTime() {
+            return m_CurrentPhystime;
         }
 
 
@@ -902,12 +948,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Evaluation of only the spatial operator 
+        /// </summary>
         protected virtual void UpdateChangeRate(double PhysTime, double[] k) {
 
             //BlockMsrMatrix OpMtx = new BlockMsrMatrix(this.CurrentStateMapping);
             double[] OpAff = new double[this.CurrentStateMapping.LocalLength];
-            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime);
-
+            base.ComputeOperatorMatrix(null, OpAff, this.CurrentStateMapping, this.CurrentStateMapping.Fields.ToArray(), base.GetAgglomeratedLengthScales(), PhysTime, 1);
             k.SetV(OpAff);
             //OpMtx.SpMV(1.0, this.m_CurrentState, 1.0, k);
         }

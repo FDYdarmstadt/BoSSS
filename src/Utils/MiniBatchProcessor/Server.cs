@@ -110,7 +110,7 @@ namespace MiniBatchProcessor {
         /// - true: the server was just started
         /// - false: the server is already running
         /// </returns>
-        public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null) {
+        public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null, bool Reset = false) {
             BatchInstructionDir = BatchInstructionDir != null ? BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
             
             if (ServerExternal != null && ServerExternal.HasExited) {
@@ -145,18 +145,56 @@ namespace MiniBatchProcessor {
 
                 ServerExternal = p;
                 MiniBatchThreadIsMyChild = true;
+
             } else {
                 Console.WriteLine("Starting mini batch processor in background thread...");
 
                 Thread ServerThread = (new Thread(delegate () {
                     var s = new Server(null);
-                    s._Main(new string[0]);
+                    s._Main(new string[0], Reset);
                 }));
                 ServerThread.Start();
 
                 ServerInternal = ServerThread;
                 MiniBatchThreadIsMyChild = true;
             }
+
+            int timeout = 0;
+            while(!GetIsRunning(BatchInstructionDir)) {
+                Console.WriteLine("waiting for startup...");
+                Thread.Sleep(4875);
+                timeout++;
+                if(timeout > 20) {
+                    Console.WriteLine("giving up.");
+                    if(ServerExternal != null) {
+                        if(!ServerExternal.HasExited) {
+                            try {
+                                ServerExternal.Kill();
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"Server startup fail: {e.GetType().Name}: {e.Message}");
+                            }
+                        }
+                        ServerExternal = null;
+                    }
+
+                    if(ServerInternal != null) {
+                        if(ServerInternal.IsAlive) {
+                            try {
+                                ServerInternal.Abort();
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"Server startup fail: {e.GetType().Name}: {e.Message}");
+                            }
+                        }
+                        ServerInternal = null;
+                    }
+
+                    return false;
+                }
+            }
+
+           
+
+            Console.WriteLine("started.");
             return true;
         }
 
@@ -248,7 +286,7 @@ namespace MiniBatchProcessor {
             }
         }
 
-        bool Init() {
+        bool Init(bool Reset) {
 
 
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
@@ -283,9 +321,34 @@ namespace MiniBatchProcessor {
                 ServerMutexS.WriteLine("one instance of the batch processor per computer/user is running.");
                 ServerMutexS.Flush();
             } catch(IOException) {
-                Console.WriteLine("Unable to obtain server mutex (2).");
+                LogMessage("Unable to obtain server mutex (2).", error:true);
                 return false;
             }
+
+            // Rename present queue and working directory to start fresh
+            if(Reset) {
+                var date = DateTime.Now.ToString("ddMMMyyyy_HHmmss");
+                foreach(string q in new[]{ 
+                    Path.Combine(config.BatchInstructionDir, QUEUE_DIR),
+                    Path.Combine(config.BatchInstructionDir, WORK_FINISHED_DIR) }) {
+
+                    if(Directory.Exists(q)) {
+                        /*
+                        foreach(string f in Directory.GetFiles(q)) {
+                            try {
+                                File.Delete(f);
+                            } catch(Exception) {
+                                // ignore
+                            }
+                        }
+                        */
+                        Directory.Move(q, q + ".bkup-" + date);
+                    }
+
+                }
+            }
+
+
 
             // see if there are any zombies left in the 'working' directory
             foreach (var J in Working) {
@@ -299,39 +362,11 @@ namespace MiniBatchProcessor {
                 }
             }
 
+          
+
             return true;
         }
-
-        /*
-        static Configuration Config;
-
-        /*
-        static void MoveWorkingToFinished(JobData J) {
-            string BaseDir = ClientAndServer.config.BatchInstructionDir;
-            foreach (string nmn in new string[] { J.ID.ToString(), J.ID.ToString() + "_exit.txt" }) {
-                var Src = Path.Combine(BaseDir, ClientAndServer.WORK_DIR, nmn);
-                var Dst = Path.Combine(BaseDir, ClientAndServer.FINISHED_DIR, nmn);
-
-                if (File.Exists(Src)) {
-                    int ReTryCount = 0;
-                    while (true) {
-                        try {
-                            File.Move(Src, Dst);
-                            break;
-                        } catch (Exception e) {
-                            if (ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
-                                ReTryCount++;
-                                Thread.Sleep(ClientAndServer.IOwaitTime);
-                            } else {
-                                Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        */
+               
 
         void MoveQueueToWorking(JobData J) {
             string BaseDir = config.BatchInstructionDir;
@@ -352,7 +387,7 @@ namespace MiniBatchProcessor {
                                 ReTryCount++;
                                 Thread.Sleep(ClientAndServer.IOwaitTime);
                             } else {
-                                Console.Error.WriteLine("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message);
+                                LogMessage(string.Format("{0} while trying to move file '{1}' to '{2}', message: {3}.", e.GetType().Name, Src, Dst, e.Message), error:true);
                                 return;
                             }
                         }
@@ -371,14 +406,14 @@ namespace MiniBatchProcessor {
         bool CheckJob(JobData J, bool WriteInfo) {
             if (J.NoOfProcs > config.MaxProcessors) {
                 if (WriteInfo) {
-                    Console.Error.WriteLine("Job #{0} is to big for this machine: configured to use {1} processors, max. allowed is {2}.", J.ID, J.NoOfProcs, config.MaxProcessors);
+                    LogMessage(string.Format("Job #{0} is to big for this machine: configured to use {1} processors, max. allowed is {2}.", J.ID, J.NoOfProcs, config.MaxProcessors), error:true);
                 }
                 return false;
             }
 
             if (J.NoOfProcs <= 0) {
                 if (WriteInfo) {
-                    Console.Error.WriteLine("Illegal configuration for job #{0}: cannot run with {1} processors.", J.ID, J.NoOfProcs);
+                    LogMessage(string.Format("Illegal configuration for job #{0}: cannot run with {1} processors.", J.ID, J.NoOfProcs), error:true);
                 }
                 return false;
             }
@@ -395,12 +430,18 @@ namespace MiniBatchProcessor {
         /// <summary>
         /// Writes a message to stdout, but only if it differs from the last message.
         /// </summary>
-        internal static void LogMessage(string m) {
+        internal static void LogMessage(string m, bool error = false) {
             lock(padlock) {
                 if(!m.Equals(LastMessage)) {
                     string fm = DateTime.Now + ": " + m;
-                    if(ServerInternal == null)
-                        Console.WriteLine(fm);
+                    if(error)
+                        fm = fm + "[ERROR] ";
+                    if(ServerInternal == null) {
+                        if(!error)
+                            Console.WriteLine(fm);
+                    }
+                    if(error)
+                        Console.Error.WriteLine(fm);
                     if (LogFile != null) {
                         LogFile.WriteLine(fm);
                         LogFile.Flush();
@@ -411,7 +452,10 @@ namespace MiniBatchProcessor {
         }
 
 
-        static void Main(string[] args) {
+        /// <summary>
+        /// Entry Point for server running as separate process
+        /// </summary>
+        public static int Main(string[] args) {
 
             string dir = null;
             if(args.Length > 0) {
@@ -423,22 +467,24 @@ namespace MiniBatchProcessor {
 
             if (GetIsRunning(args.Length > 0 ? args[0] : null)) {
                 Console.WriteLine("MiniBatchProcessor server is already running -- only one instance is allowed, terminating this one.");
-                return;
+                return -777;
             }
 
             var s = new Server(dir);
-            s._Main(args);
+            var r = s._Main(args, false);
+
+            return r ? -777 : 0;
         }
        
         /// <summary>
         /// Main routine of the server; continuously checks the respective 
         /// directories (e.g. <see cref="ClientAndServer.QUEUE_DIR"/>) and runs jobs in external processes.
         /// </summary>
-        void _Main(string[] args) {
+        bool _Main(string[] args, bool Reset) {
             
-            if(!Init()) {
+            if(!Init(Reset)) {
                 Console.WriteLine("Terminating server init.");
-                return;
+                return false;
             }
             LogMessage("server started.");
 
@@ -455,7 +501,7 @@ namespace MiniBatchProcessor {
                 if(File.Exists(GetTerminationSignalPath(config.BatchInstructionDir))) {
                     // try to delete
                     File.Delete(GetTerminationSignalPath(config.BatchInstructionDir));
-                    LogMessage("Receives termination signal: server will be terminated, but jobs may continue.");
+                    LogMessage("Received termination signal: server will be terminated, but jobs may continue.");
                     keepRunning = false;
                     ServerMutex.Close();
                     ServerMutex.Dispose();
@@ -466,7 +512,7 @@ namespace MiniBatchProcessor {
                     LogFile = null;
 
                     File.Delete(GetServerMutexPath(config.BatchInstructionDir));
-                    return;
+                    return true;
                 }
 
                 // see if any of the running jobs is finished
@@ -542,6 +588,8 @@ namespace MiniBatchProcessor {
                     th.Start();
                 }
             }
+
+            return true;
         }
 
         /// <summary>

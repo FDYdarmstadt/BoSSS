@@ -28,7 +28,7 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -57,6 +57,7 @@
     <DocumentationFile>bin\Release\BoSSS.Foundation.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <LangVersion>7.1</LangVersion>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
@@ -93,9 +94,9 @@
     <Compile Include="DatabaseDriver_TimeStep.cs" />
     <Compile Include="DatabaseDriver_VectorData.cs" />
     <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
+    <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
-    <Compile Include="FormDifferentiator.cs" />
     <Compile Include="GridComparer.cs" />
     <Compile Include="GridCommons_Comparer.cs" />
     <Compile Include="GridCommons_Merge.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="NodeCoordinateSystem.cs" />
     <Compile Include="NodeSet.cs" />
     <Compile Include="NonlinFormVectorizer.cs" />
+    <Compile Include="PeriodicBoundaryUtils.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="PolynomialList.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -244,9 +246,6 @@
       <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Renci.SshNet">
-      <HintPath>..\..\..\libs\Renci.SshNet-2016.1.0-beta1\Renci.SshNet.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Runtime.Caching" />
@@ -318,6 +317,7 @@
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Resource.resx">
       <Generator>ResXFileCodeGenerator</Generator>

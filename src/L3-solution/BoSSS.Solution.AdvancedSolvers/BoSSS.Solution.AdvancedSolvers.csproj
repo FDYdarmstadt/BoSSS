@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Solution.AdvancedSolvers</RootNamespace>
     <AssemblyName>BoSSS.Solution.AdvancedSolvers</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -51,7 +51,7 @@
     <DocumentationFile>bin\TEST\BoSSS.Solution.AdvancedSolvers.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.6.0.12051, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL">
+    <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
@@ -69,6 +69,8 @@
     <Compile Include="AggregationGridBasis.cs" />
     <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="BlockJacobi.cs" />
+    <Compile Include="UniSolver.cs" />
+    <Compile Include="GenericKcycle.cs" />
     <Compile Include="ClassicMultigrid.cs" />
     <Compile Include="ConditionNumberScalingTest.cs" />
     <Compile Include="ConvergenceObserver.cs" />

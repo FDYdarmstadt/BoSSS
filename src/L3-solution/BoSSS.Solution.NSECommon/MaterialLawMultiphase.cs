@@ -150,5 +150,9 @@ namespace BoSSS.Solution.NSECommon {
         public override double getDensityFromZ(double Z) {
             throw new NotImplementedException();
         }
+
+        public override double GetMixtureHeatCapacity(double[] MassFraction) {
+            throw new NotImplementedException();
+        }
     }
 }

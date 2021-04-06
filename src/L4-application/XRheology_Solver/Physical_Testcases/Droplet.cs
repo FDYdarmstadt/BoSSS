@@ -32,6 +32,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Application.XRheology_Solver {
 
@@ -143,14 +144,14 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.reynolds_B = 1.0;
             //C.PhysicalParameters.mu_A = 1;
             //C.PhysicalParameters.mu_B = 1;
-            C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 0.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
             double sigma = 1.0;
             C.PhysicalParameters.Sigma = sigma;
 
             C.RaiseWeissenberg = true;
-            C.PhysicalParameters.Weissenberg_a = 0.2;// .3;
-            C.PhysicalParameters.Weissenberg_b = 0.5;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.2;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.5;
             C.WeissenbergIncrement = 0.1;
 
             //C.Tags.Add("La = 0.005");
@@ -381,9 +382,8 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.PhysicalParameters.lambda_I = 2 * sigma;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            C.AdvancedDiscretizationOptions.UseLevelSetStabilization = false;
+            C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.None;
 
-            C.AdvancedDiscretizationOptions.UseWeightedAverages = false;
             C.InterAverage = XRheology_Control.InterfaceAveraging.viscosity;
 
 

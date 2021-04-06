@@ -150,13 +150,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
-    public class DivergenceAtLevelSet : ILevelSetForm {
+    public class DivergenceAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_lsTrk;
 
         public DivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
-            bool _MaterialInterface, double vorZeichen, bool RescaleConti, bool _staticInt = false,
-            bool _weighted = false, double _wA = 1.0, double _wB = 1.0) {
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti, 
+            double _wA = 1.0, double _wB = 1.0) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
@@ -171,9 +171,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
                 scaleB /= rhoB;
             }
 
-            this.staticInt = _staticInt;
-
-            this.weighted = _weighted;
             this.wA = _wA;
             this.wB = _wB;
         }
@@ -186,9 +183,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         double scaleA;
         double scaleB;
 
-        bool staticInt;
-
-        bool weighted;
         double wA;
         double wB;
 
@@ -206,10 +200,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
             //double s = 0;//cp.ParamsNeg[0];
-                         //if (!MaterialInterface) {
-                         //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
-                         //    throw new NotImplementedException();
-                         //}
+            //if (!MaterialInterface) {
+            //    Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
+            //    throw new NotImplementedException();
+            //}
 
             double rhoJmp = rhoB - rhoA;
 
@@ -218,7 +212,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             //if(!MaterialInterface)
             //    uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
             //else
-                uAxN_fict = uBxN;
+            uAxN_fict = uBxN;
 
 
             // transform from species A to B: we call this the "B-fictitious" value
@@ -226,19 +220,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             //if(!MaterialInterface)
             //    uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
             //else
-                uBxN_fict = uAxN;
+            uBxN_fict = uAxN;
 
             // compute the fluxes: note that for the continuity equation, we use not a real flux,
             // but some kind of penalization, therefore the fluxes have opposite signs!
             double FlxNeg;
             double FlxPos;
-            if(!weighted) {
-                FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
-                FlxPos = +Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
-            } else {
-                FlxNeg = -Flux(uAxN, uAxN_fict, wB, wA); // flux on A-side
-                FlxPos = +Flux(uBxN_fict, uBxN, wA, wB);  // flux on B-side
-            }
+            FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
+            FlxPos = +Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
 
             FlxNeg *= scaleA;
             FlxPos *= scaleB;
@@ -247,24 +236,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             return FlxNeg * vA - FlxPos * vB;
         }
 
-        //static double Flux(double[] n, double[] U_Neg, double[] U_Pos, int _D) {
-        //    double acc = 0;
-        //    for (int d = _D - 1; d >= 0; d--) {
-        //        acc += (U_Neg[d] - U_Pos[d]) * n[d];
-        //    }
-        //    return 0.5*acc;
-        //}
-
-        //static double UxNormal(double[] U, double[] n) {
-        //    double acc = 0;
-        //    Debug.Assert(U.Length == n.Length);
-        //    int _D = U.Length;
-        //    for (int d = _D - 1; d >= 0; d--) {
-        //        acc += (U[d]) * n[d];
-        //    }
-        //    return acc;
-        //}
-
         
         /// <summary>
         /// the penalty flux
@@ -272,81 +243,86 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         static double Flux(double UxN_in, double UxN_out, double w_in, double w_out) {
                 return (UxN_in - UxN_out) * w_in / (w_in + w_out);
         }
-/*
-        public void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
 
-            double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
-            double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
-
-            //if (varMode == EquationAndVarMode.mom_p) {
-            //    uAxN /= rhoA;
-            //    uBxN /= rhoB;
-            //}
-
-            double s = 0;//cp.ParamsNeg[0];
-            if (!MaterialInterface) {
-                Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
-                throw new NotImplementedException();
-            }
-
-            //{
-            //    double _x = cp.x[0];
-            //    double _y = cp.x[1];
-
-            //    s = -_x/Math.Sqrt(_x.Pow2() + _y.Pow2());
-
-            //}
-
-            double rhoJmp = rhoB - rhoA;
-
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict;
-            if( !MaterialInterface)
-                uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
-            else
-                uAxN_fict = uBxN;
-
-
-            // transform from species A to B: we call this the "B-fictitious" value
-            double uBxN_fict;
-            if (!MaterialInterface)
-                uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
-            else 
-                uBxN_fict = uAxN;
-
-            // compute the fluxes: note that for the continuity equation, we use not a real flux,
-            // but some kind of penalization, therefore the fluxes have opposite signs!
-            FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
-            FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
-            
-            //if (varMode == EquationAndVarMode.mom_p) {
-            //    FlxNeg *= rhoA;
-            //    FlxPos *= rhoB;
-            //}
-            
-            FlxNeg *= scaleA;
-            FlxPos *= scaleB;
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
         /*
-        public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp, 
-            double[] U_Neg, double[] U_Pos) {
-            FlxNeg = 0;
-            FlxPos = 0;
-        }
+       public void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
+           ref CommonParams cp,
+           double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
 
-        public override void FluxPotential(out double G, double[] U) {
-            G = 0;
-        }
+           double uAxN = GenericBlas.InnerProd(U_Neg, cp.n);
+           double uBxN = GenericBlas.InnerProd(U_Pos, cp.n);
 
-        public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
-            NuNeg = 1.0;
-            NuPos = 1.0;
-        }
-        */
+           //if (varMode == EquationAndVarMode.mom_p) {
+           //    uAxN /= rhoA;
+           //    uBxN /= rhoB;
+           //}
+
+           double s = 0;//cp.ParamsNeg[0];
+           if (!MaterialInterface) {
+               Debug.Assert(cp.ParamsNeg[0] == cp.ParamsPos[0], "The interface velocity must be continuous across the level set!");
+               throw new NotImplementedException();
+           }
+
+           //{
+           //    double _x = cp.x[0];
+           //    double _y = cp.x[1];
+
+           //    s = -_x/Math.Sqrt(_x.Pow2() + _y.Pow2());
+
+           //}
+
+           double rhoJmp = rhoB - rhoA;
+
+           // transform from species B to A: we call this the "A-fictitious" value
+           double uAxN_fict;
+           if( !MaterialInterface)
+               uAxN_fict = (1 / rhoA) * (rhoB * uBxN + (-s) * rhoJmp);
+           else
+               uAxN_fict = uBxN;
+
+
+           // transform from species A to B: we call this the "B-fictitious" value
+           double uBxN_fict;
+           if (!MaterialInterface)
+               uBxN_fict = (1 / rhoB) * (rhoA * uAxN - (-s) * rhoJmp);
+           else 
+               uBxN_fict = uAxN;
+
+           // compute the fluxes: note that for the continuity equation, we use not a real flux,
+           // but some kind of penalization, therefore the fluxes have opposite signs!
+           FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+           FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+
+           //if (varMode == EquationAndVarMode.mom_p) {
+           //    FlxNeg *= rhoA;
+           //    FlxPos *= rhoB;
+           //}
+
+           FlxNeg *= scaleA;
+           FlxPos *= scaleB;
+       }
+
+       /*
+       public override void PrimalVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
+           ref CommonParams cp, 
+           double[] U_Neg, double[] U_Pos) {
+           FlxNeg = 0;
+           FlxPos = 0;
+       }
+
+       public override void FluxPotential(out double G, double[] U) {
+           G = 0;
+       }
+
+       public override void Nu(out double NuNeg, out double NuPos, ref CommonParams cp) {
+           NuNeg = 1.0;
+           NuPos = 1.0;
+       }
+       */
 
         public IList<string> ArgumentOrdering {
             get {

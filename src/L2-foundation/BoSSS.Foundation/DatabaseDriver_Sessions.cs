@@ -8,22 +8,17 @@ using System.IO;
 using ilPSP.Tracing;
 using System.Diagnostics;
 
-namespace BoSSS.Foundation.IO
-{
-    class SessionDatabaseDriver : MPIProcess, IDisposable
-    {
+namespace BoSSS.Foundation.IO {
+    class SessionDatabaseDriver : MPIProcess, IDisposable {
         readonly ISerializer Driver;
         IFileSystemDriver fsDriver;
-        public SessionDatabaseDriver(ISerializer driver, IFileSystemDriver FsDriver)
-        {
+        public SessionDatabaseDriver(ISerializer driver, IFileSystemDriver FsDriver) {
             fsDriver = FsDriver;
             Driver = driver;
         }
 
-        public void Dispose()
-        {
-            if (m_stdout != null)
-            {
+        public void Dispose() {
+            if(m_stdout != null) {
                 //Debug.Assert(ilPSP.Environment.StdOut.WriterS.Contains(m_stdout));
                 //Debug.Assert(ilPSP.Environment.StdErr.WriterS.Contains(m_stderr));
 
@@ -46,20 +41,18 @@ namespace BoSSS.Foundation.IO
         /// <summary>
         /// Creates a new session;
         /// </summary>
-        public SessionInfo CreateNewSession(IDatabaseInfo database)
-        {
+        public SessionInfo CreateNewSession(IDatabaseInfo database) {
 
             Guid id = Guid.NewGuid();
-            if (fsDriver == null)
+            if(fsDriver == null)
                 id = Guid.Empty;
             id = id.MPIBroadcast(0);
 
             // init driver
             // ===========
-            if (fsDriver != null)
-            {
+            if(fsDriver != null) {
 
-                if (MyRank == 0)
+                if(MyRank == 0)
                     fsDriver.CreateSessionDirectory(id);
 
                 // ensure that the session directory is available, before ANY mpi process continues.
@@ -72,8 +65,7 @@ namespace BoSSS.Foundation.IO
 
             // create copy of stdout and stderr
             // ================================
-            if (this.fsDriver != null)
-            {
+            if(this.fsDriver != null) {
                 m_stdout = this.fsDriver.GetNewLog("stdout." + MyRank, id);
                 m_stderr = this.fsDriver.GetNewLog("stderr." + MyRank, id);
 
@@ -87,10 +79,8 @@ namespace BoSSS.Foundation.IO
         /// Saves a session info object to a file on the disk.
         /// </summary>
         /// <param name="session">The session to be saved.</param>
-        public void SaveSessionInfo(ISessionInfo session)
-        {
-            using (Stream s = fsDriver.GetSessionInfoStream(true, session.ID))
-            {
+        public void SaveSessionInfo(ISessionInfo session) {
+            using(Stream s = fsDriver.GetSessionInfoStream(true, session.ID)) {
                 Driver.Serialize(s, session, typeof(SessionInfo));
                 s.Close();
             }
@@ -103,14 +93,11 @@ namespace BoSSS.Foundation.IO
         /// <param name="sessionId"></param>
         /// <param name="database"></param>
         /// <returns></returns>
-        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database) {
+            using(var tr = new FuncTrace()) {
                 tr.Info("Loading session " + sessionId);
 
-                using (Stream s = fsDriver.GetSessionInfoStream(false, sessionId))
-                {
+                using(Stream s = fsDriver.GetSessionInfoStream(false, sessionId)) {
                     SessionInfo loadedSession = (SessionInfo)Driver.Deserialize(s, typeof(SessionInfo));
                     loadedSession.Database = database;
                     loadedSession.WriteTime = Utils.GetSessionFileWriteTime(loadedSession);
@@ -131,8 +118,7 @@ namespace BoSSS.Foundation.IO
         /// <remarks>
         /// Should work on any System.
         /// </remarks>
-        public static string GetSessionDirectory(ISessionInfo session)
-        {
+        public static string GetSessionDirectory(ISessionInfo session) {
             string path = Path.Combine(
                 session.Database.Path,
                 StandardFsDriver.SessionsDir,

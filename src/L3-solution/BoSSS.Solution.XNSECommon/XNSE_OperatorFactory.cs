@@ -329,7 +329,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
                 }
 
-                if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if(this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach(var kv in InterfaceLengths)
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                 }
@@ -348,7 +348,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["SlipLengths"] = SlipLengths;
                 }
 
-                if(this.m_XOp.SurfaceElementOperator.TotalNoOfComponents > 0) {
+                if(this.m_XOp.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                     foreach(var kv in InterfaceLengths)
                         this.m_XOp.UserDefinedValues[this.LsTrk.GetSpeciesName(kv.Key)]["InterfaceLengths"] = kv.Value;
                 }

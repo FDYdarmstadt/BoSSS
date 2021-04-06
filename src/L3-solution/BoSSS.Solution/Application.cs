@@ -326,6 +326,8 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine("User: " + System.Environment.UserName);
+
                     using (var stw = new StringWriter()) {
                         var HostName = ilPSP.Environment.MPIEnv.AllHostNames;
                         int I = HostName.Count;
@@ -443,8 +445,12 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            int MPIrank = int.MinValue;
 #if DEBUG
             {
+
+                
 #else
             try {
 #endif
@@ -454,6 +460,7 @@ namespace BoSSS.Solution {
                 bool _MustFinalizeMPI = InitMPI(args);
                 ReadBatchModeConnectorConfig();
 
+                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
 
                 // lets see if we have environment variables which override command line arguments
                 // (environment variables are usually more robust w.r.t. e.g. escape characters)
@@ -512,7 +519,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine();
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine(e.GetType().Name + ":");
+                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
                 Console.Error.WriteLine(e.Message);
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine("========================================");
@@ -616,21 +623,10 @@ namespace BoSSS.Solution {
                 // +++++++++++++++++++++
 
                 string JSON = File.ReadAllText(ControlFilePath);
-                object controlObj = AppControl.Deserialize(JSON);//, typeof(T));
-                                                                 //using (var fs = new FileStream(opt.ControlfilePath, FileMode.Open, FileAccess.Read, FileShare.Read)) {
-                                                                 //    var bf = new BinaryFormatter();
-                                                                 //    controlObj = bf.Deserialize(fs);
-                                                                 //}
+                object controlObj = AppControl.Deserialize(JSON);
 
                 ctrlV2 = controlObj as T;
-                //Debugger.Launch();
-                //if (controlObj is T) {
-                //    ctrlV2 = (T)controlObj;
-
-                //} else if (controlObj is IEnumerable<T>) {
-                //    ctrlV2_ParameterStudy = ((IEnumerable<T>)controlObj).ToArray();
-
-                //} 
+               
 
                 if (ctrlV2 == null) {
                     throw new ApplicationException(string.Format(
@@ -1090,7 +1086,7 @@ namespace BoSSS.Solution {
         ///     </item>
         /// </list>
         /// </summary>
-        protected void SetUpEnvironment() {
+        virtual protected void SetUpEnvironment() {
             // init database
             // =============
 
@@ -1277,13 +1273,15 @@ namespace BoSSS.Solution {
                 m_Database.Controller.AddGridInitializationContext(GridData);
 
                 // create fields
-                //=============
+                // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateFields(); // full user control                
+
+                
 
                 // load queries from control file
                 //========================
@@ -1296,14 +1294,34 @@ namespace BoSSS.Solution {
                 }
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
 
-                //save session information
-                //========================
+                // logging
+                // ==================================
+                m_PostprocessingModules.Clear();
+                if(this.Control != null && this.Control.PostprocessingModules != null) {
+                    m_PostprocessingModules.AddRange(this.Control.PostprocessingModules);
+                }
+
+                // save session information
+                // ========================
                 if (DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
             }
         }
+
+        List<InSituPostProcessingModule> m_PostprocessingModules = new List<InSituPostProcessingModule>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.PostprocessingModules"/>
+        /// </summary>
+        public IList<InSituPostProcessingModule> PostprocessingModules {
+            get {
+                return m_PostprocessingModules;
+            }
+        }
+
+
 
         /// <summary>
         /// Information about the currently active session.
@@ -1333,7 +1351,7 @@ namespace BoSSS.Solution {
 
                 // set deploy directory path
                 string path = typeof(BoSSS.Solution.Application).Assembly.Location;
-                string outpath = path.Substring(0, path.Length - "BoSSS.Solution.dll".Length - 1); // skip "\BoSSS.Solution.dll" at end of path
+                string outpath = Path.GetDirectoryName(path); // skip "\BoSSS.Solution.dll" at end of path
 
                 CurrentSessionInfo.DeployPath = outpath;
 
@@ -1730,8 +1748,9 @@ namespace BoSSS.Solution {
         /// sets initial values as defined in the control file. Override this
         /// method to set initial values for the fields;
         /// </summary>
-        protected virtual void SetInitial() {
+        protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
+                
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {
@@ -1750,7 +1769,7 @@ namespace BoSSS.Solution {
                     }
                 }
 
-
+ 
                 // pass 1: single phase fields
                 // ===========================
 
@@ -1758,7 +1777,7 @@ namespace BoSSS.Solution {
                 foreach (var val in this.Control.InitialValues_EvaluatorsVec) {
                     string DesiredFieldName = val.Key;
                     //ScalarFunction Function = Utils.NonVectorizedScalarFunction.Vectorize(val.Value);
-                    ScalarFunction Function = val.Value;
+                    ScalarFunction Function = val.Value.SetTime(time);
 
                     bool found = false;
                     foreach (DGField f in relevantFields) {
@@ -1778,7 +1797,7 @@ namespace BoSSS.Solution {
                                 //var SpeciesOnlyField = xdgf.GetSpeciesShadowField(spc);
                                 //SpeciesOnlyField.ProjectField(Function);
 
-                                Pass2_Evaluators.Add(val.Key, val.Value);
+                                Pass2_Evaluators.Add(val.Key, val.Value.SetTime(time));
 
                                 found = true;
                                 break;
@@ -1787,17 +1806,21 @@ namespace BoSSS.Solution {
                     }
 
                     if (!found) {
-                        throw new ApplicationException(
+                        Console.WriteLine("Warning: " +
                             "initial value specified for a field named \"" + DesiredFieldName +
                             "\", but no field with that identification exists in context.");
                     }
                 }
 
+                if(LsTrk != null) {
+                    LsTrk.UpdateTracker(time);
+                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
+                }
+
                 // pass 2: XDG fields (after tracker update)
                 // =========================================
                 if (Pass2_Evaluators.Count > 0) {
-                    LsTrk.UpdateTracker(0.0);
-                    LsTrk.PushStacks();
+
 
                     foreach (var val in Pass2_Evaluators) {
                         string DesiredFieldName = val.Key;
@@ -1834,12 +1857,6 @@ namespace BoSSS.Solution {
             }
         }
 
-        /// <summary>
-        /// Temporary hack which will be removed at some point;
-        /// </summary>
-        protected virtual void ResetInitial() {
-            // intended to be used user-specific but not necessary
-        }
 
         /// <summary>
         /// number of time-steps to be performed; <see cref="RunSolverMode"/>
@@ -1928,7 +1945,7 @@ namespace BoSSS.Solution {
         protected Boolean TerminationKey = false;
 
         /// <summary>
-        /// If the current simualation has been restarted, <see cref="TimeStepNoRestart"/>
+        /// If the current simulation has been restarted, <see cref="TimeStepNoRestart"/>
         /// is set by the method <see cref="LoadRestart(out double, out TimestepNumber)"/>.
         /// </summary>
         protected TimestepNumber TimeStepNoRestart = null;
@@ -1962,6 +1979,9 @@ namespace BoSSS.Solution {
         /// </remarks>
         public virtual void RunSolverMode() {
 
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
@@ -1970,25 +1990,83 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-
                 double physTime = 0.0;
                 TimestepNumber i0 = 0;
                 if (this.Control == null) {
-                    SetInitial(); // default behavior if no control file is present
+                    SetInitial(0.0); // default behavior if no control file is present
                 } else {
                     if (this.Control != null) {
-                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null)
-                            throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
-                                + " both cannot be unequal null at the same time.");
+                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null) {
+                            //throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
+                            //    + " both cannot be unequal null at the same time.");
+                            Console.WriteLine("Warning: InitialValues set, while restarting a simulation.");
+                        }
 
-                        if(this.Control.RestartInfo != null) {
+                        if (this.Control.RestartInfo != null) {
                             LoadRestart(out physTime, out i0);
                             TimeStepNoRestart = i0;
                         } else {
-                            SetInitial();
+                            SetInitial(0.0);
                         }
                     }
                 }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+
+                //// =========================================
+                //// Adaptive-Mesh-Refinement on startup
+                //// =========================================
+
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // unprocessed initial value IO
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+
+                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                    if (this.RollingSave)
+                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+
+
+                    bool initialRedist = false;
+                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+
+                        if (initialRedist == true) {
+
+                            if (this.Control.ImmediatePlotPeriod > 0)
+                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                            if (this.RollingSave)
+                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
+
+                        }
+                    }
+                }
+
+                // ================================================================================
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                // ================================================================================
+                CreateEquationsAndSolvers(null);
+                tr.LogMemoryStat();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                if(LsTrk != null)
+                    LsTrk.PushStacks();
+
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
 
                 if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                     PlotCurrentState(physTime, i0, this.Control.SuperSampling);
@@ -1998,31 +2076,37 @@ namespace BoSSS.Solution {
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
 
 
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                //bool initialRedist = false;
+                //for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
+                //    initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
 
-                m_queryHandler.QueryResults.Clear();
+                //    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
+                //        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
 
-                // sometimes, the operators depend on parameters,
-                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
-                // resp. 'LoadRestart(..)'!!!
-                CreateEquationsAndSolvers(null);
-                tr.LogMemoryStat();
+                //    if (initialRedist == true) {
+                //        ts0 = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                //        if (this.RollingSave)
+                //            rollingSavesTsi[0] = Tuple.Create(0, ts0);
+                //    }
+                //}
 
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                bool initialRedist = false;
-                for (int s = 0; s < this.Control.AMR_startUpSweeps; s++) {
-                    initialRedist |= this.MpiRedistributeAndMeshAdapt(i0.MajorNumber, physTime);
-                    if (this.Control.ImmediatePlotPeriod > 0 && initialRedist == true)
-                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
-                }
+                // =================================================================================
+                // Main/outmost time-stepping loop
+                // (in steady-state: only one iteration)
+                // =================================================================================
                 {
 
-                    if (this.Control != null && this.Control.AdaptiveMeshRefinement) {
-                        ResetInitial();
-                        
+
+                    // setup of logging
+                    foreach( var l in PostprocessingModules) {
+                        l.Setup(this);
+                        l.DriverTimestepPostProcessing(i0.MajorNumber, physTime);
                     }
+
 
                     bool RunLoop(int i) {
                         return (i <= i0.MajorNumber + (long)NoOfTimesteps) && EndTime - physTime > 1.0E-10 && !TerminationKey;
@@ -2032,10 +2116,17 @@ namespace BoSSS.Solution {
                         tr.Info("performing timestep " + i + ", physical time = " + physTime);
                         this.MpiRedistributeAndMeshAdapt(i, physTime);
                         this.QueryResultTable.UpdateKey("Timestep", ((int)i));
+                        // Call the solver    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
                         double dt = RunSolverOneStep(i, physTime, -1);
+                        // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
+
+                        
+                        foreach(var l in PostprocessingModules) {
+                            l.DriverTimestepPostProcessing(i, physTime);
+                        }
 
                         ITimestepInfo tsi = null;
 
@@ -2044,8 +2135,8 @@ namespace BoSSS.Solution {
                         }
 
 
-                        for(int sb = 0; sb < this.BurstSave; sb++) {
-                            if((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
+                        for (int sb = 0; sb < this.BurstSave; sb++) {
+                            if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
                                 tsi = SaveToDatabase(i, physTime);
                                 this.ProfilingLog();
                                 break;
@@ -2079,8 +2170,11 @@ namespace BoSSS.Solution {
                             PlotCurrentState(physTime, i, this.Control.SuperSampling);
                     }
 
-                    // Evaluate queries and write log file (either to session directory
-                    // or current directory)
+                   
+                    // =================================================================================
+                    // Evaluate queries and write log file 
+                    // (either to session directory or current directory)
+                    // =================================================================================
                     m_queryHandler.EvaluateQueries(this.m_RegisteredFields.Union(m_IOFields), physTime);
                     foreach (var kv in m_queryHandler.QueryResults) {
                         QueryResultTable.LogValue(kv.Key, kv.Value);
@@ -2119,6 +2213,7 @@ namespace BoSSS.Solution {
                     }
 
                     CorrectlyTerminated = true;
+
                 }
             }
         }
@@ -2134,6 +2229,7 @@ namespace BoSSS.Solution {
             //if (this.MPISize <= 1)
             //    return;
             //Console.WriteLine("REM: dynamic load balancing for 1 processor is active.");
+            bool plotAdaption = false;
 
             using (var tr = new FuncTrace()) {
 
@@ -2151,7 +2247,6 @@ namespace BoSSS.Solution {
                     // ==============================================================
 
                     //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
-
 
                     int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
 
@@ -2237,6 +2332,7 @@ namespace BoSSS.Solution {
                     // release old DG fields
                     this.m_RegisteredFields.Clear();
                     this.m_IOFields.Clear();
+                    this.LsTrk = null;
 
                     // re-create fields
                     if (this.Control != null) {
@@ -2257,11 +2353,9 @@ namespace BoSSS.Solution {
                     //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
                     //        }
                     //    }
-
-
                     //}
 
-                    // set dg coï¿½rdinates
+                    // set dg coordinates
                     foreach (var f in m_RegisteredFields) {
                         if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
@@ -2270,6 +2364,7 @@ namespace BoSSS.Solution {
                         }
                         loadbal.RestoreDGField(f);
                     }
+                    
 
                     // re-create solvers, blablabla
                     CreateEquationsAndSolvers(loadbal);
@@ -2282,6 +2377,8 @@ namespace BoSSS.Solution {
                         // mesh adaptation
                         // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 10 }), 2);
 
                         // backup old data
                         // ===============
@@ -2346,6 +2443,7 @@ namespace BoSSS.Solution {
                             if (this.LsTrk != null) {
                                 this.LsTrk.Invalidate();
                             }
+                            LsTrk = null;
                             oldGridData = null;
 
                             if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
@@ -2386,6 +2484,8 @@ namespace BoSSS.Solution {
                         CreateFields(); // full user control   
                         PostRestart(physTime, TimeStepNo);
 
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
                         // re-set Level-Set tracker
                         int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
@@ -2399,30 +2499,336 @@ namespace BoSSS.Solution {
                         //    }
                         //}
 
-                        //set dg coï¿½rdinates
+                        //set dg coordinates
                         foreach (var f in m_RegisteredFields) {
                             if (f is XDGField) {
                                 XDGBasis xb = ((XDGField)f).Basis;
                                 if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                     throw new ApplicationException();
                             }
-                            if (f.Identification == "Phi")
-                                continue;
-                            //f.Clear();
+                            //if(f.Identification == "Phi")
+                            //    //throw new ApplicationException("ask Smuda why he did this");
+                            //    continue;
+                            ////f.Clear();
 
                             remshDat.RestoreDGField(f);
                         }
 
-                        // re-create solvers, blablabla
+                        // re-create solvers, etc.
                         CreateEquationsAndSolvers(remshDat);
                     }
                 } //end of adapt mesh branch
 
                 //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+                if (plotAdaption)
+                    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
 
                 return true;
             }
         }
+
+
+        virtual protected bool MpiRedistributeAndMeshAdaptOnInit(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
+
+            bool plotAdaption = false;
+
+            using (var tr = new FuncTrace()) {
+
+                // ===============
+                // mesh adaptation
+                // ===============
+                this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
+
+                if (newGrid == null) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // no mesh adaptation, but (maybe) grid redistribution (load balancing)
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    // init / determine if partition has changed / check Partitioning
+                    // ==============================================================
+
+                    //int[] NewPartition = ComputeNewCellDistribution(TimeStepNo, physTime);
+
+                    int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
+
+
+                    if (NewPartition == null)
+                        // nothing to do
+                        return false;
+
+                    int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                    int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
+
+                    if (NoOfRedistCells <= 0) {
+                        return false;
+                    } else {
+#if DEBUG
+                        Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+#endif
+                    }
+
+                    // backup old data
+                    // ===============
+                    GridData oldGridData = ((GridData)(this.GridData));
+                    Permutation tau;
+                    GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
+                    BackupData(oldGridData, this.LsTrk, loadbal, out tau);
+
+                    // create new grid
+                    // ===============
+                    GridData newGridData;
+                    {
+                        this.MultigridSequence = null;
+
+                        this.Grid.RedistributeGrid(NewPartition);
+                        newGridData = (GridData)this.Grid.iGridData;
+                        oldGridData.Invalidate();
+                        if (this.LsTrk != null) {
+                            this.LsTrk.Invalidate();
+                        }
+
+                        if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        else
+                            this.MultigridSequence = new AggregationGridData[0];
+
+                        //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+                    }
+
+                    // compute redistribution permutation
+                    // ==================================
+
+                    Permutation Resorting;
+                    {
+                        // sigma is the GlobalID-permutation of the **new** grid
+                        Permutation sigma = fixedPermutation ?? newGridData.CurrentGlobalIdPermutation;
+
+                        // compute resorting permutation
+                        Permutation invSigma = sigma.Invert();
+                        Resorting = invSigma * tau;
+                        tau = null;
+                        invSigma = null;
+                    }
+                    //Console.WriteLine("P {0}: Resorting: {1} entries.", MPIRank, Resorting.LocalLength);
+                    //ilPSP.Environment.StdoutOnlyOnRank0 = true;
+                    //Debug.Assert(Resorting.LocalLength == newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+
+
+                    // sent data around the world
+                    // ==========================
+                    int newJ = newGridData.CellPartitioning.LocalLength;
+
+                    //int[] newTrackerData = null;
+                    //if(oldTrackerData != null) {
+                    //    newTrackerData = new int[newJ];
+                    //    Resorting.ApplyToVector(oldTrackerData, newTrackerData, newGridData.CellPartitioning);
+                    //    oldTrackerData = null;
+                    //}
+
+                    loadbal.Resort(Resorting, newGridData);
+
+                    // re-init simulation
+                    // ==================
+
+                    // release old DG fields
+                    this.m_RegisteredFields.Clear();
+                    this.m_IOFields.Clear();
+                    this.LsTrk = null;
+
+                    // re-create fields
+                    if (this.Control != null) {
+                        InitFromAttributes.CreateFieldsAuto(
+                            this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                    }
+                    CreateFields(); // full user control   
+                    PostRestart(physTime, TimeStepNo);
+
+
+                    // re-set Level-Set tracker
+                    int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
+                    //if(this.LsTrk != null) {
+                    //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                    //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                    //    foreach(var f in m_RegisteredFields) {
+                    //        if(f is XDGField) {
+                    //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                    //        }
+                    //    }
+                    //}
+
+                    // set dg coordinates
+                    foreach (var f in m_RegisteredFields) {
+                        if (f is XDGField) {
+                            XDGBasis xb = ((XDGField)f).Basis;
+                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                throw new ApplicationException();
+                        }
+                        loadbal.RestoreDGField(f);
+                    }
+
+
+                    // re-create solvers, blablabla
+                    CreateEquationsAndSolvers(loadbal);
+
+
+                } else {
+
+                    using (new BlockTrace("Mesh Adaption", tr)) {
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // mesh adaptation
+                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 10 }), 2);
+
+                        // backup old data
+                        // ===============
+
+                        GridData oldGridData = (GridData)this.GridData;
+                        GridCommons oldGrid = oldGridData.Grid;
+                        Guid oldGridId = oldGrid.ID;
+                        //Permutation tau;
+                        GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
+                        BackupDataOnInit(oldGridData, this.LsTrk, remshDat);
+
+                        // save new grid to database
+                        // ==========================
+
+                        if (!passiveIo) {
+
+                            if (newGrid.ID == null || newGrid.ID.Equals(Guid.Empty))
+                                throw new ApplicationException();
+                            if (newGrid.ID.Equals(oldGridId))
+                                throw new ApplicationException();
+                            if (DatabaseDriver.GridExists(newGrid.ID))
+                                throw new ApplicationException();
+
+                            DatabaseDriver.SaveGrid(newGrid, this.m_Database);
+                        }
+
+
+                        // check for grid redistribution
+                        // =============================
+
+                        int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
+                        if (NewPartition != null) {
+                            // grid also has to be re-distributed
+
+                            // rem: the new Partition correlates to the OLD grid
+                            // (don't know how to solve this)
+
+                            throw new NotImplementedException("todo.");
+
+                            /*
+                            int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                            int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
+
+                            if(NoOfRedistCells <= 0) {
+                                // nop
+                            } else {
+                                Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+                            }
+                            */
+                        }
+
+
+                        // create new grid
+                        // ===============
+                        GridData newGridData;
+                        {
+                            this.MultigridSequence = null;
+
+                            this.Grid = newGrid;
+                            newGridData = (GridData)this.Grid.iGridData;
+                            oldGridData.Invalidate();
+                            if (this.LsTrk != null) {
+                                this.LsTrk.Invalidate();
+                            }
+                            LsTrk = null;
+                            oldGridData = null;
+
+                            if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                                this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
+                                    MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            else
+                                this.MultigridSequence = new AggregationGridData[0];
+
+                            //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
+                        }
+
+                        // compute redistribution permutation
+                        // ==================================
+
+                        old2newGridCorr.ComputeDataRedist(newGridData);
+
+                        int newJ = newGridData.Cells.NoOfLocalUpdatedCells;
+                        //int[][] TargMappingIdx = old2newGridCorr.GetTargetMappingIndex(newGridData.CellPartitioning);
+
+                        // sent data around the world
+                        // ==========================
+
+
+                        remshDat.Resort(old2newGridCorr, newGridData);
+
+                        // re-init simulation
+                        // ==================
+
+                        // release old DG fields
+                        this.m_RegisteredFields.Clear();
+                        this.m_IOFields.Clear();
+
+                        // re-create fields
+                        if (this.Control != null) {
+                            InitFromAttributes.CreateFieldsAuto(
+                                this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
+                        }
+                        CreateFields(); // full user control   
+                        //PostRestart(physTime, TimeStepNo);
+                        SetInitial(physTime);
+
+                        if (plotAdaption)
+                            PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
+
+                        // re-set Level-Set tracker
+                        int trackerVersion = remshDat.SetNewTracker(this.LsTrk);
+                        //if(this.LsTrk != null) {
+                        //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
+                        //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);
+                        //    foreach(var f in m_RegisteredFields) {
+                        //        if(f is XDGField) {
+                        //            ((XDGField)f).Override_TrackerVersionCnt(trackerVersion);
+                        //        }
+                        //    }
+                        //}
+
+                        ////set dg coordinates
+                        //foreach (var f in m_RegisteredFields) {
+                        //    if (f is XDGField) {
+                        //        XDGBasis xb = ((XDGField)f).Basis;
+                        //        if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                        //            throw new ApplicationException();
+                        //    }
+                        //    //if(f.Identification == "Phi")
+                        //    //    //throw new ApplicationException("ask Smuda why he did this");
+                        //    //    continue;
+                        //    ////f.Clear();
+
+                        //    remshDat.RestoreDGField(f);
+                        //}
+
+                        //// re-create solvers, etc.
+                        //CreateEquationsAndSolvers(remshDat);
+                    }
+                } //end of adapt mesh branch
+
+                //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
+                if (plotAdaption)
+                    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
+
+                return true;
+            }
+        }
+
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {
@@ -2457,6 +2863,17 @@ namespace BoSSS.Solution {
             // backup user data
             this.DataBackupBeforeBalancing(loadbal);
         }
+
+
+        private void BackupDataOnInit(GridData oldGridData, LevelSetTracker oldLsTrk, GridUpdateDataVaultBase loadbal) {
+
+            // backup level-set tracker 
+            if (this.LsTrk != null) {
+                loadbal.BackupTracker();
+            }
+
+        }
+
 
         private static int CheckPartition(int[] NewPartition, int JupOld) {
             int mpiRank;// = oldGridData.CellPartitioning.MpiRank;
@@ -2621,6 +3038,8 @@ namespace BoSSS.Solution {
                 m_ResLogger.Close();
                 m_ResLogger = null;
             }
+
+
         }
 
         /// <summary>
@@ -3037,8 +3456,8 @@ namespace BoSSS.Solution {
 
 
             if (this.Control != null && this.Control.RestartInfo != null) {
-                if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
-                    throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
+                //if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty())
+                //    throw new ApplicationException("control object error: initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') cannot be specified at the same time.");
 
                 TimestepNo = RestartFromDatabase(out Time);
                 this.CurrentSessionInfo.RestartedFrom = this.Control.RestartInfo.Item1;
@@ -3100,6 +3519,10 @@ namespace BoSSS.Solution {
                     Bye();
                     ProfilingLog();
 
+                    foreach( var l in PostprocessingModules) {
+                        l.Dispose();
+                    }
+
                     if (this.CurrentSessionInfo != null)
                         this.CurrentSessionInfo.Dispose();
                     if (DatabaseDriver != null) {
@@ -3122,10 +3545,8 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// returns the size of the fixed timestep; if a variable timestep is set, this method throws
-        /// an exception.
+        /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        /// <returns></returns>
         public double GetFixedTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
@@ -3150,28 +3571,7 @@ namespace BoSSS.Solution {
         /// creates a human-readable performance report from the profiling information stored in <see cref="Tracer.Root"/>.
         /// </summary>
         public static void WriteProfilingReport(TextWriter wrt, MethodCallRecord Root) {
-            wrt.WriteLine();
-            wrt.WriteLine("Common Suspects:");
-            wrt.WriteLine("================");
-
             var R = Root;
-            List<MethodCallRecord> CommonSuspects = new List<MethodCallRecord>();
-            CommonSuspects.AddRange(R.FindChildren("*GridData*ctor*"));
-            CommonSuspects.AddRange(R.FindChildren("*MsrMatrix.Multiply*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.SpatialOperator*Evaluator*Evaluate*"));
-            CommonSuspects.AddRange(R.FindChildren("ilPSP.LinSolvers*Solve*"));
-            CommonSuspects.AddRange(R.FindChildren("BoSSS.Foundation.XDG.XSpatialOperator*ComputeMatrix*"));
-            CommonSuspects.AddRange(R.FindChildren("*MassMatrixFactory.ComputeMassMatrixBlocks*"));
-            CommonSuspects.AddRange(R.FindChildren("*Quadrature*Execute*"));
-            CommonSuspects.AddRange(R.FindChildren("integrand_evaluation"));
-            CommonSuspects.AddRange(R.FindChildren("quadrature"));
-            CommonSuspects.AddRange(R.FindChildren("saving_results"));
-
-
-            foreach (var mcr in CommonSuspects) {
-                wrt.WriteLine(mcr.GetMiniReport().ToString());
-            }
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
@@ -3264,14 +3664,15 @@ namespace BoSSS.Solution {
 
                         foreach (MethodCallRecord mcr in L) {
                             MethodCallRecord quadCall = mcr.FindChild("*Execute*");
-
-                            foreach (var subBlock in quadCall.Calls.Values) {
-                                List<MethodCallRecord> col;
-                                if (!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
-                                    col = new List<MethodCallRecord>();
-                                    QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                            if(quadCall != null) {
+                                foreach(var subBlock in quadCall.Calls.Values) {
+                                    List<MethodCallRecord> col;
+                                    if(!QuadratureExecuteBlocks[ii].TryGetValue(subBlock.Name, out col)) {
+                                        col = new List<MethodCallRecord>();
+                                        QuadratureExecuteBlocks[ii].Add(subBlock.Name, col);
+                                    }
+                                    col.Add(subBlock);
                                 }
-                                col.Add(subBlock);
                             }
                         }
                     }

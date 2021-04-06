@@ -29,6 +29,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 
+
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
@@ -36,10 +37,10 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
-    /// if null, an explixit evaluation of the operator is required, which should be stored the affine part.
+    /// if null, an explicit evaluation of the operator is required, which should be stored the affine part. 
     /// </param>
     /// <param name="OpAffine">
-    /// Output for the affine part.
+    /// Output for the affine part. 
     /// </param>
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
@@ -48,14 +49,16 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
-    /// <param name="time"></param>
-    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time);
+    /// <param name="time">
+    /// physical time
+    /// </param>
+    /// <param name="LsTrkHistoryIndex">
+    /// history index into the various stacks of the level-set tracker (<see cref="LevelSetTracker.RegionsHistory"/>, <see cref="LevelSetTracker.DataHistories"/>, etc.);
+    /// Note that, especially for splitting schemes, the physical time usually does NOT match the tracker region timestamp <see cref="LevelSetTracker.LevelSetRegions.Time"/>;
+    /// </param>
+    public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-    ///// <summary>
-    ///// Callback-Template for the mass matrix update.
-    ///// </summary>
-    //public delegate void DelComputeMassMatrix(BlockMsrMatrix MassMtx, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, double time);
- 
+   
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -144,12 +147,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
         /// </summary>
-        FSI_LieSplittingFullyCoupled = 5,
-
-        /// <summary>
-        /// Level-Set is handled using Lie-Splitting. Use this for the fully coupled FSI-Solver
-        /// </summary>
-        FSI_Coupled_Iterative = 6,
+        FSILieSplittingFullyCoupled = 5,
     }
 
     public enum SpatialOperatorType {
@@ -270,13 +268,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if(this.Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity) {
                     MassMatrix.AccEyeSp(1.0);
                 } else {
-                    if(TemporalOperator is ConstantXTemporalOperator cxt) {
-                        cxt.SetTrackerHack(this.m_LsTrk);
-                    }
+                    if(TemporalOperator != null) {
+                        if(TemporalOperator is ConstantXTemporalOperator cxt) {
+                            cxt.SetTrackerHack(this.m_LsTrk);
+                        }
 
-                    var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
-                    builder.time = time;
-                    builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                        var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
+                        builder.time = time;
+                        builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                    } else {
+                        Console.Error.WriteLine("Warning: no temporal operator specified: any result will always be steady-state.");
+                    }
                 }
             }
         }
@@ -311,8 +313,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)
                     return true;
 
-                //if (Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
-                //    return true;
+                if (Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsTimeAndSolutionDependent)
+                    return true;
 
                 return false;
             }
@@ -370,7 +372,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Agglomerated length scales, input for <see cref="ComputeOperatorMatrix"/>.
         /// </summary>
-        protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
+        internal protected Dictionary<SpeciesId, MultidimensionalArray> GetAgglomeratedLengthScales() {
             if(m_CurrentAgglomeration != null) {
                 //
                 // agglomerated length scales are available from 
@@ -471,6 +473,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 int NF = this.CurrentStateMapping.Fields.Count;
                 m_ResLogger.IterationCounter = iterIndex;
 
+                double totResi = 0.0;
                 if (m_TransformedResi) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // transform current solution and residual back to the DG domain
@@ -497,6 +500,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int i = 0; i < NF; i++) {
                         double L2Res = R.Mapping.Fields[i].L2Norm();
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                        totResi += L2Res.Pow2();
                     }
                 } else {
 
@@ -513,10 +517,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
                                                        //                                but this implementation is anyway inefficient....
+                        totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
                     }
                 }
+                totResi = totResi.Sqrt();
+                m_ResLogger.CustomValue(totResi, "Total");
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
@@ -611,7 +618,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        abstract protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
+        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.
@@ -621,7 +628,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
             
@@ -641,9 +648,24 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Ret.Add(kv.Key, kv.Value);
                     }
                 }
+
+                if (plotStencilCondNumV) {
+                    var fullStencil = ana.StencilCondNumbersV();
+                    ana.VarGroup = new int[] { 0, 1 };
+                    var sipStencil = ana.StencilCondNumbersV();
+                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
+                    //ana.VarGroup = new int[] { 2 };
+                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                }
+
             }
 
             return Ret;
         }
+
+        /// <summary>
+        /// The time associated with the current solution (<see cref="CurrentState"/>)
+        /// </summary>
+        public abstract double GetSimulationTime();
     }
 }

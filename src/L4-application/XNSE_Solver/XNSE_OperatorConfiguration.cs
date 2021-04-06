@@ -26,7 +26,8 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XheatCommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.EnergyCommon;
-
+using ilPSP;
+using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -37,6 +38,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
 
+            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z')));
+            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z')));
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
@@ -94,6 +97,23 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public DoNotTouchParameters dntParams;
 
+        /// <summary>
+        /// Fucking Gravity
+        /// </summary>
+        public bool isGravity {
+            get {                
+                return Gravity;
+            }
+        }
+
+        /// <summary>
+        /// Volume Force
+        /// </summary>
+        public bool isVolForce {
+            get {
+                return VolForce;
+            }
+        }
 
         /// <summary>
         /// Controls the domain variables that the operator should contain. <br/>
@@ -133,6 +153,17 @@ namespace BoSSS.Application.XNSE_Solver {
         /// include continuity equation
         /// </summary>
         public bool Continuity;
+
+        /// <summary>
+        /// include gravity
+        /// </summary>
+        public bool Gravity;
+
+        /// <summary>
+        /// include general volume force
+        /// </summary>
+        public bool VolForce;
+
 
         // <summary>
         // include heat equation
@@ -256,6 +287,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public XNSFE_OperatorConfiguration(XNSE_Control control) 
             : base(control) {
 
+            AgglomerationTreshold = control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
+
             thermParams = control.ThermalParameters;
 
             solveEnergy = control.solveKineticEnergyEquation;
@@ -269,11 +302,11 @@ namespace BoSSS.Application.XNSE_Solver {
             MatInt = !Evaporation;
 
             int nBlocks = 2;
-            if (solveEnergy) {
-                CodBlocks = new bool[3];
-                DomBlocks = new bool[3];
-                nBlocks = 3;
-            }
+            //if (solveEnergy) {
+            //    CodBlocks = new bool[3];
+            //    DomBlocks = new bool[3];
+            //    nBlocks = 3;
+            //}
 
             if (solveHeat) {
                 this.conductMode = control.conductMode;
@@ -283,18 +316,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
             CodBlocks.SetAll(true);
             DomBlocks.SetAll(true);
-
         }
 
+        /// <summary>
+        /// taken from <see cref="DoNotTouchParameters.CellAgglomerationThreshold"/>
+        /// </summary>
+        public double AgglomerationTreshold;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ThermalParameters thermParams;
-
 
         /// <summary>
         /// include kinetic energy equation
         /// </summary>
         public bool solveEnergy;
-
 
         /// <summary>
         /// true if the heat equation is solved via the auxiliary heat flux formulation

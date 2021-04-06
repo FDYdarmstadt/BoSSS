@@ -42,13 +42,45 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor
         /// </summary>
         public PARDISOSolver() {
-            SingletonPARDISO.SetParallelism(this.SolverVersion.ToString());
+            
         }
 
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        Parallelism m_Parallelism = Parallelism.OMP;
 
+        /// <summary>
+        /// Level of parallelism, which should be used for this solver instance 
+        /// </summary>
+        public Parallelism Parallelism {
+            get {
+                return m_Parallelism;
+            }
+            set {
+                if(m_wrapper != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
+                m_Parallelism = value;
+            }
+        }
+
+
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// symbolic factorization (PARDISO phase 11)
+        /// </summary>
         public static Stopwatch Phase_11 = new Stopwatch();
+        
+        
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// numerical factorization (PARDISO phase 22)
+        /// </summary>
         public static Stopwatch Phase_22 = new Stopwatch();
+        
+        /// <summary>
+        /// total time, over entire application instance lifetime, spent in 
+        /// back substitution and iterative refinement (PARDISO phase 33)
+        /// </summary>
         public static Stopwatch Phase_33 = new Stopwatch();
 
 
@@ -69,7 +101,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                     }
                     if (this.Version == PARDISO.Version.v5)
                         System.Environment.SetEnvironmentVariable("PARDISOLICMESSAGE", "1");
-                    m_wrapper = new MetaWrapper(this.Version);
+                    
+                    m_wrapper = new MetaWrapper(this.Version, this.Parallelism);
                 }
                 return m_wrapper;
             }
@@ -120,6 +153,10 @@ namespace ilPSP.LinSolvers.PARDISO {
         public void DefineMatrix(IMutableMatrixEx M) {
             if (m_OrgMatrix != null)
                 throw new ApplicationException("matrix is already defined. 'DefineMatrix'-method can be invoked only once in the lifetime of this object.");
+            if(M.NoOfCols != M.NoOfRows)
+                    throw new ArgumentException("Expecting quadratic matrix.");
+            if(M.NoOfCols <= 0 || M.NoOfRows <= 0)
+                throw new ArgumentException("Matrix must have a non-zero size.");
             m_MpiRank = M.RowPartitioning.MpiRank;
             m_OrgMatrix = M;
             MpiComm = M.MPI_Comm;
@@ -151,6 +188,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                 return m_Version;
             }
             set {
+                if(m_wrapper != null) {
+                    throw new NotSupportedException("Cannot be changed after init.");
+                }
+
                 m_Version = value;
             }
         }
@@ -287,24 +328,29 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 IMutableMatrixEx Mtx;
                 bool throwAwayMtx;
-                if (d != null || Scale != 1.0) {
-                    // not very efficient, but _I_dont_care_ !
-
+                if (d != null || Scale != 1.0)
+                {
                     MsrMatrix _Mtx = new MsrMatrix(m_OrgMatrix);
                     Mtx = _Mtx;
-                    _Mtx.Scale(Scale);
-
-                    int dLen = d.Count, L = _Mtx.RowPartitioning.LocalLength, i0 = (int)(_Mtx.RowPartitioning.i0);
-                    if ((L % dLen) != 0)
-                        throw new ApplicationException("wrong length of 'd'.");
-
-                    for (int l = 0; l < L; l++) {
-                        _Mtx[i0 + l, i0 + l] += d[l % dLen];
+                    if ( Scale != 1.0)
+                    {
+                        // not very efficient, but _I_dont_care_ !
+                        _Mtx.Scale(Scale);
                     }
+                    if(d != null)
+                    {
+                        int dLen = d.Count, L = _Mtx.RowPartitioning.LocalLength, i0 = (int)(_Mtx.RowPartitioning.i0);
+                        if ((L % dLen) != 0)
+                            throw new ApplicationException("wrong length of 'd'.");
 
+                        for (int l = 0; l < L; l++)
+                        {
+                            _Mtx[i0 + l, i0 + l] += d[l % dLen];
+                        }
+                    }
                     throwAwayMtx = true;
-
-                } else {
+                }
+                else { 
                     throwAwayMtx  = false;
                     Mtx = m_OrgMatrix;
                 }
@@ -473,7 +519,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 int[] Displ = new int[size];
                 for(int r = 0; r < size; r++) {
                     SendCounts[r] = m_OrgMatrix.RowPartitioning.GetLocalLength(r);
-                    Displ[r] = m_OrgMatrix.RowPartitioning.GetI0Offest(r);
+                    Displ[r] = checked((int)(m_OrgMatrix.RowPartitioning.GetI0Offest(r)));
                 }
 
 

@@ -24,29 +24,62 @@ namespace AdvancedSolverTests.SubBlocking
 
     internal class TestMask : BlockMask {
         public TestMask(SubBlockSelector SBS, BlockMsrMatrix ExtRows) : base(SBS, ExtRows){
-            Global_IList_LocalCells=base.GlobalIList_Internal.ToArray();
-            Global_IList_ExternalCells=base.GlobalIList_External.ToArray();
+            Global_IList_LocalCells = base.GlobalIList_Internal.ToArray();
+            Global_IList_ExternalCells = base.GlobalIList_External.ToArray();
         }
 
-        public int[] Global_IList_ExternalCells;
-        public int[] Global_IList_LocalCells;
+        public long[] Global_IList_ExternalCells;
+        public long[] Global_IList_LocalCells;
     }
+
+    class MgoSolverPair : IDisposable {
+
+        public MgoSolverPair(SubBlockTestSolver2Var solver) {
+            MGOp = solver.MGOp;
+            Vec = solver.someVec;
+            this.Solver = solver;
+            MGSeq = solver.MgSeq;
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+        }
+
+        public MultigridOperator MGOp {
+            get;
+            private set;
+        }
+
+        public double[] Vec {
+            get;
+            private set;
+        }
+
+        public AggregationGridData[] MGSeq {
+            get;
+            private set;
+        }
+
+        public SubBlockTestSolver2Var Solver {
+            get;
+            private set;
+        }
+
+        public void Dispose() {
+            Solver.Dispose();
+        }
+    }
+
 
     internal static class Utils
     {
-        public static MultigridOperator CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
-            return CreateTestMGOperator(out double[] Vec, UseXdg, DGOrder, MShape, Resolution);
-        }
-
-        public static MultigridOperator CreateTestMGOperator(out double[] Vec, XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
-            MultigridOperator retMGOp;
-            using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
-                solver.Init(null);
-                solver.RunSolverMode();
-                retMGOp = solver.MGOp;
-                Vec = solver.someVec;
-            }
-            return retMGOp;
+        
+        public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
+            //using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
+            var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution };
+            solver.Init(null);
+            solver.RunSolverMode();
+            //}
+            // Note to Jens:
+            // the "using"-block calls the Dispose()-Method, so the return value may depend on disposed object
+            return new MgoSolverPair(solver);
         }
 
 
@@ -82,15 +115,18 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         public static void WriteOutTestMatrices() {
-            MultigridOperator mgo;
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_var");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_spec);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_spec");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var_spec);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_var_spec");
+            using(var T1 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal)) {
+                T1.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M");
+            }
+            using(var T2 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var)) {
+                T2.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_var");
+            }
+            using(var T3 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_spec)) {
+                T3.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_spec");
+            }
+            using(var T4 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var_spec)) {
+                T4.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_var_spec");
+            }
         }
 
         public static void SetAll(this BlockMsrMatrix A, double val) {
@@ -101,10 +137,10 @@ namespace AdvancedSolverTests.SubBlocking
 
             Partitioning rowpart = new Partitioning(RowBlocks);
 
-            for (int iBlock = rowpart.i0; iBlock < rowpart.iE; iBlock++) {
-                for (int jBlock = rowpart.i0; jBlock < rowpart.iE; jBlock++) {
-                    int i0 = rowmap.GetBlockI0(iBlock);
-                    int j0 = colmap.GetBlockI0(jBlock);
+            for (long iBlock = rowpart.i0; iBlock < rowpart.iE; iBlock++) {
+                for (long jBlock = rowpart.i0; jBlock < rowpart.iE; jBlock++) {
+                    long i0 = rowmap.GetBlockI0(iBlock);
+                    long j0 = colmap.GetBlockI0(jBlock);
                     int iL = rowmap.GetBlockLen(iBlock);
                     int jL = colmap.GetBlockLen(jBlock);
                     var subM = MultidimensionalArray.Create(iL, jL);
@@ -113,7 +149,7 @@ namespace AdvancedSolverTests.SubBlocking
                 }
             }
             double min, max;
-            int minc, minr, maxc, maxr;
+            long minc, minr, maxc, maxr;
             A.GetMinimumAndMaximum_MPILocal(out min, out minr, out minc, out max, out maxr, out maxc);
             Debug.Assert(min == max);
             Debug.Assert(min == val);
@@ -128,10 +164,10 @@ namespace AdvancedSolverTests.SubBlocking
             BlockMsrMatrix B = new BlockMsrMatrix(rowmap, colmap);
 
             Partitioning rowpart = new Partitioning(RowBlocks);
-            for (int iBlock = rowpart.i0; iBlock < rowpart.iE; iBlock++) {
-                for (int jBlock = rowpart.i0; jBlock < rowpart.iE; jBlock++) {
-                    int i0 = rowmap.GetBlockI0(iBlock);
-                    int j0 = colmap.GetBlockI0(jBlock);
+            for (long iBlock = rowpart.i0; iBlock < rowpart.iE; iBlock++) {
+                for (long jBlock = rowpart.i0; jBlock < rowpart.iE; jBlock++) {
+                    long i0 = rowmap.GetBlockI0(iBlock);
+                    long j0 = colmap.GetBlockI0(jBlock);
                     int iL = rowmap.GetBlockLen(iBlock);
                     int jL = colmap.GetBlockLen(jBlock);
                     var subM = MultidimensionalArray.Create(iL, jL);
@@ -141,7 +177,7 @@ namespace AdvancedSolverTests.SubBlocking
                 }
             }
             double min, max;
-            int minc, minr, maxc, maxr;
+            long minc, minr, maxc, maxr;
             B.GetMinimumAndMaximum_MPILocal(out min, out minr, out minc, out max, out maxr, out maxc);
             Debug.Assert(min == 0);
             Debug.Assert(max == 1);
@@ -195,10 +231,10 @@ namespace AdvancedSolverTests.SubBlocking
             var comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out rank);
             double[] vec = new double[Length];
-            var rndgen = new Random();
+            var rndgen = new Random(rank);
             for (int i = 0; i < Length; i++) {
-                //vec[i] = rndgen.NextDouble() * (rank+1);
-                vec[i] = (rank + 1);
+                vec[i] = rndgen.NextDouble();
+                //vec[i] = (rank + 1);
                 Debug.Assert(vec[i]!=0);
             }
             return vec;
@@ -278,7 +314,7 @@ namespace AdvancedSolverTests.SubBlocking
             SpeciesId A = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[0];
             SpeciesId B = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[1];
 
-            sbs.CellSelector(iCell,false);
+            sbs.CellSelector(iCell);
             //do not change this, selection corresponds to hardcoded masking
             //see GetSubIndices
             switch (SType) {
@@ -302,8 +338,8 @@ namespace AdvancedSolverTests.SubBlocking
         public static BlockMsrMatrix GetCellCompMatrix(SelectionType SType, MultigridOperator mop, int iB) {
 
             int rank = mop.Mapping.MpiRank;
-            int iBlock = mop.Mapping.AggGrid.CellPartitioning.i0 + iB;
-            int i0 = mop.Mapping.GetBlockI0(iBlock);
+            long iBlock = mop.Mapping.AggGrid.CellPartitioning.i0 + iB;
+            long i0 = mop.Mapping.GetBlockI0(iBlock);
 
             //int jBlock = i0 + jB;
             int R = mop.Mapping.GetBlockLen(iBlock);
@@ -315,7 +351,7 @@ namespace AdvancedSolverTests.SubBlocking
             SpeciesId A = ((XdgAggregationBasis)mop.Mapping.AggBasis[0]).UsedSpecies[0];
             int Specpos = ((XdgAggregationBasis)mop.Mapping.AggBasis[0]).GetSpeciesIndex(iB, A);
 
-            int[] SubIdcR = GetSubIndices(SType, ZwoSpecR, Specpos);
+            long[] SubIdcR = GetSubIndices(SType, ZwoSpecR, Specpos).Select((int i) => (long)i).ToArray();
             //int[] SubIdcC = GetSubIndices(SType, ZwoSpecC);
 
             for (int i = 0; i < SubIdcR.Length; i++) {
@@ -327,11 +363,11 @@ namespace AdvancedSolverTests.SubBlocking
             //    SubIdcC[i] += i0;
             //}
             //return mop.OperatorMatrix.GetSubMatrix(SubIdcR, SubIdcC);
-            var part = new BlockPartitioning(SubIdcR.Length, new int[]{0}, new int[] { SubIdcR.Length }, csMPI.Raw._COMM.SELF);
+            var part = new BlockPartitioning(SubIdcR.Length, new long[] { 0 }, new int[] { SubIdcR.Length }, csMPI.Raw._COMM.SELF);
 
             BlockMsrMatrix sub = new BlockMsrMatrix(part);
 
-            mop.OperatorMatrix.WriteSubMatrixTo(sub, SubIdcR, default(int[]), SubIdcR, default(int[]));
+            mop.OperatorMatrix.WriteSubMatrixTo(sub, SubIdcR, default(long[]), SubIdcR, default(long[]));
             return sub;
 
             //return mop.OperatorMatrix.GetSubMatrix(SubIdcR, SubIdcR);
@@ -392,31 +428,31 @@ namespace AdvancedSolverTests.SubBlocking
             return extcells;
         }
 
-        public static int[] GetIndcOfExtCell(MultigridMapping map, int jCell) {
+        public static long[] GetIndcOfExtCell(MultigridMapping map, int jCell) {
             int Jup = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int i0 = map.GlobalUniqueIndex(0, jCell, 0);
+            long i0 = map.GlobalUniqueIndex(0, jCell, 0);
             int fld = map.NoOfVariables;
             int N = 0;
             for (int iF = 0; iF < fld; iF++)
                 N+=map.AggBasis[iF].GetLength(jCell, map.DgDegree[iF]);
-            int[] ret = N.ForLoop(i => i + i0);
+            long[] ret = N.ForLoop(i => i + i0);
             return ret;
         }
 
-        public static int[] GetAllExtCellIdc(MultigridMapping map) {
+        public static long[] GetAllExtCellIdc(MultigridMapping map) {
             var extC = GetAllExternalCells(map);
-            List<int> extIdcL = new List<int>();
+            List<long> extIdcL = new List<long>();
             foreach (int eC in extC) {
                 Debug.Assert(eC < map.AggGrid.iLogicalCells.NoOfExternalCells + map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
                 Debug.Assert(eC >= map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
-                int[] Idc = GetIndcOfExtCell(map, eC);
+                long[] Idc = GetIndcOfExtCell(map, eC);
                 extIdcL.AddRange(Idc);
             }
-            int[] extIdc = extIdcL.ToArray();
+            long[] extIdc = extIdcL.ToArray();
             Array.Sort(extIdc);
-#if Debug
+#if DEBUG
             int[] fields = map.NoOfVariables.ForLoop(i => i);
-            int[] GlobalIdxMap_ext = map.GetSubvectorIndices_Ext(fields);
+            long[] GlobalIdxMap_ext = map.GetSubvectorIndices_Ext(fields);
             Array.Sort(GlobalIdxMap_ext);
             Debug.Assert(extIdc.Length == GlobalIdxMap_ext.Length);
             for(int iCell=0;iCell<extIdc.Length; iCell++) {
@@ -426,22 +462,22 @@ namespace AdvancedSolverTests.SubBlocking
             return extIdc;
         }
 
-        public static Dictionary<int,int[]> GetDictOfAllExtCellIdc(MultigridMapping map) {
+        public static Dictionary<int,long[]> GetDictOfAllExtCellIdc(MultigridMapping map) {
             int[] cells = GetAllExternalCells(map);
-            Dictionary<int, int[]> extDict = new Dictionary<int, int[]>();
+            Dictionary<int, long[]> extDict = new Dictionary<int, long[]>();
 
             foreach(int eC in cells) {
-                int[] idc = GetIndcOfExtCell(map, eC);
+                long[] idc = GetIndcOfExtCell(map, eC);
                 extDict.Add(eC,idc);
             }
             return extDict;
         }
 
-        public static int[] GimmeAllBlocksWithSpec(MultigridMapping map, int DOF) {
-            int Bi0 = map.AggGrid.CellPartitioning.i0;
-            List<int> hits = new List<int>();
+        public static long[] GimmeAllBlocksWithSpec(MultigridMapping map, int DOF) {
+            long Bi0 = map.AggGrid.CellPartitioning.i0;
+            List<long> hits = new List<long>();
             for(int i=0; i < map.LocalNoOfBlocks; i++) {
-                int iBlock = Bi0 + i;
+                long iBlock = Bi0 + i;
                 int type = map.GetBlockType(iBlock);
                 int BlockDOF = map.GetSubblkLen(type)[0];
                 if (BlockDOF == DOF)
@@ -450,7 +486,7 @@ namespace AdvancedSolverTests.SubBlocking
 
             int[] recvcnt = hits.Count().MPIAllGather();
             Debug.Assert(recvcnt.Length==map.MpiSize);
-            int[] VecOfAllhits = hits.ToArray().MPIAllGatherv(recvcnt);
+            long[] VecOfAllhits = hits.ToArray().MPIAllGatherv(recvcnt);
             
             return VecOfAllhits;
         }
@@ -463,35 +499,35 @@ namespace AdvancedSolverTests.SubBlocking
             return bla;
         }
 
-        public static BlockMsrMatrix ConvertToQuadraticBMsr(this BlockMsrMatrix M, int[] Colidx,bool isinternal) {
+        public static BlockMsrMatrix ConvertToQuadraticBMsr(this BlockMsrMatrix M, long[] Colidx, bool isinternal) {
 
             Debug.Assert(M._RowPartitioning.LocalLength == Colidx.Length);
-            
+
             int NoOfBlocks = M._RowPartitioning.LocalNoOfBlocks;
-            int[] Offsets = new int[NoOfBlocks];
+            long[] Offsets = new long[NoOfBlocks];
             int[] Lengths = new int[NoOfBlocks];
-            int IdxOffset = M._RowPartitioning.i0;
-            int ColIdxOffset = M._ColPartitioning.i0;
-            for (int i=0;i < NoOfBlocks; i++) {
-                int iBlock = i + M._RowPartitioning.FirstBlock;
-                Offsets[i]=M._RowPartitioning.GetBlockI0(iBlock) - IdxOffset;
-                Lengths[i]=M._RowPartitioning.GetBlockLen(iBlock);
+            long IdxOffset = M._RowPartitioning.i0;
+            long ColIdxOffset = M._ColPartitioning.i0;
+            for(int i = 0; i < NoOfBlocks; i++) {
+                long iBlock = i + M._RowPartitioning.FirstBlock;
+                Offsets[i] = M._RowPartitioning.GetBlockI0(iBlock) - IdxOffset;
+                Lengths[i] = M._RowPartitioning.GetBlockLen(iBlock);
             }
-            BlockPartitioning part = new BlockPartitioning(M._RowPartitioning.LocalLength,Offsets,Lengths,csMPI.Raw._COMM.SELF,true);
+            BlockPartitioning part = new BlockPartitioning(M._RowPartitioning.LocalLength, Offsets, Lengths, csMPI.Raw._COMM.SELF, true);
             BlockMsrMatrix ret = new BlockMsrMatrix(part);
 
-            int[] RowISrc = M._RowPartitioning.LocalLength.ForLoop(i=> i + IdxOffset);
+            long[] RowISrc = M._RowPartitioning.LocalLength.ForLoop(i => i + IdxOffset);
             //int[] ColISrc = M._ColPartitioning.LocalLength.ForLoop(i => Colidx[i]);
             //if (ColISrc.Length < RowISrc.Length)
             //    ExtISrc = (RowISrc.Length - ColISrc.Length).ForLoop(i => Colidx[i+ ColISrc.Length]);
-            int[] ExtISrc = M._RowPartitioning.LocalLength.ForLoop(i => Colidx[i]);
-            int[] ExtITrg = M._RowPartitioning.LocalLength.ForLoop(i => i);
-            if (isinternal) {
-                M.AccSubMatrixTo(1.0, ret, RowISrc, default(int[]), ExtISrc, default(int[]));
+            long[] ExtISrc = M._RowPartitioning.LocalLength.ForLoop(i => (long)Colidx[i]);
+            long[] ExtITrg = M._RowPartitioning.LocalLength.ForLoop(i => (long)i);
+            if(isinternal) {
+                M.AccSubMatrixTo(1.0, ret, RowISrc, default(long[]), ExtISrc, default(long[]));
             } else {
-                M.AccSubMatrixTo(1.0, ret, RowISrc, default(int[]), new int[0], default(int[]), ExtISrc, ExtITrg);
+                M.AccSubMatrixTo(1.0, ret, RowISrc, default(long[]), new long[0], default(long[]), ExtISrc, ExtITrg);
             }
-            
+
             return ret;
         }
 
@@ -520,8 +556,8 @@ namespace AdvancedSolverTests.SubBlocking
             return testcells.ToArray();
         }
 
-        public static int[] GetIdcOfSubBlock(MultigridMapping map, int[] cells) {
-            List<int> idc = new List<int>();
+        public static long[] GetIdcOfSubBlock(MultigridMapping map, int[] cells) {
+            List<long> idc = new List<long>();
             foreach (int c in cells)
                 idc.AddRange(GetIndcOfExtCell(map,c));
             return idc.ToArray();
@@ -531,7 +567,7 @@ namespace AdvancedSolverTests.SubBlocking
             int minLen = Math.Min(map.GetSubblkLen(0)[0], map.GetSubblkLen(1)[0]);
             int crit = ZwoSpec ? maxLen : minLen;
             for (int iCell = 0; iCell < map.LocalNoOfBlocks; iCell++) {
-                int iBlock = iCell + map.AggGrid.CellPartitioning.i0;
+                long iBlock = iCell + map.AggGrid.CellPartitioning.i0;
                 if(map.GetBlockLen(iBlock) == crit)
                     return iCell;
             }

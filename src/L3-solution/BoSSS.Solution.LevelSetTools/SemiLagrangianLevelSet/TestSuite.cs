@@ -106,7 +106,7 @@ namespace BoSSS.Application.SemiLagrangianLevelSetTestSuite
         /// <summary>
         /// Set Intial Values and perform first SpecFemSmoothing, if set in Control File
         /// </summary>
-        protected override void SetInitial()
+        protected override void SetInitial(double t)
         {
             base.NoOfTimesteps = Case.NbrofTimesteps;
             Case.InitialWork();

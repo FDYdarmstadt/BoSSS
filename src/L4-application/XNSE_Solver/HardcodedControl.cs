@@ -40,162 +40,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// A few example configurations.
     /// </summary>
     public static class HardcodedControl {
-       public static XNSE_Control SloshingTank(string _DbPath = null, int k = 3) {
-            XNSE_Control C = new XNSE_Control();
-
-            // basic database options
-            // ======================
-
-            C.DbPath = _DbPath;
-            C.savetodb = false; // _DbPath != null;
-            C.ProjectName = "XNSE/SloshingTank";
-            C.ProjectDescription = "Multiphase Sloshing tank";
-
-            // DG degrees
-            // ==========
-
-            C.AddFieldOption("VelocityX", k, FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("VelocityY", k, FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("SurfaceForceDiagnosticX", SaveOpt:FieldOpts.SaveToDBOpt.FALSE);
-            C.AddFieldOption("SurfaceForceDiagnosticY", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
-            C.AddFieldOption("Pressure", k - 1, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("PhiDG", SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("Phi", Degree: 2, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            C.AddFieldOption("Curvature", Degree: 6, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-
-
-
-            // grid and boundary conditions
-            // ============================
-
-            const bool xPeriodic = false;
-
-            C.GridFunc = delegate {
-                double[] Xnodes = GenericBlas.Linspace(-2, 2, 20);
-                double[] Ynodes = GenericBlas.Linspace(-2, 2, 20);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
-                grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
-                if (!xPeriodic) {
-                    grd.EdgeTagNames.Add(3, "wall_left");
-                    grd.EdgeTagNames.Add(4, "wall_right");
-                }
-
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] - (-2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (+2.0)) <= 1.0e-8)
-                        et = 2;
-                    if (!xPeriodic && Math.Abs(X[0] - (-2.0)) <= 1.0e-8)
-                        et = 3;
-                    if (!xPeriodic && Math.Abs(X[0] - (+2.0)) <= 1.0e-8)
-                        et = 4;
-
-
-                    Debug.Assert(et != 0);
-                    return et;
-                });
-
-                return grd;
-            };
-
-            C.AddBoundaryValue("wall_lower", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_upper", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_left", "VelocityX#A", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_right", "VelocityX#A", (x, t) => 0.0);
-
-            C.AddBoundaryValue("wall_lower", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_upper", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_left", "VelocityX#B", (x, t) => 0.0);
-            C.AddBoundaryValue("wall_right", "VelocityX#B", (x, t) => 0.0);
-
-
-
-            // Initial Values
-            // ==============
-
-            /*
-            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(
-                new Guid("..."),
-                950);
-            */
-
-
-            C.InitialValues_Evaluators.Add("Phi",
-                (X => (X[1] + Math.Sin(X[0] * Math.PI / 2.0) * 0.1))   // quadratic form
-                );
-            C.InitialValues_Evaluators.Add("GravityX", X => 0.0);
-            C.InitialValues_Evaluators.Add("GravityY", X => -1000.0); // cm / sec^2
-
-
-            // Physical Parameters
-            // ===================
-
-
-            /*
-            // Air-Water (lenght scale == meters, 3D space)
-            C.PhysicalParameters.rho_A = 1000; //     kg / m³
-            C.PhysicalParameters.rho_B = 1.2; //      kg / m³
-            C.PhysicalParameters.mu_A = 1.0e-3; //    kg / m / sec
-            C.PhysicalParameters.mu_B = 17.1e-6; //   kg / m / sec
-            C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²     
-             */
-
-            /*
-            // Water (A) vs. Air (B) // (lenght scale == centimeters, 3D space)
-            C.PhysicalParameters.rho_A = 1e-3; //     kg / cm³
-            C.PhysicalParameters.rho_B = 1.2e-6; //   kg / cm³
-            C.PhysicalParameters.mu_A = 1e-5; //      kg / cm / sec
-            C.PhysicalParameters.mu_B = 17.1e-8; //   kg / cm / sec
-            C.PhysicalParameters.Sigma =  72.75e-3; // kg / sec²     
-            //*/
-
-            // Water (A) vs. Octane (B) // (lenght scale == centimeters, 3D space)
-            C.PhysicalParameters.rho_A = 1e-3; //     kg / cm³
-            C.PhysicalParameters.rho_B = 0.7e-3; //   kg / cm³
-            C.PhysicalParameters.mu_A = 1e-5; //      kg / cm / sec
-            C.PhysicalParameters.mu_B = 0.5e-5; //   kg / cm / sec
-            C.PhysicalParameters.Sigma = 0;  // no surface tension  
-
-
-
-
-            C.PhysicalParameters.IncludeConvection = false;
-            C.PhysicalParameters.Material = true;
-
-            // misc. solver options
-            // ====================
-
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
-            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
-
-            C.ComputeEnergyProperties = true;
-
-            // Timestepping
-            // ============
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 0.5;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 1e12;
-            C.NoOfTimesteps = 1;
-
-            // haben fertig...
-            // ===============
-
-            return C;
-        }
+       
 
         /// <summary>
         /// Maintainer: kummer
@@ -402,484 +247,6 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        /// <summary>
-        /// An ellipsoidal droplet without level-set motion.
-        /// </summary>
-        /// <param name="_DbPath"></param>
-        /// <param name="sizeFactor">scaling of the droplet.</param>
-        /// <param name="degree"></param>
-        /// <param name="elipsDelta"></param>
-        /// <param name="IncludeConvection">true: Navier-Stokes; false: Stokes.</param>
-//        public static XNSE_Control StaticDroplet(
-//            string _DbPath = null,
-//            int sizeFactor = 2, int degree = 3, double elipsDelta = 0.0, bool IncludeConvection = false) {
-//            XNSE_Control C = new XNSE_Control();
-
-//            if (sizeFactor < 1)
-//                throw new ArgumentOutOfRangeException();
-//            if (degree < 1)
-//                throw new ArgumentOutOfRangeException();
-
-//            const double VelXBase = 0.0;
-//            const double BaseSize = 1.0;
-//            bool xPeriodic = false;
-//            C.FakePoisson = true;
-
-//            // basic database options
-//            // ======================
-
-//            C.DbPath = _DbPath;
-//            C.savetodb = _DbPath != null;
-//            C.ProjectName = "XNSE/Droplet";
-//            C.ProjectDescription = "Multiphase Droplet";
-//            C.Tags.Add("h/p conv_study");
-//            C.Tags.Add("Stokes");
-//            C.Tags.Add(string.Format("k={0}", degree));
-//            C.Tags.Add(string.Format("sizeFactor={0}", sizeFactor));
-
-//            #region DG Degrees
-
-//            C.AddFieldOption("VelocityX", degree, FieldOpts.SaveToDBOpt.TRUE);
-//            C.AddFieldOption("VelocityY", degree, FieldOpts.SaveToDBOpt.TRUE);
-//            C.AddFieldOption("SurfaceForceDiagnosticX", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
-//            C.AddFieldOption("SurfaceForceDiagnosticY", SaveOpt: FieldOpts.SaveToDBOpt.FALSE);
-//            C.AddFieldOption("Pressure", degree - 1, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-//            C.AddFieldOption("PhiDG", SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-//            C.AddFieldOption("Phi", Degree: 2, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-//            C.AddFieldOption("Curvature", Degree: 8, SaveOpt: FieldOpts.SaveToDBOpt.TRUE);
-            
-
-//            #endregion
-//            // grid and boundary conditions
-//            // ============================
-//            #region Grid and BC's
-//            double h = 3.0 * BaseSize / sizeFactor;
-//            C.GridFunc = delegate {
-//                double[] Xnodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
-//                double[] Ynodes = GenericBlas.Linspace(-1.5 * BaseSize, 1.5 * BaseSize, 9 * sizeFactor + 1);
-//                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
-//                //var grd = Grid2D.UnstructuredTriangleGrid(Xnodes, Ynodes);
-
-//                grd.EdgeTagNames.Add(1, "wall_lower");
-//                grd.EdgeTagNames.Add(2, "wall_upper");
-//                if (!xPeriodic) {
-//                    grd.EdgeTagNames.Add(3, "wall_left");
-//                    grd.EdgeTagNames.Add(4, "wall_right");
-//                }
-
-//                grd.DefineEdgeTags(delegate (double[] X) {
-//                    byte et = 0;
-//                    if (Math.Abs(X[1] - (-1.5 * BaseSize)) <= 1.0e-8)
-//                        et = 1;
-//                    if (Math.Abs(X[1] - (+1.5 * BaseSize)) <= 1.0e-8)
-//                        et = 2;
-//                    if (!xPeriodic && Math.Abs(X[0] - (-1.5 * BaseSize)) <= 1.0e-8)
-//                        et = 3;
-//                    if (!xPeriodic && Math.Abs(X[0] - (+1.5 * BaseSize)) <= 1.0e-8)
-//                        et = 4;
-
-
-//                    Debug.Assert(et != 0);
-//                    return et;
-//                });
-
-//                return grd;
-//            };
-
-//            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
-//            if (!xPeriodic) {
-//                C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
-//                C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
-//                C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
-//                C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
-
-//#pragma warning disable 162
-//                if (VelXBase != 0.0) {
-//                    C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-//                    C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-//                }
-//#pragma warning restore 162
-//            }
-
-//            #endregion
-
-//            #region Initial Values
-//            // Initial Values
-//            // ==============
-
-
-//            double xShift = h * 0.0;
-//            double yShift = 0.0 * h;
-
-//            C.InitialValues_Evaluators.Add("Phi",
-//                //(X => ((X[0] - xShift) / (0.8 * BaseSize * (1.0 + elipsDelta))).Pow2() + ((X[1] - yShift) / (0.8 * BaseSize * (1.0 - elipsDelta))).Pow2() - 1.0)   // quadratic form
-//                (X => (0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()).Sqrt()))
-//                //(X => (0.8*0.8 - ((X[0] - xShift).Pow2() + (X[1] - yShift).Pow2()))) 
-//                );
-//            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
-
-
-//            // Physical Parameters
-//            // ===================
-
-
-//            // Air-Water
-//            C.PhysicalParameters.rho_A = 1000;
-//            C.PhysicalParameters.rho_B = 1.2;
-//            C.PhysicalParameters.mu_A = 1.0e-3;
-//            C.PhysicalParameters.mu_B = 17.1e-6;
-//            C.PhysicalParameters.Sigma = 72.75e-3;
-//            //*/
-
-//            /*
-//            // Lame
-//            C.PhysicalParameters.rho_A = 10;
-//            C.PhysicalParameters.rho_B = 0.1;
-//            C.PhysicalParameters.mu_A = 0.5;
-//            C.PhysicalParameters.mu_B = 0.005;
-//            C.PhysicalParameters.Sigma = 0.1;
-//            //*/
-
-
-//            /*
-//            // convective not stable
-//            C.PhysicalParameters.rho_A = 10;
-//            C.PhysicalParameters.rho_B = 0.1;
-//            C.PhysicalParameters.mu_A = 0.05;
-//            C.PhysicalParameters.mu_B = 0.001;
-//            C.PhysicalParameters.Sigma = 0.1;
-//             */
-
-//            /*
-//            // Lamer
-//            C.PhysicalParameters.rho_A = 1;
-//            C.PhysicalParameters.rho_B = 1;
-//            C.PhysicalParameters.mu_A = 1;
-//            C.PhysicalParameters.mu_B = 1;
-//            C.PhysicalParameters.Sigma = 0.1;
-//            */
-
-//            C.PhysicalParameters.IncludeConvection = IncludeConvection;
-//            C.PhysicalParameters.Material = true;
-//            #endregion
-//            // misc. solver options
-//            // ====================
-
-//            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
-//            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-//            C.UseXDG4Velocity = true;
-
-//            C.LinearSolver.NoOfMultigridLevels = 3;
-//            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-//            C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-//            C.LinearSolver.MaxKrylovDim = 100;
-//            //C.Solver_MaxKrylovDim = 100;
-
-//            C.FakePoisson = false;
-
-//            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-//            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-//            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
-
-
-//            C.LinearSolver.MaxSolverIterations = 1000;
-//            C.NonLinearSolver.MaxSolverIterations = 1000;
-//            //C.Solver_MaxIterations = 1000;
-
-//            // NO Timestepping
-//            // ===============
-
-//            C.CompMode = AppControl._CompMode.Steady;
-//            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-
-//            // haben fertig...
-//            // ===============
-
-//            return C;
-//        }
-
-        /// <summary>
-        /// A very simple example for debugging purposes
-        /// </summary>
-        /// <param name="_DbPath"></param>
-        /// <param name="degree"></param>
-        /// <param name="IncludeConvection"></param>
-        /// <returns></returns>
-//        public static XNSE_Control Pseudo1D(
-//            string _DbPath = null,
-//            int degree = 1, bool IncludeConvection = false) {
-//            XNSE_Control C = new XNSE_Control();
-
-//            if (degree < 1)
-//                throw new ArgumentOutOfRangeException();
-
-//            const double VelXBase = 1.0;
-
-//            // basic database options
-//            // ======================
-
-//            C.DbPath = _DbPath;
-//            C.savetodb = _DbPath != null;
-//            C.ProjectName = "XNSE/Pseudo1D";
-//            C.ProjectDescription = "Pseudo 1D calculation";
-//            C.Tags.Add(string.Format("k={0}", degree));
-
-
-//            // DG degrees
-//            // ==========
-
-//            C.SetFieldOptions(degree, 2);
-            
-//            // grid and boundary conditions
-//            // ============================
-
-//            C.GridFunc = delegate {
-//                double[] Xnodes = new double[] { -5, -3, -1, 1, 3, 7 };
-//                double[] Ynodes = new double[] { -1, 1 };
-//                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
-//                grd.EdgeTagNames.Add(1, "wall_lower");
-//                grd.EdgeTagNames.Add(2, "wall_upper");
-//                grd.EdgeTagNames.Add(3, "wall_left");
-//                grd.EdgeTagNames.Add(4, "wall_right");
-
-//                grd.DefineEdgeTags(delegate (double[] X) {
-//                    byte et = 0;
-//                    if (Math.Abs(X[1] - (-1)) <= 1.0e-8)
-//                        et = 1;
-//                    if (Math.Abs(X[1] - (+1)) <= 1.0e-8)
-//                        et = 2;
-//                    if (Math.Abs(X[0] - (-5)) <= 1.0e-8)
-//                        et = 3;
-//                    if (Math.Abs(X[0] - (+7)) <= 1.0e-8)
-//                        et = 4;
-
-
-//                    Debug.Assert(et != 0);
-//                    return et;
-//                });
-
-//                return grd;
-//            };
-
-//            C.AddBoundaryValue("wall_lower", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_upper", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_lower", "VelocityX#B", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_upper", "VelocityX#B", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_left", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_right", "VelocityX#A", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_left", "VelocityX#B", (X, t) => VelXBase);
-//            C.AddBoundaryValue("wall_right", "VelocityX#B", (X, t) => VelXBase);
-
-//#pragma warning disable 162
-//            if (VelXBase != 0.0) {
-//                C.BoundaryValues["wall_left"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-//                C.BoundaryValues["wall_right"].type = IncompressibleBcType.Velocity_Inlet.ToString();
-//            }
-//#pragma warning restore 162
-
-
-//            // Initial Values
-//            // ==============
-
-
-//            C.InitialValues_Evaluators.Add("Phi", (X => (X[0] - 0.9)));
-//            C.InitialValues_Evaluators.Add("VelocityX", X => VelXBase);
-
-
-//            // Physical Parameters
-//            // ===================
-
-//            // Lame
-//            C.PhysicalParameters.rho_A = 10;
-//            C.PhysicalParameters.rho_B = 0.1;
-//            C.PhysicalParameters.mu_A = 0.5;
-//            C.PhysicalParameters.mu_B = 0.005;
-//            C.PhysicalParameters.Sigma = 0.1;
-//            //*/
-
-
-//            C.PhysicalParameters.IncludeConvection = IncludeConvection;
-//            C.PhysicalParameters.Material = true;
-
-//            // misc. solver options
-//            // ====================
-
-//            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-//            C.Option_LevelSetEvolution = LevelSetEvolution.None;
-//            C.UseXDG4Velocity = false;
-
-
-//            C.LinearSolver.NoOfMultigridLevels = 3;
-//            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-//            C.LinearSolver.MaxKrylovDim = 100;
-//            //C.Solver_MaxKrylovDim = 100;
-//            C.AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource = Solution.XNSECommon.CurvatureAlgorithms.LevelSetSource.fromDG;
-
-            
-
-//            //C.Solver_MaxIterations = 1000;
-//            C.LinearSolver.MaxSolverIterations = 1000;
-//            C.NonLinearSolver.MaxSolverIterations = 1000;
-
-//            // NO Timestepping
-//            // ===============
-
-//            C.CompMode = AppControl._CompMode.Steady;
-//            C.dtMax = 0.1;
-//            C.dtMin = 0.1;
-//            C.Endtime = 1000;
-//            C.NoOfTimesteps = 1;
-
-//            // haben fertig...
-//            // ===============
-
-//            return C;
-//        }
-
-
-
-        //static public XNSE_Control[] StaticDroplet_LinearSolver_ParamStudy() {
-        //    List<XNSE_Control> R = new List<XNSE_Control>();
-
-        //    foreach (int sizefactor in new int[] { 1, 2, 4, 8 }) {
-        //        foreach (int dgdeg in new int[] { 1, 2, 3 }) {
-
-        //            if (dgdeg >= 3 && sizefactor >= 8)
-        //                continue;
-
-        //            foreach (var pcMode in new MultigridOperator.Mode[] { MultigridOperator.Mode.IdMass, MultigridOperator.Mode.SymPart_DiagBlockEquilib }) {
-
-        //                var BasicDesc = new Tuple<string, object>[] {
-        //                    new Tuple<string,object>("Grid", 18*sizefactor),
-        //                    new Tuple<string,object>("DG-Degree", dgdeg),
-        //                    new Tuple<string,object>("VelBlockPrecond", pcMode)
-        //                };
-
-
-        //                /*
-        //                // "iterativesimple_classic"
-        //                // =================
-        //                {
-        //                    var C1 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                    C1.VelocityBlockPrecondMode = pcMode;
-
-        //                    C1.option_solver = "iterativesimple_classic";
-        //                    C1.Paramstudy_ContinueOnError = true;
-        //                    C1.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                        new Tuple<string,object>("option_solver", C1.option_solver)
-        //                    }.Cat(BasicDesc);
-        //                    R.Add(C1);
-        //                }
-
-        //                // "iterativesimple_resmini"
-        //                // =================
-        //                {
-        //                    var C5 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                    C5.VelocityBlockPrecondMode = pcMode;
-
-        //                    C5.option_solver = "iterativesimple_resmini";
-        //                    C5.Paramstudy_ContinueOnError = true;
-        //                    C5.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                        new Tuple<string,object>("option_solver", C5.option_solver)
-        //                    }.Cat(BasicDesc);
-        //                    R.Add(C5);
-        //                }
-
-        //                // "iterativesimpler"
-        //                // ==================
-        //                {
-        //                    var C6 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                    C6.VelocityBlockPrecondMode = pcMode;
-
-        //                    C6.option_solver = "iterativesimpler";
-        //                    C6.Paramstudy_ContinueOnError = true;
-        //                    C6.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                        new Tuple<string,object>("option_solver", C6.option_solver)
-        //                    }.Cat(BasicDesc);
-        //                    R.Add(C6);
-        //                }
-        //                */
-
-        //                foreach (int kdim in new int[] { 10, 20, 100 }) {
-
-        //                    /*
-        //                    // orthonormalization
-        //                    // ==================
-        //                    {
-        //                        var C2 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                        C2.VelocityBlockPrecondMode = pcMode;
-        //                        C2.option_solver = "orthonormalization";
-        //                        C2.MaxKrylovDim = kdim;
-        //                        C2.Paramstudy_ContinueOnError = true;
-        //                        C2.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                            new Tuple<string,object>("option_solver", C2.option_solver),
-        //                            new Tuple<string,object>("KrylovDim", kdim)
-        //                        }.Cat(BasicDesc);
-        //                        R.Add(C2);
-        //                    }
-        //                     */
-
-        //                    /*
-        //                    // gmres+schwarz
-        //                    // =============
-        //                    {
-        //                        var C3 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                        C3.VelocityBlockPrecondMode = pcMode;
-        //                        C3.option_solver = "gmres+schwarz";
-        //                        C3.MaxKrylovDim = kdim;
-        //                        C3.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                            new Tuple<string,object>("option_solver", C3.option_solver),
-        //                            new Tuple<string,object>("KrylovDim", kdim)
-        //                        }.Cat(BasicDesc);
-
-
-        //                        R.Add(C3);
-        //                    }*/
-
-
-        //                    // gmres+schwarz
-        //                    // =============
-        //                    {
-        //                        var C7 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                        C7.VelocityBlockPrecondMode = pcMode;
-        //                        C7.LinearSolver.MaxKrylovDim = kdim;
-        //                        //C7.Solver_MaxKrylovDim = kdim;
-        //                        C7.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                            new Tuple<string,object>("KrylovDim", kdim)
-        //                        }.Cat(BasicDesc);
-        //                        R.Add(C7);
-        //                    }
-
-        //                    /*
-        //                    // gmres+simple
-        //                    // ============
-        //                    {
-        //                        var C4 = StaticDroplet(sizeFactor: sizefactor, degree: dgdeg);
-        //                        C4.VelocityBlockPrecondMode = pcMode;
-        //                        C4.option_solver = "gmres+simple";
-        //                        C4.MaxKrylovDim = kdim;
-        //                        C4.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-        //                            new Tuple<string,object>("option_solver", C4.option_solver),
-        //                            new Tuple<string,object>("KrylovDim", kdim)
-        //                        }.Cat(BasicDesc);
-        //                        R.Add(C4);
-        //                    }
-        //                     */
-        //                }
-
-        //            }
-        //        }
-        //    }
-
-
-
-        //    return R.ToArray();
-        //}
-
-
         public static XNSE_Control ManufacturedDroplet() {
             XNSE_Control C = new XNSE_Control();
 
@@ -970,6 +337,10 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
+        /// <summary>
+        /// See publication, Section 6.3:
+        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+        /// </summary>
         public static XNSE_Control TaylorCouette(string _DbPath = null, int k = 3, int sizeFactor = 4) {
             XNSE_Control C = new XNSE_Control();
 
@@ -1112,7 +483,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.InitialValues_Evaluators.Add("Phi",
-                (X => X.L2NormPow2() - Rm.Pow2())  // signed-distance form
+                (X => X.L2NormPow2() - Rm.Pow2())  // quadratic form
                 );
 
             C.InitialValues_Evaluators.Add("VelocityX#A", x => UA1(x, 0));
@@ -1130,8 +501,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.MaxSolverIterations = 20;
@@ -1524,7 +895,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
@@ -1951,7 +1321,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -2151,7 +1520,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
             #endregion
@@ -3121,170 +2489,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        public static XNSE_Control Test_channelFlow_fk(int degree = 2) {
-
-            XNSE_Control C = new XNSE_Control();
-
-
-            // basic database options
-            // ======================
-            #region db
-            C.DbPath = null;
-            C.savetodb = false;
-
-            #endregion
-
-            // DG degrees
-            // ==========
-            #region degrees
-
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = degree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = degree,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = degree - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 8,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-
-            #endregion
-
-            // grid genration
-            // ==============
-            #region grid
-
-            IncompressibleBcType outBc = IncompressibleBcType.Pressure_Outlet;
-
-            C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(0, 10, 33);
-                double[] Ynodes = GenericBlas.Linspace(-1, 1, 9);
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: false, periodicY: false);
-
-                grd.EdgeTagNames.Add(1, IncompressibleBcType.Wall.ToString() + "_upper");
-                grd.EdgeTagNames.Add(2, IncompressibleBcType.Wall.ToString() + "_lower");
-                grd.EdgeTagNames.Add(3, outBc.ToString());
-                grd.EdgeTagNames.Add(4, IncompressibleBcType.Velocity_Inlet.ToString());
-               
-                grd.DefineEdgeTags(delegate (double[] X) {
-                    double x = X[0], y = X[1];
-
-                    if (Math.Abs(y - (+1)) <= 1.0e-8)
-                        return 1;
-                    if(Math.Abs(y - (-1)) <= 1.0e-8)
-                        return 2;
-                    if(Math.Abs(x - (10)) <= 1.0e-8)
-                        return 3;
-                    if (Math.Abs(x - (0)) <= 1.0e-8)
-                        return 4;
-                    throw new ApplicationException();
-                });
-
-                return grd;
-            };
-
-            #endregion
-
-            // physical parameters
-            // ===================
-            #region physics
-
-            const double rhoA = 1;
-            const double rhoB = 1;
-            const double muA = 0.1;
-            const double muB = 0.1;
-            const double sigma = 0;
-
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.rho_B = rhoB;
-            C.PhysicalParameters.mu_A = muA;
-            C.PhysicalParameters.mu_B = muB;
-            C.PhysicalParameters.Sigma = sigma;
-
-            C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
-
-            #endregion
-
-            // boundary conditions
-            // ===================
-            #region BC
-
-            C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#A", (X, t) => (1.0 - X[1] * X[1]));
-            C.AddBoundaryValue(IncompressibleBcType.Velocity_Inlet.ToString(), "VelocityX#B", (X, t) => (1.0 - X[1] * X[1]));
-
-            C.AddBoundaryValue(outBc.ToString());
-
-            C.AddBoundaryValue(IncompressibleBcType.Wall.ToString() + "_upper");
-
-            C.AddBoundaryValue(IncompressibleBcType.Wall.ToString() + "_lower");
-
-            #endregion
-
-
-            // initial values
-            // ==================
-            #region init
-
-            C.InitialValues_Evaluators.Add("Phi", (X => X[0] - 2));
-            //C.InitialValues_Evaluators.Add("VelocityX#A", (X) => (2.0 / 3.0));
-            //C.InitialValues_Evaluators.Add("VelocityX#B", (X) => (2.0 / 3.0));
-
-
-            #endregion
-
-
-            // misc. solver options
-            // ====================
-            #region solver
-
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.TransposeTermMissing;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
-
-            C.LinearSolver.MaxSolverIterations = 3;
-            C.NonLinearSolver.MaxSolverIterations = 3;
-            C.NonLinearSolver.ConvergenceCriterion = 1.0e-10;
-            C.LinearSolver.ConvergenceCriterion = 1.0e-10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-
-            C.ComputeEnergyProperties = false;
-
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-            C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 0;
-
-            #endregion
-
-            // Timestepping
-            // ============
-            #region time
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.dtFixed = 0.01;
-            C.Endtime = 1000;
-            C.NoOfTimesteps = 1;
-
-            #endregion
-
-            return C;
-        }
-
-
         public static XNSE_Control FallingDropletOnSurface(int p = 2, int kelem = 40, string _DbPath = null) {
 
             XNSE_Control C = new XNSE_Control();
@@ -3837,10 +3041,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="_DbPath"></param>
         /// <param name="D">2D or 3D</param>
         /// <returns></returns>
-        public static XNSE_Control StokesSphere(int p = 2, int kelem = 16, string _DbPath = null, int D = 3) {
+        public static XNSE_Control StokesSphere(int p = 5, int kelem =32, string _DbPath = null, int D = 2) {
 
             XNSE_Control C = new XNSE_Control();
-
 
             // basic database options
             // ======================
@@ -3912,7 +3115,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
 
-
                 grd.DefineEdgeTags(delegate (double[] X) {
                     if (Math.Abs(X[0] - (-1)) <= 1.0e-8)
                         return "wall_left";
@@ -3971,12 +3173,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //double delta = 0.0;
 
-            double r = 0.5;
+            double r = 0.49;
             double nonsp = 0.5;
 
-            if(D == 2)
+            if (D == 2)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() - 1.0", false));
-            else if(D == 3)
+            else if (D == 3)
                 C.AddInitialValue("Phi", new Formula($"X => (X[0]/{r * nonsp}).Pow2() + (X[1]/{r}).Pow2() + (X[2]/{r}).Pow2() - 1.0", false));
             else
                 throw new ArgumentOutOfRangeException();
@@ -4006,7 +3208,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4015,13 +3217,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 4;
-            C.LinearSolver.MaxSolverIterations = 200;
-            if(D == 2)
-                C.LinearSolver.TargetBlockSize = 2000;
-            else 
-                C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.MaxKrylovDim = 1000;
+            C.UseSchurBlockPrec = true;
+
+            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.TargetBlockSize = 5000;
+            C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.LinearSolver.verbose = true;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
@@ -4051,6 +3252,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            //C.dtFixed = 1E-4;
 
 
             #endregion
@@ -4669,7 +3872,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
@@ -4873,7 +4075,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -4907,7 +4108,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            //C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
+            C.PostprocessingModules.Add(new PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities());
 
             C.savetodb = false;
             int p = 2;
@@ -5054,7 +4256,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
-            C.AdvancedDiscretizationOptions.UseGhostPenalties = false;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;

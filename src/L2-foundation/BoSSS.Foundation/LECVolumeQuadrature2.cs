@@ -94,6 +94,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         /// </summary>
         EquationComponentArgMapping<IVolumeForm_UxV>[] m_VolumeForm_UxV;
 
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_VolumeForm_UxV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxV.IsNonEmpty() || 
+                    m_VolumeForm_UxGradV.IsNonEmpty() || 
+                    m_VolumeForm_GradUxGradV.IsNonEmpty() || 
+                    m_VolumeSource_V.IsNonEmpty() || 
+                    m_VolumeSource_GradV.IsNonEmpty() ;
+            }
+        }
+
 
         Stopwatch[][] m_VolumeForm_UxV_Watches;
         Stopwatch[][] m_VolumeForm_GradUxV_Watches;
@@ -122,6 +136,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if(ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 
@@ -1003,8 +1019,8 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 if(bLinearRequired) {
                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(new int[] { i, 0, 0 }, new int[] { i - 1, M - 1, N - 1 });
 
-                    int m0 = (int)this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
-                    int n0 = (int)this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                    long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
+                    long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell, 0);
 
                     //for (int m = 0; m < M; m++) {
                     //    for (int n = 0; n < N; n++) {
@@ -1018,7 +1034,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(new int[] { i, 0, offset }, new int[] { i - 1, M - 1, offset - 1 });
 
 
-                    int m0 = (int)this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
+                    int m0 = this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell, 0);
 
                     for(int m = 0; m < M; m++)
                         m_Vector[m0 + m] += BlockRes[m]* a;

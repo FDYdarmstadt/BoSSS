@@ -99,7 +99,8 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_IN = new double[_NOParams];
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.EdgeTag = 0;
+            cp.GridDat = inp.GridDat;
             double[] _Grad_vA = new double[D];
             double[] _Grad_vB = new double[D];
             double[,] _Grad_uA = new double[_NOargs, D];
@@ -187,7 +188,8 @@ namespace BoSSS.Foundation.XDG {
             cp.Parameters_IN = new double[_NOParams];
             cp.time = inp.time;
             cp.iEdge = -123456;
-            cp.GridDat = null;
+            cp.EdgeTag = 0;
+            cp.GridDat = inp.GridDat;
             double[] _Grad_vA = new double[D];
             double[] _Grad_vB = new double[D];
             double[,] _Grad_uA = new double[_NOargs, D];

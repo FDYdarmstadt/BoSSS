@@ -105,7 +105,7 @@ namespace BoSSS.Solution.NSECommon {
         /// Hack for introducing the value of p0 as a double. has to be changed
         /// </param>
         /// <param name="ThermodynamicPressureValue"></param>
-        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure, ref double ThermodynamicPressureValue) {
+        public void Initialize(ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure,  double ThermodynamicPressureValue) {
             if (!IsInitialized) {
                 this.ThermodynamicPressure = ThermodynamicPressure;
                 this.ThermodynamicPressureValue = ThermodynamicPressureValue;
@@ -127,6 +127,18 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure
+        /// </summary>
+        /// <param name="ThermodynamicPressure"></param>
+        public void Initialize(double ThermodynamicPressureValue) {
+            if (!IsInitialized) {
+                this.ThermodynamicPressureValue = ThermodynamicPressureValue;
+            } else {
+                throw new ApplicationException("Initialize() can be called only once.");
+            }
+        }
         /// <summary>
         /// Dimensionless ideal gas law - returns density as function of
         /// thermodynamic pressure (i.e. p0) and temperature.
@@ -157,6 +169,13 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        public override double GetMixtureHeatCapacity(double[] MassFraction) {
+            double cp = 1.0;           
+            return cp;
+        }
+
+
+
 
         /// <summary>
         /// Sutherlands law for air. 
@@ -164,7 +183,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="T"></param>
         /// <returns>
         /// The viscosity of air at a given temperature in Kg/(m.s)
-        /// <see</returns>
+        /// </returns>
         public double getViscosityDim(double T) {
             double S = 110.56;
             double T0 = 273.15; // 
@@ -189,19 +208,20 @@ namespace BoSSS.Solution.NSECommon {
 
             phi = Math.Max(0.01, phi);
             double visc = 0; // nondimensional viscosity
-           // phi = phi < 0.1 ? 0.1 : phi; //////////////////
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
                         visc = 1.0;
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.56;
+                        double S = 110.56;                   
                         visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        visc = Math.Pow(phi, 2.0 / 3.0);
+                        //double exponent = 0.7;
+                        double exponent = 2.0 / 3.0;//
+                        visc = Math.Pow(phi, exponent) ;
                         break;
                     }
                 default:
@@ -293,8 +313,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public double get_LambdaCp_Term(double Temperature) {
-            double TREF = 298;
-            double res = 2.58e-5 * (Temperature / TREF); // in Kg/(m.s)
+            double res = 2.58e-5 * Math.Pow(Temperature / 298, 0.7); // in Kg/(m.s)
             return res;
         }
 
@@ -324,5 +343,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double getDensityFromZ(double Z) {
             throw new NotImplementedException();
         }
+
+
+
     }
 }

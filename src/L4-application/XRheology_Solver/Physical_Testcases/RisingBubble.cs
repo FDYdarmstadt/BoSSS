@@ -69,7 +69,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.SessionName = "RisingBubbleHeimann";
             C.ProjectDescription = "rising bubble";
 
-            C.LogValues = XRheology_Control.LoggingValues.RisingBubble;
+
 
             #endregion
 
@@ -130,12 +130,12 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Tags.Add("Testcase viscoelastic");
             C.PhysicalParameters.reynolds_A = 1.0;
             C.PhysicalParameters.reynolds_B = 1.0;
-            C.PhysicalParameters.beta_a = 1.0;
-            C.PhysicalParameters.beta_b = 1.0;
+            C.PhysicalParametersRheology.beta_a = 1.0;
+            C.PhysicalParametersRheology.beta_b = 1.0;
 
             C.RaiseWeissenberg = false;
-            C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
-            C.PhysicalParameters.Weissenberg_b = 0.0;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.0;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 0.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0;// 4.3e-4;
@@ -389,9 +389,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ProjectDescription = "rising bubble";
             C.Tags.Add("benchmark setup");
 
-            C.LogValues = XRheology_Control.LoggingValues.RisingBubble;
-            C.LogPeriod = 30;
-
+           
             #endregion
 
 
@@ -449,12 +447,12 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Tags.Add("Testcase viscoelastic");
             C.PhysicalParameters.reynolds_A = 0.01;
             C.PhysicalParameters.reynolds_B = 0.8;
-            C.PhysicalParameters.beta_a = 0.0;
-            C.PhysicalParameters.beta_b = 0.0;
+            C.PhysicalParametersRheology.beta_a = 0.0;
+            C.PhysicalParametersRheology.beta_b = 0.0;
 
             C.RaiseWeissenberg = true;
-            C.PhysicalParameters.Weissenberg_a = 0.0;// .3;
-            C.PhysicalParameters.Weissenberg_b = 10.0;
+            C.PhysicalParametersRheology.Weissenberg_a = 0.0;// .3;
+            C.PhysicalParametersRheology.Weissenberg_b = 10.0;
             C.WeissenbergIncrement = 0.1;
 
             double sigma = 0.3712;// entspricht Eö=6.6;
@@ -711,8 +709,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.ProjectName = "XNSE/Bubble";
             C.ProjectDescription = "rising bubble";
 
-            C.LogValues = XNSE_Control.LoggingValues.RisingBubble;
-
+            
             #endregion
 
 

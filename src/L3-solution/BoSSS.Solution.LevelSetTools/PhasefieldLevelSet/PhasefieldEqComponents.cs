@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
@@ -18,8 +19,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public phi_Diffusion(int D, double penalty_const, MultidimensionalArray cj, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, cj, "mu") // note: in the equation for 'phi', we have the Laplacian of 'mu'
+        public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+            : base(penalty_const, "mu") // note: in the equation for 'phi', we have the Laplacian of 'mu'
         {
             m_D = D;
             m_diff = __diff;
@@ -254,8 +255,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public mu_Diffusion(int D, double penalty_const, MultidimensionalArray cj, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, cj, "phi") // note: in the equation for 'mu', we have the Laplacian of 'phi'
+        public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+            : base(penalty_const, "phi") // note: in the equation for 'mu', we have the Laplacian of 'phi'
         {
             m_D = D;
             m_cahn = __cahn * __cahn;
@@ -624,12 +625,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
     class curvature_Divergence : IVolumeForm, IEdgeForm, IEquationComponent, ISupportsJacobianComponent
     {
-        public curvature_Divergence(int D, double penalty, double limit, MultidimensionalArray InverseLengthScales)
+        public curvature_Divergence(int D, double penalty, double limit)
         {
             m_D = D;
             m_limit = limit;
             m_penalty = penalty;
-            this.InverseLengthScales = InverseLengthScales;
         }
 
         int m_D;
@@ -815,7 +815,29 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Length scales used in <see cref="GetPenalty"/>
         /// </summary>
-        protected MultidimensionalArray InverseLengthScales;
+        protected MultidimensionalArray LengthScales;
+
+        /// <summary>
+        /// update of penalty length scales.
+        /// </summary>
+        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            
+            double _D = cs.GrdDat.SpatialDimension;
+            double _p = DomainDGdeg.Max();
+            
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+            
+            m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+            
+            this.LengthScales = cs.CellLengthScales;
+        }
+
+        /// <summary>
+        /// penalty scaling through polynomial degree
+        /// </summary>
+        double m_penalty_deg;
+
 
         /// <summary>
         /// computation of penalty parameter according to:
@@ -823,15 +845,16 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        protected virtual double GetPenalty(int jCellIn, int jCellOut)
-        {
-            double cj_in = InverseLengthScales[jCellIn];
-            double mu = m_penalty * cj_in;
-            if (jCellOut >= 0)
-            {
-                double cj_out = InverseLengthScales[jCellOut];
-                mu = Math.Max(mu, m_penalty * cj_out);
+        protected virtual double GetPenalty(int jCellIn, int jCellOut) {
+            double cj_in = 1.0/LengthScales[jCellIn];
+            double mu = m_penalty * m_penalty_deg* cj_in;
+            if(jCellOut >= 0) {
+                double cj_out = 1.0/LengthScales[jCellOut];
+                mu = Math.Max(mu, m_penalty* m_penalty_deg * cj_out);
             }
+
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
 
             return mu;
         }

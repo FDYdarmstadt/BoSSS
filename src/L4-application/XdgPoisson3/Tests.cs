@@ -68,11 +68,12 @@ namespace BoSSS.Application.XdgPoisson3 {
         
 
 
-#if !DEBUG
         /// <summary>
         /// Grid scale tests for condition numbers
         /// </summary>
+#if !DEBUG
         [Test]
+#endif       
         public static void ScalingCircle2D(
             //[Values(1)] 
             [Values(1,2,3,4)] 
@@ -80,21 +81,19 @@ namespace BoSSS.Application.XdgPoisson3 {
             ) //
         {
             int sz = ilPSP.Environment.MPIEnv.MPI_Size;
-            if (sz > 1)
+            if(sz > 1) {
+                Console.WriteLine("ScalingCircle2D: skipping for more than 1 processor.");
                 return;// deactivate for multiple procs.
+            }
 
             var Controls = new List<XdgPoisson3Control>();
 
             int[] ResS = null;
             switch(dgDegree) {
-//#if DEBUG
-//                case 1: ResS = new int[] { 8, 16, 32, 64 }; break;
-//#else
                 case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
                 case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
                 case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
                 case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
-//#endif
                 default: throw new NotImplementedException();
             }
             
@@ -118,6 +117,5 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             ConditionNumberScalingTest.Perform(Controls, plotAndWait:true, title: "ScalingCircle2D");
         }
-#endif       
     }
 }

@@ -137,8 +137,8 @@ namespace BoSSS.Application.Matrix_MPItest {
         }
 
 
-        protected override void SetInitial() {
-            this.LsUpdate(0.0);
+        protected override void SetInitial(double t) {
+            this.LsUpdate(t);
 
             u1.ProjectField((x, y) => x);
             u2.ProjectField((x, y) => x);
@@ -211,10 +211,10 @@ namespace BoSSS.Application.Matrix_MPItest {
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, this.ProblemMapping, this.ProblemMapping);
 
 
-            int nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz = this.OperatorMatrix.GetTotalNoOfNonZeros();
             Console.WriteLine("Number of non-zeros in matrix: " + nnz);
            
-            int nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
+            long nnz2 = this.AltOperatorMatrix.GetTotalNoOfNonZeros();
             Assert.IsTrue(nnz == nnz2, "Number of non-zeros in matrix different for " + OperatorMatrix.GetType() + " and " + AltOperatorMatrix.GetType());
             Console.WriteLine("Number of non-zeros in matrix (reference): " + nnz2);
            

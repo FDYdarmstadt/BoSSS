@@ -84,12 +84,13 @@ namespace HilbertTest {
         }
 
         static private bool TestingGridDistributionEven() {
-            //string dbPath = @"D:\Weber\BoSSS\test_db";
             string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
+            
             using (var solver = new HilbertTest()) {
+
                 solver.Init(control);
                 solver.RunSolverMode();
                 bool result = true;
@@ -268,8 +269,8 @@ namespace HilbertTest {
                     //Comparing checkLTS to Distribution along HilbertCurve of Testcase
                     int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
                     //result = ItemsAreEqual(solver.Grid.GetHilbertSortedRanks(),checkLTS);
-                    int J0 = solver.GridData.CellPartitioning.i0;
-                    int JE = solver.GridData.CellPartitioning.iE;
+                    long J0 = solver.GridData.CellPartitioning.i0;
+                    long JE = solver.GridData.CellPartitioning.iE;
 
                     ulong[] discreteCenter = new ulong[D];
                     ulong[] local_HilbertIndex = new ulong[JE - J0];
@@ -277,7 +278,7 @@ namespace HilbertTest {
 
                     var _Grid = (GridCommons)(solver.Grid);
 
-                    for (int j = J0; j < JE; j++) {
+                    for (long j = J0; j < JE; j++) {
                         Cell Cj = _Grid.Cells[j - J0];
                         int NoOfNodes = Cj.TransformationParams.NoOfRows;
                         for (int d = 0; d < D; d++) {

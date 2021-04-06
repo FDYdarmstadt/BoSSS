@@ -19,7 +19,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         public static DGField[] InvokeParameterFactory(this ISpatialOperator op, IEnumerable<DGField> __DomainFields) {
 
-            if (!op.IsCommited)
+            if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             var _DomainFields = __DomainFields.ToArray();
             if (_DomainFields.Length != op.DomainVar.Count)
@@ -110,12 +110,9 @@ namespace BoSSS.Foundation {
         /// and all <see cref="IParameterHandling.MyParameterUpdate"/> methods in the operators equation components 
         /// in order to allocate operator storage.
         /// </summary>
-        /// <param name="op"></param>
-        /// <param name="__DomainFields"></param>
-        /// <param name="__ParameterFields"></param>
-        public static void InvokeParameterUpdate(this ISpatialOperator op, DGField[] __DomainFields, DGField[] __ParameterFields) {
+        public static void InvokeParameterUpdate(this ISpatialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
 
-            if (!op.IsCommited)
+            if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             if (__DomainFields.Length != op.DomainVar.Count)
                 throw new ArgumentException("Mismatch in number of domain variables.");
@@ -137,7 +134,7 @@ namespace BoSSS.Foundation {
 
             // invoke update functions in the operator
             foreach (var PartialParameterUpdate in op.ParameterUpdates) {
-                PartialParameterUpdate(DomainVarsDict, ParameterVarsDict);
+                PartialParameterUpdate(time, DomainVarsDict, ParameterVarsDict);
             }
 
             // invoke update functions in the equation components

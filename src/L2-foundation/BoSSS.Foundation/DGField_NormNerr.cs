@@ -116,15 +116,15 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// see <see cref="GetExtremalValues(out double,out double,out int,out int,CellMask)"/>;
+        /// see <see cref="GetExtremalValues(out double,out double,out long,out long,CellMask)"/>;
         /// </summary>
         public void GetExtremalValues(out double min, out double max) {
-            int j, k;
+            long j, k;
             GetExtremalValues(out min, out max, out j, out k, null);
         }
 
         /// <summary>
-        /// used by <see cref="GetExtremalValues(out double,out double,out int,out int,CellMask)"/> and <see cref="GetExtremalValuesInCell"/>
+        /// used by <see cref="GetExtremalValues(out double,out double,out long,out long,CellMask)"/> and <see cref="GetExtremalValuesInCell"/>
         /// to find the extremal values in 
         /// </summary>
         [NonSerialized]
@@ -209,7 +209,7 @@ namespace BoSSS.Foundation {
         /// <param name="jMinGlob">
         /// global cell index in which the maximum value <paramref name="min"/> was found
         /// </param>
-        public void GetExtremalValues(out double min, out double max, out int jMinGlob, out int jMaxGlob, CellMask cm = null) {
+        public void GetExtremalValues(out double min, out double max, out long jMinGlob, out long jMaxGlob, CellMask cm = null) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             using (new FuncTrace()) {
                 int J = Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -288,14 +288,14 @@ namespace BoSSS.Foundation {
                     max = total[0];
                     min = -total[1];
 
-                    int i0 = Basis.GridDat.CellPartitioning.i0;
-                    int[] jGlob = new int[2];
+                    long i0 = Basis.GridDat.CellPartitioning.i0;
+                    long[] jGlob = new long[2];
                     if (max == LocMax) {
                         // (at least one) global maximum on this processor
                         jGlob[0] = jMaxLoc + i0;
                     } else {
                         // maximum on some other processor
-                        jGlob[0] = int.MaxValue;
+                        jGlob[0] = long.MaxValue;
                     }
 
                     if (min == LocMin) {
@@ -303,15 +303,15 @@ namespace BoSSS.Foundation {
                         jGlob[1] = jMinLoc + i0;
                     } else {
                         // minimum on some other processor
-                        jGlob[1] = int.MaxValue;
+                        jGlob[1] = long.MaxValue;
                     }
 
 
                     // in case of multiple global minimums/maximums, e.g. for a constant field, we return the lowest (jMaxGlob,jMinGlob) 
-                    int[] jGlobM = new int[2];
+                    long[] jGlobM = new long[2];
                     unsafe {
-                        fixed (int* ploc = jGlob, ptot = jGlobM) {
-                            csMPI.Raw.Allreduce((IntPtr)ploc, (IntPtr)ptot, 2, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                        fixed (long* ploc = jGlob, ptot = jGlobM) {
+                            csMPI.Raw.Allreduce((IntPtr)ploc, (IntPtr)ptot, 2, csMPI.Raw._DATATYPE.LONG_LONG, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
                         }
                     }
                     jMaxGlob = jGlob[0];
@@ -658,7 +658,7 @@ namespace BoSSS.Foundation {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             using (new FuncTrace()) {
                 double Min, Max;
-                int j, k;
+                long j, k;
                 GetExtremalValues(out Min, out Max, out j, out k, cm);
 
                 return Math.Max(Math.Abs(Max), Math.Abs(Min));

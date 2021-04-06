@@ -36,7 +36,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// <summary>
     /// a periodic channel flow, with water on bottom and air on top
     /// </summary>
-    class ChannelTest : ITest {
+    class ChannelTest : IXNSETest {
+
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
 
         public bool Material {
             get {

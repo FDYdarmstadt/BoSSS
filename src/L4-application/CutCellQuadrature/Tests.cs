@@ -37,7 +37,7 @@ namespace CutCellQuadrature {
             Program app = new Program(testCase);
             app.Init(null);
             app.SetUpEnvironment();
-            app.SetInitial();
+            app.SetInitial(0);
 
             int i = 1;
             while (testCase.ProceedToNextShift()) {
@@ -69,7 +69,7 @@ namespace CutCellQuadrature {
                 Program app = new Program(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
-                app.SetInitial();
+                app.SetInitial(0);
                 testCase.ProceedToNextShift();
                 double referenceValue = app.SetUpConfiguration();
 
@@ -106,7 +106,7 @@ namespace CutCellQuadrature {
             Program app = new Program(testCase);
             app.Init(null);
             app.SetUpEnvironment();
-            app.SetInitial();
+            app.SetInitial(0);
 
             int i = 1;
             while (testCase.ProceedToNextShift()) {
@@ -138,7 +138,7 @@ namespace CutCellQuadrature {
                 Program app = new Program(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
-                app.SetInitial();
+                app.SetInitial(0);
                 testCase.ProceedToNextShift();
                 double referenceValue = app.SetUpConfiguration();
 
@@ -176,7 +176,7 @@ namespace CutCellQuadrature {
             Program app = new Program(testCase);
             app.Init(null);
             app.SetUpEnvironment();
-            app.SetInitial();
+            app.SetInitial(0);
 
             int i = 1;
             while (testCase.ProceedToNextShift()) {
@@ -208,7 +208,7 @@ namespace CutCellQuadrature {
                 Program app = new Program(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
-                app.SetInitial();
+                app.SetInitial(0);
                 testCase.ProceedToNextShift();
                 double referenceValue = app.SetUpConfiguration();
 
@@ -245,7 +245,7 @@ namespace CutCellQuadrature {
             Program app = new Program(testCase);
             app.Init(null);
             app.SetUpEnvironment();
-            app.SetInitial();
+            app.SetInitial(0);
 
             int i = 1;
             while (testCase.ProceedToNextShift()) {
@@ -278,7 +278,7 @@ namespace CutCellQuadrature {
                 Program app = new Program(testCase);
                 app.Init(null);
                 app.SetUpEnvironment();
-                app.SetInitial();
+                app.SetInitial(0);
                 testCase.ProceedToNextShift();
                 double referenceValue = app.SetUpConfiguration();
 

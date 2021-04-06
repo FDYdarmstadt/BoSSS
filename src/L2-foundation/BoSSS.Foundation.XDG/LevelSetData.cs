@@ -192,6 +192,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
+            /// <summary>
+            /// walk back in region stack
+            /// </summary>
             LevelSetRegions GetPreviousRegion() {
                 int L = 1 - m_owner.RegionsHistory.GetPopulatedLength();
 
@@ -384,7 +387,7 @@ namespace BoSSS.Foundation.XDG {
                 {
                     int LocColors = ColorCounter - 1;
                     var ColorPart = new Partitioning(LocColors);
-                    int ColorOffset = ColorPart.i0;
+                    int ColorOffset = checked((int)(ColorPart.i0));
 
                     for (int j = 0; j < J; j++) {
                         if (ColorMap[j] != 0) {
@@ -1149,17 +1152,48 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             internal ushort[] m_LevSetRegions;
 
+
             /// <summary>
-            /// 
+            /// Level set region code, before the most recent call to <see cref="LevelSetTracker.UpdateTracker"/>
+            /// for locally updated and external cells
+            /// </summary>
+            internal ushort[] m_LevSetRegions_b4Update;
+
+
+            /// <summary>
+            /// Handling of special cases, when the level-set coincides with a cell face;
+            /// It can be null, if there is no such face in the entire mesh;
+            /// - 1st index: local cell index
+            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
+            /// - entry: if null, there is no face on the cell which coincides with any level-set 
+            /// - contains tuples, which level-set coincides with which face (if any)
+            /// </summary>
+            internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
+
+            /// <summary>
+            /// Handling of special cases, when the level-set coincides with a cell face;
+            /// It can be null, if there is no such face in the entire mesh;
+            /// - 1st index: local cell index
+            /// - 2nd index: enumeration (most of the time, only one level-set will have a coinciding face, so there can be 
+            /// - entry: if null, there is no face on the cell which coincides with any level-set 
+            /// - contains tuples, which level-set coincides with which face (if any)
+            /// </summary>
+            public (int iLevSet, int iFace)[][] LevSetCoincidingFaces {
+                get {
+                    return m_LevSetCoincidingFaces;
+                }
+            }
+
+            /// <summary>
+            /// Returns the sign (pos, neg, both) for all level-sets in cell <paramref name="jCell"/>
             /// </summary>
             public LevelsetCellSignCode GetCellSignCode(int jCell) {
                 return LevelsetCellSignCode.Extract(m_LevSetRegions[jCell]);
             }
 
             /// <summary>
-            /// For each cell <em>j</em>, the number of cells that follow with the same 
-            /// region code as cell <em>j</em>.<br/>
-            /// index: cell index <em>j</em>;
+            /// For each cell <em>j</em>, the number of cells that follow with the same region code as cell <em>j</em>.
+            /// - index: cell index <em>j</em>;
             /// </summary>
             public int[] m_LenToNextChange;
 
@@ -1183,7 +1217,9 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
-
+            /// <summary>
+            /// 
+            /// </summary>
             internal void InvalidateCaches() {
                 this.m_LevelSetWings = null;
                 this.m_NearField = null;
@@ -1235,6 +1271,15 @@ namespace BoSSS.Foundation.XDG {
             public CellMask GetCutCellMask() {
                 return GetNearFieldMask(0);
             }
+
+            /// <summary>
+            /// For each level-set, a mask cotaining all edges that coincide with the level-set itself.
+            /// Return value can be null, if there are no such edges.
+            /// </summary>
+            public EdgeMask GetZeroSetEdges(int LevSetIdx) {
+                throw new NotImplementedException("todo");
+            }
+
 
             /// <summary>
             /// Caches the values returned by <see cref="GetNearFieldSubgrid4LevSet"/>;
@@ -1718,10 +1763,21 @@ namespace BoSSS.Foundation.XDG {
 
                 L.m_LenToNextChange = this.m_LenToNextChange.CloneAs();
                 L.m_LevSetRegions = this.m_LevSetRegions.CloneAs();
+                L.m_LevSetRegions_b4Update = this.m_LevSetRegions_b4Update?.CloneAs();
                 L.Version = this.Version;
                 L.Time = this.Time;
                 L.m_ColorMap4Spc = this.m_ColorMap4Spc.CloneNonShallow(L);
-                
+
+                if(m_LevSetCoincidingFaces != null) {
+                    int len = m_LevSetCoincidingFaces.Length;
+                    L.m_LevSetCoincidingFaces = new (int iLevSet, int iFace)[len][];
+                    for(int j = 0; j < len; j++) {
+                        var entry_j = m_LevSetCoincidingFaces[j];
+                        if(entry_j != null) {
+                            L.m_LevSetCoincidingFaces[j] = entry_j.CloneAs();
+                        }
+                    }
+                }
                 return L;
             }
 

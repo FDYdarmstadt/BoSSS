@@ -166,7 +166,7 @@ namespace BoSSS.Foundation.XDG {
                 oldCcm = null;
             }
 
-            if ((oldCcm == null) != (oldTs__AgglomerationTreshold == null)) {
+            if ((oldCcm == null) != (oldTs__AgglomerationTreshold == null)) { 
                 throw new ArgumentException();
             }
 
@@ -275,7 +275,7 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            public int i0Func(int jCell, int iVar) {
+            public long i0Func(int jCell, int iVar) {
                 if (VarIsXdg[iVar]) {
                     int iSpc = m_LsRegion.GetSpeciesIndex(this.m_spId, jCell);
                     return m_Map.GlobalUniqueCoordinateIndex(iVar, jCell, iSpc * NS[iVar]);
@@ -757,8 +757,18 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// 
+        /// Sometimes, this provides indeed a correct agglomeration graph.
+        /// If agglomeration fails -- which it does quite regularly -- unleash the <see cref="Katastrophenplot"/> to see the mess!
         /// </summary>
+        /// <remarks>
+        /// Cell agglomeration is used to handle two problems:
+        /// first, for the treatment of very small cut cells and, for temporally evolving interfaces, to 
+        /// ensure an equal topology of the (agglomerated) XDG cut-cell mesh for all involved temporal levels.
+        /// - the issue of small cut cells is described in the paper:
+        ///   _Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization; Kummer; IJNMF 109 (2), 2017_. 
+        /// - the agglomeration of _newborn_ and _decased_ cells is described in 
+        ///   the paper: _Time integration for extended discontinuous Galerkin methods with moving domains; Kummer, Müller, Utz; IJNMF 113 (5), 2018_.
+        /// </remarks>
         static public IEnumerable<Tuple<int, int>> FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, double AgglomerationThreshold,
             MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea,
             bool AgglomerateNewborn, bool AgglomerateDeceased, bool ExceptionOnFailedAgglomeration,
@@ -780,7 +790,7 @@ namespace BoSSS.Foundation.XDG {
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
                 int Jtot = grdDat.Cells.Count;
                 Partitioning CellPart = Tracker.GridDat.CellPartitioning;
-                int i0 = CellPart.i0;
+                long i0 = CellPart.i0;
                 var GidxExt = Tracker.GridDat.Parallel.GlobalIndicesExternalCells;
                 var GidxExt2Lidx = Tracker.GridDat.Parallel.Global2LocalIdx;
                 //double[] RefVolumes = grdDat.Grid.RefElements.Select(Kref => Kref.Volume).ToArray();
@@ -790,8 +800,8 @@ namespace BoSSS.Foundation.XDG {
                 if (edgeArea.GetLength(0) != NoOfEdges)
                     throw new ArgumentException();
 
-                double EmptyEdgeTreshold = 1.0e-10; // edges with a measure blow or equal to this threshold are
-                // considered to be 'empty', therefore they should not be used for agglomeration;
+                double EmptyEdgeTreshold = 1.0e-10; // edges with a measure below or equal to this threshold are
+                //                                     considered to be 'empty', therefore they should not be used for agglomeration;
                 //                                     there is, as always, an exception: if all inner edges which belong to a
                 //                                     cell that should be agglomerated, the criterion mentioned above must be ignored.
 
@@ -807,7 +817,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // mask for the cells in which we -- potentially -- want to do agglomeration
                     var AggCandidates = Tracker.Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
-
+                    var SpeciesMask = Tracker.Regions.GetSpeciesMask(spId).GetBitMask();
 
                     // pass 1: determine agglomeration sources
                     // ---------------------------------------
@@ -832,14 +842,19 @@ namespace BoSSS.Foundation.XDG {
                             frac = Math.Min(1.0, Math.Max(0.0, frac));
 
 
-                            if (frac < alpha) {
+                            //
+                            // NOTE !!!!!!!!!!
+                            // Do not exclude empty cells here! Empty cells (volume is zero or negative) must be agglomerated to 
+                            // yield a correct matrix structure.
+                            //
+                            if (frac <= alpha) {
                                 // cell 'jCell' should be agglomerated to some other cell
                                 AgglomCellsBitmask[jCell] = true;
                                 AgglomCellsList.Add(jCell);
                             }
                         }
                     }
-
+                    
                     int NoTimeLev = oldTs__AgglomerationTreshold != null ? oldTs__AgglomerationTreshold.Length : 0;
                     if (NoTimeLev > 0) {
                         // for the previous timestep
@@ -857,7 +872,7 @@ namespace BoSSS.Foundation.XDG {
                         int NoOfLevSets = Tracker.LevelSets.Count;
 
                         for (int iTimeLev = 0; iTimeLev < NoTimeLev; iTimeLev++) {
-                            CellMask suspectsForAgg = Tracker.RegionsHistory[-iTimeLev].GetSpeciesMask(spId);
+                            CellMask suspectsForAgg = Tracker.RegionsHistory[-iTimeLev].GetCutCellMask().Intersect(Tracker.RegionsHistory[-iTimeLev].GetSpeciesMask(spId));
                             foreach (int jCell in suspectsForAgg.ItemEnum) {
 
 
@@ -867,7 +882,7 @@ namespace BoSSS.Foundation.XDG {
                                 spcVol = Math.Max(spcVol, 0.0);
                                 double frac = spcVol / totVol;
                                 frac = Math.Min(1.0, Math.Max(0.0, frac));
-
+                          
                                 if (frac < alpha) {
                                     // cell 'jCell' should be agglomerated to some other cell
                                     if (!AgglomCellsBitmask[jCell]) {
@@ -878,7 +893,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
-
+                    
                     if (AgglomerateNewborn) {
 
                         for (int j = 0; j < Jup; j++) {
@@ -1017,7 +1032,10 @@ namespace BoSSS.Foundation.XDG {
                     var failCells = new List<int>();
                     foreach (int jCell in AgglomCellsList) {
                         var Cell2Edge_jCell = Cell2Edge[jCell];
-
+                        //bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
+                        //int[] jNeigh = new int[Cell2Edge_jCell.Length];
+                        //bool[] isAggCandidate = new bool[Cell2Edge_jCell.Length];
+                        //bool[] passed1 = new bool[Cell2Edge_jCell.Length];
 
                         // cell 'jCell' should be agglomerated to some other cell
                         Debug.Assert(AgglomCellsBitmask[jCell] == true);
@@ -1047,8 +1065,10 @@ namespace BoSSS.Foundation.XDG {
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
 
                             double EdgeArea_iEdge = edgeArea[iEdge];
-                            if (jCellNeigh >= 0 && EdgeArea_iEdge > EmptyEdgeTreshold)
+                            if(jCellNeigh >= 0 && EdgeArea_iEdge > EmptyEdgeTreshold) {
+                                //EdgeIsNonempty[e] = true;
                                 NonEmptyEdgeAvailable = true;
+                            }
                         }
 
                         for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
@@ -1072,12 +1092,14 @@ namespace BoSSS.Foundation.XDG {
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
                             int jCellNeigh = Edge2Cell[iEdge, OtherCell];
+                            //jNeigh[e] = jCellNeigh;
                             if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
                                 // boundary edge, no neighbour for agglomeration
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
                                 continue;
                             }
-
+                            //passed1[e] = true;
+                            //isAggCandidate[e] = AggCandidates[jCellNeigh];
                             if (!AggCandidates[jCellNeigh])
                                 // not suitable for agglomeration
                                 continue;
@@ -1087,7 +1109,6 @@ namespace BoSSS.Foundation.XDG {
                             //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
                             double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                             double frac_neigh = spcVol_neigh / totVol_neigh;
-
                             // max?
                             if (frac_neigh > frac_neigh_max) {
                                 frac_neigh_max = frac_neigh;
@@ -1098,8 +1119,75 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         if (jCellNeigh_max < 0) {
+                            for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
+                                int iEdge = Cell2Edge_jCell[e];
+                                int OtherCell, ThisCell;
+                                if (iEdge < 0) {
+                                    // cell 'jCell' is the OUT-cell of edge 'iEdge'
+                                    OtherCell = 0;
+                                    ThisCell = 1;
+                                    iEdge *= -1;
+                                }
+                                else {
+                                    OtherCell = 1;
+                                    ThisCell = 0;
+                                }
+                                iEdge--;
 
-                            failCells.Add(jCell);
+                                double EdgeArea_iEdge = edgeArea[iEdge];
+
+                                _AgglomCellsEdges[iEdge] = true;
+
+                                Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
+
+                                int jCellNeigh = Edge2Cell[iEdge, OtherCell];
+                                //jNeigh[e] = jCellNeigh;
+                                if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
+                                    // boundary edge, no neighbour for agglomeration
+                                    Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
+                                    //continue;
+                                }
+                                //passed1[e] = true;
+                                //isAggCandidate[e] = AggCandidates[jCellNeigh];
+                                if (!AggCandidates[jCellNeigh])
+                                    // not suitable for agglomeration
+                                    continue;
+
+                                // volume fraction of neighbour cell
+                                double spcVol_neigh = CellVolumes[jCellNeigh];
+                                //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
+                                double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
+                                double frac_neigh = spcVol_neigh / totVol_neigh;
+
+                                // max?
+                                if (frac_neigh > frac_neigh_max) {
+                                    frac_neigh_max = frac_neigh;
+                                    e_max = e;
+                                    jCellNeigh_max = jCellNeigh;
+                                    jEdge_max = iEdge;
+                                }
+                            }
+                            if (jCellNeigh_max < 0) {
+                                failCells.Add(jCell);
+                            }
+                            else {
+                                _AccEdgesMask[jEdge_max] = true;
+
+                                int jCellNeighRank;
+                                if (jCellNeigh_max < Jup) {
+                                    jCellNeighRank = myMpiRank;
+                                }
+                                else {
+                                    jCellNeighRank = CellPart.FindProcess(GidxExt[jCellNeigh_max - Jup]);
+                                }
+
+                                AgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
+                                    jCellTarget = jCellNeigh_max,
+                                    jCellSource = jCell,
+                                    OwnerRank4Target = jCellNeighRank,
+                                    OwnerRank4Source = myMpiRank
+                                });
+                            }
                         } else {
                             _AccEdgesMask[jEdge_max] = true;
 
@@ -1119,7 +1207,7 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if (failCells.Count > 0) {
+                    if (failCells.Count.MPISum() > 0) {
 
 
                         Basis b = new Basis(grdDat, 0);
@@ -1141,6 +1229,7 @@ namespace BoSSS.Foundation.XDG {
                         foreach (int j in failCells) {
                             FailedViz.SetMeanValue(j, 1);
                         }
+
 
                         if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));

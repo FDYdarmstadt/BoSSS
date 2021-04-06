@@ -54,7 +54,7 @@ namespace BoSSS.Solution.Gnuplot {
                 DashType = DashTypes.Solid,
                 LineColor = LineColors.Black,
                 LineWidth = 1,
-                PointSize = 3,
+                PointSize = 0.7,
                 Style = Styles.LinesPoints
             };
 
@@ -332,7 +332,7 @@ namespace BoSSS.Solution.Gnuplot {
         public bool LegendHorizontal = false;
 
         /// <summary>
-        /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend rigth from the plot).
+        /// Position of legend, in graph coordinates (e.g. for a log-range, with values from 10 to 1000, this may be 10000 to print the legend right from the plot).
         /// </summary>
         [DataMember]
         public double[] LegendPosition = null;
@@ -481,9 +481,10 @@ namespace BoSSS.Solution.Gnuplot {
             : this() {
             this.dataGroups = dataRows.
                 Select(p => new XYvalues(p.Key, p.Value[0], p.Value[1])).
-                OrderBy(p => p.Name).
+                //OrderBy(p => p.Name).
                 ToArray();
         }
+
 
         /// <summary>
         /// Constructs a new, lightweight <see cref="Plot2Ddata"/> for a single set
@@ -549,7 +550,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// the new object
         /// </param>
         private Plot2Ddata(params XYvalues[] groups) : this() {
-            this.dataGroups = groups.OrderBy(p => p.Name).ToArray();
+            this.dataGroups = groups.
+                //OrderBy(p => p.Name).
+                ToArray();
         }
 
         /// <summary>
@@ -675,7 +678,7 @@ namespace BoSSS.Solution.Gnuplot {
         public IEnumerable<KeyValuePair<string, double>> Regression() {
             foreach (var group in dataGroups) {
                 double[] xValues;
-                if (LogX) {
+                if ((LogX && !group.UseX2) || (LogX2 && group.UseX2)) {
                     xValues = group.Abscissas.Select(x => x.Log10()).ToArray();
                 } else {
                     xValues = group.Abscissas;
@@ -683,7 +686,7 @@ namespace BoSSS.Solution.Gnuplot {
                 double xAvg = xValues.Average();
 
                 double[] yValues;
-                if (LogY) {
+                if ((LogY && !group.UseY2) || (LogY2 && group.UseY2)) {
                     yValues = group.Values.Select(y => y.Log10()).ToArray();
                 } else {
                     yValues = group.Values;
@@ -731,19 +734,26 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="path">
         /// Path to file
         /// </param>
-        public void SaveTextFileToPublish(string path) {
+        public void SaveTextFileToPublish(string path, bool writeGroupName = true) {
             // writing data
             string pathWithoutExt = System.IO.Path.ChangeExtension(path, null);
             string newPath = pathWithoutExt + "Data.txt";
-            SaveTabular(newPath);
+            SaveTabular(newPath, writeGroupName);
             // writing regression
             newPath = pathWithoutExt + "Rgrs.txt";
             var regressionData = this.Regression();
             using (StreamWriter stw = new StreamWriter(newPath)) {
-                stw.WriteLine("\\$\\degree$ \t EOC");
-                foreach (var item in regressionData) {
-                    stw.WriteLine(item.Key + "\t" + item.Value);
+                if (writeGroupName) {
+                    stw.WriteLine("\\$\\degree$ \t EOC");
+                    foreach (var item in regressionData) {
+                        stw.WriteLine(item.Key + "\t" + item.Value);
+                    }
+                } else {
+                    foreach (var item in regressionData) {
+                        stw.WriteLine( item.Value);
+                    }
                 }
+
                 stw.Close();
             }
         }
@@ -816,7 +826,7 @@ namespace BoSSS.Solution.Gnuplot {
                 s.Write(@"%\end{figure} 
 %\end{document}
 ");
-                s.Close();
+                s.Close(); 
             }
         }
 
@@ -873,13 +883,18 @@ namespace BoSSS.Solution.Gnuplot {
         /// </code>
         /// </summary>
         /// <param name="path">File path</param>
-        public void SaveTabular(string path) {
+        public void SaveTabular(string path, bool writeGroupName) {
             using (StreamWriter s = new StreamWriter(path)) {
-                s.WriteLine("group\tx\ty");
-
+                if (writeGroupName) {
+                    s.WriteLine("group\tx\ty");
+                } else {
+                    s.WriteLine("x\ty");
+                }
                 foreach (var group in dataGroups) {
                     for (int i = 0; i < group.Abscissas.Length; i++) {
-                        s.Write(group.Name + "\t");
+                        if (writeGroupName) {
+                            s.Write(group.Name + "\t");
+                        }
                         s.Write(group.Abscissas[i].ToString("E16", NumberFormatInfo.InvariantInfo) + "\t");
                         s.Write(group.Values[i].ToString("E16", NumberFormatInfo.InvariantInfo));
                         s.WriteLine();

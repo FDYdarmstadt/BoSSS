@@ -49,8 +49,11 @@ namespace BoSSS.Solution.XNSECommon {
     /// </summary>
     public class XLaplace_Bulk : BoSSS.Solution.NSECommon.SIPLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, MultidimensionalArray PenaltyLengthScales, XLaplace_Interface.Mode _m)
-            : base(__penatly_baseFactor, PenaltyLengthScales, n) {
+        /// <summary>
+        /// 
+        /// </summary>
+        public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, XLaplace_Interface.Mode _m)
+            : base(__penatly_baseFactor, n) {
             muA = _muA;
             muB = _muB;
             base.m_alpha = sw;
@@ -123,7 +126,10 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return mu;
         }
         
 
@@ -182,6 +188,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
+
+
+
         override public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             base.CoefficientUpdate(cs, DomainDGdeg, TestDGdeg);
             if(cs.CellLengthScales == null) {
@@ -221,9 +230,10 @@ namespace BoSSS.Solution.XNSECommon {
         public virtual double InnerEdgeForm(ref CommonParams inp, 
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double[] N = inp.Normal;
+            
+            var N = inp.Normal;
             double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            int D = N.Length;
+            int D = N.Dim;
             Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
             Debug.Assert(Grad_uA.GetLength(1) == D);
@@ -281,7 +291,10 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException();
             }
 
-            return this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor;
+            double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
+            if(mu.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return mu;
         }
 
         //List<int> cellElo = new List<int>();
@@ -303,18 +316,7 @@ namespace BoSSS.Solution.XNSECommon {
                     scaleOT = 0.5;
                     return;
                 }
-                          /*
-                case Mode.VolumeScaled: {
-                    double volIN = this.m_LsTrk._Regions.GetSpeciesVolume(inp.jCell, this.NegativeSpecies);
-                    double volOT = this.m_LsTrk._Regions.GetSpeciesVolume(inp.jCell, this.PositiveSpecies);
-
-                    scaleIN = volIN / (volIN + volOT);
-                    scaleOT = volOT / (volIN + volOT);
-                    Debug.Assert(Math.Abs(scaleIN + scaleOT - 1.0) <= 1.0e-8);
-                    return;
-                }
-                */
-
+                        
                 default:
                 throw new NotImplementedException();
             }
@@ -322,10 +324,21 @@ namespace BoSSS.Solution.XNSECommon {
 
         MultidimensionalArray PosLengthScaleS;
         MultidimensionalArray NegLengthScaleS;
+        double m_penalty_deg;
 
+        /// <summary>
+        /// <see cref="ILevelSetEquationComponentCoefficient.CoefficientUpdate(CoefficientSet, CoefficientSet, int[], int)"/>
+        /// </summary>
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+
+            double _p = DomainDGdeg.Max();
+            double _D = csA.GrdDat.SpatialDimension;
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+            
+            m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
         }
 
         public int LevelSetIndex {

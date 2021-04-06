@@ -201,7 +201,7 @@ namespace CNS.Tests.IBMTests {
 
                 // normal vector
                 Vector n = new Vector(p.y, -p.x);
-                n.Normalize();
+                n.NormalizeInPlace();
 
                 // Angle between line and x-axis
                 double alpha = shockAngle;
@@ -285,21 +285,21 @@ namespace CNS.Tests.IBMTests {
         public static void IBMAVTimeStepperTest_RK1() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 1, explicitOrder: 1),
-                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-10));
         }
 
         [Test]
         public static void IBMAVTimeStepperTest_AB1() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 2, explicitOrder: 1),
-                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-10));
         }
 
         [Test]
         public static void IBMAVTimeStepperTest_ALTS1() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 1),
-                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017555324 + 1e-10));
         }
 
         // Explicit order 2
@@ -307,14 +307,14 @@ namespace CNS.Tests.IBMTests {
         public static void IBMAVTimeStepperTest_AB2() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 2, explicitOrder: 2),
-                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-10));
         }
 
         [Test]
         public static void IBMAVTimeStepperTest_ALTS2() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 2),
-                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017763754 + 1e-10));
         }
 
         // Explicit order 3
@@ -322,14 +322,14 @@ namespace CNS.Tests.IBMTests {
         public static void IBMAVTimeStepperTest_AB3() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 2, explicitOrder: 3),
-                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-10));
         }
 
         [Test]
         public static void IBMAVTimeStepperTest_ALTS3() {
             CheckErrorThresholds(
                 Setup_IBMAVTimeStepperTest(explicitScheme: 3, explicitOrder: 3),
-                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-14));
+                Tuple.Create("L2NormDensity", 0.488419017764017 + 1e-10));
         }
     }
 }

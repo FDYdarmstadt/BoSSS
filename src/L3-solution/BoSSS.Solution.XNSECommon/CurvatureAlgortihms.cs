@@ -119,6 +119,16 @@ namespace BoSSS.Solution.XNSECommon {
             public static FilterConfiguration Default {
                 get {
                     FilterConfiguration r = new FilterConfiguration();
+                    r.gradOpt = GradientOption.FiltLevSet;
+                    r.hessOpt = HessianOption.FiltLevSetGrad;
+                    r.useFiltLevSetGrad = true;
+                    r.useFiltLevSetHess = true;
+                    r.FilterCurvatureCycles = 0;
+                    r.LevelSetSource = LevelSetSource.fromC0;
+                    r.PatchRecoveryDomWidth = 0;
+                    r.NoOfPatchRecoverySweeps = 3;
+                    r.CurvatureLimiting = false;
+
                     return r;
                 }
             }
@@ -127,28 +137,28 @@ namespace BoSSS.Solution.XNSECommon {
             public bool UseWholeField = false;
 
             [DataMember]
-            public GradientOption gradOpt = GradientOption.FiltLevSet;
+            public GradientOption gradOpt = GradientOption.LevSet;
 
             [DataMember]
-            public HessianOption hessOpt = HessianOption.FiltLevSetGrad;
+            public HessianOption hessOpt = HessianOption.LevSetGrad;
 
             [DataMember]
-            public bool useFiltLevSetGrad = true;
+            public bool useFiltLevSetGrad = false;
 
             [DataMember]
-            public bool useFiltLevSetHess = true;
+            public bool useFiltLevSetHess = false;
 
             [DataMember]
             public int FilterCurvatureCycles = 0;
 
             [DataMember]
-            public LevelSetSource LevelSetSource = LevelSetSource.fromDG;
+            public LevelSetSource LevelSetSource = LevelSetSource.fromC0;
 
             [DataMember]
             public int PatchRecoveryDomWidth = 0;
 
             [DataMember]
-            public int NoOfPatchRecoverySweeps = 3;
+            public int NoOfPatchRecoverySweeps = 0;
 
             [DataMember]
             public bool CurvatureLimiting = false;
@@ -196,7 +206,7 @@ namespace BoSSS.Solution.XNSECommon {
             }
             else
             {
-                CC = LsTrk.Regions.GetNearFieldMask(config.PatchRecoveryDomWidth);
+                CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
                 
@@ -482,7 +492,7 @@ namespace BoSSS.Solution.XNSECommon {
 
 
             for (int d = 0; d < D && FiltLevSetGrad_Req; d++) {
-                FiltLevSetGrad[d] = new SinglePhaseField(FiltLevSet.Basis, string.Format("~G({0})", d));
+                FiltLevSetGrad[d] = new SinglePhaseField(LevSetGrad[d].Basis, string.Format("~G({0})", d));
                 FiltLevSetGrad[d].AccLaidBack(1.0, LevSetGrad[d]);
                 PatchRecMultipassFilter(FiltLevSetGrad[d], config.NoOfPatchRecoverySweeps, l2pr);
             }
@@ -592,7 +602,7 @@ namespace BoSSS.Solution.XNSECommon {
                 XSpatialOperatorMk2 op = new XSpatialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
                     var H = new SurfaceTension_LaplaceBeltrami_BndLine(d, 1.0, true);
-                    op.SurfaceElementOperator.EquationComponents[CodName[d]].Add(H);
+                    op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
                 }
                 op.Commit();
                                 
@@ -738,7 +748,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Project Curvature From Hessian and Gradient
         /// </summary>
         /// <remarks>
-        /// see for clarification equations 3.6 (2D) and 4.2 (3D)
+        /// see for clarification equations 3.6 (2D) and 4.2 (3D):
         /// Goldman, Ron. “Curvature Formulas for Implicit Curves and Surfaces.”
         /// Computer Aided Geometric Design, Geometric Modelling and Differential Geometry, 22, no. 7 (October 2005): 632–58.
         /// doi:10.1016/j.cagd.2005.06.005
@@ -1209,8 +1219,8 @@ namespace BoSSS.Solution.XNSECommon {
                     var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
                     var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(line);
-                    xOp.SurfaceElementOperator.EquationComponents[codName[d]].Add(surface);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
+                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
                 }
                 
             } else {
@@ -1437,7 +1447,7 @@ namespace BoSSS.Solution.XNSECommon {
             */
 
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, CutCellsGrid.VolumeMask);
-            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"));
+            EdgeQuadratureScheme eqs = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(lsTrk.GetSpeciesId("A"), 0);
             
             // =============================
             // compute force vector in cell.

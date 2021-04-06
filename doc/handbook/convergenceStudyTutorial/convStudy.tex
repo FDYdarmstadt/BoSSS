@@ -101,11 +101,7 @@ using BoSSS.Application.SipPoisson;
  }
 \BoSSSexe
 \BoSSScmd{
-var myBatch = new MiniBatchProcessorClient();
- }
-\BoSSSexe
-\BoSSScmd{
-MiniBatchProcessor.Server.StartIfNotRunning(false);
+var myBatch = ExecutionQueues[0];
  }
 \BoSSSexe
 \BoSSScmd{
@@ -243,7 +239,7 @@ foreach(var C in Runs)\newline
 /// The following line ensures that all jobs are complete before 
 /// post-processing analysis is started, although, there is a one-hour (3600-seconds )
 /// time-out.
-WorkflowMgm.BlockUntilAllJobsTerminate(3600);
+WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -253,6 +249,22 @@ WorkflowMgm.BlockUntilAllJobsTerminate(3600);
 /// (eactly at this line here), one for set-up and
 /// job sumbission and another one for the analysis.
 WorkflowMgm.AllJobs;
+ }
+\BoSSSexe
+\BoSSScmd{
+/// We can take a closer inspection of anything that failed (should not be,
+/// anyway).
+foreach(var job in WorkflowMgm.AllJobs.Values) \{\newline 
+\btab if(job.Status != JobStatus.FinishedSuccessful) \{\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \btab Console.WriteLine($"Job \{job\}");\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \btab Console.WriteLine(job.Stdout);   \newline 
+\btab \btab Console.WriteLine("===============================================");\newline 
+\btab \btab Console.WriteLine(job.Stderr);\newline 
+\btab \btab Console.WriteLine("###############################################");\newline 
+\btab \}    \newline 
+\}
  }
 \BoSSSexe
 \BoSSScmd{

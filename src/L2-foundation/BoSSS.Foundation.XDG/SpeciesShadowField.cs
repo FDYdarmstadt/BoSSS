@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             public SpeciesShadowField(XDGField owner, SpeciesId specId) :
                 base(new Basis(owner.GridDat, owner.m_CCBasis.Degree),
-                     owner.Identification + "-" + owner.m_CCBasis.Tracker.GetSpeciesName(specId)) {
+                     owner.Identification + "#" + owner.m_CCBasis.Tracker.GetSpeciesName(specId)) {
                 m_Coordinates = new SpeciesCoordinates(owner, specId);
                 m_Owner = owner;
             }
@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.XDG {
             public override string Identification {
                 get {
                     var specId = this.m_Coordinates._SpecisId;
-                    return m_Owner.Identification + "-" + m_Owner.m_CCBasis.Tracker.GetSpeciesName(specId);
+                    return m_Owner.Identification + "#" + m_Owner.m_CCBasis.Tracker.GetSpeciesName(specId);
                 }
                 set {
                     throw new NotSupportedException("Setting is forbidden -- name of shadow field is implied by owner field.");

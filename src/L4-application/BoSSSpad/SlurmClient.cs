@@ -15,7 +15,7 @@ limitations under the License.
 */
 
 using System;
-using Renci.SshNet;
+//using Renci.SshNet;
 using System.IO;
 using System.Runtime.Serialization;
 using ilPSP;
@@ -23,6 +23,7 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ilPSP.Tracing;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -42,7 +43,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Non-recommended SSH password for authentification.
+        /// Non-recommended SSH password for authentication.
         /// This is not encrypted, the <see cref="PrivateKeyFilePath"/>
         /// </summary>
         [DataMember]
@@ -70,19 +71,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Use Lichtenberg 2?
+        /// Additional lines to be added to the auto-generated batch.sh file.
         /// </summary>
         [DataMember]
-        public bool UseLB2 {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Use the test partition on Lichtenberg 2?
-        /// </summary>
-        [DataMember]
-        public bool UseLB2TestPartition {
+        public string[] AdditionalBatchCommands {
             get;
             set;
         }
@@ -102,18 +94,22 @@ namespace BoSSS.Application.BoSSSpad {
             protected set;
         }
 
-        string DeploymentDirectoryAtRemote(Job myJob) {
+        string DeploymentDirectoryAtRemote(Job myJob, string DeploymentDirectory) {
             if (!DeploymentBaseDirectoryAtRemote.StartsWith("/")) {
                 throw new IOException($"Deployment remote base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectoryAtRemote}' is not.");
             }
 
-            var tmp = DeploymentBaseDirectoryAtRemote.TrimEnd('/');
+            string RelativeDeploymentDirectory = DeploymentDirectory
+                .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
+                .Last()
+                .TrimEnd('/', '\\');
+            var tmp = DeploymentBaseDirectoryAtRemote;
 
-            return tmp + "/" + myJob.RelativeDeploymentDirectory;
+            return tmp + "/" + RelativeDeploymentDirectory;
         }
 
 
-
+        [NonSerialized]
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -134,7 +130,7 @@ namespace BoSSS.Application.BoSSSpad {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
 
-                    m_SSHConnection.Connect();
+                    //m_SSHConnection.Connect();
                 }
 
                 return m_SSHConnection;
@@ -153,7 +149,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void TestSSH() {
             var output = SSHConnection.RunCommand("ls");
-            Console.WriteLine(output.Result);
+            Console.WriteLine(output);
         }
 
         /// <summary>
@@ -201,7 +197,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// .
         /// </summary>
-        public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
+        public override (BoSSSpad.JobStatus,int? ExitCode) EvaluateStatus(string idToken, object optInfo, string DeployDir) { 
+        //public override void EvaluateStatus(string idToken, object optInfo, string DeployDir, out bool isRunning, out bool isTerminated, out int ExitCode) {
             using (var tr = new FuncTrace()) {
                 //string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
                 //DeployDir = null;
@@ -213,14 +210,14 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("FILE_CHECK", tr)) {
                     string exitFile = Path.Combine(DeployDir, "exit.txt");
                     if (File.Exists(exitFile)) {
-                        isTerminated = true;
-                        isRunning = false;
+
+                        int ExitCode;
                         try {
                             ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
                         } catch (Exception) {
                             ExitCode = int.MinValue;
                         }
-                        return;
+                        return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
                     }
 
                     string runningFile = Path.Combine(DeployDir, "isrunning.txt");
@@ -229,61 +226,56 @@ namespace BoSSS.Application.BoSSSpad {
                         // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
 
                     } else {
-                        // job may be pending in queue
-                        isRunning = false;
-                        isTerminated = false;
-                        ExitCode = 0;
-                        return;
+                        // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
+
+                        return (JobStatus.PendingInExecutionQueue, null);
+
+                        //isRunning = false;
+                        //isTerminated = false;
+                        //ExitCode = 0;
+                        //return;
                     }
                 }
 
                 string JobID = idToken;
 
                 using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
-                    using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                        int startindex = output.Result.IndexOf("\n");
-                        int endindex = output.Result.IndexOf("\n", startindex + 1);
+                    //using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
+                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
+                        //int startindex = output.Result.IndexOf("\n");
+                        //int endindex = output.Result.IndexOf("\n", startindex + 1);
+                        int startindex = output.IndexOf("\n");
+                        int endindex = output.IndexOf("\n", startindex + 1);
                         string jobstatus;
                         if (startindex == -1 || endindex == -1) {
                             jobstatus = "";
                         } else {
-                            jobstatus = output.Result.Substring(startindex + 1, (endindex - startindex) - 1);
+                            jobstatus = output.Substring(startindex + 1, (endindex - startindex) - 1);
                         }
 
                         switch (jobstatus.ToUpperInvariant()) {
                             case "PENDING":
-                                isRunning = false;
-                                isTerminated = false;
-                                ExitCode = 0;
-                                return;
+                               return (JobStatus.PendingInExecutionQueue, null);
 
                             case "RUNNING":
                             case "COMPLETING":
-                                isRunning = true;
-                                isTerminated = false;
-                                ExitCode = 0;
-                                break;
+                                return (JobStatus.InProgress, null);
 
                             case "SUSPENDED":
                             case "STOPPED":
                             case "PREEMPTED":
                             case "FAILED":
-                                isTerminated = true;
-                                isRunning = false;
-                                ExitCode = int.MinValue;
-                                return;
+                                return (JobStatus.FailedOrCanceled, int.MinValue);
 
                             case "":
                             case "COMPLETED":
-                                isRunning = true;
-                                isTerminated = false;
-                                ExitCode = -1; // 'exit.txt' does not exist, something is shady here
-                                break;
+                                // completed, but 'exit.txt' does not exist, something is shady here
+                                return (JobStatus.FailedOrCanceled,-1);
 
                             default:
-                                throw new NotImplementedException("Unknown job state: " + jobstatus);
+                                return (JobStatus.Unknown, null);
                         }
-                    }
+                    //}
                 }
             }
         }
@@ -292,16 +284,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Returns path to text-file for standard error stream
         /// </summary>
-        public override string GetStderrFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stderr.txt");
+        public override string GetStderrFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stderr.txt");
             return fp;
         }
 
         /// <summary>
         /// Returns path to text-file for standard output stream
         /// </summary>
-        public override string GetStdoutFile(Job myJob) {
-            string fp = Path.Combine(myJob.DeploymentDirectory, "stdout.txt");
+        public override string GetStdoutFile(string idToken, string DeployDir) {
+            string fp = Path.Combine(DeployDir, "stdout.txt");
             return fp;
         }
 
@@ -322,70 +314,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         ///
         /// </summary>
-        public override (string id, object optJobObj) Submit(Job myJob) {
+        public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             using (new FuncTrace()) {
                 VerifyDatabases();
 
 
                 // load users .bashrc with all dependencies
-                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" });
+                buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
-                //string path = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
-                // Converting script to unix format
-                //string convertCmd = " dos2unix " + path + "\\batch.sh";
-
-                // Submitting script to sbatch system
-                string sbatchCmd = "sbatch " + DeploymentDirectoryAtRemote(myJob) + "/batch.sh";
-
-
-                // Convert from Windows to Unix and submit job
-                Console.WriteLine();
-                String resultString;
-                PlatformID CurrentSys = System.Environment.OSVersion.Platform;
-                switch (CurrentSys) {
-                    case PlatformID.Unix: {
-                            Process cmd = new Process();
-                            // cmd.StartInfo.FileName = "/bin/bash";
-                            cmd.StartInfo.FileName = "bash";
-                            cmd.StartInfo.RedirectStandardInput = true;
-                            cmd.StartInfo.RedirectStandardOutput = true;
-                            cmd.StartInfo.CreateNoWindow = true;
-                            cmd.StartInfo.UseShellExecute = false;
-                            cmd.Start();
-                            cmd.StandardInput.WriteLine("ssh " + Username + "@" + ServerName + " \"" + sbatchCmd + "\"");
-                            cmd.StandardInput.Flush();
-                            cmd.StandardInput.Close();
-                            cmd.WaitForExit();
-                            resultString = cmd.StandardOutput.ReadToEnd();
-                            break;
-                        }
-                    case PlatformID.Win32S:
-                    case PlatformID.Win32Windows:
-                    default: {
-                            var result2 = SSHConnection.RunCommand(sbatchCmd);
-                            resultString = result2.Result;
-                            break;
-                        }
-                }
-
-                //// Otherwise it didn't work because uploading speed at some clusters is too slow
-                //if (result1.Error == "" || result2.Result == "") {
-                //    Console.Write("Waiting for file transfer to finish");
-                //    while (result1.Error == "" || result2.Result == "") {
-                //        Console.Write(".");
-                //        System.Threading.Thread.Sleep(10000);
-                //        result1 = SSHConnection.RunCommand(convertCmd.Replace("\\", "/"));
-                //        result2 = SSHConnection.RunCommand(sbatchCmd.Replace("\\", "/"));
-                //    }
-                //    Console.WriteLine();
-                //}
-
-                // extract JobID
-                String SearchString = "Submitted batch job ";
-                String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
-                    .ToString() // convert to string
-                    .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
-                Console.WriteLine(jobId);
+                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
+                if(jobId.IsEmptyOrWhite())
+                    throw new ApplicationException("missing job id return value from slurm command.");
 
                 return (jobId, null);
             }
@@ -394,13 +333,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// build batch script with all necessary parameters
         /// </summary>
-        /// <param name="myJob"></param>
-        /// <param name="moduleLoad"></param>
-        public void buildSlurmScript(Job myJob, string[] moduleLoad) {
+        void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
 
             //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
             //string jobpath_unix = jobpath_win.Replace("\\", "/");
-            string jobpath_unix = DeploymentDirectoryAtRemote(myJob);
+            string jobpath_unix = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory);
 
             string jobname = myJob.Name;
             string executiontime = myJob.ExecutionTime;
@@ -408,7 +345,7 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = this.SlurmAccount;
+            string slurmAccount = this.SlurmAccount;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
@@ -435,21 +372,15 @@ namespace BoSSS.Application.BoSSSpad {
                 startupstring = str.ToString();
             }
 
-            string path = Path.Combine(myJob.DeploymentDirectory, "batch.sh");
+            string path = Path.Combine(DeploymentDirectory, "batch.sh");
 
             using (StreamWriter sw = File.CreateText(path)) {
                 sw.NewLine = "\n"; // Unix file endings
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -p test24");
-                }
-                if (HHLR_project != null) {
-                    sw.WriteLine("#SBATCH -A " + HHLR_project);
-                }
-                if (this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH --exclusive");
+                if (slurmAccount != null) {
+                    sw.WriteLine("#SBATCH -A " + slurmAccount);
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
@@ -464,8 +395,8 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                if (!this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -C avx2");
+                foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
+                    sw.WriteLine(cmd);
                 }
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
@@ -475,11 +406,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 // Set startupstring
-                string RunningToken = DeploymentDirectoryAtRemote(myJob) + "/isrunning.txt";
+                string RunningToken = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
-                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
+                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 sw.WriteLine(startupstring);
-                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob) + "/exit.txt'");
+                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
                 sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
                 sw.WriteLine($"rm core.*");

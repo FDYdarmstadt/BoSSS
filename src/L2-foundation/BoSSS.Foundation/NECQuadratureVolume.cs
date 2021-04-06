@@ -165,8 +165,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
 
             m_TestFuncWeighted = new MultidimensionalArray(2);
             m_TestFuncGradWeighted = new MultidimensionalArray(3);
-            
         }
+
+        
+
 
         /// <summary>
         /// Maximal codomain/testfunction basis for which the gradient values are required.
@@ -205,6 +207,20 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// array index: equation index/codomain variable index
         /// </summary>
         EquationComponentArgMapping<INonlinVolumeForm_GradV>[] m_NonlinFormGradV;
+
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        override protected bool IsNonEmpty {
+            get {
+                return 
+                    base.IsNonEmpty ||
+                    m_NonlinSources.IsNonEmpty() || 
+                    m_NonlinFormV.IsNonEmpty() || 
+                    m_NonlinFormGradV.IsNonEmpty();
+            }
+        }
+
 
         /// <summary>
         /// values of fields in the domain (of the operator);
@@ -331,6 +347,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             Debug.Assert(QuadResult.Dimension == 2);
             Debug.Assert(QuadResult.GetLength(0) == Length);
             Debug.Assert(QuadResult.GetLength(1) == base.m_CodomainMapping.BasisS.Sum(basis => basis.Length));
+
+          
 
             // ===================
             // Evaluate all fields

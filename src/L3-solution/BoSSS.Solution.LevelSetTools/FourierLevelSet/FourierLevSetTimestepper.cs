@@ -25,6 +25,7 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using BoSSS.Foundation;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
 
@@ -73,8 +74,6 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// 
         /// </summary>
         TVD3
-
-
     }
 
     /// <summary>
@@ -83,7 +82,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// <param name="dt"></param>
     /// <param name="velocity"></param>
     /// <returns></returns>
-    public delegate double[] DelComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop);
+    public delegate double[] DelComputeChangerate(double dt, ConventionalDGField[] velocity, double[] current_FLSprop, CellMask nearband);
 
     /// <summary>
     /// 
@@ -91,10 +90,23 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// <param name="current_FLSproperty"></param>
     public delegate void DelEvolveFourier(ref double[] current_FLSproperty);
 
-
     /// <summary>
-    /// base class for all Fourier Timesteppers. implements standard Explicit Euler scheme
+    /// Base class for all Fourier Timesteppers, implements standard Explicit Euler scheme;
     /// </summary>
+    /// <remarks>
+    /// The idea is to describe an interface explicitly by means of Fourier series.
+    /// This explicit representation is then converted into an implicit one and projected 
+    /// onto a DG field -- from this point on, it is handled as any interface representation
+    /// for the XDG method.
+    /// Obviously, this is only possible for simple topologies, e.g. height in dependence of x-coordinate (e.g. layers of fluids)
+    /// or radius in dependence of angel (2D bubbles and droplets).
+    /// 
+    /// The motivation behind the Fourier level-set is to be a very high accurate reference; 
+    /// Since the representation is infinitely differentiable, the curvature can be computed up to machine accuracy,
+    /// ruling out any artificial oscillations from in-precise derivatives.
+    /// - Developed and maintained by Martin Smuda mainly through 2016 to 2020
+    /// - Also used in Master/Bachelor thesis of J. Triebwasser and O. Yotov.
+    /// </remarks>
     public class FourierLevSetTimestepper {
 
 
@@ -143,7 +155,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// </summary>
         /// <param name="dt"></param>
         /// <param name="velocity"></param>
-        public virtual void moveLevelSet(double dt, ConventionalDGField[] velocity) {
+        public virtual void moveLevelSet(double dt, ConventionalDGField[] velocity, CellMask near = null) {
 
             int s = RKscheme.Stages;
 
@@ -156,7 +168,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                         FLSpropertyAtStage.AccV(dt * RKscheme.a[j, l], (double[])stage_changerates[l]);
                 }
                 // compute the change rate at current stage
-                changerateAtStage = DelCompChange(dt, velocity, FLSpropertyAtStage);
+                changerateAtStage = DelCompChange(dt, velocity, FLSpropertyAtStage, near);
                 stage_changerates.Insert(j, changerateAtStage);
 
             }
@@ -167,6 +179,8 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
             }
 
             DelEvolveFourier(ref current_FLSproperty);
+
+            // reallocate smaple points over processors
 
             //// compute the current change rate at current state
             //current_changerate = DelCompChange(dt, velocity);

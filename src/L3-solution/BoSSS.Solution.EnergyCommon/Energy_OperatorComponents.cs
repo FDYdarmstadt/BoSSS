@@ -42,7 +42,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;
@@ -87,26 +87,29 @@ namespace BoSSS.Solution.EnergyCommon {
                 if (laplaceKinE){
 
                     var kELap = new KineticEnergyLaplaceInSpeciesBulk(
-                        dntParams.UseGhostPenalties ? 0.0 : penalty, 1.0,
+                        penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                        1.0,
                         BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
                     comps.Add(kELap);
 
-                    if (dntParams.UseGhostPenalties) {
-                        var kELapPenalty = new KineticEnergyLaplaceInSpeciesBulk(
-                            penalty, 0.0,
-                            BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
-                        XOp.GhostEdgesOperator.EquationComponents[CodName].Add(kELapPenalty);
-                    }
+                    //if (dntParams.UseGhostPenalties) {
+                    //    var kELapPenalty = new KineticEnergyLaplaceInSpeciesBulk(
+                    //        penalty, 0.0,
+                    //        BcMap, spcName, spcId, D, physParams.mu_A, physParams.mu_B);
+                    //    XOp.GhostEdgesOperator.EquationComponents[CodName].Add(kELapPenalty);
+                    //}
                 }
 
                 // Divergence of stress tensor
                 // ===========================
                 {
-                    if(config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.fluxFormulation)
-                        comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
+                    comps.Add(new StressDivergenceInSpeciesBulk(D, BcMap, spcName, spcId, muSpc, transposed: !laplaceKinE));
 
-                    if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local)
-                        comps.Add(new StressDivergence_Local(D, muSpc, spcName, spcId, transposed: !laplaceKinE));
+                    if (config.getKinEviscousDiscretization == KineticEnergyViscousSourceTerms.local) {
+                        throw new ApplicationException("deprecated option");
+                        //comps.Add(new StressDivergence_Local(D, muSpc, spcId, transposed: !laplaceKinE));
+                    }
+
                 }
 
                 // Dissipation
@@ -121,12 +124,12 @@ namespace BoSSS.Solution.EnergyCommon {
             // =============
             if (config.isPressureGradient) {
 
-                if (divergenceP) {
-                    comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
-                    //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
-                } else {
-                    comps.Add(new PressureGradientConvection(D, spcName, spcId));
-                }
+                //if (divergenceP) {
+                //    comps.Add(new DivergencePressureEnergyInSpeciesBulk(D, BcMap, spcName, spcId));
+                //    //comps.Add(new ConvectivePressureTerm_LLF(D, BcMap, spcName, spcId, LFFSpc, LsTrk));
+                //} else {
+                //    comps.Add(new PressureGradientConvection(D, spcId));
+                //}
 
             }
 
@@ -143,7 +146,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;

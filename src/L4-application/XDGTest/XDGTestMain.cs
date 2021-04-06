@@ -35,13 +35,22 @@ using NUnit.Framework;
 
 namespace BoSSS.Application.XDGTest {
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class XDGTestControl : BoSSS.Solution.Control.AppControl {
 
+        /// <summary>
+        /// 
+        /// </summary>
         public XDGTestControl() {
             SetDGdegree(2);
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override void SetDGdegree(int p) {
             base.FieldOptions.Clear();
             base.AddFieldOption("Pressure", p, Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
@@ -57,9 +66,18 @@ namespace BoSSS.Application.XDGTest {
         static void Main(string[] args) {
             InitMPI();
             DeleteOldPlotFiles();
+            VariousTests.MultipleTrackerUpdateCalls(1);
             //UnitTest.AllUp();
-            UnitTest.RestartTest();
+            //UnitTest.RestartTest();
             FinalizeMPI();
+
+            /*
+            _Main(args, false, delegate () {
+                XDGTestMain p = new XDGTestMain();
+                //p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
+                return p;
+            });
+            */
         }
 
         /// <summary>
@@ -82,6 +100,12 @@ namespace BoSSS.Application.XDGTest {
         /// marks all cells which contain species B
         /// </summary>
         SinglePhaseField Bmarker;
+
+        /// <summary>
+        /// marks cut, near and far cells.
+        /// </summary>
+        SinglePhaseField LevelSetDistancce;
+
 
         static public double PressureExactA(double[] X) {
             return 2 + 0.3 * X[0] * X[1];
@@ -106,6 +130,7 @@ namespace BoSSS.Application.XDGTest {
             IOFields.Add(this.Pressure);
             Amarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesA");
             Bmarker = new SinglePhaseField(new Basis(this.GridData, 0), "SpeciesB");
+            LevelSetDistancce = new SinglePhaseField(new Basis(this.GridData, 0), "LevelSetDistancce");
         }
 
         protected override int BurstSave => 2;
@@ -139,6 +164,12 @@ namespace BoSSS.Application.XDGTest {
             this.Amarker.AccConstant(1.0, this.LsTrk.Regions.GetSpeciesMask("A"));
             this.Bmarker.AccConstant(1.0, this.LsTrk.Regions.GetSpeciesMask("B"));
 
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            for(int j = 0; j < J; j++) {
+                double dist = this.LsTrk.Regions.GetLevelSetDistance(0, j);
+                this.LevelSetDistancce.SetMeanValue(j, dist);
+            }
+
             // test the auto-extrapolation
             // ---------------------------
 
@@ -159,7 +190,7 @@ namespace BoSSS.Application.XDGTest {
 
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.PlotFields(new DGField[] { this.Pressure, this.LevSet, this.Amarker, this.Bmarker }, "XNSE_prj" + timestepNo, physTime, superSampling);
+            Tecplot.PlotFields(new DGField[] { this.Pressure, this.LevSet, this.Amarker, this.Bmarker, this.LevelSetDistancce }, "XNSE_prj" + timestepNo, physTime, superSampling);
         }
 
 

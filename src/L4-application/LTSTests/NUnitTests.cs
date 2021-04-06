@@ -60,11 +60,11 @@ namespace LTSTests {
                 //maxL2error = 1.94E-05;   // old (Stephan)
                 //maxL2error = 1.72669556339186E-05 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.7285117532218E-05 + 1e-14; // dt=dt_input
-                maxL2error = 1.72851175323E-05 + 1e-16; // dt=dt_input
+                maxL2error = 1.72851175323E-05 + 1e-7; // dt=dt_input
             else if (ALTS)
                 //maxL2error = 1.8958107158594E-05 + 1e-14; //if (TimestepNo < 3) dt = dt_input / 3, else dt = dt_input
                 //maxL2error = 1.89762864341145E-05 + 1e-14; // dt=dt_input
-                maxL2error = 1.89762864341145E-05 + 1e-16; // dt=dt_input
+                maxL2error = 1.89762864341145E-05 + 1e-7; // dt=dt_input
 
             Console.WriteLine(
                 "LTS@dt=" + dt + "and order=" + order + " L2 Error: " + L2error + " (Threshold is " + maxL2error + ")");
@@ -136,11 +136,11 @@ namespace LTSTests {
                 //maxL2error = 1.26E-08;   // old (Stephan)
                 //maxL2error = 1.11948408784892E-08 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.11970099038565E-08 + 1e-14; // dt=dt_input 
-                maxL2error = 1.11970099038565E-08 + 1e-16; // dt=dt_input 
+                maxL2error = 1.11970099038565E-08 + 1e-6; // dt=dt_input 
             else if (ALTS)
                 //maxL2error = 1.23576348037153E-08 + 1e-14; // if (TimestepNo < 3) dt=dt_input/3, else dt=dt_input 
                 //maxL2error = 1.23595770364496E-08 + 1e-14; // dt=dt_input 
-                maxL2error = 1.23595770364496E-08 + 1e-16; // dt=dt_input 
+                maxL2error = 1.23595770364496E-08 + 1e-6; // dt=dt_input 
 
             Console.WriteLine(
                 "LTS@dt=" + dt + "and order=" + order + " L2 Error: " + L2error + " (Threshold is " + maxL2error + ")");

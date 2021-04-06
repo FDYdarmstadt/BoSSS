@@ -102,26 +102,26 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
                 if (nearfield) {
                     SubGrid subGrid = LevelSetTracker.Regions.GetNearFieldSubgrid(1);
-                    int[] SubVecIdx = Extension.Mapping.GetSubvectorIndices(subGrid, true, new int[] { 0 });
+                    long[] SubVecIdx = Extension.Mapping.GetSubvectorIndices(subGrid, true, new int[] { 0 });
                     int L = SubVecIdx.Length;
                     MsrMatrix SubMatrix = new MsrMatrix(L);
                     double[] SubRHS = new double[L];
                     double[] SubSolution = new double[L];
 
-                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(long[]), SubVecIdx, default(long[]));
 
 
                     SubRHS.Clear();
                     SubSolution.Clear();
 
-                    SubRHS.AccV(1.0, RHS, default(int[]), SubVecIdx);
-                    SubSolution.AccV(1.0, Extension.CoordinateVector, default(int[]), SubVecIdx);
+                    SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                    SubSolution.AccVi64(1.0, Extension.CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
 
                     slv.DefineMatrix(SubMatrix);
                     slv.Solve(SubSolution, SubRHS);
 
                     Extension.Clear(subGrid.VolumeMask);
-                    Extension.CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(int[]));
+                    Extension.CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
 
                 }
                 else {
@@ -143,7 +143,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 ComputeMatrices(new List<DGField> { InterfaceValue[0] }, Control.subGridRestriction);
                 ISparseSolver slv = Control.solverFactory();
 
-                int[] SubVecIdx = null;
+                long[] SubVecIdx = null;
                 int L;
                 MsrMatrix SubMatrix;
                 double[] SubRHS = null;
@@ -156,7 +156,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     SubRHS = new double[L];
                     SubSolution = new double[L];
 
-                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(int[]), SubVecIdx, default(int[]));
+                    OpMatrix.AccSubMatrixTo(1.0, SubMatrix, SubVecIdx, default(long[]), SubVecIdx, default(long[]));
                     slv.DefineMatrix(SubMatrix);
                 }
                 else {
@@ -170,12 +170,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     if (subGrid != null) {
                         SubRHS.Clear();
                         SubSolution.Clear();
-                        SubRHS.AccV(1.0, RHS, default(int[]), SubVecIdx);
-                        SubSolution.AccV(1.0, NewExtension[d].CoordinateVector, default(int[]), SubVecIdx);
+                        SubRHS.AccVi64(1.0, RHS, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
+                        SubSolution.AccVi64(1.0, NewExtension[d].CoordinateVector, default(long[]), SubVecIdx, b_index_shift: -Extension.Mapping.i0);
                         slv.Solve(SubSolution, SubRHS);
 
                         NewExtension[d].Clear(subGrid.VolumeMask);
-                        NewExtension[d].CoordinateVector.AccV(1.0, SubSolution, SubVecIdx, default(int[]));
+                        NewExtension[d].CoordinateVector.AccVi64(1.0, SubSolution, SubVecIdx, default(long[]), acc_index_shift: -Extension.Mapping.i0);
                     }
                     else {
                         slv.Solve(NewExtension[d].CoordinateVector, RHS);
@@ -186,13 +186,13 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 
                 
         }
-        
+
 
 
         /// <summary>
         /// Create Spatial Operators and build the corresponding Matrices
         /// </summary>
-        public void ComputeMatrices(IList<DGField> InterfaceParams,bool nearfield) {
+        public void ComputeMatrices(IList<DGField> InterfaceParams, bool nearfield) {
             OpMatrix = new MsrMatrix(this.Extension.Mapping, this.Extension.Mapping);
             OpAffine = new double[OpMatrix.RowPartitioning.LocalLength];
 
@@ -219,7 +219,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                     BulkParams = new List<DGField> { }; // Hack, to make ArrayTools.Cat produce a List of DGFields
                     // second Hack: Does only work, when InterfaceParams is according to a single component flux,
                     // else, we will have to change the boundary edge flux
-                    BulkParams = ArrayTools.Cat(BulkParams,LevelSetGradient.ToArray(), Phi, MeanLevelSetGradient.ToArray(),InterfaceParams.ToArray());
+                    BulkParams = ArrayTools.Cat(BulkParams, LevelSetGradient.ToArray(), Phi, MeanLevelSetGradient.ToArray(), InterfaceParams.ToArray());
                     MeanLevelSetGradient.Clear();
                     MeanLevelSetGradient.AccLaidBack(1.0, LevelSetGradient);
                     break;
@@ -276,17 +276,21 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
                 Extension.Mapping, InterfaceParams, Extension.Mapping);
 
             MultiphaseCellAgglomerator dummy = LevelSetTracker.GetAgglomerator(LevelSetTracker.SpeciesIdS.ToArray(), 2 * Extension.Basis.Degree + 2, 0.0);
-            mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
+            foreach (SpeciesId spcId in LevelSetTracker.SpeciesIdS) {
+                //mtxBuilder.SpeciesOperatorCoefficients[spcId].CellLengthScales = dummy.CellLengthScales[spcId];
+                mtxBuilder.CellLengthScales.Add(spcId, dummy.CellLengthScales[spcId]);
+            }
+            //mtxBuilder.CellLengthScales.Add(LevelSetTracker.GetSpeciesId("A"), dummy.CellLengthScales[LevelSetTracker.GetSpeciesId("A")]);
 
             mtxBuilder.time = 0;
             mtxBuilder.MPITtransceive = false;
             mtxBuilder.ComputeMatrix(OpMatrix_interface, OpAffine_interface);
 
 #if DEBUG
-            OpMatrix_bulk.CheckForNanOrInfM();
+            OpMatrix_bulk.CheckForNanOrInfM(typeof(Extender).Name + " (bulk) : ");
             OpAffine_bulk.CheckForNanOrInfV();
 
-            OpMatrix_interface.CheckForNanOrInfM();
+            OpMatrix_interface.CheckForNanOrInfM(typeof(Extender).Name + " (interface) : ");
             OpAffine_interface.CheckForNanOrInfV();
 #endif
 
@@ -354,7 +358,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         /// 
         /// </summary>
         public void AnalyzeOperators(out MultidimensionalArray ret) {
-            int length = OpMatrix.NoOfRows / Extension.Basis.Length;
+            int length = checked((int)(OpMatrix.NoOfRows / Extension.Basis.Length));
             //int[,] PatternMatrix = new int[length, length]; // lässt sich besser anschauen?
             MsrMatrix PatternMatrix = new MsrMatrix(length);
             for (int i=0; i<length; i++) {
@@ -370,9 +374,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             ret = MultidimensionalArray.Create(1, 4);
             Console.WriteLine("Calling MATLAB/Octave...");
-            MultidimensionalArray L = MultidimensionalArray.Create(PatternMatrix.NoOfRows, PatternMatrix.NoOfRows);
-            MultidimensionalArray U = MultidimensionalArray.Create(PatternMatrix.NoOfRows, PatternMatrix.NoOfRows);
-            MultidimensionalArray P = MultidimensionalArray.Create(PatternMatrix.NoOfRows, PatternMatrix.NoOfRows);
+            MultidimensionalArray L = MultidimensionalArray.Create(checked((int)(PatternMatrix.NoOfRows)), checked((int)(PatternMatrix.NoOfRows)));
+            MultidimensionalArray U = MultidimensionalArray.Create(checked((int)(PatternMatrix.NoOfRows)), checked((int)(PatternMatrix.NoOfRows)));
+            MultidimensionalArray P = MultidimensionalArray.Create(checked((int)(PatternMatrix.NoOfRows)), checked((int)(PatternMatrix.NoOfRows)));
             using (BatchmodeConnector bmc = new BatchmodeConnector()) {
                 bmc.PutSparseMatrix(PatternMatrix, "PatternMatrix");
                 bmc.Cmd("[L, U, P] = lu(PatternMatrix);");
@@ -469,7 +473,8 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
             DefineBulkOperator(LSTrck, InterfaceFlux, D, PenaltyBase);
 
-            Operator_interface = InterfaceFlux.XOperator(new[] { "A" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
+            Operator_interface = InterfaceFlux.XOperator(new[] { "A", "B" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
+            //Operator_interface = InterfaceFlux.XOperator(new[] { "A" }, QuadOrderFunc.FixedOrder(2 * Extension.Basis.Degree + 2));
         }
 
         private void DefineBulkOperator(LevelSetTracker LSTrck, ILevelSetForm InterfaceFlux, int D, double PenaltyBase) {

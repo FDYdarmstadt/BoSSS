@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.XDG {
 
       
 
-        public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp) {
+        public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
@@ -231,7 +231,8 @@ namespace BoSSS.Foundation.XDG {
             var edgeQrIns = new EdgeQuadratureScheme(false, allRelevantEdges);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
+                //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
+                { 
                     EdgeMask cutEdges = this.GetCutEdges(Kref, iLevSet);
 
                     var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
@@ -249,7 +250,7 @@ namespace BoSSS.Foundation.XDG {
         ///    \oint_{K_j \cap \mathfrak{I} } \ldots \mathrm{dS} .
         /// \f]
         /// </summary>
-        public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp) {
+        public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
@@ -261,7 +262,8 @@ namespace BoSSS.Foundation.XDG {
             var LevSetQrIns = new CellQuadratureScheme(false, IntegrationDom);
 
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
-                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
+                //for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets...
+                { 
                     var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                     LevSetQrIns = LevSetQrIns.AddFactory(surfaceFactory, XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask());
                 }

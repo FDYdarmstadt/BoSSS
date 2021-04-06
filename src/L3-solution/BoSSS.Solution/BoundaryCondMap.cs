@@ -29,8 +29,8 @@ namespace BoSSS.Solution.Utils {
     /// <summary>
     /// mapping from edge tags
     /// (<see cref="Foundation.Grid.GridData.EdgeData.EdgeTags"/>) to boundary
-    /// condition types (defined in the enumeration
-    /// <typeparamref name="BCType"/>) and function;
+    /// condition types (defined in the enumeration <typeparamref name="BCType"/>) 
+    /// and respective boundary values (<see cref="IBoundaryAndInitialData"/>)
     /// </summary>
     /// <remarks>
     /// In BoSSS, different regions of the computational boundary (e.g. inlet,
@@ -39,11 +39,8 @@ namespace BoSSS.Solution.Utils {
     /// the region of 1 (including) to
     /// <see cref="BoSSS.Foundation.Grid.GridCommons.FIRST_PERIODIC_BC_TAG"/>;<br/>
     /// This edge-tag -- numbers can be used as <em>indices</em> into the 
-    /// <list type="bullet">
-    /// <item><see cref="EdgeTag2Type"/></item>
-    /// <item><see cref="bndFunction"/></item>
-    /// </list>
-    /// -- arrays.
+    /// - array/list <see cref="EdgeTag2Type"/>
+    /// - array/list <see cref="bndFunction"/>
     /// </remarks>
     /// <typeparam name="BCType">
     /// Must be an enum, which defines the boundary condition types (e.g. Wall,

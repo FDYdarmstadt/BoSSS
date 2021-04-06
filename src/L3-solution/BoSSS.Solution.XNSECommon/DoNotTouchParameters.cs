@@ -179,7 +179,7 @@ namespace BoSSS.Solution.XNSECommon {
         ExplicitTransformation,
 
         /// <summary>
-        /// the full viscous stress tensor is discretized in thw bulk domain, i.e. 
+        /// the full viscous stress tensor is discretized in the bulk domain, i.e. 
         /// \f[ 
         ///    \mathrm{div} \left( \mu \left( \nabla \vec{u} + \vec{u}^T \right) \right),
         /// \f]
@@ -223,16 +223,8 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public ViscosityMode ViscosityMode = ViscosityMode.FullySymmetric;
 
+       
         /*
-        /// <summary>
-        /// viscosity Implementation
-        /// H: SIP
-        /// SWIP: weighted
-        /// </summary>
-        [DataMember]
-        public ViscosityImplementation ViscosityImplementation = ViscosityImplementation.H;
-        */
-        
         /// <summary>
         /// Turn the use of ghost penalties on or off, see <br/>
         /// @article{massjung_unfitted_2012,
@@ -253,7 +245,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool UseGhostPenalties = false;
-
+        
         /// <summary>
         /// Continuity equation: work with div(-) resp. -div(-)
         /// </summary>
@@ -265,6 +257,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public bool RescaleConti = false;
+        */
 
         /// <summary>
         /// stabilization parameter for Local-Lax-Friedrichs flux, phase A
@@ -296,18 +289,37 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public SurfaceSressTensor SurfStressTensor = SurfaceSressTensor.Isotropic;
 
+        public enum SurfaceTensionForceStabilization {
+
+            None,
+
+            surfaceDeformationRateLocal,
+
+            GradUxGradV,
+
+            surfaceDivergence,
+
+            EdgeDissipation,
+
+        }
+
         /// <summary>
         /// 
         /// </summary>
         [DataMember]
-        public bool UseLevelSetStabilization = false;
-
+        public SurfaceTensionForceStabilization STFstabilization = SurfaceTensionForceStabilization.None;
 
         /// <summary>
-        /// Turn the use of weighted averages at the interface on or off
+        /// set the the maximum surface tension coefficient value according to given time step restriction
         /// </summary>
         [DataMember]
-        public bool UseWeightedAverages = false;
+        public bool SetSurfaceTensionMaxValue = false;
+
+        /// <summary>
+        /// switch for free surface flows, thus slip is allowed at the interface
+        /// </summary>
+        [DataMember]
+        public bool freeSurfaceFlow = false;
 
 
         /// <summary>
@@ -326,14 +338,14 @@ namespace BoSSS.Solution.XNSECommon {
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]
-        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = new CurvatureAlgorithms.FilterConfiguration();
+        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
 
         /// <summary>
         /// See <see cref="NavierSlip_Localization"/>
         /// </summary>
         [DataMember]
-        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Nearband;
+        public NavierSlip_Localization GNBC_Localization = NavierSlip_Localization.Bulk;
 
         /// <summary>
         /// See <see cref="NavierSlip_SlipLength"/>
@@ -395,33 +407,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public object Clone() {
-            var cl = new DoNotTouchParameters() {
-                CellAgglomerationThreshold = this.CellAgglomerationThreshold,
-                ContiSign = this.ContiSign,
-                RescaleConti = this.RescaleConti,
-                LFFA = this.LFFA,
-                LFFB = this.LFFB,
-                PenaltySafety = this.PenaltySafety,
-                SurfStressTensor = this.SurfStressTensor,
-                SST_isotropicMode = this.SST_isotropicMode,
-                UseLevelSetStabilization = this.UseLevelSetStabilization,
-                UseWeightedAverages = this.UseWeightedAverages,
-                ViscosityMode = this.ViscosityMode,
-                //ViscosityImplementation = this.ViscosityImplementation,
-                UseGhostPenalties = this.UseGhostPenalties,
-                FilterConfiguration = this.FilterConfiguration,
-                GNBC_Localization = this.GNBC_Localization,
-                GNBC_SlipLength = this.GNBC_SlipLength,
-                //viscoelastic LDG Stuff:
-                ObjectiveParam = this.ObjectiveParam,
-                alpha = this.alpha,
-                Penalty1 = this.Penalty1,
-                Penalty2 = this.Penalty2,
-                PresPenalty1 = this.PresPenalty1,
-                PresPenalty2 = this.PresPenalty2,
-                StressPenalty = this.StressPenalty
-
-            };
+            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value type memebers
             return cl;
         }
     }

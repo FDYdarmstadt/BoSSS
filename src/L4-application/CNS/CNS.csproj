@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CNS</RootNamespace>
     <AssemblyName>CNS</AssemblyName>
-    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <FileUpgradeFlags>
     </FileUpgradeFlags>
@@ -64,7 +64,7 @@
     <StartupObject>CNS.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=2.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+    <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
@@ -75,7 +75,8 @@
   <ItemGroup>
     <Compile Include="CNSControl.cs" />
     <Compile Include="CNSQueries.cs" />
-    <Compile Include="ControlExamples.cs" />
+    <Compile Include="ControlExamples_Subsonic.cs" />
+    <Compile Include="ControlExamples_LoadBal.cs" />
     <Compile Include="Convection\ConvectiveCFLConstraint.cs" />
     <Compile Include="Convection\ConvectiveFluxTypes.cs" />
     <Compile Include="Convection\EulerDummy.cs" />
@@ -113,7 +114,7 @@
     <Compile Include="ShockCapturing\PrimitiveFVMLimiter.cs" />
     <Compile Include="ShockCapturing\ZhangPosivityPreservingLimiter.cs" />
     <Compile Include="Source\SpongeLayerConfig.cs" />
-    <Compile Include="TestCases.cs" />
+    <Compile Include="ControlExamples_Supersonic.cs" />
     <Compile Include="Tests\ArtificialViscosity\ArtificialViscosityShockTubeTests.cs" />
     <Compile Include="Tests\ConvectiveFlux\ShockTubeTests.cs" />
     <Compile Include="Tests\IBMTests\IBMArtificialViscosityTest.cs" />

@@ -28,7 +28,8 @@ namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    public class MaterialLawLowMach_MF : MaterialLawCombustion {
+    
+    public class MaterialLawMixtureFraction : MaterialLawCombustion {
         /// <summary>
         /// 
         /// </summary>
@@ -36,16 +37,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="MolarMasses">Array of molar masses </param>
         /// <param name="MatParamsMode">Material law (constant, sutherland, etc) </param>
         /// <param name="rhoOne">Switch for constant density </param>
-        /// <param name="Q"> Adimensionalized heat release </param>
+        /// <param name="gasConstant"></param>
+        /// <param name="Q"> Adimensionalized heat release , if equal to zero, the unburnt mixture fraction profile will be calculated</param>
         /// <param name="TO0">Temperature of oxidizer inlet</param>
         /// <param name="TF0">Temperature of fuel inlet</param>
         /// <param name="YO0">Oxigen mass fraction of oxidizer inlet</param>
         /// <param name="YF0">Fuel mass fraction of fuel inlet </param>
         /// <param name="zst">Stoichiometric mixture fraction </param>
         /// <param name="CC"></param>
-        /// <param name="Prandtl"></param>
         /// 
-        public MaterialLawLowMach_MF(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MolarMasses,  MatParamsMode,  rhoOne,  Q,  TO0,  TF0,  YO0,  YF0,  zst,  CC, Prandtl) { 
+        /// <param name="Prandtl"></param>
+        public MaterialLawMixtureFraction(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(T_ref, MolarMasses, MatParamsMode, rhoOne, false, 1.0,TO0, TF0, YO0, YF0, zst, CC, Prandtl) { 
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
@@ -71,7 +73,7 @@ namespace BoSSS.Solution.NSECommon {
         //[DataMember] public double YF0;
         //[DataMember] public double YO0;
         //[DataMember] public double zst;
-        //[DataMember] public double cp;
+        [DataMember] public double cp;
         //[DataMember] public ChemicalConstants CC;
         //[DataMember] public double s;
 
@@ -82,36 +84,43 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public override double getDensityFromZ(double Z) {
             double res;
-          //  Z = repairMixtureFractionValue(Z);
-            if (Q > 0) {
-                if (!rhoOne) {
-                    //Debug.Assert(Z - 1.0 < 1e-4 && Z > -1e-4);
-                    double T, Y0, Y1, Y2, Y3, Y4;
-                    if (Z >= zst) { // Fuel side
-                        T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
-                        Y0 = YF0 * (Z - zst) / (1 - zst);
-                        Y1 = 0;
-                        Y2 = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        Y3 = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
-                    } else if (Z < zst) { // Oxydizer side
-                        T = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
-                        Y0 = 0;
-                        Y1 = YO0 * (1 - Z / zst);
-                        Y2 = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        Y3 = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        Y4 = (1.0 - YF0) * (1 - Z) + (1.0 - YO0) * Z;
-                    } else {
-                        throw new Exception("out of bounds");
-                    }
-                    Debug.Assert(Math.Abs(1.0 - (Y0 + Y1 + Y2 + Y3 + Y4)) <= 1e-1);
-                    double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
-                    res = base.GetDensity(densityArguments);
-                } else {
-                    res = 1.0;
-                }
+            //  Z = repairMixtureFractionValue(Z);
+            //if (Q > 0) { // The reactive case is being calculated 
+            //    if (!rhoOne) {
+
+            //        double T, Y0, Y1, Y2, Y3, Y4;
+
+            //        T = getVariableFromZ(Z, VariableNames.Temperature);
+            //        Y0 = getVariableFromZ(Z, VariableNames.MassFraction0);
+            //        Y1 = getVariableFromZ(Z, VariableNames.MassFraction1);
+            //        Y2 = getVariableFromZ(Z, VariableNames.MassFraction2);
+            //        Y3 = getVariableFromZ(Z, VariableNames.MassFraction3);
+            //        Y4 = getVariableFromZ(Z, VariableNames.MassFraction4);
+
+            //        Debug.Assert(Math.Abs(1.0 - (Y0 + Y1 + Y2 + Y3 + Y4)) <= 1e-1);
+            //        double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
+            //        res = base.GetDensity(densityArguments);
+            //    } else {
+            //        res = 1.0;
+            //    }
+            //} else {
+            //    res = base.GetDensity(new double[] { 1.0, Z, 1.0 - Z, 0.0, 0.0 });
+            //}
+
+            if (!rhoOne) {
+                double T, Y0, Y1, Y2, Y3, Y4;
+                T = getVariableFromZ(Z, VariableNames.Temperature);
+                Y0 = getVariableFromZ(Z, VariableNames.MassFraction0);
+                Y1 = getVariableFromZ(Z, VariableNames.MassFraction1);
+                Y2 = getVariableFromZ(Z, VariableNames.MassFraction2);
+                Y3 = getVariableFromZ(Z, VariableNames.MassFraction3);
+                Y4 = getVariableFromZ(Z, VariableNames.MassFraction4);
+
+                Debug.Assert(Math.Abs(1.0 - (Y0 + Y1 + Y2 + Y3 + Y4)) <= 1e-1);
+                double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
+                res = base.GetDensity(densityArguments);
             } else {
-                res = base.GetDensity(new double[] { 1.0, Z, 1.0 - Z, 0.0, 0.0 });
+                res = 1.0;
             }
             return res;
         }
@@ -218,59 +227,93 @@ namespace BoSSS.Solution.NSECommon {
         public override double getVariableFromZ(double Z, string id) {
             double res;
             Z = repairMixtureFractionValue(Z);
-            if (Z >= zst) { // Fuel side
-                switch (id) {
-                    case VariableNames.Temperature:
+            ////////////////////////////////////////////////////////////
+            /////////// Irreversible fast chemistry (with chemical reaction)
+            ////////////////////////////////////////////////////////////
+
+            if (Q > 0) {
+                if (Z >= zst) { // Fuel side
+                    switch (id) {
+                        case VariableNames.Temperature:
                         res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
                         break;
-                    case VariableNames.MassFraction0:
+                        case VariableNames.MassFraction0:
                         res = YF0 * (Z - zst) / (1 - zst);
                         break;
-                    case VariableNames.MassFraction1:
+                        case VariableNames.MassFraction1:
                         res = 0;
                         break;
-                    case VariableNames.MassFraction2:
-                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                        case VariableNames.MassFraction2:
+                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
                         break;
-                    case VariableNames.MassFraction3:
+                        case VariableNames.MassFraction3:
                         res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
                         break;
-                    case VariableNames.MassFraction4:
+                        case VariableNames.MassFraction4:
                         double YNOxi0 = 1.0 - YO0;
                         double YNFuel0 = 1.0 - YF0;
                         res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
                         break;
-                    default:
+                        default:
                         throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
-                }
+                    }
 
-            } else if (Z < zst) { // Oxydizer side
-                switch (id) {
-                    case VariableNames.Temperature:
+                } else if (Z < zst) { // Oxydizer side
+                    switch (id) {
+                        case VariableNames.Temperature:
                         res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
                         break;
-                    case VariableNames.MassFraction0:
+                        case VariableNames.MassFraction0:
                         res = 0;
                         break;
-                    case VariableNames.MassFraction1:
+                        case VariableNames.MassFraction1:
                         res = YO0 * (1 - Z / zst);
                         break;
-                    case VariableNames.MassFraction2:
+                        case VariableNames.MassFraction2:
                         res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
                         break;
-                    case VariableNames.MassFraction3:
+                        case VariableNames.MassFraction3:
                         res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
                         break;
-                    case VariableNames.MassFraction4:
+                        case VariableNames.MassFraction4:
                         double YNOxi0 = 1.0 - YO0;
                         double YNFuel0 = 1.0 - YF0;
                         res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
                         break;
-                    default:
+                        default:
                         throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                    }
+                } else {
+                    throw new Exception("out of bounds");
                 }
             } else {
-                throw new Exception("out of bounds");
+                ////////////////////////////////////////////////////////////
+                /////////// Frozen limit calculation (no chemical reaction)
+                ////////////////////////////////////////////////////////////
+                switch (id) {
+                    case VariableNames.Temperature:
+                    res = Z * TF0 + (1 - Z) * TO0;
+                    break;
+                    case VariableNames.MassFraction0:
+                    res = YF0 * Z;
+                    break;
+                    case VariableNames.MassFraction1:
+                    res = YO0 * (1 - Z);
+                    break;
+                    case VariableNames.MassFraction2:
+                    res = 0;
+                    break;
+                    case VariableNames.MassFraction3:
+                    res = 0;
+                    break;
+                    case VariableNames.MassFraction4:
+                    double YNOxi0 = 1.0 - YO0;
+                    double YNFuel0 = 1.0 - YF0;
+                    res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                    break;
+                    default:
+                    throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                }
             }
             return res;
 

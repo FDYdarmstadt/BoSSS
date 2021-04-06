@@ -91,14 +91,18 @@ namespace BoSSS.Application.ipViscosity {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            
-            BoSSS.Solution.Application._Main(args, true, delegate() {
-                ipViscosityMain p = new ipViscosityMain(); 
+
+            //BoSSS.Solution.Application.InitMPI(new string[0]);
+            //BoSSS.Application.ipViscosity._Test.ConsistencyTest(Terms.T1, 0);
+
+            BoSSS.Solution.Application._Main(args, true, delegate () {
+                ipViscosityMain p = new ipViscosityMain();
                 return p;
             });
-            
-            //BoSSS.Solution.Application.InitMPI(new string[0]);
-            //_Test.ConsistencyTest(Terms.T1, ViscosityImplementation.H, 1);
+
+            //
+            ////_Test.ConsistencyTest(Terms.T2, 1);
+            //_Test.solverTest(Terms.T1 | Terms.T2 | Terms.T3, 2, 4);
             //csMPI.Raw.mpiFinalize();
         }
 
@@ -207,21 +211,21 @@ namespace BoSSS.Application.ipViscosity {
 
                 for(int d = 0; d < D; d++) {
                     if((this.whichTerms & Terms.T1) != 0) {
-                        var flx1 = new swipViscosity_Term1(penalty_base * penalty_factor, d, D, BcMap,ViscosityOption.VariableViscosity);
+                        var flx1 = new SipViscosity_GradU(penalty_base * penalty_factor, d, D, BcMap,ViscosityOption.VariableViscosity);
 
                         flx1.g_Diri_Override = this.solution.U;
                         flx1.g_Neu_Override = this.solution.dU;
                         Operator.EquationComponents[CodNames[d]].Add(flx1);
                     }
                     if((this.whichTerms & Terms.T2) != 0) {
-                        var flx2 = new swipViscosity_Term2(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
+                        var flx2 = new SipViscosity_GradUtransp(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
 
                         flx2.g_Diri_Override = this.solution.U;
                         flx2.g_Neu_Override = this.solution.dU;
                         Operator.EquationComponents[CodNames[d]].Add(flx2);
                     }
                     if((this.whichTerms & Terms.T3) != 0) {
-                        var flx3 = new swipViscosity_Term3(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
+                        var flx3 = new SipViscosity_divU(penalty_base * penalty_factor, d, D, BcMap, ViscosityOption.VariableViscosity);
 
                         flx3.g_Diri_Override = this.solution.U;
                         flx3.g_Neu_Override = this.solution.dU;
@@ -332,7 +336,7 @@ namespace BoSSS.Application.ipViscosity {
 
 
 
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
             int D = this.GridData.SpatialDimension;
 
             var sol = this.solution;

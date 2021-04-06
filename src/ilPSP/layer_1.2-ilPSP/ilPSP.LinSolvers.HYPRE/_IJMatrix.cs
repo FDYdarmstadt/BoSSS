@@ -54,15 +54,15 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <summary>
         /// number of rows, over all mpi processors
         /// </summary>
-        public int NoOfRows {
-            get { return (int)RowPartitioning.TotalLength; }
+        public long NoOfRows {
+            get { return RowPartitioning.TotalLength; }
         }
 
         /// <summary>
         /// number of columns, over all mpi processors
         /// </summary>
-        public int NoOfCols {
-            get { return (int)ColPartition.TotalLength; }
+        public long NoOfCols {
+            get { return ColPartition.TotalLength; }
         }
 
         /// <summary>
@@ -107,11 +107,11 @@ namespace ilPSP.LinSolvers.HYPRE {
             int[] rows = new int[1], cols = new int[lmax], ncols = new int[1];
             double[] values = new double[lmax];
             int LR;
-            int[] col = null;
+            long[] col = null;
             double[] val = null;
             for (int i = 0; i < mtx.RowPartitioning.LocalLength; i++) {
 
-                int iRowGlob = i + mtx.RowPartitioning.i0;
+                int iRowGlob = checked((int)(i + mtx.RowPartitioning.i0));
                 LR = mtx.GetRow(iRowGlob, ref col, ref val);
                 
                 nrows = 1;
@@ -120,7 +120,7 @@ namespace ilPSP.LinSolvers.HYPRE {
                 int cnt = 0;
                 for (int j = 0; j < LR; j++) {
                     if (val[j] != 0.0) {
-                        cols[cnt] = col[j];
+                        cols[cnt] = checked((int)(col[j]));
                         values[cnt] = val[j];
                         cnt++;
                     }
@@ -141,14 +141,14 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// </summary>
         /// <param name="row">global row/column index</param>
         /// <returns>value of diagonal element</returns>
-        public double GetDiagonalElement(int row) {
+        public double GetDiagonalElement(long row) {
             if (row < m_RowPartition.i0
                 || row >= (m_RowPartition.i0 + m_RowPartition.LocalLength))
                 throw new IndexOutOfRangeException("row index is not assigned to current processor.");
 
             int[] ncols = new int[] { 1 };
-            int[] rows = new int[] { row };
-            int[] cols = new int[] { row };
+            int[] rows = new int[] { checked((int)row) };
+            int[] cols = new int[] { checked((int)row) };
             double[] ret = new double[1];
             HypreException.Check(Wrappers.IJMatrix.GetValues(m_IJMatrix, 1, ncols, rows, cols, ret));
 
@@ -161,14 +161,14 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// </summary>
         /// <param name="row">global row/column index</param>
         /// <param name="val">new value of diagonal element</param>
-        public void SetDiagonalElement(int row, double val) {
+        public void SetDiagonalElement(long row, double val) {
             if (row < m_RowPartition.i0
                 || row >= (m_RowPartition.i0 + m_RowPartition.LocalLength))
                 throw new IndexOutOfRangeException("row index is not assigned to current processor.");
             
             int[] ncols = new int[] { 1 };
-            int[] rows = new int[] { row };
-            int[] cols = new int[] { row };
+            int[] rows = new int[] { checked((int)row) };
+            int[] cols = new int[] { checked((int)row) };
             double[] _val = new double[] { val };
             HypreException.Check(Wrappers.IJMatrix.SetValues(m_IJMatrix, 1, ncols, rows, cols, _val));
 
@@ -253,13 +253,18 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <summary>
         /// see <see cref="IMutableMatrix.GetValues"/>
         /// </summary>
-        public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+        public double[] GetValues(long RowIndex, long[] ColumnIndices) {
             if( RowIndex < this.RowPartitioning.i0 || RowIndex >= (this.RowPartitioning.i0 + this.RowPartitioning.LocalLength))
                 throw new ArgumentOutOfRangeException("RowIndex","row index not within local range");
 
-            double[] ret = new double[ColumnIndices.Length];
+
+             int L = ColumnIndices.Length;
+            int[] _ColumnIndices = new int[L];
+            for(int l = 0; l < L; l++)
+                _ColumnIndices[l] = checked((int)ColumnIndices[l]);
+            double[] ret = new double[L];
             
-            HypreException.Check(Wrappers.IJMatrix.GetValues(m_IJMatrix, 1, new int[] { ColumnIndices.Length }, new int[] { RowIndex }, ColumnIndices, ret));
+            HypreException.Check(Wrappers.IJMatrix.GetValues(m_IJMatrix, 1, new int[] { ColumnIndices.Length }, new int[] { checked((int)RowIndex) }, _ColumnIndices, ret));
             
             return ret;
         }
@@ -267,22 +272,27 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <summary>
         /// see <see cref="IMutableMatrix.SetValues"/>
         /// </summary>
-        public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+        public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
             if (RowIndex < this.RowPartitioning.i0 || RowIndex >= (this.RowPartitioning.i0 + this.RowPartitioning.LocalLength))
                 throw new ArgumentOutOfRangeException("RowIndex", "row index not within local range");
 
-            HypreException.Check(Wrappers.IJMatrix.SetValues(m_IJMatrix, 1, new int[] { ColumnIndices.Length }, new int[] { RowIndex }, ColumnIndices, newValues));
+            int L = ColumnIndices.Length;
+            int[] _ColumnIndices = new int[L];
+            for(int l = 0; l < L; l++)
+                _ColumnIndices[l] = checked((int)ColumnIndices[l]);
+
+            HypreException.Check(Wrappers.IJMatrix.SetValues(m_IJMatrix, 1, new int[] { ColumnIndices.Length }, new int[] { checked((int)RowIndex) }, _ColumnIndices, newValues));
         }
 
         /// <summary>
         /// see <see cref="IMutableMatrix.this"/>
         /// </summary>
-        public double this[int i, int j] {
+        public double this[long i, long j] {
             get {
-                return GetValues(i, new int[] { j })[0];
+                return GetValues(i, new long[] { j })[0];
             }
             set {
-                SetValues(i, new int[] { j }, new double[] { value });
+                SetValues(i, new long[] { j }, new double[] { value });
             }
         }
 
@@ -294,7 +304,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
             this.AccBlock(i0, j0, alpha, Block, 1.0);
         }
 
@@ -306,7 +316,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
         /// <param param name="beta">pre-scaling</param>
-        public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+        public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();
             int I = Block.NoOfRows;
@@ -315,6 +325,23 @@ namespace ilPSP.LinSolvers.HYPRE {
             for (int i = 0; i < I; i++)
                 for (int j = 0; j < J; j++)
                     this[i0 + i, j0 + j] = this[i0 + i, j0 + j]*beta + alpha * Block[i, j];
+        }
+
+        /// <summary>
+        /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+        /// </summary>
+        /// <param name="i0">Row index offset.</param>
+        /// <param name="j0">Column index offset.</param>
+        /// <param name="Block"></param>
+        public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+             if (Block.Dimension != 2)
+                throw new ArgumentException();
+            int I = Block.NoOfRows;
+            int J = Block.NoOfCols;
+
+            for(int i = 0; i < I; i++)
+                for(int j = 0; j < J; j++)
+                    Block[i, j] = this[i0 + i, j0 + j];
         }
 
         /// <summary>

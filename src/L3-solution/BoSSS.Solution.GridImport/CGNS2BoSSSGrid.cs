@@ -92,7 +92,7 @@ namespace BoSSS.Solution.GridImport {
                             foreach(int iNode in CgnsNodes)
                                 if(iNode > NumberOfNodes)
                                     throw new ArgumentException("CGNS node index out of range.");
-                            cell.NodeIndices = GetBoSSSConnectivityNodes(elm.element_type, CgnsNodes);
+                            cell.NodeIndices = GetBoSSSConnectivityNodes(elm.element_type, CgnsNodes).Select(i => (long)i).ToArray();
                             for(int iNode = 0; iNode < cell.NodeIndices.Length; iNode++) {
                                 cell.NodeIndices[iNode] += NodeOffset;
                             }
@@ -155,7 +155,7 @@ namespace BoSSS.Solution.GridImport {
                             foreach(int iNode in CgnsNodes)
                                 if(iNode > NumberOfNodes)
                                     throw new ArgumentException("CGNS node index out of range.");
-                            cell.NodeIndices = GetBoSSSConnectivityNodes(bc_elements.element_type, CgnsNodes);
+                            cell.NodeIndices = GetBoSSSConnectivityNodes(bc_elements.element_type, CgnsNodes).Select(i => (long)i).ToArray();
                             for(int iNode = 0; iNode < cell.NodeIndices.Length; iNode++) {
                                 cell.NodeIndices[iNode] += NodeOffset;
                             }

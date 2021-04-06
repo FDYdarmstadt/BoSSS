@@ -478,17 +478,50 @@ The .NET framework is shipped with two JIT compilers that compile the CIL to mac
 
 
 \subsection{Linux}
-The \BoSSS{} group does not maintain packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux because high-performance computers typically provide specifically optimized versions of these libraries that should be used in order to obtain optimal performance. In the following, we thus focus on the installation of \BoSSS{} itself. 
-
+The \BoSSS{} group maintains basic packages of the native libraries listed in section \ref{sec:installation_libraries} for Linux.
+These are compiled against recent versions of the Open MPI and the Intel MKL library
+and should provide compatibility and decent performance on a variety of systems.
+However, compatibility this can not guaranteed for any Linux distribution -- binary platform independence in Linux not possible in general; since we use Ubuntu, all Debian derivatives might most likely work.
+Note further, high-performance computers typically provide specifically optimized versions of BLAS and LAPACK, so for the ultimate performance on a certain system,
+you'll need to build your own version of the \BoSSS{} native libraries.
 \begin{itemize}
-	\item Obtain Mono\footnote{\url{www.mono-project.com}} (version 3.0 or higher), either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
-	\item Obtain/install/load OpenMPI (tested with version 1.6.5 and higher)
-	\item Obtain/install/load BLAS and LAPACK (tested with AMD Core Math Library 5.3.1)
-        \item Dowload native libraries from \url{https://1drv.ms/u/s!ApHj99AUWCA9gfwY71lDOnGahY2ySQ?e=IZIFTs} and unpack into the folder \code{\$BoSSS\_INSTALL} (you may have to set
-          this environment variable)
-        \item Test your basic installation (cf. section \ref{sec:installation_testing})
-	\item Obtain/install/load additional libraries if required by the particular \BoSSS{} application
-	\item TODO how to obtain \BoSSS{} for Linux
+\item 
+Obtain Mono\footnote{\url{www.mono-project.com}} (version 6.0 or higher), 
+either by installing a pre-built package\footnote{\url{www.mono-project.com/download/}} or 
+by compiling\footnote{\url{www.mono-project.com/docs/compiling-mono/linux/}} it from a tarball\footnote{\url{https://download.mono-project.com/sources/mono/}}
+\item 
+Obtain/install/load OpenMPI (tested with version 1.6.5 and higher)
+
+\item Obtain/install/load native libraries {\tt libBoSSSnative\_seq.so}, {\tt libBoSSSnative\_omp.so} and {\tt libBoSSSnative\_mpi.so}
+\begin{itemize}
+ \item 
+ Pre-compiled versions of these shared libraries for Linux can be found in the Windows installation, in the directory {\tt \$BOSSS\_INSTALL/bin/native/linux/amd64-openmpi}.
+ (There should also be a {\tt zip}-File that you can unpack on any system.)
+
+ \item 
+  If these pre-build libraries are not compatible with your system 
+  (we do our best, but binary compatibility across distributions is quite difficult on Linux), you'll need to compile them yourself, 
+  the source code can be found at {\url{https://github.com/FDYdarmstadt/BoSSS-native}} resp. {\tt git@github.com:FDYdarmstadt/BoSSS-native.git}.
+
+ \item
+ In either way, the three files mentioned above should be placed in some directory 
+ where you have read/write access; This can be within your Home-directory, e.g. at 
+ {\tt /home/JohnDoe/BosssInstall/bin/native/linux/amd64-openmpi} or 
+ in a global directory directory, e.g. {\tt /opt/bosss\_install/bin/native/linux/amd64-openmpi}.
+ File access rights should be set to {\t rwx}, i.e. allow for execution.
+
+ \item
+ Setup an environment variable {\tt \$BOSSS\_INSTALL}, which points (in the examples above) to 
+ {\tt /home/JohnDoe/BosssInstall} resp. {\tt /opt/bosss\_install}.
+
+ \BoSSS{} then searches for the native libraries in {\tt \$BOSSS\_INSTALL/bin/native/linux/amd64-openmpi}.
+\end{itemize}
+
+\item
+Test your basic installation (cf. section \ref{sec:installation_testing})
+
+\item
+Obtain/install/load additional libraries if required by the particular \BoSSS{} application
 \end{itemize}
 
 
@@ -649,6 +682,13 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \label{sec:BoundaryAndInitialData}
 % ################################################################################
 \import{./BoundaryAndInitialData/}{BoundaryAndInitialData.tex}
+%
+
+% ################################################################################
+\chapter{Further options for Initial Values}
+\label{sec:InitialData}
+% ################################################################################
+\import{./InitialValues/}{InitialValues.tex}
 
 % ################################################################################
 \chapter{Workflow management and meta job scheduler}
@@ -681,27 +721,27 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Grid instantiation, $L^2$-projection and convergence}
 \label{GridInstantiation}
 % ################################################################################
-\import{./tutorial2/}{uebung2tutorial.tex}
+\import{./ue2Basics/}{ue2Basics.tex}
 
 % ################################################################################
 \chapter{Defining a Spatial Operator and using explicit time integration}
 \label{SpatialOperator}
 % ################################################################################
-\import{./tutorial4/}{tutorial4.tex}
+\import{./SpatialOperatorNexpTimeInt/}{SpatialOperatorNexpTimeInt.tex}
 
 
 % ################################################################################
 \chapter{Numerical flux and convergence study}
 \label{NumFlux}
 % ################################################################################
-\import{./tutorial5/}{uebung5tutorial.tex}
+\import{./ue5NumFluxConv/}{ue5NumFluxConv.tex}
 
 
 % ################################################################################
 \chapter{Scalar convection and stability of explicit timesteppers}
 \label{ScalarAdvection}
 % ################################################################################
-\import{./tutorial6/}{tutorial6.tex}
+\import{./ue6ScalarConvStability/}{ue6ScalarConvStability.tex}
 
 %\chapter{Exporting data}
 %\chapter{Working with masks and subgrids}
@@ -751,73 +791,7 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 \chapter{Parallel Performance and Scaling}
 \label{sec:ParallelPerformance}
 % ################################################################################
-This section covers basic performance tests, i.e. how specific algorithms scale in parallel with increasing \emph{number of processors}. So far, all calculations for this research were conducted on the Lichtenberg high performance computer of the TU Darmstadt
-
-\section{Parallel Efficiency - Navier-Stokes problems}
-Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
-\begin{itemize}
-	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
-	\item Solving the linear problem with a Gmres approach
-	\item Preconditioning with Additive-Schwarz domain decomposition (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks
-\end{itemize}
-\subsection{Simple 3D sphere immersed in a fluid flow}
-\label{sec:MPIPerformanceSphere}
-The problem
-\begin{equation}
-\left\{ \begin{array} {rclll}
-\rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} & = & \vec{f}                   
-& \text{and}\   &  \\
-% ----
-\nabla \cdot \vec{u} & = & 0                             
-& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)  & \\
- \vec{u}_D & = & 0                             
-& \text{on}\ \Gamma_D = \{ (x,y,z,t) \in \real^3; \ z = -5,5 \} 
-& \text{Dirichlet-boundary}\\
- \vec{u}_S & = & 0                             
- & \text{on}\ \Gamma_S = \{ (x,y,z) \in \real^3; \ x^2+y^2+z^2 = 1 \}
-& \text{Dirichlet-boundary} \\
- p_O & = & 0                             
-& \text{on}\ \Gamma_O = \{ (x,y,z) \in \real^3; \ x = 10 \}
-& \text{Dirichlet-boundary} \\
-% ----
-\vec{u}(x,-5,z) & = & \vec{u}(x,5,z)  
-& \text{on}\ \Gamma_P = \partial \Omega \setminus \Gamma_D \setminus \Gamma_S \setminus \Gamma_O
-& \text{Periodic-boundary}\\
-\vec{u}_0(x,y,z) & = & \{1,0,0\}  
-& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)   
-& \text{Initial Condition}
-\end{array} \right.
-\label{eq:NavierStokesSphereBenchmark}
-\end{equation}
-is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are 
-choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynolds Number of 100. 
-The problem basically describes a sphere flow between two plates.
-
-\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/}}
-
-\begin{figure}[h!]
-	\begin{center}
-		\input{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/MPIScalingTimes.tex}
-	\end{center}
-	\caption{
-		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
-		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
-	}
-	\label{fig:Spherek1Time}
-\end{figure}
-
-\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/}}
-
-\begin{figure}[h!]
-	\begin{center}
-		\input{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/MPIScalingTimes.tex}
-	\end{center}
-	\caption{
-		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
-		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
-	}
-	\label{fig:Spherek1Time}
-\end{figure}
+\import{./apdx-MPISolverPerformance/}{MPISolverPerformance.tex}
 
 % ################################################################################
 \chapter{BoSSSpad command reference}

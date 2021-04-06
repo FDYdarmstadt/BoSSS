@@ -43,6 +43,39 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public partial class XSpatialOperatorMk2 : ISpatialOperator {
 
+        bool m_IsLinear;
+
+        /// <summary>
+        /// true, if the PDE defined by operator can entirely be solved by a linear solver,
+        /// i.e. the Jacobian matrix, resp. the operator matrix does **not** depend on the linearization point.
+        /// </summary>
+        public bool IsLinear {
+            get {
+                return m_IsLinear;
+            }
+            set {
+                if(IsCommitted)
+                    throw new NotSupportedException("unable to change this after operator is committed.");
+                m_IsLinear = value;
+            }
+        }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// </summary>
+        /// <remarks>
+        /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
+        /// if these names have the same length but differ by **exactly one character**.
+        /// </remarks>
+        public IEnumerable<int[]> VectorFieldIndices {
+            get {
+                if(!this.IsCommitted)
+                    throw new NotSupportedException("Operator must be committed first.");
+
+                return PeriodicBoundaryUtils.GetVectorFieldIndices(this.DomainVar, 3);
+            }
+        }
+
         /// <summary>
         /// <see cref="ISpatialOperator.SolverSafeguard"/>
         /// </summary>
@@ -69,7 +102,7 @@ namespace BoSSS.Foundation.XDG {
            
         }
 
-        List<string> m_SpeciesList = new List<string>();
+        public List<string> m_SpeciesList = new List<string>();
 
         private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
@@ -81,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
-                    if(iec is ISpeciesFilter fiec) {
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null) {
                         string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {
@@ -154,8 +187,9 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Non-coupling surface terms; originally intended to implement the flux-form of the surface tension.
+        /// **Note: This only considers the 0-th level-set.**
         /// </summary>
-        public SpatialOperator SurfaceElementOperator {
+        public SpatialOperator SurfaceElementOperator_Ls0 {
             get;
             private set;
         }
@@ -192,13 +226,12 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorLinear GetMatrixBuilder(
             LevelSetTracker lsTrk,
-            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
-            if(!IsCommited)
+            UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap,
-                1 // based on actual level-set tracker state
-                );
+            return new XEvaluatorLinear(this, lsTrk, DomainVarMap, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
         }
 
         /// <summary>
@@ -214,13 +247,14 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public XEvaluatorNonlin GetEvaluatorEx(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
-            if(!IsCommited)
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) {
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
             return new XEvaluatorNonlin(this, lsTrk,
                 new CoordinateMapping(DomainFields), ParameterMap, CodomainVarMap,
-                1);
+                lsTrkHistoryIndex);
         }
 
 
@@ -269,16 +303,18 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public FDJacobianBuilder GetFDJacobianBuilder(
             LevelSetTracker lsTrk,
-            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
+            IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap,
+            int lsTrkHistoryIndex = 1) //
+
         {
-            if(!IsCommited)
+            if(!IsCommitted)
                 throw new NotSupportedException("Commit() (finishing operator assembly) must be called prior to evaluation.");
 
-            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
+            var xeval = this.GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap, lsTrkHistoryIndex);
 
-            Action<IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
-                delegate (IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
-                    this.InvokeParameterUpdate(DomF.ToArray(), ParamF.ToArray());
+            Action<double, IEnumerable<DGField>, IEnumerable<DGField>> ParamUpdate =
+                delegate (double time, IEnumerable<DGField> DomF, IEnumerable<DGField> ParamF) {
+                    this.InvokeParameterUpdate(time, DomF.ToArray(), ParamF.ToArray());
                 };
 
             return new FDJacobianBuilder(xeval, ParamUpdate);
@@ -537,7 +573,7 @@ namespace BoSSS.Foundation.XDG {
                 Basis[] RowBase = RowMapping.BasisS.ToArray();
                 Basis[] ColBase = ColMapping.BasisS.ToArray();
 
-                var _AvailableRowIdx = new List<int>();
+                var _AvailableRowIdx = new List<long>();
                 for (int j = 0; j < J; j++) {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
@@ -545,7 +581,7 @@ namespace BoSSS.Foundation.XDG {
                         for (int k = 0; k < RowBase.Length; k++) {
                             int N = RowBase[k].GetLength(j);
                             for (int n = 0; n < N; n++) {
-                                int iRow = RowFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
+                                long iRow = RowFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableRowIdx.Add(iRow);
                                 Debug.Assert(RowFrame.Frame2Full(iRow) >= 0);
                             }
@@ -555,7 +591,7 @@ namespace BoSSS.Foundation.XDG {
                 this.AvailableRowIdx = _AvailableRowIdx.ToArray();
 
 
-                var _AvailableColIdx = new List<int>();
+                var _AvailableColIdx = new List<long>();
                 for (int j = 0; j < JE; j++) {
                     int iSpc = m_LsTrk_regions.GetSpeciesIndex(spc, j);
 
@@ -563,7 +599,7 @@ namespace BoSSS.Foundation.XDG {
                         for (int k = 0; k < ColBase.Length; k++) {
                             int N = ColBase[k].GetLength(j);
                             for (int n = 0; n < N; n++) {
-                                int iCol = ColFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
+                                long iCol = ColFrame.FrameMap.GlobalUniqueCoordinateIndex(k, j, n);
                                 _AvailableColIdx.Add(iCol);
                                 Debug.Assert(ColFrame.Frame2Full(iCol) >= 0);
                             }
@@ -579,8 +615,8 @@ namespace BoSSS.Foundation.XDG {
 
 
 #if DEBUG
-            int[] AvailableRowIdx;
-            int[] AvailableColIdx;
+            long[] AvailableRowIdx;
+            long[] AvailableColIdx;
 #endif
 
             /// <summary>
@@ -616,7 +652,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// get a whole bunch of elements at once
             /// </summary>
-            public double[] GetValues(int RowIndex, int[] ColumnIndices) {
+            public double[] GetValues(long RowIndex, long[] ColumnIndices) {
                 int L = ColumnIndices.Length;
                 double[] ret = new double[L];
                 for(int j = 0; j < L; j++) {
@@ -628,7 +664,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// set a whole bunch of elements at once
             /// </summary>
-            public void SetValues(int RowIndex, int[] ColumnIndices, double[] newValues) {
+            public void SetValues(long RowIndex, long[] ColumnIndices, double[] newValues) {
                 if(ColumnIndices.Length != newValues.Length)
                     throw new ArgumentException();
 
@@ -639,8 +675,8 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            internal int iRowFrame2Full(int iFrame) {
-                int iFull = RowFrame.Frame2Full(iFrame);
+            internal long iRowFrame2Full(long iFrame) {
+                long iFull = RowFrame.Frame2Full(iFrame);
                 return iFull;
             }
 
@@ -648,8 +684,8 @@ namespace BoSSS.Foundation.XDG {
             //    return RowFrame.Full2Frame(iFull);
             //}
 
-            internal int iColFrame2Full(int iFrame) {
-                int iFull = ColFrame.Frame2Full(iFrame);
+            internal long iColFrame2Full(long iFrame) {
+                long iFull = ColFrame.Frame2Full(iFrame);
                 return iFull;
             }
 
@@ -664,7 +700,7 @@ namespace BoSSS.Foundation.XDG {
             /// </summary>
             /// <param name="i">row index</param>
             /// <param name="j">column index</param>
-            public double this[int i, int j] {
+            public double this[long i, long j] {
                 get {
                     return m_full[iRowFrame2Full(i), iColFrame2Full(j)];
                 }
@@ -681,7 +717,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="j0">Column offset.</param>
             /// <param name="alpha">Scaling factor for the accumulation operation.</param>
             /// <param name="Block">Block to accumulate.</param>
-            public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block) {
+            public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block) {
                 this.AccBlock(i0, j0, alpha, Block, 1.0);
             }
 
@@ -694,7 +730,7 @@ namespace BoSSS.Foundation.XDG {
             /// <param name="alpha">Scaling factor for the accumulation.</param>
             /// <param name="Block">Block to add.</param>
             /// <param name="beta">pre-scaling</param>
-            public void AccBlock(int i0, int j0, double alpha, MultidimensionalArray Block, double beta) {
+            public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
                 if(Block.Dimension != 2)
                     throw new ArgumentException();
                 int I = Block.NoOfRows;
@@ -710,20 +746,20 @@ namespace BoSSS.Foundation.XDG {
 
                 int NoIBlk = 1;
                 int[] i0S = new int[I];
-                int[] i0T = new int[I];
+                long[] i0T = new long[I];
                 int[] iLT = new int[I];
                 i0T[0] = iRowFrame2Full(i0);
                 iLT[0] = 1;
 
                 int NoJBlk = 1;
                 int[] j0S = new int[J];
-                int[] j0T = new int[J];
+                long[] j0T = new long[J];
                 int[] jLT = new int[J];
                 j0T[0] = iColFrame2Full(j0);
                 jLT[0] = 1;
 
                 for(int i = 1; i < I; i++) {
-                    int iT = iRowFrame2Full(i0 + i);
+                    long iT = iRowFrame2Full(i0 + i);
                     if(iT == i0T[NoIBlk - 1] + iLT[NoIBlk - 1]) {
                         iLT[NoIBlk - 1]++;
                     } else {
@@ -735,7 +771,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 for(int j = 1; j < J; j++) {
-                    int jT = iColFrame2Full(j0 + j);
+                    long jT = iColFrame2Full(j0 + j);
                     if(jT == j0T[NoJBlk - 1] + jLT[NoJBlk - 1]) {
                         jLT[NoJBlk - 1]++;
                     } else {
@@ -749,13 +785,31 @@ namespace BoSSS.Foundation.XDG {
 
                 for(int iBlk = 0; iBlk < NoIBlk; iBlk++) {
                     for(int jBlk = 0; jBlk < NoJBlk; jBlk++) {
-                        var SubBlock = Block.ExtractSubArrayShallow(new int[] { i0S[iBlk], j0S[jBlk] }, new int[] { i0S[iBlk] + iLT[iBlk] - 1, j0S[jBlk] + jLT[jBlk] - 1 });
-                        //double SubLinf = SubBlock.AbsSum();
-                        //if(SubLinf > 0)
+                        var SubBlock = Block.ExtractSubArrayShallow(
+                            new int[] { i0S[iBlk], j0S[jBlk] }, 
+                            new int[] { i0S[iBlk] + iLT[iBlk] - 1, j0S[jBlk] + jLT[jBlk] - 1 });
+
                         m_full.AccBlock(i0T[iBlk], j0T[jBlk], alpha, SubBlock, beta);
                     }
                 }
 
+            }
+
+            /// <summary>
+            /// Extracts a block of entries from this matrix and stores it in <paramref name="Block"/>
+            /// </summary>
+            /// <param name="i0">Row index offset.</param>
+            /// <param name="j0">Column index offset.</param>
+            /// <param name="Block"></param>
+            public void ReadBlock(long i0, long j0, MultidimensionalArray Block) {
+                if(Block.Dimension != 2)
+                    throw new ArgumentException();
+                int I = Block.NoOfRows;
+                int J = Block.NoOfCols;
+
+                for(int i = 0; i < I; i++)
+                    for(int j = 0; j < J; j++)
+                        Block[i, j] = this[i0 + i, j0 + j];
             }
 
             /// <summary>
@@ -770,14 +824,14 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// read the value of the diagonal element.
             /// </summary>
-            public double GetDiagonalElement(int row) {
+            public double GetDiagonalElement(long row) {
                 return this[row, row];
             }
 
             /// <summary>
             /// setting of diagonal element.
             /// </summary>
-            public void SetDiagonalElement(int row, double val) {
+            public void SetDiagonalElement(long row, double val) {
                 this[row, row] = val;
             }
 
@@ -802,7 +856,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// total number of rows over all MPI processes
             /// </summary>
-            public int NoOfRows {
+            public long NoOfRows {
                 get {
                     return (int)(RowPartitioning.TotalLength);
                 }
@@ -811,7 +865,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// total number of rows over all MPI processes
             /// </summary>
-            public int NoOfCols {
+            public long NoOfCols {
                 get {
                     return (int)(ColMapping.TotalLength);
                 }
@@ -826,7 +880,7 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotImplementedException();
             }
 
-            public int GetOccupiedColumnIndices(int RowIndex, ref int[] R) {
+            public int GetOccupiedColumnIndices(long RowIndex, ref long[] R) {
                 throw new NotImplementedException();
                 ////this.Ma
 
@@ -841,7 +895,7 @@ namespace BoSSS.Foundation.XDG {
                 //return ret.ToArray();
             }
 
-            public int GetRow(int RowIndex, ref int[] ColumnIndices, ref double[] Values) {
+            public int GetRow(long RowIndex, ref long[] ColumnIndices, ref double[] Values) {
                 //public MsrMatrix.MatrixEntry[] GetRow(int RowIndex) {
                 int LR = GetOccupiedColumnIndices(RowIndex, ref ColumnIndices);
                 //var row = new MsrMatrix.MatrixEntry[Occ.Length];
@@ -883,15 +937,23 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// ctor
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc,  IEnumerable<string> __Species)
+        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, __Species) {
         }
 
-       
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(IList{string},IList{string},IList{string},Func{int[],int[],int[],int})"/>
+        /// Almost empty constructor; Variable, Parameter, and Codomain/Equation names are specified by the 
+        /// order in which equation components are added.
+        /// </summary>
+        public XSpatialOperatorMk2(double __AgglomerationThreshold, params string[] species)
+            : this(new string[0], new string[0], new string[0], QuadOrderFunc.NonLinear(2), species) {
+        }
+
+
+        /// <summary>
+        /// ctor
         /// </summary>
         public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species) {
             m_DomainVar = new string[__DomainVar.Count];
@@ -940,7 +1002,7 @@ namespace BoSSS.Foundation.XDG {
             
             GhostEdgesOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
-            SurfaceElementOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+            SurfaceElementOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
         }
 
@@ -970,8 +1032,9 @@ namespace BoSSS.Foundation.XDG {
             XSpatialOperatorMk2 m_owner;
 
             /// <summary>
-            /// returns the collection of equation components for one variable in the 
-            /// codomain
+            /// Returns the collection of equation components for one variable in the codomain;
+            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="SpatialOperator.Commit"/>) a new 
+            /// equation/codomain name is appended.
             /// </summary>
             /// <param name="EqnName">
             /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
@@ -979,10 +1042,15 @@ namespace BoSSS.Foundation.XDG {
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
                 get {
-                    if(m_owner.m_IsCommited)
+                    if(m_owner.m_IsCommitted) {
                         return m_owner.m_EquationComponents[EqnName].AsReadOnly();
-                    else
+                    } else {
+                        if(!m_owner.m_CodomainVar.Contains(EqnName)) {
+                            m_owner.m_CodomainVar = m_owner.m_CodomainVar.Cat(EqnName);
+                            m_owner.m_EquationComponents.Add(EqnName, new List<IEquationComponent>());
+                        }
                         return m_owner.m_EquationComponents[EqnName];
+                    }
                 }
             }
 
@@ -1016,6 +1084,24 @@ namespace BoSSS.Foundation.XDG {
             #endregion
         }
 
+        double m_AgglomerationThreshold;
+
+        /// <summary>
+        /// Cell agglomeration threshold, see <see cref="MultiphaseCellAgglomerator"/>
+        /// </summary>
+        public double AgglomerationThreshold {
+            get {
+                return m_AgglomerationThreshold;
+            }
+            set {
+                if(IsCommitted)
+                    throw new NotSupportedException("Not allowed to change the Agglomeration Threshold after operator is committed.");
+                if(value < 0 || value > 1.0)
+                    throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (got {value}).");
+                m_AgglomerationThreshold = value;
+            }
+        }
+
 
         /// <summary>
         /// finalizes the assembly of the operator;
@@ -1023,15 +1109,51 @@ namespace BoSSS.Foundation.XDG {
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
         public virtual void Commit() {
-            Verify();
+             if(AgglomerationThreshold < 0 || AgglomerationThreshold > 1.0)
+                    throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (set as {AgglomerationThreshold}).");
 
-            if(m_IsCommited)
+            this.Verify();
+
+            if(m_IsCommitted)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
 
-            m_IsCommited = true;
+            m_IsCommitted = true;
 
             GhostEdgesOperator.Commit();
-            SurfaceElementOperator.Commit();
+            SurfaceElementOperator_Ls0.Commit();
+
+            // sync the variable names of slave operators:
+            // -------------------------------------------
+
+
+            // this is required because we allow equations and variable names to be added _before_ Commit();
+            SpatialOperator SyncSlaveOp(SpatialOperator slave, string slaveName) {
+                if(!slave.IsCommitted)
+                    throw new ApplicationException();
+
+                foreach(var s in slave.CodomainVar)
+                    if(!this.CodomainVar.Contains(s)) {
+                        throw new NotSupportedException($"Found codomain variable {s} in {slaveName}, but not in main operator - not supported!");
+                    }
+                foreach(var s in slave.DomainVar)
+                    if(!this.DomainVar.Contains(s)) {
+                        throw new NotSupportedException($"Found domain variable {s} in {slaveName}, but not in main operator - not supported!");
+                    }
+
+                var R = new SpatialOperator(this.DomainVar, this.ParameterVar, this.CodomainVar, slave.QuadOrderFunction);
+                foreach(var eqname in slave.CodomainVar) {
+                    foreach(var c in slave.EquationComponents[eqname])
+                        R.EquationComponents[eqname].Add(c);
+                }
+
+                R.Commit();
+                return R;
+            }
+
+            GhostEdgesOperator = SyncSlaveOp(GhostEdgesOperator, "GhostEdgesOperator");
+            SurfaceElementOperator_Ls0 = SyncSlaveOp(SurfaceElementOperator_Ls0, "SurfaceElementOperator");
+
+
 
             if (TemporalOperator != null) {
                 TemporalOperator.Commit();
@@ -1050,7 +1172,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
-                if (m_IsCommited) {
+                if (m_IsCommitted) {
                     return m_ParameterUpdates.AsReadOnly();
                 } else {
                     return m_ParameterUpdates;
@@ -1065,7 +1187,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
-                if (IsCommited) {
+                if (IsCommitted) {
                     return m_ParameterFactories.AsReadOnly();
                 } else {
                     return m_ParameterFactories;
@@ -1080,7 +1202,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
-                if(m_IsCommited) {
+                if(m_IsCommitted) {
                     return m_HomotopyUpdate.AsReadOnly();
                 } else {
                     return m_HomotopyUpdate;
@@ -1127,7 +1249,7 @@ namespace BoSSS.Foundation.XDG {
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
         public XSpatialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
-            if (!this.IsCommited)
+            if (!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
 
@@ -1135,7 +1257,7 @@ namespace BoSSS.Foundation.XDG {
             foreach (var cdo in this.CodomainVar) {
                 allcomps.AddRange(this.EquationComponents[cdo]);
                 allcomps.AddRange(this.GhostEdgesOperator.EquationComponents[cdo]);
-                allcomps.AddRange(this.SurfaceElementOperator.EquationComponents[cdo]);
+                allcomps.AddRange(this.SurfaceElementOperator_Ls0.EquationComponents[cdo]);
             }
             TermActivationFlags extractTaf(IEquationComponent c) {
                 TermActivationFlags ret = default(TermActivationFlags);
@@ -1194,12 +1316,12 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                foreach (var eq in this.SurfaceElementOperator.EquationComponents[CodNmn]) {
+                foreach (var eq in this.SurfaceElementOperator_Ls0.EquationComponents[CodNmn]) {
                     if (!(eq is ISupportsJacobianComponent _eq))
                         throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
                     foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
                         CheckCoeffUpd(eq, eqj);
-                        JacobianOp.SurfaceElementOperator.EquationComponents[CodNmn].Add(eqj);
+                        JacobianOp.SurfaceElementOperator_Ls0.EquationComponents[CodNmn].Add(eqj);
                     }
                 }
 
@@ -1295,7 +1417,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_EdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_EdgeQuadraturSchemeProvider = value;
             }
@@ -1326,7 +1448,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_VolumeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_VolumeQuadraturSchemeProvider = value;
             }
@@ -1359,7 +1481,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_GhostEdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_GhostEdgeQuadraturSchemeProvider = value;
             }
@@ -1369,7 +1491,7 @@ namespace BoSSS.Foundation.XDG {
 
         #region SurfElement_quadSchemeProvider
         static EdgeQuadratureScheme DefaultSurfElementEQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc);
+            var edgeScheme = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(spc, 0);
             return edgeScheme;
         }
 
@@ -1377,7 +1499,7 @@ namespace BoSSS.Foundation.XDG {
         Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, EdgeQuadratureScheme> m_SurfaceElementEdgeQuadraturSchemeProvider;
 
         /// <summary>
-        /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator"/>, see also <see cref="QuadOrderFunction"/>
+        /// User-customizable factory, to specify the edge quadrature for the <see cref="SurfaceElementOperator_Ls0"/>, see also <see cref="QuadOrderFunction"/>
         /// - 1st argument: current level-set tracker
         /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
         /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
@@ -1392,14 +1514,14 @@ namespace BoSSS.Foundation.XDG {
                 return m_SurfaceElementEdgeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_SurfaceElementEdgeQuadraturSchemeProvider = value;
             }
         }
 
         CellQuadratureScheme DefaultSurfElmCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
-            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc);
+            var volScheme = SchemeHelper.Get_SurfaceElement_VolumeQuadScheme(spc, 0);
             return volScheme;
         }
 
@@ -1421,7 +1543,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_SurfaceElement_VolumeQuadraturSchemeProvider;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_SurfaceElement_VolumeQuadraturSchemeProvider = value;
             }
@@ -1531,7 +1653,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_QuadOrderFunction;
             }
             set {
-                if(IsCommited)
+                if(IsCommitted)
                     throw new NotSupportedException("not allowed to change after Commit");
                 m_QuadOrderFunction = value;
             }
@@ -1563,23 +1685,44 @@ namespace BoSSS.Foundation.XDG {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
+            //if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
+            //    throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+
             foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {
-                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0)
-                            throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                                + varname
-                                + "\", but this name is not a member of the domain variable list.");
+                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0) {
+                            //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
+                            //    + varname
+                            //    + "\", but this name is not a member of the domain variable list.");
+
+                            m_DomainVar = m_DomainVar.Cat(varname);
+
+                        }
                     }
 
                     if(c.ParameterOrdering != null) {
                         foreach(string varname in c.ParameterOrdering) {
-                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0)
-                                throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                    + varname
-                                    + "\", but this name is not a member of the parameter variable list.");
+                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
+                                //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
+                                //    + varname
+                                //    + "\", but this name is not a member of the parameter variable list.");
 
-                            if(c.ArgumentOrdering.Contains(varname))
+                                m_ParameterVar = m_ParameterVar.Cat(varname);
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            foreach(var comps in m_EquationComponents.Values) {
+                foreach(IEquationComponent c in comps) {
+                    if(c.ParameterOrdering != null) {
+                        foreach(string varname in c.ParameterOrdering) {
+                            
+                            
+                            if(this.m_DomainVar.Contains(varname))
                                 throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
                                     + varname
                                     + "\" in parameter and argument list; this is not allowed.");
@@ -1668,15 +1811,15 @@ namespace BoSSS.Foundation.XDG {
         SortedList<string, List<IEquationComponent>> m_EquationComponents;
 
 
-        bool m_IsCommited = false;
+        bool m_IsCommitted = false;
 
         /// <summary>
         /// indicates whether the equation-assembly has been finished (by calling <see cref="Commit"/>)
         /// or not.
         /// </summary>
-        public bool IsCommited {
+        public bool IsCommitted {
             get {
-                return m_IsCommited;
+                return m_IsCommitted;
             }
         }
 
@@ -1777,7 +1920,7 @@ namespace BoSSS.Foundation.XDG {
                 return m_TemporalOperator;
             }
             set {
-                if (IsCommited)
+                if (IsCommitted)
                     throw new NotSupportedException("Not allowed to change after operator is committed.");
                 m_TemporalOperator = value;
             }
@@ -1826,7 +1969,7 @@ namespace BoSSS.Foundation.XDG {
                 set {
                     if (!InternalRep.ContainsKey(key))
                         throw new ArgumentException("Must be a name of some domain variable.");
-                    if (owner.IsCommited)
+                    if (owner.IsCommitted)
                         throw new NotSupportedException("Changing is not allowed after operator is committed.");
                     InternalRep[key] = value;
                 }
@@ -1838,7 +1981,7 @@ namespace BoSSS.Foundation.XDG {
 
             public int Count => InternalRep.Count;
 
-            public bool IsReadOnly => owner.IsCommited;
+            public bool IsReadOnly => owner.IsCommitted;
 
 
             public void Add(string key, bool value) {

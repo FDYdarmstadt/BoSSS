@@ -527,17 +527,6 @@ namespace BoSSS.Application.IBM_Solver {
                         Prec = null;
                         break;
                     }
-                case 1:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Schur;
-                        break;
-                    }
-                case 2:
-                    {
-
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_Simple;
-                        break;
-                    }
                 case 3:
                     {
                         C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
@@ -568,12 +557,6 @@ namespace BoSSS.Application.IBM_Solver {
                         C.LinearSolver.NoOfMultigridLevels = MGLevels;
                         break;
                     }
-                case 7:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_localPrec; ;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
-                        break;
-                    }
                 case 8:
                     {
                         C.LinearSolver.NoOfMultigridLevels = 5;
@@ -582,7 +565,7 @@ namespace BoSSS.Application.IBM_Solver {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
                             {
                                 //noofparts = 5,
-                                NoOfPartsPerProcess = ASparts,
+                                NoOfPartsOnCurrentProcess = ASparts,
                             },
                             CoarseSolver = new ClassicMultigrid()
                             {
@@ -602,13 +585,14 @@ namespace BoSSS.Application.IBM_Solver {
                         break;
                     }
                 default:
-                    {
-                        Prec = new SchurPrecond()
-                        {
-                            SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
-                        };
-                        break;
-                    }
+                //{
+                //    Prec = new SchurPrecond()
+                //    {
+                //        SchurOpt = SchurPrecond.SchurOptions.decoupledApprox
+                //    };
+                //    break;
+                //}
+                throw new NotImplementedException();
             }
 
 

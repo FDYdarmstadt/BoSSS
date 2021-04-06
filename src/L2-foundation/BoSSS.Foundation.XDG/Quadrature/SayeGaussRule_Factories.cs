@@ -27,7 +27,142 @@ namespace BoSSS.Foundation.XDG.Quadrature
     public interface ISayeGaussComboRule
         : ISayeGaussRule
     {
+        /// <summary>
+        /// 0: Volume Rule, 1: Surface Rule
+        /// Should be a struct anyways.
+        /// </summary>
+        /// <param name="cell"></param>
+        /// <returns></returns>
         QuadRule[] ComboEvaluate(int cell);
+    }
+
+    class LevelSetOnEdgeIntercepter : ISayeGaussComboRule
+    {
+        ISayeGaussComboRule comboRule;
+
+        LevelSetOnEdgeRule specialRule;
+
+        int intOrder;
+
+        public LevelSetOnEdgeIntercepter(ISayeGaussComboRule rule, LevelSetTracker.LevelSetData data)
+        {
+            specialRule = new LevelSetOnEdgeRule(data);
+            comboRule = rule;
+        }
+
+        public RefElement RefElement => comboRule.RefElement;
+
+        public int order
+        {
+            set
+            {
+                intOrder = value;
+                comboRule.order = value;
+            }
+        }
+
+        public QuadRule[] ComboEvaluate(int cell)
+        {
+            if (specialRule.IsSpecialCell(cell))
+            {
+                var rule = specialRule.ComboQuadRule( intOrder, cell);
+                return new QuadRule[]
+                {
+                    rule.volumeRule.Rule,
+                    rule.surfaceRule.Rule,
+                };
+            }
+            else
+            {
+                return comboRule.ComboEvaluate(cell);
+            }
+        }
+
+        public QuadRule Evaluate(int cell)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    class VolumeOnEdgeIntercepter : ISayeGaussRule
+    {
+        ISayeGaussRule sayeRule;
+
+        LevelSetOnEdgeRule specialRule;
+
+        int intOrder;
+
+        int speciesSign;
+
+        public VolumeOnEdgeIntercepter(ISayeGaussRule rule, LevelSetTracker.LevelSetData data, int speciesSign = 1)
+        {
+            specialRule = new LevelSetOnEdgeRule(data);
+            sayeRule = rule;
+            this.speciesSign = speciesSign;
+        }
+
+        public RefElement RefElement => sayeRule.RefElement;
+        
+        public int order
+        {
+            set
+            {
+                intOrder = value;
+                sayeRule.order = value;
+            }
+        }
+
+        public QuadRule Evaluate(int cell)
+        {
+            if (specialRule.IsSpecialCell(cell))
+            {
+                var rule = specialRule.VolumeQuadRule(intOrder, cell, speciesSign);
+                return rule.Rule;
+            }
+            else
+            {
+                return sayeRule.Evaluate(cell);
+            }
+        }
+    }
+
+    class SurfaceOnEdgeIntercepter : ISayeGaussRule
+    {
+        ISayeGaussRule sayeRule;
+
+        LevelSetOnEdgeRule specialRule;
+
+        int intOrder;
+
+        public SurfaceOnEdgeIntercepter(ISayeGaussRule rule, LevelSetTracker.LevelSetData data)
+        {
+            specialRule = new LevelSetOnEdgeRule(data);
+            sayeRule = rule;
+        }
+
+        public RefElement RefElement => sayeRule.RefElement;
+        
+        public int order
+        {
+            set
+            {
+                intOrder = value;
+                sayeRule.order = value;
+            }
+        }
+
+        public QuadRule Evaluate(int cell)
+        {
+            if (specialRule.IsSpecialCell(cell))
+            {
+                var rule = specialRule.SurfaceQuadRule(intOrder, cell);
+                return rule.Rule;
+            }
+            else
+            {
+                return sayeRule.Evaluate(cell);
+            }
+        }
     }
 
     class SayeGaussRuleFactory :
@@ -81,7 +216,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
     /// </summary>
     public static class SayeFactories
     {
-    #region Single QuadRules
+        #region Single QuadRules
         /// <summary>
         /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
         /// </summary>
@@ -94,7 +229,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 _lsData,
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.PositiveVolume);
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
         /// <summary>
@@ -108,13 +244,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 _lsData,
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.NegativeVolume);
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData, -1);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
         /// <summary>
         /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 3D case
         /// </summary>
-        public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet3D( 
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface3D( 
             LevelSetTracker.LevelSetData _lsData, 
             IRootFindingAlgorithm RootFinder)
         {
@@ -123,7 +260,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.Surface
                 );
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new SurfaceOnEdgeIntercepter(rule, _lsData);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
         /// <summary>
@@ -139,7 +277,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.PositiveVolume
                 );
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
         /// <summary>
@@ -154,13 +293,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.NegativeVolume
                 );
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new VolumeOnEdgeIntercepter(rule, _lsData, -1);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
         /// <summary>
         /// Gauss rules for \f$ \oint_{\frakI \cap K_j } \ldots \dS \f$ in the 2D case
         /// </summary>
-        public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet2D( 
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface2D( 
             LevelSetTracker.LevelSetData _lsData, 
             IRootFindingAlgorithm RootFinder)
         {
@@ -168,22 +308,23 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 _lsData,
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.Surface);
-            return new SayeGaussRuleFactory(rule);
+            ISayeGaussRule wrappedRule = new SurfaceOnEdgeIntercepter(rule, _lsData);
+            return new SayeGaussRuleFactory(wrappedRule);
         }
 
 
-        public static IQuadRuleFactory<QuadRule> SayeGaussRule_LevelSet(
+        public static IQuadRuleFactory<QuadRule> SayeGaussRule_Surface(
             LevelSetTracker.LevelSetData _lsData,
             IRootFindingAlgorithm RootFinder)
         {
             RefElement refElem = _lsData.GridDat.Grid.GetRefElement(0);
             if (refElem is Grid.RefElements.Square)
             {
-                return SayeGaussRule_LevelSet2D(_lsData, RootFinder);
+                return SayeGaussRule_Surface2D(_lsData, RootFinder);
             }
             else if (refElem is Grid.RefElements.Cube)
             {
-                return SayeGaussRule_LevelSet3D(_lsData, RootFinder);
+                return SayeGaussRule_Surface3D(_lsData, RootFinder);
             }
             else
             {
@@ -237,10 +378,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Square.QuadratureMode.Combo
                 );
+            ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
+
             CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
                 lsData.Region.GetCutCellMask().ToGeometicalMask());
             return new SayeGaussComboRuleFactory(
-                rule,
+                wrappedRule,
                 maxGrid);
         }
 
@@ -254,10 +397,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 RootFinder,
                 SayeFactory_Cube.QuadratureMode.Combo
                 );
+            ISayeGaussComboRule wrappedRule = new LevelSetOnEdgeIntercepter(rule, lsData);
+
+
             CellMask maxGrid = lsData.GridDat.Cells.GetCells4Refelement(rule.RefElement).Intersect(
                 lsData.Region.GetCutCellMask().ToGeometicalMask());
             return new SayeGaussComboRuleFactory(
-                rule, 
+                wrappedRule, 
                 maxGrid);
         }
 

@@ -25,7 +25,9 @@ using MPI.Wrappers;
 using BoSSS.Solution;
 using BoSSS.Solution.LevelSetTools.TestCases;
 using BoSSS.Solution.XdgTimestepping;
-
+using System.Runtime.CompilerServices;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -90,37 +92,38 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                double[] BmQ_RB = solver.ComputeBenchmarkQuantities_RisingBubble();
+                var ppModule = solver.PostprocessingModules.Single(mod => mod.GetType() == typeof(PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities)) as PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities;
+                var BmQ_RB = ppModule.ComputeBenchmarkQuantities_RisingBubble();
 
                 double err_thrsld = 1e-4;
 
                 // area
-                double err = Math.Abs(cLength*cLength*Math.PI - BmQ_RB[0]);
+                double err = Math.Abs(cLength*cLength*Math.PI - BmQ_RB.area);
                 Assert.Less(err, err_thrsld, "error in area");
                 Console.WriteLine("error in area = {0}", err);
 
                 // x-position
-                err = Math.Abs(0.6 - BmQ_RB[1]);
+                err = Math.Abs(0.6 - BmQ_RB.centerX);
                 Assert.Less(err, err_thrsld, "error in x-position too high");
                 Console.WriteLine("error in x-position = {0}", err);
 
                 // y-position
-                err = Math.Abs(0.5 - BmQ_RB[2]);
+                err = Math.Abs(0.5 - BmQ_RB.centerY);
                 Assert.Less(err, err_thrsld, "error in y-position too high");
                 Console.WriteLine("error in y-position = {0}", err);
 
                 // circularity
-                err = Math.Abs(1.0 - BmQ_RB[3]);
+                err = Math.Abs(1.0 - BmQ_RB.circularity);
                 Assert.Less(err, err_thrsld, "error in circularity too high");
                 Console.WriteLine("error in circularity = {0}", err);
 
                 // x-velocity
-                err = Math.Abs(1.0 - BmQ_RB[4]);
+                err = Math.Abs(1.0 - BmQ_RB.VelocityAtCenterX);
                 Assert.Less(err, err_thrsld, "error in x-velocity too high");
                 Console.WriteLine("error in x-velocity = {0}", err);
 
                 // y-velocity
-                err = Math.Abs(BmQ_RB[5]);
+                err = Math.Abs(BmQ_RB.VelocityAtCenterY);
                 Assert.Less(err, err_thrsld, "error in y-velocity too high");
                 Console.WriteLine("error in y-velocity = {0}", err);
 
@@ -146,32 +149,33 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                double[] BmQ_RB = solver.ComputeBenchmarkQuantities_RisingBubble();
+                var ppModule = solver.PostprocessingModules.Single(mod => mod.GetType() == typeof(PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities)) as PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities;
+                var BmQ_RB = ppModule.ComputeBenchmarkQuantities_RisingBubble();
 
                 double err_thrsld = 1e-4;
 
                 // area
-                double err = Math.Abs(cLength * 0.15 * Math.PI - BmQ_RB[0]);
+                double err = Math.Abs(cLength * 0.15 * Math.PI - BmQ_RB.area);
                 Assert.Less(err, err_thrsld, "error in area");
                 Console.WriteLine("error in area = {0}", err);
 
                 // x-position
-                err = Math.Abs(0.15*Math.Cos(0.1) - BmQ_RB[1]);
+                err = Math.Abs(0.15*Math.Cos(0.1) - BmQ_RB.centerX);
                 Assert.Less(err, err_thrsld, "error in x-position too high");
                 Console.WriteLine("error in x-position = {0}", err);
 
                 // y-position
-                err = Math.Abs(0.15*Math.Sin(0.1) - BmQ_RB[2]);
+                err = Math.Abs(0.15*Math.Sin(0.1) - BmQ_RB.centerY);
                 Assert.Less(err, err_thrsld, "error in y-position too high");
                 Console.WriteLine("error in y-position = {0}", err);
 
                 // x-velocity
-                err = Math.Abs(-0.15*Math.Sin(0.1) - BmQ_RB[4]);
+                err = Math.Abs(-0.15*Math.Sin(0.1) - BmQ_RB.VelocityAtCenterX);
                 Assert.Less(err, err_thrsld, "error in x-velocity too high");
                 Console.WriteLine("error in x-velocity = {0}", err);
 
                 // y-velocity
-                err = Math.Abs(0.15*Math.Cos(0.1) - BmQ_RB[5]);
+                err = Math.Abs(0.15*Math.Cos(0.1) - BmQ_RB.VelocityAtCenterY);
                 Assert.Less(err, err_thrsld, "error in y-velocity too high");
                 Console.WriteLine("error in y-velocity = {0}", err);
 
@@ -194,7 +198,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 solver.Init(C);
                 solver.RunSolverMode();
 
-                double[] BmQ_RB = solver.ComputeBenchmarkQuantities_RisingBubble();
+                //double[] BmQ_RB = solver.ComputeBenchmarkQuantities_RisingBubble();
+                var ppModule = solver.PostprocessingModules.Single(mod => mod.GetType() == typeof(PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities)) as PhysicalBasedTestcases.RisingBubble2DBenchmarkQuantities;
+                var BmQ_RB = ppModule.ComputeBenchmarkQuantities_RisingBubble();
 
                 double err_thrsld = 1e-4;
 
@@ -204,27 +210,27 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 double diskArea = disk.GetArea();
 
                 // area
-                double err = Math.Abs(diskArea - BmQ_RB[0]);
+                double err = Math.Abs(diskArea - BmQ_RB.area);
                 Assert.Less(err, err_thrsld, "error in area");
                 Console.WriteLine("error in area = {0}", err);
 
                 // x-position
-                err = Math.Abs(0.0 - BmQ_RB[1]);
+                err = Math.Abs(0.0 - BmQ_RB.centerX);
                 Assert.Less(err, err_thrsld, "error in x-position too high");
                 Console.WriteLine("error in x-position = {0}", err);
 
                 // y-position
-                err = Math.Abs(0.0 - BmQ_RB[2]);
+                err = Math.Abs(0.0 - BmQ_RB.centerY);
                 Assert.Less(err, err_thrsld, "error in y-position too high");
                 Console.WriteLine("error in y-position = {0}", err);
 
                 // x-velocity
-                err = Math.Abs(0.0 - BmQ_RB[4]);
+                err = Math.Abs(0.0 - BmQ_RB.VelocityAtCenterX);
                 Assert.Less(err, err_thrsld, "error in x-velocity too high");
                 Console.WriteLine("error in x-velocity = {0}", err);
 
                 // y-velocity
-                err = Math.Abs(0.0 - BmQ_RB[5]);
+                err = Math.Abs(0.0 - BmQ_RB.VelocityAtCenterY);
                 Assert.Less(err, err_thrsld, "error in y-velocity too high");
                 Console.WriteLine("error in y-velocity = {0}", err);
 
@@ -232,7 +238,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
-        [Test]
+        //[Test] Deactivated, because empty
         public static void CircleMovementTest_WithSurfaceTension(
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.ExtensionVelocity)]  LevelSetEvolution lsEvo,
             [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once, LevelSetHandling.Coupled_Iterative)] LevelSetHandling lsHandl,

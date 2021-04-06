@@ -1,10 +1,16 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using ilPSP;
+using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,6 +24,8 @@ namespace BoSSS.Solution.XdgTimestepping {
     abstract public class ApplicationWithSolver<T> : Application<T>
         where T : AppControlSolver, new() {
 
+
+
         /// <summary>
         /// Mapping for fields defined by <see cref="InstantiateSolutionFields"/>
         /// </summary>
@@ -27,13 +35,62 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
            
         }
+        CoordinateVector m_CurrentStateVector;
 
         /// <summary>
         /// DG coordinates of <see cref="CurrentState"/> in a single vector
         /// </summary>
         public virtual CoordinateVector CurrentStateVector {
-            get;
-            protected set;
+            get {
+                if(!object.ReferenceEquals(m_CurrentStateVector.Mapping.GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
+
+                return m_CurrentStateVector;
+            }
+            protected set {
+                 if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                    throw new ArgumentException("Grid data object mismatch.");
+
+                m_CurrentStateVector = value;
+            }
+        }
+
+        List<DGField> m_Parameters;
+
+        /// <summary>
+        /// List for parameter fields can be set by <see cref="CreateAdditionalFields"/>
+        /// </summary>
+        public virtual IList<DGField> Parameters {
+            get {
+                if(m_Parameters != null) {
+                    foreach(var p in m_Parameters) {
+                        if( p != null) {
+                            if(!object.ReferenceEquals(p.GridDat, this.GridData))
+                                throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
+                        }
+                    }
+                }
+
+                return m_Parameters;
+            }
+            protected set {
+                if(value != null) {
+                    foreach(var p in value) {
+                        if( p != null) {
+                            if(!object.ReferenceEquals(p.GridDat, this.GridData))
+                                throw new ArgumentException("Grid data object mismatch.");
+                        }
+                    }
+                }
+
+
+                if(m_Parameters == null)
+                    m_Parameters = new List<DGField>();
+                else
+                    m_Parameters.Clear();
+                m_Parameters.AddRange(value);
+            }
+
         }
 
         /// <summary>
@@ -45,23 +102,25 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        CoordinateVector m_CurrentResidualVector;
+
         /// <summary>
         /// DG coordinates of <see cref="CurrentResidual"/> in a single vector
         /// </summary>
         public virtual CoordinateVector CurrentResidualVector {
-            get;
-            protected set;
-        }
+            get {
+                if(!object.ReferenceEquals(m_CurrentResidualVector.Mapping.GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch - something gone terribly wrong, maybe during mesh adaptation.");
 
-        /*
-        /// <summary>
-        /// Mapping for fields defined by <see cref="InstantiateParameterFields"/>
-        /// </summary>
-        public virtual CoordinateMapping CurrentParameters {
-            get;
-            private set;
+                return m_CurrentResidualVector;
+            }
+            protected set {
+                if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                    throw new ArgumentException("Grid data object mismatch.");
+
+                m_CurrentResidualVector = value;
+            }
         }
-        */
 
         /// <summary>
         /// makes direct use of <see cref="XdgTimesteppingBase.OperatorAnalysis"/>; aids the condition number scaling analysis
@@ -70,17 +129,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.Timestepping.OperatorAnalysis();
         }      
 
-
-        abstract internal void CreateTrackerHack();
-
+        abstract protected void CreateTrackerHack();
 
         /// <summary>
-        /// 
+        /// Called on startup and 
+        /// also called after grid adaptation/MPI redistribution
         /// </summary>
         protected override void CreateFields() {
             base.CreateFields();
 
-            //
             CreateTrackerHack();
 
             // solution:
@@ -97,26 +154,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 base.RegisterField(f);
             }
 
-            // parameters:
-            /*
-            var paramFields = InstantiateParameterFields();
-            if(paramFields == null || paramFields.Count() <= 0) {
-                CurrentParameters = new CoordinateMapping(this.GridData);
-            } else {
-                CurrentParameters = new CoordinateMapping(paramFields.ToArray());
-                foreach(var f in paramFields) {
-                    base.RegisterField(f);
-                }
-            }
-            */
             CreateAdditionalFields();
         }
 
         /// <summary>
-        /// intended for the initialization of additional DG fields, which are not 
-        /// either solution, residuals of parameters.
+        /// intended for the initialization of additional DG fields, which are not either solution or residuals;
+        /// An example would be e.g. parameters such as Gravity which are set through the control file.
         /// </summary>
         protected virtual void CreateAdditionalFields() {
+
+            // parameters
+            var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
+            Parameters = new List<DGField>();
+            foreach (var f in parameterFields) {
+                this.Parameters.Add(f);
+                base.RegisterField(f);
+            }            
 
         }
 
@@ -127,14 +180,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected abstract IEnumerable<DGField> InstantiateSolutionFields();
 
-        /*
-        /// <summary>
-        /// (Optional) Override to instantiate parameters required by the operator
-        /// </summary>
-        protected virtual IEnumerable<DGField> InstantiateParameterFields() {
-            return new DGField[0];
-        }
-        */
+        
 
         /// <summary>
         /// Override to instantiate fields to store the solver residuals
@@ -202,9 +248,31 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        public void Solve(double phystime, double dt) {
-            this.Timestepping.Solve(phystime, dt);
+        /// <summary>
+        /// call the solver
+        /// </summary>
+        public bool Solve(double phystime, double dt) {
+            return this.Timestepping.Solve(phystime, dt);
         }
+
+        /// <summary>
+        /// setup AMR level indicators
+        /// </summary>
+        protected override void SetUpEnvironment() {
+            base.SetUpEnvironment();
+
+            // AMR level indactors
+            //====================
+            m_AMRLevelIndicators.Clear();
+            if (this.Control != null && this.Control.activeAMRlevelIndicators != null) {
+                m_AMRLevelIndicators.AddRange(this.Control.activeAMRlevelIndicators);
+            }
+
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                lvlInd.Setup(this);
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -219,13 +287,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
 
+
             } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                // restore BDF time-stepper after grid redistribution (dynamic load balancing)
+                // restore time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence);
+
+                // currently, only supported for the BDF timestepper.
+
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+
+                if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))
+                    throw new ApplicationException();
+
             }
         }
+
 
         /// <summary>
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
@@ -238,6 +315,103 @@ namespace BoSSS.Solution.XdgTimestepping {
             ClearOperator();
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TimestepNo"></param>
+        /// <param name="newGrid"></param>
+        /// <param name="old2NewGrid"></param>
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
+            using (new FuncTrace()) {
+
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // Check grid changes
+                    // ==================
+
+                    int[] desiredLevels = GetDesiredRefinementLevels();
+
+                    GridRefinementController gridRefinementController = new GridRefinementController((GridData)this.GridData, null);
+                    bool AnyChange = gridRefinementController.ComputeGridChange(desiredLevels, out List<int> CellsToRefineList, out List<int[]> Coarsening);
+
+                    int NoOfCellsToRefine = 0;
+                    int NoOfCellsToCoarsen = 0;
+                    if (AnyChange.MPIOr()) {
+                        int[] glb = (new int[] { CellsToRefineList.Count, Coarsening.Sum(L => L.Length) }).MPISum();
+                        NoOfCellsToRefine = glb[0];
+                        NoOfCellsToCoarsen = glb[1];
+                    }
+                    long oldJ = this.GridData.CellPartitioning.TotalLength;
+
+                    // Update Grid
+                    // ===========
+                    if (AnyChange.MPIOr()) {
+
+                        Console.WriteLine(" Refining " + NoOfCellsToRefine + " of " + oldJ + " cells");
+                        Console.WriteLine(" Coarsening " + NoOfCellsToCoarsen + " of " + oldJ + " cells");
+
+                        newGrid = ((GridData)this.GridData).Adapt(CellsToRefineList, Coarsening, out old2NewGrid);
+
+                    } else {
+
+                        newGrid = null;
+                        old2NewGrid = null;
+                    }
+
+                } else {
+
+                    newGrid = null;
+                    old2NewGrid = null;
+                }
+
+            }
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        private int[] GetDesiredRefinementLevels() {
+
+            int J = this.GridData.CellPartitioning.LocalLength;
+            int[] levelChanges = new int[J];
+
+            // combine all results of active level indicators
+            foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                int[] lvls = lvlInd.DesiredCellChanges();
+                levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+            }
+
+            // get desired level 
+            int[] levels = new int[J];
+            Cell[] cells = ((GridData)this.GridData).Grid.Cells;
+            for (int j = 0; j < J; j++) {
+                levels[j] = cells[j].RefinementLevel;
+                if (levelChanges[j] > 0)
+                    levels[j] += 1;
+                else if (levelChanges[j] < 0)
+                    levels[j] -= 1;
+            }
+
+            return levels;
+        }
+
+
+        List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
+
+        /// <summary>
+        /// <see cref="Control.AppControl.AMRLevelIndicator"/>
+        /// </summary>
+        public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
+            get {
+                return m_AMRLevelIndicators;
+            }
+        }
+
+
+
         /// <summary>
         /// configuration options for <see cref="MultigridOperator"/>;
         /// temporary, to be moved into the spatial operator soon
@@ -248,7 +422,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
+                // the last configuration entry will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
                 for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     configs[iLevel] = new MultigridOperator.ChangeOfBasisConfig[Degrees.Length];
@@ -278,11 +452,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, "plot-" + timestepNo, physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, physTime, superSampling);
+        }
+
+        protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
+            //Update Calls
+            dt = GetFixedTimestep();
+            Timestepping.Solve(phystime, dt);
+            return dt;
         }
 
 
-        
         //protected override void SetInitial() {
         //    base.SetInitial();
         //}
@@ -295,12 +475,25 @@ namespace BoSSS.Solution.XdgTimestepping {
          where T : AppControlSolver, new() //
     {
 
-        ///// <summary>
-        ///// Block scaling of the mass matrix: for each species $\frakS$, a vector $(\rho_\frakS, \ldots, \rho_frakS, 0 )$.
-        ///// </summary>
-        //abstract protected IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-        //    get;
-        //}
+        /// <summary>
+        /// Instantiation of fields according to the domain variable names in the spatial operator.
+        /// </summary>
+        protected override IEnumerable<DGField> InstantiateSolutionFields() {
+            var DomNames = this.Operator.DomainVar;
+            var ret = new DGField[DomNames.Count];
+            for(int i = 0; i < DomNames.Count; i++) {
+                string Name = DomNames[i];
+
+                var fopts = this.Control.FieldOptions.Where(kv => kv.Key.WildcardMatch(Name)).SingleOrDefault().Value;
+                if(fopts.Degree < 0) {
+                    throw new ApplicationException($"Missing specification of DG degree for field {Name} in control object.");
+                }
+
+                var xb = new XDGBasis(this.LsTrk, fopts.Degree);
+                ret[i] = new XDGField(xb, Name);
+            }
+            return ret;
+        }
 
         /// <summary>
         /// Callback-template for level-set updates.
@@ -352,9 +545,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
             var trk = InstantiateTracker();
-
+            //var test = this.Operator;
             if(base.LsTrk == null) {
                 base.LsTrk = trk;
             } else {
@@ -362,15 +555,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("It seems there is more then one Level-Set-Tracker in the application; not supported by the Application class.");
             }
 
-            foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
-                if(ls is DGField f) {
-                    base.RegisterField(f);
-                }
-            }
+            //foreach(var ls in LsTrk.LevelSetHistories.Select(history => history.Current)) {
+            //    if(ls is DGField f) {
+            //        base.RegisterField(f);
+            //    }
+            //}
+
         }
 
-
-        XSpatialOperatorMk2 m_XOperator;
+        private XSpatialOperatorMk2 m_XOperator { 
+            get; 
+            set; 
+        }
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
@@ -379,6 +575,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_XOperator.IsCommitted)
+                        throw new ApplicationException("Operator must be committed by user.");
                 }
                 return m_XOperator;
             }
@@ -407,7 +605,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.AgglomerationThreshold,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                this.LsTrk,
+                Parameters);
 
             base.Timestepping = solver;
 
@@ -433,6 +633,27 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
+        /// Instantiation of fields according to the domain variable names in the spatial operator.
+        /// </summary>
+        protected override IEnumerable<DGField> InstantiateSolutionFields() {
+            var DomNames = this.Operator.DomainVar;
+            var ret = new DGField[DomNames.Count];
+            for(int i = 0; i < DomNames.Count; i++) {
+                string Name = DomNames[i];
+
+                var fopts = this.Control.FieldOptions.Where(kv => kv.Key.WildcardMatch(Name)).SingleOrDefault().Value;
+                if(fopts.Degree < 0) {
+                    throw new ApplicationException($"Missing specification of DG degree for field {Name} in control object.");
+                }
+
+                var b = new Basis(this.GridData, fopts.Degree);
+                ret[i] = new SinglePhaseField(b, Name);
+            }
+            return ret;
+        }
+
+
+        /// <summary>
         /// initialization of the main spatial operator
         /// </summary>
         /// <param name="D">spatial dimension</param>
@@ -441,8 +662,20 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        internal override void CreateTrackerHack() {
+        protected override void CreateTrackerHack() {
                
+        }
+
+        /// <summary>
+        /// Contains hack 
+        /// </summary>
+        protected override void CreateFields() {
+            base.CreateFields();
+            if(Timestepping != null && Timestepping.LsTrk == null) {
+                // re-create the internal Dummy-Tracker after dynamic load-balancing/mesh refinement
+                Timestepping.RecreateDummyTracker(this.GridData);
+                this.LsTrk = Timestepping.LsTrk;
+            }
         }
 
 
@@ -465,6 +698,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);
+                    if(!m_SOperator.IsCommitted)
+                        throw new ApplicationException("Operator must be comitted by user.");
+
                 }
                 return m_SOperator;
             }
@@ -491,7 +727,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver,
+                Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 

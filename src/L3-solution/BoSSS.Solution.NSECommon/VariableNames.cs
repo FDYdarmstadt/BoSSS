@@ -195,6 +195,68 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// Mass balance equation of chemical component 0 (usually fuel)
+        /// </summary>
+        public const string SpeciesMassBalance0 = "SpeciesMassBalance0";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 1 (usually oxidizer)
+        /// </summary>
+        public const string SpeciesMassBalance1 = "SpeciesMassBalance1";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 2
+        /// </summary>
+        public const string SpeciesMassBalance2 = "SpeciesMassBalance2";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 3
+        /// </summary>
+        public const string SpeciesMassBalance3 = "SpeciesMassBalance3";
+
+        /// <summary>
+        /// Mass balance equation of chemical component  4
+        /// </summary>
+        public const string SpeciesMassBalance4 = "SpeciesMassBalance4";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        static public string SpeciesMassBalanceName(int component) {
+            switch (component) {
+                case 0: return SpeciesMassBalance0;
+                case 1: return SpeciesMassBalance1;
+                case 2: return SpeciesMassBalance2;
+                case 3: return SpeciesMassBalance3;
+                case 4: return SpeciesMassBalance4;
+                default: throw new NotSupportedException("Name of equation for component " + component + " not supported yet");
+            }
+        }
+
+        /// <summary>
+        /// vector of the auxiliary heat flux
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] SpeciesMassBalanceNames(int NoOfComponents) {
+            switch (NoOfComponents) {
+                case 3:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2 };
+                case 4:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2, SpeciesMassBalance3 };
+                case 5:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2, SpeciesMassBalance3, SpeciesMassBalance4 };
+                default:
+                throw new NotImplementedException("Solver for" + NoOfComponents + "components not supported!");
+            }
+        }
+
+
+
+        /// <summary>
         /// xx - component constitutive equation for viscoelastic extra stress
         /// </summary>
         public const string ConstitutiveXX = "ConstitutiveXX";
@@ -272,6 +334,20 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string GravityZ = "GravityZ";
 
+        /// <summary>
+        /// Volume force component in x - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceX = "VolumeForceX";
+
+        /// <summary>
+        /// Volume force component in y - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceY = "VolumeForceY";
+
+        /// <summary>
+        /// Volume force component in z - direction; see also <see cref="VolumeForceVector"/>.
+        /// </summary>
+        public const string VolumeForceZ = "VolumeForceZ";
 
         /// <summary>
         /// vorticity component in x - direction; 
@@ -467,7 +543,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Pressure = "Pressure";
 
-
         /// <summary>
         /// variable name for Pressure parameter
         /// </summary>
@@ -535,6 +610,13 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Temperature = "Temperature";
 
+
+        /// <summary>
+        /// Phoretic field/concentration
+        /// </summary>
+        public const string Phoretic = "PhoreticField";
+
+
         /// <summary>
         /// variable name for temperature (linearization point)
         /// </summary>
@@ -559,21 +641,7 @@ namespace BoSSS.Solution.NSECommon {
         /// z - component of the Temperature gradient
         /// </summary>
         public const string TemperatureGradient2 = "TemperatureGradient[2]";
-
-        ///// <summary>
-        ///// x - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient0 = "Temperature0Gradient[0]";
-
-        ///// <summary>
-        ///// y - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient1 = "Temperature0Gradient[1]";
-
-        ///// <summary>
-        ///// z - component of the Temperature gradient (linearization point)
-        ///// </summary>
-        //public const string Temperature0Gradient2 = "Temperature0Gradient[2]";
+         
 
         /// <summary>
         /// variable name for the Gradient of the Temperature
@@ -583,7 +651,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 1: return new string[] { TemperatureGradient0 };
                 case 2: return new string[] { TemperatureGradient0, TemperatureGradient1 };
                 case 3: return new string[] { TemperatureGradient0, TemperatureGradient1, TemperatureGradient2 };
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -717,24 +785,68 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
+        static public string MassFluxExtension = "MassFluxExtension";
+               
 
         /// <summary>
-        /// variable name for the Gradient of the Temperature (linearization point)
+        /// for XNSE - discontinuous level set field (used for level set evolution)
         /// </summary>
-        //static public string[] Temperature0Gradient(int D) {
-        //    switch (D) {
-        //        case 1: return new string[] { Temperature0Gradient0 };
-        //        case 2: return new string[] { Temperature0Gradient0, Temperature0Gradient1 };
-        //        case 3: return new string[] { Temperature0Gradient0, Temperature0Gradient1, Temperature0Gradient2 };
-        //        default: throw new NotSupportedException("unsupported number of species.");
-        //    }
-        //}
+        public const string LevelSetDG = "PhiDG";
+
+        /// <summary>
+        /// variable name for the phase dividing interface
+        /// </summary>
+        public const string LevelSetCG = "Phi";
+
+        /// <summary>
+        /// level-set names if more than one level-set is used.
+        /// </summary>
+        static public string LevelSetDGidx(int iLevSet) {
+            if(iLevSet < 0 || iLevSet >= 4)
+                throw new ArgumentOutOfRangeException("Invalid level-set index: " + iLevSet);
+            if(iLevSet == 0)
+                return LevelSetDG;
+            else
+                return $"Phi{iLevSet+1}DG";
+        }
+
+        /// <summary>
+        /// level-set names if more than one level-set is used.
+        /// </summary>
+        static public string LevelSetCGidx(int iLevSet) {
+            if(iLevSet < 0 || iLevSet >= 4)
+                throw new ArgumentOutOfRangeException("Invalid level-set index: " + iLevSet);
+            if(iLevSet == 0)
+                return LevelSetCG;
+            else
+                return $"Phi{iLevSet+1}";
+        }
 
 
         /// <summary>
         /// variable name for a single Level Set
         /// </summary>
         public const string LevelSet = "LevelSet";
+
+        /// <summary>
+        /// convention for variable names of properties defined at the interface 
+        /// </summary>
+        public static string AsLevelSetVariable(string levelSetName, string variable)
+        {
+            return variable + "@" + levelSetName;
+        }
+
+        /// <summary>
+        /// convention for variable names of properties defined at the interface 
+        /// </summary>
+        public static IList<string> AsLevelSetVariable(string levelSetName, IList<string> variables)
+        {
+            for (int i = 0; i < variables.Count; ++i)
+            {
+                variables[i] += "@" + levelSetName;
+            }
+            return variables;
+        }
 
         /// <summary>
         /// x - component of the Level-Set gradient
@@ -759,7 +871,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 1: return new string[] { LevelSetGradient0 };
                 case 2: return new string[] { LevelSetGradient0, LevelSetGradient1 };
                 case 3: return new string[] { LevelSetGradient0, LevelSetGradient1, LevelSetGradient2 };
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -771,7 +883,7 @@ namespace BoSSS.Solution.NSECommon {
                 case 0: return LevelSetGradient0;
                 case 1: return LevelSetGradient1;
                 case 2: return LevelSetGradient2;
-                default: throw new NotSupportedException("unsupported number of species.");
+                default: throw new NotSupportedException("unsupported spatial dimension.");
             }
         }
 
@@ -923,6 +1035,48 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Phi0Mean = "Phi0Mean";
 
+
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityX = "ExtensionVelocityX";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityY = "ExtensionVelocityY";
+
+        /// <summary>
+        /// x - component of the extension velocity
+        /// </summary>
+        public const string ExtensionVelocityZ = "ExtensionVelocityZ";
+
+        /// <summary>
+        /// variable name of the extension velocity
+        /// </summary>
+        static public string[] ExtensionVelocity(int D) {
+            switch (D) {
+                case 1: return new string[] { ExtensionVelocityX };
+                case 2: return new string[] { ExtensionVelocityX, ExtensionVelocityY };
+                case 3: return new string[] { ExtensionVelocityX, ExtensionVelocityY, ExtensionVelocityZ };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
+        /// Components of the extension velocity 
+        /// </summary>
+        static public string ExtensionVelocityComponent(int d) {
+            switch (d) {
+                case 0: return ExtensionVelocityX;
+                case 1: return ExtensionVelocityY;
+                case 2: return ExtensionVelocityZ;
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+
         /// <summary>
         /// variable name for the MassFraction of component 0
         /// </summary>
@@ -1013,6 +1167,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         static public string[] MassFractions(int NumberOfSpecies) {
             switch (NumberOfSpecies) {
+                case 1: return new string[] { MassFraction0};
+                case 2: return new string[] { MassFraction0, MassFraction1 };
                 case 3: return new string[] { MassFraction0, MassFraction1, MassFraction2 };
                 case 4: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3 };
                 case 5: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3, MassFraction4 };
@@ -1183,8 +1339,31 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { GravityX, GravityY, GravityZ };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
-        }  
-        
+        }
+
+        /// <summary>
+        /// component of gravity/volume force names
+        /// </summary>
+        public static string VolumeForce_d(int d) {
+            return VolumeForceVector(3)[d];
+        }
+
+
+        /// <summary>
+        /// vector of gravity/volume force names
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] VolumeForceVector(int D) {
+            if (D == 2)
+                return new string[] { VolumeForceX, VolumeForceY };
+            else if (D == 3)
+                return new string[] { VolumeForceX, VolumeForceY, VolumeForceZ };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
         /// <summary>
         /// vector of convective names
         /// </summary>
@@ -1486,5 +1665,10 @@ namespace BoSSS.Solution.NSECommon {
         /// Helical: call dierkes
         /// </summary>
         public const string w = "ueta";
+
+        /// <summary>
+        /// Max Sigma
+        /// </summary>
+        public const string MaxSigma = "MaximalSigma";
     }
 }

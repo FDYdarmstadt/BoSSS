@@ -47,7 +47,7 @@ namespace BoSSS.Solution.RheologyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName;
@@ -66,7 +66,7 @@ namespace BoSSS.Solution.RheologyCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.getPhysParams;
+            PhysicalParametersRheology physParams = config.getPhysParams as PhysicalParametersRheology;
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
@@ -167,7 +167,7 @@ namespace BoSSS.Solution.RheologyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
 
@@ -186,7 +186,7 @@ namespace BoSSS.Solution.RheologyCommon {
             if (!XOp.CodomainVar.Contains(CodName))
                 throw new ArgumentException("CoDomain variable \"" + CodName + "\" is not defined in Spatial Operator");
 
-            PhysicalParameters physParams = config.getPhysParams;
+            PhysicalParametersRheology physParams = config.getPhysParams as PhysicalParametersRheology;
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set components
@@ -213,7 +213,7 @@ namespace BoSSS.Solution.RheologyCommon {
 
             // viscous operator
             // ==================
-            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1, dntParams.UseWeightedAverages);
+            var viscosity = new ViscosityAtLevelSet(LsTrk, d, physParams.beta_a, physParams.beta_b, dntParams.Penalty1);
             comps.Add(viscosity);
 
         }
@@ -222,10 +222,10 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name = "XOp" ></ param >
-        /// < param name="config"></param>
-        /// <param name = "BcMap" ></ param >
-        /// < param name="LsTrk"></param>
+        /// <param name = "XOp" ></param>
+        /// <param name="config"></param>
+        /// <param name = "BcMap" ></param>
+        /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
         public static void AddInterfaceConstitutive(XSpatialOperatorMk2 XOp, IRheology_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {

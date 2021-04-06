@@ -29,6 +29,8 @@ using System;
 using ilPSP;
 using System.Diagnostics;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -336,6 +338,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //Func<double[], double> PhiFunc = (X => (X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2() - radius.Pow2()); // quadratic form
             Func<double[], double> PhiFunc = (X => ((X[0] - center[0]).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius); // signed-distance form
+            C.InitSignedDistance = false;
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 

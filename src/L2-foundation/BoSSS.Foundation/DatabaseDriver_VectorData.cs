@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 
@@ -80,6 +81,54 @@ namespace BoSSS.Foundation.IO
 
         bool DebugSerialization = false;
 
+
+        /// <summary>
+        /// Determines the average size after serialization, in bytes, of items stores in a vector;
+        /// </summary>
+        private int GetItemSize<T>(IList<T> vector) {
+            int N = Math.Min(10, vector.Count);
+            var testVector = vector.GetSubVector(0, N);
+
+            long size;
+            using(MemoryStream ms = new MemoryStream(1024*1024)) {
+                serializer.Serialize(ms, testVector, typeof(T));
+                size = ms.ToArray().Length;
+            }
+
+            return (int)Math.Round((double)size / (double)N);
+        }
+
+        /// <summary>
+        /// It was noticed that the BSON-de-serializer used in this project crashes for objects
+        /// which are, after serialization, larger than about 100 megabyte;
+        /// therefore, such vectors will be split up further before saving.
+        /// </summary>
+        private IList<T>[] RepartitionVector<T>(IList<T> vector) {
+
+            const int SplitUpThreshold = 64 * 1024 * 1024;
+
+            int N = vector.Count;
+            int itmSz = GetItemSize(vector);
+
+            int totSize = N * itmSz;
+            if(totSize < SplitUpThreshold) {
+                return new IList<T>[] { vector };
+            } else {
+                int NoOfParts = (int) Math.Ceiling( (double)totSize / (double)SplitUpThreshold);
+                var ret = new IList<T>[NoOfParts];
+
+                for(int iPart = 0; iPart < NoOfParts; iPart++) {
+                    int i0 = checked((int)(((long)N * (long)iPart) / NoOfParts));
+                    int iE = checked((int)(((long)N * (long)(iPart + 1)) / NoOfParts));
+
+                    ret[iPart] = vector.GetSubVector(i0, iE - i0);
+                }
+
+                return ret;
+            }
+        }
+
+
         /// <summary>
         /// saves a vector to the database, under a specified Guid
         /// </summary>
@@ -108,53 +157,64 @@ namespace BoSSS.Foundation.IO
                 }
 #endif
                 Exception e = null;
-                try
-                {
+                try {
+                    // split up the vector to avoid files which are to big for the JSON/BSON format:
+                    IList<T>[] vectorRepart = RepartitionVector<T>(vector);
+                    if(vectorRepart.Length < 1)
+                        throw new ApplicationException("internal error in saving vector");
 
-                    // save parts
-                    using (Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyRank))
-                    {
-                        using (var s2 = new GZipStream(s, CompressionMode.Compress))
-                        {
-                            // Use a tuple since the Json format expects one object per
-                            // file (with some tricks, we could avoid this, but it's
-                            // not really worth the effort)
-                            var tuple = new Tuple<DistributedVectorHeader, IList<T>>(null, vector);
+                    // determine partitioning
+                    int[] NoOfPartsPerProc = vectorRepart.Length.MPIAllGather();
+                    int[] _Partitioning = vectorRepart.Select(part => part.Count).ToArray().MPIAllGatherv();
+                    int MyPartOffset = 0;
+                    for(int i = 0; i < MyRank; i++)
+                        MyPartOffset += NoOfPartsPerProc[i];
 
-                            // save header (only proc 0)
-                            // =========================
-                            var _part = (new Partitioning(vector.Count));
-                            if (MyRank == 0)
-                            {
-                                DistributedVectorHeader header = new DistributedVectorHeader();
-                                header.m_Guid = id;
-                                header.UseGzip = !DebugSerialization;
-                                long[] part = new long[_part.MpiSize + 1];
-                                for (int i = 0; i < _part.MpiSize; i++)
-                                {
-                                    part[i + 1] = part[i] + _part.GetLocalLength(i);
+                    // loop over all parts...
+                    for(int iPart = 0; iPart < vectorRepart.Length; iPart++) {
+
+                        // save parts
+                        using(Stream s = m_fsDriver.GetDistVectorDataStream(true, id, MyPartOffset + iPart)) {
+                            using(var s2 = new GZipStream(s, CompressionMode.Compress)) {
+                                // Use a tuple since the Json format expects one object per
+                                // file (with some tricks, we could avoid this, but it's
+                                // not really worth the effort)
+                                Tuple<DistributedVectorHeader, IList<T>> tuple;
+
+
+                                if(MyRank == 0 && iPart == 0) {
+                                    // save header (only proc 0, for the 0-th part)
+                                    DistributedVectorHeader header = new DistributedVectorHeader();
+                                    header.m_Guid = id;
+                                    header.UseGzip = !DebugSerialization;
+                                    long[] part = new long[_Partitioning.Length + 1];
+                                    for(int i = 0; i < _Partitioning.Length; i++) {
+                                        part[i + 1] = part[i] + _Partitioning[i];
+                                    }
+                                    header.Partitioning = part;
+                                    tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vectorRepart[iPart]);
+                                } else {
+                                    // save all other parts without header
+                                    tuple = new Tuple<DistributedVectorHeader, IList<T>>(null, vectorRepart[iPart]);
                                 }
-                                header.Partitioning = part;
-                                tuple = new Tuple<DistributedVectorHeader, IList<T>>(header, vector);
+                                                      
+                                // serialize it!
+                                serializer.Serialize(s2, tuple, typeof(Tuple<DistributedVectorHeader, IList<T>>));
+
+                                s2.Close();
+                                s.Close();
                             }
-
-                            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-                            serializer.Serialize(s2, tuple, typeof(Tuple<DistributedVectorHeader, IList<T>>));
-
-                            s2.Close();
-                            s.Close();
                         }
                     }
-                }
-                catch (Exception ee)
-                {
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                } catch(Exception ee) {
                     Console.Error.WriteLine(ee.GetType().Name + " on rank " + this.MyRank + " saving vector " + id + ": " + ee.Message);
                     Console.Error.WriteLine(ee.StackTrace);
                     e = ee;
                 }
 
-                e.ExceptionBcast();
+                //e.ExceptionBcast();
             }
         }
 
@@ -204,10 +264,10 @@ namespace BoSSS.Foundation.IO
                 // define partition, if necessary
                 if (part == null)
                 {
-                    int L = (int)header.Partitioning.Last();
-                    int i0 = (L * this.MyRank) / this.Size;
-                    int ie = (L * (this.MyRank + 1)) / this.Size;
-                    part = new Partitioning(ie - i0);
+                    long L = header.Partitioning.Last();
+                    long i0 = (L * this.MyRank) / this.Size;
+                    long ie = (L * (this.MyRank + 1)) / this.Size;
+                    part = new Partitioning(checked((int)(ie - i0)));
                 }
 
 
@@ -248,12 +308,12 @@ namespace BoSSS.Foundation.IO
                             s.Close();
                         }
 
-                        int srdInd = (int)((myI0 + d) - header.Partitioning[p]);
-                        int CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
+                        long srdInd = ((myI0 + d) - header.Partitioning[p]);
+                        long CopyLen = Math.Min(vecP.Count - srdInd, myLen - d);
 
                         for (int i = 0; i < CopyLen; i++)
                         {
-                            ret.Add(vecP[srdInd + i]);
+                            ret.Add(vecP[checked((int)(srdInd + i))]);
                             d++;
                         }
 

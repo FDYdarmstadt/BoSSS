@@ -142,11 +142,6 @@ namespace MiniBatchProcessor {
         /// Saves job data in queue-directory.
         /// </summary>
         internal void Write(TextWriter fStr) {
-
-
-
-
-
             fStr.WriteLine(Name);
             fStr.WriteLine(ExeDir != null ? ExeDir : "");
             fStr.WriteLine(NoOfProcs);

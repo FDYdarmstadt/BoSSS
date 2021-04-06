@@ -47,7 +47,7 @@ namespace QuadratureAndProjectionTest {
                 Cells = new Cell[] {
                     new Cell() {
                         GlobalID = 0,
-                        NodeIndices = new int[] {0,1,2,3},
+                        NodeIndices = new long[] { 0, 1, 2, 3},
                         TransformationParams = Simplex.Vertices,
                         Type = CellType.Tetra_Linear
                     }

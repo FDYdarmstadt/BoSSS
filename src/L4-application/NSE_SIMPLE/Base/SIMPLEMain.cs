@@ -124,12 +124,12 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Initializes velocity and pressure
         /// </summary>
-        protected override void SetInitial() {
+        protected override void SetInitial(double t) {
 
             //WriteQuadNodesOrrSommerfeld();
             //InitOrrSommerfeld();
 
-            base.SetInitial();
+            base.SetInitial(t);
 
             //TaylorVortexHack();
 

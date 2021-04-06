@@ -1236,8 +1236,7 @@ namespace BoSSS.Solution.GridImport {
                 for (int j = 0; j < refElement.FaceToVertexIndices.GetLength(0); j++) {
                     otherNodeIndices = new int[refElement.FaceToVertexIndices.GetLength(1)];
                     for (int k = 0; k < refElement.FaceToVertexIndices.GetLength(1); k++) {
-                        otherNodeIndices[k] = grid.Cells[i].NodeIndices[
-                            refElement.FaceToVertexIndices[j, k]];
+                        otherNodeIndices[k] = checked((int)(grid.Cells[i].NodeIndices[refElement.FaceToVertexIndices[j, k]]));
                     }
 
                     containsAllIndices = true;
@@ -1395,7 +1394,7 @@ namespace BoSSS.Solution.GridImport {
 
                 for (int j = 0; j < bosss_elements; j++) {
                     grd.Cells[j].GlobalID = j;
-                    grd.Cells[j].NodeIndices = base_elements[bosss_element_index_to_msh_element_index[j]];
+                    grd.Cells[j].NodeIndices = base_elements[bosss_element_index_to_msh_element_index[j]].Select(i => (long)i).ToArray();;
                     grd.Cells[j].TransformationParams = transformationParams[j];
                 }
 

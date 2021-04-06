@@ -44,7 +44,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.PeriodicBoundaryHandler
 
             //MatlabPlotter.Plot(mesh,"2aRemove");
             RemoveOuterCellsFromMesh(mesh);
-            //MatlabPlotter.Plot(mesh, "2bRemove");
+            //MatlabPlotter.Plot(mesh, "final");
         }
 
         IEnumerable<CellPairCollection<T>.EdgeCombo> MergePairsOfEachEdge(

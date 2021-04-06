@@ -45,7 +45,8 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// the species in which the bulk equation component is valid
+        /// the species in which the bulk equation component is valid;
+        /// Null deactivates the Filter, i.e. the component is integrated for all species.
         /// </summary>
         string ValidSpecies { get; }
     }
@@ -54,7 +55,6 @@ namespace BoSSS.Foundation.XDG {
     /// Interface for equation components which require e.g. grid and/or problem-dependent coefficients,
     /// e.g. cell length scales
     /// </summary>
-    /// <seealso cref="XSpatialOperator.XEvaluatorBase.OperatorCoefficients"/>
     public interface ILevelSetEquationComponentCoefficient : IEquationComponent {
 
         /// <summary>
@@ -81,7 +81,6 @@ namespace BoSSS.Foundation.XDG {
     /// </summary>
     public interface ILevelSetForm : IInnerEdgeForm {
 
-
         /// <summary>
         /// index of the species-separating level set.
         /// </summary>
@@ -104,7 +103,9 @@ namespace BoSSS.Foundation.XDG {
         TermActivationFlags LevelSetTerms { get; }
     }
 
-
+    /// <summary>
+    /// provides access to the level set tracker
+    /// </summary>
     public interface ILevelSetFormSetup { 
         /// <summary>
         /// Called before Integration

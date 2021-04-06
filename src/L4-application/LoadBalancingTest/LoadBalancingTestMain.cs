@@ -29,11 +29,20 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
+
+            //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            //InitMPI();
+            ////Debugger.Launch();
+            //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
+            //throw new NotImplementedException("remove me");
+
+
             BoSSS.Solution.Application<AppControlSolver>._Main(
                 args,
                 true,
                 () => new LoadBalancingTestMain());
         }
+
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
             control.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
@@ -143,8 +152,8 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// <summary>
         /// Setting initial value.
         /// </summary>
-        protected override void SetInitial() {
-            this.DelUpdateLevelset(null, 0.0, 0.0, 0.0, false);
+        protected override void SetInitial(double t) {
+            this.DelUpdateLevelset(null, t, 0.0, 0.0, false);
         }
 
         /// <summary>
@@ -169,32 +178,13 @@ namespace BoSSS.Application.LoadBalancingTest {
             Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, alpha_A, alpha_B)); // flux am lev-set 0
 
             Op.LinearizationHint = LinearizationHint.AdHoc;
-
+            Op.AgglomerationThreshold = this.THRESHOLD;
             Op.TemporalOperator = new ConstantXTemporalOperator(Op, 1.0);
 
             Op.Commit();
 
             if (L == null) {
-                /*
-                AltTimeIntegration = new XdgBDFTimestepping(
-                    new DGField[] { u }, new DGField[0], new DGField[] { uResidual }, base.LsTrk,
-                    true,
-                    DelComputeOperatorMatrix, Op.TemporalOperator, DelUpdateLevelset,
-                    3, // BDF3
-                       //-1, // Crank-Nicolson
-                       //0, // Explicit Euler
-                    LevelSetHandling.LieSplitting,
-                    MassMatrixShapeandDependence.IsTimeDependent,
-                    SpatialOperatorType.LinearTimeDependent,
-                    MultigridOperatorConfig,
-                    this.MultigridSequence,
-                    this.LsTrk.SpeciesIdS.ToArray(),
-                    quadorder,
-                    this.THRESHOLD,
-                    true,
-                    this.Control.NonLinearSolver,
-                    this.Control.LinearSolver);
-                */
+                
                 
                 TimeIntegration = new XdgTimestepping(
                     Op,
@@ -209,7 +199,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             } else {
                 Debug.Assert(object.ReferenceEquals(this.MultigridSequence[0].ParentGrid, this.GridData));
-                TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
+                TimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence, this.Op);
                 //AltTimeIntegration.DataRestoreAfterBalancing(L, new DGField[] { u }, new DGField[] { uResidual }, base.LsTrk, this.MultigridSequence);
             }
         }
@@ -240,10 +230,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-
-        const XQuadFactoryHelper.MomentFittingVariants HMF = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-
-        
+       
         protected virtual void DelComputeOperatorMatrix(BlockMsrMatrix OpMatrix, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double phystime) {
             
             OpAffine.ClearEntries();

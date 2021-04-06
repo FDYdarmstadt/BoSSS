@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using ilPSP;
-
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.Statistic {
     
@@ -42,7 +42,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.L2Distance(fine);
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_L2noMean(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.L2Distance(fine, IgnoreMeanValue:true);
@@ -116,7 +116,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors_H1(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string, int[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds) {
 
             double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
                 return coarse.H1Distance(fine);
@@ -127,11 +127,104 @@ namespace BoSSS.Solution.Statistic {
         }
 
 
+        /// <summary>
+        /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="__fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="__fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="__fields"/>).
+        /// </param>
+        public static void ComputeErrors_L2(IList<IEnumerable<DGField>> __fields,
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
+                return coarse.L2Distance(fine);
+            }
+
+
+            ComputeErrors(DistFunc, __fields, out GridRes, out __DOFs, out Errors);
+        }
+
+        /// <summary>
+        /// Computes L2 norms, ignoring the mean value (useful e.g. for pressure) between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="__fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="__fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="__fields"/>).
+        /// </param>
+        public static void ComputeErrors_L2noMean(IList<IEnumerable<DGField>> __fields,
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
+                return coarse.L2Distance(fine, IgnoreMeanValue:true);
+            }
+
+
+            ComputeErrors(DistFunc, __fields, out GridRes, out __DOFs, out Errors);
+        }
+
+        /// <summary>
+        /// Computes H1 norms between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="__fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the H1 error 
+        /// (for each field specified in <paramref name="__fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="__fields"/>).
+        /// </param>
+        public static void ComputeErrors_H1(IList<IEnumerable<DGField>> __fields,
+          out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            double DistFunc(ConventionalDGField coarse, ConventionalDGField fine) {
+                return coarse.H1Distance(fine);
+            }
+
+
+            ComputeErrors(DistFunc, __fields, out GridRes, out __DOFs, out Errors);
+        }
+
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
           IEnumerable<string> FieldsToCompare, 
           IEnumerable<ITimestepInfo> timestepS,
           out double[] GridRes, 
-          out Dictionary<string, int[]> __DOFs, 
+          out Dictionary<string, long[]> __DOFs, 
           out Dictionary<string, double[]> Errors, 
           out Guid[] timestepIds) {
             using (var tr = new FuncTrace()) {
@@ -175,17 +268,61 @@ namespace BoSSS.Solution.Statistic {
                     }
                 }
 
+                ComputeErrors(distFunc, fields, out GridRes, out __DOFs, out Errors);
+
+            }
+        }
+
+
+        static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
+          IList<IEnumerable<DGField>> __fields, 
+          out double[] GridRes, 
+          out Dictionary<string, long[]> __DOFs, 
+          out Dictionary<string, double[]> Errors) {
+            using (var tr = new FuncTrace()) {
+                
+                if (__fields == null || __fields.Count() <= 2)
+                    throw new ArgumentException("expecting at least solutions on two different meshes.");
+               
+                // load the DG-Fields
+                List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>(__fields); // 1st index: grid / 2nd index: enumeration
+                
+
+                // sort according to grid resolution
+                {
+                    var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
+                    var orgfields = fields.ToArray();
+                    fields.Clear();
+                    fields.AddRange(s);
+                    s = null;
+
+                    // filter equal grids:
+                    while(fields.Count >= 2 
+                        && (fields[fields.Count - 1].First().GridDat.CellPartitioning.TotalLength 
+                        == fields[fields.Count - 2].First().GridDat.CellPartitioning.TotalLength)) {
+                        fields.RemoveAt(fields.Count - 2);
+                    }
+                }
+
+                string[] FieldsToCompare = fields.First().Select(dgf => dgf.Identification).ToArray();
+                foreach(var flds in fields.Skip(1)) {
+                    if(!FieldsToCompare.SetEquals(flds.Select(dgf => dgf.Identification))) {
+                        throw new ArgumentException("DG Field identifications must match on all mesh levels in order to be correlated.");
+                    }
+                }
+
+
                 // grids and resolution
                 GridData[] gDataS = fields.Select(fc => GridHelper.ExtractGridData(fc.First().GridDat)).ToArray();
                 GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
 
                 // compute the errors
                 Errors = new Dictionary<string, double[]>();
-                __DOFs = new Dictionary<string, int[]>();
+                __DOFs = new Dictionary<string, long[]>();
                 foreach (string Identification in FieldsToCompare) {
 
                     double[] L2Error = new double[gDataS.Length - 1];
-                    int[] dof = new int[gDataS.Length - 1];
+                    long[] dof = new long[gDataS.Length - 1];
 
                     for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
                         //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);

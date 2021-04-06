@@ -40,16 +40,34 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// \f]
     /// which is not the case in many other test-cases.
     /// </summary>
-    class ViscosityJumpTest : ITest {
+    class ViscosityJumpTest : IXNSETest {
+
+
+        private int m_SpatialDimension;
+
+        public ViscosityJumpTest(int _SpatialDimension) {
+            m_SpatialDimension = _SpatialDimension;
+        }
+
 
         public int SpatialDimension {
             get {
-                return 2;
+                return m_SpatialDimension;
             }
         }
 
+        /// <summary>
+        /// 45 degree 
+        /// </summary>
         public Func<double[],double,double> GetPhi() {
-            return ((_3D)((time, x, y) => x + y)).Convert_txy2Xt();
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_3D)((time, x, y) => x + y)).Convert_txy2Xt();
+                case 3:
+                    return ((_4D)((time, x, y, z) => x + y + z)).Convert_txyz2Xt();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public int LevelsetPolynomialDegree {
@@ -58,13 +76,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
-        public Func<double[],double,double> GetU(string species, int d) {
-            if (d == 0) {
-                return ((_3D)((t, x, y) => y)).Convert_txy2Xt();
-            } else if (d == 1) {
-                return ((_3D)((t, x, y) => -x)).Convert_txy2Xt();
-            } else {
-                throw new ArgumentOutOfRangeException();
+        public Func<double[], double, double> GetU(string species, int d) {
+            switch (m_SpatialDimension) {
+                case 2:
+                    if (d == 0) {
+                        return ((_3D)((t, x, y) => y)).Convert_txy2Xt();
+                    } else if (d == 1) {
+                        return ((_3D)((t, x, y) => -x)).Convert_txy2Xt();
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                case 3:
+                    if (d == 0) {
+                        return ((_4D)((t, x, y, z) => y)).Convert_txyz2Xt();
+                    } else if (d == 1) {
+                        return ((_4D)((t, x, y, z) => -(x + z))).Convert_txyz2Xt();
+                    } else if (d == 2) {
+                        return ((_4D)((t, x, y, z) => y)).Convert_txyz2Xt();
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
@@ -74,13 +107,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+        /// <summary>
+        /// arranged so that the level-set passes through the corners
+        /// </summary>
         public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)
                 throw new ArgumentException();
 
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 4 * Resolution + 1), GenericBlas.Linspace(-2, 2, 4 * Resolution + 1));
-            //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
-            //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));
+            GridCommons grd;
+            switch (m_SpatialDimension) {
+                case 2:
+                    grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 4 * Resolution + 1), GenericBlas.Linspace(-2, 2, 4 * Resolution + 1));
+                    //var grd = Grid2D.UnstructuredTriangleGrid(GenericBlas.Linspace(-2, 2, 6), GenericBlas.Linspace(-2, 2, 5));
+                    //var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 3), GenericBlas.Linspace(-2, 2, 3));  
+                    break;
+                case 3:
+                    grd = Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, 4 * Resolution + 1), 
+                        GenericBlas.Linspace(-2, 2, 4 * Resolution + 1), GenericBlas.Linspace(-2, 2, 4 * Resolution + 1));
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
 
             grd.EdgeTagNames.Add(1, "Velocity_Inlet");
             grd.DefineEdgeTags(delegate (double[] _X) {
@@ -94,24 +142,58 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
             config.Add("Velocity_Inlet", new AppControl.BoundaryValueCollection());
-            config["Velocity_Inlet"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#A",
-                (X, t) => X[1]);
-            config["Velocity_Inlet"].Evaluators.Add(
-                VariableNames.Velocity_d(1) + "#A",
-                (X, t) => -X[0]);
-            config["Velocity_Inlet"].Evaluators.Add(
-                VariableNames.Velocity_d(0) + "#B",
-                (X, t) => X[1]);
-            config["Velocity_Inlet"].Evaluators.Add(
-                VariableNames.Velocity_d(1) + "#B",
-                (X, t) => -X[0]);
+            switch (m_SpatialDimension) {
+                case 2:
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(0) + "#A",
+                        (X, t) => X[1]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(1) + "#A",
+                        (X, t) => -X[0]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(0) + "#B",
+                        (X, t) => X[1]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(1) + "#B",
+                        (X, t) => -X[0]);
+                    break;
+                case 3:
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(0) + "#A",
+                        (X, t) => X[1]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(1) + "#A",
+                        (X, t) => -(X[0] + X[2]));
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(2) + "#A",
+                        (X, t) => X[1]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(0) + "#B",
+                        (X, t) => X[1]);
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(1) + "#B",
+                        (X, t) => -(X[0] + X[2]));
+                    config["Velocity_Inlet"].Evaluators.Add(
+                        VariableNames.Velocity_d(2) + "#B",
+                        (X, t) => X[1]);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+
+            }
 
             return config;
         }
 
-        public Func<double[],double,double> GetPress(string species) {
-            return ((_3D)((t, x, y) => 0)).Convert_txy2Xt();
+        public Func<double[], double, double> GetPress(string species) {
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_3D)((t, x, y) => 0)).Convert_txy2Xt();
+                case 3:
+                    return ((_4D)((t, x, y, z) => 0)).Convert_txyz2Xt();
+                default:
+                    throw new ArgumentOutOfRangeException();
+        }
         }
 
         /// <summary>
@@ -154,7 +236,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Foundation.ScalarFunction GetS(double time) {
-            return ((_2D)((x, y) => 0)).Vectorize();
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_2D)((x, y) => 0)).Vectorize();
+                case 3:
+                    return ((_3D)((x, y, z) => 0)).Vectorize();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
         public Func<double[],double> GetF(string species, int d) {
@@ -162,9 +251,21 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Foundation.ScalarFunction GetSF(double time, int d) {
-            return ((_2D)((x, y) => 0)).Vectorize();
+            switch (m_SpatialDimension) {
+                case 2:
+                    return ((_2D)((x, y) => 0)).Vectorize();
+                case 3:
+                    return ((_3D)((x, y, z) => 0)).Vectorize();
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
+        
+
+        /// <summary>
+        /// the surface tension force has no effect due to the flat interface 
+        /// </summary>
         public double Sigma {
             get {
                 return 0.0;
@@ -192,15 +293,41 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public double[] AcceptableL2Error {
             get {
-                return new double[] { 5.0e-9, 5.0e-9, 1.0e-7 };
+                switch (m_SpatialDimension) {
+                    case 2:
+                        return new double[] { 5.0e-9, 5.0e-9, 1.0e-7 };
+                    case 3:
+                        return new double[] { 5.0e-9, 5.0e-9, 5.0e-9, 1.0e-7 };
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }             
             }
         }
 
         public double[] AcceptableResidual {
             get {
-                return new double[] { 1.0e-7, 1.0e-7, 1.0e-7 };
+                switch (m_SpatialDimension) {
+                    case 2:
+                        return new double[] { 1.0e-7, 1.0e-7, 1.0e-7 };
+                    case 3:
+                        return new double[] { 1.0e-7, 1.0e-7, 1.0e-7, 1.0e-7 };
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
             }
         }
 
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -25,6 +25,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Foundation.Grid {
+
+    /// <summary>
+    /// Common interface for all kinds of grids/meshes
+    /// </summary>
     public interface IGridData {
 
         /// <summary>
@@ -535,6 +539,12 @@ namespace BoSSS.Foundation.Grid {
         double[] GetCenter(int jCell);
     }
 
+    /// <summary>
+    /// Properties of logical cell; A logical cell can be described as:
+    /// - A logical cell may be composed of one or more geometrical parts.
+    /// - there is always a single set of DG modes for one logical cell.
+    /// - for typical meshes (no aggregation) the relation between logical and geometrical cells is 1:1
+    /// </summary>
     public interface ILogicalCellData {
 
         /// <summary>
@@ -585,15 +595,12 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Which edges (see <see cref="EdgeData.CellIndices"/>) bound to
-        /// which cells? <br/>
-        /// 1st index: local cell index <em>j</em>, only local updated<br/>
-        /// 2nd index: collection, order is arbitrary; <br/>
-        /// content <em>e</em>: 
-        /// If <em>e</em> is positive, then cell <em>j</em> is the first
-        /// (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is
-        /// negative, then cell <em>j</em> is the second (OUT) cell of edge
-        /// <em>-e - 1</em>.
+        /// Which edges (see <see cref="ILogicalEdgeData.CellIndices"/>) bound to which cells? 
+        /// - 1st index: local cell index <em>j</em>, only local updated
+        /// - 2nd index: collection, order is arbitrary; 
+        /// - content <em>e</em>: If <em>e</em> is positive, then cell <em>j</em> is the first
+        ///   (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is
+        ///   negative, then cell <em>j</em> is the second (OUT) cell of edge <em>-e - 1</em>.
         /// </summary>
         /// <remarks>
         /// Note: the second index does NOT correlate with the face index
@@ -616,7 +623,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Returns the volume (to be more exact: the
-        /// <see cref="SpatialDimension"/> - dimensional measure) of the
+        /// <see cref="IGridData.SpatialDimension"/> - dimensional measure) of the
         /// cell <paramref name="j"/>;
         /// </summary>
         /// <param name="j">local cell index</param>
@@ -647,9 +654,15 @@ namespace BoSSS.Foundation.Grid {
         double[] GetCenter(int jCell);
     }
 
+    /// <summary>
+    /// Vertices/Nodes of the mesh
+    /// </summary>
     public interface IVertexData {
 
-
+        /// <summary>
+        /// - 1st index/row index: vertex index 
+        /// - 2nd index: spatial dimension
+        /// </summary>
         MultidimensionalArray Coordinates {
             get;
         }
@@ -969,7 +982,9 @@ namespace BoSSS.Foundation.Grid {
     }
 
 
-
+    /// <summary>
+    /// Common interface for properties required for MPI parallel computation on meshes.
+    /// </summary>
     public interface IParallelization {
 
 
@@ -985,10 +1000,10 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Global indices of external cells (local indices j in the range
-        /// <see cref="ICellData.NoOfLocalUpdatedCells"/> &lt;= j &lt;
-        /// <see cref="ICellData.NoOfCells"/>); Note that there is an index
+        /// <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/> &lt;= j &lt;
+        /// <see cref="ILogicalCellData.Count"/>); Note that there is an index
         /// offset, so the entry at index 0 is the global index of cell at
-        /// local index <see cref="CellData.NoOfLocalUpdatedCells"/>;
+        /// local index <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>;
         /// See also <see cref="GlobalIndicesExternalCells"/>;
         /// </summary>
         long[] GlobalIndicesExternalCells {

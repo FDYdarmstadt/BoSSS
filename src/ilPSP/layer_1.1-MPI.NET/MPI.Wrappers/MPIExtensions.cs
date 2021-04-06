@@ -14,12 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
+//using System.Runtime.Serialization.Formatters.Binary;
 
 namespace MPI.Wrappers {
 
@@ -35,6 +37,52 @@ namespace MPI.Wrappers {
         static public T MPIBroadcast<T>(this T o, int root) {
             return MPIBroadcast(o, root, csMPI.Raw._COMM.WORLD);
         }
+
+        [Serializable]
+        class JsonContainer<T> {
+            public T PayLoad;
+        }
+
+        static JsonSerializer jsonFormatter {
+            get {
+                return new JsonSerializer() {
+                    NullValueHandling = NullValueHandling.Include,
+                    TypeNameHandling = TypeNameHandling.All,
+                    ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
+                    TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                };
+            }
+        }
+
+        static byte[] SerializeObject<T>(T o) {
+            int Size;
+            byte[] buffer;
+            using(var ms = new MemoryStream()) {
+                //_Formatter.Serialize(ms, o);
+                using(var w = new BsonWriter(ms)) {
+                    jsonFormatter.Serialize(w, new JsonContainer<T>() { PayLoad = o });
+                    Size = (int)ms.Position;
+                }
+                buffer = ms.GetBuffer();
+            }
+
+            if(Size <= 0)
+                throw new IOException("Error serializing object for MPI broadcast - size is 0");
+            Array.Resize(ref buffer, Size);
+            return buffer;
+        }
+
+        static T DeserializeObject<T>(byte[] buffer) {
+            using(var ms = new MemoryStream(buffer)) {
+                using(var w = new BsonReader(ms)) {
+                    var containerObj = (JsonContainer<T>)jsonFormatter.Deserialize(w, typeof(JsonContainer<T>));
+                    return containerObj.PayLoad;
+                }
+                
+            }
+        }
+
 
         /// <summary>
         /// broadcasts an object to all other processes in the 
@@ -59,7 +107,8 @@ namespace MPI.Wrappers {
             int MyRank;
             csMPI.Raw.Comm_Rank(comm, out MyRank);
 
-            IFormatter _Formatter = new BinaryFormatter();
+            //IFormatter _Formatter = new BinaryFormatter();
+            
 
             // -----------------------------------------------------
             // 1st phase: serialize object and broadcast object size 
@@ -69,14 +118,8 @@ namespace MPI.Wrappers {
             int Size = -1;
 
             if(root == MyRank) {
-                using(var ms = new MemoryStream()) {
-                    _Formatter.Serialize(ms, o);
-                    Size = (int)ms.Position;
-                    buffer = ms.GetBuffer();
-                }
-                if(Size <= 0)
-                    throw new IOException("Error serializing object for MPI broadcast - size is 0");
-                Array.Resize(ref buffer, Size);
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             }
 
             unsafe {
@@ -98,15 +141,11 @@ namespace MPI.Wrappers {
             }
 
             if(MyRank == root) {
-
                 return o;
             } else {
-                T r;
-                using(var ms = new MemoryStream(buffer)) {
-                    r = (T)_Formatter.Deserialize(ms);
-                    return r;
-                }
+                return DeserializeObject<T>(buffer);
             }
+            
         }
 
         /// <summary>
@@ -141,8 +180,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int MyRank);
             csMPI.Raw.Comm_Size(comm, out int MpiSize);
 
-            IFormatter _Formatter = new BinaryFormatter();
-
+           
             // -----------------------------------------------------
             // 1st phase: serialize object and gather object size 
             // -----------------------------------------------------
@@ -150,15 +188,8 @@ namespace MPI.Wrappers {
             byte[] buffer = null;
             int Size;
             if(root != MyRank) {
-                using(var ms = new MemoryStream()) {
-                    _Formatter.Serialize(ms, o);
-                    Size = (int)ms.Position;
-                    buffer = ms.GetBuffer();
-                }
-                if(Size <= 0)
-                    throw new IOException("Error serializing object for MPI broadcast - size is 0");
-                Array.Resize(ref buffer, Size);
-
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             } else {
                 buffer = new byte[0];
                 Size = 0;
@@ -178,15 +209,21 @@ namespace MPI.Wrappers {
 
             if(MyRank == root) {
                 T[] ret = new T[MpiSize];
-                using(var ms = new MemoryStream(rcvBuffer)) {
-                    for(int r = 0; r < MpiSize; r++) {
-                        if(r == MyRank) {
-                            ret[r] = o;
-                        } else {
-                            ret[r] = (T)_Formatter.Deserialize(ms);
-                        }
+
+                int i0 = 0;
+                for(int r = 0; r < MpiSize; r++) {
+                    int sz = Sizes[r];
+
+                    if(r == MyRank) {
+                        ret[r] = o;
+                    } else {
+                        byte[] subBuffer = new byte[sz];
+                        Array.Copy(rcvBuffer, i0, subBuffer, 0, sz);
+                        ret[r] = DeserializeObject<T>(subBuffer);
                     }
+                    i0 += sz;
                 }
+
                 return ret;
             } else {
                 return null;
@@ -199,7 +236,6 @@ namespace MPI.Wrappers {
         /// Gathers (serializeable) objects <paramref name="o"/> from each rank on all processors.
         /// </summary>
         /// <param name="o"></param>
-        /// <param name="comm"></param>
         /// <returns>
         /// an array of all objects on all ranks
         /// </returns>
@@ -219,7 +255,7 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Rank(comm, out int MyRank);
             csMPI.Raw.Comm_Size(comm, out int MpiSize);
 
-            IFormatter _Formatter = new BinaryFormatter();
+            //IFormatter _Formatter = new BinaryFormatter();
 
             // -----------------------------------------------------
             // 1st phase: serialize object and gather object size 
@@ -229,15 +265,9 @@ namespace MPI.Wrappers {
             int Size;
 
             using(var ms = new MemoryStream()) {
-                _Formatter.Serialize(ms, o);
-                Size = (int)ms.Position;
-                buffer = ms.GetBuffer();
+                buffer = SerializeObject<T>(o);
+                Size = buffer.Length;
             }
-            if(Size <= 0)
-                throw new IOException("Error serializing object for MPI broadcast - size is 0");
-            Array.Resize(ref buffer, Size);
-
-
 
             int[] Sizes = Size.MPIAllGather(comm);
 
@@ -251,8 +281,15 @@ namespace MPI.Wrappers {
             // -----------------------------------------------------
             T[] ret = new T[MpiSize];
             using(var ms = new MemoryStream(rcvBuffer)) {
+                int i0 = 0;
                 for(int r = 0; r < MpiSize; r++) {
-                    ret[r] = (T)_Formatter.Deserialize(ms);
+                    int sz = Sizes[r];
+
+                    byte[] subBuffer = new byte[sz];
+                    Array.Copy(rcvBuffer, i0, subBuffer, 0, sz);
+                    ret[r] = DeserializeObject<T>(subBuffer);
+
+                    i0 += sz;
                 }
             }
             return ret;
@@ -385,6 +422,28 @@ namespace MPI.Wrappers {
                 return glob;
             }
         }
+
+        /// <summary>
+        /// equal to <see cref="MPISum(long,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPISum(this long i) {
+            return MPISum(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the sum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPISum(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MinValue;
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.LONG_LONG_INT, csMPI.Raw._OP.SUM, comm);
+                return glob;
+            }
+        }
+
 
         /// <summary>
         /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the
@@ -862,6 +921,34 @@ namespace MPI.Wrappers {
         }
 
         /// <summary>
+        /// equal to <see cref="MPIMax(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPIMax(this long i) {
+            return MPIMax(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPIMax(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MinValue;
+                csMPI.Raw.Allreduce(
+                    (IntPtr)(&loc),
+                    (IntPtr)(&glob),
+                    1,
+                    csMPI.Raw._DATATYPE.LONG_LONG,
+                    csMPI.Raw._OP.MAX,
+                    comm);
+                return glob;
+            }
+        }
+
+
+        /// <summary>
         /// Gathers single numbers form each MPI rank in an array
         /// </summary>
         static public int[] MPIAllGather(this int i) {
@@ -1068,8 +1155,32 @@ namespace MPI.Wrappers {
         /// <summary>
         /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
+        static public int[] MPIAllGatherv(this int[] send, MPI_Comm comm) {
+            int sz = send.Length;
+            int[] AllSz = sz.MPIAllGather(comm);
+            return MPIAllGatherv(send, AllSz, comm);
+        }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public int[] MPIAllGatherv(this int[] send) {
+            return MPIAllGatherv(send, csMPI.Raw._COMM.WORLD);
+        }
+
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
         static public int[] MPIAllGatherv(this int[] send, int[] recvcounts) {
             return send.Int_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public int[] MPIAllGatherv(this int[] send, int[] recvcounts, MPI_Comm comm) {
+            return send.Int_MPIAllGatherv(recvcounts, comm);
         }
 
         /// <summary>
@@ -1152,7 +1263,7 @@ namespace MPI.Wrappers {
 
             return result;
         }
-
+        
 
         /// <summary>
         /// Gathers all ulong[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
@@ -1195,6 +1306,50 @@ namespace MPI.Wrappers {
                 }
             }
 
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Gathers all long[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public long[] MPIAllGatherv(this long[] send, int[] recvcounts) {
+            return send.Long_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static private long[] Long_MPIAllGatherv(this long[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            int rcs = m_recvcounts.Sum();
+            if (rcs == 0)
+                return new long[0];
+
+            long[] result = new long[rcs];
+
+            if (send.Length == 0)
+                send = new long[1];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed (long* pResult = result, pSend = send) {
+                    fixed (int* pRcvcounts = m_recvcounts) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            comm);
+                    }
+                }
+            }
             
             return result;
         }
@@ -1275,6 +1430,7 @@ namespace MPI.Wrappers {
                 root: 0,
                 comm: csMPI.Raw._COMM.WORLD);
         }
+
         /// <summary>
         /// MPI-process with rank <paramref name="root"/> gathers this ulong[] of all MPI-processes in the
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
@@ -1324,6 +1480,73 @@ namespace MPI.Wrappers {
 
             return result;
         }
+
+        /// <summary>
+        /// MPI-process with rank 0 gathers this ulong[] of all MPI-processes in the
+        /// </summary>
+        /// <param name="recvcount">
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount) {
+            return send.MPIGatherv(
+                recvcount,
+                root: 0,
+                comm: csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// MPI-process with rank <paramref name="root"/> gathers this ulong[] of all MPI-processes in the
+        /// <paramref name="comm"/>-communicator with variable length. The length of the gathered long[] is specified by <paramref name="recvcount"/>
+        /// </summary>
+        /// <param name="recvcount">
+        /// number of items to receive from each sender
+        /// </param>
+        /// <param name="send">
+        /// data to send
+        /// </param>
+        /// <param name="comm"></param>
+        /// <param name="root">rank of receiver process</param>
+        static public long[] MPIGatherv(this long[] send, int[] recvcount, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            int rcs = rank == root ? recvcount.Sum() : 0;
+            long[] result = rank == root ? new long[Math.Max(1, rcs)] : null;
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                if(rank == root)
+                    for (int i = 1; i < size; i++) {
+                        displs[i] = displs[i - 1] + recvcount[i - 1];
+                    }
+                //LONG_LONG for long of 64 bits in size
+                fixed (long* pSend = send, pResult = result) {
+                    fixed (int* pRcvcounts = recvcount) {
+                        csMPI.Raw.Gatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.LONG_LONG,
+                            root,
+                            comm);
+                    }
+                }
+            }
+
+            if (result != null && result.Length > rcs) {
+                Debug.Assert(rcs == 0);
+                result = new long[0];
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// Wrapper around <see cref="IMPIdriver.Gatherv"/>

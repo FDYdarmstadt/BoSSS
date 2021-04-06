@@ -51,19 +51,19 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI();
+            InitMPI();
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t02(TimeSteppingScheme.RK1, 8, 0.0d);
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestBurgers_HighOrder(0, 0.08d, "bdf", 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_Splitting_LowOrder_RK_t023(TimeSteppingScheme.RK_IMEX3, 8, 0.0d);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_RK_dt023(TimeSteppingScheme.RK_IMEX3, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(TimeSteppingScheme.BDF2, 8);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
-            //throw new ApplicationException("fuck you");
-            //return;
+            //throw new ApplicationException("deactivate me");
+            return;
 
-            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
-                return new XdgTimesteppingMain();
-            });
+            //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
+            //    return new XdgTimesteppingMain();
+            //});
         }
 #pragma warning disable 649
 
@@ -170,8 +170,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             */
         }
 
-        protected override void SetInitial() {
-            base.SetInitial();
+        protected override void SetInitial(double t) {
+            base.SetInitial(t);
             
             this.CreateEquationsAndSolvers(null);
 
@@ -183,7 +183,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 if (base.Timestepping.m_RK_Timestepper != null)
                     throw new NotSupportedException();
                 
-                base.Timestepping.m_BDF_Timestepper.MultiInit(0.0, 0, this.Control.GetFixedTimestep(),
+                base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
                     delegate (int TimestepIndex, double Time, DGField[] St) {
 
                         Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
@@ -311,6 +311,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -327,6 +328,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -339,6 +341,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
+                Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
@@ -462,9 +465,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Console.WriteLine("L2-err at t = {0}, Jump:      {1}", PhysTime, JmpL2Err);
 
             double uA_min, uA_max, uB_min, uB_max;
-            int dummy1, dummy2;
-            uNum_A.GetExtremalValues(out uA_min, out uA_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("A"));
-            uNum_B.GetExtremalValues(out uB_min, out uB_max, out dummy1, out dummy2, this.LsTrk.Regions.GetSpeciesMask("B"));
+            uNum_A.GetExtremalValues(out uA_min, out uA_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("A"));
+            uNum_B.GetExtremalValues(out uB_min, out uB_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("B"));
 
             base.QueryHandler.ValueQuery("uA_Min", uA_min);
             base.QueryHandler.ValueQuery("uA_Max", uA_max);

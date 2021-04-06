@@ -40,7 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     ///with the addition of an isotropic viscosity term \epsilon
     ///\div ((\epsilon I + \nabla \phi \otimes \nabla \phi ) \cdot \nabla u ) = 0
     /// </summary>
-    public abstract class EllipticExtVelForm : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IObserver<LevelSetTracker.LevelSetRegions>{
+    public abstract class EllipticExtVelForm : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IObserver<LevelSetTracker.LevelSetRegions> {
         /// <summary>
         /// CTOR
         /// </summary>
@@ -183,7 +183,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         protected LevelSetTracker LSTrck;
 
         /// <summary>
-        /// <see cref="swipViscosity_Term1"/>
+        /// <see cref="SipViscosity_GradU"/>
         /// </summary>
         /// <param name="inp">
         /// </param>
@@ -271,7 +271,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         }
 
         /// <summary>
-        /// <see cref="swipViscosity_Term1"/>
+        /// <see cref="SipViscosity_GradU"/>
         /// </summary>
         /// <param name="inp">
         /// </param>
@@ -384,7 +384,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         }
 
         /// <summary>
-        /// <see cref="swipViscosity_Term1"/>
+        /// <see cref="SipViscosity_GradU"/>
         /// </summary>
         /// <param name="inp">
         /// </param>
@@ -614,7 +614,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
         }
 
         /// <summary>
-        /// <see cref="swipViscosity_Term1"/>
+        /// <see cref="SipViscosity_GradU"/>
         ///Direction Selector:
         /// in Cut-Cells: Central Differences
         /// from Cut-Cells into Non-Cut-Cells: Upwinding away from Cut-cell

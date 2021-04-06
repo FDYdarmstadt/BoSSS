@@ -132,6 +132,7 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_D = D;
 
             this.m_spcId = spcId;
+            ValidSpecies = spcName;
             //this.ksqrt = Math.Sqrt(_k);
 
             fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
@@ -481,12 +482,12 @@ namespace BoSSS.Solution.XheatCommon {
         /// </summary>
         protected ThermalBcType[] EdgeTag2Type;
 
-        /// <summary>
-        /// Dirichlet boundary values; <br/>
-        ///  - 1st index: spatial dimension <br/>
-        ///  - 2nd index: edge tag
-        /// </summary>
-        //protected Func<double[], double, double>[][] fluxFunction;
+        ///// <summary>
+        ///// Dirichlet boundary values; <br/>
+        /////  - 1st index: spatial dimension <br/>
+        /////  - 2nd index: edge tag
+        ///// </summary>
+        ////protected Func<double[], double, double>[][] fluxFunction;
 
         /// <summary>
         /// Dirichlet boundary values; <br/>

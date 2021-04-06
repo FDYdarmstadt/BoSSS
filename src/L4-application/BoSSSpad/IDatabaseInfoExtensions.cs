@@ -97,6 +97,11 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="database"></param>
         /// <param name="grd"></param>
+        /// <param name="force">
+        /// - false (default): Only store the grid, if no equivalent grid is in the database
+        /// - true: store always
+        /// </param>
+
         /// <returns></returns>
         public static Guid SaveGrid<TG>(this IDatabaseInfo database, ref TG grd, bool force = false) where TG : IGrid //
         {
@@ -119,11 +124,23 @@ namespace BoSSS.Foundation.IO {
 
 
         /// <summary>
-        /// Stores a grid in the database.
+        /// Stores a grid in the database; see also <see cref="IDatabaseDriver.SaveGridIfUnique"/>, 
+        /// - Per default, (<paramref name="force"/> = false) the database is first checked for any equivalent grid, and if there is one, this is returned. 
+        /// - This behavior can be overridden by stetting <paramref name="force"/> to false; then, the grid <paramref name="grd"/> is stored under all circumstances, i.e. without equality check.
         /// </summary>
-        /// <param name="database"></param>
-        /// <param name="grd"></param>
-        /// <returns></returns>
+        /// <param name="database">
+        /// database where the grid should be saved
+        /// </param>
+        /// <param name="grd">
+        /// the grid to be saved
+        /// </param>
+        /// <param name="force">
+        /// if true, no search for equivalent grids is performed
+        /// </param>
+        /// <returns>
+        /// - the input value <paramref name="grd"/> (reference equality), if the grid is unique for the database <paramref name="database"/> or if <paramref name="force"/> is true
+        /// - if an equivalent grid is identified (and <paramref name="force"/> is false), this equivalent grid object
+        /// </returns>
         public static IGrid SaveGrid(this IDatabaseInfo database, IGrid grd, bool force = false) {
             bool found;
             IGrid grid = grd;
@@ -144,8 +161,6 @@ namespace BoSSS.Foundation.IO {
         /// Save a list of DG fields (all defined on the same grid) into the database.
         /// </summary>
         /// <param name="database"></param>
-        /// <param name="projectName"></param>
-        /// <param name="sessionName"></param>
         /// <param name="fields"></param>
         /// <returns></returns>
         public static ITimestepInfo SaveTimestep(this IDatabaseInfo database, params DGField[] fields) {

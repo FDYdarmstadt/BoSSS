@@ -139,7 +139,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 AggCellMMb4Ortho.Clear();
                                 for(int k = 0; k < K; k++) { // loop over the base cells in the aggregate cell
                                     if(sim[iSpc_agg, k] >= 0) {
-                                        var ExPolMtx = base.CompositeBasis[jagg].ExtractSubArrayShallow(k, -1, -1);
+                                        
+                                        var ExPolMtx = base.GetCompositeBasis(jagg).ExtractSubArrayShallow(k, -1, -1);
                                         AggCellMMb4Ortho.Multiply(1.0, ExPolMtx, ExPolMtx, 1.0, "lm", "im", "il");
                                     }
                                 }
@@ -194,6 +195,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int JAGG = compCells.Length;
             Debug.Assert(JAGG == agg.iLogicalCells.Count);
             int JAGGup = agg.iLogicalCells.NoOfLocalUpdatedCells;
+            var Regions = LsTrk.Regions;
 
             this.UsedSpecies = Agglomerator.SpeciesList.ToArray();
 
@@ -237,14 +239,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // check no of species:
                 int MaxNoOfSpecies = 0; // number of species in the composite cell
+                bool AnyUnusedSpecies = false;
                 for(int k = 0; k < K; k++) { // loop over original cells in composite cell
                     int jCell = compCell[k];
-                    _NoOfSpecies[k] = LsTrk.Regions.GetNoOfSpecies(jCell, out _RRcs[k]);
-                    MaxNoOfSpecies = Math.Max(_NoOfSpecies[k], MaxNoOfSpecies);
+                    int NoOfSpecies_k = Regions.GetNoOfSpecies(jCell, out _RRcs[k]);
+                    MaxNoOfSpecies = Math.Max(NoOfSpecies_k, MaxNoOfSpecies);
+                    _NoOfSpecies[k] = NoOfSpecies_k;
+
+                    if(MaxNoOfSpecies <= 1 && AnyUnusedSpecies == false) {
+                        for(int iSpc = 0; iSpc < NoOfSpecies_k; iSpc++) {
+                            var Spc = Regions.GetSpeciesIdFromIndex(jCell, iSpc);
+                            int b = Array.IndexOf(this.UsedSpecies, Spc);
+                            if(b < 0) {
+                                AnyUnusedSpecies = true;
+                            }
+                        }
+                    }
 
                 }
                 
-                if(MaxNoOfSpecies == 1) {
+                if(MaxNoOfSpecies == 1 && AnyUnusedSpecies == false) {
                     // only one species -- use single-phase implementation in underlying class
 
                     this.SpeciesIndexMapping[jagg] = null;
@@ -271,7 +285,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for(int iSpc = _NoOfSpecies[k] - 1; iSpc >= 0; iSpc--) {
                             SpeciesId spId = LsTrk.GetSpeciesIdFromIndex(rrc, iSpc);
-                            bool isPresent = LsTrk.Regions.IsSpeciesPresentInCell(spId, jCell);
+                            bool isPresent = Regions.IsSpeciesPresentInCell(spId, jCell);
                             bool isAgglomerated = agglomeratedCells.ContainsKey(spId) ? agglomeratedCells[spId][jCell] : false;
                             bool isUsed = Array.IndexOf(this.UsedSpecies, spId) >= 0;
 
@@ -336,8 +350,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
-
-       
 
         /// <summary>
         /// Mapping from species indices in composite/aggregate cells to species index in base grid.
@@ -615,6 +627,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         public override int GetMaximalLength(int p) {
+            if (XDGBasis.Tracker.TotalNoOfSpecies == 0)
+                throw new Exception("0 SPecies");
             return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetMaximalLength(p);
         }
 
@@ -643,7 +657,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
           
-            int mgMap_Offset = mgMap.Partitioning.i0;
+            long mgMap_Offset = mgMap.Partitioning.i0;
 
             for(int jAgg = 0; jAgg < JAGG; jAgg++) {
                 int[] AgCell = this.AggGrid.iLogicalCells.AggregateCellToParts[jAgg];
@@ -657,7 +671,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int NCOL = N_full;
                         Debug.Assert(mgMap.AggBasis[iF].GetLength(jAgg, degrees[iF]) == N_rest * NoSpc_Agg);
                         int i0Agg_Loc = mgMap.LocalUniqueIndex(iF, jAgg, N_rest * iSpc_Agg);
-                        int i0Agg = i0Agg_Loc + mgMap_Offset;
+                        long i0Agg = i0Agg_Loc + mgMap_Offset;
                         Debug.Assert(i0Agg >= mgMap.Partitioning.i0);
                         Debug.Assert(i0Agg < mgMap.Partitioning.iE);
                         
@@ -674,7 +688,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             
                             for(int k = 0; k < K; k++) { // loop over the cells which form the aggregated cell...
                                 int jCell = AgCell[k];
-                                int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
+                                long i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, 0);
                                 var Block = Trf.ExtractSubArrayShallow(k, -1, -1);
 
 
@@ -704,7 +718,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     //for(int n = 0; n < N; n++)
                                     //    FulCoords[k, n] = 0;
                                 } else {
-                                    int i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, iSpcBase * N_full);
+                                    long i0Full = mgMap.ProblemMapping.GlobalUniqueCoordinateIndex(iF, jCell, iSpcBase * N_full);
                                     var Block = Trf.ExtractSubArrayShallow(k, -1, -1);
 
                                     for(int nRow = 0; nRow < NROW; nRow++) {

@@ -28,6 +28,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation;
 using ilPSP.Utils;
+using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -122,7 +123,10 @@ namespace BoSSS.Application.BoSSSpad {
             Console.Clear();
         }
 
-        private static WorkflowMgm m_WorkflowMgm;
+        private static WorkflowMgm m_WorkflowMgm {
+            get { return BoSSSshell.WorkflowMgm; }
+            set { BoSSSshell.m_WorkflowMgm = value; }
+        }
 
         /// <summary>
         /// Link to the workflow-management facility
@@ -239,7 +243,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// All the databases; the workflow-management (see <see cref="WorkflowMgm"/>) must have access to those.
         /// </summary>
-        public static IList<IDatabaseInfo> databases;
+        public static IList<IDatabaseInfo> databases {
+            get { return BoSSSshell.databases; }
+            set { BoSSSshell.databases = value; }
+        }
 
         /// <summary>
         /// Sessions in all Databases
@@ -317,11 +324,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            foreach(var existing_dbi in InteractiveShell.databases) {
-                if(existing_dbi.PathMatch(dbDir)) {
+            return OpenOrCreateDatabase_Impl(dbDir, true);
+        }
+
+        /// <summary>
+        /// Opens an existing database at a specific path
+        /// </summary>
+        static public IDatabaseInfo OpenDatabase(string dbDir) {
+            return OpenOrCreateDatabase_Impl(dbDir, false);
+        }
+
+        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in InteractiveShell.databases) {
+                if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
+        
             
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
@@ -329,8 +348,12 @@ namespace BoSSS.Application.BoSSSpad {
                 }
                 Console.WriteLine("Opening existing database '" + dbDir + "'.");
             } else {
-                DatabaseUtils.CreateDatabase(dbDir);
-                Console.WriteLine("Creating database '" + dbDir + "'.");
+                if (allowCreation) {
+                    DatabaseUtils.CreateDatabase(dbDir);
+                    Console.WriteLine("Creating database '" + dbDir + "'.");
+                } else {
+                    throw new ArgumentException("Database Directory '" + dbDir + "' does not exist.");
+                }
             }
 
             var dbi = DatabaseInfo.Open(dbDir);
@@ -429,9 +452,20 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// <see cref="GridImporter.Import(string)"/>
+        /// </summary>
+        public static GridCommons ImportGrid(string fileName) {
+            GridCommons r = GridImporter.Import(fileName);
+
+            return r;
+        }
+
+
+
+        /// <summary>
         /// Simple plotting interface
         /// </summary>
-        /// <returns>Output of <see cref="GnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        /// <returns>Output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/></returns>
         static public object Plot(IEnumerable<double> X1, IEnumerable<double> Y1, string Name1 = null, string Format1 = null,
             IEnumerable<double> X2 = null, IEnumerable<double> Y2 = null, string Name2 = null, string Format2 = null,
             IEnumerable<double> X3 = null, IEnumerable<double> Y3 = null, string Name3 = null, string Format3 = null,
@@ -442,7 +476,7 @@ namespace BoSSS.Application.BoSSSpad {
             bool logX = false, bool logY = false) {
 
             using (var gp = new Gnuplot()) {
-
+                
 
                 IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
                 IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };
@@ -641,7 +675,7 @@ namespace BoSSS.Application.BoSSSpad {
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
-
+               
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
@@ -650,6 +684,9 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
+            foreach (var q in bpc.AllQueues)
+                _ = q.AllowedDatabases;
+
         }
 
 
@@ -669,7 +706,10 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        static List<BatchProcessorClient> executionQueues = null;
+        static List<BatchProcessorClient> executionQueues {
+            get { return BoSSSshell.executionQueues; }
+            set { BoSSSshell.executionQueues = value; }
+        }
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.

@@ -1,0 +1,266 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Opening existing database '\\dc1\scratch\kummer\bosss_db'.
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 1; Grid Count = 1; Path = P:\bosss_db2 }
+  1: { Session Count = 65; Grid Count = 5; Path = \\dc1\scratch\kummer\bosss_db }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+WorkflowMgm.Init("ConfinedCylinder_ConvergenceStudy_04nov20");
+**************
+Project name is set to 'ConfinedCylinder_ConvergenceStudy_04nov20'.
+
+==============
+//###################
+//Plot for Velocity  
+//###################
+**************
+==============
+var ExpPlotS_velX = new List<Plot2Ddata>();
+int[] pOrder = new int[] {1, 2, 3, 4};
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:VelocityX"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
+
+    // now , create a plot from the selected sessions :
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("VelocityX", 
+      xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);
+    Plot2Ddata pDegPlot_Y = pDegSessions.ToEstimatedGridConvergenceData("VelocityY", 
+      xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);
+    
+    // Combine VelocityX and VelocityX-plot
+    int N = 3;
+    if(pDegPlot.dataGroups[0].Values.Length != N)
+        throw new Exception();
+    if(pDegPlot_Y.dataGroups[0].Values.Length != N)
+        throw new Exception();
+    
+    for(int n = 0; n < N; n++) {
+        double vx = pDegPlot.dataGroups[0].Values[n];
+        double vy = pDegPlot_Y.dataGroups[0].Values[n];
+        pDegPlot.dataGroups[0].Values[n] = Math.Sqrt(vx*vx + vy*vy);
+    }  
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_velX.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_velX[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_velX[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_velX[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_velX[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_velX[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_velX[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_velX[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_velX[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_velX ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+**************
+==============
+var ExpPlot_velX = ExpPlotS_velX[0]; // select 0-th object
+foreach (var p in ExpPlotS_velX.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_velX = ExpPlot_velX.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_velX.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -2.19731784201047]
+  1: [$k = 2$, -2.57588540977907]
+  2: [$k = 3$, -3.64341209336333]
+  3: [$k = 4$, -4.91833651883904]
+}
+==============
+var velX = ExpPlot_velX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+velX.SaveTo(@"vel_Convergence.tex");
+ExpPlot_velX.PlotNow();
+
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for Pressure   //
+//####################//
+**************
+==============
+var ExpPlotS_pres = new List<Plot2Ddata>();
+int[] pOrder2 = new int[] {0, 1, 2, 3};
+**************
+==============
+foreach (int p in pOrder2){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:Pressure"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("Pressure",
+      xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2noMean_approximate);
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_pres.Add(pDegPlot);
+}
+**************
+==============
+ExpPlotS_pres[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_pres[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_pres[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_pres[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_pres[0].dataGroups[0].Name = "$k = 0$";
+ExpPlotS_pres[1].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_pres[2].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_pres[3].dataGroups[0].Name = "$k = 3$";
+foreach (var p in ExpPlotS_pres ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_pres = ExpPlotS_pres[0]; // select 0-th object
+foreach (var p in ExpPlotS_pres.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_pres = ExpPlot_pres.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_pres.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 0$, -1.75712964310222]
+  1: [$k = 1$, -2.26823681806091]
+  2: [$k = 2$, -2.78847564847977]
+  3: [$k = 3$, -4.1669176009307]
+}
+==============
+var pres = ExpPlot_pres.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+pres.SaveTo(@"pres_Convergence.tex");
+ExpPlot_pres.PlotNow();
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+//####################//
+//Plot for Stress
+//####################//
+**************
+==============
+var ExpPlotS_strXX = new List<Plot2Ddata>();
+**************
+==============
+foreach (int p in pOrder){ // loop over polynomial degrees
+    // extract sessions with DG degree pDeg
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+    // function which is true on all sessions we are interested in:
+    Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:StressXX"]) == p 
+                           && Convert.ToDouble(Si.KeysAndQueries["Weissenberg"]) == 0.2
+                           && Si.SuccessfulTermination).ToArray();
+
+    // now , create a plot from the selected sessions :
+    // (we could also do other things )
+
+    Plot2Ddata pDegPlot = pDegSessions.ToEstimatedGridConvergenceData("StressXX", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);
+    Plot2Ddata pDegPlot_XY = pDegSessions.ToEstimatedGridConvergenceData("StressXY", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);
+    Plot2Ddata pDegPlot_YY = pDegSessions.ToEstimatedGridConvergenceData("StressYY", xAxis_Is_hOrDof:false, // false selects DOFs for x- axis
+      normType:NormType.L2_approximate);
+      
+    // Combine XX-, XY- and YY-Stress-plot
+    int N = 3;
+    if(pDegPlot.dataGroups[0].Values.Length != N)
+        throw new Exception();
+    if(pDegPlot_XY.dataGroups[0].Values.Length != N)
+        throw new Exception();
+    if(pDegPlot_YY.dataGroups[0].Values.Length != N)
+        throw new Exception();    
+    for(int n = 0; n < N; n++) {
+        double sxx = pDegPlot.dataGroups[0].Values[n];
+        double sxy = pDegPlot_XY.dataGroups[0].Values[n];
+        double syy = pDegPlot_YY.dataGroups[0].Values[n];
+        pDegPlot.dataGroups[0].Values[n] = Math.Sqrt(sxx*sxx + sxy*sxy + syy*syy);
+    }    
+
+    // remember the freshly created plot object in a list :
+    ExpPlotS_strXX.Add(pDegPlot);
+}
+**************
+==============
+//ExpPlotS_strXX
+**************
+==============
+ExpPlotS_strXX[0].dataGroups[0].Format.PointType = PointTypes.Diamond ;
+ExpPlotS_strXX[1].dataGroups[0].Format.PointType = PointTypes.Box;
+ExpPlotS_strXX[2].dataGroups[0].Format.PointType = PointTypes.LowerTriangle ;
+ExpPlotS_strXX[3].dataGroups[0].Format.PointType = PointTypes.Asterisk ;
+ExpPlotS_strXX[0].dataGroups[0].Name = "$k = 1$";
+ExpPlotS_strXX[1].dataGroups[0].Name = "$k = 2$";
+ExpPlotS_strXX[2].dataGroups[0].Name = "$k = 3$";
+ExpPlotS_strXX[3].dataGroups[0].Name = "$k = 4$";
+foreach (var p in ExpPlotS_strXX ){
+  p.dataGroups[0].Format.PointSize = 0.8;
+  p.dataGroups[0].Format.DashType = DashTypes.Dotted ;
+  p.dataGroups[0].Format.LineWidth = 2;
+}
+**************
+==============
+var ExpPlot_strXX = ExpPlotS_strXX[0]; // select 0-th object
+foreach (var p in ExpPlotS_strXX.Skip (1)) { // loop over other ( skip 0-th entry )
+  ExpPlot_strXX = ExpPlot_strXX.Merge(p); // merge
+}
+**************
+==============
+ExpPlot_strXX.Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, -1.27539082967699]
+  1: [$k = 2$, -1.87072955497142]
+  2: [$k = 3$, -2.84168477428932]
+  3: [$k = 4$, -4.44112631339917]
+}
+==============
+var strXX = ExpPlot_strXX.ToGnuplot().PlotCairolatex(xSize:14,ySize:12);
+strXX.SaveTo(@"str_Convergence.tex");
+ExpPlot_strXX.PlotNow();
+**************
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+Using gnuplot: C:\Program Files\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"Left reverse 
+System.Drawing.Bitmap
+==============
+**************
+==============

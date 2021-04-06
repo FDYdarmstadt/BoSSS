@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         
         public LECEdgeQuadrature2(SpatialOperator op) {
             Operator = op;
+
             m_Edgeform_UxV = EquationComponentArgMapping<IEdgeForm_UxV>.GetArgMapping(op, true,
                 eq => ((eq.BoundaryEdgeTerms & TermActivationFlags.UxV) != 0) || ((eq.InnerEdgeTerms & TermActivationFlags.UxV) != 0),
                 eq => (eq is IEdgeForm) ? new LinearEdgeFormVectorizer((IEdgeForm)eq) : null);
@@ -90,6 +91,23 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         Stopwatch[][] m_EdgeSourceV_Watches;
         Stopwatch[][] m_EdgeSourceGradV_Watches;
 
+        
+
+
+        /// <summary>
+        /// true, if this integrator is responsible for any component
+        /// </summary>
+        bool IsNonEmpty {
+            get {
+                return m_Edgeform_UxV.IsNonEmpty() || 
+                    m_Edgeform_GradUxV.IsNonEmpty() || 
+                    m_Edgeform_UxGradV.IsNonEmpty() || 
+                    m_Edgeform_GradUxGradV.IsNonEmpty() || 
+                    m_EdgeSourceV.IsNonEmpty() || 
+                    m_EdgeSourceGradV.IsNonEmpty() ;
+            }
+        }
+
         /// <summary>
         /// Execution of quadrature
         /// </summary>
@@ -109,11 +127,12 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         public void Execute(ICompositeQuadRule<QuadRule> domNrule,
             UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
             M Matrix, V AffineVector, double time) {
-
             if (RowMap.BasisS.Count != GAMMA)
                 throw new ArgumentException("Mismatch in number of codomain (rew. row-variables, resp. test-variables) variables.", "RowMap");
             if (ColMap.BasisS.Count != DELTA)
                 throw new ArgumentException("Mismatch in number of domain (rew. column-variables, resp. trial-variables) variables.", "ColMap");
+            if(this.IsNonEmpty == false)
+                return;
 
             m_GridDat = RowMap.GridDat;
 
@@ -748,11 +767,13 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 
                                                 // test function gradient ( \/V ) transform:
                                                 if(AffineEdge) {
+                                                    // linear edge
                                                     m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, invJacobi, m_UxGradVSumBuffer[gamma, delta, cr, cc], 0.0, ref mp_ika_Tiad_ikd,
                                                         pEdge2Cell, pEdge2Cell,
                                                         trfPreOffset_A: (2 * i0 + cr), trfCycle_A: 2, trfPostOffset_A: 0, trfPreOffset_B: 0, trfCycle_B: 0, trfPostOffset_B: 0);
 
                                                 } else {
+                                                    // curved edge
                                                     m_Trf_UxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, invJacobi_V, m_UxGradVSumBuffer[gamma, delta, cr, cc], 0.0, ref mp_ika_ikad_ikd);
                                                 }
 
@@ -806,8 +827,6 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                                                 if(!AffineEdge)
                                                     m_Trf_GradUxGradVSumBuffer[gamma, delta, cr, cc].Multiply(1.0, sqrtGram, m_Trf_GradUxGradVSumBuffer[gamma, delta, cr, cc], 0.0, "ikde", "ik", "ikde");
                                             }
-
-
                                         }
                                     }
                                 }
@@ -1393,10 +1412,9 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                         for (int cc = 0; cc < CC; cc++) {
                             int jCell_cc = Edge2Cell[jEdge, cc];
 
-                            int _i0 = this.m_RowMap.i0, _iE = this.m_RowMap.iE;
-                            int M_i0 = m_Matrix.RowPartitioning.i0, m_iE = m_Matrix.RowPartitioning.iE;
-                            int m0 = (int)this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell_cr, 0);
-                            int n0 = (int)this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell_cc, 0);
+
+                            long m0 = this.m_RowMap.GlobalUniqueCoordinateIndex(0, jCell_cr, 0);
+                            long n0 = this.m_ColMap.GlobalUniqueCoordinateIndex(0, jCell_cc, 0);
 
 
                             Debug.Assert(ResultsOfIntegration.GetLength(3) == M);
@@ -1417,7 +1435,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
                     // Affine offset part
                     if (bAffineRequired && jCell_cr < Jup) {
-                        int m0 = (int)this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell_cr, 0);
+                        int m0 = this.m_RowMap.LocalUniqueCoordinateIndex(0, jCell_cr, 0);
 
                         
                         var BlockRes = ResultsOfIntegration.ExtractSubArrayShallow(

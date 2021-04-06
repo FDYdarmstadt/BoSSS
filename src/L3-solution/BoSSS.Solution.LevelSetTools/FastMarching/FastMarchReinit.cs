@@ -30,6 +30,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using ilPSP;
+using MPI.Wrappers;
 using BoSSS.Solution.Timestepping;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -47,8 +48,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             LevelSetBasis = __LevelSetBasis;
             LevelSetMapping = new UnsetteledCoordinateMapping(__LevelSetBasis);
 
-            lsEllipt = new LocalSolver_Elliptic(__LevelSetBasis);
-            lsGeom = new LocalSolver_Geometric(__LevelSetBasis);
+            //lsEllipt = new LocalSolver_Elliptic(__LevelSetBasis);
+            //lsGeom = new LocalSolver_Geometric(__LevelSetBasis);
             gradModule = new GradientModule();
 
             //This plotter can plot each single update of the resp. field. 
@@ -130,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             //GradPhi.Gradient(1, Phi, NEAr.VolumeMask);
         }
 
-        public void AvgInit(SinglePhaseField Phi, CellMask _Accepted) {
+        public void AvgInit(SinglePhaseField Phi, BitArray _Accepted) { //CellMask _Accepted) {
             int J = this.GridDat.Cells.Count;
             double[] PhiAvg;
             if (m_PhiAvg == null) {
@@ -140,10 +141,26 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 PhiAvg = m_PhiAvg;
             }
 
-            foreach (int jCell in _Accepted.ItemEnum)
-                PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+            //foreach (int jCell in _Accepted)
+            //    PhiAvg[jCell] = Phi.GetMeanValue(jCell);
+
+            for (int j = 0; j < J; j++) {
+                if (_Accepted[j])
+                    PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
         }
 
+
+        public void UpdateAvg(SinglePhaseField Phi, BitArray _UpdateRegion) {
+
+            int J = this.GridDat.Cells.Count;
+            for (int j = 0; j < J; j++) {
+                if (_UpdateRegion[j])
+                    m_PhiAvg[j] = Phi.GetMeanValue(j);
+            }
+
+        }
 
 
         /// <summary>
@@ -186,6 +203,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 BitArray Trial_Mutuable = ((_Accepted.AllNeighbourCells().Intersect(ReInitSpecies)).Except(_Accepted)).GetBitMask().CloneAs();
                 BitArray Recalc_Mutuable = Trial_Mutuable.CloneAs();
                 BitArray PosSpecies_Bitmask = ReInitSpecies.GetBitMask();
+         
 
                 int J = this.GridDat.Cells.Count;
                 int D = this.GridDat.SpatialDimension;
@@ -232,8 +250,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 int cnt = 0;
                 while (true) {
                     cnt++;
-
-
 
                     CellMask Recalc = new CellMask(this.GridDat, Recalc_Mutuable);
                     CellMask Accepted = new CellMask(this.GridDat, Acceped_Mutuable);
@@ -395,7 +411,6 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 // check args and init
                 // ===================
 
-
                 //ExtVelSolver extVelSlv = null;
                 ExtVelSolver_Geometric extVelSlv = null;
                 if (ExtProperty != null) {
@@ -404,16 +419,16 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     if (ExtProperty.Length != ExtPropertyMax.Length)
                         throw new ArgumentException();
 
-
                     //extVelSlv = new ExtVelSolver(ExtProperty[0].Basis);
                     extVelSlv = new ExtVelSolver_Geometric(ExtProperty[0].Basis);
                 }
 
-                BitArray Accepted_Mutuable = cut.GetBitMask().CloneAs();
 
-                int J = this.GridDat.Cells.Count;
-                int D = this.GridDat.SpatialDimension;
-                int N = this.LevelSetBasis.Length;
+                BitArray Accepted_Mutuable = cut.GetBitMaskWithExternal().CloneAs();
+
+                //int J = this.GridDat.Cells.Count;
+                //int D = this.GridDat.SpatialDimension;
+                //int N = this.LevelSetBasis.Length;
 
                 int[] DomainCellIndices = Domain.ItemEnum.ToArray();
                 double[] PhiAvg = new double[DomainCellIndices.Length];
@@ -427,9 +442,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                     Array.Sort(PhiAvg, DomainCellIndices);
                 }
 
-                if (this.GridDat.MpiSize > 1)
-                    throw new NotSupportedException("Currently not MPI parallel.");
-
+                //if (this.GridDat.MpiSize > 1)
+                //    throw new NotSupportedException("Currently not MPI parallel.");
 
                 int[] PosDomain, NegDomain;
                 {
@@ -458,6 +472,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 // perform marching...
                 // ===================
 
+
                 // marching loop..
                 for (int iMinusPlus = -1; iMinusPlus <= 1; iMinusPlus += 2) {
                     double _sign = iMinusPlus;
@@ -473,9 +488,10 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                             throw new Exception();
                     }
 
+
                     for (int iSub = 0; iSub < _Domain.Length; iSub++) {
 
-                        CellMask Accepted = new CellMask(this.GridDat, Accepted_Mutuable);
+                        //CellMask Accepted = new CellMask(this.GridDat, Accepted_Mutuable);
 
                         int jCellAccpt = _Domain[iSub];
                         //this.Stpw_gradientEval.Start();
@@ -487,21 +503,21 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                         // ----------------------------------
 
                         if (ExtProperty != null) {
-                            int[] Neighb, dummy33;
-                            GridDat.GetCellNeighbours(jCellAccpt, GetCellNeighbours_Mode.ViaEdges, out Neighb, out dummy33);
+                            //int[] Neighb, dummy33;
+                            //GridDat.GetCellNeighbours(jCellAccpt, GetCellNeighbours_Mode.ViaEdges, out Neighb, out dummy33);
 
                             // solve for each component seperately
                             for (int iComp = 0; iComp < ExtProperty.Length; iComp++) {
 
-                                ExtPropertyMax[iComp][jCellAccpt] = -double.MaxValue;
-                                ExtPropertyMin[iComp][jCellAccpt] = double.MaxValue;
+                                //ExtPropertyMax[iComp][jCellAccpt] = -double.MaxValue;
+                                //ExtPropertyMin[iComp][jCellAccpt] = double.MaxValue;
 
-                                foreach (int jNeig in Neighb) {
-                                    if (Accepted_Mutuable[jNeig]) {
-                                        ExtPropertyMax[iComp][jCellAccpt] = Math.Max(ExtPropertyMax[iComp][jCellAccpt], ExtPropertyMax[iComp][jNeig]);
-                                        ExtPropertyMin[iComp][jCellAccpt] = Math.Min(ExtPropertyMin[iComp][jCellAccpt], ExtPropertyMin[iComp][jNeig]);
-                                    }
-                                }
+                                //foreach (int jNeig in Neighb) {
+                                //    if (Accepted_Mutuable[jNeig]) {
+                                //        ExtPropertyMax[iComp][jCellAccpt] = Math.Max(ExtPropertyMax[iComp][jCellAccpt], ExtPropertyMax[iComp][jNeig]);
+                                //        ExtPropertyMin[iComp][jCellAccpt] = Math.Min(ExtPropertyMin[iComp][jCellAccpt], ExtPropertyMin[iComp][jNeig]);
+                                //    }
+                                //}
 
                                 this.Stpw_extVelSolver.Start();
                                 //extVelSlv.ExtVelSolve_Far(Phi, GradPhi, ExtProperty[iComp], ref ExtPropertyMin[iComp][jCellAccpt], ref ExtPropertyMax[iComp][jCellAccpt], jCellAccpt, Accepted, _sign);
@@ -520,6 +536,148 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             }
         }
 
+
+
+        public void ConstructExtension2(SinglePhaseField Phi, CellMask Domain, CellMask Accepted, ConventionalDGField[] ExtProperty) {
+            //using (new FuncTrace()) {
+            //    Tracer.InstrumentationSwitch = false; // lots of tracing on calls acting on singe cells causes massive overhead (up to 5x slower).
+            //    Stpw_total.Start();
+
+                // check args and init
+                // ===================
+
+                //ExtVelSolver extVelSlv = null;
+                ExtVelSolver_Geometric extVelSlv = null;
+                if (ExtProperty != null) {
+                    //extVelSlv = new ExtVelSolver(ExtProperty[0].Basis);
+                    extVelSlv = new ExtVelSolver_Geometric(ExtProperty[0].Basis);
+                }
+
+
+                BitArray Accepted_MutuableExt = Accepted.GetBitMaskWithExternal().CloneAs();
+                BitArray Accepted_Mutuable = Accepted.GetBitMask().CloneAs();
+                BitArray DomainBit = Domain.GetBitMaskWithExternal();
+
+
+                int[] DomainCellIndices = Domain.ItemEnum.ToArray();
+                double[] PhiAvg = new double[DomainCellIndices.Length];
+                {
+                    int L = DomainCellIndices.Length;
+                    for (int jSub = 0; jSub < L; jSub++) {
+                        int jCell = DomainCellIndices[jSub];
+                        PhiAvg[jSub] = Phi.GetMeanValue(jCell);
+
+                    }
+                    Array.Sort(PhiAvg, DomainCellIndices);
+                }
+
+
+
+                int[] PosDomain, NegDomain;
+                {
+                    int median = 0;
+                    for (; median < DomainCellIndices.Length; median++) {
+                        if (PhiAvg[median] >= 0)
+                            break;
+                    }
+
+                    NegDomain = new int[median];
+                    for (int i = 0; i < median; i++) {
+                        NegDomain[i] = DomainCellIndices[median - i - 1];
+                    }
+
+                    PosDomain = new int[DomainCellIndices.Length - median];
+                    Array.Copy(DomainCellIndices, median, PosDomain, 0, PosDomain.Length);
+
+                    Debug.Assert(PosDomain.Length + NegDomain.Length == DomainCellIndices.Length);
+                }
+
+
+                // perform marching...
+                // ===================
+
+                List<int> externalUpdateCells = new List<int>();
+                int NoOfExtUpdate = 0;
+
+                // marching loop..
+                for (int iMinusPlus = -1; iMinusPlus <= 1; iMinusPlus += 2) {
+                    double _sign = iMinusPlus;
+                    int[] _Domain;
+                    switch (iMinusPlus) {
+                        case -1:
+                        _Domain = NegDomain;
+                        break;
+                        case +1:
+                        _Domain = PosDomain;
+                        break;
+                        default:
+                        throw new Exception();
+                    }
+
+
+                    for (int iSub = 0; iSub < _Domain.Length; iSub++) {
+
+                        //CellMask Accepted = new CellMask(this.GridDat, Accepted_Mutuable);
+
+                        int jCellAccpt = _Domain[iSub];
+
+
+                        // solve for the extension properties
+                        // ----------------------------------
+
+                        if (ExtProperty != null) {
+                            int[] Neighb, dummy33;
+                            GridDat.GetCellNeighbours(jCellAccpt, GetCellNeighbours_Mode.ViaEdges, out Neighb, out dummy33);
+                            bool externalUpdate = false;
+                            foreach (int neigh in Neighb) {
+                                if (neigh > this.GridDat.Cells.NoOfLocalUpdatedCells && DomainBit[neigh]
+                                    && !Accepted_MutuableExt[neigh] && m_PhiAvg[neigh] < m_PhiAvg[jCellAccpt]) {
+                                    //Console.WriteLine("MPI-rank {0}: add externalUpdateCell {1} (PhiAvg_neigh{2} {3} < PhiAvg_jCell {4})", 
+                                    //    this.GridDat.MpiRank, jCellAccpt, neigh, m_PhiAvg[neigh], m_PhiAvg[jCellAccpt]);
+                                    if (!externalUpdateCells.Contains(jCellAccpt))
+                                        externalUpdateCells.Add(jCellAccpt);
+                                    NoOfExtUpdate++;
+                                    externalUpdate = true;
+                                    break;
+                                }
+                            }
+                            if (externalUpdate)
+                                continue;
+
+                            // solve for each component seperately
+                            for (int iComp = 0; iComp < ExtProperty.Length; iComp++) {
+
+                                //this.Stpw_extVelSolver.Start();
+                                //extVelSlv.ExtVelSolve_Far(Phi, GradPhi, ExtProperty[iComp], ref ExtPropertyMin[iComp][jCellAccpt], ref ExtPropertyMax[iComp][jCellAccpt], jCellAccpt, Accepted, _sign);
+                                extVelSlv.ExtVelSolve_Geometric(Phi, ExtProperty[iComp], Accepted_MutuableExt, jCellAccpt, _sign);
+                                //this.Stpw_extVelSolver.Start();
+                            }
+                        }
+                        Accepted_MutuableExt[jCellAccpt] = true;
+                        Accepted_Mutuable[jCellAccpt] = true;
+                    }
+                }
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                if (NoOfExtUpdate.MPISum() > 0) {
+                    //Console.WriteLine("MPI-rank {0}: externalUpdateCells", this.GridDat.MpiRank);
+                    CellMask Accepted_Update = new CellMask(this.GridDat, Accepted_Mutuable);
+                    for (int d = 0; d < ExtProperty.Length; d++) {
+                        ExtProperty[d].MPIExchange();
+                    }
+                    ConstructExtension2(Phi, Domain.Except(Accepted_Update), Accepted_Update, ExtProperty);
+                }
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+            //    Tracer.InstrumentationSwitch = true;
+            //    Stpw_total.Stop();
+            //}
+        }
+
+
+
         /// <summary>
         /// Reinitializes <paramref name="Phi"/> on <paramref name="reinitField"/> using the <paramref name="Accepted"/> cells as start value. 
         /// </summary>
@@ -537,19 +695,27 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 ReinitField = reinitField;
             }
             //Build Local Solver that solves the Eikonal in each cell.
-            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_2DStructured(Phi.Basis);
+            //FastMarching.ILocalSolver localSolver2D = new FastMarching.LocalMarcher.LocalMarcher_2DStructured(Phi.Basis);
+            FastMarching.ILocalSolver localSolver = new FastMarching.LocalMarcher.LocalMarcher_Structured(Phi.Basis);
 
             //Build Global Solver that marches through all cells
             FastMarching.GlobalMarcher.CellMarcher fastMarcher = new FastMarching.GlobalMarcher.CellMarcher(Phi.Basis, localSolver);
-            
+
             //Solve
             fastMarcher.Reinit(Phi, Accepted, ReinitField);
 
             //Invert Negative Domain that is part of ReinitField
             Phi.Scale(-1, NegativeField.Intersect(ReinitField).Except(Accepted));
+
+            //Update avergae values
+            //foreach (Chunk cnk in reinitField) {
+            //    for (int j = cnk.i0; j < cnk.JE; j++)
+            //        m_PhiAvg[j] = Phi.GetMeanValue(j);
+            //}
+
         }
 
-        
+
         /// <summary>
         /// Reinitializes levelset in <paramref name="_LevelSetTracker"/> on a near field with width <paramref name="nearFieldWidth"/>
         /// </summary>

@@ -96,20 +96,22 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 var result = new List<ChunkRulePair<CellBoundaryQuadRule>>(mask.NoOfItemsLocally);
                 foreach (Chunk chunk in mask) {
                     for (int i = 0; i < chunk.Len; i++) {
-                        int cell = chunk.i0 + i;
+                        int jCell = chunk.i0 + i;
 
-                        if (cache.ContainsKey(cell)) {
+                        if (cache.ContainsKey(jCell)) {
                             result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
-                                Chunk.GetSingleElementChunk(cell),
-                                cache[cell]));
+                                Chunk.GetSingleElementChunk(jCell),
+                                cache[jCell]));
                             continue;
                         }
 
+
+
                         optimizationTimer.Start();
-                        CellBoundaryQuadRule optimizedRule = GetOptimizedRule(chunk.i0 + i, order);
+                        CellBoundaryQuadRule optimizedRule = GetOptimizedRule(jCell, order);
                         optimizationTimer.Stop();
 
-                        cache.Add(cell, optimizedRule);
+                        cache.Add(jCell, optimizedRule);
                         result.Add(new ChunkRulePair<CellBoundaryQuadRule>(
                             Chunk.GetSingleElementChunk(i + chunk.i0), optimizedRule));
                     }
@@ -152,11 +154,17 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 minOrder += 1;
             }
 
+            int RefCell = 0;
+            if (LevelSetData.GridDat.Cells.Cells2Edges.Distinct().Count() > 1) {
+                RefCell = LevelSetData.GridDat.Cells.Cells2Edges.FirstIndexWhere(
+                    edges => edges.Count() == LevelSetData.GridDat.Grid.RefElements[0].NoOfFaces);
+            }
+
             baseRule = new CellBoundaryFromEdgeRuleFactory<CellBoundaryQuadRule>(
                 LevelSetData.GridDat,
                 RefElement,
                 new FixedRuleFactory<QuadRule>(RefElement.FaceRefElement.GetQuadratureRule(minOrder))).
-                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(0), MaskType.Geometrical), -1).
+                GetQuadRuleSet(new CellMask(LevelSetData.GridDat, Chunk.GetSingleElementChunk(RefCell), MaskType.Geometrical), -1).
                 First().Rule;
         }
 

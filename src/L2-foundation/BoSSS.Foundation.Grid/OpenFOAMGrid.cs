@@ -279,7 +279,7 @@ namespace BoSSS.Foundation.Grid {
                     bosss_cells[iCell] = cl;
                     cl.GlobalID = iCell;
                     cl.Type = CellType.Cube_8;
-                    cl.NodeIndices = new int[8];
+                    cl.NodeIndices = new long[8];
                     cl.TransformationParams = MultidimensionalArray.Create(8, 3);
 
                     // Find point indices for bottom, i.e. 'y == -1' (in ref. coordinates):
@@ -312,17 +312,17 @@ namespace BoSSS.Foundation.Grid {
                     
                     // set point coordinates
                     for (int i = 0; i < 8; i++) {
-                        cl.TransformationParams.SetRow(i, points.GetRow(cl.NodeIndices[i]));
+                        cl.TransformationParams.SetRow(i, points.GetRow(checked((int)(cl.NodeIndices[i]))));
                     }
 
                     // Jacobian Test
                     JacobianTest(cl, out bool PositiveJacobianFlag, out bool NegativeJacobianFlag, out bool Linear);
                     if (NegativeJacobianFlag) {
                         // flip top/bottom
-                        int _0 = cl.NodeIndices[0];
-                        int _1 = cl.NodeIndices[1];
-                        int _6 = cl.NodeIndices[6];
-                        int _3 = cl.NodeIndices[3];
+                        long _0 = cl.NodeIndices[0];
+                        long _1 = cl.NodeIndices[1];
+                        long _6 = cl.NodeIndices[6];
+                        long _3 = cl.NodeIndices[3];
 
                         cl.NodeIndices[0] = cl.NodeIndices[2];
                         cl.NodeIndices[1] = cl.NodeIndices[4];
@@ -335,7 +335,7 @@ namespace BoSSS.Foundation.Grid {
                         cl.NodeIndices[7] = _3;
 
                         for (int i = 0; i < 8; i++) {
-                            cl.TransformationParams.SetRow(i, points.GetRow(cl.NodeIndices[i]));
+                            cl.TransformationParams.SetRow(i, points.GetRow(checked((int)(cl.NodeIndices[i]))));
                         }
 
                         JacobianTest(cl, out PositiveJacobianFlag, out NegativeJacobianFlag, out Linear);
@@ -422,7 +422,7 @@ namespace BoSSS.Foundation.Grid {
 
         }
 
-        static bool ContainsEdge(int[] face, int iPt1, int iPt2, out int iPrev, out int iNext) {
+        static bool ContainsEdge(int[] face, long iPt1, long iPt2, out long iPrev, out long iNext) {
             int L = face.Length;
             for (int i = 0; i < L; i++) {
                 int v1 = face[i];

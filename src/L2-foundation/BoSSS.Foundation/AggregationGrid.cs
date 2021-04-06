@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.IO;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using MPI.Wrappers;
 using Newtonsoft.Json;
@@ -52,7 +53,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             int J = AggregationCells.Length;
             if (AggregationCellGids == null) {
                 AggregationCellGids = new long[J];
-                int i0 = m_CellPartitioning.i0;
+                long i0 = m_CellPartitioning.i0;
                 for (int j = 0; j < J; j++)
                     AggregationCellGids[j] = j + i0;
             }
@@ -361,7 +362,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 long[] EvalBuffer = new long[L];
                 ParentIdx.EvaluatePermutation(InputBuffer, EvalBuffer);
 
-                int i0_Parent = ParentGrid.CellPartitioning.i0;
+                long i0_Parent = ParentGrid.CellPartitioning.i0;
                 int J_Parent = ParentGrid.iGridData.iLogicalCells.NoOfLocalUpdatedCells;
 
                 l = 0;
@@ -373,7 +374,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     for (int k = 0; k < AG; k++) { // loop over parts of aggregation cell
                         Debug.Assert(EvalBuffer[l] >= 0);
                         Debug.Assert(EvalBuffer[l] < ParentGrid.NumberOfCells);
-                        AggIdx_j[k] = (int)EvalBuffer[l] - i0_Parent;
+                        AggIdx_j[k] = checked((int)(EvalBuffer[l] - i0_Parent));
                         Debug.Assert(AggIdx_j[k] >= 0);
                         Debug.Assert(AggIdx_j[k] < J_Parent);
 
@@ -490,6 +491,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             throw new NotImplementedException();
         }
 
+        //
         public void RedistributeGrid(int[] part) {
             throw new NotImplementedException();
         }
@@ -516,6 +518,21 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 
             return new Foundation.Comm.Permutation(gid, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// list of transformations which describe how some edges should be
+        /// transformed to other edges;
+        /// </summary>
+        /// <remarks>
+        /// indices into this list are the
+        /// <see cref="GridData.EdgeData.EdgeTags"/> minus
+        /// <see cref="FIRST_PERIODIC_BC_TAG"/>
+        /// </remarks>
+        public IList<AffineTrafo> PeriodicTrafo {
+            get {
+                return RootGrid.PeriodicTrafo;
+            }
         }
     }
 }

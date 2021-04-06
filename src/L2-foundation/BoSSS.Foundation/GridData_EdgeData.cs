@@ -383,7 +383,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     int Je = m_owner.Cells.Count;
                     int J = m_owner.Cells.NoOfLocalUpdatedCells;
-                    int j0 = m_owner.CellPartitioning.i0;
+                    long j0 = m_owner.CellPartitioning.i0;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
 
                     if (m_EdgesTmp != null)
@@ -422,14 +422,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // we use the most significant bit to mark processed edges
 
                             int jNeig = CellNeigh[e];
-                            int jNeigGlob;
+                            long jNeigGlob;
                             if(jNeig < J) {
                                 Debug.Assert(jNeig >= 0);
                                 jNeigGlob = jNeig + j0;
                             } else {
                                 Debug.Assert(jNeig >= J);
                                 Debug.Assert(jNeig < Je);
-                                jNeigGlob = (int)(GlidxExternal[jNeig - J]);
+                                jNeigGlob = (GlidxExternal[jNeig - J]);
                             }
 
                             //Single(dnsjdkvnskj)
@@ -502,7 +502,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 if (ceh.IsPeriodic) {
                                     if (cn_je.CellFaceTag.PeriodicInverse == cn_je2.CellFaceTag.PeriodicInverse)
-                                        throw new ApplicationException("inconsistent specification of periodic boundaries.");
+                                        throw new ApplicationException("inconsistent specification of periodic boundaries. " + cn_je.CellFaceTag.PeriodicInverse + cn_je2.CellFaceTag.PeriodicInverse);
 
                                     ceh.Cell1_PeriodicTrafoIdx = ((int)cn_je.CellFaceTag.EdgeTag) - GridCommons.FIRST_PERIODIC_BC_TAG;
                                     if (cn_je.CellFaceTag.PeriodicInverse) {
@@ -890,7 +890,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         this.m_Edge2CellTrafos_SqrtGramian = MultidimensionalArray.Create(Edge2CellTrafos.Count);
                         for (int i = 0; i < Edge2CellTrafos.Count; i++) {
                             var tr = this.Edge2CellTrafos[i];
-                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.Transpose(), tr.Matrix).Determinant().Sqrt();
+                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.TransposeTo(), tr.Matrix).Determinant().Sqrt();
                         }
                     }
                     return m_Edge2CellTrafos_SqrtGramian;
@@ -2315,6 +2315,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 get;
                 private set;
             }
+
+           
 
             /// <summary>
             /// Edge Tags

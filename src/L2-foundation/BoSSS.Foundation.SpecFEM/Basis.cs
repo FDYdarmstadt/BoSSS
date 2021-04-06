@@ -326,8 +326,8 @@ namespace BoSSS.Foundation.SpecFEM {
             
 
             for(int j = 0; j < J; j++) {
-                int i0 = j * N + R.RowPartitioning.i0; // row offset into R for cell 'j'
-                int j0 = j * ModalBasis.Length + R.ColPartition.i0; // column offset into R for cell 'j'
+                long i0 = j * N + R.RowPartitioning.i0; // row offset into R for cell 'j'
+                long j0 = j * ModalBasis.Length + R.ColPartition.i0; // column offset into R for cell 'j'
                 double tr = Trafo[j];
 
                 for(int n = 0; n < N; n++) { // loop over rows
@@ -362,8 +362,8 @@ namespace BoSSS.Foundation.SpecFEM {
 
 
             for(int j = 0; j < J; j++) {
-                int i0 = j * N + R.RowPartitioning.i0; // column offset into R for cell 'j'
-                int j0 = j * ModalBasis.Length + R.ColPartition.i0; // row offset into R for cell 'j'
+                long i0 = j * N + R.RowPartitioning.i0; // column offset into R for cell 'j'
+                long j0 = j * ModalBasis.Length + R.ColPartition.i0; // row offset into R for cell 'j'
                 double tr = Trafo[j];
 
                 for(int m = 0; m < M; m++) { // loop over rows
@@ -587,7 +587,7 @@ namespace BoSSS.Foundation.SpecFEM {
             var GidxExtCell = this.GridDat.Parallel.GlobalIndicesExternalCells;
             var Edges2Cell = this.GridDat.Edges.CellIndices;
             var EdgeTags = this.GridDat.Edges.EdgeTags;
-            int j0 = this.GridDat.CellPartitioning.i0;
+            long j0 = this.GridDat.CellPartitioning.i0;
             
 
             
@@ -1054,14 +1054,14 @@ namespace BoSSS.Foundation.SpecFEM {
             int Kown = this.NoOfLocalOwnedNodes;
             int myrank = this.GridDat.MpiRank;
             var AbusedArray = MultidimensionalArray.Create(Kloc);
-            int k0 = this.NodePartition.i0;
+            long k0 = this.NodePartition.i0;
 
             for (int k = 0; k < Kown; k++) { // loop over 'owned' nodes ...
                 double pseudo_struct = 0;
                 Debug.Assert(sizeof(double) == sizeof(int)*2);
                 unsafe {
                     int* p = (int*)(&pseudo_struct);
-                    p[0] = k + k0; // store the global index of the node on the first 4 bytes ...
+                    p[0] = checked((int)(k + k0)); // store the global index of the node on the first 4 bytes ...
                     p[1] = myrank; // ... and the rank on the last 4 bytes of the double
                 }
 
@@ -1295,7 +1295,7 @@ namespace BoSSS.Foundation.SpecFEM {
         /// <summary>
         /// Global Number of Nodes (over all MPI processes), i.e. dimension of the SEM vector space.
         /// </summary>
-        public int GlobalNoOfNodes {
+        public long GlobalNoOfNodes {
             get {
                 return NodePartition.TotalLength;
             }
@@ -1399,7 +1399,7 @@ namespace BoSSS.Foundation.SpecFEM {
                 var Mass = MultidimensionalArray.Create(K, K);
 
                 var MR = m_Modal2Nodal[iKref];
-                var ML = MR.Transpose();
+                var ML = MR.TransposeTo();
 
                 Mass.GEMM(1.0, ML, MR, 0.0);
 
@@ -1432,11 +1432,11 @@ namespace BoSSS.Foundation.SpecFEM {
 
             var C2N = this.CellNode_To_Node;
 
-            int k0 = this.NodePartition.i0;
+            long k0 = this.NodePartition.i0;
             int Kown = this.NoOfLocalOwnedNodes;
 
 
-            var SendData = new Dictionary<int, List<Tuple<int, int, double>>>();
+            var SendData = new Dictionary<int, List<(long, long, double)>>();
 
 
             foreach (Chunk cnk in cm) {
@@ -1459,14 +1459,14 @@ namespace BoSSS.Foundation.SpecFEM {
                     
                     for (int l = 0; l < K; l++) {
                         int rowLoc = C2N[j, l];
-                        int rowGlob;
-                        List<Tuple<int, int, double>> SendData_p = null;
+                        long rowGlob;
+                        List<(long, long, double)> SendData_p = null;
                         if (rowLoc < Kown) {
                             rowGlob = rowLoc + k0;
                         } else {
                             int ownRank = this.ForeignNodes_OwnerRank[rowLoc - Kown];
                             if (!SendData.TryGetValue(ownRank, out SendData_p)) {
-                                SendData_p = new List<Tuple<int, int, double>>();
+                                SendData_p = new List<(long, long, double)>();
                                 SendData.Add(ownRank, SendData_p);
                             }
                             rowGlob = this.ForeignNodes_GlobalIndex[rowLoc - Kown];
@@ -1474,7 +1474,7 @@ namespace BoSSS.Foundation.SpecFEM {
 
                         for (int k = 0; k < K; k++) {
                             int colLoc = C2N[j, k];
-                            int colGlob;
+                            long colGlob;
                             if (colLoc < Kown) {
                                 colGlob = colLoc + k0;
                             } else {
@@ -1484,7 +1484,7 @@ namespace BoSSS.Foundation.SpecFEM {
                             if (SendData_p == null)
                                 MassMatrix[rowGlob, colGlob] += CellLocalMass[l, k]*tr;
                             else
-                                SendData_p.Add(new Tuple<int, int, double>(rowGlob, colGlob, CellLocalMass[l, k]*tr));
+                                SendData_p.Add((rowGlob, colGlob, CellLocalMass[l, k]*tr));
                         }
                     }
                 }

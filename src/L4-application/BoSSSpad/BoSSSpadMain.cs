@@ -18,10 +18,12 @@ using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using MPI.Wrappers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.IO.Compression;
 using System.Threading;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -67,13 +69,25 @@ namespace BoSSS.Application.BoSSSpad {
             TexBatch
         }
 
+   
+
+
         /// <summary>
         /// application entry point
         /// </summary>
         [STAThread]
-        public static int Main(string[] args) { 
+        public static int Main(string[] args) {
             
-            
+            /*
+            SshClient_exp ssh = new SshClient_exp("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+
+            var rr1 = ssh.RunCommand("ls");
+            Console.WriteLine(rr1.stdout);
+            var rr2 = ssh.RunCommand("ls -l");
+            Console.WriteLine(rr2.stdout);
+            ssh.Final();
+            return 0;
+            //*/
             int errCount = 0;
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -270,7 +284,8 @@ namespace BoSSS.Application.BoSSSpad {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.Program).FullName);
             Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
-            Console.WriteLine(typeof(XNSE_Solver.XNSE_SolverMain).FullName);
+            Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
+            Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
         }
     }
 }

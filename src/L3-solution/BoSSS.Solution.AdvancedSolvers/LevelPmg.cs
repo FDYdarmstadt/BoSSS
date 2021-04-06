@@ -155,7 +155,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     hiSolver = new PARDISOSolver() {
                         CacheFactorization = true,
                         UseDoublePrecision = true, // keep it true, experiments showed, that this leads to fewer iterations
-                        SolverVersion = Parallelism.OMP
+                        Parallelism = Parallelism.OMP
                     };
                     hiSolver.DefineMatrix(P01HiMatrix);
                 }
@@ -166,7 +166,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             intSolver = new PARDISOSolver() {
                 CacheFactorization = true,
                 UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
-                SolverVersion = Parallelism.OMP
+                Parallelism = Parallelism.OMP
             };
             intSolver.DefineMatrix(P01SubMatrix);
             
@@ -279,12 +279,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (UseDiagonalPmg) {
                     var Map = m_op.Mapping;
                     int NoVars = Map.AggBasis.Length;
-                    int j0 = Map.FirstBlock;
+                    long j0 = Map.FirstBlock;
                     int J = HighOrderBlocks_LU.Length;
                     int[] degs = m_op.Degrees;
                     var BS = Map.AggBasis;
 
-                    int Mapi0 = Map.i0;
+                    long Mapi0 = Map.i0;
                     double[] x_hi = null;
                     for (int j = 0; j < J; j++) {
 

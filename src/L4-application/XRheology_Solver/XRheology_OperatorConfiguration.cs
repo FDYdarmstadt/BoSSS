@@ -231,5 +231,23 @@ namespace BoSSS.Application.XRheology_Solver {
         /// true if the interface pressure is prescribed i.e. for evaporation
         /// </summary>
         public bool isPInterfaceSet { get; }
+
+        /// <summary>
+        /// Fucking Gravity
+        /// </summary>
+        public bool isGravity {
+            get {
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Volume Force
+        /// </summary>
+        public bool isVolForce {
+            get {
+                return false;
+            }
+        }
     }
 }

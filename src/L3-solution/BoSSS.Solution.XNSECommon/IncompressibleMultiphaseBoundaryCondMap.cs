@@ -23,6 +23,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
 using BoSSS.Foundation.Grid.Classic;
+using ilPSP;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -51,12 +52,54 @@ namespace BoSSS.Solution.XNSECommon {
             return scalarFields.ToArray();
         }
 
+        /// <summary>
+        /// Loops over all boundary conditions:
+        /// If e.g. `VelocityX` is defined, but not `VelocityX#A`, the value for `VelocityX#A` is inferred from `VelocityX`.
+        /// </summary>
+        static IDictionary<string, AppControl.BoundaryValueCollection> BndyModify(IDictionary<string, AppControl.BoundaryValueCollection> b, string[] SpeciesNames) {
+            
+            bool isNonXname(string s) {
+                foreach(var sn in SpeciesNames) {
+                    string end = "#" + sn;
+                    if(s.Length > 2 && s.EndsWith(end))
+                        return false;
+                }
+                return true;
+            }
+
+            var ret = new Dictionary<string, AppControl.BoundaryValueCollection>();
+
+            foreach(var kv in b) {
+                var coll = kv.Value.CloneAs();
+                ret.Add(kv.Key, coll);
+
+                string[] definedKeys = coll.Evaluators.Keys.ToArray();
+                foreach(var varName in definedKeys) {
+                    if(isNonXname(varName)) {
+                        foreach(var spc in SpeciesNames) {
+                            string XvarName = varName + "#" + spc;
+                            if(!kv.Value.Evaluators.ContainsKey(XvarName)) {
+                                coll.Evaluators.Add(XvarName, coll.Evaluators[varName]);
+                            }
+                        }
+
+
+                    }
+                }
+            }
+
+            
+            return ret;
+        }
+
 
         public IncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
-           : base(f, b, PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
+           : base(f, BndyModify(b, SpeciesNames), PhysicsMode.Incompressible, BndFunctions(f, SpeciesNames)) //
         {
             string S0 = "#" + SpeciesNames[0];
 
+
+            // set boundary for 'VelocityX' from 'VelocityX#A'
             int D = f.SpatialDimension;
             for (int d = 0; d < D; d++) {
                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);

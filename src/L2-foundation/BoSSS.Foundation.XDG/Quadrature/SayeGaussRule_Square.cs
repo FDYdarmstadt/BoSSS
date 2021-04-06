@@ -124,7 +124,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         protected override MultidimensionalArray Gradient(LinearPSI<Square> psi, NodeSet Node, int Cell)
         {
             //Move Node onto psi 
-            MultidimensionalArray gradient = ScaledReferenceGradient(Node, Cell);
+            MultidimensionalArray gradient = ReferenceGradient(Node, Cell);
 
             return gradient;
         }
@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
 
 
-            MultidimensionalArray grad = ScaledReferenceGradient(nodeOnPsi, cell);
+            MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
             
             grad.ApplyAll(x => Math.Abs(x));     
             double delta = grad.InnerProduct(diameters) * sqrt_2;
@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override int FindPromisingHeightDirection(LinearPSI<Square> Psi, NodeSet Node, int Cell)
         {
-            MultidimensionalArray gradient = ScaledReferenceGradient(Node, Cell);
+            MultidimensionalArray gradient = ReferenceGradient(Node, Cell);
             if (Math.Abs(gradient[0]) > Math.Abs(gradient[1]))
                 return 0;
             return 1;
@@ -240,10 +240,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region Evaluate Saye Integrand
 
-        private MultidimensionalArray ScaledReferenceGradient(NodeSet Node, int Cell)
+        private MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
         {
-            MultidimensionalArray gradient = lsData.GetLevelSetReferenceGradients(Node, Cell, 1);
-            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
+            MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
+            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
             MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
@@ -353,24 +353,48 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return transformed_GaussRule_1D;
         }
 
-        protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell)
-        {
-            double weight = X_weight;
-
+        protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
             NodeSet node = new NodeSet(RefElement, X.To2DArray());
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(node, cell, 1);
-            gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
-
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+            MultidimensionalArray inverseJacobian = grid.InverseJacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
 
-            //Scale weight
-            weight *= gradient.L2Norm()/ Math.Abs(gradient[heightDirection]);
-            weight /= jacobian[heightDirection, heightDirection];
+            MultidimensionalArray rgradient = lsData.GetLevelSetGradients(node, cell, 1).CloneAs();
+            rgradient = rgradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 });
+
+            //This is required, because Surface quad nodes are treated as Volume quad nodes.
+            double scale;
+            if (IsScalingMatrix(jacobian)) {
+                scale = rgradient.L2Norm() / Math.Abs(rgradient[heightDirection]);
+                //This is required, because Surface quad nodes are treated as Volume quad nodes.
+                scale /= jacobian[heightDirection, heightDirection];
+            } else {
+                if (heightDirection == 0) {
+                    double dg = -(rgradient[0] * jacobian[0, 1] + rgradient[1] * jacobian[1, 1]) / (rgradient[0] * jacobian[0, 0] + rgradient[1] * jacobian[1, 0]);
+                    rgradient[0] = dg * jacobian[0, 0] + jacobian[0, 1];
+                    rgradient[1] = dg * jacobian[1, 0] + jacobian[1, 1];
+                    scale = Math.Sqrt(rgradient[0] * rgradient[0] + rgradient[1] * rgradient[1]);
+                } else if (heightDirection == 1) {
+                    double dg = -(rgradient[0] * jacobian[0, 0] + rgradient[1] * jacobian[1, 0]) / (rgradient[0] * jacobian[0, 1] + rgradient[1] * jacobian[1, 1]);
+                    rgradient[0] = jacobian[0, 0] + dg * jacobian[0, 1];
+                    rgradient[1] = jacobian[1, 0] + dg * jacobian[1, 1];
+                    scale = Math.Sqrt(rgradient[0] * rgradient[0] + rgradient[1] * rgradient[1]);
+                } else {
+                    throw new NotSupportedException();
+                }
+                //This is required, because Surface quad nodes are treated as Volume quad nodes.
+                scale /= grid.JacobianDeterminat.GetValue_Cell(node, cell, 1)[0, 0];
+            }
 
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
-            weightArr[0] = weight;
+            weightArr[0] = scale * X_weight;
             return new SayeQuadRule(node, weightArr);
+        }
+
+        bool IsScalingMatrix(MultidimensionalArray matrix) {
+            if (matrix[0, 1] == 0.0 && matrix[1, 0] == 0.0) {
+                return true;
+            } else return false;
         }
 
         public override double[] GetBoundaries(SayeSquare arg, int heightDirection)
