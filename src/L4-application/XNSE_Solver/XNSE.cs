@@ -325,6 +325,8 @@ namespace BoSSS.Application.XNSE_Solver {
             GetBcMap();
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            // === momentum equations === //
             for (int d = 0; d < D; ++d) {
                 DefineMomentumEquation(opFactory, config, d, D);
 
@@ -344,21 +346,23 @@ namespace BoSSS.Application.XNSE_Solver {
                     opFactory.AddParameter(VolForceB);
                 }
             }
+
+            // === continuity equation === //
+            if (config.isContinuity) {
+                DefineContinuityEquation(opFactory, config, D);
+            }
+
+            // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if ((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) {
+            if (((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
 
+            // === level set related parameters === //
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
-            opFactory.AddParameter(normalsParameter);
-
-            if (config.isContinuity) {
-                opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-                opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
-            }
+            opFactory.AddParameter(normalsParameter);            
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
@@ -415,10 +419,32 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="d">Momentum component index</param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
         virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
-            opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-            opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-            opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+
+            // === linearized or parameter free variants, difference only in convective term === //
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                opFactory.AddEquation(new NavierStokes_Newton("A", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes_Newton("B", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            } else {
+                throw new NotSupportedException();
+            }
             opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+        }
+
+        /// <summary>
+        /// Override this method to customize the assembly of the continuity equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+            opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
+            opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
+            opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
         }
 
         /// <summary>

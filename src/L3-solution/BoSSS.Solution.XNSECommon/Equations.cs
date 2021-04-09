@@ -8,6 +8,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.XNSECommon.Operator.Convection;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using ilPSP.Utils;
@@ -17,7 +18,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Incompressible, constant density momentum equation in the bulk;
     /// Designed for multi-phase flows (e.g. water/oil), one instance of this object defines only one phase/component of the flow.
-    /// Must be used togehter with <see cref="NSEInterface"/>, which provides the coupling between the comonents.
+    /// Must be used together with <see cref="NSEInterface"/>, which provides the coupling between the components.
     /// </summary>
     public class NavierStokes : BulkEquation {
         string speciesName;
@@ -220,7 +221,45 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
+    /// <summary>
+    /// Same as <see cref="NavierStokes"/>, however using <see cref="ConvectionInSpeciesBulk_LLF_Newton"/> in convective terms,
+    /// to work with Newton solver.
+    /// </summary>
+    public class NavierStokes_Newton : NavierStokes {       
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="spcName">
+        /// species-name for multi-component flow
+        /// </param>
+        /// <param name="d">
+        /// Momentum component index
+        /// </param>
+        /// <param name="LsTrk"></param>
+        /// <param name="D">
+        /// Spatial dimension
+        /// </param>
+        /// <param name="boundaryMap"></param>
+        /// <param name="config"></param>
+        public NavierStokes_Newton(
+            string spcName,
+            int d,
+            LevelSetTracker LsTrk,
+            int D,
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            INSE_Configuration config) : base(spcName, d, LsTrk, D, boundaryMap, config) {           
+
+        }
+
+        /// <summary>
+        /// Convective component of the momentum equation, using Newton solver version of convective terms
+        /// </summary>
+        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, double rhoSpc, double LFFSpc, LevelSetTracker LsTrk) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
+            AddComponent(conv);
+        }       
+    }
     /// <summary>
     /// Continuity equation for the incompressible case, for constant density in the bulk.
     /// </summary>
@@ -356,8 +395,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);
-                AddComponent(conv);
+                DefineConvective(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);                
             }
             if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                 // if Moving mesh, we need the interface transport term somehow
@@ -404,6 +442,34 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
+        protected virtual void DefineConvective(int d, int dimension, LevelSetTracker LsTrk, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+            AddComponent(conv);
+        }
+    }
+
+    /// <summary>
+    /// Same as <see cref="NSEInterface"/>, however using <see cref="ConvectionAtLevelSet_LLF_Newton"/> for convective terms
+    /// </summary>
+    public class NSEInterface_Newton : NSEInterface {
+
+        //Methode aus der XNSF_OperatorFactory
+        public NSEInterface_Newton(
+            string phaseA,
+            string phaseB,
+            int d,
+            int dimension,
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            INSE_Configuration config,
+            bool isMovingMesh) : base(phaseA, phaseB, d, dimension, boundaryMap, LsTrk, config, isMovingMesh) {
+
+        }
+
+        protected override void DefineConvective(int d, int dimension, LevelSetTracker LsTrk, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+            AddComponent(conv);
+        }
     }
 
     /// <summary>

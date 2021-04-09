@@ -238,6 +238,137 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 
     }
 
+    /// <summary>
+    /// Newton compatible version of <see cref="ConvectionAtLevelSet_LLF"/>
+    /// </summary>
+    public class ConvectionAtLevelSet_LLF_Newton : ILevelSetForm, ISupportsJacobianComponent {
+
+        LevelSetTracker m_LsTrk;
+
+        bool movingmesh;
+
+        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+            m_D = _D;
+            m_d = _d;
+            rhoA = _rhoA;
+            rhoB = _rhoB;
+            m_LsTrk = LsTrk;
+            //varMode = _varMode;
+            MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+
+            NegFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
+            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
+            PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
+            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+
+        }
+
+        bool MaterialInterface;
+        double rhoA;
+        double rhoB;
+        int m_D;
+        int m_d;
+        //EquationAndVarMode varMode;
+
+        // Use Fluxes as in Bulk Convection
+        ConvectionInBulk_LLF_Newton NegFlux;
+        ConvectionInBulk_LLF_Newton PosFlux;       
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+            //if (this.MaterialInterface) {
+            //if (varMode == EquationAndVarMode.mom_p)
+            //    throw new NotImplementedException();
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+
+            //} else {
+            //    throw new NotImplementedException();
+            //}
+        }
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+            //Flux for negativ side
+            double FlxNeg;
+            {
+                //double flx = 0.0;
+                //for (int d = m_D - 1; d >= 0; d--)
+                //    flx += cp.ParamsNeg[d] * cp.n[d];
+                //flx *= U_Neg[0];
+                //FlxNeg = flx;
+
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_OUT = ParamsNegFict;
+
+                FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+            }
+            // Flux for positive side
+            double FlxPos;
+            {
+                //double flx = 0.0;
+                //for (int d = m_D - 1; d >= 0; d--)
+                //    flx += cp.ParamsPos[d] * cp.n[d];
+                //flx *= U_Pos[0];
+                //FlxPos = flx;
+
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_IN = ParamsPosFict;
+
+                FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
+            }
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return FlxNeg * v_Neg - FlxPos * v_Pos;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return VariableNames.VelocityVector(m_D);
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { };
+                }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public SpeciesId PositiveSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        }
+
+        public SpeciesId NegativeSpecies {
+            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+    }
+
 
 
     //class ConvectionInBulk_weightedLLF : LinearFlux, IEquationComponentSpeciesNotification {

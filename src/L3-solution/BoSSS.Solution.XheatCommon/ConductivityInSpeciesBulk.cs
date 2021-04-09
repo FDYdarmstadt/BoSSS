@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// 
     /// </summary>
-    public class ConductivityInSpeciesBulk : swipConductivity, ISpeciesFilter {
+    public class ConductivityInSpeciesBulk : swipConductivity, ISpeciesFilter, ISupportsJacobianComponent {
 
         /// <summary>
         /// different implementations for the conductivity part (laplace operator) of the heat equation 
@@ -98,6 +98,9 @@ namespace BoSSS.Solution.XheatCommon {
             return currentk;
         }
 
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
     }
 
 

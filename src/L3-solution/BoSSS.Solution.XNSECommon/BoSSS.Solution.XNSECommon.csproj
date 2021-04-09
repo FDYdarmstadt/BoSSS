@@ -57,7 +57,6 @@
     <Compile Include="CutCellBoundingBoxes.cs" />
     <Compile Include="LowMachCombustionMultiphaseBoundaryCondMap.cs" />
     <Compile Include="LowMachSourceTerms.cs" />
-    <Compile Include="MassFluxAtLevelSet.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="ParameterSource.cs" />
     <Compile Include="IncompressibleMultiphaseBoundaryCondMap.cs" />

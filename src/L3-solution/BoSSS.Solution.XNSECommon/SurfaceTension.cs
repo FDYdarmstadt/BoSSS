@@ -30,7 +30,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetForm {
+    public class CurvatureBasedSurfaceTension : ILevelSetForm, ISupportsJacobianComponent {
 
         public static double hmin = double.NaN;
 
@@ -255,6 +255,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         public TermActivationFlags InnerEdgeTerms {
             get { return TermActivationFlags.None; }
         }
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
 
@@ -463,6 +467,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         }
 
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
+
         public override IList<string> ArgumentOrdering {
             get {
                 return new string[0]; 
@@ -619,6 +628,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return TermActivationFlags.V;
             }
         }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
     /// <summary>
@@ -678,7 +692,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { this };
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
         }
 
         public virtual IList<string> ParameterOrdering {

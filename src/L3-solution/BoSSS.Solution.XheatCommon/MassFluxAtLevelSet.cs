@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// Base class for fluxes that need to incorporate the mass flux at the level set
     /// </summary>
-    public abstract class MassFluxAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public abstract class MassFluxAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         // for micro regions
         protected double m_sigma;
@@ -83,7 +83,9 @@ namespace BoSSS.Solution.XheatCommon {
             }
 
         }
-
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
 
         public virtual IList<string> ArgumentOrdering {
             get {
@@ -121,7 +123,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// Base class for fluxes that need to incorporate the mass flux at the level set
     /// </summary>
-    public abstract class MassFluxAtLevelSet_StrongCoupling : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public abstract class MassFluxAtLevelSet_StrongCoupling : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         // for micro regions
         protected double m_sigma;
@@ -153,12 +155,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         protected double MassFlux(CommonParams cp, double[,] Grad_uA, double[,] Grad_uB) {
 
-            double M = 0.0; // take average of massflux, should be equal in both phases anyway
+            double M = 0.0;
             for(int d = 0; d < m_D; d++) {
                 M += -(m_kA * Grad_uA[0, d] - m_kB * Grad_uB[0, d]) * cp.Normal[d];
             }
-            M *= 1 / m_hvap;
-
+            M *= 1.0 / m_hvap;
+            //Console.WriteLine("Massflux: " + M);
             return M;
         }
 
@@ -179,7 +181,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         }
 
-        
+        public virtual IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
         public virtual IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.Temperature };
@@ -209,8 +214,6 @@ namespace BoSSS.Solution.XheatCommon {
         public virtual TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.GradUxV; }
         }
-
-
     }
 
 
@@ -284,9 +287,9 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// velocity jump penalty for the divergence operator (continuity equation), on the level set
     /// </summary>
-    public class DivergenceAtLevelSet_withMassFlux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+    public class DivergenceAtLevelSet_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
-        public DivergenceAtLevelSet_withMassFlux_StrongCoupling(int _D, LevelSetTracker lsTrk,
+        public DivergenceAtLevelSet_Evaporation_StrongCoupling(int _D, LevelSetTracker lsTrk,
             double vorZeichen, bool RescaleConti, ThermalParameters thermalParameters)
             : base(_D, lsTrk, thermalParameters) {
 
@@ -498,10 +501,10 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// Correction terms at level set for a non material interface, for the viscous terms.
     /// </summary>
-    public class ViscosityAtLevelSet_FullySymmetric_withMassFlux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+    public class ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
 
-        public ViscosityAtLevelSet_FullySymmetric_withMassFlux_StrongCoupling(LevelSetTracker lstrk, double _penalty, int _component,
+        public ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling(LevelSetTracker lstrk, double _penalty, int _component,
             ThermalParameters thermalParameters, PhysicalParameters physicalParameters)
             : base(lstrk.GridDat.SpatialDimension, lstrk, thermalParameters) {
 
@@ -738,7 +741,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// Interfaceflux Extension for jump conditions in Navierstokes with Massflux
     /// </summary>
-    public class MassFluxAtLevelSet_withMassFlux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+    public class MassFluxAtLevelSet_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
 
         /// <summary>
@@ -749,7 +752,7 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="LsTrk"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public MassFluxAtLevelSet_withMassFlux_StrongCoupling(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermalParameters, bool _movingMesh)
+        public MassFluxAtLevelSet_Evaporation_StrongCoupling(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermalParameters, bool _movingMesh)
             : base(_D, LsTrk, thermalParameters) {
 
             this.m_d = _d;
@@ -773,7 +776,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (M == 0.0)
                 return 0.0;
 
-            double massFlux = M * 0.5 * (cp.Parameters_IN[0] + cp.Parameters_OUT[0]) * ((1 / m_rhoA) - (1 / m_rhoB)) * Normal[m_d];
+            double massFlux = M.Pow2() * ((1 / m_rhoA) - (1 / m_rhoB)) * Normal[m_d];
 
             double FlxNeg = -0.5 * massFlux;
             double FlxPos = +0.5 * massFlux;
@@ -787,15 +790,15 @@ namespace BoSSS.Solution.XheatCommon {
             // ========================
 
             if (movingMesh) {
-                double s = ComputeInterfaceNormalVelocity(ref cp, Grad_uA, Grad_uB);
+                double s = ComputeInterfaceNormalVelocity(ref cp, uA, uB, Grad_uA, Grad_uB);
                 Console.WriteLine("interface normal velocity = {0}", s);
                 double movingFlux;
                 if (M < 0) { // select DOWN-wind! (sign of M is equal to relative interface velocity (-s + u * n))
                     Console.WriteLine($"Velocity OUT: {cp.Parameters_OUT[1 + m_d]}");
-                    movingFlux = (-s) * m_rhoB * cp.Parameters_OUT[1 + m_d]; // uB[0];
+                    movingFlux = (-s) * m_rhoB * uB[1 + m_d]; // uB[0];
                 } else {
                     Console.WriteLine($"Velocity IN: {cp.Parameters_IN[1 + m_d]}");
-                    movingFlux = (-s) * m_rhoA * cp.Parameters_IN[1 + m_d]; // uA[0];
+                    movingFlux = (-s) * m_rhoA * uA[1 + m_d]; // uA[0];
                 }
                 Console.WriteLine($"{Ret}   |   {movingFlux}");
                 Ret -= movingFlux * Normal[m_d] * 0.5 * (vA + vB);
@@ -804,18 +807,18 @@ namespace BoSSS.Solution.XheatCommon {
             return Ret;
         }
 
-        private double ComputeInterfaceNormalVelocity(ref CommonParams cp, double[,] Grad_uA, double[,] Grad_uB) {
+        private double ComputeInterfaceNormalVelocity(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB) {
 
             double M = MassFlux(cp, Grad_uA, Grad_uB);
 
             double sNeg = 0.0;
             for (int d = 0; d < m_D; d++)
-                sNeg += (cp.Parameters_IN[1 + d]) * cp.Normal[d];
+                sNeg += (uA[1 + d]) * cp.Normal[d];
             sNeg -= (M / m_rhoA);
 
             double sPos = 0.0;
             for (int d = 0; d < m_D; d++)
-                sPos += (cp.Parameters_OUT[1 + d]) * cp.Normal[d];
+                sPos += (uB[1 + d]) * cp.Normal[d];
             sPos -= (M / m_rhoB);
 
             double s = (m_rhoA * sNeg + m_rhoB * sPos) / (m_rhoA + m_rhoB);     // density averaged, corresponding to the mean evo velocity 
@@ -823,7 +826,19 @@ namespace BoSSS.Solution.XheatCommon {
             return s;
         }
 
-        public override IList<string> ParameterOrdering => base.ParameterOrdering.Cat(VariableNames.MassFluxExtension).Cat(VariableNames.Velocity0Vector(m_D));
+        public override TermActivationFlags LevelSetTerms { 
+            get {
+                if (this.movingMesh) return base.LevelSetTerms | TermActivationFlags.UxV;
+                else return base.LevelSetTerms;
+            } 
+        }
+
+        public override IList<string> ArgumentOrdering => base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
     }
 
     /// <summary>
@@ -939,6 +954,69 @@ namespace BoSSS.Solution.XheatCommon {
             get {
                 return base.ParameterOrdering.Cat(VariableNames.Velocity0MeanVector(m_D));
             }
+        }
+    }
+
+    /// <summary>
+    /// Same as <see cref="ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling"/>, but using Newton Solver compatible fluxes
+    /// </summary>
+    public class ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton : MassFluxAtLevelSet_StrongCoupling {
+
+        public ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(int _d, int _D, LevelSetTracker lsTrk, ThermalParameters thermParams)
+            : base(_D, lsTrk, thermParams) {
+
+            this.m_d = _d;
+        }
+
+        int m_d;
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+            if (M == 0.0)
+                return 0.0;
+
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1+d];
+                VelocityMeanOut[d] = U_Pos[1+d];
+
+            }
+
+            double LambdaIn;
+            double LambdaOut;
+
+            LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+            LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+
+
+            double uJump = -M * ((1 / m_rhoA) - (1 / m_rhoB)) * cp.Normal[m_d];
+
+
+            double flx = Lambda * uJump * 0.8;
+
+            return flx * (m_rhoA * vA - m_rhoB * vB);
+        }
+
+        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.UxV;
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
         }
     }
 
@@ -1153,6 +1231,114 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public override IList<string> ParameterOrdering => base.ParameterOrdering.Cat(VariableNames.Velocity0Vector(m_D));
+
+    }
+
+    /// <summary>
+    /// Same as <see cref="ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling"/>, but using Newton solver compatible fluxes
+    /// </summary>
+    public class ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton : MassFluxAtLevelSet_StrongCoupling {
+
+
+        public ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(int _d, int _D, LevelSetTracker lsTrk,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams)
+            : base(_D, lsTrk, thermParams) {
+
+            this.m_d = _d;
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if (RescaleConti) {
+                scaleA /= m_rhoA;
+                scaleB /= m_rhoB;
+            }
+
+        }
+
+        int m_d;
+
+        double scaleA;
+        double scaleB;
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.GradUxV | TermActivationFlags.UxV;
+            }
+        }
+
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+
+            if (M == 0.0)
+                return 0.0;
+
+            double Ucentral = 0.0;
+            double Ujump = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                Ucentral += 0.5 * (U_Neg[1 + d] + U_Pos[1 + d]) * cp.Normal[d];
+                Ujump += (U_Neg[1 + d] - U_Pos[1 + d]) * cp.Normal[d];
+            }
+
+            //double uAxN = Ucentral * (-M * (1 / m_rhoA) * cp.Normal[m_d]);
+            //double uBxN = Ucentral * (-M * (1 / m_rhoB) * cp.Normal[m_d]);
+
+
+            //uAxN += -M * (1 / m_rhoA) * 0.5 * (U_Neg[1] + U_Pos[1]);
+            //uBxN += -M * (1 / m_rhoB) * 0.5 * (U_Neg[1] + U_Pos[1]);
+
+            //// transform from species B to A: we call this the "A-fictitious" value
+            //double uAxN_fict;
+            ////uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            //uAxN_fict = uBxN;
+
+            //// transform from species A to B: we call this the "B-fictitious" value
+            //double uBxN_fict;
+            ////uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            //uBxN_fict = uAxN;
+
+            //// compute the fluxes: note that for the continuity equation, we use not a real flux,
+            //// but some kind of penalization, therefore the fluxes have opposite signs!
+            //double FlxNeg = -Flux(uAxN, uAxN_fict); // flux on A-side
+            //double FlxPos = +Flux(uBxN_fict, uBxN);  // flux on B-side
+
+            //FlxNeg *= m_rhoA;
+            //FlxPos *= m_rhoB;
+
+            //double Ret = FlxNeg * vA - FlxPos * vB;
+
+            double Ret = (Ucentral * M * (1 / m_rhoA - 1 / m_rhoB) * cp.Normal[m_d] + 0.5 * (U_Neg[1 + m_d] + U_Pos[1 + m_d]) * Ujump) * 0.5 * (m_rhoA * vA + m_rhoB * vB);
+
+            return Ret;
+        }
+
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
 
     }
 

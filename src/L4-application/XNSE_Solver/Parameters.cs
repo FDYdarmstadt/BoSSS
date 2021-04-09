@@ -540,9 +540,8 @@ namespace BoSSS.Application.XNSE_Solver {
         public override DelParameterFactory Factory => ParameterFactory;
 
         public override DelPartialParameterUpdate Update {
-            get {
-                if(config.MassfluxCoupling != XNSFE_Control.Coupling.weak)
-                    return MassFluxExtension_Evaporation_Update;  // seems more stable to update once per timestep
+            get {                
+                //return MassFluxExtension_Evaporation_Update;  // seems more stable to update once per timestep
                 return null;
             }
         }

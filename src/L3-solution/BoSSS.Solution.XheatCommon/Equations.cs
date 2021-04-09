@@ -50,15 +50,7 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-
-                IEquationComponent conv;
-                if (config.useUpwind)
-                    conv = new HeatConvectionInSpeciesBulk_Upwind(D, boundaryMap, spcName, spcId, capSpc);
-                else
-                    conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
-                AddComponent(conv);
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+                DefineConvective(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk, config.useUpwind);               
             }
 
 
@@ -85,11 +77,49 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+        protected virtual void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, SpeciesId spcId, double capSpc, double LFFSpc, LevelSetTracker LsTrk, bool useUpwind) {
+            IEquationComponent conv;            
+            if (useUpwind) {
+                conv = new HeatConvectionInSpeciesBulk_Upwind(D, boundaryMap, spcName, spcId, capSpc);
+            } else {
+                conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+            }
+            AddComponent(conv);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+        }
+
         public override string SpeciesName => speciesName;
 
         public override double MassScale => cap;
 
         public override string CodomainName => codomainName;
+    }
+
+    /// <summary>
+    /// Same as <see cref="Heat"/>, but with <see cref="HeatConvectionInSpeciesBulk_LLF_Newton"/> to work with Newton Solver
+    /// </summary>
+    public class Heat_Newton : Heat {
+        
+        public Heat_Newton(
+            string spcName,
+            LevelSetTracker LsTrk,
+            int D,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            IHeat_Configuration config) : base(spcName, LsTrk, D, boundaryMap, config){
+           
+        }
+
+        protected override void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, SpeciesId spcId, double capSpc, double LFFSpc, LevelSetTracker LsTrk, bool useUpwind) {
+            IEquationComponent conv;
+            if (useUpwind) {
+                throw new NotImplementedException();
+            } else {
+                //conv = new HeatConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                conv = new HeatConvectionInSpeciesBulk_Hamiltonian_Newton(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+            }
+            AddComponent(conv);
+        }
     }
 
     public class HeatFlux : BulkEquation {
@@ -160,7 +190,6 @@ namespace BoSSS.Solution.XheatCommon {
             codomainName = EquationNames.HeatEquation;
             AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
             if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddCoefficient("EvapMicroRegion");
         }
@@ -196,10 +225,8 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
                 Console.WriteLine("include heat convection");
-                //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
-                AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh));
+                DefineConvective(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh);                
             }
 
             // viscous operator (laplace)
@@ -215,6 +242,32 @@ namespace BoSSS.Solution.XheatCommon {
                 AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk));
             }
 
+        }
+
+        protected virtual void DefineConvective(int dimension, LevelSetTracker LsTrk, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
+            AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
+        }
+    }
+
+    /// <summary>
+    /// Same as <see cref="HeatInterface"/>, but with <see cref="HeatConvectionAtLevelSet_LLF_material_Newton"/> to work with Newton Solver
+    /// </summary>
+    public class HeatInterface_Newton : HeatInterface {
+
+        public HeatInterface_Newton(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            IXHeat_Configuration config) : base(phaseA, phaseB, dimension, boundaryMap, LsTrk, config) {           
+        }        
+
+        protected override void DefineConvective(int dimension, LevelSetTracker LsTrk, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
         }
     }
 

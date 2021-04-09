@@ -48,8 +48,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 return m_CurrentStateVector;
             }
             protected set {
-                 if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
-                    throw new ArgumentException("Grid data object mismatch.");
+                if (value != null) {
+                    if (!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                        throw new ArgumentException("Grid data object mismatch.");
+                }
 
                 m_CurrentStateVector = value;
             }
@@ -115,8 +117,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 return m_CurrentResidualVector;
             }
             protected set {
-                if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
-                    throw new ArgumentException("Grid data object mismatch.");
+                if (value != null) {
+                    if (!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                        throw new ArgumentException("Grid data object mismatch.");
+                }
 
                 m_CurrentResidualVector = value;
             }

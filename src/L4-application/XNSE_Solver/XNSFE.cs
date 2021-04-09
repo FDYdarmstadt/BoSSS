@@ -23,6 +23,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
+    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
     public class XNSFE : XNSE<XNSFE_Control> {
 
@@ -64,53 +65,69 @@ namespace BoSSS.Application.XNSE_Solver {
             AddXHeatMultigridConfigLevel(configsLevel);
         }
 
+        private ThermalMultiphaseBoundaryCondMap m_thermBoundaryMap;
+
+        /// <summary>
+        /// Relation between 
+        /// - edge tags (<see cref="Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>, passed to equation components via <see cref="BoSSS.Foundation.CommonParams.EdgeTag"/>)
+        /// - boundary conditions specified in the control object (<see cref="AppControl.BoundaryValues"/>)
+        /// </summary>
+        protected ThermalMultiphaseBoundaryCondMap thermBoundaryMap {
+            get {
+                if (m_thermBoundaryMap == null)
+                    m_thermBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+                return m_thermBoundaryMap;
+            }
+        }
+
+
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             base.DefineSystem(D, opFactory, lsUpdater);
             AddXHeat(D, opFactory, lsUpdater);
         }
 
+        /// <summary>
+        /// Add Heat and in case of evaporation extensions for momentum and continuity equations
+        /// <see cref="DefineHeatEquation(OperatorFactory, XNSFE_OperatorConfiguration, int)"/>
+        /// <see cref="DefineMomentumEquation(OperatorFactory, XNSFE_OperatorConfiguration, int, int)"/>
+        /// <see cref="DefineContinuityEquation(OperatorFactory, XNSFE_OperatorConfiguration, int)"/>
+        /// </summary>
+        /// <param name="D"></param>
+        /// <param name="opFactory"></param>
+        /// <param name="lsUpdater"></param>
         private void AddXHeat(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             ThermalMultiphaseBoundaryCondMap heatBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
 
-            // add Heat equation components
-            // ============================
-            opFactory.AddEquation(new Heat("A", lsUpdater.Tracker, D, heatBoundaryMap, config));
-            opFactory.AddEquation(new Heat("B", lsUpdater.Tracker, D, heatBoundaryMap, config));
+            // === heat equation === //
+            DefineHeatEquation(opFactory, config, D);
 
-            if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-                for (int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new HeatFlux("A", d, lsUpdater.Tracker, D, heatBoundaryMap, config));
-                    opFactory.AddEquation(new HeatFlux("B", d, lsUpdater.Tracker, D, heatBoundaryMap, config));
-                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, heatBoundaryMap, lsUpdater.Tracker, config));
+            // === additional parameters === //
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) { 
+                opFactory.AddParameter(new Velocity0(D)); 
+            }
+
+            if (config.isEvaporation) {
+                Console.WriteLine("Including mass transfer.");
+
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton) throw new ApplicationException("Evaporation only implemented with use of Newton-solver!");
+
+                var MassFluxExt = new MassFluxExtension_Evaporation(config);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                    opFactory.AddParameter(MassFluxExt);
                 }
             }
 
-            opFactory.AddEquation(new HeatInterface("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
-            opFactory.AddParameter(new Velocity0(D));
             opFactory.AddCoefficient(new EvapMicroRegion());
 
             if (config.prescribedMassflux != null)
                 opFactory.AddCoefficient(new PrescribedMassFlux(config));
 
-            // add Evaporation at Interface components, heads-up depends only on parameters
-            // ============================
-            if (config.isEvaporation) {
-                //opFactory.AddParameter(new Temperature0());
-                //opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));
-                var MassFluxExt = new MassFluxExtension_Evaporation(config);
-                opFactory.AddParameter(MassFluxExt);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
-
-                opFactory.AddEquation(new HeatInterface_MassFlux("A", "B", D, heatBoundaryMap, lsUpdater.Tracker, config));
-
-                for (int d = 0; d < D; ++d)
-                    opFactory.AddEquation(new InterfaceNSE_MassFlux("A", "B", D, d, lsUpdater.Tracker, config));
-
-                if (config.isContinuity)
-                    opFactory.AddEquation(new InterfaceContinuity_MassFlux("A", "B", D, lsUpdater.Tracker, config));
-            }
+            // When using LDG Formulation
+            //opFactory.AddParameter(new Temperature0());
+            //opFactory.AddParameter(new HeatFlux0(D, lsUpdater.Tracker, config));            
         }
 
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
@@ -125,6 +142,93 @@ namespace BoSSS.Application.XNSE_Solver {
                 return base.GetLevelSetVelocity(iLevSet);
             }
         }
+
+        /// <summary>
+        /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSFE_OperatorConfiguration, int, int)"/>
+        /// adding evaporation extension for Navier-Stokes equations
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="d"></param>
+        /// <param name="D"></param>
+        protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+            base.DefineMomentumEquation(opFactory, config, d, D);
+
+            // === evaporation extension === //
+            if (config.isEvaporation) {
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, LsTrk, config));                    
+                } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, LsTrk, config));
+                }                    
+            }
+        }
+
+
+        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+            base.DefineContinuityEquation(opFactory, config, D);
+
+            // === evaporation extension === //
+            if (config.isEvaporation) {
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, LsTrk, config));
+                } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, LsTrk, config));
+                }
+            }
+        }    
+
+        /// <summary>
+        /// Override this method to customize the assembly of the heat equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="d">Momentum component index</param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineHeatEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+
+            // === linearized or parameter free variants, difference only in convective term === //
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                opFactory.AddEquation(new Heat("A", LsTrk, D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat("B", LsTrk, D, thermBoundaryMap, config));
+
+                if (config.isEvaporation) {
+                    opFactory.AddEquation(new HeatInterface_Evaporation("A", "B", D, thermBoundaryMap, LsTrk, config));
+                } else {
+                    opFactory.AddEquation(new HeatInterface("A", "B", D, thermBoundaryMap, LsTrk, config));
+                }
+
+                if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                    for (int d = 0; d < D; ++d) {
+                        throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
+                        opFactory.AddEquation(new HeatFlux("A", d, LsTrk, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFlux("B", d, LsTrk, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                    }
+                }                
+            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                opFactory.AddEquation(new Heat_Newton("A", LsTrk, D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat_Newton("B", LsTrk, D, thermBoundaryMap, config));
+
+                if (config.isEvaporation) {
+                    opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                } else {
+                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                }
+
+                if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                    for (int d = 0; d < D; ++d) {
+                        throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
+                        opFactory.AddEquation(new HeatFlux("A", d, LsTrk, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFlux("B", d, LsTrk, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                    }
+                }
+            } else {
+                throw new NotSupportedException();
+            }
+        }
+
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -136,9 +240,21 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || Control.MassfluxCoupling != XNSFE_Control.Coupling.weak);
+            XOP.LinearizationHint = this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || this.Control.ThermalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton); // when using Newton solver the employed coupoling between heat and momentum is nonlinear
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton & this.Control.ThermalParameters.IncludeConvection) {
+                //XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
+                //    if (HomotopyScalar < 0.0)
+                //        throw new ArgumentOutOfRangeException();
+                //    if (HomotopyScalar > 1.0)
+                //        throw new ArgumentOutOfRangeException();
+
+                //    //Console.WriteLine("Updating Homotopy Scalar aka. scaling for heat convection, Value = " + HomotopyScalar);
+                //});
+            }
+
             XOP.Commit();
 
             return XOP;

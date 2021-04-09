@@ -254,7 +254,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         }
 
         void AddCoefficients(XSpatialOperatorMk2 spatialOperator) {
-            spatialOperator.OperatorCoefficientsProvider = Coefficients;
+            spatialOperator.OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+                var r = Coefficients(lstrk, spc, quadOrder, TrackerHistoryIdx, time);
+                r.HomotopyValue = spatialOperator.CurrentHomotopyValue;
+                return r;
+            };
         }
 
         CoefficientSet Coefficients(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
@@ -283,8 +287,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             foreach(string coeff in coeffs)
                 if(Array.IndexOf(actualcoeffs, coeff) < 0) throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on coefficient  \""
                                     + coeff
-                                    + "\", but this name is not a member of the UserDefinedValues list.");
-
+                                    + "\", but this name is not a member of the UserDefinedValues list.");            
             return r;
         }
     }
