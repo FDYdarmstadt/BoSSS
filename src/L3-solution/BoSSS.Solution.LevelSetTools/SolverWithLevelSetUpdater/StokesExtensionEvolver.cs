@@ -119,7 +119,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+            ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extensionVelocity);
 
             var rk = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
             rk.Perform(dt);

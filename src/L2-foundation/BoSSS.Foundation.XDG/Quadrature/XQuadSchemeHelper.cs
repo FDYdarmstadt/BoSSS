@@ -198,8 +198,7 @@ namespace BoSSS.Foundation.XDG {
         public EdgeQuadratureScheme Get_SurfaceElement_EdgeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
-            Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
+
             //var allRelevantEdges = this.m_SpeciesSubgrid_InnerAndDomainEdges[sp].Intersect(this.m_CutCellSubgrid_InnerEdges);
 
             var innerCutCellEdges = this.XDGSpaceMetrics.LevelSetRegions.GetCutCellSubgrid4LevSet(iLevSet).InnerEdgesMask;
@@ -251,8 +250,6 @@ namespace BoSSS.Foundation.XDG {
         public CellQuadratureScheme Get_SurfaceElement_VolumeQuadScheme(SpeciesId sp, int iLevSet) {
             if (!this.SpeciesList.Contains(sp))
                 throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
-            //Default behaviour: If Species are not divided by Level Set, function should not be called
-            Debug.Assert(!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp));
 
             var spdom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(sp);
             var IntegrationDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).Intersect(spdom);

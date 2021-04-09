@@ -1476,7 +1476,8 @@ namespace BoSSS.Foundation.XDG {
                     }
                     if (m_PresenceMask4LevelSet[levSetIdx, FieldWidth] == null) {
                         CellMask nearMask = GetNearMask4LevSet(levSetIdx, FieldWidth);
-                        IEnumerable<string> speciesOfLevelSet = m_owner.GetSpeciesSeparatedByLevSet(levSetIdx);
+
+                        LinkedList<string> speciesOfLevelSet = FindSeparatedSpecies(levSetIdx);
 
                         CellMask support = CellMask.GetEmptyMask(m_owner.GridDat);
                         foreach (string speciesName in speciesOfLevelSet) {
@@ -1488,6 +1489,41 @@ namespace BoSSS.Foundation.XDG {
                     return m_PresenceMask4LevelSet[levSetIdx, FieldWidth];
                 }
             }
+
+
+
+            /// <summary>
+            /// Returns species that are separated by levelSet with No. <paramref name="levSetIdx"/>
+            /// </summary>
+            LinkedList<string> FindSeparatedSpecies(int levSetIdx) {
+                int[] levelSetSigns = new int[SpeciesTable.Rank];
+                LinkedList<string> speciesOfLevelSet = new LinkedList<string>();
+                FindSeparatedSpecies(levelSetSigns, 0, levSetIdx, speciesOfLevelSet);
+                return speciesOfLevelSet;
+            }
+
+            void FindSeparatedSpecies(int[] levelSetSigns, int level, int levSetIdx, LinkedList<string> species) {
+                if (level == levelSetSigns.Length) {
+                    levelSetSigns[levSetIdx] = 0;
+                    string speciesNameA = (string)SpeciesTable.GetValue(levelSetSigns);
+                    levelSetSigns[levSetIdx] = 1;
+                    string speciesNameB = (string)SpeciesTable.GetValue(levelSetSigns);
+                    if (speciesNameA != speciesNameB) {
+                        if(!species.Contains(speciesNameA))
+                            species.AddLast(speciesNameA);
+                        if(!species.Contains(speciesNameB))
+                            species.AddLast(speciesNameB);
+                    }
+                } else if (level == levSetIdx) {
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                } else {
+                    levelSetSigns[level] = 0;
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                    levelSetSigns[level] = 1;
+                    FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                }
+            }
+
 
 
             /// <summary>
