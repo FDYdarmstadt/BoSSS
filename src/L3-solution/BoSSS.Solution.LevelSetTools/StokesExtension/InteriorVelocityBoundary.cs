@@ -17,22 +17,25 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
     /// to the physical one.
     /// </summary>
     class InteriorVelocityBoundary : ILevelSetForm, IParameterHandling, ILevelSetEquationComponentCoefficient {
+        int m_d;
+        int m_levelSetIndex;
+        DGField m_InterfaceVelocityComponent;
+        SpeciesId m_negativeSpecies;
+        SpeciesId m_positiveSpecies;
 
-        public InteriorVelocityBoundary(LevelSetTracker lsTrk, int d, DGField InterfaceVelocityComponent) {
-            m_lsTrk = lsTrk;
+        public InteriorVelocityBoundary(SpeciesId positiveSpecies, SpeciesId negativeSpecies, int levelSetIndex, int d, DGField InterfaceVelocityComponent) {
             m_InterfaceVelocityComponent = InterfaceVelocityComponent;
             m_d = d;
+            m_levelSetIndex = levelSetIndex;
+            m_positiveSpecies = positiveSpecies;
+            m_negativeSpecies = negativeSpecies;
         }
 
-        int m_d;
-        LevelSetTracker m_lsTrk;
-        DGField m_InterfaceVelocityComponent;
+        public int LevelSetIndex => m_levelSetIndex;
 
-        public int LevelSetIndex => 0;
+        public SpeciesId PositiveSpecies => m_positiveSpecies;
 
-        public SpeciesId PositiveSpecies => m_lsTrk.GetSpeciesId("B");
-
-        public SpeciesId NegativeSpecies => m_lsTrk.GetSpeciesId("A");
+        public SpeciesId NegativeSpecies => m_negativeSpecies;
 
         public TermActivationFlags LevelSetTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 

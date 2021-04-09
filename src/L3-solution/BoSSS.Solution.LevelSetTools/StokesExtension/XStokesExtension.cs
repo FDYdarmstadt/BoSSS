@@ -101,8 +101,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             }
             //Interior Surface
             for (int d = 0; d < D; d++) {
+                SpeciesId positiveSpecies = LsTrk.GetSpeciesId("B");
+                SpeciesId negativeSpecies = LsTrk.GetSpeciesId("A");
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new InteriorVelocityBoundary(LsTrk, d, InterfaceVelocity[d])
+                    
+                    new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, 0, d, InterfaceVelocity[d])
                     );
             }
             //Immersed Boundary
