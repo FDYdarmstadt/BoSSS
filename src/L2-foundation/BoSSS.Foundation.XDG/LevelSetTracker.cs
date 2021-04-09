@@ -1354,6 +1354,7 @@ namespace BoSSS.Foundation.XDG {
             this.Regions.Version = VersionCounter;
             this.Regions.Time = time;
             this.m_VersionCnt = VersionCounter;
+
         }
 
         /// <summary>

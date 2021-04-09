@@ -331,7 +331,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // =================================
             if(_MultigridOperatorConfig == null) {
                 int NoOfVar = Fields.Count();
-                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[0][];
+                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[1][];
                 _MultigridOperatorConfig[0] = new MultigridOperator.ChangeOfBasisConfig[NoOfVar];
                 for(int iVar = 0; iVar < NoOfVar; iVar++) {
                     _MultigridOperatorConfig[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {

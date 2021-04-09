@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// Saves the location and weight associated with each node in
         /// <paramref name="compositeRule"/> into a text file
         /// </summary>
-        public static void ToTextFileVolume(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+        public static void ToTextFileCell(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
             int D = gridData.SpatialDimension;
             string[] dimensions = new string[] { "x", "y", "z" };
 
@@ -102,7 +102,38 @@ namespace BoSSS.Foundation.Quadrature {
 
                 foreach (IChunkRulePair<QuadRule> pair in compositeRule) {
                     MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_Cell(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
+                    foreach (var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
+                        for (int n = 0; n < pair.Rule.NoOfNodes; n++) {
+                            file.Write(cell.Value);
 
+                            for (int d = 0; d < D; d++) {
+                                file.Write("\t{0}", globalNodes[cell.Index, n, d].ToString("E", NumberFormatInfo.InvariantInfo));
+                            }
+
+                            file.WriteLine("\t{0}", pair.Rule.Weights[n].ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                    }
+
+                    file.Flush();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Saves the location and weight associated with each node in
+        /// <paramref name="compositeRule"/> into a text file
+        /// </summary>
+        public static void ToTextFileEdge(this ICompositeQuadRule<QuadRule> compositeRule, IGridData gridData, string filename) {
+            int D = gridData.SpatialDimension;
+            string[] dimensions = new string[] { "x", "y", "z" };
+
+            using (var file = new StreamWriter(filename)) {
+                file.WriteLine(String.Format(
+                    "Cell\t{0}\tWeight",
+                    dimensions.Take(D).Aggregate((s, t) => s + "\t" + t)));
+
+                foreach (IChunkRulePair<QuadRule> pair in compositeRule) {
+                    MultidimensionalArray globalNodes = gridData.GlobalNodes.GetValue_EdgeSV(pair.Rule.Nodes, pair.Chunk.i0, pair.Chunk.Len);
                     foreach (var cell in pair.Chunk.Elements.AsSmartEnumerable()) {
                         for (int n = 0; n < pair.Rule.NoOfNodes; n++) {
                             file.Write(cell.Value);

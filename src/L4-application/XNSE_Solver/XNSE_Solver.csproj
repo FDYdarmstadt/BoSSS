@@ -93,6 +93,7 @@
     <Compile Include="Logging\MovingContactLineLogging.cs" />
     <Compile Include="Parameters.cs" />
     <Compile Include="Logging\RisingBubble2DBenchmarkQuantities.cs" />
+    <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\BasicThreePhase.cs" />
     <Compile Include="Tests\ErrorEvaluator.cs" />
     <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
@@ -120,7 +121,6 @@
     <Compile Include="Tests\LevelSetReinitializationTest.cs" />
     <Compile Include="Tests\LevelSetUnitTests.cs" />
     <Compile Include="Tests\SinglePhaseChannel.cs" />
-    <Compile Include="Tests\ASUnitTest.cs" />
     <Compile Include="Tests\StaticDropletTest.cs" />
     <Compile Include="Logging\WaveLikeLogging.cs" />
     <Compile Include="Tests\SteadyStateEvaporationTest.cs" />

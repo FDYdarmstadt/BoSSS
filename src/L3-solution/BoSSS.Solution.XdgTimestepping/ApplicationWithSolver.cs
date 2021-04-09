@@ -48,9 +48,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 return m_CurrentStateVector;
             }
             protected set {
-                 if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
-                    throw new ArgumentException("Grid data object mismatch.");
-
+                if (value != null) {
+                    if (!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                        throw new ArgumentException("Grid data object mismatch.");
+                }
                 m_CurrentStateVector = value;
             }
         }
@@ -115,9 +116,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 return m_CurrentResidualVector;
             }
             protected set {
-                if(!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
-                    throw new ArgumentException("Grid data object mismatch.");
-
+                if (value != null) {
+                    if (!object.ReferenceEquals(value.Mapping.GridDat, this.GridData))
+                        throw new ArgumentException("Grid data object mismatch.");
+                }
                 m_CurrentResidualVector = value;
             }
         }
@@ -129,7 +131,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return this.Timestepping.OperatorAnalysis();
         }      
 
-        abstract protected void CreateTrackerHack();
+        //abstract protected void CreateTrackerHack();
 
         /// <summary>
         /// Called on startup and 
@@ -138,7 +140,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            CreateTrackerHack();
+            //CreateTracker();
 
             // solution:
             var solFields = InstantiateSolutionFields();
@@ -545,7 +547,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        protected override void CreateTrackerHack() {
+        protected override void CreateTracker() {
             var trk = InstantiateTracker();
             //var test = this.Operator;
             if(base.LsTrk == null) {
@@ -662,7 +664,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// empty in the DG case
         /// </summary>
-        protected override void CreateTrackerHack() {
+        protected override void CreateTracker() {
                
         }
 

@@ -74,8 +74,11 @@ namespace AdvancedSolverTests.SubBlocking
         public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
             //using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
             var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution };
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             solver.Init(null);
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             solver.RunSolverMode();
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             //}
             // Note to Jens:
             // the "using"-block calls the Dispose()-Method, so the return value may depend on disposed object

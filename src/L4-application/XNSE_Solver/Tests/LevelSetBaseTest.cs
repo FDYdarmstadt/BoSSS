@@ -64,13 +64,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
         }
 
+
         /// <summary>
         /// computes the timestep size according to the level-set CFL condition
         /// </summary>
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public abstract double ComputeTimestep(int Resolution, int LSdegree);
+        public abstract double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public abstract double getEndTime();
 
        
         /// <summary>
@@ -183,16 +190,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             private set;
         }
 
-        public double[] AcceptableL2Error {
-            get {
-                  return new double[] { };
-            }
+        public virtual double[] AcceptableL2Error {
+            get;
         }
 
-        public double[] AcceptableResidual {
-            get {
-                return  new double[] { };
-            }
+        public virtual double[] AcceptableResidual {
+            get;
         }
 
 
