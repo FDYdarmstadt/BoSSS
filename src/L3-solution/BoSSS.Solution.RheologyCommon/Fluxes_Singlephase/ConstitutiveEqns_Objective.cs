@@ -21,6 +21,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.NSECommon;
 using ilPSP.Utils;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.RheologyCommon {
     /// <summary>

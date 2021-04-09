@@ -54,8 +54,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public override double ComputeTimestep(int Resolution, int LSdegree) {
-            int gridCells1D = 9 * Resolution;
+        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
             double h = 1.0 * L / (double)gridCells1D;
             double dt = h / Uscale;
             dt /= (double)(LSdegree * LSdegree);
@@ -63,7 +63,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             return dt;
         }
 
-       
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override double getEndTime() {
+            return 1.0; //TODO
+        }
+
         /// <summary>
         /// creates a square in 2D and a cube in 3D
         /// </summary>
@@ -213,11 +220,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
         }
-        
 
-        public double[] AcceptableL2Error {
+
+        public override double[] AcceptableL2Error {
             get {
-                  return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
+                return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
             }
         }
 

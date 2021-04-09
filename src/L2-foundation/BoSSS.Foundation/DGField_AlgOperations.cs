@@ -613,7 +613,7 @@ namespace BoSSS.Foundation {
         /// <param name="U">
         /// arguments for <paramref name="f"/>
         /// </param>
-        public void ProjectFunction(double alpha, Func<Vector,double[],int,double> f, CellQuadratureScheme cqs, params DGField[] U) {
+        virtual public void ProjectFunction(double alpha, Func<Vector,double[],int,double> f, CellQuadratureScheme cqs, params DGField[] U) {
 
             string[] Dom = new string[U.Length];
             for (int i = 0; i < Dom.Length; i++)

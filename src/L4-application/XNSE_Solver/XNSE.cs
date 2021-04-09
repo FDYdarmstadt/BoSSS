@@ -59,15 +59,17 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </remarks>
     public class XNSE : XNSE<XNSE_Control> {
 
-        //===========
-        // Main file
-        //===========
+        // ===========
+        //  Main file
+        // ===========
         static void Main(string[] args) {
 
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //Tests.ASUnitTest.CurvedElementsTest(3);
+
+            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
+            ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //throw new Exception("Remove me");
 
@@ -123,6 +125,28 @@ namespace BoSSS.Application.XNSE_Solver {
             }
             return quadOrder;
         }
+
+        /// <summary>
+        /// Current velocity
+        /// </summary>
+        public VectorField<XDGField> Velocity {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return new VectorField<XDGField>(this.CurrentState.Fields.Take(D).Select(f => ((XDGField)f)).ToArray());
+            }
+        }
+
+        /// <summary>
+        /// Current Pressure
+        /// </summary>
+        public XDGField Pressure {
+            get {
+                int D = this.GridData.SpatialDimension;
+                return (XDGField)this.CurrentState.Fields[D];
+            }
+        }
+
+
 
         /// <summary>
         /// Usually, the term "DG order of the calculation" means the velocity degree.
@@ -268,22 +292,30 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
-            
+
             OperatorFactory opFactory = new OperatorFactory();
-            
+
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
+            FinalOperatorSettings(XOP);
+            XOP.Commit();
+
+            return XOP;
+        }
+
+        /// <summary>
+        /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
+        /// </summary>
+        /// <param name="XOP"></param>
+        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
-            XOP.Commit();
-
-            return XOP;
         }
 
         /// <summary>
@@ -295,13 +327,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+                DefineMomentumEquation(opFactory, config, d, D);
 
                 // Add Gravitation
-                if(config.isGravity){
+                if(config.isGravity) {
                     var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
                     opFactory.AddParameter(GravA);
                     var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
@@ -309,7 +338,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // Add additional volume forces
-                if (config.isVolForce) {
+                if(config.isVolForce) {
                     var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
                     opFactory.AddParameter(VolForceA);
                     var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
@@ -380,6 +409,20 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// Override this method to customize the assembly of the momentum equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="d">Momentum component index</param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+            opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
+            opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+        }
+
+        /// <summary>
         /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>;
         /// Override to customize.
         /// </summary>
@@ -396,39 +439,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
         }
-
-
-        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 1) {
-
-        //    DGField[] plotFields = this.m_RegisteredFields.ToArray();
-        //    void AddPltField(DGField f) {
-        //        bool add = true;
-        //        foreach(var ff in plotFields) {
-        //            if(object.ReferenceEquals(f, ff) || (f.Identification == ff.Identification)) {
-        //                add = false;
-        //                break;
-        //            }
-        //        }
-        //        if(add) {
-        //            f.AddToArray(ref plotFields);
-        //        }
-        //    }
-        //    void AddPltFields(IEnumerable<DGField> fs) {
-        //        foreach(var f in fs)
-        //            AddPltField(f);
-        //    }
-
-        //    if (Timestepping?.Parameters != null) {
-        //        AddPltFields(Timestepping.Parameters);
-        //    }
-        //    if (LsUpdater?.Parameters != null) {
-        //        AddPltFields(LsUpdater.Parameters.Values);
-        //        AddPltFields(LsUpdater.InternalFields.Values);
-        //    }
-
-        //    Tecplot.PlotFields(plotFields, "XNSE_Solver-" + timestepNo, physTime, superSampling);
-        //}
-
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls

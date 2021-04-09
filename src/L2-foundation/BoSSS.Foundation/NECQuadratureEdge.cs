@@ -130,6 +130,10 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 comp => (((comp.BoundaryEdgeTerms | comp.InnerEdgeTerms) & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IEdgeForm ? new NonlinEdgeFormVectorizer((IEdgeForm)eq) : null));
 
+            //foreach(var C in m_EdgeForm_V[0].m_AllComponentsOfMyType) {
+            //    Console.WriteLine($"    {C.GetType()} :: {C.ToString()}");
+            //}
+
 
             // determine for which fields evaluation is required.
             bool[] GradientRequired = new bool[_DomainFields.Count];

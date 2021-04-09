@@ -35,13 +35,22 @@ using NUnit.Framework;
 
 namespace BoSSS.Application.XDGTest {
 
+    /// <summary>
+    /// 
+    /// </summary>
     public class XDGTestControl : BoSSS.Solution.Control.AppControl {
 
+        /// <summary>
+        /// 
+        /// </summary>
         public XDGTestControl() {
             SetDGdegree(2);
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
         public override void SetDGdegree(int p) {
             base.FieldOptions.Clear();
             base.AddFieldOption("Pressure", p, Solution.Control.FieldOpts.SaveToDBOpt.TRUE);
@@ -55,17 +64,20 @@ namespace BoSSS.Application.XDGTest {
     /// </summary>
     class XDGTestMain : BoSSS.Solution.Application<XDGTestControl> {
         static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
+            VariousTests.MultipleTrackerUpdateCalls(1);
             //UnitTest.AllUp();
             //UnitTest.RestartTest();
-            //FinalizeMPI();
+            FinalizeMPI();
 
+            /*
             _Main(args, false, delegate () {
                 XDGTestMain p = new XDGTestMain();
                 //p.m_GridPartitioningType = BoSSS.Foundation.Grid.GridPartType.none;
                 return p;
             });
+            */
         }
 
         /// <summary>

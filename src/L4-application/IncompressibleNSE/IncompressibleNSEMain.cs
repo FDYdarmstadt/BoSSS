@@ -120,7 +120,7 @@ namespace BoSSS.Application.IncompressibleNSE {
 
                     var comps = op.EquationComponents[CodName[d]];
 
-                    var ConvBulk = new LocalLaxFriedrichsConvection(D, boundaryCondMap, d, Control.Density);
+                    var ConvBulk = new LocalLaxFriedrichsConvection(D, boundaryCondMap, d, Control.Density, null);
                     comps.Add(ConvBulk); // bulk component
                 }
             }

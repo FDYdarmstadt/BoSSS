@@ -777,7 +777,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                             }
                         }
                     }
-                    double PSnINorm = PSnI.L2Norm();
                     double[] PSnINormal_IN = PSnI.Normalize(); // line normal: tangential to domain boundary & normal on contact line
 
 
@@ -847,7 +846,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             int D = Nsurf.Dim;
 
-            Vector tau = new double[D];
+            Vector tau = new Vector(D);
             for(int d1 = 0; d1 < D; d1++) {
                 for(int d2 = 0; d2 < D; d2++) {
                     double nn = Nsurf[d1] * Nsurf[d2];

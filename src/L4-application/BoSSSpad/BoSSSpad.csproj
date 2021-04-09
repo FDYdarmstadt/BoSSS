@@ -55,6 +55,7 @@
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FastColoredTextBox">
@@ -164,9 +165,6 @@
     </Compile>
     <Compile Include="WorksheetEntry.cs" />
     <Compile Include="XmlDocumentationExtensions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\internal\src\private-gutz\L4-application\LowMachCombustionNSE\LowMachCombustionNSE.csproj">

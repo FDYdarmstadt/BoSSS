@@ -32,7 +32,7 @@ See in the appendix of the [BoSSS handbook](https://github.com/FDYdarmstadt/BoSS
 
 This project is licensed under the [Apache License](http://www.apache.org/licenses/LICENSE-2.0).
 
-For more information, see [license](LICENSE.md)
+For more information, see [license](LICENSE.md).
 
 BoSSS greatfully relies on multiple [Third-Party Software](doc/licenses/Overview.md) packages, with different licenses.
 

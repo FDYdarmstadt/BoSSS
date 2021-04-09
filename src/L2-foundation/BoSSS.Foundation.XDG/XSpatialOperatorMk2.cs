@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.XDG {
            
         }
 
-        List<string> m_SpeciesList = new List<string>();
+        public List<string> m_SpeciesList = new List<string>();
 
         private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG {
                 foreach(IEquationComponent iec in op.EquationComponents[comps]) {
                     //m_SpatialOperator.EquationComponents[comps].Add(iec);
                     
-                    if(iec is ISpeciesFilter fiec) {
+                    if(iec is ISpeciesFilter fiec && fiec.ValidSpecies != null) {
                         string spcNmn = fiec.ValidSpecies;
 
                         if(!this.Species.Contains(spcNmn)) {
@@ -193,6 +193,16 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+
+        /// <summary>
+        /// Non-coupling contact-line terms.
+        /// **Note: This only considers the 0-th level-set.**
+        /// </summary>
+        public SpatialOperator ContactLineOperator_Ls0 {
+            get;
+            private set;
+        }
+
 
         /// <summary>
         /// edge and cell scheme for a certain species
@@ -1004,6 +1014,8 @@ namespace BoSSS.Foundation.XDG {
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
             SurfaceElementOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
+            ContactLineOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+                (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
         }
 
         _XEquationComponents m_EquationComponentsHelper;
@@ -1121,6 +1133,7 @@ namespace BoSSS.Foundation.XDG {
 
             GhostEdgesOperator.Commit();
             SurfaceElementOperator_Ls0.Commit();
+            ContactLineOperator_Ls0.Commit();
 
             // sync the variable names of slave operators:
             // -------------------------------------------
@@ -1152,6 +1165,7 @@ namespace BoSSS.Foundation.XDG {
 
             GhostEdgesOperator = SyncSlaveOp(GhostEdgesOperator, "GhostEdgesOperator");
             SurfaceElementOperator_Ls0 = SyncSlaveOp(SurfaceElementOperator_Ls0, "SurfaceElementOperator");
+            ContactLineOperator_Ls0 = SyncSlaveOp(ContactLineOperator_Ls0, "ContactLineOperator");
 
 
 
@@ -1258,6 +1272,7 @@ namespace BoSSS.Foundation.XDG {
                 allcomps.AddRange(this.EquationComponents[cdo]);
                 allcomps.AddRange(this.GhostEdgesOperator.EquationComponents[cdo]);
                 allcomps.AddRange(this.SurfaceElementOperator_Ls0.EquationComponents[cdo]);
+                allcomps.AddRange(this.ContactLineOperator_Ls0.EquationComponents[cdo]);
             }
             TermActivationFlags extractTaf(IEquationComponent c) {
                 TermActivationFlags ret = default(TermActivationFlags);
@@ -1325,6 +1340,15 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                foreach (var eq in this.ContactLineOperator_Ls0.EquationComponents[CodNmn]) {
+                    if (!(eq is ISupportsJacobianComponent _eq))
+                        throw new NotSupportedException(string.Format("Unable to handle component {0}: To obtain a Jacobian operator, all components must implement the {1} interface.", eq.GetType().Name, typeof(ISupportsJacobianComponent).Name));
+                    foreach (var eqj in _eq.GetJacobianComponents(SpatialDimension)) {
+                        CheckCoeffUpd(eq, eqj);
+                        JacobianOp.ContactLineOperator_Ls0.EquationComponents[CodNmn].Add(eqj);
+                    }
+                }
+
             }
 
             foreach(string domName in this.DomainVar)
@@ -1333,6 +1357,7 @@ namespace BoSSS.Foundation.XDG {
             JacobianOp.VolumeQuadraturSchemeProvider = this.VolumeQuadraturSchemeProvider;
             JacobianOp.SurfaceElement_VolumeQuadraturSchemeProvider = this.SurfaceElement_VolumeQuadraturSchemeProvider;
             JacobianOp.SurfaceElement_EdgeQuadraturSchemeProvider = this.SurfaceElement_EdgeQuadraturSchemeProvider;
+            JacobianOp.ContactLine_VolumeQuadratureSchemeProvider = this.ContactLine_VolumeQuadratureSchemeProvider;
             JacobianOp.GhostEdgeQuadraturSchemeProvider = this.GhostEdgeQuadraturSchemeProvider;
             foreach(var species in this.Species) {
                 var src = this.UserDefinedValues[species];
@@ -1525,6 +1550,8 @@ namespace BoSSS.Foundation.XDG {
             return volScheme;
         }
 
+
+
         Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_SurfaceElement_VolumeQuadraturSchemeProvider;
 
         /// <summary>
@@ -1549,6 +1576,35 @@ namespace BoSSS.Foundation.XDG {
             }
         }
         #endregion
+
+        Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> m_ContactLine_VolumeQuadraturSchemeProvider;
+
+        /// <summary>
+        /// User-customizable factory, to specify the cell/volume quadrature, see also <see cref="QuadOrderFunction"/>
+        /// - 1st argument: current level-set tracker
+        /// - 2nd argument: species which should be integrated, one of <see cref="Species"/>
+        /// - 3rd argument: a default <see cref="XQuadSchemeHelper"/>
+        /// - 4th argument: quadrature order
+        /// - 5th argument: level-set resp. tracker history.
+        /// - return: quadrature scheme
+        /// </summary>
+        public Func<LevelSetTracker, SpeciesId, XQuadSchemeHelper, int, int, CellQuadratureScheme> ContactLine_VolumeQuadratureSchemeProvider {
+            get {
+                if (m_ContactLine_VolumeQuadraturSchemeProvider == null)
+                    m_ContactLine_VolumeQuadraturSchemeProvider = DefaultContactLineCQSprovider;
+                return m_ContactLine_VolumeQuadraturSchemeProvider;
+            }
+            set {
+                if (IsCommitted)
+                    throw new NotSupportedException("not allowed to change after Commit");
+                m_ContactLine_VolumeQuadraturSchemeProvider = value;
+            }
+        }
+        
+        CellQuadratureScheme DefaultContactLineCQSprovider(LevelSetTracker lsTrk, SpeciesId spc, XQuadSchemeHelper SchemeHelper, int quadOrder, int TrackerHistory) {
+            var volScheme = SchemeHelper.GetContactLineQuadScheme(spc, 0);
+            return volScheme;
+        }
 
 
         DelOperatorCoefficientsProvider m_OperatorCoefficientsProvider; 
@@ -1685,8 +1741,8 @@ namespace BoSSS.Foundation.XDG {
         /// exception is thrown;
         /// </remarks>
         internal protected void Verify() {
-            if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
-                throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
+            //if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
+            //    throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
 
             foreach(var comps in m_EquationComponents.Values) {
                 foreach(IEquationComponent c in comps) {

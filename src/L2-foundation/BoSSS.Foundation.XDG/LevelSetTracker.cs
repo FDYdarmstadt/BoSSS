@@ -1354,6 +1354,7 @@ namespace BoSSS.Foundation.XDG {
             this.Regions.Version = VersionCounter;
             this.Regions.Time = time;
             this.m_VersionCnt = VersionCounter;
+
         }
 
         /// <summary>
@@ -1428,7 +1429,7 @@ namespace BoSSS.Foundation.XDG {
         /// If true, the distance of near-cells can only increase by one.
         /// E.g., if the level-set leaves the domain, setting this parameter to true ensures that the respective 
         /// boundary cells are treated as near-cells for one 
-        /// <see cref="UpdateTracker(int, bool, int[])"/>-cycle.
+        /// <see cref="UpdateTracker(double, int, bool, int[])"/>-cycle.
         /// This maintains a 'correct' near field when level-set leaves domain, which is necessary e.g. for operator matrix update.
         /// 
         /// Furthermore, it speeds up the detection of cut cells: the detection of cut cells is limited to the near-region,
@@ -1496,6 +1497,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // init memory
                     // -----------
+                    Regions.m_LevSetRegions_b4Update = Regions.m_LevSetRegions;
                     Regions.m_LevSetRegions = new ushort[JA];
                     LevSetRegions = Regions.m_LevSetRegions;
                     Regions.InvalidateCaches();
@@ -2025,7 +2027,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Dirty Hack to support dynamic load balancing,
-        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers
+        /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext"/> for all observers
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {

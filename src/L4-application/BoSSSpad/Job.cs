@@ -202,8 +202,7 @@ namespace BoSSS.Application.BoSSSpad {
         List<Tuple<byte[], string>> m_AdditionalDeploymentFiles = new List<Tuple<byte[], string>>();
 
         /// <summary>
-        /// Additional data files which will be deployed in the <see cref="DeploymentDirectory"/> together with the
-        /// assemblies.
+        /// Additional data files which will be deployed in the <see cref="Deployment.DeploymentDirectory"/> together with the assemblies.
         ///  - 1st item: file content
         ///  - 2nd item: file name
         /// </summary>
@@ -690,8 +689,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Returns the directory where the assemblies for <paramref name="myJob"/> 
-        /// are deployed if <paramref name="myJob"/> is assigned to this batch processor.
+        /// Creates a new directory where the assemblies for some job can be copied to for a deployment on this batch processor.
         /// </summary>
         string GetNewDeploymentDir() {
             if(AssignedBatchProc == null)
@@ -1076,7 +1074,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// After calling <see cref="BatchProcessorClient.Submit(Job)"/>, this job
+        /// After calling <see cref="BatchProcessorClient.Submit"/>, this job
         /// is assigned to the respective batch processor, which is recorded in this member.
         /// </summary>
         public BatchProcessorClient AssignedBatchProc {
@@ -1322,6 +1320,15 @@ namespace BoSSS.Application.BoSSSpad {
                     return JobStatus.FailedOrCanceled;
                 }
 
+                if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
+                    if(WriteHints) {
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Hint: want to re-activate the job.");
+                    }
+                    this.statusCache = JobStatus.FailedOrCanceled;
+                    return JobStatus.FailedOrCanceled;
+                }
+
                 // ============
                 // what now?
                 // ============
@@ -1390,8 +1397,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         
         /// <summary>
-        /// Copies the executable files to the <see cref="DeploymentBaseDirectory"/>, 
-        /// but does not submit the job.
+        /// Copies the executable files to the <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, but does not submit the job.
         /// </summary>
         string DeployExecuteables() {
 
@@ -1438,7 +1444,11 @@ namespace BoSSS.Application.BoSSSpad {
                     foreach (var a in AllDependentAssemblies) {
                         if (IsNotSystemAssembly(a, MainAssemblyDir)) {
                             files.Add(a.Location);
+                            if(File.Exists(a.Location + ".config")) {
+                                files.Add(a.Location + ".config");
+                            }
                         }
+
                     }
                
                     // test for really strange errors

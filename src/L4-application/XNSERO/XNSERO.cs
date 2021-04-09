@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
             //throw new Exception("remove me");
-
+            
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
