@@ -752,23 +752,25 @@ namespace BoSSS.Foundation.XDG {
                         //Only for ls0 so far:
                         //Add species, if it is separated from another species by level set 0
                         //For species not separated by ls0, nothing happens
-                        if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
-                            EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                            CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                            if (ruleDiagnosis) {
-                                SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
-                                SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                        if(!SchemeHelper.SpeciesAreSeparatedByLevSet(0, SpeciesId, SpeciesId)) {
+                            if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
+                                EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                if (ruleDiagnosis) {
+                                    SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                    SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                }
+                                ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
-                            ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
-                        }
 
-                        if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
-                            EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
-                            CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
-                            if (ruleDiagnosis) {
-                                ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                            if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
+                                EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
+                                CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                                if (ruleDiagnosis) {
+                                    ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                }
+                                ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
-                            ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
                     }
 
