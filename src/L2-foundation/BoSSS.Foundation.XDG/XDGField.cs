@@ -1355,7 +1355,7 @@ namespace BoSSS.Foundation.XDG {
 
             if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
                 if (trk.HistoryLength < 1)
-                    throw new NotSupportedException("LevelSettracker must have at a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
+                    throw new NotSupportedException("LevelSettracker must have a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
             }
 
             // rearrange DG coordinates if regions have changed

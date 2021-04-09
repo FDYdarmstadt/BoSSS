@@ -59,16 +59,17 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </remarks>
     public class XNSE : XNSE<XNSE_Control> {
 
-        //===========
-        // Main file
-        //===========
+        // ===========
+        //  Main file
+        // ===========
         static void Main(string[] args) {
 
 
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
-            //Tests.ASUnitTest.CurvedElementsTest(3);
+
+            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
+            ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //throw new Exception("Remove me");
 
