@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using ilPSP;
-using Mono.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,6 +23,8 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Linq;
 using BoSSS.Solution.Utils;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 
 namespace BoSSS.Solution.Control {
 
@@ -89,6 +90,7 @@ namespace BoSSS.Solution.Control {
 
         void Compile() {
             if (m_Xt_Del == null && m_X__Del == null) {
+                /*
                 using (var err = new StringWriter()) {
                     var Settings = new CompilerSettings();
 #if DEBUG
@@ -168,6 +170,66 @@ namespace BoSSS.Solution.Control {
                         throw new ArgumentException("Unable to cast result of code snippet '" + m_Code + " to a valid expression (Func<double[],double,double> or Func<double[],double>)." + err.NewLine + "Error(s): " + err.NewLine + err.ToString());
                     }
                 }
+                */
+
+                string script;
+                using(var scriptWrt = new StringWriter()) {
+                    scriptWrt.WriteLine("using System;");
+                    scriptWrt.WriteLine("using System.Collections.Generic;");
+                    scriptWrt.WriteLine("using System.Linq;");
+                    scriptWrt.WriteLine("using ilPSP;");
+                    scriptWrt.WriteLine("using ilPSP.Utils;");
+                    scriptWrt.WriteLine("using BoSSS.Platform;");
+                    scriptWrt.WriteLine("using BoSSS.Platform.Utils;");
+                    scriptWrt.WriteLine("using BoSSS.Foundation;");
+                    scriptWrt.WriteLine("using BoSSS.Foundation.Grid;");
+                    scriptWrt.WriteLine("using BoSSS.Foundation.IO;");
+                    scriptWrt.WriteLine("using BoSSS.Solution;");
+                    scriptWrt.WriteLine("using BoSSS.Solution.Utils;");
+                    scriptWrt.WriteLine();
+
+                    if (!m_AdditionalPrefixCode.IsEmptyOrWhite()) {
+                        scriptWrt.WriteLine(m_AdditionalPrefixCode);
+                        scriptWrt.WriteLine();
+                    }
+
+                    {
+                        string Prefix = m_TimeDep ? "Func<double[], double, double>" : "Func<double[], double>";
+                        Prefix = Prefix + " myfunc = ";
+                        scriptWrt.WriteLine(Prefix + m_Code + ";");
+                        scriptWrt.Write("myfunc");
+                    }
+
+
+                    script = scriptWrt.ToString();
+                }
+
+                Assembly[] allAssis = BoSSS.Solution.Application.GetAllAssemblies(typeof(Formula)).ToArray();
+                //foreach(var a in allAssis) {
+                //    Console.WriteLine("---" + a.FullName + "   " + (a.Location != null ? a.Location: "NULL"));
+                //}
+                var scriptOptions = ScriptOptions.Default;
+                scriptOptions = scriptOptions.AddReferences(allAssis);
+
+                var formula = CSharpScript.EvaluateAsync(script, scriptOptions).Result;
+
+
+                if(formula != null) {
+                    if(formula is Func<double[], double, double>) {
+                        m_Xt_Del = (Func<double[], double, double>)formula;
+                        return;
+                    }
+
+                    if(formula is Func<double[], double>) {
+                        m_X__Del = (Func<double[], double>)formula;
+                        return;
+                    }
+
+                    throw new ArgumentException("Unable to cast result of code snippet '" + m_Code + " to a valid expression (Func<double[],double,double> or Func<double[],double>).");
+                } else {
+                    throw new ArgumentException("Unable to cast result of code snippet '" + m_Code + " to a valid expression (Func<double[],double,double> or Func<double[],double>).");
+                }
+
             }
         }
 

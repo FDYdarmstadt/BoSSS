@@ -31,7 +31,6 @@ using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
-using Mono.CSharp;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
@@ -261,20 +260,23 @@ namespace BoSSS.Solution {
         /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
         /// </summary>
         public static void ReadBatchModeConnectorConfig() {
-            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
-            if (userDir.IsEmptyOrWhite())
-                return;
+            using(var tr = new FuncTrace()) {
+                string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+                if(userDir.IsEmptyOrWhite())
+                    return;
 
-            try {
-                var o = MatlabConnectorConfig.LoadDefault(userDir);
+                try {
+                    var o = MatlabConnectorConfig.LoadDefault(userDir);
 
-                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
-                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
 
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+                } catch(Exception e) {
+                    var errStr = $"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}";
+                    tr.Logger.Error(errStr);
+                    Console.Error.WriteLine(errStr);
+                }
             }
-
         }
 
         /// <summary>
@@ -294,18 +296,24 @@ namespace BoSSS.Solution {
             if (args == null)
                 args = new string[0];
 
+            m_Logger.Info("In BoSSS MPI init.");
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            m_Logger.Info("Bootstrapping.");
+
 
             ilPSP.Environment.Bootstrap(
                 args,
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
 
+            m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
+
+            int rank, size;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
             if (_MustFinalizeMPI) {
-                int rank, size;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
 
                     Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
@@ -372,6 +380,9 @@ namespace BoSSS.Solution {
 
                 }
             }
+
+            m_Logger.Info("Hello from MPI rank " + rank + " of " + size + "!");
+
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -382,24 +393,29 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Recursive collection of all dependencies of some assembly.
         /// </summary>
-        public static IEnumerable<Assembly> GetAllAssemblies() {
+        public static IEnumerable<Assembly> GetAllAssemblies(Type EntryType) {
             StackTrace stackTrace = new StackTrace();
             List<Assembly> allAssis = new List<Assembly>();
 
-            // Start from entry assembly and _not_
-            // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-            // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-            // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
+            if(EntryType == null) {
+                // Start from entry assembly and _not_
+                // - don't use typeof(T).Assembly since T might be located different assembly than the control file
+                // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
+                // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
-            for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tuepe != null) {
-                    Assembly entryAssembly = Tuepe.Assembly;
-                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                for(int i = 0; i < stackTrace.FrameCount; i++) {
+                    Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                    if(Tuepe != null) {
+                        Assembly entryAssembly = Tuepe.Assembly;
+                        GetAllAssembliesRecursive(entryAssembly, allAssis);
+                    }
                 }
+            } else {
+                GetAllAssembliesRecursive(EntryType.Assembly, allAssis);
             }
+            
 
-            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
+            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib")).Where(a => a.IsDynamic == false).ToArray();
         }
 
         /// <summary>
@@ -413,8 +429,11 @@ namespace BoSSS.Solution {
             if (a.GlobalAssemblyCache)
                 return;
 
+
             if (assiList.Contains(a))
                 return;
+
+
 
             assiList.Add(a);
 
@@ -445,6 +464,9 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            m_Logger.Info("Entering _Main routine...");
+
 
             int MPIrank = int.MinValue;
 #if DEBUG
@@ -482,17 +504,22 @@ namespace BoSSS.Solution {
                 if (!argsParseSuccess) {
                     MPI.Wrappers.csMPI.Raw.mpiFinalize();
                     _MustFinalizeMPI = false;
+                    m_Logger.Error("Unable to parse arguments - exiting.");
                     System.Environment.Exit(-1);
                 }
 
                 if (opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
+                m_Logger.Info("Braodcasting command line options..");
                 opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                m_Logger.Info("done.");
 
                 // Delete old plots if requested
                 if (opt.delPlt) {
+                    m_Logger.Info("Deletion of old plot files...");
                     DeleteOldPlotFiles();
+                    m_Logger.Info("done.");
                 }
 
 
@@ -500,9 +527,12 @@ namespace BoSSS.Solution {
                 T ctrlV2 = null;
                 T[] ctrlV2_ParameterStudy = null;
                 if (!noControlFile) {
+                    m_Logger.Info("Loading control object...");
                     LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                    m_Logger.Info("done.");
                 } else {
                     ctrlV2 = new T();
+                    m_Logger.Info("No control Object.");
                 }
 
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
@@ -738,8 +768,10 @@ namespace BoSSS.Solution {
                 // -------
 
                 using (Application<T> app = ApplicationFactory()) {
+                    m_Logger.Info("Running application...");
                     app.Init(ctrlV2);
                     app.RunSolverMode();
+                    m_Logger.Info("Application finished.");
                 }
             } else {
                 // no control file 
@@ -1090,7 +1122,12 @@ namespace BoSSS.Solution {
             // init database
             // =============
 
+            m_Logger.Info("Try to open database...");
             m_Database = GetDatabase();
+            if(m_Database == null)
+                m_Logger.Info("Database is NULL.");
+            else
+                m_Logger.Info("Opened database: " + m_Database.ToString());
 
             if(this.Control != null) {
                 this.passiveIo = !this.Control.savetodb;
@@ -1104,8 +1141,13 @@ namespace BoSSS.Solution {
 
                     if(NamespacesToLog.Any(s => s.Equals("*"))) {
                         Tracer.NamespacesToLog = new string[] { "" };
+                        m_Logger.Info("Logging ALL namespaces / full tracing");
                     } else {
                         Tracer.NamespacesToLog = NamespacesToLog;
+                        m_Logger.Info("Logging " + NamespacesToLog.Length + " namespaces.");
+                        foreach(var n in NamespacesToLog) {
+                            m_Logger.Info("Logging namespace: " + n);
+                        }
                     }
                 }
             } else {
@@ -1141,6 +1183,7 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.Tags = tags;
             }
 
+            
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
             using(var ht = new FuncTrace()) {
                 // create or load grid

@@ -195,6 +195,12 @@ namespace BoSSS.Application.XNSERO_Solver {
             double _penalty = Penalty(inp.jCellIn);
             int dim = normalVector.Dim;
 
+            //uA[0] = u
+            //uA[1] = v
+            //uA[2] = PhoreticField
+
+            // Grad_u[2,0] = d PhoreticField /dx 
+            // Grad_u[2,1] = d PhoreticField /dy
             
 
             Debug.Assert(uA.Length == ArgumentOrdering.Count);
@@ -216,17 +222,24 @@ namespace BoSSS.Application.XNSERO_Solver {
             
             if(m_UsePhoretic) {
 
-                double alpha = GetAngle(inp.X, inp.jCellIn, out var Particle);
+                Vector GradPhoretic = new Vector(Grad_uA[2, 0], Grad_uA[2, 1]);
+                Vector GradPhoreticNormal = (inp.Normal * GradPhoretic) * inp.Normal;
+                Vector GradPhoreticTangential = GradPhoretic - GradPhoreticNormal;
 
+                /*
+                double alpha = GetAngle(inp.X, inp.jCellIn, out var Particle);
+                */
 
                 Debug.Assert(ArgumentOrdering.Count == dim + 1);
                 double phoreticVal = uA[dim];
-                Vector tangential = normalVector.Rotate2D(Math.PI * 0.5);
+                //Vector tangential = normalVector.Rotate2D(Math.PI * 0.5);
+
+                //uAFict = uAFict + GradPhoreticTangential * 0.7;
 
                 // todo: add computation of slip velocity.
                 // Note: if the relation is non-linear, special treatment is required!
                 if(write) {
-                    Console.WriteLine($"todo: add computation of slip velocity; phoretic value is {phoreticVal}, angle is {alpha}");
+                    Console.WriteLine($"todo: add computation of slip velocity; phoretic value is {phoreticVal}, gradient absolute value is {GradPhoretic.Abs()}");
                     write = false; // prevent end-less output; 
                 }
             } else {
@@ -258,11 +271,15 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =====================
             switch(bcType) {
                 case BoundaryConditionType.passive: {
+
+                    // Grad_aU[0,0] = du_dx; Grad_aU[0,1] = du_dy;
+                    // Grad_aU[1,0] = dv_dx; Grad_aU[1,1] = dv_dy;
+
                     for(int d = 0; d < dim; d++) {
-                        returnValue -= FluidViscosity * Grad_uA[Component, d] * vA * normalVector[d];
-                        returnValue -= FluidViscosity * Grad_vA[d] * (uA[Component] - uAFict[Component]) * normalVector[d];
+                        returnValue -= FluidViscosity * Grad_uA[Component, d] * vA * normalVector[d]; // consistency term: \/u*n*viscosity 
+                        returnValue -= FluidViscosity * Grad_vA[d] * (uA[Component] - uAFict[Component]) * normalVector[d]; // symmetry term 
                     }
-                    returnValue += FluidViscosity * (uA[Component] - uAFict[Component]) * vA * _penalty;
+                    returnValue += FluidViscosity * (uA[Component] - uAFict[Component]) * vA * _penalty; // penalty tern
                     break;
                 }
 
