@@ -442,8 +442,8 @@ namespace BoSSS.Solution.XheatCommon {
             vOUTxN *= capB;
             double uJump = U_Neg[0] - U_Pos[0];
 
-            flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * uJump * v_Neg;
-            flx -= 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * uJump * v_Pos;
+            flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * -uJump * v_Neg;
+            flx += 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * -uJump * v_Pos;
             //===========================================================================================================
             //===========================================================================================================
 

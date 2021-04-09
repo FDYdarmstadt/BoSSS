@@ -401,8 +401,8 @@ namespace BoSSS.Solution.XheatCommon {
             
             double uJump = _uIN[0] - _uOUT[0];           
 
-            flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * uJump * _vIN;
-            flx -= 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * uJump * _vOUT;
+            flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * -uJump * _vIN;
+            flx += 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * -uJump * _vOUT;
             //===========================================================================================================
             //===========================================================================================================
 
