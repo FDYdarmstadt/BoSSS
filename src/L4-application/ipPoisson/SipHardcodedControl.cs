@@ -189,7 +189,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
-            RR.LinearSolver.SolverCode = LinearSolverCode.classic_cg;
+            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             return RR;
         }
