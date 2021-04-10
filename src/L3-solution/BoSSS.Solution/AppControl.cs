@@ -30,11 +30,12 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System.Runtime.Serialization;
 using MPI.Wrappers;
-using Mono.CSharp;
 using System.Diagnostics;
 using BoSSS.Foundation;
 using System.Collections;
 using BoSSS.Solution.Utils;
+using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
 
 namespace BoSSS.Solution.Control {
 
@@ -1190,125 +1191,128 @@ namespace BoSSS.Solution.Control {
         static public void FromCode(string ctrlfileContent, Type t, out AppControl ctrl, out AppControl[] ctrl_ParamStudy) {
 
             // try to get type from first line comment (a hack).
-            if (t == null) {
+            if(t == null) {
                 string FirstLine = null;
-                using (StringReader strR1 = new StringReader(ctrlfileContent)) {
+                using(StringReader strR1 = new StringReader(ctrlfileContent)) {
                     FirstLine = strR1.ReadLine();
                 }
-                if (FirstLine != null && FirstLine.StartsWith("//")) {
+                if(FirstLine != null && FirstLine.StartsWith("//")) {
                     FirstLine = FirstLine.Substring(2);
                     try {
                         Type t2 = Type.GetType(FirstLine);
 
-                        if (t2 != null)
+                        if(t2 != null)
                             t = t2;
 
-                    } catch (Exception) {
+                    } catch(Exception) {
 
                     }
                 }
-               
+
             }
 
-            if (t == null)
+            if(t == null)
                 t = typeof(AppControl);
 
 
 
-            var Settings = new CompilerSettings();
-#if DEBUG
-            Settings.Optimize = false;
-#else
-            Settings.Optimize = false;
-#endif
-            CompilerContext cmpCont = new CompilerContext(Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
-            eval.InteractiveBaseClass = t;
+            //            var Settings = new CompilerSettings();
+            //#if DEBUG
+            //            Settings.Optimize = false;
+            //#else
+            //            Settings.Optimize = false;
+            //#endif
+            //            CompilerContext cmpCont = new CompilerContext(Settings, new ConsoleReportPrinter());
+            //            Evaluator eval = new Evaluator(cmpCont);
+            //            eval.InteractiveBaseClass = t;
 
-            // Start from entry assembly and _not_
-            // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-            // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-            StackTrace stackTrace = new StackTrace();
-            Assembly entryAssembly = stackTrace.GetFrame(1).GetMethod().DeclaringType.Assembly;
-            var allAssis = Application.GetAllAssemblies();
-            foreach (var assi in allAssis) {
-                eval.ReferenceAssembly(assi);
+            var allAssis = Application.GetAllAssemblies(null);
+            //foreach (var assi in allAssis) {
+            //    eval.ReferenceAssembly(assi);
+            //}
+           
+
+            string Script;
+            using(StringWriter scriptWriter = new StringWriter()) {
+                using(StringReader strR = new StringReader(ctrlfileContent)) {
+
+                    //bool result_set = false;
+                    //string incompleteStatement = null;
+                    //int lineno = 0;
+                    for(string line = strR.ReadLine(); line != null; line = strR.ReadLine()) {
+                        //lineno++;
+
+                        // Remove any trailing multiline delimiters (for
+                        // compatibility with older control files)
+                        line = line.TrimEnd().TrimEnd('\\');
+                        scriptWriter.WriteLine(line);
+
+                        //string statement;
+                        //if(incompleteStatement == null) {
+                        //    statement = line;
+                        //} else {
+                        //    statement = incompleteStatement + System.Environment.NewLine + line;
+                        //}
+
+                        //try {
+                        //    incompleteStatement = eval.Evaluate(statement, out controlObj, out result_set);
+                        //} catch(Exception e) {
+                        //    string message = String.Format(
+                        //        "'{0}' during the interpretation of control file code, line {1}",
+                        //        e.GetType().Name,
+                        //        lineno);
+                        //    throw new AggregateException(message, e);
+                        //}
+
+                        //if(cmpCont.Report.Errors > 0) {
+                        //    throw new ApplicationException(
+                        //        "Syntax error in control file line " + lineno + ": \n" + statement);
+                        //}
+                    } // end control file lines loop
+                }
+                //if (incompleteStatement != null) {
+                //    throw new ApplicationException(String.Format(
+                //        "Reached end of control file before statement starting with '{0}' was complete",
+                //        incompleteStatement.Substring(0, Math.Min(incompleteStatement.Length, 20))));
+                //}
+                Script = scriptWriter.ToString();
             }
 
-            object controlObj = null;
+            var scriptOptions = ScriptOptions.Default;
+            scriptOptions = scriptOptions.AddReferences(allAssis);
+            object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
-            using (StringReader strR = new StringReader(ctrlfileContent)) {
-
-                bool result_set = false;
-                string incompleteStatement = null;
-                int lineno = 0;
-                for (string line = strR.ReadLine(); line != null; line = strR.ReadLine()) {
-                    lineno++;
-
-                    // Remove any trailing multiline delimiters (for
-                    // compatibility with older control files)
-                    line = line.TrimEnd().TrimEnd('\\');
-
-                    string statement;
-                    if (incompleteStatement == null) {
-                        statement = line;
-                    } else {
-                        statement = incompleteStatement + "\n" + line;
-                    }
-
-                    try {
-                        incompleteStatement = eval.Evaluate(statement, out controlObj, out result_set);
-                    } catch (Exception e) {
-                        string message = String.Format(
-                            "'{0}' during the interpretation of control file code, line {1}",
-                            e.GetType().Name,
-                            lineno);
-                        throw new AggregateException(message, e);
-                    }
-
-                    if (cmpCont.Report.Errors > 0) {
-                        throw new ApplicationException(
-                            "Syntax error in control file line " + lineno + ": \n" + statement);
-                    }
-                }
-
-                if (incompleteStatement != null) {
-                    throw new ApplicationException(String.Format(
-                        "Reached end of control file before statement starting with '{0}' was complete",
-                        incompleteStatement.Substring(0, Math.Min(incompleteStatement.Length, 20))));
-                }
-
-                if (controlObj == null) {
-                    throw new ApplicationException(
-                        "Unable to create a control object from cs-script file.");
-                }
-
-                // return
-                if (controlObj is System.Collections.IEnumerable) {
-                    var enu = (System.Collections.IEnumerable)controlObj;
-
-                    List<AppControl> _ctrl_ParameterStudy = new List<AppControl>();
-                    //ctrl_ParameterStudy = new AppControl[enu.];
-                    int i = 0;
-                    foreach (object o in enu) {
-                        AppControl c = (AppControl)o;
-                        c.ControlFileText = ctrlfileContent;
-                        c.GeneratedFromCode = true;
-                        c.ControlFileText_Index = i;
-                        _ctrl_ParameterStudy.Add(c);
-                        i++;
-                    }
-
-                    ctrl_ParamStudy = _ctrl_ParameterStudy.ToArray();
-                    ctrl = null;
-                } else {
-                    ctrl_ParamStudy = null;
-                    ctrl = (AppControl)controlObj;
-                    ctrl.ControlFileText = ctrlfileContent;
-                    ctrl.ControlFileText_Index = 0;
-                    ctrl.GeneratedFromCode = true;
-                }
+            if(controlObj == null) {
+                throw new ApplicationException(
+                    "Unable to create a control object from cs-script file.");
             }
+
+            // return
+            if(controlObj is System.Collections.IEnumerable) {
+                var enu = (System.Collections.IEnumerable)controlObj;
+
+                List<AppControl> _ctrl_ParameterStudy = new List<AppControl>();
+                //ctrl_ParameterStudy = new AppControl[enu.];
+                int i = 0;
+                foreach(object o in enu) {
+                    AppControl c = (AppControl)o;
+                    c.ControlFileText = ctrlfileContent;
+                    c.GeneratedFromCode = true;
+                    c.ControlFileText_Index = i;
+                    _ctrl_ParameterStudy.Add(c);
+                    i++;
+                }
+
+                ctrl_ParamStudy = _ctrl_ParameterStudy.ToArray();
+                ctrl = null;
+            } else {
+                ctrl_ParamStudy = null;
+                ctrl = (AppControl)controlObj;
+                ctrl.ControlFileText = ctrlfileContent;
+                ctrl.ControlFileText_Index = 0;
+                ctrl.GeneratedFromCode = true;
+            }
+
 
         }
 

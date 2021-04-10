@@ -25,6 +25,7 @@ using BoSSS.Foundation.Comm;
 using BoSSS.Platform;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -386,6 +387,30 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public override int GetHashCode() {
             return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// Returns all connected Edges
+        /// </summary>
+        public EdgeMask AllEdges() {
+            int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
+
+            HashSet<int> edges = new HashSet<int>(this.ItemEnum.Count() * 2 * GridData.SpatialDimension);
+
+            foreach (int jCell in this.ItemEnum) {
+                int cell;
+                if(base.MaskType == MaskType.Geometrical && this.GridData.iGeomCells.GeomCell2LogicalCell != null) {
+                    cell = this.GridData.iGeomCells.GeomCell2LogicalCell[jCell];
+                } else {
+                    cell = jCell;
+                }
+                int[] Edges = C2E[cell];
+                foreach(int e in Edges) {
+                    edges.Add(Math.Abs(e));
+                }
+            }
+            int[] sequence = edges.ToArray();
+            return new EdgeMask(this.GridData, sequence, base.MaskType);
         }
 
         /// <summary>

@@ -24,6 +24,7 @@ using BoSSS.Platform;
 //using Renci.SshNet;
 //using Renci.SshNet.Common;
 using BoSSS.Foundation.Grid;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.IO {
 
@@ -126,36 +127,40 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns>A list of databases as listed in DBE.xml.</returns>
         public static IList<IDatabaseInfo> LoadDatabaseInfosFromXML() {
-            string path = Path.Combine(Utils.GetBoSSSUserSettingsPath(), "etc", "DBE.xml");
-            if (!File.Exists(path)) {
-                return new List<IDatabaseInfo>();
-            }
+            using(var tr = new FuncTrace()) {
+                string path = Path.Combine(Utils.GetBoSSSUserSettingsPath(), "etc", "DBE.xml");
+                if(!File.Exists(path)) {
+                    return new List<IDatabaseInfo>();
+                }
 
-            Stream fs = new FileStream(
-                path,
-                FileMode.Open,
-                FileAccess.Read);
+                Stream fs = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read);
 
-            XmlDocument xmlDoc = new XmlDocument();
-            xmlDoc.Load(fs);
-            XmlNodeList xmlDatabases = xmlDoc.SelectNodes("/DBEControl/Databases/Database");
+                XmlDocument xmlDoc = new XmlDocument();
+                xmlDoc.Load(fs);
+                XmlNodeList xmlDatabases = xmlDoc.SelectNodes("/DBEControl/Databases/Database");
 
-            IList<IDatabaseInfo> databases = new List<IDatabaseInfo>();
+                IList<IDatabaseInfo> databases = new List<IDatabaseInfo>();
 
-            int cnt = 0;
-            foreach (XmlNode xmlDatabase in xmlDatabases) {
+                int cnt = 0;
+                foreach(XmlNode xmlDatabase in xmlDatabases) {
                     XmlElement xmlPath = xmlDatabase.SelectSingleNode("path") as XmlElement;
                     string dbpath = xmlPath.GetAttribute("value");
-                try {
-                    databases.Add(DatabaseInfo.Open(dbpath));
-                } catch( Exception e) {
-                    Console.Error.WriteLine($"{e.GetType().Name} caught while opening database #{cnt} at '{dbpath}': {e.Message}");
-                    //databases.Add(null);
+                    try {
+                        databases.Add(DatabaseInfo.Open(dbpath));
+                    } catch(Exception e) {
+                        var errStr = $"{e.GetType().Name} caught while opening database #{cnt} at '{dbpath}': {e.Message}";
+                        tr.Logger.Error(errStr);
+                        Console.Error.WriteLine(errStr);
+                        //databases.Add(null);
+                    }
+                    cnt++;
                 }
-                cnt++;
-            }
 
-            return databases;
+                return databases;
+            }
         }
 
         /// <summary>

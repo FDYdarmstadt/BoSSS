@@ -50,7 +50,7 @@ namespace CNS {
         static void Main(string[] args) {
 
             //Application.InitMPI(args);
-            //CNS.Tests.BoundaryConditions.EulerBoundaryConditionTest.TestSupersonicInletCondition1D();
+            //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
             //Debug.Assert(false, "remove me");
             //return;
 

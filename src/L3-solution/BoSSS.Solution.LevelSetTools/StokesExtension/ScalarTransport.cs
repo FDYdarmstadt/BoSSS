@@ -11,15 +11,18 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.LevelSetTools.StokesExtension {
     
     /// <summary>
-    /// Flux for an 2D scalar transport equation
+    /// Flux for a scalar transport equation
     /// </summary>
     class ScalarTransportFlux : LinearFlux {
 
-        public ScalarTransportFlux(IncompressibleBoundaryCondMap map) {
+        public ScalarTransportFlux(IncompressibleBoundaryCondMap map, int D) {
             m_map = map;
+            m_spatDim = D;
         }
 
         IncompressibleBoundaryCondMap m_map;
+
+        int m_spatDim;
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
             var EdgeType = m_map.EdgeTag2Type[inp.EdgeTag];
@@ -85,7 +88,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// </summary>
         public override IList<string> ParameterOrdering {
             get {
-                return Solution.NSECommon.VariableNames.VelocityVector(2);
+                return Solution.NSECommon.VariableNames.VelocityVector(this.m_spatDim);
             }
         }
 

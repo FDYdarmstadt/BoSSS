@@ -37,7 +37,6 @@ namespace BoSSS.Solution.Control {
         /// <returns>Function value.</returns>
         double Evaluate(double[] X, double t);
 
-
         /// <summary>
         /// Vectorized version of <see cref="Evaluate(double[], double)"/>, matches the signature of <see cref="Foundation.ScalarFunctionTimeDep"/>
         /// </summary>
@@ -49,7 +48,5 @@ namespace BoSSS.Solution.Control {
         ///  - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
         /// </param>
         void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output);
-        
     }
-
 }
