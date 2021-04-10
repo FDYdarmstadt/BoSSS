@@ -161,6 +161,8 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
             //Assert.AreEqual(1, 2, "Remove Me!!");
 
+            //System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "/home/flori/bosss_install/bin/native/linux/amd64-openmpi", EnvironmentVariableTarget.User);
+
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
             si3 = si3 != null ? si3 : "NIX";

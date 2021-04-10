@@ -332,9 +332,9 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Control C = new IBM_Control();
 
-                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                C.Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>[] {
                                 new Tuple<string,object>("k", i),
-                            };
+                            });
 
                 k = i;
 

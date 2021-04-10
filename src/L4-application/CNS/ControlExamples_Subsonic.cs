@@ -166,10 +166,10 @@ namespace CNS {
                     int noOfCellsPerDirection = (int)Math.Pow(2, power);
                     controls[ii] = IsentropicVortex(dbPath, noOfCellsPerDirection, i, advectionVelocity);
                     controls[ii].Paramstudy_ContinueOnError = true;
-                    controls[ii].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                    controls[ii].Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>[] {
                     new Tuple<string, object>("dgDegree", i),
                     new Tuple<string, object>("noOfCellsPerDirection", noOfCellsPerDirection)
-                    };
+                    });
                     ii++;
                 }
             }
@@ -638,10 +638,10 @@ namespace CNS {
                     c.ResidualInterval = 200;
 
                     c.Paramstudy_ContinueOnError = true;
-                    c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                    c.Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>[] {
                         new Tuple<string, object>("dgDegree", dgDegree),
                         new Tuple<string, object>("refinements", refinements),
-                    };
+                    });
 
                     c.GridPartType = GridPartType.ParMETIS;
                     c.GridPartOptions = parmetiesRefinements.ToString();

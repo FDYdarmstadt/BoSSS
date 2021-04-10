@@ -261,12 +261,16 @@ namespace BoSSS.Solution.Gnuplot {
                 psi.FileName = ImageMagikTool;
 
                 var p = new Process();
-                p.StartInfo = psi;
-                p.Start();
-                p.WaitForExit();
+                try {
+                    p.StartInfo = psi;
+                    p.Start();
+                    p.WaitForExit();
 
-                if(p.ExitCode != 0 || !File.Exists(mainPngFile)) {
-                    Console.WriteLine("Unable to convert to png, '" + ImageMagikTool + "' exited with: " + p.ExitCode + ",  directory is " + WorkingDirectory.FullName);
+                    if(p.ExitCode != 0 || !File.Exists(mainPngFile))
+                        throw new Exception("'" + ImageMagikTool + "' exited with: " + p.ExitCode + ",  directory is " + WorkingDirectory.FullName);
+                } catch(Exception e) {
+
+                    Console.Error.WriteLine("Unable to convert to png: " + e.Message + "  (" + e.GetType().Name + ")");
                     return null;
                 }
 

@@ -118,6 +118,9 @@ namespace BoSSS.Solution.Control {
             if(other.AgglomerationThreshold != this.AgglomerationThreshold)
                 return false;
 
+            if(other.TimeSteppingScheme != this.TimeSteppingScheme)
+                return false;
+
 
             return true;
         }

@@ -239,9 +239,7 @@ namespace CNS.Tests.IBMTests {
 
             c.ResidualLoggerType = ResidualLoggerTypes.None;
 
-            c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                    new Tuple<string, object>("dgDegree", dgDegree),
-                };
+            c.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dgDegree", dgDegree));
 
             return c;
         }

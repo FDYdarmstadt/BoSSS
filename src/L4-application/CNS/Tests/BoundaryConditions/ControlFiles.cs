@@ -104,10 +104,8 @@ namespace CNS.Tests.BoundaryConditions {
                     c.Queries.Add("momentumError", QueryLibrary.L2Error(CompressibleVariables.Momentum[0], exactMomentum, 10));
                     c.Queries.Add("energyError", QueryLibrary.L2Error(CompressibleVariables.Energy, exactEnergy, 10));
 
-                    c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("divisions", divisions),
-                        new Tuple<string, object>("dgDegree", dgDegree)
-                    };
+                    c.Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>("divisions", divisions));
+                    c.Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>("dgDegree", dgDegree));
 
                     c.ResidualLoggerType = ResidualLoggerTypes.ChangeRate | ResidualLoggerTypes.Query;
                     c.ResidualBasedTerminationCriteria.Add("changeRate_abs_rhoE", 1E-9);

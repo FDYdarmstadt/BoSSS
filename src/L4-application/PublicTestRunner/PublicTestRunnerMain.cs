@@ -1088,16 +1088,19 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile($"Nunit3.{MpiRank}of{MpiSize}");
+
+            //if(MpiRank == 0)
+            //    Debugger.Launch();
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 
             using(var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssemblies();
-                
+
                 if(MpiSize != 1) {
                     // this seems some parallel run
                     // we have to fix the result argument
@@ -1114,7 +1117,16 @@ namespace PublicTestRunner {
 
                     var parAssis = GetAllMpiAssemblies();
                     foreach(var t in parAssis) {
-                        t.Asbly.AddToArray(ref assln);
+                        Assembly a = t.Asbly;
+                        if(!assln.Contains(a))
+                            a.AddToArray(ref assln);
+                    }
+
+
+                    int ii = 0;
+                    foreach(var a in assln) {
+                        ftr.Info("Assembly #" + ii + ": " + a.ToString());
+                        ii++;
                     }
                 }
 
@@ -1125,7 +1137,7 @@ namespace PublicTestRunner {
                         continue;
                     }
                     Console.WriteLine("Matching assembly: " + a.Location);
-
+                    ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
 
                     if(MpiRank == 0) {
@@ -1167,6 +1179,8 @@ namespace PublicTestRunner {
                 }
 
                 {
+                    ftr.Info("Found  " + count + " assemblies in total");
+                    
                     if(count <= 0) {
                         Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
                         return -1;

@@ -39,14 +39,14 @@ namespace CNS.Tests.IBMTests {
         public static IBMControl[] IBMBumpStudy(int noOfGridLevels, int maxDgDegree, int lsDegree, double CFL, double epsX = 0.0, double epsY = 0.0, int minDgDegree = 0) {
             IBMControl[] controls = new IBMControl[noOfGridLevels * ((maxDgDegree - minDgDegree) + 1)];
 
-            for (int i = minDgDegree; i <= maxDgDegree; i++) {
-                for (int j = 0; j < noOfGridLevels; j++) {
+            for(int i = minDgDegree; i <= maxDgDegree; i++) {
+                for(int j = 0; j < noOfGridLevels; j++) {
                     int noOfCells = (int)Math.Pow(2, 3 + j);
                     controls[(i - minDgDegree) * noOfGridLevels + j] = IBMBump(noOfCells, i, lsDegree, CFL, epsX, epsY);
                     controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_ContinueOnError = true;
-                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                    new Tuple<string, object>("refinement+dgDegree", i*100+noOfCells)
-                };
+                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification.Add(
+                        new Tuple<string, object>("refinement+dgDegree", i * 100 + noOfCells));
+
                 }
             }
 
@@ -56,14 +56,13 @@ namespace CNS.Tests.IBMTests {
         public static CNSControl[] BumpStudy(int noOfGridLevels, int maxDgDegree, double CFL, int minDgDegree = 0) {
             CNSControl[] controls = new CNSControl[noOfGridLevels * ((maxDgDegree - minDgDegree) + 1)];
 
-            for (int i = minDgDegree; i <= maxDgDegree; i++) {
-                for (int j = 0; j < noOfGridLevels; j++) {
+            for(int i = minDgDegree; i <= maxDgDegree; i++) {
+                for(int j = 0; j < noOfGridLevels; j++) {
                     int noOfCells = (int)Math.Pow(2, 3 + j);
                     controls[(i - minDgDegree) * noOfGridLevels + j] = Bump(noOfCells, i, CFL);
                     controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_ContinueOnError = true;
-                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                    new Tuple<string, object>("refinement+dgDegree", i*100+noOfCells)
-                };
+                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification.Add(
+                        new Tuple<string, object>("refinement+dgDegree", i * 100 + noOfCells));
                 }
             }
 
