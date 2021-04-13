@@ -27,7 +27,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     /// <summary>
     /// 
     /// </summary>
-    public class PressureFormAtLevelSet : ILevelSetForm {
+    public class PressureFormAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -68,8 +68,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             
         }
 
-       
-
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { DerivEdg };
+        }
         public IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.Pressure };

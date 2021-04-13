@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Utils;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,43 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.XNSECommon {
+
+
+    /// <summary>
+    /// Used for setting the field everywhere equal to one in the system of equations.
+    /// </summary>
+    public class identityTerm : Idsource, ISpeciesFilter {
+        public identityTerm(string spcsName, string varname) : base(varname) {
+            ValidSpecies = spcsName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
+
+
+    public class Idsource : LinearSource {
+        public Idsource(string _var) {
+            m_var = _var;
+        }
+
+        string m_var;
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return new string[] { m_var };
+            }
+        }
+
+        protected override double Source(double[] x, double[] parameters, double[] U) {
+            return U[0];
+        }
+    }
+
+
+
     /// <summary>
     /// 
     /// </summary>

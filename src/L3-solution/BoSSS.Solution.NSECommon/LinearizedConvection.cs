@@ -381,16 +381,16 @@ namespace BoSSS.Solution.NSECommon {
                 rhoOut = EoS.GetDensity(inp.Parameters_OUT[2 * m_SpatialDimension]);
                 break;
                 case PhysicsMode.Combustion:
-                double[] args_IN = new double[NumberOfReactants + 1];
-                for(int n = 0; n < NumberOfReactants + 1; n++) {
-                    args_IN[n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
-                }
-                double[] args_OUT = new double[NumberOfReactants + 1];
-                for(int n = 0; n < NumberOfReactants + 1; n++) {
-                    args_OUT[n] = inp.Parameters_OUT[2 * m_SpatialDimension + n];
-                }
-                rhoIn = EoS.GetDensity(args_IN);
-                rhoOut = EoS.GetDensity(args_OUT);
+                //double[] args_IN = new double[NumberOfReactants + 1];
+                //for(int n = 0; n < NumberOfReactants + 1; n++) {
+                //    args_IN[n] = inp.Parameters_IN[2 * m_SpatialDimension + n];
+                //}
+                //double[] args_OUT = new double[NumberOfReactants + 1];
+                //for(int n = 0; n < NumberOfReactants + 1; n++) {
+                //    args_OUT[n] = inp.Parameters_OUT[2 * m_SpatialDimension + n];
+                //}
+                //rhoIn = EoS.GetDensity(args_IN);
+                //rhoOut = EoS.GetDensity(args_OUT);
                 break;
                 default:
                 throw new NotImplementedException("PhysicsMode not implemented");
@@ -418,6 +418,7 @@ namespace BoSSS.Solution.NSECommon {
             double LambdaOut;
 
             switch(m_bcmap.PhysMode) {
+                case PhysicsMode.Combustion:
                 case PhysicsMode.Viscoelastic:
                 case PhysicsMode.Incompressible:
                 case PhysicsMode.RANS:
@@ -433,16 +434,16 @@ namespace BoSSS.Solution.NSECommon {
                 LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, TemperatureMeanOut);
                 break;
 
-                case PhysicsMode.Combustion:
-                double[] ScalarMeanIn = new double[NumberOfReactants + 1];
-                double[] ScalarMeanOut = new double[NumberOfReactants + 1];
-                for(int n = 0; n < NumberOfReactants + 1; n++) {
-                    ScalarMeanIn[n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
-                    ScalarMeanOut[n] = inp.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
-                }
-                LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, ScalarMeanIn);
-                LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, ScalarMeanOut);
-                break;
+                //case PhysicsMode.Combustion:
+                //double[] ScalarMeanIn = new double[NumberOfReactants + 1];
+                //double[] ScalarMeanOut = new double[NumberOfReactants + 1];
+                //for(int n = 0; n < NumberOfReactants + 1; n++) {
+                //    ScalarMeanIn[n] = inp.Parameters_IN[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
+                //    ScalarMeanOut[n] = inp.Parameters_OUT[2 * m_SpatialDimension + NumberOfReactants + 1 + n];
+                //}
+                //LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, true, ScalarMeanIn);
+                //LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, true, ScalarMeanOut);
+                //break;
                 default:
                 throw new NotImplementedException();
             }

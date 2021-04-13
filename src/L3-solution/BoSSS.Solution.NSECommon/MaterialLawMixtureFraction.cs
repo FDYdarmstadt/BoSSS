@@ -60,10 +60,8 @@ namespace BoSSS.Solution.NSECommon {
             this.MatParamsMode = MatParamsMode;
             this.rhoOne = rhoOne;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
-
-            
-
         }
+
         [DataMember] MaterialParamsMode MatParamsMode;
         [DataMember] public bool rhoOne;
         

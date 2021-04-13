@@ -32,7 +32,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     public class ConvectionInBulk_LLF : LinearizedConvection, IEquationComponentSpeciesNotification {
 
-        public ConvectionInBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) :
+        public ConvectionInBulk_LLF(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) :
             base(SpatDim, _bcmap, _component, false) 
         {
             //
@@ -46,7 +46,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             base.velFunction = null;
         }
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+        IncompressibleBoundaryCondMap m_bcmap;
         LevelSetTracker lsTrk;
 
         double LFFA;

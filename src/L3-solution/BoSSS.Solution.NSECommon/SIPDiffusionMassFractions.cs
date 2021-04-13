@@ -77,10 +77,11 @@ namespace BoSSS.Solution.NSECommon {
             IncompressibleBcType edgType = BcMap.EdgeTag2Type[inp.EdgeTag];
 
             switch (edgType) {
+                //case IncompressibleBcType.Wall:
+                ////Neumann boundary condition
+                //Acc = 0.0;
+                //break;
                 case IncompressibleBcType.Wall:
-                //Neumann boundary condition
-                Acc = 0.0;
-                break;
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:

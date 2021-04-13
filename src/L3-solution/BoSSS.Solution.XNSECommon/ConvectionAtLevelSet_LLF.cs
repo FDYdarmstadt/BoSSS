@@ -32,13 +32,13 @@ using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionAtLevelSet_LLF : ILevelSetForm {
+    public class ConvectionAtLevelSet_LLF : ILevelSetForm, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public ConvectionAtLevelSet_LLF(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleBoundaryCondMap _bcmap, bool _movingmesh) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
@@ -202,6 +202,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
                 return FlxNeg * v_Neg - FlxPos * v_Pos;
         }
 
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { DerivEdg };
+        }
         public IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.Velocity_d(m_d) };

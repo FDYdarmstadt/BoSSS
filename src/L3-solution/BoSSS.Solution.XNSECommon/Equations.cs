@@ -288,7 +288,7 @@ namespace BoSSS.Solution.XNSECommon {
             double rhoB = physParams.rho_B;
 
             // set components
-            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, isMaterialInterface, -1, false);
+            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSetLowMach(D, LsTrk, rhoA, rhoB, isMaterialInterface, -1, false);
             AddComponent(divPen);
         }
 
@@ -312,7 +312,7 @@ namespace BoSSS.Solution.XNSECommon {
             string phaseB,
             int d,
             int dimension,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) : base() {
@@ -331,7 +331,7 @@ namespace BoSSS.Solution.XNSECommon {
         void AddInterfaceNSE(
             int dimension,
             int d,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) {
@@ -405,6 +405,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
     }
+ 
 
     /// <summary>
     /// Implementation of surface tension forces in the Momentum equation,
@@ -425,7 +426,7 @@ namespace BoSSS.Solution.XNSECommon {
             string phaseB,
             int d,
             int D,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             LevelSetTracker LsTrk,
             INSE_Configuration config) {
             codomainName = EquationNames.MomentumEquationComponent(d);
@@ -667,8 +668,7 @@ namespace BoSSS.Solution.XNSECommon {
                     default:
                     throw new NotImplementedException();
                 }
-            }
-           
+            }         
 
         }
 

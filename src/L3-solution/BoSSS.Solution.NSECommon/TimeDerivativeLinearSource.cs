@@ -20,6 +20,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
 using ilPSP.Utils;
 
@@ -150,6 +151,78 @@ namespace BoSSS.Solution.NSECommon {
             return mult * rho * U[j];
 
 
+        }
+    }
+
+
+
+
+
+
+    /// <summary>
+    /// Implementation of the time derivative as a linearized source term in the low-Mach combustion solver.
+    /// Based on the implicit Euler scheme.
+    /// </summary>
+    public class MassMatrixLowMachComponent : IVolumeForm, ISupportsJacobianComponent {
+        IList<string> m_ArgumentOrdering;
+        IList<string> m_ParameterOrdering;
+        MaterialLaw EoS;
+        int m_SpatialDimension;
+        int NumberOfReactants;
+        int j;
+
+
+        /// <summary>
+        /// Ctor for variable density flows
+        /// </summary> 
+        /// <param name="EoS">The material law</param>
+        /// <param name="energy">Set conti: true for the energy equation</param>
+        /// <param name="varname"></param>
+        /// <param name="TimeStepSize"></param>
+        public MassMatrixLowMachComponent(MaterialLaw EoS, string varname, int spatDim, int NumberOfReactants) {
+            this.EoS = EoS;
+            this.m_SpatialDimension = spatDim;
+            this.NumberOfReactants = NumberOfReactants;
+            m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(spatDim), VariableNames.Pressure, VariableNames.Temperature, VariableNames.MassFractions(NumberOfReactants));
+            this.j = m_ArgumentOrdering.IndexOf(varname);
+            if (j < 0 || j > NumberOfReactants+3)
+                throw new ArgumentOutOfRangeException();
+
+            if (EoS == null)
+                throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+            else
+                this.EoS = EoS;
+        }
+ 
+        public IList<string> ArgumentOrdering {
+            get { return m_ArgumentOrdering; }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return m_ParameterOrdering;
+            }
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { DerivVol };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension+1, NumberOfReactants+1);
+            double rho = EoS.GetDensity(DensityArgumentsIn);
+            return rho * U[j] * V;            
+        }
+
+        /// <summary>
+        /// Active terms are <see cref="TermActivationFlags.UxV"/> and
+        /// <see cref="TermActivationFlags.V"/>
+        /// </summary>
+        virtual public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
         }
     }
 }
