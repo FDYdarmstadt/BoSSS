@@ -726,7 +726,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #endif      
             )
         {
-            BoSSS.Solution.Application.InitMPI();
             var Tst = new ChannelTest(angle);
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver);

@@ -626,10 +626,10 @@ namespace BoSSS.Solution.XNSECommon {
     /// Incompressible, Newtonian momentum equation, (fluid/solid) immersed boundary
     /// </summary>
     public class NSEimmersedBoundary : SurfaceEquation {
-        string m_codomainName;
-        string m_fluidPhase;
-        string m_solidPhase;
-        int m_iLevSet;
+        protected string m_codomainName;
+        protected string m_fluidPhase;
+        protected string m_solidPhase;
+        protected int m_iLevSet;
 
         //Methode aus der XNSF_OperatorFactory
         public NSEimmersedBoundary(
@@ -685,18 +685,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // convective operator
             // ===================
-            if (physParams.IncludeConvection && config.isTransport) {
-                 var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
-                            d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
-                            m_iLevSet, m_fluidPhase, m_solidPhase, true);
-                
-                AddComponent(ConvIB);
-            }
-            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
-                // if Moving mesh, we need the interface transport term somehow
-
-                throw new NotImplementedException("Something missing here.");
-            }
+            AddConvective(d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh, physParams, config);
 
 
             // pressure gradient
@@ -738,6 +727,23 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
+        protected virtual void AddConvective(int d, int D, LevelSetTracker LsTrk, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+            if (physParams.IncludeConvection && config.isTransport) {
+                var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
+                           d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
+                           m_iLevSet, m_fluidPhase, m_solidPhase, true);
+
+                AddComponent(ConvIB);
+            }
+            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+                // if Moving mesh, we need the interface transport term somehow
+
+                throw new NotImplementedException("Something missing here.");
+            }
+        }
+
         public override string FirstSpeciesName {
             get { return m_fluidPhase; }
         }
@@ -753,6 +759,44 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+
+    /// <summary>
+    /// Incompressible, Newtonian momentum equation, (fluid/solid) immersed boundary, newton version of <see cref="NSEimmersedBoundary"/>
+    /// </summary>
+    public class NSEimmersedBoundary_Newton : NSEimmersedBoundary {
+
+
+        //Methode aus der XNSF_OperatorFactory
+        public NSEimmersedBoundary_Newton(
+            string fluidPhase,
+            string solidPhase,
+            int iLevSet,
+            int d,
+            int D,
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            LevelSetTracker LsTrk,
+            INSE_Configuration config,
+            bool isMovingMesh) : base(fluidPhase, solidPhase, iLevSet, d, D, boundaryMap, LsTrk, config, isMovingMesh) //
+        {     
+            
+        }
+
+
+        protected override void AddConvective(int d, int D, LevelSetTracker LsTrk, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {
+            if (physParams.IncludeConvection && config.isTransport) {
+                var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB_Newton(
+                           d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
+                           m_iLevSet, m_fluidPhase, m_solidPhase, true);
+
+                AddComponent(ConvIB);
+            }
+            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+                // if Moving mesh, we need the interface transport term somehow
+
+                throw new NotImplementedException("Something missing here.");
+            }
+        }
+    }
 
 
 
