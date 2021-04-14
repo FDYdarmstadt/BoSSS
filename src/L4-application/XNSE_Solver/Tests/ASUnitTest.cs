@@ -838,7 +838,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm,
-            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver) {
+            [Values(NonLinearSolverCode.Newton)] NonLinearSolverCode nonlinsolver) // evaporation currently only implemented with use of newton solver
+            {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
             var Tst = new SteadyStateEvaporationTest(rawangle * Math.PI / 180.0);
