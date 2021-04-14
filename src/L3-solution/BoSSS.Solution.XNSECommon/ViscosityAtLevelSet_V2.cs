@@ -28,7 +28,7 @@ using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
-    public class ViscosityAtLevelSet_Standard : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ViscosityAtLevelSet_Standard : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
 
@@ -139,6 +139,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobianComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobianComp };
         }
 
         public int LevelSetIndex {

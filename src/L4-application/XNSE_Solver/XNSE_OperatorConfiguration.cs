@@ -293,6 +293,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             solveEnergy = control.solveKineticEnergyEquation;
 
+            HeatTransport = control.ThermalParameters.IncludeConvection;
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
             if(control.prescribedMassflux_Evaluator != null)

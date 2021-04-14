@@ -69,6 +69,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
             //Tests.ASUnitTest.CurvedElementsTest(3);
+            //Tests.ASUnitTest.ChannelTest(2, 0.0d, ViscosityMode.Standard, 0.0d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
+            //Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             //throw new Exception("Remove me");
 
@@ -312,8 +314,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="XOP"></param>
         protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
+            XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
         }
 

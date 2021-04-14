@@ -615,7 +615,7 @@ namespace BoSSS.Foundation.XDG {
     /// Differentiation of an edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
     /// In principal the same as <see cref="EdgeFormDifferentiator"/>, but using <see cref="ILevelSetForm"/>
     /// </summary>
-    public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm {
+    public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         ILevelSetForm m_EdgForm;
 
@@ -738,6 +738,15 @@ namespace BoSSS.Foundation.XDG {
 
             //Dir = 0;
             return ret;
+        }
+
+        /// <summary>
+        /// passes the coefficients to original form
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
+                eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            }
         }
 
         private double Diff(

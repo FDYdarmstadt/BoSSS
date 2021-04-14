@@ -298,6 +298,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+    /// <summary>
+    /// Gravity Parameter, note a few specials:
+    /// 1.  When setting gravity in control file, set an acceleration. 
+    ///     However in this class the acceleration is multiplied by the density of the respective phase, thus representing a gravitational volume force.
+    /// 2.  The sign of this volume force is opposite to that of the acceleration. 
+    ///     This is due to the implementation, where the volume force is brought to the left-hand-side of the Navier-Stokes-Equations <see cref="Solution.XNSECommon.Operator.MultiPhaseSource"/>
+    /// </summary>
     public class Gravity : ParameterS {
         int degree;
 
@@ -340,6 +347,7 @@ namespace BoSSS.Solution.XNSECommon {
             } else {
                 gravityDegree = 0;
             }
+
             return new Gravity(species, d, D, gravityFunc, rho, gravityDegree);
         }
 
@@ -356,15 +364,11 @@ namespace BoSSS.Solution.XNSECommon {
             return new (string, DGField)[] { (names[0], gravity) };
         }
 
-        double timeOfLastUpdate = 0.0;
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (timeOfLastUpdate != time) {
-                timeOfLastUpdate = time;
-                DGField gravity = ParameterVarFields[names[0]];
-                gravity.Clear();
-                if(initial != null)
-                    gravity.ProjectField(-rho, initial.SetTime(time));
-            }
+            DGField gravity = ParameterVarFields[names[0]];
+            gravity.Clear();
+            if(initial != null)
+                gravity.ProjectField(-rho, initial.SetTime(time));
         }
     }
 
@@ -413,14 +417,10 @@ namespace BoSSS.Solution.XNSECommon {
             return new (string, DGField)[] { (names[0], volforce) };
         }
 
-        double timeOfLastUpdate = 0.0;
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (timeOfLastUpdate != time) {
-                timeOfLastUpdate = time;
-                DGField volforce = ParameterVarFields[names[0]];
-                volforce.Clear();
-                volforce.ProjectField(-1, initial.SetTime(time));
-            }
+            DGField volforce = ParameterVarFields[names[0]];
+            volforce.Clear();
+            volforce.ProjectField(-1, initial.SetTime(time));
         }
     }
 

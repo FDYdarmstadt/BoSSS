@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
@@ -17,6 +18,7 @@ using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -109,7 +111,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             if (config.isEvaporation) {
-                Console.WriteLine("Including mass transfer.");
+                //Console.WriteLine("Including mass transfer.");
 
                 if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton) throw new ApplicationException("Evaporation only implemented with use of Newton-solver!");
 
@@ -159,6 +161,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, LsTrk, config));                    
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                    NonlinearCouplingEvaporation = true; // When using Newton evaporation coupling is always nonlinear
                     opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, LsTrk, config));
                 }                    
             }
@@ -229,6 +232,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        bool NonlinearCouplingEvaporation = false;
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -240,8 +244,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || this.Control.ThermalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton); // when using Newton solver the employed coupoling between heat and momentum is nonlinear
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || this.Control.ThermalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || NonlinearCouplingEvaporation); // when using Newton solver the employed coupling between heat and momentum is nonlinear
+            XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
+
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton & this.Control.ThermalParameters.IncludeConvection) {
@@ -254,9 +259,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 //    //Console.WriteLine("Updating Homotopy Scalar aka. scaling for heat convection, Value = " + HomotopyScalar);
                 //});
             }
-
             XOP.Commit();
 
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) Console.WriteLine("Warning using Picard iteration, this is not recommended!");
+            PrintConfiguration();
             return XOP;
         }
 
@@ -266,17 +272,42 @@ namespace BoSSS.Application.XNSE_Solver {
             //    ScalarFunction T_ex = null;
             //    T_ex = scalarFunctionTimeDep.SetTime(phystime);
             //    ((XDGField)this.CurrentState.Fields.Single(s => s.Identification == "Temperature")).GetSpeciesShadowField("B").ProjectField(T_ex);
-            //}
+            //}            
+
+            // Set timestep as minimum of capillary timestep restriction or level set CFL
+            //SetTimestep();
 
             return base.RunSolverOneStep(TimestepNo, phystime, dt);
         }
+
+        private void SetTimestep() {
+            if (this.Control.PhysicalParameters.Sigma != 0.0) {
+                double dt_cfl, dt_cap;
+                dt_cap = GetCapillaryTimestep();
+                //extend by levelset cfl
+
+                if (Math.Abs(dt_cap - this.Control.dtFixed) > 1e-3 * Math.Abs(dt_cap)) {
+                    Console.WriteLine($"Setting new capillary timestep restriction, new timestep size: {dt_cap}");
+                    this.Control.dtFixed = dt_cap;
+                }
+            }
+        }
+
+        private double GetCapillaryTimestep() {
+            var C = this.Control;
+            double h = this.GridData.iGeomCells.h_min.Min();
+            int p = VelocityDegree();
+            double safety = 5;
+            return 1 / safety * Math.Sqrt((C.PhysicalParameters.rho_A + C.PhysicalParameters.rho_B) * Math.Pow(h / (p + 1), 3) / (2 * Math.PI * Math.Abs(C.PhysicalParameters.Sigma)));
+        }        
+
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
             base.PlotCurrentState(physTime, timestepNo, superSampling);
 
-            XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
-            XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
-            VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
-            GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
+            //XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
+            //XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
+            //VectorField<XDGField> GradT = new VectorField<XDGField>(GradT_X, GradT_Y);
+            //GradT.Gradient(1.0, this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First());
 
             //DGField CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0));
             //CellNumbers.ProjectField(1.0, delegate(int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -289,10 +320,23 @@ namespace BoSSS.Application.XNSE_Solver {
             //}, new CellQuadratureScheme());
 
             //Tecplot.PlotFields(new List<DGField> { CellNumbers }, "XNSFE_GradT-" + timestepNo, physTime, 3);
-            Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
+            //Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
 
         }
 
+
+        private void PrintConfiguration() {
+
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            PropertyInfo[] properties = typeof(XNSFE_OperatorConfiguration).GetProperties();
+            foreach (PropertyInfo property in properties) {
+                if(property.PropertyType == typeof(bool)) {
+                    bool s = (bool)property.GetValue(config);
+                    Console.WriteLine("     {0,-30}:{1,3}", property.Name, "[" + (s == true ? "x" : " ") + "]");
+                }
+            }
+        }
         /*
 
         protected override LevelSetUpdater InstantiateLevelSetUpdater() {
