@@ -26,12 +26,14 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         static Type[] TypesToExport { 
             get {
                 if (s_TypesToExport == null) {
-                    var assis = BoSSS.Solution.Application.GetAllAssemblies();
+                    var assis = BoSSS.Solution.Application.GetAllAssemblies(typeof(CodeGenMain));
                     List<Type> classes = new List<Type>();
                     foreach (var a in assis) {
-                        foreach (var t in a.GetTypes()) {
-                            if (t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
-                                classes.Add(t);
+                        if(a.FullName.StartsWith("BoSSS") || a.FullName.StartsWith("ilPSP") || a.FullName.StartsWith("MPI.Wrappers")) {
+                            foreach(var t in a.GetTypes()) {
+                                if(t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
+                                    classes.Add(t);
+                                }
                             }
                         }
                     }

@@ -49,10 +49,8 @@ namespace CNS.Tests.MMS {
                     int noOfCells = (int)Math.Pow(2, 3 + j);
                     CNSControl c = Euler1D(i, noOfCells);
                     c.Paramstudy_ContinueOnError = true;
-                    c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("dgDegree", i),
-                        new Tuple<string, object>("refinement", j),
-                    };
+                    c.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dgDegree", i));
+                    c.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("refinement", j));
                     controls.Add(c);
                     ii++;
                 }
@@ -167,10 +165,8 @@ namespace CNS.Tests.MMS {
                     int noOfCells = (int)Math.Pow(2, 3 + j);
                     CNSControl c = Euler2D(i, noOfCells);
                     c.Paramstudy_ContinueOnError = true;
-                    c.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("dgDegree", i),
-                        new Tuple<string, object>("refinement", j),
-                    };
+                    c.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dgDegree", i));
+                    c.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("refinement", j));
                     controls.Add(c);
                     ii++;
                 }

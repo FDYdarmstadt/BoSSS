@@ -126,6 +126,10 @@
       <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
       <Name>ilPSP.Connectors.Matlab</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj">
+      <Project>{332083b9-c7fd-4b04-95ec-b0c729b21883}</Project>
+      <Name>ilPSP.LinSolvers.HYPRE</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>

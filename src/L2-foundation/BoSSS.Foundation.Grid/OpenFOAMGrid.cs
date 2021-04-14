@@ -14,7 +14,7 @@ namespace BoSSS.Foundation.Grid {
     
 
     /// <summary>
-    /// Instantiation of BoSSS grids
+    /// Instantiation of BoSSS grids from an OpenFOAM polymesh structure
     /// </summary>
     public class OpenFOAMGrid : GridCommons, IForeignLanguageProxy {
 
@@ -47,7 +47,7 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// Create a BoSSS grid from an OpenFOAM mesh
+        /// Create a BoSSS grid from an OpenFOAM mesh (polymesh)
         /// </summary>
         /// <param name="ierr">output, error code; on success, set to 0</param>
         /// <param name="faces">
@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.Grid {
         /// number of cells in OpenFOAM polymesh
         /// </param>
         /// <param name="neighbour">
-        /// Neighbor cell labels for internal faces
+        /// Neighbor cell labels for internal faces (length is <paramref name="nInternalFaces"/>)
         /// </param>
         /// <param name="owner">
         /// for each face, the owner cell label
@@ -85,53 +85,56 @@ namespace BoSSS.Foundation.Grid {
             double* points) :
             base(new[] { Cube.Instance}, new[] { Square.Instance}) //
         {
+            try {
+                // copy data (unmanaged to managed)
+                int[][] _faces = new int[nFaces][];
+                int[] _neighbour = new int[nInternalFaces];
+                int[] _owner = new int[nFaces];
+                double[,] _points = new double[nPoints, 3];
 
-            // copy data (unmanaged to managed)
-            int[][] _faces = new int[nFaces][];
-            int[] _neighbour = new int[nInternalFaces];
-            int[] _owner = new int[nFaces];
-            double[,] _points = new double[nPoints, 3];
-
-            //Debug.Assert(nFaces == GridImportTest.faces.Length, "mism nFaces len");
-            for (int i = 0; i < nFaces; i++) {
-                int N = vertices_per_face[i];
-                //Debug.Assert(N == GridImportTest.faces[i].Length, "mism nVerts face " + i);
-                _faces[i] = new int[N];
-                for (int n = 0; n < N; n++) {
-                    _faces[i][n] = faces[i][n];
-                    //Debug.Assert(_faces[i][n] == GridImportTest.faces[i][n], "mism face " + i + " vert " + n);
+                //Debug.Assert(nFaces == GridImportTest.faces.Length, "mism nFaces len");
+                for(int i = 0; i < nFaces; i++) {
+                    int N = vertices_per_face[i];
+                    //Debug.Assert(N == GridImportTest.faces[i].Length, "mism nVerts face " + i);
+                    _faces[i] = new int[N];
+                    for(int n = 0; n < N; n++) {
+                        _faces[i][n] = faces[i][n];
+                        //Debug.Assert(_faces[i][n] == GridImportTest.faces[i][n], "mism face " + i + " vert " + n);
+                    }
                 }
+
+                //Debug.Assert(nInternalFaces == GridImportTest.neighbour.Length, "mismatch neighbour length");
+                for(int i = 0; i < nInternalFaces; i++) {
+                    _neighbour[i] = neighbour[i];
+                    //Debug.Assert(_neighbour[i] == GridImportTest.neighbour[i], "neighbour " + i + " mismatch ");
+                }
+
+                for(int i = 0; i < nFaces; i++) {
+                    _owner[i] = owner[i];
+                    //Debug.Assert(_owner[i] == GridImportTest.owner[i], "owner " + i + " mismatch ");
+                }
+
+                for(int i = 0; i < nPoints; i++) {
+                    _points[i, 0] = points[i * 3 + 0];
+                    _points[i, 1] = points[i * 3 + 1];
+                    _points[i, 2] = points[i * 3 + 2];
+                }
+
+
+                // create BoSSS grid
+                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points);
+
+                // create grid data object
+                this.GridDataObject = new GridData(this);
+            } catch(Exception e) {
+                Console.Error.WriteLine(e.GetType() + ": " + e.Message);
+                Console.Error.WriteLine(e.StackTrace);
             }
-
-            //Debug.Assert(nInternalFaces == GridImportTest.neighbour.Length, "mismatch neighbour length");
-            for (int i = 0; i < nInternalFaces; i++) {
-                _neighbour[i] = neighbour[i];
-                //Debug.Assert(_neighbour[i] == GridImportTest.neighbour[i], "neighbour " + i + " mismatch ");
-            }
-
-            for (int i = 0; i < nFaces; i++) {
-                _owner[i] = owner[i];
-                //Debug.Assert(_owner[i] == GridImportTest.owner[i], "owner " + i + " mismatch ");
-            }
-
-            for (int i = 0; i < nPoints; i++) {
-                _points[i, 0] = points[i * 3 + 0];
-                _points[i, 1] = points[i * 3 + 1];
-                _points[i, 2] = points[i * 3 + 2];
-            }
-
-
-            // create BoSSS grid
-            FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points);
-
-            // create grid data object
-            this.GridDataObject = new GridData(this);
         }
 
         /// <summary>
         /// Create a BoSSS grid from an OpenFOAM mesh
         /// </summary>
-        /// <param name="ierr">output, error code; on success, set to 0</param>
         /// <param name="faces">
         /// point labels (indices) of faces, according to OpenFOAM polymesh description (array of arrays)
         /// </param>
@@ -165,11 +168,17 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-
+        /// <summary>
+        /// Only for testing purposes
+        /// </summary>
+        /// <param name="a"></param>
+        /// <returns></returns>
         [CodeGenExport]
         public int TestMethod(int a) {
-            Console.WriteLine("C#: Got number " + a + " from external code; returning " + (a * 2));
-            return a * 2;
+            Console.WriteLine("This is a BoSSS mesh with " + CellPartitioning.TotalLength + " cells on " + CellPartitioning.MpiSize + " MPI processes.");
+
+            //Console.WriteLine("C#: Got number " + a + " from external code; returning " + (a * 2));
+            return (int)CellPartitioning.TotalLength;
         }
 
 

@@ -536,7 +536,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Center-of-gravity for the cell
         /// </summary>
-        double[] GetCenter(int jCell);
+        Vector GetCenter(int jCell);
     }
 
     /// <summary>
@@ -651,7 +651,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Center-of-gravity for the cell
         /// </summary>
-        double[] GetCenter(int jCell);
+        Vector GetCenter(int jCell);
     }
 
     /// <summary>

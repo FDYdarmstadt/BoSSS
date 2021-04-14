@@ -80,9 +80,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             speciesNames = null;
                     }
 
-                   
-
-
                     if(speciesNames != null && LsTrk != null) {
                         spcIDs = speciesNames.Select(spcN => LsTrk.GetSpeciesId(spcN)).ToArray();
                     } else {
@@ -462,7 +459,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// DG fields to store the solution.
         /// </param>
         /// <param name="nsc">
-        /// - configuration of the nonlinear solver (see also <see cref="BoSSS.Solution.Control.AppControlSolver.NonLinearSolver"/>)
+        /// - configuration of the nonlinear solver (see also <see cref="BoSSS.Solution.AppControlSolver.NonLinearSolver"/>)
         /// - if null, an default solver configuration is used
         /// </param>
         /// <param name="lsc">

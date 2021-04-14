@@ -212,7 +212,7 @@ namespace BoSSS.Solution.RheologyCommon {
             double flxOut = 0;
             double n_u2 = 0;
 
-            Normale.Scale(-1.0);
+            Normale.ScaleInPlace(-1.0);
 
             if (m_UseFDJacobian) {
                 for (int d = 0; d < 2; d++) {
