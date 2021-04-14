@@ -20,17 +20,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// </summary>
     /// <remarks>
     /// - implemented by Fk, jan21
-    /// - added AdamsBashforth by Lb, april21
     /// </remarks>
-    public class StokesExtensionEvolver : ILevelSetEvolver {
+    public class ImplicitStokesExtensionEvolver : ILevelSetEvolver {
 
 
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
-            for(int d = 0; d < D; d++) {
-                if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
+        public ImplicitStokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
+            for (int d = 0; d < D; d++) {
+                if (!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
             }
 
@@ -41,7 +40,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
-            timeStepOrder = 3;
         }
 
         IGridData m_grd;
@@ -50,7 +48,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         int m_HMForder;
         string levelSetName;
         string[] parameters;
-        int timeStepOrder;
         IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
@@ -68,12 +65,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Provides access to the internally constructed extension velocity.
         /// <see cref="ILevelSetEvolver.InternalFields"/>
         /// </summary>
-        public IDictionary<string, DGField> InternalFields { 
+        public IDictionary<string, DGField> InternalFields {
             get {
                 var Ret = new Dictionary<string, DGField>();
 
-                if(extensionVelocity != null) {
-                    foreach(var f in extensionVelocity)
+                if (extensionVelocity != null) {
+                    foreach (var f in extensionVelocity)
                         Ret.Add(f.Identification, f);
                 }
 
@@ -82,9 +79,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        ITimeStepper timeStepper;
+        BDFTimestepper timeStepper;
 
-        private ITimeStepper InitializeAdamsBashforth(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+        private BDFTimestepper InitializeImplicitTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
             var diffOp = new SpatialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
@@ -98,26 +95,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 return new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
             }
 
-            AdamsBashforth abf = new(diffOp, levelSet.Mapping, new CoordinateMapping(Velocity), timeStepOrder);
-            return abf;
+            BDFTimestepper bdf = new(diffOp, levelSet.Mapping, Velocity, 3, Solver, false);
+            return bdf;
         }
 
-
-
-        private ITimeStepper InitializeRungeKutta(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new SpatialOperator(new string[] { "Phi" },
-                Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
-                new string[] { "codom1" },
-                QuadOrderFunc.NonLinear(1));
-            diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap, this.SpatialDimension));
-            diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, 1);
-            diffOp.IsLinear = true;
-            diffOp.Commit();
-
-            var Timestepper = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
-            return Timestepper;
-
-        }
 
         SinglePhaseField[] extensionVelocity;
 
@@ -137,24 +118,26 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
                 );
 
-            if(extensionVelocity == null) {
+            if (extensionVelocity == null) {
                 extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
             } else {
-                foreach(var f in extensionVelocity)
+                foreach (var f in extensionVelocity)
                     f.Clear();
             }
 
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
-            if(timeStepper == null) {
-                timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
+            if (timeStepper == null) {
+                timeStepper = InitializeImplicitTimeStepper(levelSet.DGLevelSet, extensionVelocity);
             }
-            if(!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)){
+            if (!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
                 throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
             }
 
             timeStepper.Perform(dt);
+            
+            timeStepper.FinishTimeStep();
         }
     }
 }

@@ -117,6 +117,7 @@
     <Compile Include="SolverWithLevelSetUpdater\FourierLevelSet.cs" />
     <Compile Include="SolverWithLevelSetUpdater\ILevelSetEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\FastMarchingEvolver.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\ImplicitStokesExtensionEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\LevelSetUpdater.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBase.cs" />
     <Compile Include="PhasefieldLevelSet\PhasefieldBoundaryType.cs" />
