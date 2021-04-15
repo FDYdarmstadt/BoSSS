@@ -270,9 +270,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
 
                 double[] uLevSet_temp = uLevSet;
 
-                inp.Parameters_OUT = new double[inp.D * 2];
-                Array.Copy(uLevSet, 0, inp.Parameters_OUT, 0, m_D);
-                Array.Copy(uLevSet, 0, inp.Parameters_OUT, m_D, m_D);
+                //inp.Parameters_OUT = new double[inp.D * 2];
+                //Array.Copy(uLevSet, 0, inp.Parameters_OUT, 0, m_D);
+                //Array.Copy(uLevSet, 0, inp.Parameters_OUT, m_D, m_D);
 
                 double FlxNeg = this.NegFlux.InnerEdgeForm(ref inp, U_Neg, uLevSet_temp, null, null, v_Neg, 0, null, null);
                 if (FlxNeg.IsNaNorInf())

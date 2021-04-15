@@ -708,7 +708,9 @@ namespace BoSSS.Solution.XNSECommon {
                     break;
 
                     case ViscosityMode.FullySymmetric:
-                    throw new NotImplementedException("todo");
+                    //throw new NotImplementedException("todo");
+                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                    break;
 
                     case ViscosityMode.Viscoelastic:
                     //double reynoldsA = physParams.reynolds_A;
@@ -727,10 +729,10 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        protected virtual void AddConvective(int d, int D, LevelSetTracker LsTrk, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+        protected virtual void AddConvective(int d, int D, LevelSetTracker LsTrk, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {  
             if (physParams.IncludeConvection && config.isTransport) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
                 var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB(
                            d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
                            m_iLevSet, m_fluidPhase, m_solidPhase, true);
@@ -818,7 +820,7 @@ namespace BoSSS.Solution.XNSECommon {
             m_SecondSpeciesName = solidPhase;
 
             // set components
-            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true);
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true, -1);
             
             AddComponent(divPen);
             AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
