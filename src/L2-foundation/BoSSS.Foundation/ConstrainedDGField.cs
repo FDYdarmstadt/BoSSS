@@ -88,6 +88,9 @@ namespace BoSSS.Foundation {
                     //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
                     //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
                     //solver.Tolerance = 1.0e-12;
+                    //var solver = new ilPSP.LinSolvers.HYPRE.PCG();
+                    //var precond = new ilPSP.LinSolvers.HYPRE.Euclid();
+                    //solver.NestedPrecond = precond;
                     var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
                     //var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
                     m_OpSolver = solver;
@@ -1219,7 +1222,7 @@ namespace BoSSS.Foundation {
             //double[] x = new double[m_Coordinates.Length];
 
             //BlockMsrMatrix AT = A.Transpose();
-            //AT.SpMV(-1.0, v.ExtractSubArrayShallow(new int[] { -1, 0}).To1DArray(), 0.0, x);
+            //AT.SpMV(-1.0, v.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray(), 0.0, x);
 
             //m_Coordinates.AccVector(1.0, x);
 
@@ -2131,248 +2134,248 @@ namespace BoSSS.Foundation {
     }
 
 
-    //public class myCG : IDisposable {
-    //    public void Init(BlockMsrMatrix M) {
-    //        m_Matrix = M;
-    //        //var M_test = M.CloneAs();
-    //        //M_test.Acc(-1.0, M.Transpose());
-    //        //Console.WriteLine("Symm-test: " + M_test.InfNorm());
-    //        //Console.WriteLine("Inf-Norm: " + M.InfNorm());
-    //        //m_Matrix.SaveToTextFileSparse("M");
-    //        BlockJacInit();
-    //        ILUInit();
-    //    }
+    public class myCG : IDisposable {
+        public void Init(BlockMsrMatrix M) {
+            m_Matrix = M;
+            //var M_test = M.CloneAs();
+            //M_test.Acc(-1.0, M.Transpose());
+            //Console.WriteLine("Symm-test: " + M_test.InfNorm());
+            //Console.WriteLine("Inf-Norm: " + M.InfNorm());
+            //m_Matrix.SaveToTextFileSparse("M");
+            BlockJacInit();
+            ILUInit();
+        }
 
-    //    private BlockMsrMatrix ILU_M;
-    //    public void ILUInit() {
-    //        ILU_M = m_Matrix.CloneAs();
-    //    }
-    //    public void ILUSolve<P, Q>(P X, Q B)
-    //        where P : IList<double>
-    //        where Q : IList<double> {
+        private BlockMsrMatrix ILU_M;
+        public void ILUInit() {
+            ILU_M = m_Matrix.CloneAs();
+        }
+        public void ILUSolve<P, Q>(P X, Q B)
+            where P : IList<double>
+            where Q : IList<double> {
 
-    //        long n = ILU_M.RowPartitioning.LocalLength;
-    //        double sum = 0;
+            long n = ILU_M.RowPartitioning.LocalLength;
+            double sum = 0;
 
-    //        var tempMtx = ILU_M;
+            var tempMtx = ILU_M;
 
-    //        // Zeros on diagonal elements because of saddle point structure
-    //        //for (int bla = 0; bla < n; bla++) {
-    //        //    if (ILU_M.GetDiagonalElement(bla) == 0)
-    //        //        throw new Exception("One or more diagonal elements are zero, ILU cannot work");
-    //        //    ILU_M.SetDiagonalElement(bla, 1);
-    //        //}
+            // Zeros on diagonal elements because of saddle point structure
+            //for (int bla = 0; bla < n; bla++) {
+            //    if (ILU_M.GetDiagonalElement(bla) == 0)
+            //        throw new Exception("One or more diagonal elements are zero, ILU cannot work");
+            //    ILU_M.SetDiagonalElement(bla, 1);
+            //}
 
-    //        // ILU decomposition of matrix
-    //        for (long k = 0; k < n - 1; k++) {
-    //            for (long i = k; i < n; i++) {
-    //                if (tempMtx[i, k] == 0) { i = n; } else {
-    //                    ILU_M[i, k] = ILU_M[i, k] / ILU_M[k, k];
-    //                    for (long j = k + 1; j < n; j++) {
-    //                        if (tempMtx[i, j] == 0) {
-    //                            j = n;
-    //                        } else {
-    //                            ILU_M[i, j] = ILU_M[i, j] - ILU_M[i, k] * ILU_M[k, j];
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //        }
+            // ILU decomposition of matrix
+            for (long k = 0; k < n - 1; k++) {
+                for (long i = k; i < n; i++) {
+                    if (tempMtx[i, k] == 0) { i = n; } else {
+                        ILU_M[i, k] = ILU_M[i, k] / ILU_M[k, k];
+                        for (long j = k + 1; j < n; j++) {
+                            if (tempMtx[i, j] == 0) {
+                                j = n;
+                            } else {
+                                ILU_M[i, j] = ILU_M[i, j] - ILU_M[i, k] * ILU_M[k, j];
+                            }
+                        }
+                    }
+                }
+            }
 
-    //        if (this.ILU_M.RowPartitioning.MpiSize != 1)
-    //            throw new NotSupportedException();
+            if (this.ILU_M.RowPartitioning.MpiSize != 1)
+                throw new NotSupportedException();
 
-    //        // find solution of Ly = b
-    //        double[] y = new double[n];
-    //        for (int i = 0; i < n; i++) {
-    //            sum = 0;
-    //            for (int k = 0; k < i; k++)
-    //                sum += ILU_M[i, k] * y[k];
-    //            y[i] = B[i] - sum;
-    //        }
-    //        // find solution of Ux = y
-    //        for (long i = n - 1; i >= 0; i--) {
-    //            sum = 0;
-    //            for (long k = i + 1; k < n; k++)
-    //                sum += ILU_M[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
-    //            X[(int)i] = (1 / ILU_M[i, i]) * (y[i] - sum);
-    //        }
+            // find solution of Ly = b
+            double[] y = new double[n];
+            for (int i = 0; i < n; i++) {
+                sum = 0;
+                for (int k = 0; k < i; k++)
+                    sum += ILU_M[i, k] * y[k];
+                y[i] = B[i] - sum;
+            }
+            // find solution of Ux = y
+            for (long i = n - 1; i >= 0; i--) {
+                sum = 0;
+                for (long k = i + 1; k < n; k++)
+                    sum += ILU_M[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
+                X[(int)i] = (1 / ILU_M[i, i]) * (y[i] - sum);
+            }
 
-    //    }
-    //    public void BlockJacInit() {
-    //        BlockMsrMatrix M = m_Matrix;
+        }
+        public void BlockJacInit() {
+            BlockMsrMatrix M = m_Matrix;
 
-    //        int L = M.RowPartitioning.LocalLength;
+            int L = M.RowPartitioning.LocalLength;
 
-    //        Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-    //        invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-    //        int Jloc = M._RowPartitioning.LocalNoOfBlocks;
-    //        long j0 = M._RowPartitioning.FirstBlock;
-    //        MultidimensionalArray temp = null;
-    //        for (int j = 0; j < Jloc; j++) {
-    //            long jBlock = j + j0;
-    //            int Nblk = M._RowPartitioning.GetBlockLen(jBlock);
-    //            long i0 = M._RowPartitioning.GetBlockI0(jBlock);
+            Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+            int Jloc = M._RowPartitioning.LocalNoOfBlocks;
+            long j0 = M._RowPartitioning.FirstBlock;
+            MultidimensionalArray temp = null;
+            for (int j = 0; j < Jloc; j++) {
+                long jBlock = j + j0;
+                int Nblk = M._RowPartitioning.GetBlockLen(jBlock);
+                long i0 = M._RowPartitioning.GetBlockI0(jBlock);
 
-    //            if (temp == null || temp.NoOfCols != Nblk)
-    //                temp = MultidimensionalArray.Create(Nblk, Nblk);
+                if (temp == null || temp.NoOfCols != Nblk)
+                    temp = MultidimensionalArray.Create(Nblk, Nblk);
 
-    //            M.ReadBlock(i0, i0, temp);
-    //            Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
-    //            temp.Invert();
-    //            invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
-    //        }
-    //    }
-    //    private double omega = 0.5;
+                M.ReadBlock(i0, i0, temp);
+                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+                temp.InvertInPlace();
+                invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+            }
+        }
+        private double omega = 0.5;
 
-    //    public void BlockJacSolve<U, V>(U xl, V bl)
-    //        where U : IList<double>
-    //        where V : IList<double> {
-    //        int L = xl.Count;
-    //        double[] ql = new double[L];
+        public void BlockJacSolve<U, V>(U xl, V bl)
+            where U : IList<double>
+            where V : IList<double> {
+            int L = xl.Count;
+            double[] ql = new double[L];
 
-    //        double iter0_ResNorm = 0;
+            double iter0_ResNorm = 0;
 
-    //        for (int iIter = 0; iIter < 10; iIter++) {
-    //            ql.SetV(bl);
-    //            m_Matrix.SpMV(-1.0, xl, 1.0, ql);
-    //            double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+            for (int iIter = 0; iIter < 10; iIter++) {
+                ql.SetV(bl);
+                m_Matrix.SpMV(-1.0, xl, 1.0, ql);
+                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
 
-    //            if (iIter == 0) {
-    //                iter0_ResNorm = ResNorm;
-    //            }
+                if (iIter == 0) {
+                    iter0_ResNorm = ResNorm;
+                }
 
-    //            Diag.SpMV(1.0, xl, 1.0, ql);
-    //            invDiag.SpMV(omega, ql, 1.0 - omega, xl);
+                Diag.SpMV(1.0, xl, 1.0, ql);
+                invDiag.SpMV(omega, ql, 1.0 - omega, xl);
 
-    //        }
-    //    }
+            }
+        }
 
-    //    BlockMsrMatrix m_Matrix;
-    //    BlockMsrMatrix Diag;
-    //    BlockMsrMatrix invDiag;
+        BlockMsrMatrix m_Matrix;
+        BlockMsrMatrix Diag;
+        BlockMsrMatrix invDiag;
 
-    //    public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
-    //        where Vec1 : IList<double>
-    //        where Vec2 : IList<double> //
-    //    {
+        public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
+            where Vec1 : IList<double>
+            where Vec2 : IList<double> //
+        {
 
-    //        double[] x, R;
-    //        if (_x is double[]) {
-    //            x = _x as double[];
-    //        } else {
-    //            x = _x.ToArray();
-    //        }
-    //        if (_R is double[]) {
-    //            R = _R as double[];
-    //        } else {
-    //            R = _R.ToArray();
-    //        }
+            double[] x, R;
+            if (_x is double[]) {
+                x = _x as double[];
+            } else {
+                x = _x.ToArray();
+            }
+            if (_R is double[]) {
+                R = _R as double[];
+            } else {
+                R = _R.ToArray();
+            }
 
-    //        int L = x.Length;
+            int L = x.Length;
 
-    //        double[] P = new double[L];
+            double[] P = new double[L];
 
-    //        //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
-    //        double[] V = new double[L];
-    //        double[] Z = new double[L];
-
-
-    //        // compute P0, R0
-    //        // ==============
-    //        GenericBlas.dswap(L, x, 1, P, 1);
-    //        m_Matrix.SpMV(-1.0, P, 1.0, R);
-
-    //        GenericBlas.dswap(L, x, 1, P, 1);
-    //        //if (Precond != null) {
-    //        //    Precond.Solve(Z, R);
-    //        //    P.SetV(Z);
-    //        //} else {
-    //        //P.SetV(R);
-    //        //}
-    //        BlockJacSolve(Z, R);
-    //        P.SetV(Z);
-
-    //        double alpha = R.InnerProd(P).MPISum();
-    //        double alpha_0 = alpha;
-    //        double ResNorm;
-    //        var ResReal = new double[R.Length];
-    //        var Xdummy = new double[R.Length];
-
-    //        ResNorm = Math.Sqrt(alpha);
-    //        double ResNorm0 = ResNorm;
-
-    //        // iterate
-    //        // =======
-    //        for (int n = 1; true; n++) {
-
-    //            if (n % 1 == 0) {
-    //                Xdummy.SetV(x);
-    //                ResReal.SetV(R);
-    //                m_Matrix.SpMV(-1.0, Xdummy, 1.0, ResReal);
-    //                Console.WriteLine("Res real at n" + n + ":" + ResReal.MPI_L2Norm());
-    //            }
-
-    //            //Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
-    //            if (ResNorm / ResNorm0 + ResNorm < 1E-8 || ResNorm < 1E-16 || n > 100) {
-    //                if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not converged.");
-    //                break;
-    //            }
-
-    //            if (Math.Abs(alpha) <= double.Epsilon) {
-    //                // numerical breakdown
-    //                break;
-    //            }
+            //double[] R = rhs; // rhs is only needed once, so we can use it to store residuals
+            double[] V = new double[L];
+            double[] Z = new double[L];
 
 
-    //            m_Matrix.SpMV(1.0, P, 0, V);
-    //            double VxP = V.InnerProd(P).MPISum();
-    //            if (double.IsNaN(VxP) || double.IsInfinity(VxP))
-    //                throw new ArithmeticException();
-    //            double lambda = alpha / VxP;
-    //            if (double.IsNaN(lambda) || double.IsInfinity(lambda))
-    //                throw new ArithmeticException();
+            // compute P0, R0
+            // ==============
+            GenericBlas.dswap(L, x, 1, P, 1);
+            m_Matrix.SpMV(-1.0, P, 1.0, R);
+
+            GenericBlas.dswap(L, x, 1, P, 1);
+            //if (Precond != null) {
+            //    Precond.Solve(Z, R);
+            //    P.SetV(Z);
+            //} else {
+            //P.SetV(R);
+            //}
+            BlockJacSolve(Z, R);
+            P.SetV(Z);
+
+            double alpha = R.InnerProd(P).MPISum();
+            double alpha_0 = alpha;
+            double ResNorm;
+            var ResReal = new double[R.Length];
+            var Xdummy = new double[R.Length];
+
+            ResNorm = Math.Sqrt(alpha);
+            double ResNorm0 = ResNorm;
+
+            // iterate
+            // =======
+            for (int n = 1; true; n++) {
+
+                if (n % 1 == 0) {
+                    Xdummy.SetV(x);
+                    ResReal.SetV(R);
+                    m_Matrix.SpMV(-1.0, Xdummy, 1.0, ResReal);
+                    Console.WriteLine("Res real at n" + n + ":" + ResReal.MPI_L2Norm());
+                }
+
+                //Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
+                if (ResNorm / ResNorm0 + ResNorm < 1E-8 || ResNorm < 1E-16 || n > 100) {
+                    if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not converged.");
+                    break;
+                }
+
+                if (Math.Abs(alpha) <= double.Epsilon) {
+                    // numerical breakdown
+                    break;
+                }
 
 
-    //            x.AccV(lambda, P);
-
-    //            R.AccV(-lambda, V);
-
-    //            //if (Precond != null) {
-    //            //    Z.Clear();
-    //            //    Precond.Solve(Z, R);
-    //            //} else {
-    //            //Z.SetV(R);
-    //            //}
-    //            Z.Clear();
-    //            BlockJacSolve(Z, R);
-
-    //            double alpha_neu = R.InnerProd(Z).MPISum();
-
-    //            // compute residual norm
-    //            ResNorm = R.L2NormPow2().MPISum().Sqrt();
-
-    //            P.ScaleV(alpha_neu / alpha);
-    //            P.AccV(1.0, Z);
-
-    //            alpha = alpha_neu;
-    //        }
-
-    //        if (!object.ReferenceEquals(_x, x))
-    //            _x.SetV(x);
-    //        if (!object.ReferenceEquals(_R, R))
-    //            _R.SetV(R);
+                m_Matrix.SpMV(1.0, P, 0, V);
+                double VxP = V.InnerProd(P).MPISum();
+                if (double.IsNaN(VxP) || double.IsInfinity(VxP))
+                    throw new ArithmeticException();
+                double lambda = alpha / VxP;
+                if (double.IsNaN(lambda) || double.IsInfinity(lambda))
+                    throw new ArithmeticException();
 
 
-    //        return;
+                x.AccV(lambda, P);
 
-    //    }
+                R.AccV(-lambda, V);
 
-    //    public void Dispose() {
-    //        m_Matrix.Clear();
-    //    }
+                //if (Precond != null) {
+                //    Z.Clear();
+                //    Precond.Solve(Z, R);
+                //} else {
+                //Z.SetV(R);
+                //}
+                Z.Clear();
+                BlockJacSolve(Z, R);
 
-    //}
+                double alpha_neu = R.InnerProd(Z).MPISum();
+
+                // compute residual norm
+                ResNorm = R.L2NormPow2().MPISum().Sqrt();
+
+                P.ScaleV(alpha_neu / alpha);
+                P.AccV(1.0, Z);
+
+                alpha = alpha_neu;
+            }
+
+            if (!object.ReferenceEquals(_x, x))
+                _x.SetV(x);
+            if (!object.ReferenceEquals(_R, R))
+                _R.SetV(R);
+
+
+            return;
+
+        }
+
+        public void Dispose() {
+            m_Matrix.Clear();
+        }
+
+    }
 
 
 }
