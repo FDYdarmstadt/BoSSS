@@ -192,7 +192,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public bool steady => true;
 
-        public bool IncludeConvection => false;
+        public bool IncludeConvection => true;
 
         public int LevelsetPolynomialDegree => 4;
 
