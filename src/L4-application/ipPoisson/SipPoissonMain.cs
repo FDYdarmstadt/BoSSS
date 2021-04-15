@@ -156,10 +156,13 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
             //Assert.AreEqual(1, 2, "Remove Me!!");
+
+            //System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "/home/flori/bosss_install/bin/native/linux/amd64-openmpi", EnvironmentVariableTarget.User);
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");

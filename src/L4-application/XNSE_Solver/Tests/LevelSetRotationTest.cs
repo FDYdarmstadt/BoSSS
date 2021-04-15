@@ -74,8 +74,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public double ComputeTimestep(int Resolution, int LSdegree) {
-            int gridCells1D = 9 * Resolution;
+        public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
             double h = 1.0 * L / (double)gridCells1D;
             double dt = h / Uscale;
             dt /= (double)(LSdegree * LSdegree);
@@ -84,7 +84,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
-       
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public double getEndTime() {
+            return 1.0; //TODO
+        }
+
         /// <summary>
         /// creates a square in 2D and a cube in 3D
         /// </summary>

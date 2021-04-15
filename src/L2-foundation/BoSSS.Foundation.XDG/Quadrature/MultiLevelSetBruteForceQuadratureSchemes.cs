@@ -77,6 +77,39 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
         }
 
+        public (int x1, int x2, int y1, int y2, int x1y1, int x1y2, int x2y1, int x2y2) SixNeighborNodes(int node) {
+            int i = node / yTics.Length;
+            int j = node % yTics.Length;
+            int x1 = VolumeNodeIndice(i - 1, j);
+            int x2 = VolumeNodeIndice(i + 1, j);
+            int y1 = VolumeNodeIndice(i, j - 1);
+            int y2 = VolumeNodeIndice(i, j + 1);
+
+            int x1y1 = VolumeNodeIndice(i - 1, j -1);
+            int x1y2 = VolumeNodeIndice(i - 1, j + 1);
+            int x2y1 = VolumeNodeIndice(i + 1, j - 1);
+            int x2y2 = VolumeNodeIndice(i + 1, j + 1);
+
+            x1 = CheckBounds(x1);
+            x2 = CheckBounds(x2);
+            y1 = CheckBounds(y1);
+            y2 = CheckBounds(y2);
+            x1y1 = CheckBounds(x1y1);
+            x1y2 = CheckBounds(x1y2);
+            x2y1 = CheckBounds(x2y1);
+            x2y2 = CheckBounds(x2y2);
+
+            return (x1, x2, y1, y2, x1y1, x1y2, x2y1, x2y2);
+
+            int CheckBounds(int k) {
+                if (k > VolumeNodes.NoOfNodes - 1) {
+                    return -1;
+                } else {
+                    return k;
+                }
+            }
+        }
+
         private void CreateInnerEdgeNodes() {
             verticalEdgeNodes = new NodeSet(Square.Instance, xTics.Length * (yTics.Length - 1), 2);
             for (int i = 0; i < xTics.Length - 1; ++i) {
@@ -208,7 +241,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public void Initialize(int resolution) {
-            resolution *= 2;
             grid = new TensorGrid(CenteredLinSpace(resolution), CenteredLinSpace(resolution));
             surfaceWeight = 2.0 / (double)(resolution);
             phiValues0 = MultidimensionalArray.Create(1, resolution * resolution);
@@ -398,7 +430,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public void Initialize(int resolution) {
-            resolution *= 2;
             weight = 2.0 / (resolution);
             phiValuesIn = MultidimensionalArray.Create(1, resolution);
             phiValuesOut = MultidimensionalArray.Create(1, resolution);
@@ -471,8 +502,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public void Initialize(int resolution) {
-            resolution *= 2;
-            
             phiValuesIn = MultidimensionalArray.Create(1, resolution);
             phiValuesOut = MultidimensionalArray.Create(1, resolution);
             CreateEdgeNodes(resolution);
@@ -480,8 +509,8 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private void CreateEdgeNodes(int resolution) {
             edgeNodes = new NodeSet(Line.Instance, resolution, 1);
-            double increment = 2.0 / resolution;
-            double first = increment / 2 - 1.0;
+            double increment = 2.0 / (resolution - 1);
+            double first = - 1.0;
             for (int i = 0; i < resolution; ++i) {
                 edgeNodes[i, 0] = increment * i + first;
             }
@@ -533,12 +562,11 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private TensorGrid grid;
         private Action<int, NodeSet, MultidimensionalArray> phi0;
-        private Action<int, NodeSet, MultidimensionalArray> phi1;
         private Func<int, double> gram;
 
         public RefElement ReferenceElement => Square.Instance;
 
-        ///Zeros must be also only mimimas of phi
+        ///Zeros must be also only minima of phi
         public BruteForceZeroScheme(
             Action<int, NodeSet, MultidimensionalArray> phi0,
             Func<int, double> gram) {
@@ -547,15 +575,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         public void Initialize(int resolution) {
-            resolution *= 2;
-            grid = new TensorGrid(CenteredLinSpace(resolution), CenteredLinSpace(resolution));
+            grid = new TensorGrid(LinSpace(resolution), LinSpace(resolution));
             phiValues0 = MultidimensionalArray.Create(1, resolution * resolution);
         }
 
-        private static double[] CenteredLinSpace(int resolution) {
-            double[] nodes = new double[resolution];
-            double increment = 2.0 / resolution;
-            double first = increment / 2 - 1.0;
+        private static double[] LinSpace(int resolution) {
+            double[] nodes = new double[resolution ];
+            double increment = 2.0 / (resolution - 1);
+            double first = - 1.0;
             for (int i = 0; i < resolution; ++i) {
                 nodes[i] = increment * i + first;
             }
@@ -563,7 +590,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private MultidimensionalArray phiValues0;
-
 
         public QuadRule GetQuadRule(int cell) {
             phi0(cell, grid.VolumeNodes, phiValues0);
@@ -575,6 +601,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 rule = QuadRule.CreateEmpty(Square.Instance, 1, 2);
                 rule.Nodes.LockForever();
             } else {
+                if(numberOfVolumeNodes != 1) {
+                    Console.WriteLine($"Warning: More than one levelSetintersection in Cell{cell}");
+                }
                 double weight = gram(cell);
                 rule = ExtractQuadRule(nodeMap, numberOfVolumeNodes, weight);
             }
@@ -585,31 +614,39 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             BitArray nodeMap = new BitArray(grid.VolumeNodes.NoOfNodes);
             int numberOfVolumeNodes = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
-                (int a, int b, int c, int d) = grid.NeighborNodes(i);
-                bool isMinimum = true;
-                if (a > -1) {
+                (int a, int b, int c, int d, int e, int f, int g, int h) = grid.SixNeighborNodes(i);
+                if(a > -1 && b > -1 && c > -1 && d > -1 && e > -1 && f > -1 && g > -1 && h > -1) {
+                    bool isMinimum = true;
                     if (phiValues0[0, i] > phiValues0[0, a]) {
                         isMinimum = false;
                     }
-                }
-                if (b > -1) {
                     if (phiValues0[0, i] > phiValues0[0, b]) {
                         isMinimum = false;
                     }
-                }
-                if (c > -1) {
                     if (phiValues0[0, i] > phiValues0[0, c]) {
                         isMinimum = false;
                     }
-                }
-                if (d > -1) {
                     if (phiValues0[0, i] > phiValues0[0, d]) {
                         isMinimum = false;
                     }
-                }
-                if (isMinimum) {
-                    nodeMap[i] = true;
-                    ++numberOfVolumeNodes;
+                    if (phiValues0[0, i] > phiValues0[0, e]) {
+                        isMinimum = false;
+                    }
+                    if (phiValues0[0, i] > phiValues0[0, f]) {
+                        isMinimum = false;
+                    }
+                    if (phiValues0[0, i] > phiValues0[0, g]) {
+                        isMinimum = false;
+                    }
+                    if (phiValues0[0, i] > phiValues0[0, h]) {
+                        isMinimum = false;
+                    }
+                    if (isMinimum) {
+                        if (Math.Abs(phiValues0[0, i]) < 1e-4) {
+                            nodeMap[i] = true;
+                            ++numberOfVolumeNodes;
+                        }
+                    }
                 }
             }
             return (nodeMap, numberOfVolumeNodes);

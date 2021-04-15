@@ -237,7 +237,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.StokesExtension: {
-                        var stokesExtEvo = new XStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                        var stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData);
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
@@ -525,20 +525,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            if (!this.Control.AdaptiveMeshRefinement) {
+            // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
 
-                Console.WriteLine("PostRestart temporarily switched off for AMR");
+            // set restart time, used later in the intial tracker updates
+            restartTime = time;
 
-                // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
-                if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
-                    this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+            // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+            this.LsUpdater.Tracker.PushStacks();
 
-                // set restart time, used later in the intial tracker updates
-                restartTime = time;
-
-                // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
-                this.LsUpdater.Tracker.PushStacks();
-            }
         }
 
     }

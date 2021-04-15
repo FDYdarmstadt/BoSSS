@@ -61,12 +61,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
    
 
         /// <summary>
-        /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
-        /// </summary>
-        public Parallelism SolverVersion = Parallelism.SEQ;
-
-        /// <summary>
         /// Switch between PARDISO and MUMPS.
         /// </summary>
         public _whichSolver WhichSolver = _whichSolver.CG;
@@ -89,10 +83,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_MultigridOp;
 
         
-        ilPSP.LinSolvers.monkey.Solver GetSolver(IMutableMatrixEx Mtx) {
-            ilPSP.LinSolvers.monkey.Solver solver;
+        ISparseSolverExt GetSolver(IMutableMatrixEx Mtx) {
+            ISparseSolverExt solver;
 
-
+            
             switch (WhichSolver) {
 
                 case _whichSolver.CG: {
@@ -114,6 +108,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new NotImplementedException();
 
             }
+            
+
+            //solver = new ilPSP.LinSolvers.HYPRE.PCG();
 
             solver.DefineMatrix(Mtx);
 

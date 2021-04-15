@@ -54,10 +54,8 @@ namespace CNS.Tests.MMS {
                     controls[ii] = Gassner2D_conserved(noOfCellsPerDirection, i, dbPath);
                     controls[ii].savetodb = true;
                     controls[ii].Paramstudy_ContinueOnError = true;
-                    controls[ii].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("divisions", i),
-                        new Tuple<string, object>("dgDegree", i)
-                    };
+                    controls[ii].Paramstudy_CaseIdentification.Add(new Tuple<string, object>("divisions", i));
+                    controls[ii].Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dgDegree", i));
                     ii++;
                 }
             }
@@ -79,9 +77,7 @@ namespace CNS.Tests.MMS {
                 double dt = dtStart / factor;
                 controls[i] = Gassner2D_time(dt, order, timeStepper);
                 controls[i].Paramstudy_ContinueOnError = true;
-                controls[i].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("dt", dt)
-                };
+                controls[i].Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", dt));
             }
             return controls;
         }
@@ -421,10 +417,9 @@ namespace CNS.Tests.MMS {
                     controls[ii] = Gassner3D_unsteady(noOfCellsPerDirection, i, dbPath);
                     controls[ii].savetodb = true;
                     controls[ii].Paramstudy_ContinueOnError = true;
-                    controls[ii].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                        new Tuple<string, object>("divisions", i),
-                        new Tuple<string, object>("dgDegree", i)
-                    };
+                    controls[ii].Paramstudy_CaseIdentification.Add(new Tuple<string, object>("divisions", i));
+                    controls[ii].Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dgDegree", i));
+                    
                     ii++;
                 }
             }

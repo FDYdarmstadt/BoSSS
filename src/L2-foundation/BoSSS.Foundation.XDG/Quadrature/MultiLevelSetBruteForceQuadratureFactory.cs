@@ -162,7 +162,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             LevelSetCombination phi = FindPhi(id);
             var edgeScheme = new BruteForceEdgeScheme(phi.EvaluateEdge);
 
-            return new BruteForceQuadratureFactory(edgeScheme);
+            return new BruteForceQuadratureFactory(edgeScheme, 400);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -198,7 +198,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             var surfaceScheme = new BruteForceSurfaceScheme(phi0.Evaluate, Phi0, Scales, Gradient);
-            return new BruteForceQuadratureFactory(surfaceScheme);
+            return new BruteForceQuadratureFactory(surfaceScheme, 400);
         }
 
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
@@ -212,7 +212,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination phi = FindPhi(id);
             var volumeScheme = new BruteForceVolumeScheme(phi.Evaluate);
-            return new BruteForceQuadratureFactory(volumeScheme);
+            return new BruteForceQuadratureFactory(volumeScheme, 200);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1) {
@@ -231,7 +231,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge, SqrtGram);
-            return new BruteForceQuadratureFactory(edgeScheme);
+            return new BruteForceQuadratureFactory(edgeScheme, 200);
         }
 
         public IQuadRuleFactory<QuadRule> GetIntersectionFactory(int levSetIndex0, int levSetIndex1) {
@@ -256,7 +256,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             var surfaceScheme = new BruteForceZeroScheme(Phi, Det);
-            return new BruteForceQuadratureFactory(surfaceScheme);
+            return new BruteForceQuadratureFactory(surfaceScheme, 400);
         }
 
     }
@@ -265,9 +265,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
     {
         IScheme scheme;
 
-        public BruteForceQuadratureFactory(IScheme scheme)
+        int resolution; 
+
+        public BruteForceQuadratureFactory(IScheme scheme, int resolution = 200)
         {
             this.scheme = scheme;
+            this.resolution = resolution;
         }
 
         public RefElement RefElement => scheme.ReferenceElement;
@@ -279,7 +282,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public virtual IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
-            int resolution = 200;
             scheme.Initialize(resolution);
             List<ChunkRulePair<QuadRule>> rule = new List<ChunkRulePair<QuadRule>>();
             foreach(Chunk chunk in mask)

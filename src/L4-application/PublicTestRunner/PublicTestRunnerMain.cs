@@ -96,6 +96,7 @@ namespace PublicTestRunner {
                         typeof(CutCellQuadrature.Program),
                         typeof(BoSSS.Application.XDGTest.UnitTest),
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
+                        //typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
                         typeof(BoSSS.Application.MultigridTest.MultigridMain),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
@@ -364,7 +365,7 @@ namespace PublicTestRunner {
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
 
-            tracerfile = new FileStream($"trace-PublicTestRunner_{basename}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
+            tracerfile = new FileStream($"trace_{basename}.txt", FileMode.Create, FileAccess.Write, FileShare.Read);
             tracertxt = new StreamWriter(tracerfile);
 
             TextWriterAppender fa = new TextWriterAppender();
@@ -565,6 +566,11 @@ namespace PublicTestRunner {
         /// </summary>
         static Mutex IOsyncMutex = new Mutex(false, "BoSSS_test_runner_IOmutex");
 
+        /// <summary>
+        /// to distinct the internalTestRunner
+        /// </summary>
+        public static string RunnerPrefix = "Pub";
+
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
@@ -588,7 +594,7 @@ namespace PublicTestRunner {
                 Thread.Sleep(rnd.Next(10000)); // sleep for a random amount of time to avoid 
                 do {
                     DateNtime = DateTime.Now.ToString("MMMdd_HHmmss");
-                    string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + ".lock");
+                    string MutexFileName = Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" +  DateNtime + ".lock");
                     try {
                         ServerMutex = File.Open(MutexFileName, FileMode.Create, FileAccess.Write, FileShare.None);
                         using(var wrt = new StreamWriter(ServerMutex)) {
@@ -612,7 +618,7 @@ namespace PublicTestRunner {
                 IOsyncMutex.ReleaseMutex();
             }
             Tracer.NamespacesToLog = new string[] { "" };
-            InitTraceFile(DateNtime);
+            InitTraceFile("JobManagerRun-" + DateNtime);
 
 
 
@@ -626,7 +632,7 @@ namespace PublicTestRunner {
 
                 DirectoryInfo NativeOverride;
                 if(!bpc.DeployRuntime) {
-                    NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, DateNtime + "_amd64"));
+                    NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
                     NativeOverride.Create();
                     MetaJobMgrIO.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
                 } else {
@@ -1088,16 +1094,19 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
-            InitTraceFile($"Nunit3.{MpiRank}of{MpiSize}");
+            InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
+
+            //if(MpiRank == 0)
+            //    Debugger.Launch();
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 
             using(var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssemblies();
-                
+
                 if(MpiSize != 1) {
                     // this seems some parallel run
                     // we have to fix the result argument
@@ -1114,7 +1123,16 @@ namespace PublicTestRunner {
 
                     var parAssis = GetAllMpiAssemblies();
                     foreach(var t in parAssis) {
-                        t.Asbly.AddToArray(ref assln);
+                        Assembly a = t.Asbly;
+                        if(!assln.Contains(a))
+                            a.AddToArray(ref assln);
+                    }
+
+
+                    int ii = 0;
+                    foreach(var a in assln) {
+                        ftr.Info("Assembly #" + ii + ": " + a.ToString());
+                        ii++;
                     }
                 }
 
@@ -1125,7 +1143,7 @@ namespace PublicTestRunner {
                         continue;
                     }
                     Console.WriteLine("Matching assembly: " + a.Location);
-
+                    ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
 
                     if(MpiRank == 0) {
@@ -1167,6 +1185,8 @@ namespace PublicTestRunner {
                 }
 
                 {
+                    ftr.Info("Found  " + count + " assemblies in total");
+                    
                     if(count <= 0) {
                         Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
                         return -1;

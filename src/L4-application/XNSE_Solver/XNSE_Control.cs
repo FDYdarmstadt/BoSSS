@@ -718,5 +718,34 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false;
+
+            var other = obj as XNSE_Control;
+            if(other == null)
+                return false;
+
+            if(!this.PhysicalParameters.Equals(other.PhysicalParameters))
+                return false;
+
+            if(!this.ThermalParameters.Equals(other.ThermalParameters))
+                return false;
+
+
+            return true;
+        }
+
     }
 }

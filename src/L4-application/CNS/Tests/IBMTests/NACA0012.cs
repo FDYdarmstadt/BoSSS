@@ -38,9 +38,9 @@ namespace CNS.Tests.IBMTests {
                     int noOfCells = (int)Math.Pow(2, 3 + j);
                     controls[(i - minDgDegree) * noOfGridLevels + j] = IBMNACA0012(noOfCells, i, CFL, agglomeration, alpha);
                     controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_ContinueOnError = true;
-                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                    new Tuple<string, object>("refinement+dgDegree", i*100+noOfCells)
-                };
+                    controls[(i - minDgDegree) * noOfGridLevels + j].Paramstudy_CaseIdentification.Add(
+                        new Tuple<string, object>("refinement+dgDegree", i*100+noOfCells)
+                    );
                 }
             }
 
