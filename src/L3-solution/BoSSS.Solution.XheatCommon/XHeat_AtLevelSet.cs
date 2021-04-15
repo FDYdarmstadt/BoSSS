@@ -1381,7 +1381,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             // new standalone non-material form
             // symmetry term
-            Ret += (Tsat - uA[0]) * (kA * Grad_vA_xN) - (Tsat - uB[0]) * kB * Grad_vB_xN;
+            Ret -=  kA * Grad_vA_xN * (uA[0] - Tsat) - kB * Grad_vB_xN * (Tsat - uB[0]);
 
             // consistency term
             Ret -= (vA * kA * Grad_uA_xN - vB * kB * Grad_uB_xN);
