@@ -190,7 +190,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         public bool Material => true;
 
-        public bool steady => true;
+        public bool steady => false;
 
         public bool IncludeConvection => true;
 
