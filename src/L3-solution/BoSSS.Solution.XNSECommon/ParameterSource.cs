@@ -14,12 +14,14 @@ namespace BoSSS.Solution.XNSECommon.Operator {
     /// </summary>
     public class ParameterSource : IVolumeForm, ISupportsJacobianComponent {
         string[] parameterName;
+        double scale;
 
-        public ParameterSource(string parameter) {
+        public ParameterSource(string parameter, double scale = 1.0) {
             parameterName = new string[]
             {
                 parameter
             };
+            this.scale = scale;
         }
 
         public TermActivationFlags VolTerms {
@@ -37,14 +39,14 @@ namespace BoSSS.Solution.XNSECommon.Operator {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            return cpv.Parameters[0] * V;
+            return cpv.Parameters[0] * V * scale;
         }
     }
 
     public class MultiPhaseSource : ParameterSource, ISpeciesFilter {
         string species;
 
-        public MultiPhaseSource(string parameter, string species) : base(parameter) {
+        public MultiPhaseSource(string parameter, string species, double scale = 1.0) : base(parameter, scale) {
             this.species = species;
         }
 
