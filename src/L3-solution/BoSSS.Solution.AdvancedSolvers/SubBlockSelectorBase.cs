@@ -750,7 +750,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// The core of the masking
         /// Generates index lists and the Ni0-struct-list corresponding to mask
         /// and is called by the child classes: local and external mask
-        /// Note: the smallest unit are DG sub blocks!
+        /// Note: the smallest sub blocks are DG blocks!
         /// </summary>
         protected void GenerateAllMasks() {
             int NoOfCells = m_NoOfCells;

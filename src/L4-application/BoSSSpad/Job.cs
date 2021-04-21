@@ -1404,7 +1404,8 @@ namespace BoSSS.Application.BoSSSpad {
             bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir) {
                 PlatformID CurrentSys = System.Environment.OSVersion.Platform;
                 switch(CurrentSys) {
-                    case PlatformID.Unix: { return Path.GetFullPath(Ass.Location).StartsWith("/home/"); }
+                    case PlatformID.Unix: { return Path.GetFullPath(Ass.Location).StartsWith("/home/")
+                            || Path.GetFullPath(Ass.Location).StartsWith("/Jenkins/"); }
                     case PlatformID.Win32S:
                     case PlatformID.Win32Windows:
                     default: {

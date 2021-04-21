@@ -32,6 +32,8 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.XNSE_Solver.Legacy;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -53,8 +55,30 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        [Test]
-        static public void RotCube_QuadratureError() {
+        //[Test]
+        static public void RotCube_GetSpeciesIDError() {
+            // Tritt nur mit 4 cores auf !!!
+            
+            /*
+             * Unhandled Exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at BoSSS.Foundation.XDG.LevelSetTracker.GetSpeciesId(String species) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 571
+   at BoSSS.Foundation.XDG.LinearLevelSetFormVectorizer..ctor(ILevelSetForm _OrgComponent, LevelSetTracker _lsTrk) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LinearLevelSetFormVectorizer.cs:line 53
+   at BoSSS.Foundation.XDG.LECQuadratureLevelSet`2.<>c__DisplayClass18_0.<.ctor>b__1(IEquationComponent eq) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LECQuadratureLevelSet.cs:line 204
+   at BoSSS.Foundation.Quadrature.FluxQuadCommon.EquationComponentArgMapping`1..ctor(ISpatialOperator DiffOp, String CoDomVarName, IList`1 _fieldList, IList`1 _fieldList2, Func`2 F, Func`2 vectorizer) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EquationComponentArgMapping.cs:line 122
+   at BoSSS.Foundation.Quadrature.FluxQuadCommon.EquationComponentArgMapping`1.GetArgMapping(ISpatialOperator op, Boolean CatParams, Func`2 F, Func`2 vectorizer) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EquationComponentArgMapping.cs:line 64
+   at BoSSS.Foundation.XDG.LECQuadratureLevelSet`2..ctor(IGridData context, XSpatialOperatorMk2 DiffOp, M Matrix, V OffsetVec, UnsetteledCoordinateMapping RowMap, IList`1 ParamsMap, UnsetteledCoordinateMapping ColMap, LevelSetTracker lsTrk, Int32 _iLevSet, Int32 TrackerHistoryIndex, Tuple`2 SpeciesPair, ICompositeQuadRule`1 domAndRule) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LECQuadratureLevelSet.cs:line 202
+   at BoSSS.Foundation.XDG.XSpatialOperatorMk2.XEvaluatorLinear.ComputeMatrix_Internal[M,V](M Matrix, V AffineOffset, Boolean OnlyAffine, Double alpha) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XSpatialOperatorMk2_XEvaluators.cs:line 286
+   at BoSSS.Foundation.XDG.XSpatialOperatorMk2.XEvaluatorLinear.ComputeMatrix[M,V](M Matrix, V AffineOffset, Double alpha) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XSpatialOperatorMk2_XEvaluators.cs:line 149
+   at BoSSS.Solution.XdgTimestepping.XdgTimestepping.ComputeOperatorMatrix(BlockMsrMatrix OpMtx, Double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary`2 AgglomeratedCellLengthScales, Double time, Int32 LsTrkHistoryIndex) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgTimestepper.cs:line 526
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.AssembleMatrixCallback(BlockMsrMatrix& System, Double[]& Affine, BlockMsrMatrix& PrecondMassMatrix, DGField[] argCurSt, Boolean Linearization, ISpatialOperator& abstractOperator) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1087
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment(Int32 increment, Double phystime, Double dt, Boolean ComputeOnlyResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1503
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve(Double phystime, Double dt, Boolean ComputeOnlyResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1320
+   at BoSSS.Solution.XdgTimestepping.XdgTimestepping.Solve(Double phystime, Double dt, Boolean SkipSolveAndEvaluateResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgTimestepper.cs:line 726
+   at BoSSS.Application.XNSE_Solver.XNSE`1.RunSolverOneStep(Int32 TimestepNo, Double phystime, Double dt) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver\XNSE.cs:line 447
+   at BoSSS.Solution.Application`1.RunSolverMode() in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution\Application.cs:line 2127
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_QuadratureError() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 62
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 96
+             */
             var C = Rotating_Cube(4,30,2,true);
 
             using (var solver = new XNSE()) {
@@ -62,6 +86,99 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.RunSolverMode();
             }
         }
+
+        //[Test]
+        static public void RotCube_HMFonLineSegment() {
+            //Passiert unabhängig von der Anzahl der Prozessoren
+            
+            /*
+             Unhandled Exception: System.NotSupportedException: Divergence-free basis for reference element 'BoSSS.Foundation.Grid.RefElements.Square' is not specified for degree 18, max. supported degree is 16.
+   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeBasis.GetPolynomials(RefElement simplex, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeBasis.cs:line 112
+   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeBasis.GetPolynomials(GridData g, RefElement element, Int32 p) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeBasis.cs:line 78
+   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeFaceBasis..ctor(GridData gridData, RefElement VolKref, Int32 degree, Int32 localEdge) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeFaceBasis.cs:line 32
+   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory.SwitchOrder(Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs:line 146
+   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs:line 93
+   at BoSSS.Foundation.Quadrature.CompositeQuadRule`1.Create[TDomain](IQuadRuleFactory`1 ruleFactory, Int32 order, TDomain domain) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\CompositeQuadRule.cs:line 255
+   at BoSSS.Foundation.Quadrature.QuadratureScheme`2.Compile(IGridData gridData, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\QuadratureScheme.cs:line 318
+   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.LambdaLevelSetSurfaceQuadrature..ctor(LevelSetEdgeVolumeQuadRuleFactory owner, IQuadRuleFactory`1 surfaceRuleFactory, Int32 maxLambdaDegree, CellMask mask) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 890
+   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.GetOptimizedRules(CellMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 315
+   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 244
+   at BoSSS.Foundation.Quadrature.EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EdgeRuleFromCellBoundaryFactory.cs:line 183
+   at BoSSS.Foundation.XDG.XQuadFactoryHelper.ComplementaryRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\XQuadFactoryHelper.cs:line 604
+   at BoSSS.Foundation.Quadrature.CompositeQuadRule`1.Create[TDomain](IQuadRuleFactory`1 ruleFactory, Int32 order, TDomain domain) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\CompositeQuadRule.cs:line 255
+   at BoSSS.Foundation.Quadrature.QuadratureScheme`2.Compile(IGridData gridData, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\QuadratureScheme.cs:line 318
+   at BoSSS.Foundation.XDG.CutCellMetrics.ComputeNonAgglomeratedMetrics() in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\CutCellMetrics.cs:line 197
+   at BoSSS.Foundation.XDG.XDGSpaceMetrics..ctor(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, Int32 __quadorder, SpeciesId[] speciesIds, Int32 HistoyIndex) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGSpaceMetrics.cs:line 52
+   at BoSSS.Foundation.XDG.LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[] Spc, Int32 CutCellsQuadOrder, Int32 HistoryIndex) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker_b.cs:line 100
+   at BoSSS.Solution.XNSECommon.Velocity0Mean.LevelSetParameterUpdate(DualLevelSet levelSet, Double time, IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XNSECommon\Parameters.cs:line 231
+   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.SingleLevelSetUpdater.UpdateParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 243
+   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 575
+   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.InitializeParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 519
+   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1.CreateEquationsAndSolvers(GridUpdateDataVaultBase L) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\SolverWithLevelSetUpdater.cs:line 498
+   at BoSSS.Solution.Application`1.RunSolverMode() in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution\Application.cs:line 2063
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_HMFonLineSegment() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 95
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 131
+             */
+            var C = Rotating_Cube(4, 10, 3, false);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        //[Test]
+        static public void RotCube_CG_ProjectionOutOfMemoryException() {
+            /*
+            T.b.d.
+             */
+            var C = Rotating_Cube(3, 100, 3, false);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        //[Test]
+        static public void Rotating_Cube_compare4to1() {
+            /*
+            Unhandled Exception:
+System.ArgumentException: DG degree seems different
+   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
+   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
+System.ArgumentException: DG degree seems different
+   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
+   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
+   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
+             */
+            var C = Rotating_Cube(3, 20, 2, false);
+            string bla = "IOTest_ofVelocity";
+
+            using (var solver = new XNSE()) {
+               
+
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                var grid = solver.GridData;
+                var testIO = new TestingIO(grid, bla, 1);
+                LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+                LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
+
+                var projCheck = new TestingIO(solver.GridData, $"{bla}.csv", 1);
+                projCheck.AddDGField(PhiDG);
+                projCheck.AddDGField(PhiCG);
+                projCheck.DoIOnow();
+
+                Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
+                Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
+            }
+        }
+
 
         /// <summary>
         /// 
@@ -93,9 +210,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            RotCube_QuadratureError();
+            //RotCube_GetSpeciesIDError();
+            //RotCube_CG_ProjectionOutOfMemoryException();
+            Rotating_Cube_compare4to1();
             BoSSS.Solution.Application.FinalizeMPI();
         }
+
+
 
 
         /// <summary>

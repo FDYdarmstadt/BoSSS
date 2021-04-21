@@ -10,6 +10,7 @@ using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
 using NUnit.Framework;
 using AdvancedSolverTests.SubBlocking;
+using System.Diagnostics;
 
 namespace AdvancedSolverTests {
 
@@ -29,7 +30,10 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.none, 2, MatrixShape.diagonal);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.diagonal);
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubBlockExtraction(XDGusage.none, 2, MatrixShape.diagonal_var_spec, 4);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
+            //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.all, 2, 4);
         }
 
     }

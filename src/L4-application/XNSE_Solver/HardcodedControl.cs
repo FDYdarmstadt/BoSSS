@@ -522,12 +522,12 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = false) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            C.DbPath = @"D:\trash_db";
+            //C.DbPath = @"D:\trash_db";
             //C.AlternateDbPaths = new[] {
             //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
             //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
@@ -542,7 +542,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==========
 
             C.SetFieldOptions(k, Math.Max(6,k*2));
-            C.GridPartType = GridPartType.METIS;
+            C.GridPartType = GridPartType.Hilbert;
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             //C.TracingNamespaces = "*";
