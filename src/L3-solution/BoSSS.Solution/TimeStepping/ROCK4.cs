@@ -272,7 +272,7 @@ namespace BoSSS.Solution.Timestepping {
 
             Matrix<double> processedData = Matrix<double>.Build.DenseOfArray(H);
             Evd<double> eigen = processedData.Evd(Symmetricity.Asymmetric);
-            Vector<Complex> EigenValues = eigen.EigenValues;
+            MathNet.Numerics.LinearAlgebra.Vector<Complex> EigenValues = eigen.EigenValues;
             
             MaxEigen = EigenValues.Select(ev => Complex.Abs(ev)).Max();
 

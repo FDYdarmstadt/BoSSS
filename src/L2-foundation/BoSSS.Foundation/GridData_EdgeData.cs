@@ -1116,7 +1116,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 int ip2 = (i + 2) % first_polygon.Count;
                                 var Pin = first_polygon[ip2];
                                 if (H.PointDistance(Pin) < 0)
-                                    H.Normal.Scale(-1);
+                                    H.Normal.ScaleInPlace(-1);
                             }
 
                             var C = new List<Vector>();
@@ -1172,7 +1172,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     int ip2 = (i + 2) % N2;
                                     var Pin = second_polygon[ip2];
                                     if (H.PointDistance(Pin) < 0)
-                                        H.Normal.Scale(-1);
+                                        H.Normal.ScaleInPlace(-1);
                                 }
 
 

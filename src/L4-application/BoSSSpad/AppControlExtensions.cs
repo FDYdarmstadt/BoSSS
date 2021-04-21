@@ -299,10 +299,68 @@ namespace BoSSS.Application.BoSSSpad {
                 string name = kv1.Key;
                 var o1 = kv1.Value;
 
-                if((!D2.ContainsKey(name)) || (!o1.Equals(D2[name]))) {
+                if((!D2.ContainsKey(name)) || (!KeyComparison(o1, D2[name]))) {
                     throw new ArgumentException("Unable to serialize/deserialize '" + name + "' correctly. (Missing a DataMemberAtribute in control class?)");
                 }
 
+            }
+
+
+            bool isInt(object a) {
+
+                switch(Type.GetTypeCode(a.GetType())) {
+                    case TypeCode.Byte:
+                    case TypeCode.SByte:
+                    case TypeCode.UInt16:
+                    case TypeCode.UInt32:
+                    case TypeCode.UInt64:
+                    case TypeCode.Int16:
+                    case TypeCode.Int32:
+                    case TypeCode.Int64:
+                    return true;
+
+                    default:
+                    return false;
+                }
+            }
+
+            bool isFloat(object a) {
+
+                switch(Type.GetTypeCode(a.GetType())) {
+                    case TypeCode.Double:
+                    case TypeCode.Single:
+                    return true;
+
+                    default:
+                    return false;
+                }
+            }
+
+            bool KeyComparison(object a, object b) {
+                if(a == null && b == null)
+                    return true;
+
+                if(a == null || b == null)
+                    return false;
+
+                if(a.Equals(b))
+                    return true;
+
+                if(isInt(a) && isInt(b)) {
+                    long _a = Convert.ToInt64(a);
+                    long _b = Convert.ToInt64(b);
+
+                    return _a == _b;
+                }
+
+                if(isFloat(a) && isFloat(b)) {
+                    double _a = Convert.ToDouble(a);
+                    double _b = Convert.ToDouble(b);
+
+                    return _a == _b;
+                }
+
+                return false;
             }
 
         }

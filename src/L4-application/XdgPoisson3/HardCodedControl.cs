@@ -158,11 +158,10 @@ namespace BoSSS.Application.XdgPoisson3 {
                         var C = Circle(Resolution: (res + 1));
 
                         C.Paramstudy_ContinueOnError = true;
-                        C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("Resolution", res),
-                                new Tuple<string,object>("HMF", HMFversion),
-                                new Tuple<string,object>("pOff", pOff)
-                            };
+                        C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Resolution", res));
+                        C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("HMF", HMFversion));
+                        C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("pOff", pOff));
+                            
 
                         C.CutCellQuadratureType = HMFversion;
                         C.pOff = pOff;
@@ -403,12 +402,12 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                         C.AgglomerationThreshold = 0.0;
 
-                        C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                        C.Paramstudy_CaseIdentification.AddRange(new[] {
                                 new Tuple<string, object>("Interface_Mode", vmode),
                                 new Tuple<string, object>("delta", delta),
                                 new Tuple<string, object>("antidelta", 1.0-delta),
                                 new Tuple<string, object>("PrePre", ppcMode)
-                            };
+                            });
 
 
                         cases.Add(C);
@@ -441,11 +440,11 @@ namespace BoSSS.Application.XdgPoisson3 {
                             C.AgglomerationThreshold = 1.0e-7;
                             C.penalty_multiplyer = mul;
 
-                            C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                            C.Paramstudy_CaseIdentification.AddRange(new[] {
                                 new Tuple<string, object>("Interface_Mode", vmode),
                                 new Tuple<string, object>("mul", mul),
                                 new Tuple<string, object>("PrePre", ppcMode)
-                            };
+                            });
 
 
                             cases.Add(C);
@@ -680,9 +679,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
                         var Ri = CircleNeum(res);
 
-                        Ri.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                            new Tuple<string,object>("Resolution", res)
-                        };
+                        Ri.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Resolution", res));
 
                         Ri.pOff = pOff;
                         Ri.CutCellQuadratureType = HMFversion;

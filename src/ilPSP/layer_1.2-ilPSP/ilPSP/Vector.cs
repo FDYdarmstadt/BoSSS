@@ -426,15 +426,26 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// multiples this vector with  scalar <paramref name="s"/>;
+        /// multiples this vector with scalar <paramref name="s"/>;
         /// </summary>
-        /// <param name="s"></param>
-        public void Scale(double s) {
+        /// <param name="s">scaling factor</param>
+        public void ScaleInPlace(double s) {
             this.x *= s;
             this.y *= s;
             this.z *= s;
         }
-
+        
+        /// <summary>
+        /// multiples this vector with scalar <paramref name="s"/>, returns the result;
+        /// this vector will be un-changed.
+        /// </summary>
+        /// <param name="s"></param>
+        public Vector Scale(double s) {
+            Vector r = this;
+            r.ScaleInPlace(s);
+            return r;
+        }
+        
         /// <summary>
         /// sets the components of this object
         /// </summary>
@@ -496,7 +507,7 @@ namespace ilPSP {
         /// <returns>clear;</returns>
         public static Vector operator *(Vector v, double s) {
             Vector ret = v;
-            ret.Scale(s);
+            ret.ScaleInPlace(s);
             return ret;
         }
 
@@ -514,8 +525,8 @@ namespace ilPSP {
         /// multiplication by a matrix
         /// </summary>
         /// <param name="s">the scalar</param>
-        /// <param name="v">the vector</param>
-        /// <returns>clear;</returns>
+        /// <param name="m">the matrix</param>
+        /// <returns><paramref name="m"/>*<paramref name="s"/></returns>
         public static Vector operator *(MultidimensionalArray m, Vector s)
         {
             Vector result = new Vector(s.Dim);
@@ -537,7 +548,7 @@ namespace ilPSP {
         /// <returns>v / s</returns>
         public static Vector operator /(Vector v, double s) {
             Vector result = v;
-            result.Scale(1.0 / s);
+            result.ScaleInPlace(1.0 / s);
             return result;
         }
 

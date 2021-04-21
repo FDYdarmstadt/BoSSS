@@ -1329,6 +1329,15 @@ namespace BoSSS.Application.BoSSSpad {
                     return JobStatus.FailedOrCanceled;
                 }
 
+                if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
+                    if(WriteHints) {
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Hint: want to re-activate the job.");
+                    }
+                    this.statusCache = JobStatus.FailedOrCanceled;
+                    return JobStatus.FailedOrCanceled;
+                }
+
                 // ============
                 // what now?
                 // ============
@@ -1445,7 +1454,11 @@ namespace BoSSS.Application.BoSSSpad {
                     foreach (var a in AllDependentAssemblies) {
                         if (IsNotSystemAssembly(a, MainAssemblyDir)) {
                             files.Add(a.Location);
+                            if(File.Exists(a.Location + ".config")) {
+                                files.Add(a.Location + ".config");
+                            }
                         }
+
                     }
                
                     // test for really strange errors
