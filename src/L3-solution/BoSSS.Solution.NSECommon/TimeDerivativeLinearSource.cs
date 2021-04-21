@@ -203,7 +203,7 @@ namespace BoSSS.Solution.NSECommon {
                 return m_ParameterOrdering;
             }
         }
-
+        
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { DerivVol };

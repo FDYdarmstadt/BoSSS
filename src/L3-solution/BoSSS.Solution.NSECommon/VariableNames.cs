@@ -1177,11 +1177,27 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// the names of all mass fractions from last timestep listed in an array
+        /// </summary>
+        static public string[] MassFractions_t0(int NumberOfSpecies) {
+            switch (NumberOfSpecies) {
+                case 1: return new string[] { MassFraction0 + "_t0" };
+                case 2: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0" };
+                case 3: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0" };
+                case 4: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0", MassFraction3 + "_t0" };
+                case 5: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0", MassFraction3 + "_t0", MassFraction4 + "_t0" };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
         /// the names of all mass fractions (at linearization point) listed in an array
         /// </summary>
         static public string[] MassFractions0(int NumberOfSpecies) {
             switch (NumberOfSpecies) {
-                case 3: return new string[] {MassFraction0_0, MassFraction1_0, MassFraction2_0};
+                case 1: return new string[] { MassFraction0_0 };
+                case 2: return new string[] { MassFraction0_0, MassFraction1_0 };
+                case 3: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0 };
                 case 4: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0 };
                 case 5: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0, MassFraction4_0 };
                 default: throw new NotSupportedException("unsupported number of species.");
@@ -1213,6 +1229,21 @@ namespace BoSSS.Solution.NSECommon {
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
+
+        /// <summary>
+        /// the name of the n-th mass fraction
+        /// </summary>
+        static public string MassFraction_t0_n(int n) {
+            switch (n) {
+                case 0: return MassFraction0 + "_t0";
+                case 1: return MassFraction1 + "_t0";
+                case 2: return MassFraction2 + "_t0";
+                case 3: return MassFraction3 + "_t0";
+                case 4: return MassFraction4 + "_t0";
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// The name of the <paramref name="d"/>-th velocity component.

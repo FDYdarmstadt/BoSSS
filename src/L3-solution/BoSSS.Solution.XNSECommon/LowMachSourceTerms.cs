@@ -1,7 +1,9 @@
-﻿using BoSSS.Foundation.XDG;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -109,7 +111,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Manufactured solution 
     /// </summary>
-    public class LowMach_MomentumManSolution :RHSManuSourceNS, ISpeciesFilter {
+    public class LowMach_MomentumManSolution : RHSManuSourceNS, ISpeciesFilter {
         public LowMach_MomentumManSolution(string spcName, double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, bool rhoOne, Func<double[], double, double> _SourceTerm) : base(Reynolds, Froude, MolarMasses, direction, physMode, rhoOne, _SourceTerm) {
             ValidSpecies = spcName;
         }
@@ -123,7 +125,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Manufactured solution 
     /// </summary>
-    public class LowMach_ScalarManSolution:RHSManuSourceTransportEq, ISpeciesFilter {
+    public class LowMach_ScalarManSolution : RHSManuSourceTransportEq, ISpeciesFilter {
         public LowMach_ScalarManSolution(string spcName, double HeatRelease, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, MaterialLaw EoS, string EqType, PhysicsMode physicsMode, int SpeciesIndex = -1, bool chemReactionOK = true, bool rhoOne = false) : base(HeatRelease, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, EqType, physicsMode, SpeciesIndex, chemReactionOK, rhoOne) {
 
             ValidSpecies = spcName;
@@ -135,5 +137,154 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+    /// <summary>
+    /// Time derivative contribution in the continuity equation.
+    /// </summary>
+    public class LowMach_TimeDerivativeConti_term1 : ContiTimeDerivativeActual, ISpeciesFilter {
+        public LowMach_TimeDerivativeConti_term1(string spcName, MaterialLaw EoS, double dt, int NumberOfChemicalComponents) : base(EoS, dt, NumberOfChemicalComponents) {
+            ValidSpecies = spcName;
+        }
 
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
+
+
+    /// <summary>
+    /// implementation of the term rho^n_(t)/dt
+    /// </summary>
+    public class ContiTimeDerivativeActual : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
+
+        double m_dt;
+        string[] m_ArgumentOrdering;
+        MaterialLaw m_EoS;
+
+        public ContiTimeDerivativeActual(MaterialLaw EoS, double dt, int NumberOfChemicalComponents) {
+            m_EoS = EoS;
+            m_dt = dt;
+            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
+        }
+        /// <summary>
+        /// CHECK
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                //return (TermActivationFlags.V | TermActivationFlags.UxV);
+                return TermActivationFlags.AllOn;
+            }
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        public IList<string> ArgumentOrdering {
+            get {
+                return m_ArgumentOrdering;
+            }
+        }
+        /// <summary>
+        ///  
+        /// </summary>
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            // For now no update. In future dt could be dynamicaly changed here
+            return;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] {
+                new VolumeFormDifferentiator(this, SpatialDimension)
+            };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            double rho = m_EoS.GetDensity(U);
+            return rho / m_dt * V;
+
+        }
+    }
+
+
+    /// <summary>
+    /// Time derivative contribution in the continuity equation.
+    /// </summary>
+    public class LowMach_TimeDerivativeConti_term2 : ContiTimeDerivativePrevious, ISpeciesFilter {
+        public LowMach_TimeDerivativeConti_term2(string spcName, MaterialLaw EoS, double dt, int NumberOfChemicalComponents) : base(EoS, dt, NumberOfChemicalComponents) {
+            ValidSpecies = spcName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
+
+
+    /// <summary>
+    /// implementation of the term rho^n_(t)/dt
+    /// </summary>
+    public class ContiTimeDerivativePrevious : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
+
+        double m_dt;
+        string[] m_ParameterOrdering;
+        MaterialLaw m_EoS;
+
+        public ContiTimeDerivativePrevious(MaterialLaw EoS, double dt, int NumberOfChemicalComponents) {
+            m_EoS = EoS;
+            m_dt = dt;
+
+            m_ParameterOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature + "_t0" }, VariableNames.MassFractions_t0(NumberOfChemicalComponents)); // Variables for the density evaluation
+        }
+        /// <summary>
+        /// CHECK
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+        /// <summary>
+        ///  
+        /// </summary>
+        public IList<string> ParameterOrdering {
+            get {
+                return m_ParameterOrdering;
+            }
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            // For now no update. In future dt could be dynamicaly changed here
+            return;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] {
+                new VolumeFormDifferentiator(this, SpatialDimension)
+            };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double[] densityParameters = cpv.Parameters;
+            double rho = m_EoS.GetDensity(densityParameters);
+            return -1 * rho / m_dt * V;
+
+        }
+    }
 }
