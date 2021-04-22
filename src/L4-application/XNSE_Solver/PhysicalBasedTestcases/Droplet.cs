@@ -832,9 +832,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             bool quarterDomain = true;
 
-            string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_testDB";
+            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_testDB";
             //string _DbPath = @"D:\local\local_test_db2";
-            //string _DbPath = null;
+            string _DbPath = null;
 
             // basic database options
             // ======================
@@ -923,80 +923,80 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double L = 6.0 * Lscale;
             double L_drop = 2.0 * Lscale;
 
-            //if (!quarterDomain) {
-            //    C.GridFunc = delegate () {
-            //        double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
-            //        double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
-            //        out_min = out_min.GetSubVector(0, (out_min.Length - 2));
-            //        double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
-            //        out_max = out_max.GetSubVector(1, (out_max.Length - 1));
-            //        //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
-            //        double[] nodes = droplet;
-            //        L = L_drop;
+            if (!quarterDomain) {
+                C.GridFunc = delegate () {
+                    double[] droplet = GenericBlas.Linspace(-L_drop, L_drop, kelem + 1);
+                    double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+                    double[] nodes = droplet;
+                    L = L_drop;
 
-            //        var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
+                    var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-            //        grd.EdgeTagNames.Add(1, "wall");
+                    grd.EdgeTagNames.Add(1, "wall");
 
-            //        grd.DefineEdgeTags(delegate (double[] X) {
-            //            byte et = 0;
-            //            if (Math.Abs(X[1] + (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[1] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[0] + (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[0] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[2] + (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[2] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            return et;
-            //        });
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
 
-            //        return grd;
-            //    };
+                    return grd;
+                };
 
-            //} else {
+            } else {
 
-            //    C.GridFunc = delegate () {
-            //        double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
-            //        double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
-            //        //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
-            //        //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
-            //        //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
-            //        //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
-            //        //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
+                C.GridFunc = delegate () {
+                    double[] droplet_xy = GenericBlas.Linspace(0, L_drop, kelem + 1);
+                    double[] droplet_z = GenericBlas.Linspace(-L_drop, L_drop, (2 * kelem) + 1);
+                    //double[] out_min = Grid1D.TanhSpacing(-L, -L_drop, (kelem / 2) + 1, 1.5, false);
+                    //out_min = out_min.GetSubVector(0, (out_min.Length - 2));
+                    //double[] out_max = Grid1D.TanhSpacing(L_drop, L, (kelem / 2) + 1, 1.5, true);
+                    //out_max = out_max.GetSubVector(1, (out_max.Length - 1));
+                    //double[] nodes = ArrayTools.Cat(out_min, droplet, out_max);
 
-            //        var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
+                    var grd = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z);
 
-            //        L = L_drop;
+                    L = L_drop;
 
-            //        grd.EdgeTagNames.Add(1, "wall");
-            //        grd.EdgeTagNames.Add(2, "slipsymmetry");
+                    grd.EdgeTagNames.Add(1, "wall");
+                    grd.EdgeTagNames.Add(2, "slipsymmetry");
 
-            //        grd.DefineEdgeTags(delegate (double[] X) {
-            //            byte et = 0;
-            //            if (Math.Abs(X[1] + (0)) <= 1.0e-8)
-            //                et = 2;
-            //            if (Math.Abs(X[1] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[0] + (0)) <= 1.0e-8)
-            //                et = 2;
-            //            if (Math.Abs(X[0] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[2] + (L)) <= 1.0e-8)
-            //                et = 1;
-            //            if (Math.Abs(X[2] - (L)) <= 1.0e-8)
-            //                et = 1;
-            //            return et;
-            //        });
+                    grd.DefineEdgeTags(delegate (double[] X) {
+                        byte et = 0;
+                        if (Math.Abs(X[1] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[1] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[0] + (0)) <= 1.0e-8)
+                            et = 2;
+                        if (Math.Abs(X[0] - (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] + (L)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (L)) <= 1.0e-8)
+                            et = 1;
+                        return et;
+                    });
 
-            //        return grd;
-            //    };
+                    return grd;
+                };
 
-            //}
+            }
 
             #endregion
 
@@ -1017,22 +1017,37 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
             // f_2 denotes the initial amplitude
 
-            double f_2 = 0.5;
-            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
-            Func<double[], double> PhiFunc = delegate(double[] X) {
+            //double f_2 = 0.5;
+            //double gam_2 = 35.0 / (35.0 + 21.0 * f_2.Pow2() + 2.0 * f_2.Pow(3));
+            //Func<double[], double> PhiFunc = delegate(double[] X) {
+            //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+            //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+            //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+            //    double f = gam_2 * (1 + f_2 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));
+            //    double phi = r - f;
+            //    return phi;
+            //};
+
+            // WLNT
+            double m = 2;
+            double eta0 = 0.7;
+            Func<double[], double> PhiFunc = delegate (double[] X) {
                 double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
                 double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
                 double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
-                double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
-                double phi = r - f;
+                double eta = 1;
+                eta += eta0 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0); // first order deformation
+                eta -= eta0.Pow2() / (2.0 * m + 1.0);    // second order correction for m;
+                eta -= (eta0.Pow(3) / 6.0) * 0.1142857;     // third order correction for m=2
+                double phi = r - eta;
                 return phi;
             };
 
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            // restart
-            Guid restartID = new Guid("78808235-9904-439c-a4e5-d32a97eee5f5");
-            C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 100);
+            //// restart
+            //Guid restartID = new Guid("78808235-9904-439c-a4e5-d32a97eee5f5");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, 100);
 
             #endregion
 
@@ -1129,7 +1144,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1000;
+            C.NoOfTimesteps = 1; // 000;
             C.saveperiod = 4;
 
             #endregion
