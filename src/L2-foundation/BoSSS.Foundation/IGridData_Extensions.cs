@@ -641,7 +641,7 @@ namespace BoSSS.Foundation.Grid {
                 buf[0] = GlobalId;
                 buf[1] = GlobalIndex;
 
-                csMPI.Raw.Bcast((IntPtr)buf, 2, csMPI.Raw._DATATYPE.LONG, RootRank, gdat.CellPartitioning.MPI_Comm);
+                csMPI.Raw.Bcast((IntPtr)buf, 2, csMPI.Raw._DATATYPE.LONG_LONG, RootRank, gdat.CellPartitioning.MPI_Comm);
                 GlobalId = buf[0];
                 GlobalIndex = buf[1];
 

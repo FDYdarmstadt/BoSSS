@@ -220,6 +220,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 AggregationGridBasis[] basisS = this.Mapping.AggBasis;
                 int[] Degrees = this.Mapping.DgDegree;
+                bool marker = false;
 
                 List<long> IndefRows = new List<long>();
 
@@ -260,127 +261,177 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
                     long i0 = this.Mapping.Partitioning.i0;
+
+                    //List<Chunk> blaagr = new List<Chunk>();
+
+                    //for (int jCell = 0; jCell < J; jCell++) {
+                    //    for (int i = 0; i < LL; i++) {
+                    //        long[] _i0s = __i0s[i];
+                    //        int[] _Lns = __Lns[i];
+                    //        var conf = m_Config[i];
+                    //        int E = conf.VarIndex.Length;
+                    //        for (int e = 0; e < E; e++) {
+                    //            int iVar = conf.VarIndex[e];
+                    //            _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
+                    //            _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
+                    //        }
+                    //        ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
+                    //        ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
+
+                    //        if (MassBlock[i].InfNorm() == 0) {
+                    //            Console.WriteLine("zero massmtx block in " + jCell);
+                    //            double[] coords = this.Mapping.AggGrid.iLogicalCells.GetCenter(jCell);
+                    //            foreach (var c in coords)
+                    //                Console.WriteLine(c);
+                    //            blaagr.Add(Chunk.GetSingleElementChunk(jCell));
+                    //        }
+                            
+                    //    }
+                    //}
+
+                    //(new CellMask(GridData, blaagr)).SaveToTextFile("failCell.csv");
+
                     for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
-                        //ReducedRegionCode rrc;
-                        //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
+                    //ReducedRegionCode rrc;
+                    //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
 
-                        //if (this.Mapping.GetLength(jCell) == 0)
-                        //    // void cell
-                        //    continue;
+                    //if (this.Mapping.GetLength(jCell) == 0)
+                    //    // void cell
+                    //    continue;
 
-                        for (int i = 0; i < LL; i++) { // for each configuration item...
-                            var conf = m_Config[i];
+                    for (int i = 0; i < LL; i++) { // for each configuration item...
+                        var conf = m_Config[i];
 
-                            int E = conf.VarIndex.Length;
-                            long[] _i0s = __i0s[i];
-                            int[] _Lns = __Lns[i];
-                            //AggregationGridBasis basis = null;
+                        int E = conf.VarIndex.Length;
+                        long[] _i0s = __i0s[i];
+                        int[] _Lns = __Lns[i];
+                        //AggregationGridBasis basis = null;
 
-                            int DOF = 0;
-                            bool AnyZeroLength = false;
-                            for (int e1 = 0; e1 < E; e1++) {
-                                int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
-                                DOF += dof_var;
-                                AnyZeroLength |= (dof_var == 0);
-                            }
-                            if (AnyZeroLength && DOF > 0)
-                                throw new ApplicationException();
+                        int DOF = 0;
+                        bool AnyZeroLength = false;
+                        for (int e1 = 0; e1 < E; e1++) {
+                            int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
+                            DOF += dof_var;
+                            AnyZeroLength |= (dof_var == 0);
+                        }
+                        if (AnyZeroLength && DOF > 0)
+                            throw new ApplicationException();
 
-                            if (DOF == 0)
-                                // void cell
-                                continue;
+                        if (DOF == 0)
+                            // void cell
+                            continue;
 
-                            for (int e = 0; e < E; e++) {
-                                int iVar = conf.VarIndex[e];
-                                _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
-                                _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
-                            }
+                        for (int e = 0; e < E; e++) {
+                            int iVar = conf.VarIndex[e];
+                            _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
+                            _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
+                        }
 
-                            // extract blocks from operator and mass matrix
-                            // --------------------------------------------
+                        // extract blocks from operator and mass matrix
+                        // --------------------------------------------
 
-                            stw_Data.Start();
-                            ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
-                            ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
-                            stw_Data.Stop();
-                            double MassBlkNrm = MassBlock[i].InfNorm();
-                            double OperatorBlkNrm = OperatorBlock[i].InfNorm();
-                            int NN = MassBlock[i].NoOfRows;
+                        stw_Data.Start();
+                        ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
+                        ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
+                        stw_Data.Stop();
+                        double MassBlkNrm = MassBlock[i].InfNorm();
+                        double OperatorBlkNrm = OperatorBlock[i].InfNorm();
+                        int NN = MassBlock[i].NoOfRows;
 
                             if (MassBlkNrm == 0) {
                                 //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
                                 //Console.WriteLine("absolute zero Mass block in cell " + jCell + ".");
 
-                                if (conf.mode == Mode.IdMass_DropIndefinite || conf.mode == Mode.SymPart_DiagBlockEquilib_DropIndefinite) {
-                                    // we can deal with this ...
+                                //if (conf.mode == Mode.IdMass_DropIndefinite || conf.mode == Mode.SymPart_DiagBlockEquilib_DropIndefinite) {
+                                //    // we can deal with this ...
 
-                                } else {
-                                    throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
+
+                                //Console.WriteLine("Error at level" + i);
+                                //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
+
+
+                                int Length = 0;
+                                foreach (int len in _Lns) {
+                                    Length += len;
                                 }
-                            }
-                            //if(OperatorBlkNrm == 0) {
-                            //    throw new ArithmeticException("absolute zero Operator block in cell " + jCell + ".");
-                            //}
-
-                            // mem alloc
-                            // ---------
-
-                            if (PCleftBlock[i] == null || PCleftBlock[i].NoOfRows != NN) {
-                                PCleftBlock[i] = MultidimensionalArray.Create(NN, NN);
-                            }
-                            if (PCrightBlock[i] == null || PCrightBlock[i].NoOfRows != NN) {
-                                PCrightBlock[i] = MultidimensionalArray.Create(NN, NN);
-                            } if (work[i] == null || work[i].NoOfRows != NN) {
-                                work[i] = MultidimensionalArray.Create(NN, NN);
-                            }
-
-                            // compute precond
-                            // ---------------
-
-
-                            stw_Comp.Start();
-                            int Rank;
-                            PCleftBlock[i].Clear();
-                            PCrightBlock[i].Clear();
-                            int[] idr = ComputeChangeOfBasisBlock(_Lns, MassBlock[i], OperatorBlock[i], PCleftBlock[i], PCrightBlock[i], conf.mode, out Rank, work[i]);
-                            if (Rank != NN) {
-                                IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
+                                long[] ZeroIdc = Length.ForLoop(Z => _i0s[0] + Z);
+                                IndefRows.AddRange(ZeroIdc);
+                                if (!marker) {
+                                    Console.WriteLine("Zero mass matrix blocks detected. This should not happen, but we can deal with this.");
+                                    Console.WriteLine("zero blocks at cell: ");
+                                    marker = true;
+                                }
+                                Console.WriteLine(jCell);
                             } else {
-                                Debug.Assert(idr == null);
+
+
+
+
+                                //if(OperatorBlkNrm == 0) {
+                                //    throw new ArithmeticException("absolute zero Operator block in cell " + jCell + ".");
+                                //}
+
+                                // mem alloc
+                                // ---------
+
+                                if (PCleftBlock[i] == null || PCleftBlock[i].NoOfRows != NN) {
+                                    PCleftBlock[i] = MultidimensionalArray.Create(NN, NN);
+                                }
+                                if (PCrightBlock[i] == null || PCrightBlock[i].NoOfRows != NN) {
+                                    PCrightBlock[i] = MultidimensionalArray.Create(NN, NN);
+                                }
+                                if (work[i] == null || work[i].NoOfRows != NN) {
+                                    work[i] = MultidimensionalArray.Create(NN, NN);
+                                }
+
+                                // compute precond
+                                // ---------------
+
+
+                                stw_Comp.Start();
+                                int Rank;
+                                PCleftBlock[i].Clear();
+                                PCrightBlock[i].Clear();
+                                int[] idr = ComputeChangeOfBasisBlock(_Lns, MassBlock[i], OperatorBlock[i], PCleftBlock[i], PCrightBlock[i], conf.mode, out Rank, work[i]);
+                                if (Rank != NN) {
+                                    IndefRows.AddRange(ConvertRowIndices(jCell, basisS, Degrees, conf, E, _i0s, idr));
+                                } else {
+                                    Debug.Assert(idr == null);
+                                }
+                                stw_Comp.Stop();
+
+                                // write block back
+                                // ----------------
+                                stw_Data.Start();
+                                ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref PCleftBlock[i]);
+                                ExtractBlock(_i0s, _Lns, false, RightPreCond, ref PCrightBlock[i]);
+
+
+                                // inverse precond-matrix
+                                // ----------------------
+                                // right-inverse: (required for transforming solution guess)
+                                if (PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
+                                    PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
+                                }
+                                if (Rank == NN)
+                                    PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
+                                else
+                                    RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
+                                ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref PCrightBlock_inv[i]);
+
+                                // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
+                                if (PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
+                                    PCleftBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
+                                }
+                                if (Rank == NN)
+                                    PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
+                                else
+                                    RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
+                                ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
+
+                                stw_Data.Stop();
                             }
-                            stw_Comp.Stop();
-
-                            // write block back
-                            // ----------------
-                            stw_Data.Start();
-                            ExtractBlock(_i0s, _Lns, false, LeftPreCond, ref PCleftBlock[i]);
-                            ExtractBlock(_i0s, _Lns, false, RightPreCond, ref PCrightBlock[i]);
-
-
-                            // inverse precond-matrix
-                            // ----------------------
-                            // right-inverse: (required for transforming solution guess)
-                            if (PCrightBlock_inv[i] == null || PCrightBlock_inv[i].NoOfRows != NN) {
-                                PCrightBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
-                            }
-                            if (Rank == NN)
-                                PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
-                            else
-                                RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
-                            ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref PCrightBlock_inv[i]);
-
-                            // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
-                            if (PCleftBlock_inv[i] == null || PCleftBlock_inv[i].NoOfRows != NN) {
-                                PCleftBlock_inv[i] = MultidimensionalArray.Create(NN, NN);
-                            }
-                            if (Rank == NN)
-                                PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
-                            else
-                                RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
-                            ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
-
-                            stw_Data.Stop();
-                        }
+                    }
                     }
 
                     bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");

@@ -69,6 +69,8 @@
     <Compile Include="AggregationGridBasis.cs" />
     <Compile Include="AggregationGridCurvedInjector.cs" />
     <Compile Include="BlockJacobi.cs" />
+    <Compile Include="BlockLevelPmg.cs" />
+    <Compile Include="ISmootherTemplate.cs" />
     <Compile Include="UniSolver.cs" />
     <Compile Include="GenericKcycle.cs" />
     <Compile Include="ClassicMultigrid.cs" />
@@ -94,7 +96,6 @@
     <Compile Include="OrthonormalizationScheme.cs" />
     <Compile Include="FlexGMRES.cs" />
     <Compile Include="GenericRestriction.cs" />
-    <Compile Include="ISmootherTemplate.cs" />
     <Compile Include="Jacobi.cs" />
     <Compile Include="MultigridMapping.cs" />
     <Compile Include="MultigridOperator.cs" />
@@ -154,6 +155,10 @@
       <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</Project>
       <Name>BoSSS.Solution.Gnuplot</Name>
@@ -161,10 +166,6 @@
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>

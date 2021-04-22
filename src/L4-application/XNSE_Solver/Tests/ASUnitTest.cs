@@ -667,7 +667,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
         /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.IBMChannel"/>
         /// </summary>
         [Test]
         public static void IBMChannelTest(
@@ -691,6 +691,29 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             XNSESolverTest(Tst, C);
 
+        }
+
+        [Test]
+        public static void IBMChannelSolverTest(
+            [Values(1, 2, 3)] int FlowSolverDegree = 2,
+            [Values(0)] double angle = 0.0,
+            [Values(LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.exp_Kcycle_schwarz
+            ) {
+            double AgglomerationTreshold = 0.3;
+
+            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+
+            int GridResolution = 1;
+
+            var Tst = new IBMChannel(30 * Math.PI / 180, true);
+
+            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, ViscosityMode.Standard, SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution, solvercode: solvercode);
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-11;
+
+
+            XNSESolverTest(Tst, C);
         }
 
 
@@ -1129,7 +1152,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         static XNSE_Control TstObj2CtrlObj(IXNSETest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
-            int GridResolution = 1) {
+            int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;
 
@@ -1244,7 +1267,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = solvercode;
 
 
             // return

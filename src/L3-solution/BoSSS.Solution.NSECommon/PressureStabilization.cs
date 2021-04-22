@@ -51,7 +51,7 @@ namespace BoSSS.Solution.NSECommon {
         MultidimensionalArray h_max_Edge;
 
         protected override void InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOutCell) {
-            double h_max = this.h_max_Edge[inp.iEdge];
+            double h_max = this.h_max_Edge[inp.jCellIn];
             double penalty = PressureStabilizationFactor * Reynolds * h_max;
             FluxInCell = penalty * (Uin[0] - Uout[0]);
             FluxOutCell = -FluxInCell;
@@ -62,7 +62,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            h_max_Edge = cs.EdgeLengthScales;
+            h_max_Edge = cs.CellLengthScales;
         }
     }
 }

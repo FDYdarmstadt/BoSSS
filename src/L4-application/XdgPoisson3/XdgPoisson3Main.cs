@@ -42,6 +42,8 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
 using Code = BoSSS.Solution.Control.LinearSolverCode;
+using BoSSS.Foundation.Comm;
+using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 namespace BoSSS.Application.XdgPoisson3 {
 

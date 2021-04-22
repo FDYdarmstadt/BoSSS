@@ -1,0 +1,257 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 2; Grid Count = 4; Path = D:\IBM }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+ExecutionQueues;
+**************
+List of 4 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\weber\dply
+  2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
+  3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
+}
+==============
+// ==================================
+// setup Client & Workflow & Database
+// ==================================
+//var myBatch = (MsHPC2012Client)ExecutionQueues[1];
+var myBatch                     = (SlurmClient)ExecutionQueues[3];
+myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"}; //new string[]{"#SLURM -p test24", "#SLURM -C avx512","#SLURM -N 3"}; 
+**************
+==============
+string WFlowName = "IBM_RotCube_test";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'IBM_RotCube_test'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+// providing corresponding paths on both platforms:
+string dirname = "DB_IBM_test";
+string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
+**************
+==============
+var tempDB = OpenOrCreateDatabase(winpath);
+**************
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_IBM_test'.
+
+==============
+tempDB.Sessions
+**************
+List of 14 instances of ISessionInfo {
+  0: XNSE/IBM_benchmark	XNSE_rotsphere	02/26/2021 17:30:39	8a132319...
+  1: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:35:09	4abfa7ef...
+  2: XNSE/IBM_benchmark	XNSE_rotsphere*	02/26/2021 17:30:55	36684c3b...
+  3: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:25:33	6fc6d6f6...
+  4: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:21:48	10b2437c...
+  5: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:16:46	7de3dcf4...
+  6: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:04:09	00348b81...
+  7: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:01	1fd4c0a7...
+  8: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	f07102c1...
+  9: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	fa414a6f...
+  10: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:32:44	77a9229f...
+  11: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:05:45	f06072f2...
+  12: XNSE/RotCube	XNSE_rotcube*	02/26/2021 15:51:57	88776311...
+  13: XNSE/RotCube	XNSE_rotcube*	02/25/2021 21:27:06	6e8461d3...
+}
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+double xMax = 1.0, yMax = 1.0, zMax=1.0;
+double xMin = -1.0, yMin = -1.0,zMin = -1.0;
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+}
+**************
+==============
+Utils.Np(0);
+**************
+1
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+// set parameterz
+int[] core_sweep = {40};
+int p             = 3;
+int Problemsize   = 1000000;
+int MemoryPerCore = 2000;
+**************
+==============
+// calculate grid size
+double Res    = Math.Pow(Problemsize/(Utils.Np(p)*3+Utils.Np(p-1)),0.333333333);
+int ResRndup  = (int)Math.Ceiling(Res);
+int NoOfCells = ResRndup*ResRndup*ResRndup;
+double test   = NoOfCells*Utils.Np(p);
+test;
+**************
+312500
+==============
+ResRndup
+**************
+25
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<string> controls = new List<string>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+//int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {p};
+**************
+==============
+// Solvers which we want to instrument:
+LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
+    //LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_mumps, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
+}; 
+**************
+==============
+// MaxDof for each calculation, prohibit crashes, due to limited memory capabilities of lin solver
+int MaxDof = int.MaxValue;
+**************
+==============
+// --------------------
+// setup control object
+// --------------------
+
+//foreach(LinearSolverCode solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {    
+    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2})",k,ResRndup,3);
+    controls.Add(jobstr);
+    Console.WriteLine(jobstr);
+    }
+**************
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
+
+==============
+controls
+**************
+List of 1 instances of String {
+  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
+}
+==============
+//var solver = new XdgPoisson3Main();
+//solver.Init(c+ontrols[0]);
+//solver.RunSolverMode();
+//solver.Dispose();
+**************
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+using BoSSS.Application.XNSE_Solver;
+**************
+==============
+foreach(var cores in core_sweep){
+foreach(var ctrlstr in controls){
+    int rndnum = new Random().Next();
+    var aJob   = new Job("rotting_cube_"+rndnum,typeof(XNSE));
+    aJob.SetControlStatement(ctrlstr);
+    aJob.NumberOfMPIProcs         = cores;
+    aJob.ExecutionTime            = "1:00:00";
+    aJob.MemPerCPU                = "2000";
+    aJob.UseComputeNodesExclusive = true;
+    aJob.Activate(myBatch);
+}
+}
+**************
+Deploying job rotting_cube_17823411 ... 
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\IBM_RotCube_test-XNSE_Solver2021Feb27_135212
+copied 31 files.
+deployment finished.
+17101426
+
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

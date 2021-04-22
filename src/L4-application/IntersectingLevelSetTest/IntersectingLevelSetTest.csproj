@@ -93,10 +93,6 @@
       <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
       <Project>{d0546422-ec92-4964-82e9-8ee819a2f786}</Project>
       <Name>BoSSS.Solution.Tecplot</Name>
@@ -104,6 +100,10 @@
     <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{df7f5abd-e606-41cd-beef-31a95d136dea}</Project>
       <Name>BoSSS.Solution</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

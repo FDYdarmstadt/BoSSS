@@ -155,29 +155,6 @@ sortedDT.Print();
 11: 41                      2671600 2          1158.9981832 Xdg_weakscaling       J262144_k2_exp_Kcycle_schwarz        27     
 12: 41                      5199920 2          1245.4266283 Xdg_weakscaling       J512000_k2_exp_Kcycle_schwarz        27     
 ==============
-//SubTab.Columns.Add("InitnRunTime", typeof(Double));
-foreach(System.Data.DataRow row in SubTab.Rows){
-    Console.WriteLine(row["SessionName"]);
-    double initTime = Convert.ToDouble(row["Solver_Init_time"]);
-    double RunTime  = Convert.ToDouble(row["Solver_Run_time"]);
-    row["InitnRunTime"]=initTime+RunTime;
-    }
-**************
-J8000_k2_exp_Kcycle_schwarz
-J262144_k2_exp_Kcycle_schwarz
-J512000_k2_exp_Kcycle_schwarz
-J17576_k2_classic_pardiso
-J132651_k2_exp_Kcycle_schwarz_predef
-J17576_k2_exp_Kcycle_schwarz
-J32768_k2_classic_pardiso
-J8000_k2_classic_pardiso
-J4096_k2_exp_Kcycle_schwarz
-J32768_k2_exp_Kcycle_schwarz
-J64000_k2_exp_Kcycle_schwarz
-J4096_k2_classic_pardiso
-J64000_k2_classic_pardiso
-
-==============
 public static class DoWhatUWant{
 
 public static PlotRowSelector Solver_DG_Proj(int Degree){
@@ -200,7 +177,6 @@ public static PlotRowSelector Solver_DG_Proj(int Degree){
                    Nmn+="Kcycle w. add.-Schwarz";
                    //Fmt.LineColor = LineColors.Blue;
                    Fmt.PointType = PointTypes.LowerTriangle;
-                   Fmt.LineColor = LineColors.Blue;
                    break;
                case LinearSolverCode.exp_gmres_levelpmg:
                    Nmn+="GMRES w. pTG";
@@ -209,7 +185,6 @@ public static PlotRowSelector Solver_DG_Proj(int Degree){
                    break;
                case LinearSolverCode.classic_pardiso:
                    Nmn+="Pardiso";
-                   Fmt.LineColor = LineColors.Red;
                    //Fmt.LineColor = LineColors.Red;
                    Fmt.PointType = PointTypes.OpenCircle;
                    Fmt.DashType  = DashTypes.Dotted;
@@ -263,7 +238,7 @@ public static PlotRowSelector Solver_DG_Proj(int Degree){
            Fmt.PointSize = 0.5;
            Fmt.LineWidth = 3;
            Fmt.Style     = Styles.LinesPoints;
-           //Fmt.LineColor = LineColors.Black;
+           Fmt.LineColor = LineColors.Black;
            //Fmt.DashType  = DashTypes.Solid;
        };
     
@@ -365,49 +340,47 @@ int xMax = 512;
 // print runtime vs cores
 // ======================
 Plot2Ddata[,] multiplots = new Plot2Ddata[2,1];
-multiplots[0,0] = SubTab.ToPlot("DOFs","InitnRunTime",DoWhatUWant.Solver_DG_Proj(DG));
+multiplots[0,0] = SubTab.ToPlot("NoOfCores","maxSolRunT",DoWhatUWant.Solver_DG_Proj(DG));
 multiplots[0,0].LogX = true;
 multiplots[0,0].LogY = true;
 multiplots[0,0].tmargin = 0;
-multiplots[0,0].bmargin = 1;
-//multiplots[0,0].XrangeMin=xMin;
-//multiplots[0,0].XrangeMax=xMax;
+multiplots[0,0].bmargin = 2;
+multiplots[0,0].XrangeMin=xMin;
+multiplots[0,0].XrangeMax=xMax;
 multiplots[0,0].Ylabel = "~wallclock time";
 multiplots[0,0].LegendAlignment=new string[]{"i","b","r"};
 // ==============
 // print 2h limit
 // ==============
-//double[] xaxis = new[]{(double)xMin,(double)xMax};
-//double[] T = xaxis.Select(x => 7200.0).ToArray();
-//var linT              = new Plot2Ddata.XYvalues("2h limit", xaxis, T);
-//linT.Format.FromString("- black");
-//linT.Format.LineWidth = 2;
-//linT.Format.DashType  = DashTypes.DotDashed;
-//ArrayTools.AddToArray(linT, ref multiplots[0,0].dataGroups);
+double[] xaxis = new[]{(double)xMin,(double)xMax};
+double[] T = xaxis.Select(x => 7200.0).ToArray();
+var linT              = new Plot2Ddata.XYvalues("2h limit", xaxis, T);
+linT.Format.FromString("- black");
+linT.Format.LineWidth = 2;
+linT.Format.DashType  = DashTypes.DotDashed;
+ArrayTools.AddToArray(linT, ref multiplots[0,0].dataGroups);
 // =====================
 // print noiter vs cores
 // =====================
-//multiplots[1,0] = SubTab.ToPlot("NoOfCores","NoIter",DoWhatUWant.Solver_DG_Proj(DG));
-//multiplots[1,0].LogX = true;
-//multiplots[1,0].LogY = true;
-//multiplots[1,0].tmargin = 0;
-//multiplots[1,0].bmargin = 3;
-//multiplots[1,0].XrangeMin=xMin;
-//multiplots[1,0].XrangeMax=xMax;
-//multiplots[1,0].Xlabel = "no of cores";
-//multiplots[1,0].Ylabel = "iterations";
-//multiplots[1,0].LegendAlignment=new string[]{"i","b","r"};
-
-multiplots[0,0].ShowLegend =false;
-
-//multiplots[1,0].ShowLegend =false;
+multiplots[1,0] = SubTab.ToPlot("NoOfCores","NoIter",DoWhatUWant.Solver_DG_Proj(DG));
+multiplots[1,0].LogX = true;
+multiplots[1,0].LogY = true;
+multiplots[1,0].tmargin = 0;
+multiplots[1,0].bmargin = 3;
+multiplots[1,0].XrangeMin=xMin;
+multiplots[1,0].XrangeMax=xMax;
+multiplots[1,0].Xlabel = "no of cores";
+multiplots[1,0].Ylabel = "iterations";
+multiplots[1,0].LegendAlignment=new string[]{"i","b","r"};
 multiplots.PlotNow();
 **************
 Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside bottom right Left reverse 
+set key font ",16"inside right Left reverse 
 System.Drawing.Bitmap
 ==============
 // ==============
-// plot out stuff7
+// plot out stuff
 // ==============
 string plotsdirpath = CurrentDocDir+@"\"+"plots";
 DirectoryInfo dir   = Directory.CreateDirectory(plotsdirpath);
@@ -418,11 +391,9 @@ CL.WriteMinimalCompileableExample(
    "Scaling_"+DG+".tex");
 **************
 Using gnuplot: B:\BoSSS-BIN\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+set key font ",16"inside bottom right Left reverse 
+set key font ",16"inside right Left reverse 
 
-==============
-**************
-==============
-**************
 ==============
 **************
 ==============

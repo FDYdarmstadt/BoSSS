@@ -38,15 +38,15 @@ namespace AdvancedSolverTests {
 
     public enum MatrixShape
     {
-        laplace,
-        full,
-        full_var,
-        full_spec,
-        full_var_spec,
-        diagonal,
-        diagonal_var,
-        diagonal_var_spec,
-        diagonal_spec,
+        laplace, // matrix of a laplacian operator
+        full, // a matrix without coupling of species and variables
+        full_var, // a matrix without coupling of species
+        full_spec, // a matrix without coupling of variables
+        full_var_spec, // a matrix
+        diagonal, // a matrix without coupling of cells, species and variables
+        diagonal_var, // a matrix without coupling of cells and species
+        diagonal_var_spec, // a matrix without coupling of cells
+        diagonal_spec, // a matrix without coupling of cells and variables
     }
 
     class SubBlockTestSolver2Var : Application {
@@ -167,7 +167,7 @@ namespace AdvancedSolverTests {
 
         void LsUpdate(double t) {
             double offset = t;
-            Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.707).Pow2());
+            Phi.ProjectField((x, y) => -(x - offset).Pow2() - y.Pow2() + (0.3).Pow2());
             LsTrk.UpdateTracker(t);
         }
 
