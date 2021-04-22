@@ -62,7 +62,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Prandtl"></param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
         public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double gasConstant, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
-            : base(T_ref_Sutherland, MatParamsMode, rhoOne, Prandtl) {
+            : base(T_ref_Sutherland, MatParamsMode, rhoOne,_cpOne, Prandtl) {
             this.MatParamsMode = MatParamsMode;
             this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
