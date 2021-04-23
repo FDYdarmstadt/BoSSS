@@ -824,7 +824,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 5) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 8) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1019,27 +1019,44 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //double f_2 = 0.5;
             //double gam_2 = 35.0 / (35.0 + 21.0 * f_2.Pow2() + 2.0 * f_2.Pow(3));
-            //Func<double[], double> PhiFunc = delegate(double[] X) {
+            //Func<double[], double> PhiFunc = delegate (double[] X) {
             //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
             //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
             //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
-            //    double f = gam_2 * (1 + f_2 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));
+            //    double f = 1.0 * (gam_2 + f_2 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));
             //    double phi = r - f;
             //    return phi;
             //};
 
-            // WLNT
-            double m = 2;
-            double eta0 = 0.7;
+            //// WLNT
+            //double m = 2;
+            //double eta0 = 0.7;
+            //Func<double[], double> PhiFunc = delegate (double[] X) {
+            //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+            //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+            //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
+            //    double eta = 1;
+            //    eta += eta0 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0); // first order deformation
+            //    eta -= eta0.Pow2() / (2.0 * m + 1.0);    // second order correction for m;
+            //    eta -= (eta0.Pow(3) / 6.0) * 0.1142857;     // third order correction for m=2
+            //    double phi = r - eta;
+            //    return phi;
+            //};
+
+            // Becker
+            double r_0 = 1;
+            double a_P = 0.5;       //initial disturbance to corresponding Legendre polynomial P
+            //double a_0 = 0.94754;   // for a_2 = 0.5 and r_0 = 1 (script available in maple)
+            //double a_0 = 0.9643;   // for a_3 = 0.5 and r_0 = 1 (script available in maple)
+            double a_0 = 0.97146;   // for a_4 = 0.5 and r_0 = 1 (script available in maple)
             Func<double[], double> PhiFunc = delegate (double[] X) {
                 double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
                 double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
-                double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
-                double eta = 1;
-                eta += eta0 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0); // first order deformation
-                eta -= eta0.Pow2() / (2.0 * m + 1.0);    // second order correction for m;
-                eta -= (eta0.Pow(3) / 6.0) * 0.1142857;     // third order correction for m=2
-                double phi = r - eta;
+                double theta = Math.Atan2(r_xy, -X[2]);
+                //double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));                                        // P_2
+                //double f = r_0 * (a_0 + a_P * 0.5 * (5.0 * (Math.Cos(theta)).Pow(3) - 3.0 * Math.Cos(theta)));                      // P_3
+                double f = r_0 * (a_0 + a_P * 0.125 * (35.0 * (Math.Cos(theta)).Pow(4) - 30.0 * (Math.Cos(theta)).Pow(2) + 3.0));   // P_4
+                double phi = r - f;
                 return phi;
             };
 
@@ -1122,7 +1139,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitSignedDistance = true;
 
 
-            C.AdaptiveMeshRefinement = true;
+            C.AdaptiveMeshRefinement = false;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
