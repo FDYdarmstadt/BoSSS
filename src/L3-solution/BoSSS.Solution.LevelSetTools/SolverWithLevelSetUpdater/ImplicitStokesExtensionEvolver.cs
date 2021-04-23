@@ -79,9 +79,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        BDFTimestepper timeStepper;
+        BDFTimestepper implicitTimeStepper;
 
-        private BDFTimestepper InitializeImplicitTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+        RungeKutta explicitTimeStepper;
+
+        private (BDFTimestepper, RungeKutta) InitializeTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
             var diffOp = new SpatialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
@@ -96,7 +98,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             BDFTimestepper bdf = new(diffOp, levelSet.Mapping, Velocity, 3, Solver, false);
-            return bdf;
+            RungeKutta rk = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
+            return (bdf, rk);
         }
 
 
@@ -128,16 +131,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
-            if (timeStepper == null) {
-                timeStepper = InitializeImplicitTimeStepper(levelSet.DGLevelSet, extensionVelocity);
+            if (implicitTimeStepper == null) {
+                (implicitTimeStepper, explicitTimeStepper)  = InitializeTimeStepper(levelSet.DGLevelSet, extensionVelocity);
             }
-            if (!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
+            if (!ReferenceEquals(implicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet) 
+                || ! ReferenceEquals(explicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
                 throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
             }
-
-            timeStepper.Perform(dt);
-            
-            timeStepper.FinishTimeStep();
+            if(Math.Abs(time - internalTime) < dt * 1e-10 || first) {
+                implicitTimeStepper.FinishTimeStep();
+                internalTime = time + dt;
+                first = false;
+                Console.WriteLine("pushed LevelSet! Created initial guess!");
+                //explicitTimeStepper.Perform(dt);
+            }
+            Console.WriteLine("iterating levelSetposition");
+            implicitTimeStepper.Perform(dt);
         }
+        bool first = true;
+        double internalTime = 0.0;
     }
 }

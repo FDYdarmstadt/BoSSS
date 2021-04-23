@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -54,6 +55,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             
             Ret += (uA[0] - uIn) * (vA) * pnlty;
             Ret += (uB[0] - uOt) * (vB) * pnlty;
+
 
             return Ret;
         }
@@ -130,4 +132,5 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         }
 
     }
+
 }

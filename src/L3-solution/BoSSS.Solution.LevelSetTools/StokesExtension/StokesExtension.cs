@@ -62,19 +62,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new SipViscosity_GradU(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
                 // Momentum, Pressure gradient:
                 for(int d = 0; d < D; d++) {
-                    var PresDeriv = new PressureGradientLin_d(d, map);
+                    var PresDeriv = new ExtensionPressureGradient(d, map);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(PresDeriv);
                 }
                 
                 // Continuity:
                 for(int d = 0; d < D; d++) {
                     var divVol = new Divergence_DerivativeSource(d, D);
-                    var divEdg = new Divergence_DerivativeSource_Flux(d, map);
+                    var divEdg = new ExtensionDivergenceFlux(d, map);
                     Op.EquationComponents[EquationNames.ContinuityEquation].Add(divVol);
                     Op.EquationComponents[EquationNames.ContinuityEquation].Add(divEdg);
                 }
@@ -144,7 +144,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             Op.AgglomerationThreshold = 0.0;
             Op.TemporalOperator = null;
             Op.IsLinear = true;
-            Op.FreeMeanValue[Op.DomainVar.Last()] = !this.map.DirichletPressureBoundary;
+            Op.FreeMeanValue[Op.DomainVar.Last()] = false;
             Op.Commit();
 
             return Op;
@@ -244,6 +244,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+
+            BoSSS.Solution.Tecplot.Tecplot plotter = new Solution.Tecplot.Tecplot(lsTrk.GridDat, 4);
+            plotter.PlotFields("extensionVelocity", 0, ExtensionVelocity.Cat(dummyPressure));
+
         }
     }
 }
