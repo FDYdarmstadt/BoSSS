@@ -210,9 +210,9 @@ System.ArgumentException: DG degree seems different
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            //RotCube_GetSpeciesIDError();
+            RotCube_GetSpeciesIDError();
             //RotCube_CG_ProjectionOutOfMemoryException();
-            Rotating_Cube_compare4to1();
+            //Rotating_Cube_compare4to1();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

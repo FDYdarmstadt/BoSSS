@@ -214,9 +214,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// <see cref="IEquationComponentSpeciesNotification.SetParameter"/>
         /// </summary>
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             if(m_OrgForm is IEquationComponentSpeciesNotification ecsn) {
-                ecsn.SetParameter(speciesName, SpcId);
+                ecsn.SetParameter(speciesName);
             }
         }
 

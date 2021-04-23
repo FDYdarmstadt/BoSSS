@@ -30,14 +30,14 @@ namespace BoSSS.Application.IBM_Solver {
 
     public class IBM_ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public IBM_ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
+        public IBM_ViscosityAtIB(int _d, int _D, double penalty, Func<double, int, double> _PenaltyFunc, double _muA,
             Func<double[], double, ParticleParameters> getParticleParams) {
 
             this.m_penalty = penalty;
             this.m_PenaltyFunc = _PenaltyFunc;
-            this.m_LsTrk = t;
+            //this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
             this.m_getParticleParams = getParticleParams;
@@ -149,12 +149,12 @@ namespace BoSSS.Application.IBM_Solver {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         /// <summary>

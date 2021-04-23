@@ -41,8 +41,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public MassFluxAtInterface(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermParams, double _sigma, bool _movingMesh) 
-            : base(_D, LsTrk, thermParams, _sigma) {
+        public MassFluxAtInterface(int _d, int _D, ThermalParameters thermParams, double _sigma, bool _movingMesh) 
+            : base(_D, thermParams, _sigma) {
 
             this.m_d = _d;
             if (m_d >= m_D)

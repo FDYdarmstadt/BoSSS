@@ -359,7 +359,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (config.isContinuity) {
                 opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
                 opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-                opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
+                opFactory.AddEquation(new InterfaceContinuity(config, D, config.isMatInt));
             }
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
@@ -434,8 +434,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
             }
 
-            opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
-            opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));

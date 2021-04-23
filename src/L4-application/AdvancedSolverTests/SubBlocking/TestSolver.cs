@@ -208,13 +208,13 @@ namespace AdvancedSolverTests {
                     double MU_B = 10;
                     
                     Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
-                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
-                    Op.EquationComponents["c1"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
-                    Op.EquationComponents["c2"].Add(new XLaplace_Interface(this.LsTrk, MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
@@ -239,23 +239,23 @@ namespace AdvancedSolverTests {
                     break;
                 case MatrixShape.full_spec:
                     //tested: no spec coupling in the secondary diagonals (obviously)
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -1));
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new DxFlux("u1", 10)); // Flux in Bulk Phase;
 
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -4));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx( "u2", -4));
                     Op.EquationComponents["c2"].Add(new SourceTest("u2", -2)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new DxFlux("u2", -11)); // Flux in Bulk Phase;
                     break;
                 case MatrixShape.full_var_spec:
                     //tested: no spec coupling in the secondary diagonals (obviously)
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u2", -1));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -1));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx( "u2", -1));
                     Op.EquationComponents["c1"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
 
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u1", -1));
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -1));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx( "u1", -1));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx( "u2", -1));
                     Op.EquationComponents["c2"].Add(new DxFlux("u1", 3)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new DxFlux("u2", 4)); // Flux in Bulk Phase;
                     break;
@@ -265,13 +265,13 @@ namespace AdvancedSolverTests {
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", -2)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 3)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u2", -4)); // Flux in Bulk Phase;
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -2));
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -4));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -2));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx( "u2", -4));
                     break;
                 case MatrixShape.diagonal_spec:
                     // block diagonal matrix (ignore cell and variable coupling) 
-                    Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -2));
-                    Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", -4));
+                    Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -2));
+                    Op.EquationComponents["c2"].Add(new LevSetFlx( "u2", -4));
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 1)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u2", -4)); // Flux in Bulk Phase;
                     break;

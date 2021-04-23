@@ -170,8 +170,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
                 }
 
-                opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
-                opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+                opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
+                opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
                 opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
                 opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));

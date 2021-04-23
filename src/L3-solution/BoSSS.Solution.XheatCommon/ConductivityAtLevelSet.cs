@@ -34,18 +34,18 @@ namespace BoSSS.Solution.XheatCommon {
 
     public class ConductivityAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpatialDim;
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
         }
 
@@ -226,12 +226,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -251,8 +251,8 @@ namespace BoSSS.Solution.XheatCommon {
 
     public class HeatFluxAtLevelSet : EvaporationAtLevelSet {
 
-        public HeatFluxAtLevelSet(int _D, LevelSetTracker _LsTrk, ThermalParameters thermParams, double _sigma) 
-            : base(_D, _LsTrk, thermParams, _sigma) {
+        public HeatFluxAtLevelSet(int _D, ThermalParameters thermParams, double _sigma) 
+            : base(_D, thermParams, _sigma) {
 
         }
 
@@ -292,12 +292,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         int m_D;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public HeatFluxDivergencetAtLevelSet(LevelSetTracker lstrk) {
+        public HeatFluxDivergencetAtLevelSet(int SpatialDim) {
 
-            this.m_D = lstrk.GridDat.SpatialDimension;
-            m_LsTrk = lstrk;
+            this.m_D = SpatialDim;
+            //m_LsTrk = lstrk;
 
             //this.kAsqrt = Math.Sqrt(_kA);
             //this.kBsqrt = Math.Sqrt(_kB);
@@ -353,12 +353,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return VariableNames.HeatFluxVector(m_D); }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -380,12 +380,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         int m_D;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public AuxiliaryStabilizationFormAtLevelSet(LevelSetTracker lstrk, bool _DiriCond) {
+        public AuxiliaryStabilizationFormAtLevelSet(bool _DiriCond, int SpacialDim) {
 
-            this.m_D = lstrk.GridDat.SpatialDimension;
-            m_LsTrk = lstrk;
+            this.m_D = SpacialDim;
+            //m_LsTrk = lstrk;
 
             this.DirichletCond = _DiriCond;
         }
@@ -429,12 +429,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return VariableNames.HeatFluxVector(m_D); }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -459,12 +459,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         int m_d;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public TemperatureGradientAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, double _Tsat) {
+        public TemperatureGradientAtLevelSet(int _d, double _kA, double _kB, double _Tsat) {
 
             this.m_d = _d;
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
             this.kA = _kA;
             this.kB = _kB;
@@ -524,12 +524,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -551,12 +551,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         int m_d;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public TemperatureStabilizationFormAtLevelSet(int _d, LevelSetTracker lstrk, double _kA, double _kB, bool _DiriCond, double _Tsat) {
+        public TemperatureStabilizationFormAtLevelSet(int _d, double _kA, double _kB, bool _DiriCond, double _Tsat) {
 
             this.m_d = _d;
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
             this.kA = _kA;
             this.kB = _kB;
@@ -601,12 +601,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

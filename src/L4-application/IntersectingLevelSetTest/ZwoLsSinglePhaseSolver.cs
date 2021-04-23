@@ -178,9 +178,9 @@ namespace IntersectingLevelSetTest {
                 __varnames: new[] { "u", "c1" });
 
             Op.EquationComponents["c1"].Add(new LevelSetJumpFlux()); // Flux in Bulk Phase;
-            Op.EquationComponents["c1"].Add(new LevSetJump_AB(this.LsTrk)); // flux am lev-set 0
-            Op.EquationComponents["c1"].Add(new LevSetFlx_CA(this.LsTrk)); // flux am lev-set 1
-            Op.EquationComponents["c1"].Add(new LevSetFlx_CB(this.LsTrk)); // flux am lev-set 1
+            Op.EquationComponents["c1"].Add(new LevSetJump_AB()); // flux am lev-set 0
+            Op.EquationComponents["c1"].Add(new LevSetFlx_CA()); // flux am lev-set 1
+            Op.EquationComponents["c1"].Add(new LevSetFlx_CB()); // flux am lev-set 1
 
             Op.Commit();
         }

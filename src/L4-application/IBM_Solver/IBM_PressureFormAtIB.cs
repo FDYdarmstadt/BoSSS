@@ -25,15 +25,15 @@ using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.IBM_Solver {
     public class IBM_PressureFormAtIB : ILevelSetForm, ISupportsJacobianComponent {
-        public IBM_PressureFormAtIB(int _d, int _D, LevelSetTracker LsTrk) {
+        public IBM_PressureFormAtIB(int _d, int _D) {
             m_d = _d;
             m_D = _D;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
         }
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
         int m_d;
         int m_D;
 
@@ -49,15 +49,15 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get {
-                return this.m_LsTrk.GetSpeciesId("A");
+                return "A";
             }
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get {
-                return this.m_LsTrk.GetSpeciesId("B");
+                return "B";
             }
         }
 

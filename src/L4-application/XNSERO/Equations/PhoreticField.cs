@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
         public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk) {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Phoretic);
-            AddComponent(new XLaplace_Interface(lstrk, 1.0));
+            AddComponent(new XLaplace_Interface(1.0));
         }
 
 
@@ -80,7 +80,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
             
 
-            protected LevelSetTracker m_LsTrk;
+            //protected LevelSetTracker m_LsTrk;
 
             /// <summary>
             /// 
@@ -92,8 +92,8 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <param name="__penatly_baseFactor">
             /// multiplicative safety factor for the penalty; should be between 1 and 10.
             /// </param>
-            public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double __penatly_baseFactor = 4.0) {
-                this.m_LsTrk = lstrk;
+            public XLaplace_Interface(double _muA, double __penatly_baseFactor = 4.0) {
+                //this.m_LsTrk = lstrk;
                 this.muA = _muA;
                 this.penatly_baseFactor = __penatly_baseFactor;
             }
@@ -184,15 +184,15 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <summary>
             /// The Solid Domain
             /// </summary>
-            public SpeciesId PositiveSpecies {
-                get { return m_LsTrk.GetSpeciesId("C"); }
+            public string PositiveSpecies {
+                get { return "C"; }
             }
 
             /// <summary>
             /// The fluid Domain
             /// </summary>
-            public SpeciesId NegativeSpecies {
-                get { return m_LsTrk.GetSpeciesId("A"); }
+            public string NegativeSpecies {
+                get { return "A"; }
             }
 
             /// <summary>

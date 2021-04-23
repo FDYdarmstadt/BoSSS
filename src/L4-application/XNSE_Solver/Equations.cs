@@ -47,16 +47,16 @@ namespace BoSSS.Application.XNSE_Solver {
             // from XNSFE_OperatorComponents
             if (config.isTransport) {
                 if (!config.isMovingMesh) {
-                    AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
+                    AddComponent(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
                     AddComponent(new ConvectionAtLevelSet_nonMaterialLLF(d, D, lsTrk, thermParams, sigma));
                     AddComponent(new ConvectionAtLevelSet_Consistency(d, D, lsTrk, -1, false, thermParams, sigma));
                 }
             } else {
-                AddComponent(new MassFluxAtInterface(d, D, lsTrk, thermParams, sigma, config.isMovingMesh));
+                AddComponent(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
             }
 
             if (config.isViscous) {
-                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withEvap(lsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withEvap(lsTrk.GridDat.SpatialDimension, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
 
         }
@@ -104,19 +104,19 @@ namespace BoSSS.Application.XNSE_Solver {
                     // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
                     // for the moving mesh discretization this condition is already contained in the convective terms
                     // therefore we only need these terms when using splitting...
-                    AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
-                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, lsTrk, physParams));
-                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, lsTrk, -1, false, physParams));
+                    AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, physParams, config.isMovingMesh));
+                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(d, D, physParams));
+                    AddComponent(new ConvectionAtLevelSet_Consistency_withMassFlux(d, D, -1, false, physParams));
                 } else {
-                    AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, lsTrk, physParams));
+                    AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, physParams));
                 }
             } else {
                 //  ... and when the convective terms are turned off we still need the contribution below
-                AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, lsTrk, physParams, config.isMovingMesh));
+                AddComponent(new MassFluxAtLevelSet_withMassFlux(d, D, physParams, config.isMovingMesh));
             }           
 
             if (config.isViscous) {
-                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk, dntParams.PenaltySafety, d, physParams));
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_withMassFlux(lsTrk.GridDat.SpatialDimension, dntParams.PenaltySafety, d, physParams));
             }            
         }
 
@@ -275,7 +275,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk.GridDat.SpatialDimension, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
             } else {
                 throw new NotImplementedException();
