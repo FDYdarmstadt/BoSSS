@@ -89,14 +89,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Species ID of the solid
         /// </summary>
         public string PositiveSpecies {
-            get { return "B"; }
+            get { return m_SolidSpecies; }
         }
 
         /// <summary>
         /// Species ID of the fluid; 
         /// </summary>
         public string NegativeSpecies {
-            get { return "A"; }
+            get { return m_FluidSpc; }
         }
 
         public TermActivationFlags LevelSetTerms {
