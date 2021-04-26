@@ -32,12 +32,12 @@ namespace BoSSS.Application.IBM_Solver {
     /// </summary>
     public class IBM_DivergenceAtIB : ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public IBM_DivergenceAtIB(int _D, LevelSetTracker lsTrk,
+        public IBM_DivergenceAtIB(int _D,
             double vorZeichen, Func<double[], double, ParticleParameters> getParticleParams) {
             this.D = _D;
-            this.m_LsTrk = lsTrk;
+            //this.m_LsTrk = lsTrk;
             this.m_getParticleParams = getParticleParams;
         }
 
@@ -140,12 +140,12 @@ namespace BoSSS.Application.IBM_Solver {
             }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

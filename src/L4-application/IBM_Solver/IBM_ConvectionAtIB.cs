@@ -29,8 +29,8 @@ namespace BoSSS.Application.IBM_Solver {
     public class IBM_ConvectionAtIB : ILevelSetForm {
 
 
-        public IBM_ConvectionAtIB(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double, ParticleParameters> getParticleParams, double fluidDensity, bool UseMovingMesh) {
-            m_LsTrk = LsTrk;
+        public IBM_ConvectionAtIB(int _d, int _D, double _LFFA, IncompressibleBoundaryCondMap _bcmap, Func<double[], double, ParticleParameters> getParticleParams, double fluidDensity, bool UseMovingMesh) {
+            //m_LsTrk = LsTrk;
             m_D = _D;
             m_d = _d;
             LFFA = _LFFA;
@@ -44,7 +44,7 @@ namespace BoSSS.Application.IBM_Solver {
             //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
         }
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
         int m_D;
         int m_d;
 
@@ -76,12 +76,12 @@ namespace BoSSS.Application.IBM_Solver {
             get { return 0; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
         public TermActivationFlags LevelSetTerms {

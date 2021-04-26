@@ -223,9 +223,9 @@ namespace BoSSS.Application.ZwoLsTest {
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             if(usePhi0)
-                Op.EquationComponents["c1"].Add(new LevSetFlx_phi0(this.LsTrk)); // flux am lev-set 0
+                Op.EquationComponents["c1"].Add(new LevSetFlx_phi0()); // flux am lev-set 0
             if(usePhi1)
-                Op.EquationComponents["c1"].Add(new LevSetFlx_phi1(this.LsTrk)); // flux am lev-set 1
+                Op.EquationComponents["c1"].Add(new LevSetFlx_phi1()); // flux am lev-set 1
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
 

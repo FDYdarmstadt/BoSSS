@@ -68,17 +68,17 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
             if (config.isTransport) {
                 if (!config.isMovingMesh) {
-                    comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
+                    comps.Add(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
                     comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
                     comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, -1, false, thermParams, sigma));
                 } 
             } else {
-                comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
+                comps.Add(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
             }
 
 
             if (config.isViscous) {
-                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
+                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk.GridDat.SpatialDimension, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
 
         }

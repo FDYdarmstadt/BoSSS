@@ -39,11 +39,11 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     /// </summary>
     public class SingleComponentInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
         double PenaltyBase;
-        LevelSetTracker LSTrk;
+        //LevelSetTracker LSTrk;
 
-        public SingleComponentInterfaceForm(double PenaltyBase, LevelSetTracker  LSTrk) {
+        public SingleComponentInterfaceForm(double PenaltyBase) {
             this.PenaltyBase = PenaltyBase;
-            this.LSTrk = LSTrk;
+            //this.LSTrk = LSTrk;
             
         }
 
@@ -111,12 +111,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.LSTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.LSTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

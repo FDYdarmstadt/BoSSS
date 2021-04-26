@@ -178,11 +178,11 @@ namespace BoSSS.Solution.EnergyCommon {
 
     public class DivergencePressureEnergyAtLevelSet : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public DivergencePressureEnergyAtLevelSet(LevelSetTracker lstrk) {
-            this.m_LsTrk = lstrk;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+        public DivergencePressureEnergyAtLevelSet(int SpatialDimension) {
+            //this.m_LsTrk = lstrk;
+            this.m_D = SpatialDimension;
         }
 
         int m_D;
@@ -190,14 +190,15 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public double InnerEdgeForm(ref CommonParams inp, Double[] uA, Double[] uB, Double[,] Grad_uA, Double[,] Grad_uB, Double vA, Double vB, Double[] Grad_vA, Double[] Grad_vB) {
 
-            double[] Vel_A = inp.Parameters_IN.GetSubVector(0, m_D);
-            double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, m_D);
-            double p_A = inp.Parameters_IN[m_D];
-            double p_B = inp.Parameters_OUT[m_D];
+            int D = inp.D;
+            double[] Vel_A = inp.Parameters_IN.GetSubVector(0, D);
+            double[] Vel_B = inp.Parameters_OUT.GetSubVector(0, D);
+            double p_A = inp.Parameters_IN[D];
+            double p_B = inp.Parameters_OUT[D];
 
             double ret = 0.0;
 
-            for (int d = 0; d < m_D; d++) {
+            for (int d = 0; d < D; d++) {
                 ret += 0.5 * (p_A * Vel_A[d] + p_B * Vel_B[d]) * inp.Normal[d];  // pressure
             }
 
@@ -215,12 +216,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return new string[] { }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -666,12 +667,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

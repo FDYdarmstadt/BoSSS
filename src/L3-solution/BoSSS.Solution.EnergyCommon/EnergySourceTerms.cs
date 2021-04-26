@@ -102,10 +102,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
     public class SurfaceEnergy : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public SurfaceEnergy(int _D, LevelSetTracker LsTrk, double _sigma, double _rhoA, double _rhoB) {
-            m_LsTrk = LsTrk;
+        public SurfaceEnergy(int _D, double _sigma, double _rhoA, double _rhoB) {
+            //m_LsTrk = LsTrk;
             this.m_D = _D;
             this.sigma = _sigma;
             this.rhoA = _rhoA;
@@ -223,12 +223,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

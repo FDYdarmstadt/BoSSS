@@ -182,7 +182,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
         /// </summary>
         public abstract void Flux(double time, MultidimensionalArray x, ilPSP.MultidimensionalArray[] U, int Offset, int Length, MultidimensionalArray Output);
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             this.speciesName = speciesName;
         }
 

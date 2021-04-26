@@ -63,10 +63,10 @@ namespace BoSSS.Application.ZwoLsTest {
     /// </summary>
     abstract class LevSetFlx : ILevelSetForm {
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
 
-        public LevSetFlx(LevelSetTracker _LsTrk) {
-            m_LsTrk = _LsTrk;
+        public LevSetFlx() {
+            //m_LsTrk = _LsTrk;
         }
         
         public IList<string> ArgumentOrdering {
@@ -85,7 +85,7 @@ namespace BoSSS.Application.ZwoLsTest {
             }
         }
 
-        abstract public SpeciesId NegativeSpecies {
+        abstract public string NegativeSpecies {
             get;
         }
 
@@ -96,7 +96,7 @@ namespace BoSSS.Application.ZwoLsTest {
         }
 
 
-        virtual public SpeciesId PositiveSpecies {
+        virtual public string PositiveSpecies {
             get;
             private set;
         }
@@ -109,7 +109,7 @@ namespace BoSSS.Application.ZwoLsTest {
     /// </summary>
     class LevSetFlx_phi0 : LevSetFlx {
 
-        public LevSetFlx_phi0(LevelSetTracker _LsTrk) : base(_LsTrk) { }
+        public LevSetFlx_phi0() : base() { }
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) { 
             double FlxPos = 0; // we are not interested in "A"
@@ -122,16 +122,12 @@ namespace BoSSS.Application.ZwoLsTest {
             get { return 0; }
         }
 
-        public override SpeciesId PositiveSpecies {
-            get { 
-                return base.m_LsTrk.GetSpeciesId("A"); 
-            }
+        public override string PositiveSpecies {
+            get { return "A"; }
         }
 
-        public override SpeciesId NegativeSpecies {
-            get { 
-                return base.m_LsTrk.GetSpeciesId("B"); 
-            }
+        public override string NegativeSpecies {
+            get { return "B"; }
         }
     }
 
@@ -140,7 +136,7 @@ namespace BoSSS.Application.ZwoLsTest {
     /// </summary>
     class LevSetFlx_phi1 : LevSetFlx {
 
-        public LevSetFlx_phi1(LevelSetTracker _LsTrk) : base(_LsTrk) { }
+        public LevSetFlx_phi1() : base() { }
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             
@@ -154,12 +150,12 @@ namespace BoSSS.Application.ZwoLsTest {
             get { return 1; }
         }
 
-        public override SpeciesId PositiveSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("B"); }
+        public override string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public override SpeciesId NegativeSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("A"); }
+        public override string NegativeSpecies {
+            get { return "A"; }
         }
     }
 }

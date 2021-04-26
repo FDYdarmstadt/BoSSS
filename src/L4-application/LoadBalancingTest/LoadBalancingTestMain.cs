@@ -175,7 +175,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             var blkFlux = new DxFlux(this.LsTrk, alpha_A, alpha_B);
             Op.EquationComponents["c1"].Add(blkFlux); // Flux in Bulk Phase;
-            Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, alpha_A, alpha_B)); // flux am lev-set 0
+            Op.EquationComponents["c1"].Add(new LevSetFlx( alpha_A, alpha_B)); // flux am lev-set 0
 
             Op.LinearizationHint = LinearizationHint.AdHoc;
             Op.AgglomerationThreshold = this.THRESHOLD;

@@ -53,12 +53,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         double LFFB;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": this.rho = this.rhoA; base.LaxFriedrichsSchemeSwitch = LFFA; this.SetBndfunc("A"); break;
                 case "B": this.rho = this.rhoB; base.LaxFriedrichsSchemeSwitch = LFFB; this.SetBndfunc("B"); break;
                 default: throw new ArgumentException("Unknown species.");
             }
+            var SpcId= lsTrk.GetSpeciesId(speciesName);
             SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
         }
 

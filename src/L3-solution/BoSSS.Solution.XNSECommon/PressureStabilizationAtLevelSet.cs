@@ -32,7 +32,7 @@ namespace BoSSS.Solution.NSECommon {
     /// </summary>
     public class PressureStabilizationAtLevelSet : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
         double PressureStabilizationFactor;
         protected double ReynoldsA;
         protected double ReynoldsB;
@@ -40,8 +40,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilizationAtLevelSet(LevelSetTracker lstrk, double PressureStabilizationFactor, double _reynoldsA, double _reynoldsB) {
-            this.m_LsTrk = lstrk;
+        public PressureStabilizationAtLevelSet( double PressureStabilizationFactor, double _reynoldsA, double _reynoldsB) {
+            //this.m_LsTrk = lstrk;
             this.PressureStabilizationFactor = PressureStabilizationFactor;
             this.ReynoldsA = _reynoldsA;
             this.ReynoldsB = _reynoldsB;
@@ -89,12 +89,12 @@ namespace BoSSS.Solution.NSECommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

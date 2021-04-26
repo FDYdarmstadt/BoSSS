@@ -27,10 +27,10 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
     
     
     public class PressureFormAtIB : ILevelSetForm, ISupportsJacobianComponent {
-        public PressureFormAtIB(int _d, int _D, LevelSetTracker LsTrk, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public PressureFormAtIB(int _d, int _D, int iLevSet, string FluidSpc, string SolidSpecies) {
             m_d = _d;
             m_D = _D;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
         
@@ -42,7 +42,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
         string m_FluidSpc;
         string m_SolidSpecies;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
         int m_d;
         int m_D;
 
@@ -59,15 +59,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
         /// <summary>
         /// Species ID of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get { return m_SolidSpecies; }
         }
 
         /// <summary>
         /// Species ID of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get { return m_FluidSpc; }
         }
 
 
