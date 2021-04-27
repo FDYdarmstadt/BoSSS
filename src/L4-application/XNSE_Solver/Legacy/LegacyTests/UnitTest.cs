@@ -291,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BcTest_PressureOutlet"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void BcTest_PressureOutletTest(
             [Values(2, 3)] int spatialDimension,
             [Values(1)] int deg,
@@ -322,7 +322,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_debug(
             [Values(2, 3)] int spatialDimension,
             [Values(1)] int deg,
@@ -342,7 +342,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p2_OneStepGaussAndStokes_Standard(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -363,7 +363,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p3_OneStepGaussAndStokes_Standard(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -384,7 +384,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p2_Saye_Standard(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -405,7 +405,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p3_Saye_Standard(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -425,7 +425,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p2_OneStepGaussAndStokes_FullySymmetric(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -446,7 +446,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p3_OneStepGaussAndStokes_FullySymmetric(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -467,7 +467,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p2_Saye_FullySymmetric(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -488,7 +488,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.MovingDropletTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void MovingDropletTest_rel_p3_Saye_FullySymmetric(
             [Values(2, 3)] int spatialDimension,
             [Values(0.01, 0.1, 0.3)] double AgglomerationTreshold,
@@ -538,7 +538,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ChannelTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void ChannelTest(
 #if DEBUG
             [Values(2)] int deg,
@@ -570,7 +570,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void TranspiratingChannelTest(
             [Values(2, 3)] int spatialDimension,
             [Values(2)] int deg,
@@ -602,7 +602,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
         /// <summary>
         /// <see cref="Tests.PolynomialTestForConvection"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void PolynomialTestForConvectionTest(
             [Values(2, 3)] int spatialDimension,
             [Values(3)] int deg,

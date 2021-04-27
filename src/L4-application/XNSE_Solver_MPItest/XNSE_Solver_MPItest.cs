@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = RisingBubble();
             C.TracingNamespaces = "*";
 
-            using (var solver = new XNSE_SolverMain()) {
+            using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
@@ -467,7 +467,7 @@ System.ArgumentException: DG degree seems different
 
             #endregion
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.ScalarConvection;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching; // Test with old XNSE_SolverMain was using ScalarConvection
 
             // misc. solver options
             // ====================
