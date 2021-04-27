@@ -648,7 +648,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// %
         /// </summary>
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get {
                 return m_EdgForm.PositiveSpecies;
             }
@@ -656,7 +656,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// %
         /// </summary>
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get {
                 return m_EdgForm.NegativeSpecies;
             }

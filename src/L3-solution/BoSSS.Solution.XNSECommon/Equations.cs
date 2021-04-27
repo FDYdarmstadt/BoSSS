@@ -49,7 +49,6 @@ namespace BoSSS.Solution.XNSECommon {
         public NavierStokes(
             string spcName,
             int d,
-            LevelSetTracker LsTrk,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
             INSE_Configuration config) {
@@ -63,7 +62,6 @@ namespace BoSSS.Solution.XNSECommon {
             if(d < 0 || d >= D)
                 throw new ArgumentOutOfRangeException();
 
-            SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -80,7 +78,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                DefineConvective(spcName, d, D, boundaryMap, spcId, rhoSpc, LFFSpc, LsTrk);
+                DefineConvective(spcName, d, D, boundaryMap, rhoSpc, LFFSpc);
             }
 
 
@@ -88,7 +86,7 @@ namespace BoSSS.Solution.XNSECommon {
             // pressure gradient
             // =================
             if (config.isPressureGradient) {
-                var pres = new Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spcName, spcId);
+                var pres = new Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spcName);
                 AddComponent(pres);
             }
 
@@ -98,7 +96,7 @@ namespace BoSSS.Solution.XNSECommon {
                 AddCoefficient("SlipLengths");
                 //Console.WriteLine("!!!!!!!!!!!!!!!!!!  Erinn: slip längen deakt");
                 double penalty = dntParams.PenaltySafety;
-                DefineViscous(spcName, d, D, boundaryMap, spcId, physParams, dntParams, penalty);
+                DefineViscous(spcName, d, D, boundaryMap, physParams, dntParams, penalty);
             }
 
             // gravity & more general volume force
@@ -122,8 +120,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Convective component of the momentum equation
         /// </summary>
-        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, double rhoSpc, double LFFSpc, LevelSetTracker LsTrk) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
+        protected virtual void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
@@ -132,7 +130,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Viscous component of the momentum equation
         /// </summary>
-        protected virtual void DefineViscous(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, PhysicalParameters physParams, DoNotTouchParameters dntParams, double penalty) {
+        protected virtual void DefineViscous(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, PhysicalParameters physParams, DoNotTouchParameters dntParams, double penalty) {
             switch(dntParams.ViscosityMode) {
                 case ViscosityMode.Standard:
                 case ViscosityMode.TransposeTermMissing: {
@@ -140,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon {
                     var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                         penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                         1.0,
-                        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        boundaryMap, spcName, d, D, physParams.mu_A, physParams.mu_B);
                     AddComponent(Visc1);
 
 
@@ -151,13 +149,13 @@ namespace BoSSS.Solution.XNSECommon {
                     var Visc1 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                         penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                         1.0,
-                        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        boundaryMap, spcName, d, D, physParams.mu_A, physParams.mu_B);
                     AddComponent(Visc1);
 
                     var Visc2 = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                         penalty, // dntParams.UseGhostPenalties ? 0.0 : penalty, 
                         1.0,
-                        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
+                        boundaryMap, spcName, d, D, physParams.mu_A, physParams.mu_B);
                     AddComponent(Visc2);
 
 
@@ -195,16 +193,16 @@ namespace BoSSS.Solution.XNSECommon {
                     var Visc1 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                         penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                         1.0,
-                        boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
+                        boundaryMap, spcName, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                     AddComponent(Visc1);
 
                     var Visc2 = new Solution.XNSECommon.Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
                         penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                         1.0,
-                        boundaryMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
+                        boundaryMap, spcName, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                     AddComponent(Visc2);
 
-                    var div = new StressDivergenceInBulk(d, boundaryMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                    var div = new StressDivergenceInBulk(d, boundaryMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName);
                     AddComponent(div);
 
                     break;
@@ -245,18 +243,17 @@ namespace BoSSS.Solution.XNSECommon {
         public NavierStokes_Newton(
             string spcName,
             int d,
-            LevelSetTracker LsTrk,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            INSE_Configuration config) : base(spcName, d, LsTrk, D, boundaryMap, config) {           
+            INSE_Configuration config) : base(spcName, d, D, boundaryMap, config) {           
 
         }
 
         /// <summary>
         /// Convective component of the momentum equation, using Newton solver version of convective terms
         /// </summary>
-        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, SpeciesId spcId, double rhoSpc, double LFFSpc, LevelSetTracker LsTrk) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
+        protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
             AddComponent(conv);
         }       
     }
@@ -272,10 +269,9 @@ namespace BoSSS.Solution.XNSECommon {
         double massScale;
 
         public Continuity(
+            string spcName,
             INSE_Configuration config,
             int D,
-            string spcName,
-            SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -296,7 +292,7 @@ namespace BoSSS.Solution.XNSECommon {
             for (int d = 0; d < D; ++d) {
                 var src = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcName, rhoSpc, -1, false);
                 AddComponent(src);
-                var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, -1, false);
+                var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, rhoSpc, -1, false);
                 AddComponent(flx);
             }
         }
@@ -313,11 +309,15 @@ namespace BoSSS.Solution.XNSECommon {
     /// </summary>
     public class InterfaceContinuity : SurfaceEquation {
         string codomainName;
+        string phaseA, phaseB;
 
         //Methode aus der XNSF_OperatorFactory
-        public InterfaceContinuity(INSE_Configuration config, int D, bool isMaterialInterface) {
+        public InterfaceContinuity(string phaseA, string phaseB, INSE_Configuration config, int D, bool isMaterialInterface) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -331,9 +331,9 @@ namespace BoSSS.Solution.XNSECommon {
             AddComponent(divPen);
         }
 
-        public override string FirstSpeciesName => "A";
+        public override string FirstSpeciesName => phaseA;
 
-        public override string SecondSpeciesName => "B";
+        public override string SecondSpeciesName => phaseB;
 
         public override string CodomainName => codomainName;
     }
@@ -344,7 +344,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// </summary>
     public class NSEInterface : SurfaceEquation {
         string codomainName;
-
+        string phaseA, phaseB;
         //Methode aus der XNSF_OperatorFactory
         public NSEInterface(
             string phaseA,
@@ -355,14 +355,18 @@ namespace BoSSS.Solution.XNSECommon {
             LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
             codomainName = EquationNames.MomentumEquationComponent(d);
             AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config, isMovingMesh);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
         }
 
-        public override string FirstSpeciesName => "A";
+        public override string FirstSpeciesName => phaseA;
 
-        public override string SecondSpeciesName => "B";
+        public override string SecondSpeciesName => phaseB;
 
         public override string CodomainName => codomainName;
 
@@ -467,7 +471,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, LevelSetTracker LsTrk, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
             AddComponent(conv);
         }
     }
@@ -478,7 +482,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// </summary>
     public class NSESurfaceTensionForce : SurfaceEquation {
         string codomainName;
-
+        string phaseA, phaseB;
         int d;
 
         int D;
@@ -492,13 +496,15 @@ namespace BoSSS.Solution.XNSECommon {
             int d,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config) {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
             codomainName = EquationNames.MomentumEquationComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
             this.D = D;
             this.d = d;
-            this.LsTrk = LsTrk;
 
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
@@ -613,9 +619,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
         }
 
-        public override string FirstSpeciesName => "A";
+        public override string FirstSpeciesName => phaseA;
 
-        public override string SecondSpeciesName => "B";
+        public override string SecondSpeciesName => phaseB;
 
         public override string CodomainName => codomainName;
 
@@ -639,7 +645,6 @@ namespace BoSSS.Solution.XNSECommon {
             int d,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) : base() //
         {
@@ -648,7 +653,7 @@ namespace BoSSS.Solution.XNSECommon {
             m_solidPhase = solidPhase;
             m_iLevSet = iLevSet;
             m_codomainName = EquationNames.MomentumEquationComponent(d);
-            AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh);
+            AddInterfaceNSE(D, d, boundaryMap, config, isMovingMesh);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
 
             AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
@@ -659,7 +664,6 @@ namespace BoSSS.Solution.XNSECommon {
             int D,
             int d,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) {
             PhysicalParameters physParams = config.getPhysParams;
@@ -709,7 +713,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                     case ViscosityMode.FullySymmetric:
                     //throw new NotImplementedException("todo");
-                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
                     break;
 
                     case ViscosityMode.Viscoelastic:
@@ -776,18 +780,17 @@ namespace BoSSS.Solution.XNSECommon {
             int d,
             int D,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
-            bool isMovingMesh) : base(fluidPhase, solidPhase, iLevSet, d, D, boundaryMap, LsTrk, config, isMovingMesh) //
+            bool isMovingMesh) : base(fluidPhase, solidPhase, iLevSet, d, D, boundaryMap, config, isMovingMesh) //
         {     
             
         }
 
 
-        protected override void AddConvective(int d, int D, LevelSetTracker LsTrk, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {
+        protected override void AddConvective(int d, int D, double LFF, IncompressibleBoundaryCondMap boundaryMap, double rho, bool isMovingMesh, PhysicalParameters physParams, INSE_Configuration config) {
             if (physParams.IncludeConvection && config.isTransport) {
                 var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB_Newton(
-                           d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh,
+                           d, D, LFF, boundaryMap, rho, isMovingMesh,
                            m_iLevSet, m_fluidPhase, m_solidPhase, true);
 
                 AddComponent(ConvIB);

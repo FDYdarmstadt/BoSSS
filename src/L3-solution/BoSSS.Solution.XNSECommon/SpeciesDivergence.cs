@@ -40,12 +40,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// component of the divergence
         /// </param>
         /// <param name="_bcmap"></param>
-        public DivergenceInSpeciesBulk_Edge(int _component, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
+        public DivergenceInSpeciesBulk_Edge(int _component, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName,  
             double _rho, double _vorZeichen, bool _RescaleConti)
             : base(_component, _bcmap) {
 
             rho = _rho;
-            m_spcId = spcId;
+            //m_spcId = spcId;
             ValidSpecies = spcName;
 
             this.RescaleConti = _RescaleConti;
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         bool RescaleConti;
         double scale;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;

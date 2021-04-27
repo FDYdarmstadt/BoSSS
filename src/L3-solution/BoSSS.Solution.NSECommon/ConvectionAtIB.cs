@@ -158,8 +158,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
     }
 
     public class ConvectionAtIB_Newton : ILevelSetForm, ISupportsJacobianComponent {
-        public ConvectionAtIB_Newton(int _d, int _D, LevelSetTracker LsTrk, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
-            m_LsTrk = LsTrk;
+        public ConvectionAtIB_Newton(int _d, int _D, double _LFFA, IncompressibleBoundaryCondMap _bcmap, double fluidDensity, bool UseMovingMesh, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
             m_D = _D;
             m_d = _d;
             LFFA = _LFFA;
@@ -172,15 +171,13 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             //NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, fluidDensity, 0, _LFFA, double.NaN, LsTrk);
             //NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"), null);
             this.m_iLevSet = iLevSet;
-            this.m_SolidSpecies = SolidSpecies;
-            this.m_FluidSpc = FluidSpc;
+            this.PositiveSpecies = SolidSpecies;
+            this.NegativeSpecies = FluidSpc;
         }
         int m_iLevSet;
-        string m_FluidSpc;
-        string m_SolidSpecies;
+
         bool m_UseLevelSetVelocityParameter;
 
-        LevelSetTracker m_LsTrk;
         int m_D;
         int m_d;
 
@@ -210,17 +207,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
         }
 
         /// <summary>
-        /// Species ID of the solid
+        /// Species of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
         /// <summary>
-        /// Species ID of the fluid; 
+        /// Species of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         public TermActivationFlags LevelSetTerms {

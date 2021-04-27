@@ -1167,7 +1167,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             int GridResolution = 1,
-            NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
+            NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard,
             LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
             XNSE_Control C = new XNSE_Control();
             int D = tst.SpatialDimension;

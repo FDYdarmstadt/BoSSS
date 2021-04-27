@@ -39,7 +39,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public KineticEnergyLaplaceInSpeciesBulk(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap,
             string spcName, SpeciesId spcId, int _D, double _muA, double _muB, double _betaS = 0.0)
-            : base(penalty, sw, bcMap, spcName, spcId, 0, _D, _muA, _muB, _betaS) {
+            : base(penalty, sw, bcMap, spcName, 0, _D, _muA, _muB, _betaS) {
         }
 
         public override IList<string> ArgumentOrdering {

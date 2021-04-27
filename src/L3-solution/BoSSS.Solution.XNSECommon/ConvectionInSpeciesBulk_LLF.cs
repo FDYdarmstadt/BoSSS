@@ -34,16 +34,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     public class ConvectionInSpeciesBulk_LLF : LinearizedConvection, ISpeciesFilter, IEquationComponentCoefficient {
 
-        public ConvectionInSpeciesBulk_LLF(int SpatDim, IncompressibleBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, int _component, 
-            double _rho, double _LFF, LevelSetTracker _lsTrk) :
+        public ConvectionInSpeciesBulk_LLF(int SpatDim, IncompressibleBoundaryCondMap _bcmap, string spcName, int _component, 
+            double _rho, double _LFF) :
             base(SpatDim, _bcmap, _component, false) {
             //
             rho = _rho;
-            m_spcId = spcId;
+            //m_spcId = spcId;
             ValidSpecies = spcName;
 
             //varMode = _varMode;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFF = _LFF;
 
             this.m_bcmap = _bcmap;
@@ -57,12 +57,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         IncompressibleBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFF;
 
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -151,7 +151,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            SubGrdMask = cs.SpeciesSubGrdMask;
         }
     }
 
@@ -160,16 +161,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     /// </summary>
     public class ConvectionInSpeciesBulk_LLF_Newton : LinearizedConvectionJacobi, ISpeciesFilter, IEquationComponentCoefficient {
 
-        public ConvectionInSpeciesBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, int _component,
-            double _rho, double _LFF, LevelSetTracker _lsTrk) :
+        public ConvectionInSpeciesBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, string spcName, int _component,
+            double _rho, double _LFF) :
             base(SpatDim, _bcmap, _component, false) {
             //
             rho = _rho;
-            m_spcId = spcId;
+            //m_spcId = spcId;
             ValidSpecies = spcName;
 
             //varMode = _varMode;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFF = _LFF;
 
             this.m_bcmap = _bcmap;
@@ -183,12 +184,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         IncompressibleBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFF;
 
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -277,7 +278,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            SubGrdMask = cs.SpeciesSubGrdMask;
         }
     }
 }

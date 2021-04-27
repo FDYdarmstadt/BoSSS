@@ -427,17 +427,17 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // === linearized or parameter free variants, difference only in convective term === //
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, this.LsTrk, config, config.isMovingMesh));
             } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                opFactory.AddEquation(new NavierStokes_Newton("A", d, LsTrk, D, boundaryMap, config));
-                opFactory.AddEquation(new NavierStokes_Newton("B", d, LsTrk, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
             } else {
                 throw new NotSupportedException();
             }
-            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
         }
 
         /// <summary>
@@ -447,9 +447,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="config"></param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
         virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
-            opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-            opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-            opFactory.AddEquation(new InterfaceContinuity(config, D, LsTrk, config.isMatInt));
+            opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
+            opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
+            opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
         }
 
         /// <summary>
@@ -460,11 +460,11 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                    opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                 }
             }
 

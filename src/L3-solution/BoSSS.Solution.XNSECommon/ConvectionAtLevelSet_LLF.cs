@@ -247,7 +247,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
@@ -257,11 +257,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
-            NegFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
 
+            NegFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
+            NegFlux.SetParameter(this.NegativeSpecies);
+            PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
+            PosFlux.SetParameter(this.PositiveSpecies);           
         }
 
         bool MaterialInterface;
@@ -353,12 +355,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         public TermActivationFlags LevelSetTerms {

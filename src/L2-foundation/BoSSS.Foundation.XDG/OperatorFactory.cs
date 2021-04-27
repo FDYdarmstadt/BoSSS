@@ -274,6 +274,8 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
 
+            r.SpeciesSubGrdMask = lstrk.Regions.GetSpeciesSubGrid(spc).VolumeMask.GetBitMaskWithExternal();
+
             string[] coeffs = eqSystem.Coefficients();
 
             ICollection<DelCoefficientFactory> factories = coefficients.Factories(coeffs);

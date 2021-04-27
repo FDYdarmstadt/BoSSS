@@ -190,12 +190,13 @@ namespace BoSSS.Solution.XheatCommon {
         double capB;
         protected double cap;
 
-        public void SetParameter(String speciesName, SpeciesId SpcId) {
+        public void SetParameter(String speciesName) {
             switch (speciesName) {
                 case "A": this.cap = this.capA; base.LaxFriedrichsSchemeSwitch = LFFA; this.SetBndfunc("A"); break;
                 case "B": this.cap = this.capB; base.LaxFriedrichsSchemeSwitch = LFFB; this.SetBndfunc("B"); break;
                 default: throw new ArgumentException("Unknown species.");
             }
+            SpeciesId SpcId = lsTrk.GetSpeciesId(speciesName);
             SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
         }
 

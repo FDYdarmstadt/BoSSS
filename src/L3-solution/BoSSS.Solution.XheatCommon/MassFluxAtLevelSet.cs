@@ -46,15 +46,16 @@ namespace BoSSS.Solution.XheatCommon {
         protected int m_D;
 
 
-        public MassFluxAtLevelSet(int _D, LevelSetTracker _LsTrk, PhysicalParameters physicalParameters) {
+        public MassFluxAtLevelSet(int _D, PhysicalParameters physicalParameters, string phaseA, string phaseB) {
 
             this.m_D = _D;
-            this.m_LsTrk = _LsTrk;
-
             this.m_rhoA = physicalParameters.rho_A;
             this.m_rhoB = physicalParameters.rho_B;
 
             this.m_sigma = physicalParameters.Sigma;
+
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
 
         }       
 
@@ -68,9 +69,6 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
-
-
-        protected LevelSetTracker m_LsTrk;
 
         bool MEvapIsPrescribd = false;
         double prescrbMEvap;
@@ -105,12 +103,14 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         public virtual TermActivationFlags LevelSetTerms {
@@ -138,11 +138,9 @@ namespace BoSSS.Solution.XheatCommon {
         protected int m_D;
 
 
-        public MassFluxAtLevelSet_StrongCoupling(int _D, LevelSetTracker _LsTrk, ThermalParameters thermalParameters) {
+        public MassFluxAtLevelSet_StrongCoupling(int _D, ThermalParameters thermalParameters, string phaseA, string phaseB) {
 
             this.m_D = _D;
-            this.m_LsTrk = _LsTrk;
-
             this.m_rhoA = thermalParameters.rho_A;
             this.m_rhoB = thermalParameters.rho_B;
 
@@ -151,6 +149,8 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.m_hvap = thermalParameters.hVap;
 
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
         }
 
         protected double MassFlux(CommonParams cp, double[,] Grad_uA, double[,] Grad_uB) {
@@ -165,9 +165,6 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
-
-
-        protected LevelSetTracker m_LsTrk;
 
         bool MEvapIsPrescribd = false;
         double prescrbMEvap;
@@ -203,13 +200,16 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
+
 
         public virtual TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.GradUxV; }
@@ -222,9 +222,9 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class DivergenceAtLevelSet_withMassFlux : MassFluxAtLevelSet {
 
-        public DivergenceAtLevelSet_withMassFlux(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, bool RescaleConti, PhysicalParameters physicalParameters)
-            : base(_D, lsTrk, physicalParameters) {
+        public DivergenceAtLevelSet_withMassFlux(int _D,
+            double vorZeichen, bool RescaleConti, PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;
@@ -289,9 +289,9 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class DivergenceAtLevelSet_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
-        public DivergenceAtLevelSet_Evaporation_StrongCoupling(int _D, LevelSetTracker lsTrk,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermalParameters)
-            : base(_D, lsTrk, thermalParameters) {
+        public DivergenceAtLevelSet_Evaporation_StrongCoupling(int _D,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermalParameters, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;
@@ -357,9 +357,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ViscosityAtLevelSet_FullySymmetric_withMassFlux : MassFluxAtLevelSet {
 
 
-        public ViscosityAtLevelSet_FullySymmetric_withMassFlux(LevelSetTracker lstrk, double _penalty, int _component,
-            PhysicalParameters physicalParameters)
-            : base(lstrk.GridDat.SpatialDimension, lstrk, physicalParameters) {
+        public ViscosityAtLevelSet_FullySymmetric_withMassFlux(double _penalty, int _component, int D,
+            PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(D, physicalParameters, phaseA, phaseB) {
 
             this.muA = physicalParameters.mu_A;
             this.muB = physicalParameters.mu_B;
@@ -504,9 +504,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
 
-        public ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling(LevelSetTracker lstrk, double _penalty, int _component,
-            ThermalParameters thermalParameters, PhysicalParameters physicalParameters)
-            : base(lstrk.GridDat.SpatialDimension, lstrk, thermalParameters) {
+        public ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling(double _penalty, int _component, int D,
+            ThermalParameters thermalParameters, PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(D, thermalParameters, phaseA, phaseB) {
 
             this.muA = physicalParameters.mu_A;
             this.muB = physicalParameters.mu_B;
@@ -651,13 +651,14 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
+        /// <param name="_d"></param>
+        /// <param name="_D"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public MassFluxAtLevelSet_withMassFlux(int _d, int _D, LevelSetTracker LsTrk, PhysicalParameters physicalParameters, bool _movingMesh)
-            : base(_D, LsTrk, physicalParameters) {
+        /// <param name="phaseA"></param>
+        /// <param name="phaseB"></param>
+        public MassFluxAtLevelSet_withMassFlux(int _d, int _D, PhysicalParameters physicalParameters, bool _movingMesh, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             this.m_d = _d;
             this.movingMesh = _movingMesh;
@@ -752,8 +753,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="LsTrk"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public MassFluxAtLevelSet_Evaporation_StrongCoupling(int _d, int _D, LevelSetTracker LsTrk, ThermalParameters thermalParameters, bool _movingMesh)
-            : base(_D, LsTrk, thermalParameters) {
+        public MassFluxAtLevelSet_Evaporation_StrongCoupling(int _d, int _D, ThermalParameters thermalParameters, bool _movingMesh, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
 
             this.m_d = _d;
             this.movingMesh = _movingMesh;
@@ -846,8 +847,8 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConvectionAtLevelSet_nonMaterialLLF_withMassFlux : MassFluxAtLevelSet {
 
-        public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(int _d, int _D, LevelSetTracker lsTrk, PhysicalParameters physicalParameters)
-            : base(_D, lsTrk, physicalParameters) {
+        public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux(int _d, int _D, PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             this.m_d = _d;
         }
@@ -904,8 +905,8 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConvectionAtLevelSet_nonMaterialLLF_withMassFlux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
-        public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux_StrongCoupling(int _d, int _D, LevelSetTracker lsTrk, ThermalParameters thermParams)
-            : base(_D, lsTrk, thermParams) {
+        public ConvectionAtLevelSet_nonMaterialLLF_withMassFlux_StrongCoupling(int _d, int _D, ThermalParameters thermParams, string phaseA, string phaseB)
+            : base(_D, thermParams, phaseA, phaseB) {
 
             this.m_d = _d;
         }
@@ -962,8 +963,8 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton : MassFluxAtLevelSet_StrongCoupling {
 
-        public ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(int _d, int _D, LevelSetTracker lsTrk, ThermalParameters thermParams)
-            : base(_D, lsTrk, thermParams) {
+        public ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(int _d, int _D, ThermalParameters thermParams, string phaseA, string phaseB)
+            : base(_D, thermParams, phaseA, phaseB) {
 
             this.m_d = _d;
         }
@@ -1026,9 +1027,8 @@ namespace BoSSS.Solution.XheatCommon {
     public class ConvectionAtLevelSet_Consistency_withMassFlux : MassFluxAtLevelSet {
 
 
-        public ConvectionAtLevelSet_Consistency_withMassFlux(int _d, int _D, LevelSetTracker lsTrk,
-            double vorZeichen, bool RescaleConti, PhysicalParameters physParams)
-            : base(_D, lsTrk, physParams) {
+        public ConvectionAtLevelSet_Consistency_withMassFlux(int _d, int _D, double vorZeichen, bool RescaleConti, PhysicalParameters physParams, string phaseA, string phaseB)
+            : base(_D, physParams, phaseA, phaseB) {
 
             this.m_d = _d;
 
@@ -1133,9 +1133,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
 
-        public ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling(int _d, int _D, LevelSetTracker lsTrk,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermParams)
-            : base(_D, lsTrk, thermParams) {
+        public ConvectionAtLevelSet_Consistency_withMassFlux_StrongCoupling(int _d, int _D,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, string phaseA, string phaseB)
+            : base(_D, thermParams, phaseA, phaseB) {
 
             this.m_d = _d;
 
@@ -1240,9 +1240,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton : MassFluxAtLevelSet_StrongCoupling {
 
 
-        public ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(int _d, int _D, LevelSetTracker lsTrk,
-            double vorZeichen, bool RescaleConti, ThermalParameters thermParams)
-            : base(_D, lsTrk, thermParams) {
+        public ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(int _d, int _D,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermParams, string phaseA, string phaseB)
+            : base(_D, thermParams, phaseA, phaseB) {
 
             this.m_d = _d;
 
@@ -1356,8 +1356,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="LsTrk"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public ConvectionAtLevelSet_MovingMesh_withMassFlux(int _d, int _D, LevelSetTracker LsTrk, PhysicalParameters physicalParameters)
-            : base(_D, LsTrk, physicalParameters) {
+        public ConvectionAtLevelSet_MovingMesh_withMassFlux(int _d, int _D, PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             this.m_d = _d;
             if (m_d >= m_D)

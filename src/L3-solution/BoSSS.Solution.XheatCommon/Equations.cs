@@ -21,7 +21,6 @@ namespace BoSSS.Solution.XheatCommon {
 
         public Heat(
             string spcName,
-            LevelSetTracker LsTrk,
             int D,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
             IHeat_Configuration config) {
@@ -33,7 +32,6 @@ namespace BoSSS.Solution.XheatCommon {
 
             this.D = D;
 
-            SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -50,7 +48,7 @@ namespace BoSSS.Solution.XheatCommon {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-                DefineConvective(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk, config.useUpwind);               
+                DefineConvective(D, boundaryMap, spcName, capSpc, LFFSpc, config.useUpwind);               
             }
 
 
@@ -62,7 +60,7 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                     1.0,
-                    boundaryMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
+                    boundaryMap, D, spcName, thermParams.k_A, thermParams.k_B);
 
                 AddComponent(Visc);
 
@@ -73,16 +71,16 @@ namespace BoSSS.Solution.XheatCommon {
                 //}
             } else {
                 // Local DG add divergence term
-                AddComponent(new HeatFluxDivergenceInSpeciesBulk(D, boundaryMap, spcName, spcId));
+                AddComponent(new HeatFluxDivergenceInSpeciesBulk(D, boundaryMap, spcName));
             }
         }
 
-        protected virtual void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, SpeciesId spcId, double capSpc, double LFFSpc, LevelSetTracker LsTrk, bool useUpwind) {
+        protected virtual void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, double capSpc, double LFFSpc, bool useUpwind) {
             IEquationComponent conv;            
             if (useUpwind) {
-                conv = new HeatConvectionInSpeciesBulk_Upwind(D, boundaryMap, spcName, spcId, capSpc);
+                conv = new HeatConvectionInSpeciesBulk_Upwind(D, boundaryMap, spcName, capSpc);
             } else {
-                conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                conv = new HeatConvectionInSpeciesBulk_LLF(D, boundaryMap, spcName, capSpc, LFFSpc);
             }
             AddComponent(conv);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
@@ -103,20 +101,19 @@ namespace BoSSS.Solution.XheatCommon {
         
         public Heat_Newton(
             string spcName,
-            LevelSetTracker LsTrk,
             int D,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            IHeat_Configuration config) : base(spcName, LsTrk, D, boundaryMap, config){
+            IHeat_Configuration config) : base(spcName, D, boundaryMap, config){
            
         }
 
-        protected override void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, SpeciesId spcId, double capSpc, double LFFSpc, LevelSetTracker LsTrk, bool useUpwind) {
+        protected override void DefineConvective(int D, ThermalMultiphaseBoundaryCondMap boundaryMap, string spcName, double capSpc, double LFFSpc, bool useUpwind) {
             IEquationComponent conv;
             if (useUpwind) {
                 throw new NotImplementedException();
             } else {
                 //conv = new HeatConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
-                conv = new HeatConvectionInSpeciesBulk_Hamiltonian_Newton(D, boundaryMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                conv = new HeatConvectionInSpeciesBulk_Hamiltonian_Newton(D, boundaryMap, spcName, capSpc, LFFSpc);
             }
             AddComponent(conv);
         }
@@ -134,7 +131,6 @@ namespace BoSSS.Solution.XheatCommon {
         public HeatFlux(
             string spcName,
             int d,
-            LevelSetTracker LsTrk,
             int D,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
             IHeat_Configuration config) {
@@ -145,7 +141,6 @@ namespace BoSSS.Solution.XheatCommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             this.D = D;
 
-            SpeciesId spcId = LsTrk.GetSpeciesId(spcName);
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -159,8 +154,8 @@ namespace BoSSS.Solution.XheatCommon {
 
             // viscous operator (laplace)
             // ==========================
-            AddComponent(new AuxiliaryHeatFlux_Identity(d, spcName, spcId));   // cell local
-            AddComponent(new TemperatureGradientInSpeciesBulk(D, d, boundaryMap, spcName, spcId, kSpc));
+            AddComponent(new AuxiliaryHeatFlux_Identity(d, spcName));   // cell local
+            AddComponent(new TemperatureGradientInSpeciesBulk(D, d, boundaryMap, spcName, kSpc));
         }
 
         public override string SpeciesName => speciesName;
@@ -267,7 +262,7 @@ namespace BoSSS.Solution.XheatCommon {
         }        
 
         protected override void DefineConvective(int dimension, LevelSetTracker LsTrk, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
+            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
         }
     }
 
