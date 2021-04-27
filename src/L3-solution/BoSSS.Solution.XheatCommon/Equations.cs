@@ -236,10 +236,10 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-                var Visc = new ConductivityAtLevelSet_material(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_material(LsTrk.GridDat.SpatialDimension, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
             } else {
-                AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk));
+                AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk.GridDat.SpatialDimension));
             }
 
         }
@@ -318,7 +318,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Tsat = thermParams.T_sat;
 
-            AddComponent(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
+            AddComponent(new TemperatureGradientAtLevelSet(d, kA, kB, Tsat));
 
         }
     }

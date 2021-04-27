@@ -23,7 +23,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
 
             int D = this.GridData.SpatialDimension;
 

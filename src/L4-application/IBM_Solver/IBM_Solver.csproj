@@ -73,7 +73,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IBM_PressureFormAtIB.cs" />
+    <Compile Include="IBM_ViscosityAtIB.cs" />
+    <Compile Include="IBM_ConvectionAtIB.cs" />
+    <Compile Include="IBM_DivergenceAtIB.cs" />
     <Compile Include="FluxDifferentiator.cs" />
+    <Compile Include="ParticleParameters.cs" />
     <Compile Include="PhysicalParameters.cs" />
     <Compile Include="HardcodedPrecTest.cs" />
     <Compile Include="HardcodedPerformance.cs" />
@@ -118,6 +123,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
       <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
       <Name>BoSSS.Solution.LevelSetTools</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
+      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
+      <Name>BoSSS.Solution.Statistic</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
       <Project>{0D8F577E-316D-4362-816B-9F610C5EB4A5}</Project>

@@ -252,10 +252,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int pVel = VelocityDegree();
             int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             int D = this.GridData.SpatialDimension;
+
 
             if (this.Control.UseSchurBlockPrec) {
                 // using a Schur complement for velocity & pressure
@@ -467,8 +468,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             }
 
-            opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
-            opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
+            opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));

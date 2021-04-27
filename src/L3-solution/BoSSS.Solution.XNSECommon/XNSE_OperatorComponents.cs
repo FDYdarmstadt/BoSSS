@@ -266,7 +266,7 @@ namespace BoSSS.Solution.XNSECommon {
             // pressure gradient
             // =================
             if (config.isPressureGradient) {
-                var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, LsTrk, _freeSurface: dntParams.freeSurfaceFlow, _pFree: physParams.pFree);
+                var presLs = new Operator.Pressure.PressureFormAtLevelSet(d, D, _freeSurface: dntParams.freeSurfaceFlow, _pFree: physParams.pFree);
                 comps.Add(presLs);
             }
 
@@ -285,7 +285,7 @@ namespace BoSSS.Solution.XNSECommon {
                     break;
 
                     case ViscosityMode.FullySymmetric:
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, muA, muB, penalty, d,
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, muA, muB, penalty, d,
                         _freeSurface: dntParams.freeSurfaceFlow));
                     break;
 
@@ -297,7 +297,7 @@ namespace BoSSS.Solution.XNSECommon {
                     double betaB = ((PhysicalParametersRheology)physParams).beta_b;
                     double[] penalty1 = dntParams.Penalty1;
                     double penalty2 = dntParams.Penalty2;
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
                     comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
                     break;
 
@@ -387,7 +387,7 @@ namespace BoSSS.Solution.XNSECommon {
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                         || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
 
-                    XOp.EquationComponents[CodName].Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
+                    XOp.EquationComponents[CodName].Add(new CurvatureBasedSurfaceTension(d, D, sigma));
 
                     CurvatureRequired = true;
 
@@ -444,7 +444,7 @@ namespace BoSSS.Solution.XNSECommon {
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.GradUxGradV: {
-                            XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, 0.1, LsTrk));
+                            XOp.EquationComponents[CodName].Add(new LevelSetStabilization(d, D, 0.1));
                             break;
                         }
                     case DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDivergence: {
@@ -471,7 +471,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             if (config.isPressureGradient && physParams.useArtificialSurfaceForce) {
 
-                XOp.EquationComponents[CodName].Add(new SurfaceTension_ArfForceSrc(d, D, LsTrk));
+                XOp.EquationComponents[CodName].Add(new SurfaceTension_ArfForceSrc(d, D));
             }
 
         }
@@ -578,7 +578,7 @@ namespace BoSSS.Solution.XNSECommon {
             // set components
             var comps = XOp.EquationComponents[CodName];
 
-            var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, config.isMatInt, -1, false);
+            var divPen = new Operator.Continuity.DivergenceAtLevelSet(D, rhoA, rhoB, config.isMatInt, -1, false);
             comps.Add(divPen);
             //var stabint = new PressureStabilizationAtLevelSet(LsTrk, dntParams.PresPenalty2, physParams.reynolds_A, physParams.reynolds_B);
             //comps.Add(stabint);

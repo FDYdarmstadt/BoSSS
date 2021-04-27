@@ -177,7 +177,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet(LsTrk.GridDat.SpatialDimension, kA, kB, penalty * 1.0, Tsat);
                 comps.Add(Visc);
 
                 //var qJump = new HeatFluxAtLevelSet(D, LsTrk, thermParams, config.getPhysParams.Sigma);
@@ -185,14 +185,14 @@ namespace BoSSS.Solution.XheatCommon {
 
             } else {
 
-                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk)); 
+                comps.Add(new HeatFluxDivergencetAtLevelSet(LsTrk.GridDat.SpatialDimension)); 
                 //if(config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                 //    comps.Add(new AuxiliaryStabilizationFormAtLevelSet(LsTrk, config.isEvaporation));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new TemperatureGradientAtLevelSet(d, LsTrk, kA, kB, Tsat));
+                    comps.Add(new TemperatureGradientAtLevelSet(d, kA, kB, Tsat));
                     //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     //    comps.Add(new TemperatureStabilizationFormAtLevelSet(d, LsTrk, kA, kB, config.isEvaporation, Tsat));
                 }

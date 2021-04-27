@@ -32,6 +32,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback {
 
+        ///// <summary>
+        ///// Configuration of <see cref="BlockJacobi"/>
+        ///// </summary>
+        //public class myConfig : ConfigBase {
+        //    /// <summary>
+        //    /// Configuration cctor of <see cref="BlockJacobi"/>
+        //    /// </summary>
+            //public myConfig() {
+                int MaxSolverIterations = 1;
+            //}
+            /// <summary>
+            /// Jacobi-Damping
+            /// </summary>
+            public double omega = 1.0; // jacobi - under-relax
+
+            /// <summary>
+            /// Fixed number of block-Jacobi 
+            /// </summary>
+            public int NoOfIterations = 1;
+
+        //    /// <summary>
+        //    /// ~
+        //    /// </summary>
+        //    /// <returns></returns>
+        //    public override ISolverSmootherTemplate GetInstance() {
+        //        return new BlockJacobi();
+        //    }
+        //}
+
+        //myConfig m_config;
+
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public ConfigBase Config {
+        //    get {
+        //        if (m_config == null)
+        //            m_config = new myConfig();
+        //        return m_config;
+        //    }
+        //}
+
         MultigridOperator m_MultigridOp;
 
         /// <summary>
@@ -102,22 +144,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         BlockMsrMatrix invDiag;
         //double[] diag;
 
-        /// <summary>
-        /// Jacobi-Damping
-        /// </summary>
-        public double omega = 1.0; // jacobi - under-relax
+
 
         /// <summary>
         /// ~
         /// </summary>
         bool TerminationCriterion(int iter, double r0_l2, double r_l2) {
-            return (iter <= NoOfIterations);
+            return (iter <= MaxSolverIterations);
         }
 
-        /// <summary>
-        /// Fixed number of block-Jacobi 
-        /// </summary>
-        public int NoOfIterations = 1;
+
 
       
         /// <summary>
@@ -198,8 +234,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public object Clone() {
             var clone = new BlockJacobi();
             clone.IterationCallback = this.IterationCallback;
-            clone.NoOfIterations = this.NoOfIterations;
             clone.omega = this.omega;
+            clone.NoOfIterations = this.NoOfIterations;
             return clone;
         }
     }

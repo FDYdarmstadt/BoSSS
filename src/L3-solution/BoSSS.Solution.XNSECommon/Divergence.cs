@@ -69,7 +69,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double rho;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": rho = rhoA; scale = vorZeichen / ((RescaleConti) ? rhoA : 1.0); SetBndfunction("A"); break;
                 case "B": rho = rhoB; scale = vorZeichen / ((RescaleConti) ? rhoB : 1.0); SetBndfunction("B"); break;
@@ -130,7 +130,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         bool RescaleConti;
         double vorZeichen;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": scale = vorZeichen / ((RescaleConti) ? rhoA : 1.0); break;
                 case "B": scale = vorZeichen / ((RescaleConti) ? rhoB : 1.0); break;
@@ -152,15 +152,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// </summary>
     public class DivergenceAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_lsTrk;
+        //LevelSetTracker m_lsTrk;
 
-        public DivergenceAtLevelSet(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
+        public DivergenceAtLevelSet(int _D, double _rhoA, double _rhoB,
             bool _MaterialInterface, double vorZeichen, bool RescaleConti, 
             double _wA = 1.0, double _wB = 1.0) {
             this.D = _D;
             this.rhoA = _rhoA;
             this.rhoB = _rhoB;
-            this.m_lsTrk = lsTrk;
+            //this.m_lsTrk = lsTrk;
             MaterialInterface = _MaterialInterface;
 
             scaleA = vorZeichen;
@@ -339,12 +339,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
       

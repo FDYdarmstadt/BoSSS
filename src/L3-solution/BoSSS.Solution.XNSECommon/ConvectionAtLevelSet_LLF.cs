@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     public class ConvectionAtLevelSet_LLF : ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
@@ -43,15 +43,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             m_d = _d;
             rhoA = _rhoA;
             rhoB = _rhoB;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             //varMode = _varMode;
             MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
             NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
+            NegFlux.SetParameter("A");
             PosFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            PosFlux.SetParameter("B");
 
         }
 
@@ -222,12 +222,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

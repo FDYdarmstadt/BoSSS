@@ -147,12 +147,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return new string[] { VariableNames.KineticEnergy }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -355,10 +355,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
     public class StressDivergenceAtLevelSet : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _muA, double _muB, bool transposed = false) {
-            this.m_LsTrk = lstrk;
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.m_D = lstrk.GridDat.SpatialDimension;
@@ -424,12 +424,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return new string[] { }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
