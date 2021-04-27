@@ -42,7 +42,7 @@ namespace BoSSS.Application.TutorialTests {
             BoSSS.Solution.Application.InitMPI(new string[0]);
             
             // start the minibatchprocessor which is used internally
-            bool iStartedThisShit = AllUpTest.OneTimeSetUp();
+            //bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 
             var losScriptos = GetListOfScripts();
             int r = 0;
@@ -83,7 +83,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.Run__ue5NumFluxConv();
 #endif
 */
-            AllUpTest.OneTimeTearDown(iStartedThisShit);
+            //AllUpTest.OneTimeTearDown(iStartedThisShit);
             csMPI.Raw.mpiFinalize();
             return r;
         }
