@@ -44,8 +44,6 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 
-            MiniBatchProcessor.Server.StartIfNotRunning();
-
             var losScriptos = GetListOfScripts();
             int r = 0;
             int i = 1;
