@@ -117,10 +117,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new HeatFlux("A", d, D, boundaryMap, config));
                     opFactory.AddEquation(new HeatFlux("B", d, D, boundaryMap, config));
-                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, lsUpdater.Tracker, config));
+                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, config));
                 }
             }
-            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));
+            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, config));
             opFactory.AddCoefficient(new EvapMicroRegion());
 
 

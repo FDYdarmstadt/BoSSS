@@ -176,14 +176,13 @@ namespace BoSSS.Solution.XheatCommon {
             string phaseB,
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             IXHeat_Configuration config) : base() {
 
             this.phaseA = phaseA;
             this.phaseB = phaseB;
 
             codomainName = EquationNames.HeatEquation;
-            AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
+            AddInterfaceHeatEq(dimension, boundaryMap, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
             AddCoefficient("EvapMicroRegion");
@@ -200,7 +199,6 @@ namespace BoSSS.Solution.XheatCommon {
         void AddInterfaceHeatEq(
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             IXHeat_Configuration config) {
 
             ThermalParameters thermParams = config.getThermParams;
@@ -221,7 +219,7 @@ namespace BoSSS.Solution.XheatCommon {
             // ================
             if (thermParams.IncludeConvection) {
                 Console.WriteLine("include heat convection");
-                DefineConvective(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh);                
+                DefineConvective(dimension, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh);                
             }
 
             // viscous operator (laplace)
@@ -231,19 +229,19 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-                var Visc = new ConductivityAtLevelSet_material(LsTrk.GridDat.SpatialDimension, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
             } else {
-                AddComponent(new HeatFluxDivergencetAtLevelSet(LsTrk.GridDat.SpatialDimension));
+                AddComponent(new HeatFluxDivergencetAtLevelSet(dimension));
             }
 
         }
 
-        protected virtual void DefineConvective(int dimension, LevelSetTracker LsTrk, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+        protected virtual void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
-            AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
+            AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
         }
     }
 
@@ -257,12 +255,11 @@ namespace BoSSS.Solution.XheatCommon {
             string phaseB,
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
-            IXHeat_Configuration config) : base(phaseA, phaseB, dimension, boundaryMap, LsTrk, config) {           
+            IXHeat_Configuration config) : base(phaseA, phaseB, dimension, boundaryMap, config) {           
         }        
 
-        protected override void DefineConvective(int dimension, LevelSetTracker LsTrk, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+        protected override void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
         }
     }
 
@@ -278,14 +275,13 @@ namespace BoSSS.Solution.XheatCommon {
             int dimension,
             int d,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             IXHeat_Configuration config) : base() {
 
             this.phaseA = phaseA;
             this.phaseB = phaseB;
 
             codomainName = EquationNames.AuxHeatFlux(dimension)[d];
-            AddInterfaceHeatEq(dimension, d, boundaryMap, LsTrk, config);
+            AddInterfaceHeatEq(dimension, d, boundaryMap, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             AddCoefficient("EvapMicroRegion");
         }
@@ -302,7 +298,6 @@ namespace BoSSS.Solution.XheatCommon {
             int dimension,
             int d,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             IXHeat_Configuration config) {
 
             ThermalParameters thermParams = config.getThermParams;

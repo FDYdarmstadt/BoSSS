@@ -32,13 +32,13 @@ using System.Collections;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionAtLevelSet_LLF : ILevelSetForm, ISupportsJacobianComponent {
+    public class ConvectionAtLevelSet_LLF : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
         //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public ConvectionAtLevelSet_LLF(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
@@ -48,9 +48,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
-            NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
+            NegFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN);
             NegFlux.SetParameter("A");
-            PosFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
+            PosFlux = new ConvectionInBulk_LLF(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB);
             PosFlux.SetParameter("B");
 
         }
@@ -206,6 +206,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             return new IEquationComponent[] { this };
         }
 
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
+        }
+
         public IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.Velocity_d(m_d) };
@@ -241,18 +246,18 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     /// <summary>
     /// Newton compatible version of <see cref="ConvectionAtLevelSet_LLF"/>
     /// </summary>
-    public class ConvectionAtLevelSet_LLF_Newton : ILevelSetForm, ISupportsJacobianComponent {
+    public class ConvectionAtLevelSet_LLF_Newton : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, LevelSetTracker LsTrk, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
+        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
             rhoB = _rhoB;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             //varMode = _varMode;
             MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
@@ -260,9 +265,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             this.NegativeSpecies = phaseA;
             this.PositiveSpecies = phaseB;
 
-            NegFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN, LsTrk);
+            NegFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, _LFFA, double.NaN);
             NegFlux.SetParameter(this.NegativeSpecies);
-            PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, LsTrk);
+            PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB);
             PosFlux.SetParameter(this.PositiveSpecies);           
         }
 
@@ -337,6 +342,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { JacobiComp };
+        }
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
         }
 
         public IList<string> ArgumentOrdering {

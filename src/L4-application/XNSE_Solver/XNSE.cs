@@ -429,11 +429,11 @@ namespace BoSSS.Application.XNSE_Solver {
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, this.LsTrk, config, config.isMovingMesh));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
             } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                 opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
-                opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
             } else {
                 throw new NotSupportedException();
             }

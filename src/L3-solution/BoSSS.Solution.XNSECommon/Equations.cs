@@ -352,7 +352,6 @@ namespace BoSSS.Solution.XNSECommon {
             int d,
             int dimension,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) : base() {
 
@@ -360,7 +359,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.phaseB = phaseB;
 
             codomainName = EquationNames.MomentumEquationComponent(d);
-            AddInterfaceNSE(dimension, d, boundaryMap, LsTrk, config, isMovingMesh);
+            AddInterfaceNSE(dimension, d, boundaryMap, config, isMovingMesh);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
         }
 
@@ -375,7 +374,6 @@ namespace BoSSS.Solution.XNSECommon {
             int dimension,
             int d,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
             bool isMovingMesh) {
             PhysicalParameters physParams = config.getPhysParams;
@@ -399,7 +397,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                DefineConvective(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);                
+                DefineConvective(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);                
             }
             if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                 // if Moving mesh, we need the interface transport term somehow
@@ -422,20 +420,20 @@ namespace BoSSS.Solution.XNSECommon {
                 double penalty = dntParams.PenaltySafety;
                 switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, true));
                     break;
                     case ViscosityMode.TransposeTermMissing:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, muA, muB, penalty, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
                     double betaA = ((PhysicalParametersRheology)physParams).beta_a;
                     double betaB = ((PhysicalParametersRheology)physParams).beta_b;
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.StressDivergenceAtLevelSet(reynoldsA, reynoldsB, penalty1, penalty2, dimension, d));
                     break;
 
                     default:
@@ -446,8 +444,8 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        protected virtual void DefineConvective(int d, int dimension, LevelSetTracker LsTrk, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+        protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
             AddComponent(conv);
         }
     }
@@ -464,14 +462,13 @@ namespace BoSSS.Solution.XNSECommon {
             int d,
             int dimension,
             IncompressibleMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             INSE_Configuration config,
-            bool isMovingMesh) : base(phaseA, phaseB, d, dimension, boundaryMap, LsTrk, config, isMovingMesh) {
+            bool isMovingMesh) : base(phaseA, phaseB, d, dimension, boundaryMap, config, isMovingMesh) {
 
         }
 
-        protected override void DefineConvective(int d, int dimension, LevelSetTracker LsTrk, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, LsTrk, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
+        protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
             AddComponent(conv);
         }
     }

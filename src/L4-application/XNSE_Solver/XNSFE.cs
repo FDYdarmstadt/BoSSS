@@ -196,9 +196,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new Heat("B", D, thermBoundaryMap, config));
 
                 if (config.isEvaporation) {
-                    opFactory.AddEquation(new HeatInterface_Evaporation("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Evaporation("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface("A", "B", D, thermBoundaryMap, config));
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
@@ -206,7 +206,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
                         opFactory.AddEquation(new HeatFlux("A", d, D, thermBoundaryMap, config));
                         opFactory.AddEquation(new HeatFlux("B", d, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, config));
                     }
                 }                
             } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
@@ -214,9 +214,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new Heat_Newton("B", D, thermBoundaryMap, config));
 
                 if (config.isEvaporation) {
-                    opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
@@ -224,7 +224,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
                         opFactory.AddEquation(new HeatFlux("A", d, D, thermBoundaryMap, config));
                         opFactory.AddEquation(new HeatFlux("B", d, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, config));
                     }
                 }
             } else {

@@ -264,14 +264,13 @@ namespace BoSSS.Application.XNSE_Solver {
             string phaseB,
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             XNSFE_OperatorConfiguration config) : base() {
 
             this.phaseA = phaseA;
             this.phaseB = phaseB;
 
             codomainName = EquationNames.HeatEquation;
-            AddInterfaceHeatEq(dimension, boundaryMap, LsTrk, config);
+            AddInterfaceHeatEq(dimension, boundaryMap, config);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
 
             AddCoefficient("EvapMicroRegion");
@@ -288,7 +287,6 @@ namespace BoSSS.Application.XNSE_Solver {
         void AddInterfaceHeatEq(
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
             XNSFE_OperatorConfiguration config) {
 
             PhysicalParameters physParams = config.getPhysParams;
@@ -309,7 +307,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // convective part
             // ================
             if (thermParams.IncludeConvection) {
-                DefineConvective(dimension, LsTrk, Tsat, config);                
+                DefineConvective(dimension, Tsat, config);                
             }
 
             // viscous operator (laplace)
@@ -318,7 +316,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet_withMassflux(LsTrk.GridDat.SpatialDimension, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_withMassflux(dimension, kA, kB, penalty * 1.0, Tsat);
                 AddComponent(Visc);
             } else {
                 throw new NotImplementedException();
@@ -326,7 +324,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        protected virtual void DefineConvective(int dimension, LevelSetTracker LsTrk, double Tsat, XNSFE_OperatorConfiguration config) {
+        protected virtual void DefineConvective(int dimension, double Tsat, XNSFE_OperatorConfiguration config) {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             if (config.isMovingMesh) {
@@ -349,11 +347,10 @@ namespace BoSSS.Application.XNSE_Solver {
             string phaseB,
             int dimension,
             ThermalMultiphaseBoundaryCondMap boundaryMap,
-            LevelSetTracker LsTrk,
-            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, boundaryMap, LsTrk, config) {
+            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, boundaryMap, config) {
         }
 
-        protected override void DefineConvective(int dimension, LevelSetTracker LsTrk, double Tsat, XNSFE_OperatorConfiguration config) {
+        protected override void DefineConvective(int dimension, double Tsat, XNSFE_OperatorConfiguration config) {
             if (config.isMovingMesh) {
                 AddComponent(new HeatConvectionAtLevelSet_MovingMesh_withMassflux(dimension, Tsat, config.getPhysParams, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
             } else {

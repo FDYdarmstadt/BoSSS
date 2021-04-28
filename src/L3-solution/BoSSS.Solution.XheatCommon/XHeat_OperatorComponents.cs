@@ -163,7 +163,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (thermParams.IncludeConvection) {
                 Console.WriteLine("include heat convection");
                 //ILevelSetForm conv;
-                comps.Add(new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
+                comps.Add(new HeatConvectionAtLevelSet_LLF(D, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
                 //if (config.isMovingMesh)
                 //    comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
                 //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);

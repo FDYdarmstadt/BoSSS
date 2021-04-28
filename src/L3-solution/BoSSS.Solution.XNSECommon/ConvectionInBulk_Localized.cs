@@ -26,7 +26,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     class ConvectionInBulk_Localized : ConvectionInBulk_LLF {
 
-        public ConvectionInBulk_Localized(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) : base(SpatDim, _bcmap, _component, _rhoA, _rhoB, _LFFA, _LFFB, _lsTrk) { }
+        public ConvectionInBulk_Localized(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) : base(SpatDim, _bcmap, _component, _rhoA, _rhoB, _LFFA, _LFFB) { }
 
         protected override double InnerEdgeFlux(ref BoSSS.Foundation.CommonParams inp, double[] Uin, double[] Uout) {
             if(basecall) {
