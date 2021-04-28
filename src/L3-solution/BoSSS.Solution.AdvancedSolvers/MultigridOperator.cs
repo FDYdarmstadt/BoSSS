@@ -109,6 +109,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return globalCutCells;
         }
 
+        int FindPhaseDGCoordinate(UnsetteledCoordinateMapping map, int iVar, int jCell, AggregationGridBasis[] bases) {
+            LevelSetTracker lsTrk = GetTracker(map);
+            var basis = bases[iVar];
+            if(lsTrk != null) {
+                int N = basis.GetLength(jCell, map.BasisS[iVar].Degree);
+                return basis.N_Murks(jCell, 0, N);
+            } else {
+                return 0;
+            }
+        }
+
         static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -181,10 +192,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(onthisProc) {
                 int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
 
+
                 m_ReferenceIndices = new long[L];
                 for(int iVar = 0; iVar < L; iVar++) {
                     if(FreeMeanValue[iVar]) {
-                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, 0);
+                        int kCoord = FindPhaseDGCoordinate(map, iVar, jRefLoc, bases);
+                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, kCoord);
                     } else {
                         m_ReferenceIndices[iVar] = int.MinValue;
                     }
