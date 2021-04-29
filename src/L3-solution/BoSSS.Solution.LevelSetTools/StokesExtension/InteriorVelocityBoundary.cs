@@ -23,10 +23,12 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         DGField m_InterfaceVelocityComponent;
         SpeciesId m_negativeSpecies;
         SpeciesId m_positiveSpecies;
+        int m_D;
 
-        public InteriorVelocityBoundary(SpeciesId positiveSpecies, SpeciesId negativeSpecies, int levelSetIndex, int d, DGField InterfaceVelocityComponent) {
+        public InteriorVelocityBoundary(SpeciesId positiveSpecies, SpeciesId negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
             m_InterfaceVelocityComponent = InterfaceVelocityComponent;
             m_d = d;
+            m_D = D;
             m_levelSetIndex = levelSetIndex;
             m_positiveSpecies = positiveSpecies;
             m_negativeSpecies = negativeSpecies;
@@ -40,21 +42,24 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         public TermActivationFlags LevelSetTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public IList<string> ArgumentOrdering => new[] { VariableNames.Velocity_d(m_d) };
+        public IList<string> ArgumentOrdering => VariableNames.VelocityVector(m_D);
 
-        public IList<string> ParameterOrdering => new[] { VariableNames.AsLevelSetVariable("Interface", VariableNames.Velocity_d(m_d)) };
+        public IList<string> ParameterOrdering => VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(m_D));
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Ret = 0;
 
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
 
-            double uIn = inp.Parameters_IN[0];
-            double uOt = inp.Parameters_OUT[0];
+            double uIn = 0;
+            double uOt = 0;
 
-            
-            Ret += (uA[0] - uIn) * (vA) * pnlty;
-            Ret += (uB[0] - uOt) * (vB) * pnlty;
+            for(int d =0; d < m_D; ++d) {
+                uIn += inp.Normal[d] * inp.Parameters_IN[d];
+                uOt += inp.Normal[d] * inp.Parameters_OUT[d];
+            }
+            Ret += (uA[m_d] - uIn * inp.Normal[m_d]) * (vA) * pnlty;
+            Ret += (uB[m_d] - uOt * inp.Normal[m_d]) * (vB) * pnlty;
 
 
             return Ret;

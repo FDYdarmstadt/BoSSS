@@ -136,7 +136,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     SpeciesId negativeSpecies = LsTrk.GetSpeciesId(speciesPair.Item1);
                     SpeciesId positiveSpecies = LsTrk.GetSpeciesId(speciesPair.Item2);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                        new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, InterfaceVelocity[d])
+                        new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
                         );
                 }
             }
@@ -244,10 +244,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
-
-            BoSSS.Solution.Tecplot.Tecplot plotter = new Solution.Tecplot.Tecplot(lsTrk.GridDat, 4);
-            plotter.PlotFields("extensionVelocity", 0, ExtensionVelocity.Cat(dummyPressure));
-
         }
     }
 }

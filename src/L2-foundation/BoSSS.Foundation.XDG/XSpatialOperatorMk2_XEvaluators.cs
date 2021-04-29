@@ -752,7 +752,8 @@ namespace BoSSS.Foundation.XDG {
                         //Only for ls0 so far:
                         //Add species, if it is separated from another species by level set 0
                         //For species not separated by ls0, nothing happens
-                        if(!SchemeHelper.SpeciesAreSeparatedByLevSet(0, SpeciesId, SpeciesId)) {
+                        var levelSetSpecies = lsTrk.GetSpeciesSeparatedByLevSet(0);
+                        if(levelSetSpecies.Contains(lsTrk.GetSpeciesName(SpeciesId))) {
                             if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                                 EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
@@ -762,7 +763,6 @@ namespace BoSSS.Foundation.XDG {
                                 }
                                 ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
-
                             if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
                                 EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
