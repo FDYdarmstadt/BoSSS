@@ -102,28 +102,28 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             //Interior Surface
             for (int d = 0; d < D; d++) {
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new InteriorVelocityBoundary(LsTrk, d, InterfaceVelocity[d])
+                    new InteriorVelocityBoundary( d, InterfaceVelocity[d])
                     );
             }
             //Immersed Boundary
             for (int d = 0; d < D; d++) {
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new ViscosityAtSlipIB(d, D, LsTrk, penalty_safety, viscosity, 1, "A", "C", false)
+                    new ViscosityAtSlipIB(d, D, penalty_safety, viscosity, 1, "A", "C", false)
                     );
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new ViscosityAtSlipIB(d, D, LsTrk, penalty_safety, viscosity, 1, "B", "C", false)
+                    new ViscosityAtSlipIB(d, D, penalty_safety, viscosity, 1, "B", "C", false)
                     );
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk, 1, "A", "C")
+                    new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, 1, "A", "C")
                     );
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk, 1, "B", "C")
+                    new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, 1, "B", "C")
                     );
             }
             Op.EquationComponents[EquationNames.ContinuityEquation].Add(
-                new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, "A", "C", false));
+                new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, 1, "A", "C", false));
             Op.EquationComponents[EquationNames.ContinuityEquation].Add(
-                new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, 1, "B", "C", false));
+                new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, 1, "B", "C", false));
 
             Op.AgglomerationThreshold = 0.0;
             Op.TemporalOperator = null;

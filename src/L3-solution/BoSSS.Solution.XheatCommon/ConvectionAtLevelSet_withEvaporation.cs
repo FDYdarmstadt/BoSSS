@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ConvectionAtLevelSet_nonMaterialLLF(int _d, int _D, LevelSetTracker lsTrk, ThermalParameters thermParams, double _sigma) 
-            : base(_D, lsTrk, thermParams, _sigma) {
+            : base(_D, thermParams, _sigma) {
                                  
             this.m_d = _d;
         }
@@ -98,7 +98,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public ConvectionAtLevelSet_Consistency(int _d, int _D, LevelSetTracker lsTrk,
             double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _sigma) 
-            : base(_D, lsTrk, thermParams, _sigma) {
+            : base(_D, thermParams, _sigma) {
 
             this.m_d = _d;
 
@@ -202,8 +202,8 @@ namespace BoSSS.Solution.XheatCommon {
 
     public class ConvectionAtLevelSet_MovingMesh : EvaporationAtLevelSet {
 
-        public ConvectionAtLevelSet_MovingMesh(int _d, int _D, LevelSetTracker lsTrk, ThermalParameters thermParams, double _sigma) 
-            : base(_D, lsTrk, thermParams, _sigma) {
+        public ConvectionAtLevelSet_MovingMesh(int _d, int _D, ThermalParameters thermParams, double _sigma) 
+            : base(_D, thermParams, _sigma) {
 
             this.m_d = _d;
 

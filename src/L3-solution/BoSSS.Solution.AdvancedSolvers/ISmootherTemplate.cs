@@ -18,10 +18,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BoSSS.Solution.Control;
 using ilPSP.LinSolvers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-
 
     /// <summary>
     /// The basic interface for a linear solver. 
@@ -76,6 +76,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         void ResetStat();
     }
+
+
+    /// <summary>
+    /// Individual Configuration of Solver. Inherits <see cref="LinearSolverConfig"/>, which can be adjusted by control object (by the user).
+    /// </summary>
+    public abstract class ConfigBase : LinearSolverConfig {
+
+        /// <summary>
+        /// cctor of Individual Configuration
+        /// </summary>
+        public ConfigBase() : base() { }
+
+        /// <summary>
+        /// returns an instance of the configured linear solver
+        /// </summary>
+        /// <returns></returns>
+        public abstract ISolverSmootherTemplate GetInstance();
+    }
+
 
     /// <summary>
     /// For certain solvers, a programmable termination criterion seems handy.

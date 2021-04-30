@@ -154,12 +154,12 @@ namespace BoSSS.Application.Matrix_MPItest {
             Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             
             Op.EquationComponents["c1"].Add(new DxFlux("u1", -3.0)); // Flux in Bulk Phase;
-            Op.EquationComponents["c1"].Add(new LevSetFlx(this.LsTrk, "u1", -3.0));
+            Op.EquationComponents["c1"].Add(new LevSetFlx( "u1", -3.0));
 
             Op.EquationComponents["c2"].Add(new DxFlux("u1", +3.0)); // Flux in Bulk Phase;
-            Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u1", +3.0));
+            Op.EquationComponents["c2"].Add(new LevSetFlx( "u1", +3.0));
             Op.EquationComponents["c2"].Add(new DxFlux("u2", 77.7)); // Flux in Bulk Phase;
-            Op.EquationComponents["c2"].Add(new LevSetFlx(this.LsTrk, "u2", 77.7));
+            Op.EquationComponents["c2"].Add(new LevSetFlx("u2", 77.7));
 
             Op.Commit();
         }

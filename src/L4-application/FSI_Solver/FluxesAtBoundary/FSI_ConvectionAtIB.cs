@@ -25,8 +25,8 @@ using BoSSS.Application.FSI_Solver;
 
 namespace BoSSS.Solution.NSECommon.Operator.Convection {
     public class FSI_ConvectionAtIB : ILevelSetForm {
-        public FSI_ConvectionAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk, IncompressibleBoundaryCondMap _bcmap, Particle[] allParticles, bool useMovingMesh, double minGridLength) {
-            m_LsTrk = LsTrk;
+        public FSI_ConvectionAtIB(int currentDim, int spatialDim, IncompressibleBoundaryCondMap _bcmap, Particle[] allParticles, bool useMovingMesh, double minGridLength) {
+            //m_LsTrk = LsTrk;
             m_D = spatialDim;
             m_d = currentDim;
             this.allParticles = allParticles;
@@ -35,7 +35,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             NegFlux = new LinearizedConvection(spatialDim, _bcmap, currentDim);
         }
 
-        private readonly LevelSetTracker m_LsTrk;
+        //private readonly LevelSetTracker m_LsTrk;
         private readonly int m_D;
         private readonly int m_d;
         private readonly Particle[] allParticles;
@@ -59,12 +59,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Convection {
             get { return 0; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
         public TermActivationFlags LevelSetTerms {

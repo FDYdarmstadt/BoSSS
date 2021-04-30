@@ -52,8 +52,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                     // ======================
                     ThisLevelKrylovMethod = new SoftGMRES() {
                         Precond = this.CoarserLevelSolver,
-                        MaxKrylovDim = 100,
-                        TerminationCriterion = (int iter, double r0, double r) => iter <= 100,
+                        MaxKrylovDim = 10,
+                        TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
                     };
                     ThisLevelKrylovMethod.Init(op.CoarserLevel);
 
@@ -112,9 +112,12 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                     // Berechnung der Grobgitterkorrektur
                     var vlp1 = new double[NN];
-                    //ThisLevelKrylovMethod.Solve(vlp1, rlp1);
-                    this.CoarserLevelSolver.Solve(vlp1, rlp1);
 
+                    if (this.CoarserLevelSolver.GetType() == typeof(DirectSolver))
+                        this.CoarserLevelSolver.Solve(vlp1, rlp1);
+                    else
+                        ThisLevelKrylovMethod.Solve(vlp1, rlp1);
+                    
                     // Prolongation der Grobgitterkorrektur
                     this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
 

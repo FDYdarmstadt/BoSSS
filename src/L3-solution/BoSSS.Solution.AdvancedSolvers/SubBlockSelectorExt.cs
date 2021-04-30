@@ -414,15 +414,17 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are concidered.
         /// Probably slower than <see cref="GetSubBlockMatrix(BlockMsrMatrix)"/>.
         /// </summary>
+        /// <remarks>
+        /// If you are using <see cref="ignoreSpecCoupling"/>, you may dismiss coupling with other cells.
+        /// By comparison to variables, whose ordering is fixed in the mapping, this does not hold for species.
+        /// E.g. iSpc=0 is not corresponding to the same species within every cell
+        /// </remarks>
         /// <param name="source">matrix to apply masking to</param>
         /// <param name="ignoreCellCoupling">flag to ignore cell coupling</param>
         /// <param name="ignoreVarCoupling">flag to ignore variable coupling</param>
         /// <param name="ignoreSpecCoupling">flag to ignore species coupling</param>
         /// <returns>sub block matrix</returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
-
-            if (ignoreCellCoupling && m_includeExternalCells)
-                throw new NotImplementedException("Coupling of internal and external block is not considered");
 
             BlockMsrMatrix submatrix = null;
             if (m_includeExternalCells) {
@@ -444,11 +446,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
 
-        private void AuxGetSubBlockMatrix(BlockMsrMatrix target, BlockMsrMatrix source, BlockMaskBase mask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
+        private void AuxGetSubBlockMatrix(BlockMsrMatrix target, BlockMsrMatrix source, BlockMaskBase Rowmask, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
-            bool IsLocalMask = mask.GetType() == typeof(BlockMaskLoc);
+            bool IsLocalMask = Rowmask.GetType() == typeof(BlockMaskLoc);
 
-            extNi0[][][][] RowNi0s = mask.m_StructuredNi0;
+            extNi0[][][][] RowNi0s = Rowmask.m_StructuredNi0;
             extNi0[][][][] ColNi0s = this.StructuredNi0;
 
             int auxIdx = 0;
@@ -477,18 +479,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                                             long Srcj0 = ColNi0.Gi0;
 
                                             var tmpBlock = MultidimensionalArray.Create(RowNi0.N, ColNi0.N);
-
                                             int Trgj0 = ColNi0s[jLoc][jVar][jSpc][jMode].Si0;
-//#if DEBUG
-//                                            SubMSR.ReadBlock(SubRowIdx, SubColIdx, tmpBlock);
-//                                            Debug.Assert(tmpBlock.Sum() == 0);
-//                                            Debug.Assert(tmpBlock.InfNorm() == 0);
-//#endif
 
                                             try {
                                                 source.ReadBlock(Srci0, Srcj0,
                                                 tmpBlock);
                                             } catch (Exception e) {
+                                                Console.WriteLine("error at rank: " + m_map.MpiRank);
                                                 Console.WriteLine("row: " + Srci0);
                                                 Console.WriteLine("col: " + Srcj0);
                                                 throw new Exception(e.Message);
@@ -496,9 +493,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                             Debug.Assert(Trgi0 < target.RowPartitioning.LocalLength);
                                             Debug.Assert(Trgj0 < target.ColPartition.LocalLength);
 
-
                                             target.AccBlock(Trgi0, Trgj0, 1.0, tmpBlock);
-
                                         } 
                                     }
                                 }

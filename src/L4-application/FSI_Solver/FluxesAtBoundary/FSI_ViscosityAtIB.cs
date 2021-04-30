@@ -30,9 +30,9 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
     public class FSI_ViscosityAtIB : ILevelSetForm, ILevelSetEquationComponentCoefficient {
-        public FSI_ViscosityAtIB(int currentDim, int spatialDim, LevelSetTracker levelSetTracker, double penalty, double fluidViscosity, Particle[] allParticles, double minGridLength) {
+        public FSI_ViscosityAtIB(int currentDim, int spatialDim, double penalty, double fluidViscosity, Particle[] allParticles, double minGridLength) {
             m_penalty = penalty;
-            LsTrk = levelSetTracker;
+            //LsTrk = levelSetTracker;
             FluidViscosity = fluidViscosity;
             Component = currentDim;
             MinGridLength = minGridLength;
@@ -43,7 +43,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         private readonly int Component;
         private readonly int SpatialDim;
         private readonly double MinGridLength;
-        private readonly LevelSetTracker LsTrk;
+        //private readonly LevelSetTracker LsTrk;
         private readonly Particle[] AllParticles;
         private readonly double FluidViscosity;
         private readonly double m_penalty; // safety factor
@@ -206,12 +206,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         }
 
 
-        public SpeciesId PositiveSpecies {
-            get { return LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

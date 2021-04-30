@@ -30,7 +30,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetForm {
+    public class CurvatureBasedSurfaceTension : ILevelSetForm, ISupportsJacobianComponent {
 
         public static double hmin = double.NaN;
 
@@ -92,7 +92,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
         */
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         /// <summary>
         /// 
@@ -101,8 +101,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public CurvatureBasedSurfaceTension(int _d, int _D, LevelSetTracker LsTrk, double _sigma) {
-            m_LsTrk = LsTrk;
+        public CurvatureBasedSurfaceTension(int _d, int _D, double _sigma) {
+            //m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentOutOfRangeException();
             this.m_D = _D;
@@ -232,12 +232,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -255,6 +255,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         public TermActivationFlags InnerEdgeTerms {
             get { return TermActivationFlags.None; }
         }
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
 
@@ -265,7 +269,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         public static double hmin = double.NaN;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         /// <summary>
         /// 
@@ -273,8 +277,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <param name="_d">spatial direction</param>
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
-        public SurfaceTension_ArfForceSrc(int _d, int _D, LevelSetTracker LsTrk) {
-            m_LsTrk = LsTrk;
+        public SurfaceTension_ArfForceSrc(int _d, int _D) {
+            //m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentOutOfRangeException();
             this.m_D = _D;
@@ -358,12 +362,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -461,6 +465,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //        throw new NotSupportedException();
             //}
 
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
         }
 
         public override IList<string> ArgumentOrdering {
@@ -619,12 +628,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return TermActivationFlags.V;
             }
         }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
     /// <summary>
     /// IsotropicSurfaceTension_LaplaceBeltrami with max sigma as parameter
     /// </summary>
-    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm {
+    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
         int m_comp;
 
         int m_D;
@@ -675,6 +689,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             m_edgeTag2Type = edgeTag2Type;
             velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
             //m_staticInt = _staticInt;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
         }
 
         public virtual IList<string> ParameterOrdering {
@@ -2084,7 +2103,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         double m_penalty;
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         
         /// <summary>
@@ -2094,8 +2113,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <param name="_D">spatial dimension</param>
         /// <param name="LsTrk"></param>
         /// <param name="_sigma">surface-tension constant</param>
-        public LevelSetStabilization(int _d, int _D, double penalty, LevelSetTracker LsTrk) {
-            m_LsTrk = LsTrk;
+        public LevelSetStabilization(int _d, int _D, double penalty) {
+            //m_LsTrk = LsTrk;
             if(_d >= _D)
                 throw new ArgumentOutOfRangeException();
             this.m_D = _D;
@@ -2136,12 +2155,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

@@ -214,9 +214,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// <see cref="IEquationComponentSpeciesNotification.SetParameter"/>
         /// </summary>
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             if(m_OrgForm is IEquationComponentSpeciesNotification ecsn) {
-                ecsn.SetParameter(speciesName, SpcId);
+                ecsn.SetParameter(speciesName);
             }
         }
 
@@ -378,7 +378,7 @@ namespace BoSSS.Foundation.XDG {
     public class EdgeFormDifferentiator : FormDifferentiatorCommon, IEdgeForm {
 
         IEdgeForm m_EdgForm;
-
+        
         /// <summary>
         /// ctor
         /// </summary>
@@ -609,5 +609,181 @@ namespace BoSSS.Foundation.XDG {
             return ret;
 
         }
+    }
+
+    /// <summary>
+    /// Differentiation of an edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
+    /// In principal the same as <see cref="EdgeFormDifferentiator"/>, but using <see cref="ILevelSetForm"/>
+    /// </summary>
+    public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {
+
+        ILevelSetForm m_EdgForm;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public LevelSetFormDifferentiator(ILevelSetForm ef, int SpatialDimension) :
+            base(ef, ef.LevelSetTerms, SpatialDimension) //
+        {
+            m_EdgForm = ef;
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return base.Terms;
+            }
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public int LevelSetIndex {
+            get {
+                return m_EdgForm.LevelSetIndex;
+            }
+        }
+        /// <summary>
+        /// %
+        /// </summary>
+        public string PositiveSpecies {
+            get {
+                return m_EdgForm.PositiveSpecies;
+            }
+        }
+        /// <summary>
+        /// %
+        /// </summary>
+        public string NegativeSpecies {
+            get {
+                return m_EdgForm.NegativeSpecies;
+            }
+        }
+
+
+        //static public int SetDir = 0;
+        static public int Dir = 0;
+
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] U_IN, double[] U_OT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+            double ret = 0.0;
+            int GAMMA = m_EdgForm.ArgumentOrdering.Count;
+            int D = inp.D;
+            Debug.Assert(D == m_SpatialDimension, "spatial dimension mismatch");
+
+            CommonParams clonedParams = inp;
+            Debug.Assert(object.ReferenceEquals(inp, clonedParams) == false);
+            GetOrgParams(inp.Parameters_IN, out clonedParams.Parameters_IN);
+            GetOrgParams(inp.Parameters_OUT, out clonedParams.Parameters_OUT);
+
+            double deltaIn = GetTmpTrialVals(inp.Parameters_IN, out var U_IN_temp, out var GradU_IN_temp);
+            double deltaOt = GetTmpTrialVals(inp.Parameters_OUT, out var U_OT_temp, out var GradU_OT_temp);
+            double delta = Math.Max(deltaIn, deltaOt);
+
+
+            //SetDir = 0;
+
+            double f0 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+
+            ret += f0; // affine contribution - contains V and GradV contribution
+
+            for (int iVar = 0; iVar < GAMMA; iVar++) { // loop over trial variables
+                if (((m_EdgForm.LevelSetTerms & (TermActivationFlags.UxV | TermActivationFlags.UxGradV)) != 0)) {
+                    //if (U_IN[iVar] != 0.0) {
+                    {
+                        //if (U_IN[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
+
+                        ret += Diff(ref U_IN_temp[iVar], U_IN[iVar],
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT,
+                            delta, f0);
+
+
+                    }
+
+                    //if(U_OT[iVar] != 0.0) {
+                    {
+                        //if (U_OT[iVar] != 0.0 && (_vIN != 0 || _vOUT != 0))
+                        //    Console.Write("");
+
+                        ret += Diff(ref U_OT_temp[iVar], U_OT[iVar],
+                            ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT,
+                            delta, f0);
+
+
+                    }
+                }
+
+                if (((m_EdgForm.LevelSetTerms & (TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV)) != 0)) {
+                    for (int d = 0; d < D; d++) {
+                        //if (U_IN[iVar] != 0.0) {
+                        {
+                            ret += Diff(ref GradU_IN_temp[iVar, d], _Grad_uIN[iVar, d],
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT,
+                                delta, f0);
+                        }
+
+                        //if(U_OT[iVar] != 0.0) {
+                        {
+                            ret += Diff(ref GradU_OT_temp[iVar, d], _Grad_uOUT[iVar, d],
+                                ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT,
+                                delta, f0);
+                        }
+                    }
+                }
+
+            }
+
+            //Dir = 0;
+            return ret;
+        }
+
+        /// <summary>
+        /// passes the coefficients to original form
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
+                eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            }
+        }
+
+        private double Diff(
+            ref double PertubVar, double Var,
+            ref CommonParams clonedParams,
+            double[] U_IN_temp, double[] U_OT_temp, double[,] GradU_IN_temp, double[,] GradU_OT_temp,
+            double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT, double delta, double f0) {
+
+            // add perturbation
+            double bkup = PertubVar;
+            PertubVar += delta;
+
+            // flux eval
+            double f1 = m_EdgForm.InnerEdgeForm(ref clonedParams, U_IN_temp, U_OT_temp, GradU_IN_temp, GradU_OT_temp, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+#if DEBUG
+            if (double.IsInfinity(f1))
+                throw new ArithmeticException();
+            if (double.IsNaN(f1))
+                throw new ArithmeticException();
+#endif
+
+            // compute finite difference
+            double dU_iVar = (f1 - f0) / delta;
+            if (double.IsInfinity(dU_iVar))
+                throw new ArithmeticException("Got INF while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
+            if (double.IsNaN(dU_iVar))
+                throw new ArithmeticException("Got NAN while differentiation of inner edge part of " + m_EdgForm.GetType().Name);
+
+            // restore un-perturbed state
+            PertubVar = bkup;
+
+            // inner product
+            double ret = 0;
+            ret += dU_iVar * Var;
+            ret -= dU_iVar * PertubVar; // subtract affine contribution
+            return ret;
+        }
+
     }
 }

@@ -30,12 +30,6 @@ namespace AdvancedSolverTests.SubBlocking {
                 return;
             }
 
-
-            //Matlabaufruf --> gesamte Matrix nach Matlab schreiben
-            //Teilmatritzen gemäß Globalid extrahieren
-            //Mit ExternalRows vergleichen
-            //Die große Frage: funktioniert der batchmode connector parallel? Beim rausschreiben beachten
-
             Utils.TestInit((int)UseXdg, DGOrder);
             Console.WriteLine("GetExternalRowsTest({0},{1})", UseXdg, DGOrder);
 
@@ -44,18 +38,6 @@ namespace AdvancedSolverTests.SubBlocking {
                 MultigridOperator mgo = O.MGOp;
                 MultigridMapping map = mgo.Mapping;
                 BlockMsrMatrix M = mgo.OperatorMatrix;
-
-                //Delete this plz ...
-                //M.SaveToTextFileSparse("M");
-                //int[] A = Utils.GimmeAllBlocksWithSpec(map, 9);
-                //int[] B = Utils.GimmeAllBlocksWithSpec(map, 18);
-                //if (map.MpiRank == 0) {
-                //    A.SaveToTextFileDebug("ACells");
-                //    B.SaveToTextFileDebug("BCells");
-                //}
-                var selector = new SubBlockSelector(map);
-                var dummy = new BlockMsrMatrix(map); // we are only interested in getting indices, so a dummy is sufficient
-                var mask = new BlockMask(selector, dummy);
 
                 //Arrange --- get stuff to put into matlab
                 long[] GlobalIdx_ext = Utils.GetAllExtCellIdc(map);
@@ -181,7 +163,6 @@ namespace AdvancedSolverTests.SubBlocking {
                 var mask = new BlockMask(sbs, M_ext);
                 bool[] coup = Utils.SetCoupling(MShape);
 
-
                 //Arrange --- get index list of all external cells
                 long[] idc = Utils.GetAllExtCellIdc(map);
                 double[] GlobIdx = idc.Count().ForLoop(i => (double)idc[i] + 1.0);
@@ -192,7 +173,8 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- Extract SubMatrix
                 stw.Start();
-                BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
+                BlockMsrMatrix subM = mask.GetSubBlockMatrix(M, false, coup[0], false);
+                // ignoring of species and including cell coupling can not be tested with this setup
                 stw.Stop();
 
                 //Arrange --- Extract Blocks in Matlab and substract
@@ -249,7 +231,7 @@ namespace AdvancedSolverTests.SubBlocking {
                 sbs.AllExternalCellsSelection();
                 var M_ext = BlockMask.GetAllExternalRows(map, M);
                 var mask = new BlockMask(sbs, M_ext);
-                //bool[] coup = Utils.SetCoupling(MShape);
+                bool[] coup = Utils.SetCoupling(MShape);
 
                 //Arrange --- get index dictonary of all external cell indices
                 Dictionary<int, long[]> Didc = Utils.GetDictOfAllExtCellIdc(map);
@@ -260,8 +242,7 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- Extract subblocks
                 stw.Start();
-                //var eblocks = mask.GetSubBlocks(M,coup[0],coup[1],coup[2]);
-                var eblocks = mask.GetDiagonalBlocks(M, false, false);
+                var eblocks = mask.GetDiagonalBlocks(M, coup[0], coup[1]);
                 stw.Stop();
 
                 //Assert --- same number of blocks?
