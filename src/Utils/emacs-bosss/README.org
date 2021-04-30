@@ -1,0 +1,113 @@
+* Description
+This package is intended to provide an alternative interface to [[https://github.com/FDYdarmstadt/BoSSS][BoSSS]].
+Example configurations are provided below - adapt to your needs.
+
+* Installation
+Since this package is probably only interesting for a limited group of people, 
+inclusion into ELPA or MELPA is currently not planned. If you would like me to 
+package it there, please let me know.
+
+For the time being, simply ~require~ the file ~bosss.el~ (see also the example configs).
+
+Next, adapt the file ~bosss-console~ and put it somewhere in your ~$PATH~. Please note that depending on how you set your environment variables, emacs may not pick them up and thus have a different value for ~$PATH~ and ~exec-path~. You can double-check by typing ~M-x getenv~ and then searching for ~PATH~. Similarly, make sure that ~$BOSSS_INSTALL~ is correctly recognized by emacs. For more information see the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Environment.html][emacs manual]].
+
+* Configuration
+In this section, we provide some example configs that should give you an idea of what is possible. They should of course be adapted to your preferences and may not fully work if copied blindly.
+** Example for plain emacs:
+
+(Note that I use evil bindings myself, so my emacs-style bindings might not be very good.)
+#+BEGIN_SRC emacs-lisp
+;; bosss
+(add-to-load-path "$BOSSS_INSTALL/public/src/utils/emacs-bosss")
+(require 'bosss)
+(setq bosss-pad-path "/home/YOURNAME/BoSSS/src/L4-application/BoSSSpad/bin/Debug/BoSSSpad.exe") ;; path to BoSSSpad.exe
+;; Setting this variable allows you to run bosss-repl-load-my-assembly, which makes your experimental BoSSS libraries available
+(setq bosss-path-reference (mapcar (lambda (proj) (concat "/home/YOURNAME/BoSSS-experimental/internal/src/private-kli/" proj));; optional: add a reference path to your project executable
+                                   '("RANSCommon/bin/Release/RANS_Solver.dll"
+                                     "KOmegaModelSolver/bin/Release/KOmegaSolver.exe"
+                                     "KOmegaStatSymmModelSolver/bin/Release/KOmegaSSSolver.exe"
+                                     "TurbulenceModelParameterOptimization/bin/Release/ParameterOptimization.exe")))
+(add-to-list 'auto-mode-alist '("\\.bws\\'" . bosss-mode)) ;; link bosss-mode to .bws file type
+(global-set-key (kbd "C-c C-n") 'bosss-next-field)
+(global-set-key (kbd "C-c C-p") 'bosss-previous-field)
+(global-set-key (kbd "C-c C-r") 'run-bosss-repl-other-window)
+(global-set-key (kbd "C-c C-q") 'bosss-repl-quit)
+(global-set-key (kbd "C-c C-e") 'bosss-repl-send-region)
+(global-set-key (kbd "C-c c") 'bosss-repl-send-current-field)
+(global-set-key (kbd "C-c C-c") 'bosss-eval-and-next-field)
+(global-set-key (kbd "C-c C-l") 'bosss-repl-load-my-assembly)
+(global-set-key (kbd "C-c C-i") 'bosss-create-new-field)
+#+END_SRC
+
+** Example using use-package and general for key bindings:
+
+#+BEGIN_SRC emacs-lisp
+;; bosss
+(use-package bosss
+  :load-path "$BOSSS_INSTALL/public/src/utils/emacs-bosss"
+  :init
+  (setq bosss-pad-path "/home/yourname/BoSSS/src/L4-application/BoSSSpad/bin/Debug/BoSSSpad.exe") ;; path to BoSSSpad.exe
+;; Setting this variable allows you to run bosss-repl-load-my-assembly, which makes your experimental BoSSS libraries available
+  (setq bosss-path-reference (mapcar (lambda (proj) (concat "/home/YOURNAME/BoSSS-experimental/internal/src/private-kli/" proj));; optional: add a reference path to your project executable
+                                     '("RANSCommon/bin/Release/RANS_Solver.dll"
+                                       "KOmegaModelSolver/bin/Release/KOmegaSolver.exe"
+                                       "KOmegaStatSymmModelSolver/bin/Release/KOmegaSSSolver.exe"
+                                       "TurbulenceModelParameterOptimization/bin/Release/ParameterOptimization.exe")))
+  (add-to-list 'auto-mode-alist '("\\.bws\\'" . bosss-mode)) ;; link bosss-mode to .bws file type
+  :config
+  ;; Note that this requires my-local-leader-def to be defined somewhere. If you use general, I assume that you have something along those lines already
+  (my-local-leader-def ;; define some keybindings
+    :keymaps 'bosss-mode-map
+    "j" '(bosss-next-field :which-key "next field")
+    "k" '(bosss-previous-field :which-key "previous field")
+    "ro" '(run-bosss-repl-other-window :which-key "start repl in other window")
+    "rq" '(bosss-repl-quit :which-key "quit repl")
+    "rn" '(bosss-bosss-repl-run-bosss-pad :which-key "run bossspad")
+    "ef" '(bosss-repl-send-current-field :which-key "send region to repl")
+    "ee" '(bosss-repl-send-region :which-key "send region to repl")
+    "eb" '(bosss-repl-send-buffer :which-key "send buffer to repl")
+    "en" '(bosss-eval-and-next-field :which-key "eval and next field")
+    "lp" '(bosss-repl-load-my-assembly :which-key "load my assembly")
+    "in" '(bosss-create-new-field :which-key "create new input field")))
+#+END_SRC
+
+** Example for doom-emacs
+
+#+BEGIN_SRC emacs-lisp
+;; bosss
+(use-package! bosss
+  :load-path "$BOSSS_INSTALL/public/src/utils/emacs-bosss"
+  :init
+  (add-to-list 'auto-mode-alist '("\\.bws\\'" . bosss-mode))
+  (setq bosss-pad-path "/home/YOURNAME/BoSSS-experimental/public/src/L4-application/BoSSSpad/bin/Debug/BoSSSpad.exe")
+;; Setting this variable allows you to run bosss-repl-load-my-assembly, which makes your experimental BoSSS libraries available
+  (setq bosss-path-reference (mapcar (lambda (proj) (concat "/home/YOURNAME/BoSSS-experimental/internal/src/private-kli/" proj))
+                                     '("RANSCommon/bin/Release/RANS_Solver.dll"
+                                       "KOmegaModelSolver/bin/Release/KOmegaSolver.exe"
+                                       "KOmegaStatSymmModelSolver/bin/Release/KOmegaSSSolver.exe"
+                                       "TurbulenceModelParameterOptimization/bin/Release/ParameterOptimization.exe")))
+  :config
+  (map! :map bosss-mode-map
+        :n "M-j" '(bosss-next-field :which-key "next field")
+        :n "M-k" '(bosss-previous-field :which-key "previous field"))
+  (map!
+   :localleader
+   :map #'bosss-mode-map
+   :n "ro" #'run-bosss-repl-other-window
+   :n "rq" #'bosss-repl-quit
+   :n "R"  #'run-bosss-repl-other-window
+   :n "rn" #'bosss-repl-start-bosss-pad
+   :n "ef" #'bosss-repl-send-current-field
+   :n "ee" #'bosss-repl-send-region
+   :n "eb" #'bosss-repl-send-buffer
+   :n "en" #'bosss-eval-and-next-field
+   :n "lp" #'bosss-repl-load-my-assembly
+   :n "in" #'bosss-create-new-field))
+#+END_SRC
+
+
+* Example Session
+- Open a worksheet file with a ~.bws~-ending
+- If the file is empty, insert a new input field using ~bosss-create-new-field~. This will insert lines consisting of many ~=~- and ~*~-symbols. These lines separate different input and output fields which you may know from the graphical BoSSSpad. Note that the graphical BoSSSpad requires these separators to be uncommented, whereas for ~emacs-bosss~, it is fine (and more convenient - it allows us to use default C# syntax highlighting etc.) to comment them. The commands ~bosss-comment-all-separators~ and ~bosss-uncomment-all-separators~ are available for conveniently going back and forth.
+- Run ~run-bosss-repl-other-window~ to open a bosss console window in a vertical split
+- You can directly type commands into this new window. However, it is generally more convenient to edit the ~.bws~-file and send the commands to the console window using e.g. ~bosss-repl-send-current-field~.

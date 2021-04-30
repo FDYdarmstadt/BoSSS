@@ -986,8 +986,16 @@ namespace BoSSS.Solution.Control {
         /// of the study, which should be described by an enumeration of
         ///  parameter - name/value - pairs.
         /// </summary>
+        [JsonIgnore]
+        public IList<Tuple<string, object>> Paramstudy_CaseIdentification {
+            get {
+                return m_Paramstudy_CaseIdentification;
+            }
+        }
+
         [DataMember]
-        public IEnumerable<Tuple<string, object>> Paramstudy_CaseIdentification = null;
+        List<Tuple<string, object>> m_Paramstudy_CaseIdentification = new List<Tuple<string, object>>();
+
 
         /// <summary>
         /// Continue parameter study if one case (aka. sessions or run) throws an exception.

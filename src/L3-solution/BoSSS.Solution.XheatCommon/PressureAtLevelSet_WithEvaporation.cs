@@ -34,11 +34,11 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class GeneralizedPressureFormAtLevelSet : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public GeneralizedPressureFormAtLevelSet(int _d, LevelSetTracker LsTrk, double _pSat, double _hVapA) {
+        public GeneralizedPressureFormAtLevelSet(int _d, double _pSat, double _hVapA) {
             m_d = _d;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             this.pSat = _pSat;
             this.hVapA = _hVapA;
@@ -76,12 +76,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

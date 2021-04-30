@@ -130,6 +130,10 @@
     <Compile Include="FSIAuxillary.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
       <Name>BoSSS.Solution.AdvancedSolvers</Name>
@@ -161,10 +165,6 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
       <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
       <Project>{e56b9ce4-14dc-4256-a337-46e5d298b722}</Project>

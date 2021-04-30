@@ -179,7 +179,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             /// <summary>
             /// Center-of-gravity
             /// </summary>
-            public double[] GetCenter(int jCell) {
+            public ilPSP.Vector GetCenter(int jCell) {
                 return m_Owner.ParentGrid.iGeomCells.GetCenter(jCell);
             }
         }
@@ -300,7 +300,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             /// <summary>
             /// Center-of-gravity
             /// </summary>
-            public double[] GetCenter(int jCell) {
+            public ilPSP.Vector GetCenter(int jCell) {
                 int D = m_Owner.SpatialDimension;
                 double VolAcc = 0.0;
                 double[] CenAcc = new double[D];

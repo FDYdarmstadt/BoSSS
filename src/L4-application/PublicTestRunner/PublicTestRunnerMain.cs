@@ -139,7 +139,7 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4)
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
@@ -581,7 +581,7 @@ namespace PublicTestRunner {
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
-                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account.");
+                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
@@ -1095,16 +1095,19 @@ namespace PublicTestRunner {
         /// Runs all tests serially
         /// </summary>
         static int RunNunit3Tests(string AssemblyFilter, string[] args) {
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out var MpiRank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
+
+            //if(MpiRank == 0)
+            //    Debugger.Launch();
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 
             using(var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssemblies();
-                
+
                 if(MpiSize != 1) {
                     // this seems some parallel run
                     // we have to fix the result argument
@@ -1121,7 +1124,16 @@ namespace PublicTestRunner {
 
                     var parAssis = GetAllMpiAssemblies();
                     foreach(var t in parAssis) {
-                        t.Asbly.AddToArray(ref assln);
+                        Assembly a = t.Asbly;
+                        if(!assln.Contains(a))
+                            a.AddToArray(ref assln);
+                    }
+
+
+                    int ii = 0;
+                    foreach(var a in assln) {
+                        ftr.Info("Assembly #" + ii + ": " + a.ToString());
+                        ii++;
                     }
                 }
 
@@ -1132,7 +1144,7 @@ namespace PublicTestRunner {
                         continue;
                     }
                     Console.WriteLine("Matching assembly: " + a.Location);
-
+                    ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
 
                     if(MpiRank == 0) {
@@ -1174,6 +1186,8 @@ namespace PublicTestRunner {
                 }
 
                 {
+                    ftr.Info("Found  " + count + " assemblies in total");
+                    
                     if(count <= 0) {
                         Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
                         return -1;

@@ -70,11 +70,11 @@ namespace IntersectingLevelSetTest
     abstract class LevSetFlx : ILevelSetForm
     {
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
 
-        public LevSetFlx(LevelSetTracker _LsTrk)
+        public LevSetFlx()
         {
-            m_LsTrk = _LsTrk;
+            //m_LsTrk = _LsTrk;
         }
 
         public IList<string> ArgumentOrdering {
@@ -93,7 +93,7 @@ namespace IntersectingLevelSetTest
             }
         }
 
-        abstract public SpeciesId NegativeSpecies {
+        abstract public string NegativeSpecies {
             get;
         }
 
@@ -104,7 +104,7 @@ namespace IntersectingLevelSetTest
         }
 
 
-        virtual public SpeciesId PositiveSpecies {
+        virtual public string PositiveSpecies {
             get;
             private set;
         }
@@ -118,7 +118,7 @@ namespace IntersectingLevelSetTest
     class LevSetFlx_AB : LevSetFlx
     {
 
-        public LevSetFlx_AB(LevelSetTracker _LsTrk) : base(_LsTrk) { }
+        public LevSetFlx_AB() : base() { }
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB)
         {
@@ -133,16 +133,12 @@ namespace IntersectingLevelSetTest
             get { return 0; }
         }
 
-        public override SpeciesId PositiveSpecies {
-            get {
-                return base.m_LsTrk.GetSpeciesId("A");
-            }
+        public override string PositiveSpecies {
+            get { return "A"; }
         }
 
-        public override SpeciesId NegativeSpecies {
-            get {
-                return base.m_LsTrk.GetSpeciesId("B");
-            }
+        public override string NegativeSpecies {
+            get { return "B"; }
         }
     }
 
@@ -151,7 +147,7 @@ namespace IntersectingLevelSetTest
     /// </summary>
     class LevSetFlx_CB : LevSetFlx
     {
-        public LevSetFlx_CB(LevelSetTracker _LsTrk) : base(_LsTrk) { }
+        public LevSetFlx_CB() : base() { }
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB)
         {
@@ -165,17 +161,17 @@ namespace IntersectingLevelSetTest
             get { return 1; }
         }
 
-        public override SpeciesId PositiveSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("C"); }
+        public override string PositiveSpecies {
+            get { return "C"; }
         }
 
-        public override SpeciesId NegativeSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("B"); }
+        public override string NegativeSpecies {
+            get { return "B"; }
         }
     }
 
     class LevSetFlx_CA : LevSetFlx {
-        public LevSetFlx_CA(LevelSetTracker _LsTrk) : base(_LsTrk) { }
+        public LevSetFlx_CA() : base() { }
 
         public override double InnerEdgeForm(ref CommonParams inp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double FlxNeg = U_Neg[0] * inp.Normal[0];
@@ -188,12 +184,12 @@ namespace IntersectingLevelSetTest
             get { return 1; }
         }
 
-        public override SpeciesId PositiveSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("C"); }
+        public override string PositiveSpecies {
+            get { return "C"; }
         }
 
-        public override SpeciesId NegativeSpecies {
-            get { return base.m_LsTrk.GetSpeciesId("A"); }
+        public override string NegativeSpecies {
+            get { return "A"; }
         }
     }
 }

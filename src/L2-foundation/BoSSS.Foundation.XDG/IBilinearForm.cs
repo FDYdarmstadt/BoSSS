@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// called before the integration on respective species 
         /// </summary>
-        void SetParameter(string speciesName, SpeciesId SpcId);
+        void SetParameter(string speciesName);
     }
 
     /// <summary>
@@ -90,12 +90,12 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// regarding this integrand, the species on the positive side of level set number <see cref="LevelSetIndex"/>
         /// </summary>
-        SpeciesId PositiveSpecies { get; }
+        string PositiveSpecies { get; }
 
         /// <summary>
         /// guess what?
         /// </summary>
-        SpeciesId NegativeSpecies { get; }
+        string NegativeSpecies { get; }
 
         /// <summary>
         /// Controls integration at the level-set.

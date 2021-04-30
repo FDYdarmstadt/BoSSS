@@ -297,7 +297,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
                 var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames , "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
-                Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(this.LsTrk, S));
+                Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(S));
 
                 //delegate (string ParameterName, DGField ParamField)[] DelParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields)
                 Operator.ParameterFactories.Add(delegate (IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -337,7 +337,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 
                 var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
-                Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(this.LsTrk, S, this.Control.BurgersDirection));
+                Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(S, this.Control.BurgersDirection));
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;

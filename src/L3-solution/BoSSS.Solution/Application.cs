@@ -3160,7 +3160,7 @@ namespace BoSSS.Solution {
                     Tuple<string, object> caseId = new Tuple<string, object>("pstudy_case", iPstudy);
                     if (!idl.Contains(caseId, ((Func<Tuple<string, object>, Tuple<string, object>, bool>)((a, b) => a.Item1.Equals(b.Item1))).ToEqualityComparer())) {
                         idl.Add(caseId);
-                        _control.Paramstudy_CaseIdentification = idl.ToArray();
+                        _control.Paramstudy_CaseIdentification.AddRange(idl.ToArray());
                     }
                 }
 

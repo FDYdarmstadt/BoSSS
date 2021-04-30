@@ -87,10 +87,10 @@ namespace AdvancedSolverTests {
     /// </summary>
     class LevSetFlx : ILevelSetForm {
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
 
-        public LevSetFlx(LevelSetTracker _LsTrk, string varname, double factor) {
-            m_LsTrk = _LsTrk;
+        public LevSetFlx(string varname, double factor) {
+            //m_LsTrk = _LsTrk;
             m_varname = varname;
             m_factor = factor;
         }
@@ -132,15 +132,15 @@ namespace AdvancedSolverTests {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get { 
-                return m_LsTrk.GetSpeciesId("A"); 
+                return "A"; 
             }
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get { 
-                return m_LsTrk.GetSpeciesId("B"); 
+                return "B"; 
             }
         }
 
@@ -198,16 +198,15 @@ namespace AdvancedSolverTests {
 
         double muA;
         double muB;
-        SpeciesId SpcId;
         double penatly_baseFactor;
         XLaplace_Interface.Mode m_Mode;
         
         string current_species;
 
-        public void SetParameter(string speciesName, SpeciesId __SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
-                case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
-                case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
+                case "A": species_Mu = muA; otherSpecies_Mu = muB; break;
+                case "B": species_Mu = muB; otherSpecies_Mu = muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
             current_species = speciesName;
@@ -314,10 +313,10 @@ namespace AdvancedSolverTests {
             SIP
         }
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
 
-        public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double _muB, double __penatly_baseFactor, string varname) {
-            this.m_LsTrk = lstrk;
+        public XLaplace_Interface(double _muA, double _muB, double __penatly_baseFactor, string varname) {
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penatly_baseFactor = __penatly_baseFactor;
@@ -456,12 +455,12 @@ namespace AdvancedSolverTests {
             get { return new string[] { m_varname }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

@@ -125,13 +125,13 @@
       <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj">
       <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
       <Name>BoSSS.Solution</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -142,7 +142,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
     <None Include="thermo30.dat.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

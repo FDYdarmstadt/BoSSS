@@ -192,6 +192,33 @@ namespace BoSSS.Solution.XNSECommon {
                 return C;
             }
         }
+
+        public override bool Equals(object obj) {
+            var other = obj as PhysicalParameters;
+            if(other == null)
+                return false;
+
+            return
+                this.IncludeConvection == other.IncludeConvection &&
+                this.rho_A == other.rho_A &&
+                this.rho_B == other.rho_B &&
+                this.mu_A == other.mu_A &&
+                this.mu_B == other.mu_B &&
+                this.mu_I == other.mu_I &&
+                this.Sigma == other.Sigma &&
+                this.pFree == other.pFree &&
+                this.betaS_A == other.betaS_A &&
+                this.betaS_B == other.betaS_B &&
+                this.betaL == other.betaL &&
+                this.theta_e == other.theta_e &&
+                this.sliplength == other.sliplength &&
+                this.Material == other.Material &&
+                this.reynolds_A == other.reynolds_A &&
+                this.reynolds_B == other.reynolds_B &&
+                this.lambda_I == other.lambda_I &&
+                this.lambdaI_tilde == other.lambdaI_tilde &&
+                this.useArtificialSurfaceForce == other.useArtificialSurfaceForce;
+        }
     }
 
 

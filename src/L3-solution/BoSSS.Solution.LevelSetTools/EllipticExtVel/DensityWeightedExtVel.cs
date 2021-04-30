@@ -40,12 +40,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
     public class DensityWeightedExtVel : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         double PenaltyBase;
-        LevelSetTracker LSTrk;
+        //LevelSetTracker LSTrk;
         double[] Weights;
 
-        public DensityWeightedExtVel(double PenaltyBase, LevelSetTracker LSTrk, double[] rho) {
+        public DensityWeightedExtVel(double PenaltyBase, double[] rho) {
             this.PenaltyBase = PenaltyBase;
-            this.LSTrk = LSTrk;
+            //this.LSTrk = LSTrk;
             double SumOfDensities = rho.Sum();
             Weights = new double[2];
             Weights[0] = rho[0] / SumOfDensities;
@@ -107,12 +107,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.LSTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.LSTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

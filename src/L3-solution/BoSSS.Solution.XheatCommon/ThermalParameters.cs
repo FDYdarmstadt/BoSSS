@@ -146,9 +146,39 @@ namespace BoSSS.Solution.XheatCommon {
             cl.fc = this.fc;
             cl.Rc = this.Rc;
             cl.pc = this.pc;
-            return cl;
+
+            return MemberwiseClone();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
 
+            var cl = obj as ThermalParameters;
+            if(cl == null)
+                return false;
+
+            return
+                cl.rho_A == this.rho_A &&
+            cl.rho_B == this.rho_B &&
+            cl.c_A == this.c_A &&
+            cl.c_B == this.c_B &&
+            cl.k_A == this.k_A &&
+            cl.k_B == this.k_B &&
+            cl.hVap == this.hVap &&
+            cl.T_sat == this.T_sat &&
+            cl.p_sat == this.p_sat &&
+            cl.fc == this.fc &&
+            cl.Rc == this.Rc &&
+            cl.pc == this.pc;
+        }
+
+        /// <summary>
+        /// Always the same
+        /// </summary>
+        public override int GetHashCode() {
+            return -1;
+        }
     }
 }
