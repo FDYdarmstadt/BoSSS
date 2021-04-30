@@ -581,7 +581,7 @@ namespace PublicTestRunner {
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
-                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account.");
+                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
