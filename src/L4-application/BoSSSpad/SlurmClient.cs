@@ -456,7 +456,12 @@ namespace BoSSS.Application.BoSSSpad {
         ///
         /// </summary>
         public override string ToString() {
-            return "SlurmClient: " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
+
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return "SlurmClient" + NameString + ": " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
         }
 
     }
