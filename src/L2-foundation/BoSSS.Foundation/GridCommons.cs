@@ -1080,7 +1080,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public IGridData iGridData {
             get {
-                this.EnsureMinimalBalance();
                 return GridData;
             }
         }
@@ -1133,6 +1132,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         void InitGridData() {
             if(m_GridData != null)
                 return; // nothing to do
+            this.EnsureMinimalBalance();
             m_GridData = new GridData(this);
         }
 
