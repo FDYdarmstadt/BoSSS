@@ -1080,6 +1080,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public IGridData iGridData {
             get {
+                this.EnsureMinimalBalance();
                 return GridData;
             }
         }
