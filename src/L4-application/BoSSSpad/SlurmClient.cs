@@ -148,8 +148,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// runs an ls command
         /// </summary>
         public void TestSSH() {
-            var output = SSHConnection.RunCommand("ls");
-            Console.WriteLine(output);
+            Console.WriteLine($"Performing test for ssh connection of {this.ToString()} ...");
+            var output = SSHConnection.RunCommand("ls", verbose:true);
+            //Console.WriteLine(output);
+            Console.WriteLine($"Test finished.");
         }
 
         /// <summary>
