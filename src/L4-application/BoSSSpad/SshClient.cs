@@ -120,7 +120,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(verbose)
                 Console.WriteLine("started.");
 
-            string sshCmd = "ssh " + m_usrname + "@" + m_srvrname + " \"" + command + "\"";
+            string sshCmd = "ssh " + m_usrname + "@" + m_srvrname + " -oStrictHostKeyChecking=no \"" + command + "\"";
             if(verbose)
                 Console.WriteLine("Command: " + sshCmd);
             m_cmd.StandardInput.WriteLine(sshCmd);
