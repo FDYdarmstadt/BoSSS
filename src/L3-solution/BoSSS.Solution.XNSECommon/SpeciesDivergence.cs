@@ -219,7 +219,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             double FlxNeg;
             double FlxPos;
             FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
-            FlxPos = +Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
+            FlxPos = -Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
 
             FlxNeg *= scaleA;
             FlxPos *= scaleB;
@@ -233,7 +233,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// the penalty flux
         /// </summary>
         static double Flux(double UxN_in, double UxN_out, double w_in, double w_out) {
-            return (UxN_in - UxN_out) * w_in / (w_in + w_out);
+            return (UxN_in + UxN_out) * w_in / (w_in + w_out);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

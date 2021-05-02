@@ -43,6 +43,9 @@ namespace BoSSS.Solution.NSECommon {
         protected bool rhoOne;
         [DataMember]
         protected bool cpOne;
+
+        [DataMember]
+        public double ConstantViscosityValue;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -50,13 +53,15 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="MatParamsMode"></param>
         /// <param name="rhoOne"></param>
         /// <param name="Prandtl"></param>
-        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne, bool cpOne, double Prandtl)
+        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne, bool cpOne, double Prandtl, double viscValue = 1.0)
             : base() {
             this.rhoOne = rhoOne;
             this.cpOne = cpOne;
             this.Prandtl = Prandtl;
             this.T_ref = T_ref;
             this.MatParamsMode = MatParamsMode;
+            this.ConstantViscosityValue = viscValue;
+
         }
 
         /// <summary>
@@ -73,7 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected bool IsInitialized {
             get {
-                return (ThermodynamicPressure != null || ThermodynamicPressure2 != null);
+                return (ThermodynamicPressure != null || ThermodynamicPressure2 != null || ThermodynamicPressureValue != -1);
             }
         }
 
@@ -117,10 +122,11 @@ namespace BoSSS.Solution.NSECommon {
         public void Initialize(XDGField ThermodynamicPressure) {
             if (!IsInitialized) {
                 var p0 = ThermodynamicPressure.CloneAs();
-                p0.Clear();
-                this.ThermodynamicPressure2 = new ScalarFieldHistory<XDGField>(p0);
+                ThermodynamicPressureValue = p0.GetMeanValueTotal(null);
+                //p0.Clear();
+                //this.ThermodynamicPressure2 = new ScalarFieldHistory<XDGField>(p0);
             } else {
-                throw new ApplicationException("Initialize() can be called only once.");
+               // throw new ApplicationException("Initialize() can be called only once.");
             }
         }
 
@@ -255,7 +261,7 @@ namespace BoSSS.Solution.NSECommon {
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
-                        visc = 1.0;
+                        visc = ConstantViscosityValue;
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
@@ -395,7 +401,7 @@ namespace BoSSS.Solution.NSECommon {
             //Console.WriteLine("push count : " + ThermodynamicPressure2.PushCount);
             //Console.WriteLine("history length: " + ThermodynamicPressure2.HistoryLength);
 
-            this.ThermodynamicPressureValue = p0;
+            //this.ThermodynamicPressureValue = p0;
             //Console.WriteLine(p0);
             return p0;
         }

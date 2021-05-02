@@ -42,7 +42,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override double Source(double[] x, double[] parameters, double[] U) {
-            return U[0];
+            return (U[0] - 1.0);
         }
     }
 
@@ -137,35 +137,33 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+
+
+
     /// <summary>
     /// Time derivative contribution in the continuity equation.
     /// </summary>
-    public class LowMach_TimeDerivativeConti_term1 : ContiTimeDerivativeActual, ISpeciesFilter {
-        public LowMach_TimeDerivativeConti_term1(string spcName, MaterialLaw EoS, double dt, int NumberOfChemicalComponents) : base(EoS, dt, NumberOfChemicalComponents) {
+    public class LowMach_TimeDerivativeConti : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient, ISpeciesFilter {
+        public LowMach_TimeDerivativeConti(string spcName, MaterialLaw EoS, double dt, int NumberOfChemicalComponents){
             ValidSpecies = spcName;
+            m_EoS = EoS;
+            m_dt = dt;
+            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
+            m_ParameterOrdering = new string[] { "Density0", "Density" };
         }
 
         public string ValidSpecies {
             get;
             private set;
         }
-    }
 
-
-    /// <summary>
-    /// implementation of the term rho^n_(t)/dt
-    /// </summary>
-    public class ContiTimeDerivativeActual : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
         double m_dt;
         string[] m_ArgumentOrdering;
+        string[] m_ParameterOrdering;
         MaterialLaw m_EoS;
 
-        public ContiTimeDerivativeActual(MaterialLaw EoS, double dt, int NumberOfChemicalComponents) {
-            m_EoS = EoS;
-            m_dt = dt;
-            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
-        }
+ 
         /// <summary>
         /// CHECK
         /// </summary>
@@ -189,7 +187,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         public IList<string> ParameterOrdering {
             get {
-                return new string[] { };
+                return m_ParameterOrdering;
             }
         }
 
@@ -206,43 +204,43 @@ namespace BoSSS.Solution.XNSECommon {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
-            double rho = m_EoS.GetDensity(U);
-            return rho / m_dt * V;
+            double rhoActual = m_EoS.GetDensity(U);
+            double rhoOld = cpv.Parameters[0];
+
+
+            return (rhoActual - rhoOld) / m_dt * V;
 
         }
     }
 
+ 
+     
+
+
+
+
+
+
+
+
 
     /// <summary>
-    /// Time derivative contribution in the continuity equation.
+    /// Thermodynamic pressure time derivative contribution in the energy equation.
+    ///  -p0^{n}_{t}   / delta t
     /// </summary>
-    public class LowMach_TimeDerivativeConti_term2 : ContiTimeDerivativePrevious, ISpeciesFilter {
-        public LowMach_TimeDerivativeConti_term2(string spcName, MaterialLaw EoS, double dt, int NumberOfChemicalComponents) : base(EoS, dt, NumberOfChemicalComponents) {
+    public class LowMach_TimeDerivativep0 : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient, ISpeciesFilter {
+        public LowMach_TimeDerivativep0(string spcName, double dt)  {
             ValidSpecies = spcName;
+            m_dt = dt;
+            m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.ThermodynamicPressure + "_t0" };
+            m_ArgumentOrdering = new string[] { };// no arguments
         }
-
-        public string ValidSpecies {
-            get;
-            private set;
-        }
-    }
-
-
-    /// <summary>
-    /// implementation of the term rho^n_(t)/dt
-    /// </summary>
-    public class ContiTimeDerivativePrevious : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
         double m_dt;
+        string[] m_ArgumentOrdering;
+
         string[] m_ParameterOrdering;
-        MaterialLaw m_EoS;
 
-        public ContiTimeDerivativePrevious(MaterialLaw EoS, double dt, int NumberOfChemicalComponents) {
-            m_EoS = EoS;
-            m_dt = dt;
-
-            m_ParameterOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature + "_t0" }, VariableNames.MassFractions_t0(NumberOfChemicalComponents)); // Variables for the density evaluation
-        }
         /// <summary>
         /// CHECK
         /// </summary>
@@ -257,7 +255,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         public IList<string> ArgumentOrdering {
             get {
-                return new string[] { };
+                return m_ArgumentOrdering;
             }
         }
         /// <summary>
@@ -281,10 +279,28 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double[] densityParameters = cpv.Parameters;
-            double rho = m_EoS.GetDensity(densityParameters);
-            return -1 * rho / m_dt * V;
 
+            double p0_Actual = cpv.Parameters[0];
+            double p0_Old = cpv.Parameters[1];
+            double dp0_dt = (p0_Actual - p0_Old) / m_dt;
+
+            return -dp0_dt * V;
+        }
+        public string ValidSpecies {
+            get;
+            private set;
         }
     }
+
+ 
+
+
+
+
+
+
+
+
+
+
 }

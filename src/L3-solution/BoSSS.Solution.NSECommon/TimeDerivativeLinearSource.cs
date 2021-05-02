@@ -52,38 +52,38 @@ namespace BoSSS.Solution.NSECommon {
             this.m_SpatialDimension = spatDim;
             this.NumberOfReactants = NumberOfReactants;
 
-            int SpatDim =2;
+            int SpatDim = 2;
             int numberOfReactants = 3;
             this.physicsMode = _physicsMode;
             switch (_physicsMode) {
                 case PhysicsMode.Multiphase:
-                    m_ArgumentOrdering = new string[] { VariableNames.LevelSet };
-                    m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
-                    break;
+                m_ArgumentOrdering = new string[] { VariableNames.LevelSet };
+                m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+                break;
                 case PhysicsMode.LowMach:
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature);
-                    if (EoS == null)
-                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
-                    else
-                        this.EoS = EoS;
-                    break;
+                m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature);
+                if (EoS == null)
+                    throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                else
+                    this.EoS = EoS;
+                break;
                 case PhysicsMode.MixtureFraction:
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction);
+                m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction);
 
-                    if (EoS == null)
-                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
-                    else
-                        this.EoS = EoS;
-                    break;
+                if (EoS == null)
+                    throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                else
+                    this.EoS = EoS;
+                break;
                 case PhysicsMode.Combustion:
-                    m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature, VariableNames.MassFractions(numberOfReactants - 1)); // u,v,w,T, Y0,Y1,Y2,Y3  as variables (Y4 is calculated as Y4 = 1- (Y0+Y1+Y2+Y3)
-                    if (EoS == null)
-                        throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
-                    else
-                        this.EoS = EoS;
-                    break;
+                m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.Temperature, VariableNames.MassFractions(numberOfReactants - 1)); // u,v,w,T, Y0,Y1,Y2,Y3  as variables (Y4 is calculated as Y4 = 1- (Y0+Y1+Y2+Y3)
+                if (EoS == null)
+                    throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+                else
+                    this.EoS = EoS;
+                break;
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
             }
         }
         /// <summary>
@@ -129,23 +129,23 @@ namespace BoSSS.Solution.NSECommon {
         protected override double Source(double[] x, double[] parameters, double[] U) {
             double mult = 1.0;
             double rho = 1.0;
-      
+
             switch (physicsMode) {
                 case PhysicsMode.Incompressible:
-                    break;
+                break;
                 case PhysicsMode.MixtureFraction:
-                    rho = EoS.getDensityFromZ(U[m_SpatialDimension]);
-                    break;
+                rho = EoS.getDensityFromZ(U[m_SpatialDimension]);
+                break;
                 case PhysicsMode.LowMach:
-                    double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension, 1);
+                double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension, 1);
                 rho = EoS.GetDensity(DensityArgumentsIn);
                 break;
                 case PhysicsMode.Combustion:
-                    double[] DensityArgumentsIn2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants);
-                    rho = EoS.GetDensity(DensityArgumentsIn2);
-                    break;
+                double[] DensityArgumentsIn2 = U.GetSubVector(m_SpatialDimension, NumberOfReactants);
+                rho = EoS.GetDensity(DensityArgumentsIn2);
+                break;
                 default:
-                    throw new NotImplementedException("PhysicsMode not implemented");
+                throw new NotImplementedException("PhysicsMode not implemented");
             }
 
             return mult * rho * U[j];
@@ -185,7 +185,10 @@ namespace BoSSS.Solution.NSECommon {
             this.NumberOfReactants = NumberOfReactants;
             m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(spatDim), VariableNames.Pressure, VariableNames.Temperature, VariableNames.MassFractions(NumberOfReactants));
             this.j = m_ArgumentOrdering.IndexOf(varname);
-            if (j < 0 || j > NumberOfReactants+3)
+
+            if (varname == VariableNames.Pressure && j != 2)
+                throw new Exception("!!!");
+            if (j < 0 || j > NumberOfReactants + 3)
                 throw new ArgumentOutOfRangeException();
 
             if (EoS == null)
@@ -193,7 +196,7 @@ namespace BoSSS.Solution.NSECommon {
             else
                 this.EoS = EoS;
         }
- 
+
         public IList<string> ArgumentOrdering {
             get { return m_ArgumentOrdering; }
         }
@@ -203,16 +206,21 @@ namespace BoSSS.Solution.NSECommon {
                 return m_ParameterOrdering;
             }
         }
-        
+
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { DerivVol };
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension+1, NumberOfReactants+1);
+            double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension + 1, NumberOfReactants + 1);
             double rho = EoS.GetDensity(DensityArgumentsIn);
-            return rho * U[j] * V;            
+            double ret = rho * U[j] * V;
+
+            if (j == 2)
+                ret = 0.0;
+
+            return ret;
         }
 
         /// <summary>
