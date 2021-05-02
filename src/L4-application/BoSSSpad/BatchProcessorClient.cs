@@ -65,15 +65,19 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// If not null, specifies paths to databases which are accessible to the computer system 
+        /// If null or empty, ignored;
+        /// 
+        /// 
+        /// specifies paths to databases which are accessible to the computer system 
         /// on which this batch processor submits its jobs.
         /// This triggers data synchronization on job submission, if e.g. grid or restart timestep
         /// are in some other database.
         /// </summary>
         [DataMember]
-        public string[] AllowedDatabasesPaths;
+        public (string LocalMountPath, string PathAtRemote)[] AllowedDatabasesPaths;
 
 
+        /*
         List<IDatabaseInfo> m_AllowedDatabases;
 
         /// <summary>
@@ -130,32 +134,30 @@ namespace BoSSS.Application.BoSSSpad {
                 ret.AddRange(m_AllowedDatabases);
 
                 // add any local database which might be acceptable
-                /*
-                if(InteractiveShell.databases != null) {
-                    foreach(var db in InteractiveShell.databases) {
+                //if(InteractiveShell.databases != null) {
+                //    foreach(var db in InteractiveShell.databases) {
 
-                        bool found = false;
-                        foreach(var odb in m_AllowedDatabases) {
-                            if(odb.Equals(db)) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if(found)
-                            continue;
+                //        bool found = false;
+                //        foreach(var odb in m_AllowedDatabases) {
+                //            if(odb.Equals(db)) {
+                //                found = true;
+                //                break;
+                //            }
+                //        }
+                //        if(found)
+                //            continue;
 
-                        if(!found) {
-                            // 'db' is not in the list to return, but is it located on the local machine?
+                //        if(!found) {
+                //            // 'db' is not in the list to return, but is it located on the local machine?
 
-                            db.
-                        }
-                    }
+                //            db.
+                //        }
+                //    }
                 }
-                */
                 return ret.AsReadOnly();
             }
         }
-
+        */
 
 
 

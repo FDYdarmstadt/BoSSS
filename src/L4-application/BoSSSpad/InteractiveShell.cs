@@ -683,9 +683,9 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
-            executionQueues.AddRange(bpc.AllQueues);
-            foreach (var q in bpc.AllQueues)
-                _ = q.AllowedDatabases;
+            //executionQueues.AddRange(bpc.AllQueues);
+            //foreach (var q in bpc.AllQueues)
+            //    _ = q.AllowedDatabases;
 
         }
 
