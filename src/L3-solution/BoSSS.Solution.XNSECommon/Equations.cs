@@ -288,7 +288,7 @@ namespace BoSSS.Solution.XNSECommon {
             double rhoB = physParams.rho_B;
 
             // set components
-            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSetLowMach(D, LsTrk, rhoA, rhoB, isMaterialInterface, -1, false);
+            var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, LsTrk, rhoA, rhoB, isMaterialInterface, -1, false);
             AddComponent(divPen);
         }
 
