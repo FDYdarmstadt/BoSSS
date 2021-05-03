@@ -307,12 +307,12 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitializeParticlesNewTimestep(dt);
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-
+            
             CalculateCollision(Particles, dt);
             if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
             LogPhysicalData(phystime, TimestepNo);
-            //Console.WriteLine("Particle 1 " + Particles[0].Motion.GetTranslationalVelocity());
+            Console.WriteLine("Particle 1 " + Particles[0].Motion.GetRotationalVelocity());
             //Console.WriteLine("Particle 2 " + Particles[1].Motion.GetTranslationalVelocity());
             Console.WriteLine($"done with time step {TimestepNo}");
             TimeSpan ts = stopWatch.Elapsed;

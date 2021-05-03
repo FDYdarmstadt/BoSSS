@@ -65,7 +65,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             }
 
             double FlxNeg = -DirichletFlux(uAxN, uBxN); // flux on A-side
-            return FlxNeg * v_Neg;
+            return FlxNeg * v_Neg * (-1);
         }
 
         public IList<string> ArgumentOrdering {
