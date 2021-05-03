@@ -56,6 +56,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Descriptive name specified by the user
+        /// </summary>
+        [DataMember]
+        public string Name {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// If not null, specifies paths to databases which are accessible to the computer system 
         /// on which this batch processor submits its jobs.
         /// This triggers data synchronization on job submission, if e.g. grid or restart timestep

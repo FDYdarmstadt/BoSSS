@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
@@ -43,7 +44,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
-        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// to the <see cref="IGridData.EdgeTagNames"/>-dictionary, if the edge tag
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
@@ -55,7 +56,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
-        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// to the <see cref="IGridData.EdgeTagNames"/>-dictionary, if the edge tag
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
@@ -98,7 +99,7 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// sets values for <see cref="Cell.CellFaceTags"/> by using a
         /// <paramref name="EdgeTagFunc"/>-function; also adds entries with empty names
-        /// to the <see cref="EdgeTagNames"/>-dictionary, if the edge tag
+        /// to the <see cref="IGridData.EdgeTagNames"/>-dictionary, if the edge tag
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
@@ -316,5 +317,60 @@ namespace BoSSS.Foundation.Grid {
         }
 
   
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        static public void EnsureMinimalBalance(this IGrid g) {
+            using(var tr = new FuncTrace()) {
+                int J = g.CellPartitioning.LocalLength;
+                int MpiSz = g.CellPartitioning.MpiSize;
+                int MpiRk = g.CellPartitioning.MpiRank;
+
+                long JG = g.CellPartitioning.TotalLength;
+                if(JG < MpiSz) {
+                    throw new ApplicationException($"Grid contains only {JG} cells, but {MpiSz} processors are used; unable to assign at least one cell to each processor; un-able to continue.");
+                }
+
+                // determine if there is any processor which has no cell at all
+                bool locallyFucked = J <= 0;
+                bool globallyFucked = locallyFucked.MPIOr();
+
+                tr.Info($"Processor {MpiRk} contains {J} cells");
+                if(!globallyFucked) {
+                    tr.Info("All processors contain at least one cell - no re-balancing required.");
+                    return; // nothing to do
+                }
+
+                g.InvalidateGridData();
+
+                int _i0(int rnk) {
+                    return (rnk * J) / MpiSz;
+                }
+                int _iE(int rnk) {
+                    return ((rnk + 1) * J) / MpiSz;
+                }
+                int FindRank(int j) {
+                    for(int r = 0; r < MpiSz; r++) {
+                        if(_i0(r) <= j && j < _iE(r))
+                            return r;
+                    }
+                    throw new ApplicationException();
+                }
+
+
+
+                int[] newPart = new int[J];
+                long j0G = g.CellPartitioning.i0;
+                for(int j = 0; j < J; j++) {
+                    newPart[j] = FindRank(j);
+                }
+
+                g.RedistributeGrid(newPart);
+
+            }
+        }
     }
 }
