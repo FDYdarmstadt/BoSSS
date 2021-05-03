@@ -215,9 +215,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// <see cref="IEquationComponentSpeciesNotification.SetParameter"/>
         /// </summary>
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
-            if (m_OrgForm is IEquationComponentSpeciesNotification ecsn) {
-                ecsn.SetParameter(speciesName, SpcId);
+        public void SetParameter(string speciesName) {
+            if(m_OrgForm is IEquationComponentSpeciesNotification ecsn) {
+                ecsn.SetParameter(speciesName);
             }
         }
 
@@ -385,7 +385,7 @@ namespace BoSSS.Foundation.XDG {
     public class EdgeFormDifferentiator : FormDifferentiatorCommon, IEdgeForm {
 
         IEdgeForm m_EdgForm;
-
+        
         /// <summary>
         /// ctor
         /// </summary>
@@ -620,12 +620,11 @@ namespace BoSSS.Foundation.XDG {
         }
     }
 
-
     /// <summary>
     /// Differentiation of an edge form, used e.g.to obtain a Jacobian of an operator, see <see cref="SpatialOperator.GetJacobiOperator"/>.
     /// In principal the same as <see cref="EdgeFormDifferentiator"/>, but using <see cref="ILevelSetForm"/>
     /// </summary>
-    public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm {
+    public class LevelSetFormDifferentiator : FormDifferentiatorCommon, ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
         ILevelSetForm m_EdgForm;
 
@@ -658,7 +657,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// %
         /// </summary>
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get {
                 return m_EdgForm.PositiveSpecies;
             }
@@ -666,7 +665,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// %
         /// </summary>
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get {
                 return m_EdgForm.NegativeSpecies;
             }
@@ -748,6 +747,15 @@ namespace BoSSS.Foundation.XDG {
 
             //Dir = 0;
             return ret;
+        }
+
+        /// <summary>
+        /// passes the coefficients to original form
+        /// </summary>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
+                eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            }
         }
 
         private double Diff(

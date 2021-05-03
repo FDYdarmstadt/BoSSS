@@ -651,7 +651,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// flux at the boundary
         /// </summary>
-        protected double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+        protected virtual double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
             IncompressibleBcType edgeType = m_bcmap.EdgeTag2Type[inp.EdgeTag];
 
             switch(edgeType) {
@@ -805,7 +805,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// bla bla bla
         /// </summary>
-        protected double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
+        protected virtual double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
             double r = 0.0;
 
             // Calculate central part
@@ -912,7 +912,7 @@ namespace BoSSS.Solution.NSECommon {
         /// where \f$ \vec{v}\f$  is the linearization point.
         /// For variable density the result is multiplied by \f$ \rho\f$ .
         /// </summary>
-        protected void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
+        protected virtual void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
             int idx = m_component;
             double rho;
             double[] DensityArguments;

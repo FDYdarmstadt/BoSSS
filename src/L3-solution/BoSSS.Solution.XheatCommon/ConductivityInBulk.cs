@@ -60,7 +60,7 @@ namespace BoSSS.Solution.XheatCommon {
         double m_penalty;
 
 
-        public void SetParameter(String speciesName, SpeciesId SpcId) {
+        public void SetParameter(String speciesName) {
             switch(speciesName) {
                 case "A": currentk = kA; complementk = kB; SetBndfunction("A"); break;
                 case "B": currentk = kB; complementk = kA; SetBndfunction("B"); break;

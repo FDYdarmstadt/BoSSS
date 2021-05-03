@@ -26,12 +26,12 @@ using BoSSS.Solution.NSECommon;
 namespace BoSSS.Application.XNSERO_Solver {
     public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
+        public ViscosityAtIB(int _d, int _D, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
 
             this.m_penalty_base = penalty_base;
-            this.m_LsTrk = t;
+            //this.m_LsTrk = t;
             this.FluidViscosity = _muA;
             Component = _d;
             this.m_D = _D;
@@ -337,18 +337,32 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        ///// <summary>
+        ///// Species ID of the solid
+        ///// </summary>
+        //public SpeciesId PositiveSpecies {
+        //    get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        //}
+
+        ///// <summary>
+        ///// Species ID of the fluid; 
+        ///// </summary>
+        //public SpeciesId NegativeSpecies {
+        //    get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        //}
+
         /// <summary>
         /// Species ID of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get { return m_SolidSpecies; }
         }
 
         /// <summary>
         /// Species ID of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get { return m_FluidSpc; }
         }
 
         /// <summary>

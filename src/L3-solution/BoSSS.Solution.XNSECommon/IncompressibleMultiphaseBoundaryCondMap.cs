@@ -40,6 +40,10 @@ namespace BoSSS.Solution.XNSECommon {
             foreach (var S in SpeciesNames) {
                 for (int d = 0; d < D; d++) {
                     scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
+                    for (int _d = 0; _d < D; _d++) {
+                        // same for velocity gradient vector
+                        scalarFields.Add(VariableNames.Velocity_GradientVector(D)[d, _d] + "#" + S);
+                    }
                 }
                 scalarFields.Add(VariableNames.Pressure + "#" + S);
                 scalarFields.Add(VariableNames.StressXX + "#" + S);
@@ -103,6 +107,10 @@ namespace BoSSS.Solution.XNSECommon {
             int D = f.SpatialDimension;
             for (int d = 0; d < D; d++) {
                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
+                for(int _d = 0; _d< D; _d++) {
+                    // same for velocity gradient vector
+                    base.bndFunction.Add(VariableNames.Velocity_GradientVector(D)[d,_d], base.bndFunction[VariableNames.Velocity_GradientVector(D)[d, _d] + S0]);
+                }
             }
             base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
             base.bndFunction.Add(VariableNames.StressXX, base.bndFunction[VariableNames.StressXX + S0]);

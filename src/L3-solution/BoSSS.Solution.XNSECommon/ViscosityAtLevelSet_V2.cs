@@ -30,15 +30,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     public class ViscosityAtLevelSet_Standard : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_Standard(LevelSetTracker lstrk, double _muA, double _muB, double _penalty_safety, int _component, bool _includeTransposeTerm) {
-            this.m_LsTrk = lstrk;
+        public ViscosityAtLevelSet_Standard(double _muA, double _muB, double _penalty_safety, int D, int _component, bool _includeTransposeTerm) {
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penalty_safety = _penalty_safety;
             this.component = _component;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            //this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = D;
             this.includeTransposeTerm = _includeTransposeTerm;
         }
 
@@ -83,7 +84,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            //double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == D);
@@ -142,9 +143,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
-            return new IEquationComponent[] { DerivEdg };
+            var JacobianComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobianComp };
         }
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -153,12 +155,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get { return VariableNames.VelocityVector(this.m_D); }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return"B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

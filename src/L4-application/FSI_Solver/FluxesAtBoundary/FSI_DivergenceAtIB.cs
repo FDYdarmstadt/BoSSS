@@ -26,14 +26,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// </summary>
     public class FSI_DivergenceAtIB : ILevelSetForm {
 
-        public FSI_DivergenceAtIB(int _D, LevelSetTracker lsTrk, Particle[] allParticles, double minGridLength) {
+        public FSI_DivergenceAtIB(int _D, Particle[] allParticles, double minGridLength) {
             D = _D;
-            m_LsTrk = lsTrk;
+            //m_LsTrk = lsTrk;
             this.allParticles = allParticles;
             this.minGridLength = minGridLength;
         }
 
-        private readonly LevelSetTracker m_LsTrk;
+        //private readonly LevelSetTracker m_LsTrk;
 
         private readonly int D;
 
@@ -77,12 +77,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

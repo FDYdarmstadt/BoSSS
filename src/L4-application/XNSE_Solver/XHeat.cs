@@ -110,17 +110,17 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = QuadOrder();
             // add Heat equation components
             // ============================
-            opFactory.AddEquation(new Heat("A", lsUpdater.Tracker, D, boundaryMap, config));
-            opFactory.AddEquation(new Heat("B", lsUpdater.Tracker, D, boundaryMap, config));
+            opFactory.AddEquation(new Heat("A", D, boundaryMap, config));
+            opFactory.AddEquation(new Heat("B", D, boundaryMap, config));
 
             if(config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 for(int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new HeatFlux("A", d, lsUpdater.Tracker, D, boundaryMap, config));
-                    opFactory.AddEquation(new HeatFlux("B", d, lsUpdater.Tracker, D, boundaryMap, config));
-                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, lsUpdater.Tracker, config));
+                    opFactory.AddEquation(new HeatFlux("A", d, D, boundaryMap, config));
+                    opFactory.AddEquation(new HeatFlux("B", d, D, boundaryMap, config));
+                    opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, boundaryMap, config));
                 }
             }
-            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, lsUpdater.Tracker, config));
+            opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, config));
             opFactory.AddCoefficient(new EvapMicroRegion());
 
 

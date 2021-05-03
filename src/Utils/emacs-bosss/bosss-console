@@ -1,0 +1,3 @@
+#!/bin/sh
+
+mono ~/BoSSS-experimental/public/src/L4-application/BoSSSpad/bin/Release/BoSSSpad.exe --simpleconsole

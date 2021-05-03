@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSE_Solver {
             var C = RisingBubble();
             C.TracingNamespaces = "*";
 
-            using (var solver = new XNSE_SolverMain()) {
+            using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
@@ -210,9 +210,9 @@ System.ArgumentException: DG degree seems different
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            //RotCube_GetSpeciesIDError();
+            RotCube_GetSpeciesIDError();
             //RotCube_CG_ProjectionOutOfMemoryException();
-            Rotating_Cube_compare4to1();
+            //Rotating_Cube_compare4to1();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -467,7 +467,7 @@ System.ArgumentException: DG degree seems different
 
             #endregion
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.ScalarConvection;
+            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching; // Test with old XNSE_SolverMain was using ScalarConvection
 
             // misc. solver options
             // ====================

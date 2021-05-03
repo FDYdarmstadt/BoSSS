@@ -25,14 +25,14 @@ using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Solution.NSECommon.Operator.Pressure {
     public class FSI_PressureAtIB : ILevelSetForm {
-        public FSI_PressureAtIB(int currentDim, int spatialDim, LevelSetTracker LsTrk) {
+        public FSI_PressureAtIB(int currentDim, int spatialDim) {
             m_d = currentDim;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             if (currentDim >= spatialDim)
                 throw new ArgumentException();
         }
 
-        private readonly LevelSetTracker m_LsTrk;
+        //private readonly LevelSetTracker m_LsTrk;
         private readonly int m_d;
 
         public IList<string> ArgumentOrdering {
@@ -47,15 +47,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Pressure {
             }
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get {
-                return this.m_LsTrk.GetSpeciesId("A");
+                return "A";
             }
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get {
-                return this.m_LsTrk.GetSpeciesId("B");
+                return "B";
             }
         }
 

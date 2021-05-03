@@ -29,8 +29,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="LsTrk"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public HeatConvectionAtLevelSet_MovingMesh_withMassflux(int _D, LevelSetTracker LsTrk, double _Tsat, PhysicalParameters physicalParameters, ThermalParameters thermalParameters)
-            : base(_D, LsTrk, physicalParameters) {
+        public HeatConvectionAtLevelSet_MovingMesh_withMassflux(int _D, double _Tsat, PhysicalParameters physicalParameters, ThermalParameters thermalParameters, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             this.Tsat = _Tsat;
             c_A = thermalParameters.c_A;
@@ -59,30 +59,30 @@ namespace BoSSS.Solution.XheatCommon {
             return Ret;
         }
 
-    }
+    }    
 
     /// <summary>
     /// 
     /// </summary>
-    public class HeatConvectionAtLevelSet_LLF_material : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class HeatConvectionAtLevelSet_LLF_material: ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_material(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet_LLF_material(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh ) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
             capA = _capA;
             capB = _capB;
@@ -126,48 +126,57 @@ namespace BoSSS.Solution.XheatCommon {
             //Flux for negative side
             double FlxNeg, FlxPos, LLF;
 
+            // NEGATIVE
             // central part
-
-            FlxNeg = U_Neg[0] * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+            double Tavg = U_Neg[0];
+            FlxNeg = Tavg * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
             if (m_D == 3) {
-                FlxNeg += U_Neg[0] * ParamsNeg[2] * cp.Normal[2];
+                FlxNeg += Tavg * ParamsNeg[2] * cp.Normal[2];
             }
-
-            FlxPos = U_Pos[0] * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
-            if (m_D == 3) {
-                FlxPos += U_Pos[0] * ParamsPos[2] * cp.Normal[2];
-            }
-
-            LLF = 0.5 * (FlxNeg + FlxPos);
 
             // dissipative part
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
                 VelocityMeanIn[d] = ParamsNeg[m_D + d];
             }
-
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+            double uJump = U_Neg[0] - U_Pos[0];
+            //FlxNeg += uJump * LambdaIn * LFFA;
+            //FlxNeg *= capA;
+
+            // POSITIVE
+            Tavg = U_Pos[0];
+            FlxPos = Tavg * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+            if (m_D == 3) {
+                FlxPos += Tavg * ParamsPos[2] * cp.Normal[2];
+            }
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
                 VelocityMeanOut[d] = ParamsPos[m_D + d];
             }
-
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
-
             double Lambda = Math.Max(LambdaIn, LambdaOut);
-            double uJump = U_Neg[0] - U_Pos[0];
+            uJump = U_Neg[0] - U_Pos[0];
+            //FlxPos += uJump * LambdaOut * LFFB;
+            //FlxPos *= capB;
 
+            //LLF = FlxNeg * v_Neg - FlxPos * v_Pos;
+            LLF = 0.5 * (FlxPos + FlxNeg);
             LLF += uJump * Lambda;
+
+            //LLF = 0.5 * (FlxNeg + FlxPos) * (capA * v_Neg - capB * v_Neg);
 
             if (movingmesh)
                 return 0.0;
             else
-                return LLF * ( capA * v_Neg - capB * v_Pos);
+                return LLF * (capA * v_Neg - capB * v_Pos);
         }
 
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
@@ -193,17 +202,320 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_material_Newton : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent, IEquationComponentCoefficient {
+
+        //LevelSetTracker m_LsTrk;
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_material_Newton(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
+
+            m_D = _D;
+
+            //m_LsTrk = LsTrk;
+
+            movingmesh = _movingmesh;
+
+            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
+        }
+
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        // Use Fluxes as in Bulk Convection
+        HeatConvectionInBulk_Newton NegFlux;
+        HeatConvectionInBulk_Newton PosFlux;
+
+        /// <summary>
+        /// Scale of this component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+            //Flux for negativ side
+            double FlxNeg;
+            {
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_OUT = ParamsNegFict;
+
+                FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+            }
+            // Flux for positive side
+            double FlxPos;
+            {
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_IN = ParamsPosFict;
+
+                FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
+            }
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return Scale * (FlxNeg * v_Neg - FlxPos * v_Pos);
+        }
+
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature }.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public string PositiveSpecies {
+            get;
+            private set;
+        }
+
+        public string NegativeSpecies {
+            get;
+            private set;
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent, IEquationComponentCoefficient {
+
+        //LevelSetTracker m_LsTrk;
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
+
+            m_D = _D;
+
+            //m_LsTrk = LsTrk;
+
+            movingmesh = _movingmesh;
+
+            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
+
+        }
+
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        // Use Fluxes as in Bulk Convection
+        HeatConvectionInBulk_Newton NegFlux;
+        HeatConvectionInBulk_Newton PosFlux;
+
+        /// <summary>
+        /// Scale of this component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double flx = 0.0;
+
+            //===========================================================================================================
+            //===========================================================================================================
+            // First variant, using central flux for temperature            
+            /*
+            double FlxNeg = U_Neg[0] * (U_Neg[1] * cp.Normal[0] + U_Neg[2] * cp.Normal[1]);
+            double FlxPos = U_Pos[0] * (U_Pos[1] * cp.Normal[0] + U_Pos[2] * cp.Normal[1]);
+            if (m_D == 3) {
+                FlxNeg += U_Neg[0] * U_Neg[3] * cp.Normal[2];
+                FlxPos += U_Pos[0] * U_Pos[3] * cp.Normal[2];
+            }
+
+            // Term from partial integration back to strong form
+            double sflx = capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos;
+            //funktioniert mit starker Form
+            flx = (0.5 * (U_Neg[0] + U_Pos[0])) * ((U_Neg[1] * cp.Normal[0] + U_Neg[2] * cp.Normal[1]) * capA * v_Neg - (U_Pos[1] * cp.Normal[0] + U_Pos[2] * cp.Normal[1]) * capB * v_Pos) - sflx;
+            */
+            //===========================================================================================================
+            //===========================================================================================================
+
+
+
+            //===========================================================================================================
+            //===========================================================================================================
+            // Second variant using Roe-Type Scheme
+            // Normal velocities
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            double vINxN = 0.0, vOUTxN = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1 + d];
+                vINxN += VelocityMeanIn[d] * cp.Normal[d];
+                VelocityMeanOut[d] = U_Pos[1 + d];
+                vOUTxN += VelocityMeanOut[d] * cp.Normal[d];
+            }
+
+            vINxN *= capA;
+            vOUTxN *= capB;
+            double uJump = U_Neg[0] - U_Pos[0];
+
+            flx = 0.5 * (Math.Min(vINxN, vOUTxN) - Math.Abs(Math.Min(vINxN, vOUTxN))) * -uJump * v_Neg;
+            flx += 0.5 * (Math.Max(vINxN, vOUTxN) + Math.Abs(Math.Max(vINxN, vOUTxN))) * -uJump * v_Pos;
+            //===========================================================================================================
+            //===========================================================================================================
+
+            if (movingmesh) {
+                return 0.0;
+            } else {
+                return Scale * flx;
+            }
+        }
+
+
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature }.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public string PositiveSpecies {
+            get;
+            private set;
+        }
+
+        public string NegativeSpecies {
+            get;
+            private set;
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
             }
         }
     }
@@ -216,19 +528,19 @@ namespace BoSSS.Solution.XheatCommon {
         bool movingmesh;
 
         public HeatConvectionAtLevelSet_LLF_withMassflux(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat, PhysicalParameters _physicalParameters) : base(_D, LsTrk, _physicalParameters){
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat, PhysicalParameters _physicalParameters, string phaseA, string phaseB) : base(_D, _physicalParameters, phaseA, phaseB) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
 
             //DirichletCond = _DiriCond;
@@ -284,22 +596,23 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = ParamsNeg[m_D + d];
+                VelocityMeanIn[d] = ParamsNeg[1 + m_D + d];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanOut[d] = ParamsPos[m_D + d];
+                VelocityMeanOut[d] = ParamsPos[1 + m_D + d];
             }
 
-
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
             double Lambda = Math.Max(LambdaIn, LambdaOut);
-                
-            
-            double Flx = Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
+
+
+            double Flx = 0;
+            //Flx += Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
 
             //double FlxNeg, FlxPos;
             //{
@@ -352,9 +665,28 @@ namespace BoSSS.Solution.XheatCommon {
             // contribution due to massflux
             {
                 double M = MassFlux(cp);
-                Flx += Tsat * M * (1/base.m_rhoA - 1/base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
-            }
+                Flx += Tsat * M * (1 / base.m_rhoA - 1 / base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
 
+                //double FlxNeg = Tsat * (ParamsNeg[0] * cp.Normal[0] + ParamsNeg[1] * cp.Normal[1]);
+                //if (m_D == 3) {
+                //    FlxNeg += Tsat * ParamsNeg[2] * cp.Normal[2];
+                //}
+                //double FlxPos = Tsat * (ParamsPos[0] * cp.Normal[0] + ParamsPos[1] * cp.Normal[1]);
+                //if (m_D == 3) {
+                //    FlxPos += Tsat * ParamsPos[2] * cp.Normal[2];
+                //}
+                //Flx -= 0.5 * (FlxNeg + FlxPos) * (capA * v_Neg - capB * v_Pos);
+
+                //double FlxNeg = 0, FlxPos = 0;
+                //for(int d = 0; d < m_D; d++) {
+                //    FlxNeg += ParamsNeg[1 + d] * cp.Normal[d];
+                //    FlxPos += ParamsPos[1 + d] * cp.Normal[d];
+                //}
+                //FlxNeg *= U_Neg[0];
+                //FlxPos *= U_Pos[0];
+                //Flx += (FlxNeg - FlxPos) * 0.5 * (capA * v_Neg + capB * v_Pos);
+
+            }
             if (movingmesh)
                 return 0.0;
             else
@@ -363,6 +695,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
             base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
@@ -392,22 +726,442 @@ namespace BoSSS.Solution.XheatCommon {
     }
 
     /// <summary>
+    /// Extension for dissipative part of LLF to ensure $T=T_sat$ at the interface
+    /// </summary>
+    public class HeatConvectionAtLevelSet_Direct : ILevelSetForm {
+
+        bool movingmesh;
+        string m_spcId;
+        public HeatConvectionAtLevelSet_Direct(int _D, LevelSetTracker LsTrk, double _capA, double _capB,
+            double _Tsat, PhysicalParameters _physicalParameters, string spcId)  {
+
+            m_D = _D;
+
+            m_spcId = spcId;
+
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+        }
+
+        int m_D;
+
+        double capA;
+        double capB;
+
+        double Tsat;     
+
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double Flx = 0;
+            if(m_spcId == this.NegativeSpecies) {
+                Flx += cp.Parameters_IN[0] * cp.Normal[0] + cp.Parameters_IN[1] * cp.Normal[1];
+                if(m_D == 3)
+                    Flx += cp.Parameters_IN[2] * cp.Normal[2];
+                Flx *= U_Neg[0];
+                Flx *= capA * v_Neg;
+            } else {
+                Flx -= cp.Parameters_OUT[0] * cp.Normal[0] + cp.Parameters_OUT[1] * cp.Normal[1];
+                if (m_D == 3)
+                    Flx -= cp.Parameters_OUT[2] * cp.Normal[2];
+                Flx *= U_Pos[0];
+                Flx *= capB * v_Pos;
+            }
+            return Flx;
+        }  
+
+       
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { VariableNames.Temperature };
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV | TermActivationFlags.V;
+            }
+        }
+
+        public int LevelSetIndex => 0;
+
+        public string PositiveSpecies {
+            get { return "B"; }
+        }
+
+        public string NegativeSpecies {
+            get { return "A"; }
+        }
+    }
+
+    /// <summary>
+    /// Extension for dissipative part of LLF to ensure $T=T_sat$ at the interface
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling : MassFluxAtLevelSet_StrongCoupling, IEquationComponentCoefficient {
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(int _D, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams, string phaseA, string phaseB) : base(_D, thermParams, phaseA, phaseB) {
+
+            m_D = _D;
+
+            //MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+            
+            //DirichletCond = _DiriCond;
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+        }
+
+        //bool MaterialInterface;
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        //bool DirichletCond;
+        double Tsat;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+        /// <summary>
+        /// Scale of the component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
+
+
+
+
+            // Calculate dissipative part
+            // ==========================
+            double[] VelocityMeanIn = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1 + d];
+            }
+
+            double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+            double[] VelocityMeanOut = new double[m_D];
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanOut[d] = U_Pos[1 + d];
+            }
+
+
+            double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
+
+
+            //double Flx = Lambda * (U_Pos[0] - Tsat) * capA * v_Neg - Lambda * (Tsat - U_Neg[0]) * capB * v_Pos;
+
+            //double FlxNeg, FlxPos;
+            //{
+            //    double r = 0.0;
+
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanIn = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanIn[d] = ParamsNeg[m_D + d];
+            //    }
+
+            //    double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
+
+            //    double uJump = U_Neg[0] - Tsat;
+
+            //    r += LambdaIn * uJump * LFFA;
+
+            //    FlxNeg = capA * r;
+
+            //}
+
+            ////Flux for positive side
+            //{
+            //    double r = 0.0;
+
+            //    // Calculate dissipative part
+            //    // ==========================
+
+            //    double[] VelocityMeanOut = new double[m_D];
+            //    for (int d = 0; d < m_D; d++) {
+            //        VelocityMeanOut[d] = ParamsPos[m_D + d];
+            //    }
+
+
+            //    double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+
+            //    double uJump = Tsat - U_Pos[0];
+
+            //    r += LambdaOut * uJump * LFFB;
+
+            //    FlxPos = capB * r;
+
+            //}
+
+            //double Flx = FlxNeg * v_Neg - FlxPos * v_Pos;
+
+            // contribution due to massflux
+            //{
+            //    double M = MassFlux(cp, Grad_uA, Grad_uB);
+            //    Flx += Tsat * M * (1 / base.m_rhoA - 1 / base.m_rhoB) * 0.5 * (capA * v_Neg + capB * v_Pos);
+            //}
+
+            // ++++++++++
+            // ++++++++++
+            double UxN_Neg = 0, UxN_Pos = 0;
+            for(int d = 0; d < m_D; d++) {
+                UxN_Neg += U_Neg[1 + d] * cp.Normal[d];
+                UxN_Pos += U_Pos[1 + d] * cp.Normal[d];
+            }
+
+            double Flx = Tsat * (UxN_Neg - UxN_Pos) * 0.5 * (capA * v_Neg + capB * v_Pos);
+            Flx += (0.5 * (UxN_Neg * U_Neg[0] + UxN_Pos * U_Pos[0]) + Lambda * (U_Neg[0] - U_Pos[0])) * (capA * v_Neg - capB * v_Pos);
+            //double Flx = 0.0;
+            //Flx += 1.0 * (U_Neg[0] - Tsat) * capA * v_Neg;
+            //Flx -= 1.0 * (Tsat - U_Pos[0]) * capB * v_Pos;
+            //Flx += -(capA * v_Neg - capB * v_Pos) * Lambda * (U_Neg[0] - U_Pos[0]) + capA * v_Neg * Lambda * (U_Neg[0] - Tsat) - capB * v_Pos * Lambda * (Tsat - U_Pos[0]);
+            //double Flx = Tsat * UxN_Neg * capA * v_Neg - Tsat * UxN_Pos * capB * v_Pos;
+            // ++++++++++
+            // ++++++++++
+
+            
+            double FlxNeg = Tsat * UxN_Neg;
+            FlxNeg += LambdaIn * (U_Neg[0] - Tsat);
+            double sFlxNeg = U_Neg[0] * UxN_Neg;
+            FlxNeg += -sFlxNeg;
+
+            double FlxPos = Tsat * UxN_Pos;
+            FlxPos += LambdaOut * (Tsat - U_Pos[0]);
+            double sFlxPos = U_Pos[0] * UxN_Pos;
+            FlxPos += -sFlxPos;
+            
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return Scale * (capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos);// Scale * Flx; //
+        }
+
+
+        public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D)) ;
+            }
+        }
+
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+    }
+
+    /// <summary>
+    /// Extension for <see cref="HeatConvectionInSpeciesBulk_Hamiltonian_Newton"/> on interface
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian : MassFluxAtLevelSet_StrongCoupling, IEquationComponentCoefficient {
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(int _D, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams, string phaseA, string phaseB) : base(_D, thermParams, phaseA, phaseB) {
+
+            m_D = _D;
+
+            //MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+
+            //DirichletCond = _DiriCond;
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+        }
+
+        //bool MaterialInterface;
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        //bool DirichletCond;
+        double Tsat;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+        /// <summary>
+        /// Scale of the component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
+            // Normal velocities
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            double vINxN = 0.0, vOUTxN = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1 + d];
+                vINxN += VelocityMeanIn[d] * cp.Normal[d];
+                VelocityMeanOut[d] = U_Pos[1 + d];
+                vOUTxN += VelocityMeanOut[d] * cp.Normal[d];
+            }
+
+            //===========================================================================================================
+            //===========================================================================================================
+            // First variant, using central flux for temperature       
+            /*
+            double FlxNeg = Tsat * vINxN;
+            double sFlxNeg = U_Neg[0] * vINxN;
+            FlxNeg += -sFlxNeg;
+
+            double FlxPos = Tsat * vOUTxN;
+            double sFlxPos = U_Pos[0] * vOUTxN;
+            FlxPos += -sFlxPos;           
+            */
+            //===========================================================================================================
+            //===========================================================================================================
+
+
+            //===========================================================================================================
+            //===========================================================================================================
+            // Second variant using Roe-Type Scheme
+            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature
+            double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
+            FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
+
+            double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
+            FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
+            //===========================================================================================================
+            //===========================================================================================================
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return Scale * (capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos);
+        }
+
+
+        public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+    }
+
+    /// <summary>
     /// 
     /// </summary>
-    public class ConductivityAtLevelSet_material : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ConductivityAtLevelSet_material : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet_material(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpatialDim;
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
         }
 
@@ -452,7 +1206,7 @@ namespace BoSSS.Solution.XheatCommon {
             double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
 
             double Ret = 0.0;
-           
+
             Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
@@ -527,6 +1281,9 @@ namespace BoSSS.Solution.XheatCommon {
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
         }
 
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -536,12 +1293,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -561,20 +1318,20 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// 
     /// </summary>
-    public class ConductivityAtLevelSet_withMassflux : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ConductivityAtLevelSet_withMassflux : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet_withMassflux(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet_withMassflux(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpatialDim;
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
         }
 
@@ -620,14 +1377,28 @@ namespace BoSSS.Solution.XheatCommon {
 
             double Ret = 0.0;
 
-            // enforce saturation temperature
-            //Ret += (Tsat - 0.5 * (uA[0] + uB[0])) * (kA * Grad_vA_xN - kB * Grad_vB_xN);
+            // old, extension to material form
+            /*
+            // symmetry term
+            Ret += (Tsat - 0.5 * (uA[0] + uB[0])) * (kA * Grad_vA_xN - kB * Grad_vB_xN);
 
-            // incorporate massflux
+            // consistency term
             Ret -= 0.5 * (vA + vB) * (kA * Grad_uA_xN - kB * Grad_uB_xN);
 
-            // extension of penalty
+            // penalty
             Ret += pnlty * wPenalty * vA * (uB[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uA[0]);   
+            //Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
+            */
+
+            // new standalone non-material form
+            // symmetry term
+            Ret -=  kA * Grad_vA_xN * (uA[0] - Tsat) - kB * Grad_vB_xN * (Tsat - uB[0]);
+
+            // consistency term
+            Ret -= (vA * kA * Grad_uA_xN - vB * kB * Grad_uB_xN);
+
+            // penalty, like a dirichlet condition for temperature from both sides
+            Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
@@ -697,6 +1468,9 @@ namespace BoSSS.Solution.XheatCommon {
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
         }
 
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
 
         public int LevelSetIndex {
             get { return 0; }
@@ -706,12 +1480,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -722,10 +1496,11 @@ namespace BoSSS.Solution.XheatCommon {
 
         public IList<string> ParameterOrdering {
             get {
-                return null;
+                return new string[] { };
             }
         }
 
     }
+    
 
 }

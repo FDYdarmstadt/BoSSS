@@ -29,15 +29,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
     /// </summary>
     public class PressureFormAtLevelSet : ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public PressureFormAtLevelSet(int _d, int _D, LevelSetTracker LsTrk, 
+        public PressureFormAtLevelSet(int _d, int _D, 
             double _wA = 1.0, double _wB = 1.0, 
             bool _freeSurface = false, double _pFree = 0.0) {
 
             m_d = _d;
             m_D = _D;
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
             if (_d >= _D)
                 throw new ArgumentException();
 
@@ -69,9 +69,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
-            return new IEquationComponent[] { DerivEdg };
+            return new IEquationComponent[] { this };
         }
+
         public IList<string> ArgumentOrdering {
             get {
                 return new string[] { VariableNames.Pressure };
@@ -82,12 +82,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
