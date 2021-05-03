@@ -486,6 +486,26 @@ namespace BoSSS.Foundation.Quadrature {
     public static class QuadratureScheme_Ext {
 
         /// <summary>
+        /// Save Quadrule nodes in cell as .txt file
+        /// </summary>
+        public static void ToTextFileCell<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+            where TQuadRule : QuadRule
+            where TDomain : ExecutionMask {
+            var rule = scheme.Compile(grid, quadOrder);
+            rule.ToTextFileCell(grid, name);
+        }
+
+        /// <summary>
+        /// Save Quadrule nodes on edge as .txt file
+        /// </summary>
+        public static void ToTextFileEdge<TQuadRule, TDomain>(this IQuadratureScheme<TQuadRule, TDomain> scheme, IGridData grid, int quadOrder = 3, string name = "QuadratureNodes.txt")
+            where TQuadRule : QuadRule
+            where TDomain : ExecutionMask {
+            var rule = scheme.Compile(grid, quadOrder);
+            rule.ToTextFileEdge(grid, name);
+        }
+
+        /// <summary>
         /// adds a factory to a quadrature scheme
         /// </summary>
         public static R AddFactory<R, TQuadRule, TDomain>(this R scheme, IQuadRuleFactory<TQuadRule> factory, TDomain domain = null)

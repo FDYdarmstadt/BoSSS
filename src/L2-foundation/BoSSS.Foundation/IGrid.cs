@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -53,7 +54,8 @@ namespace BoSSS.Foundation.Grid {
         /// redistributes this grid, i.e. sends cells to different processors
         /// </summary>
         /// <param name="part">
-        /// MPI processor rank for each cell; index: local cell index;
+        /// - index: local cell index;
+        /// - content: MPI processor rank for respective cell; 
         /// </param>
         void RedistributeGrid(int[] part);
                
@@ -86,5 +88,14 @@ namespace BoSSS.Foundation.Grid {
             get;
         }
 
+        /// <summary>
+        /// list of transformations which describe how some edges should be transformed to other edges;
+        /// </summary>
+        /// <remarks>
+        /// indices into this list are edge tags (<see cref="IGeometricalEdgeData.EdgeTags"/> minus <see cref="Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/>)
+        /// </remarks>
+        IList<AffineTrafo> PeriodicTrafo {
+            get;
+        }
     }
 }

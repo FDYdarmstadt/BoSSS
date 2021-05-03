@@ -62,16 +62,18 @@ namespace ilPSP.LinSolvers {
             where V : IList<double>
             where W : IList<double> //
         {
-            /*
+            //*
             using (var slv = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
                 slv.DefineMatrix(Matrix);
                 var SolRes = slv.Solve(X, B.ToArray());
             }
-            */
+            /*
             using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                //slv.Parallelism = Parallelism.OMP;
                 slv.DefineMatrix(Matrix);
                 var SolRes = slv.Solve(X, B.ToArray());
             }
+            */
         }
 
         /// <summary>

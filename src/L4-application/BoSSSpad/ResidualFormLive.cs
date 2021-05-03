@@ -27,6 +27,10 @@ using BoSSS.Foundation.IO;
 
 
 namespace BoSSS.Application.BoSSSpad {
+
+    /// <summary>
+    /// On-Line visualization od residuals
+    /// </summary>
     public partial class ResidualFormLive : Form {
         //The Residuallog to be plotted
         ResidualLog log;

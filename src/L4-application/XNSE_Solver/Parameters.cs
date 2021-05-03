@@ -21,7 +21,7 @@ using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.XNSE_Solver {
-    static class FromControl {
+    public static class FromControl {
         public static BeltramiGradient BeltramiGradient(XNSE_Control control, string levelSetName, int D) {
             string levelSet = levelSetName;
             int levelSetDegree;
@@ -320,10 +320,10 @@ namespace BoSSS.Application.XNSE_Solver {
                        MultidimensionalArray HeatFluxA_Res = MultidimensionalArray.Create(Len, K, D);
                        MultidimensionalArray HeatFluxB_Res = MultidimensionalArray.Create(Len, K, D);
 
-                       for (int dd = 0; dd < D; dd++) {
-                           ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                           ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
-                       }
+                       //for (int dd = 0; dd < D; dd++) {
+                       //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, HeatFluxA_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                       //    ((XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.HeatFlux0VectorComponent(dd)]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, HeatFluxB_Res.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
+                       //}
 
 
                        MultidimensionalArray TempA_Res = MultidimensionalArray.Create(Len, K);
@@ -375,7 +375,8 @@ namespace BoSSS.Application.XNSE_Solver {
                                } else {
                                    //macro region
                                    for (int dd = 0; dd < D; dd++) {
-                                       qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
+                                       //qEvap += (HeatFluxB_Res[j, k, dd] - HeatFluxA_Res[j, k, dd]) * Normals[j, k, dd];
+                                       qEvap += ((-kA) * GradTempA_Res[j, k, dd] - (-kB) * GradTempB_Res[j, k, dd]) * Normals[j, k, dd];
                                    }
                                }
                                //Console.WriteLine("qEvap delUpdateLevelSet = {0}", qEvap);
@@ -385,9 +386,9 @@ namespace BoSSS.Application.XNSE_Solver {
                                                                                                                                                              //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
                                                                                                                                                              //Console.WriteLine("prescribedMassFlux = {0}", this.XOpConfig.prescribedMassflux(globX, hack_Phystime));
 
-                               double sNeg = VelA[j, k, d] + mEvap * (1 / rhoA) * Normals[j, k, d];
+                               double sNeg = VelA[j, k, d] - mEvap * (1 / rhoA) * Normals[j, k, d];
                                //Console.WriteLine("sNeg = {0}", sNeg);
-                               double sPos = VelB[j, k, d] + mEvap * (1 / rhoB) * Normals[j, k, d];
+                               double sPos = VelB[j, k, d] - mEvap * (1 / rhoB) * Normals[j, k, d];
                                //Console.WriteLine("sPos = {0}", sPos);
 
                                result[j, k] = (rhoA * sNeg + rhoB * sPos) / (rhoA + rhoB);   // density averaged evap velocity 
@@ -401,9 +402,12 @@ namespace BoSSS.Application.XNSE_Solver {
         
     }
 
-    class LevelSetVelocityGeneralNonMaterial : LevelSetVelocity {
-
-        public LevelSetVelocityGeneralNonMaterial(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters) : base(levelSetName, D, degree, averagingMode, physicalParameters) {
+    public class LevelSetVelocityGeneralNonMaterial : LevelSetVelocity {
+        ThermalParameters thermalParameters;
+        XNSFE_OperatorConfiguration config;
+        public LevelSetVelocityGeneralNonMaterial(string levelSetName, int D, int degree, XNSE_Control.InterfaceVelocityAveraging averagingMode, PhysicalParameters physicalParameters, XNSFE_OperatorConfiguration config) : base(levelSetName, D, degree, averagingMode, physicalParameters) {
+            this.thermalParameters = config.getThermParams;
+            this.config = config;
         }
 
         public override void LevelSetParameterUpdate(
@@ -434,20 +438,75 @@ namespace BoSSS.Application.XNSE_Solver {
                     MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray MassFlux = MultidimensionalArray.Create(Len, K);
+                    MultidimensionalArray MassFlux_d = MultidimensionalArray.Create(Len, K);
 
                     for (int dd = 0; dd < D; dd++) {
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("B").Evaluate(j0, Len, NS, VelB.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
                     }
+                    
                     ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension].Evaluate(j0, Len, NS, MassFlux.ExtractSubArrayShallow(new int[] { -1, -1}));
+
+                    if (config.isEvaporation) {
+                        XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
+
+                        MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
+                        MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
+
+                        temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
+                        temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
+
+                        MassFlux_d.Acc(-thermalParameters.k_A / thermalParameters.hVap, GradTempA_Res.ExtractSubArrayShallow(-1, -1, d));
+                        MassFlux_d.Acc(thermalParameters.k_B / thermalParameters.hVap, GradTempB_Res.ExtractSubArrayShallow(-1, -1, d));
+                    }
 
                     var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
 
                     for (int j = 0; j < Len; j++) {
 
                         for (int k = 0; k < K; k++) {
-                            
-                            result[j, k] = 0.5 * (VelA[j, k, d] + VelB[j, k, d]) - 0.5 * MassFlux[j, k] * (1 / rhoA + 1 / rhoB) * Normals[j, k, d]; // calculate as modified rankine-hugoniot shock condition
+                            double uNeg = VelA[j, k, d];
+                            double uPos = VelB[j, k, d];
+                            bool useNormal = false;
+                            double sNeg, sPos;
+
+                            if (config.prescribedMassflux != null) {
+                                MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                                levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+                                double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+
+                                sNeg = uNeg - (1 / rhoA) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                                sPos = uPos - (1 / rhoB) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                            } else {
+                                if (!useNormal) {
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux_d[j, k];
+                                    sPos = uPos - (1 / rhoB) * MassFlux_d[j, k];
+                                } else {
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux[j, k] * Normals[j, k, d];
+                                    sPos = uPos - (1 / rhoB) * MassFlux[j, k] * Normals[j, k, d];
+                                }
+                            }
+
+                            switch (this.averagingMode) {
+                                case (XNSE_Control.InterfaceVelocityAveraging.mean):
+                                {
+                                    result[j, k] = 0.5 * (sNeg + sPos);
+                                    break;
+                                }
+                                case (XNSE_Control.InterfaceVelocityAveraging.phaseA): {
+                                    result[j, k] = sNeg;
+                                    break;
+                                }
+                                case (XNSE_Control.InterfaceVelocityAveraging.phaseB): {
+                                    result[j, k] = sPos;
+                                    break;
+                                }
+                                case (XNSE_Control.InterfaceVelocityAveraging.density):
+                                default: {
+                                    result[j, k] = (rhoA * sNeg + rhoB * sPos)/(rhoA + rhoB);
+                                    break;
+                                }
+                            }
 
                             //if (rhoA != rhoB) {
                             //    result[j, k] = (rhoA * VelA[j, k, d] - rhoB * VelB[j, k, d]) / (rhoA - rhoB);   // interface velocity for arbitrary mass flux
@@ -470,18 +529,25 @@ namespace BoSSS.Application.XNSE_Solver {
     /// mass flows from - phase to + phase.
     /// Keep in mind maybe it is more stable to only update massflux once per timestep, not in every nonlinear iteration.
     /// </summary>
-    class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
+    public class MassFluxExtension_Evaporation : ParameterS, ILevelSetParameter {
 
         XNSFE_OperatorConfiguration config;
         DualLevelSet levelSet;
         double time;
+
         public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.MassFluxExtension };
 
         public override DelParameterFactory Factory => ParameterFactory;
 
+        public override DelPartialParameterUpdate Update {
+            get {                
+                //return MassFluxExtension_Evaporation_Update;  // seems more stable to update once per timestep
+                return null;
+            }
+        }
+
         public MassFluxExtension_Evaporation(XNSFE_OperatorConfiguration config) {
-            this.config = config;
-            //Update = MassFluxExtension_Evaporation_Update; // Update only once per timestep for now, seems to give better convergence
+            this.config = config;            
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -492,7 +558,9 @@ namespace BoSSS.Application.XNSE_Solver {
             massfluxext[0] = (paramName, MassFluxExtension);
             return massfluxext;
         }
-
+        public void MassFluxExtension_Evaporation_Update(double phystime, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            MassFluxExtension_Evaporation_Update(DomainVarFields, ParameterVarFields);
+        }
         public void MassFluxExtension_Evaporation_Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             var thermalParams = config.getThermParams;
             double kA = 0, kB = 0;
@@ -515,7 +583,6 @@ namespace BoSSS.Application.XNSE_Solver {
             MassFluxField.ProjectField(1.0,
                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No nof Nodes
-
 
                     MultidimensionalArray GradTempA_Res = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray GradTempB_Res = MultidimensionalArray.Create(Len, K, D);
@@ -553,6 +620,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                             //Console.WriteLine("mEvap - delUpdateLevelSet = {0}", mEvap);
                             result[j, k] = mEvap;
+
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
@@ -562,25 +630,25 @@ namespace BoSSS.Application.XNSE_Solver {
             ParameterVarFields[paramName].Clear();
             ParameterVarFields[paramName].Acc(1.0, MassFluxField);
 
-            //// extension
-            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
-            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
-            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
-            //int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
-            //double[][] MassFluxMin = new double[1][];
-            //double[][] MassFluxMax = new double[1][];
-            //MassFluxMin[0] = new double[J];
-            //MassFluxMax[0] = new double[J];
+            // extension
+            SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
+            CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
+            CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
+            int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
+            double[][] MassFluxMin = new double[1][];
+            double[][] MassFluxMax = new double[1][];
+            MassFluxMin[0] = new double[J];
+            MassFluxMax[0] = new double[J];
 
-            //VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d=> new SinglePhaseField(levelSet.DGLevelSet.Basis)));
-            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+            VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
+            DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
 
-            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
-            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
+            NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
+                levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
 
-            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
-            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
-            //    MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
+            var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
+            marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
+                MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
 
             ParameterVarFields[paramName].CheckForNanOrInf(true, true, true);
         }

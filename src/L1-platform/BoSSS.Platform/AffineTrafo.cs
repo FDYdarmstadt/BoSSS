@@ -86,6 +86,29 @@ namespace BoSSS.Platform.LinAlg {
         [DataMember]
         public double[] Affine;
 
+
+        /// <summary>
+        /// Computes <see cref="Matrix"/>*<paramref name="vtx"/> + <see cref="Affine"/>;
+        /// </summary>
+        /// <param name="vtx">
+        /// the vector/point/vertex that should be transformed;
+        /// </param>
+        /// <returns></returns>
+        /// <remarks>
+        /// This method should not be used for performance-critical
+        /// issues; One reason for this is that it allocates a small array
+        /// for return value.
+        /// </remarks>
+        public Vector Transform(Vector vtx) {
+            if (vtx.Dim != Matrix.NoOfCols)
+                throw new ArgumentException("dimension mismatch");
+
+            Vector ret = Matrix.MtxVecMul(vtx);
+            ret.Acc(this.Affine);
+
+            return ret;
+        }
+
         /// <summary>
         /// Computes <see cref="Matrix"/>*<paramref name="vtx"/> + <see cref="Affine"/>;
         /// </summary>

@@ -195,6 +195,68 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// Mass balance equation of chemical component 0 (usually fuel)
+        /// </summary>
+        public const string SpeciesMassBalance0 = "SpeciesMassBalance0";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 1 (usually oxidizer)
+        /// </summary>
+        public const string SpeciesMassBalance1 = "SpeciesMassBalance1";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 2
+        /// </summary>
+        public const string SpeciesMassBalance2 = "SpeciesMassBalance2";
+
+        /// <summary>
+        /// Mass balance equation of chemical component 3
+        /// </summary>
+        public const string SpeciesMassBalance3 = "SpeciesMassBalance3";
+
+        /// <summary>
+        /// Mass balance equation of chemical component  4
+        /// </summary>
+        public const string SpeciesMassBalance4 = "SpeciesMassBalance4";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="d"></param>
+        /// <returns></returns>
+        static public string SpeciesMassBalanceName(int component) {
+            switch (component) {
+                case 0: return SpeciesMassBalance0;
+                case 1: return SpeciesMassBalance1;
+                case 2: return SpeciesMassBalance2;
+                case 3: return SpeciesMassBalance3;
+                case 4: return SpeciesMassBalance4;
+                default: throw new NotSupportedException("Name of equation for component " + component + " not supported yet");
+            }
+        }
+
+        /// <summary>
+        /// vector of the auxiliary heat flux
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[] SpeciesMassBalanceNames(int NoOfComponents) {
+            switch (NoOfComponents) {
+                case 3:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2 };
+                case 4:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2, SpeciesMassBalance3 };
+                case 5:
+                return new string[] { SpeciesMassBalance0, SpeciesMassBalance1, SpeciesMassBalance2, SpeciesMassBalance3, SpeciesMassBalance4 };
+                default:
+                throw new NotImplementedException("Solver for" + NoOfComponents + "components not supported!");
+            }
+        }
+
+
+
+        /// <summary>
         /// xx - component constitutive equation for viscoelastic extra stress
         /// </summary>
         public const string ConstitutiveXX = "ConstitutiveXX";
@@ -435,6 +497,11 @@ namespace BoSSS.Solution.NSECommon {
         public const string VelocityX_GradientY = "VelocityX_GradientY";
 
         /// <summary>
+        /// gradient in z-direction of velocity component in x-direction
+        /// </summary>
+        public const string VelocityX_GradientZ = "VelocityX_GradientZ";
+
+        /// <summary>
         /// gradient in x-direction of velocity component in y-direction
         /// </summary>
         public const string VelocityY_GradientX = "VelocityY_GradientX";
@@ -443,6 +510,26 @@ namespace BoSSS.Solution.NSECommon {
         /// gradient in y-direction of velocity component in y-direction
         /// </summary>
         public const string VelocityY_GradientY = "VelocityY_GradientY";
+
+        /// <summary>
+        /// gradient in z-direction of velocity component in y-direction
+        /// </summary>
+        public const string VelocityY_GradientZ = "VelocityY_GradientZ";
+
+        /// <summary>
+        /// gradient in x-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientX = "VelocityZ_GradientX";
+
+        /// <summary>
+        /// gradient in y-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientY = "VelocityZ_GradientY";
+
+        /// <summary>
+        /// gradient in z-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientZ = "VelocityZ_GradientZ";
 
 
         ///// <summary>
@@ -480,7 +567,6 @@ namespace BoSSS.Solution.NSECommon {
         /// variable name for Pressure
         /// </summary>
         public const string Pressure = "Pressure";
-
 
         /// <summary>
         /// variable name for Pressure parameter
@@ -1106,6 +1192,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         static public string[] MassFractions(int NumberOfSpecies) {
             switch (NumberOfSpecies) {
+                case 1: return new string[] { MassFraction0};
+                case 2: return new string[] { MassFraction0, MassFraction1 };
                 case 3: return new string[] { MassFraction0, MassFraction1, MassFraction2 };
                 case 4: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3 };
                 case 5: return new string[] { MassFraction0, MassFraction1, MassFraction2, MassFraction3, MassFraction4 };
@@ -1418,6 +1506,21 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { Momentum0X_Mean, Momentum0Y_Mean };
             else if (D == 3)
                 return new string[] { Momentum0X_Mean, Momentum0Y_Mean, Momentum0Z_Mean };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
+        /// <summary>
+        /// vector of velocity gradient names
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[,] Velocity_GradientVector(int D) {
+            if (D == 2)
+                return new string[,] { { VelocityX_GradientX, VelocityX_GradientY }, { VelocityY_GradientX, VelocityY_GradientY } };
+            else if (D == 3)
+                return new string[,] { { VelocityX_GradientX, VelocityX_GradientY, VelocityX_GradientZ }, { VelocityY_GradientX, VelocityY_GradientY, VelocityY_GradientZ }, { VelocityZ_GradientX, VelocityZ_GradientY, VelocityZ_GradientZ } };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }

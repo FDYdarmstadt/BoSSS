@@ -64,7 +64,9 @@
   <ItemGroup>
     <Compile Include="BaseVariableDensity\VariableDensitySIMPLEControl.cs" />
     <Compile Include="Base\01_VariableSet\BaseVariableSet.cs" />
-    <Compile Include="Base\02_Operators\swipViscosityTerm1_variante.cs" />
+    <Compile Include="Base\02_Operators\SipViscosityTerm1_segregatedVar.cs" />
+    <Compile Include="Base\02_Operators\SipViscosityTerm2_segregatedVar.cs" />
+    <Compile Include="Base\02_Operators\SipViscosityTerm3_segregatedVar.cs" />
     <Compile Include="Incompressible\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\00_ControlFiles\ControlExamples.cs" />
     <Compile Include="LowMach\LowMachSIMPLEControl.cs" />
@@ -194,7 +196,7 @@
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
       <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">

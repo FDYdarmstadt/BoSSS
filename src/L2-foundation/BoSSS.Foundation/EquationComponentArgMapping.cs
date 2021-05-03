@@ -53,7 +53,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
         static public EquationComponentArgMapping<T>[] GetArgMapping(ISpatialOperator op, bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) {
 //             public EquationComponentArgMapping<T>[] GetArgMapping<T>(                  bool CatParams = false, Func<T, bool> F = null, Func<IEquationComponent, IEquationComponent> vectorizer = null) where T : IEquationComponent {
 
-            if(!op.IsCommited)
+            if(!op.IsCommitted)
                 throw new ApplicationException("Commit() has to be called prior to this method.");
 
             int Gamma = op.CodomainVar.Count;

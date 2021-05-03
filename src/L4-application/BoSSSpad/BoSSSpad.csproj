@@ -55,6 +55,7 @@
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="FastColoredTextBox">
@@ -94,9 +95,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="SshNet.Security.Cryptography">
-      <HintPath>..\..\..\libs\Renci.SshNet-2020.0.0-beta1\SshNet.Security.Cryptography.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -114,12 +112,13 @@
     <Compile Include="AppControlExtensions.cs" />
     <Compile Include="BatchProcessorConfig.cs" />
     <Compile Include="BoSSSpadGnuplotExtensions.cs" />
+    <Compile Include="BoSSSshell.cs" />
+    <Compile Include="TemporalConvergence.cs" />
     <Compile Include="SshClient.cs" />
     <Compile Include="ResolvableAssembly.cs" />
     <Compile Include="autonomuousPlotter.cs" />
     <Compile Include="BoSSSpadMain.cs" />
     <Compile Include="BatchProcessorClient.cs" />
-    <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="Document.cs" />
     <Compile Include="ElectronWorksheet.cs" />
@@ -165,9 +164,6 @@
     <Compile Include="XmlDocumentationExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\..\..\internal\src\private-gutz\L4-application\LowMachCombustionNSE\LowMachCombustionNSE.csproj">
       <Project>{9a1b20c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
       <Name>LowMachCombustionNSE</Name>
@@ -179,6 +175,10 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
       <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
       <Name>BoSSS.Foundation.SpecFEM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
@@ -267,10 +267,6 @@
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
       <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
       <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
       <Project>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</Project>

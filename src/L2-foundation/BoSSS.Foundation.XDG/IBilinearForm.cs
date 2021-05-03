@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// called before the integration on respective species 
         /// </summary>
-        void SetParameter(string speciesName, SpeciesId SpcId);
+        void SetParameter(string speciesName);
     }
 
     /// <summary>
@@ -45,7 +45,8 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// the species in which the bulk equation component is valid
+        /// the species in which the bulk equation component is valid;
+        /// Null deactivates the Filter, i.e. the component is integrated for all species.
         /// </summary>
         string ValidSpecies { get; }
     }
@@ -89,12 +90,12 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// regarding this integrand, the species on the positive side of level set number <see cref="LevelSetIndex"/>
         /// </summary>
-        SpeciesId PositiveSpecies { get; }
+        string PositiveSpecies { get; }
 
         /// <summary>
         /// guess what?
         /// </summary>
-        SpeciesId NegativeSpecies { get; }
+        string NegativeSpecies { get; }
 
         /// <summary>
         /// Controls integration at the level-set.

@@ -285,7 +285,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// The inverse of <see cref="ToDataTable(IDictionary{string, object[]})"/>
+        /// The inverse of <see cref="ToDataTable{V}(IDictionary{string, V})"/>
         /// </summary>
         /// <param name="tab"></param>
         /// <returns>
@@ -432,7 +432,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
         
         /// <summary>
-        /// Extracts one column from a table, and tries to convert the content into type <typeparamref name="T"/>.
+        /// Extracts one column from a table
         /// </summary>
         public static Array GetColumn(this DataTable tab, string ColName) {
             DataColumn col = tab.Columns[ColName];

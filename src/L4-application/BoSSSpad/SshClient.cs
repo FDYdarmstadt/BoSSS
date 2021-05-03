@@ -113,15 +113,36 @@ namespace BoSSS.Application.BoSSSpad {
             return jobId;
         }
 
-        public (string stdout, string stderr) RunCommand(string command) {
+        public (string stdout, string stderr) RunCommand(string command, bool verbose = false) {
+            if(verbose)
+                Console.WriteLine("Starting test shell...");
             m_cmd.Start();
-            m_cmd.StandardInput.WriteLine("ssh " + m_usrname + "@" + m_srvrname + " \"" + command + "\"");
+            if(verbose)
+                Console.WriteLine("started.");
+
+            string sshCmd = "ssh " + m_usrname + "@" + m_srvrname + " -oStrictHostKeyChecking=no \"" + command + "\"";
+            if(verbose)
+                Console.WriteLine("Command: " + sshCmd);
+            m_cmd.StandardInput.WriteLine(sshCmd);
+            if(verbose)
+                Console.WriteLine("command written; Waiting for completion...");
             //m_cmd.StandardInput.WriteLine(command);
             m_cmd.StandardInput.Flush();
             m_cmd.StandardInput.Close();
             m_cmd.WaitForExit();
+            if(verbose)
+                Console.WriteLine("external shell terminated; exit code is " + m_cmd.ExitCode);
             string std, err;
             ReadLines(out std, out err);
+            if(verbose) {
+                Console.WriteLine("stdout received:");
+                Console.WriteLine(std);
+                Console.WriteLine("----- (end of stdout)");
+                Console.WriteLine("stderr received:");
+                Console.WriteLine(err);
+                Console.WriteLine("----- (end of stderr)");
+            }
+
             return (std, err);
         }
 

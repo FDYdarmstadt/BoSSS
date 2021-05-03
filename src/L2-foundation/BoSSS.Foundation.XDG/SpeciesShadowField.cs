@@ -64,7 +64,7 @@ namespace BoSSS.Foundation.XDG {
             public override string Identification {
                 get {
                     var specId = this.m_Coordinates._SpecisId;
-                    return m_Owner.Identification + "-" + m_Owner.m_CCBasis.Tracker.GetSpeciesName(specId);
+                    return m_Owner.Identification + "#" + m_Owner.m_CCBasis.Tracker.GetSpeciesName(specId);
                 }
                 set {
                     throw new NotSupportedException("Setting is forbidden -- name of shadow field is implied by owner field.");

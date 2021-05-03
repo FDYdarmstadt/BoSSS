@@ -57,6 +57,7 @@
     <DocumentationFile>bin\Release\BoSSS.Foundation.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <LangVersion>7.1</LangVersion>
+    <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AggregationGrid.cs" />
@@ -93,9 +94,9 @@
     <Compile Include="DatabaseDriver_TimeStep.cs" />
     <Compile Include="DatabaseDriver_VectorData.cs" />
     <Compile Include="DatabaseDriver_VersionedSerializer.cs" />
+    <Compile Include="DatabaseUtils.cs" />
     <Compile Include="DGFieldExtensions.cs" />
     <Compile Include="EdgeInfo.cs" />
-    <Compile Include="FormDifferentiator.cs" />
     <Compile Include="GridComparer.cs" />
     <Compile Include="GridCommons_Comparer.cs" />
     <Compile Include="GridCommons_Merge.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="NodeCoordinateSystem.cs" />
     <Compile Include="NodeSet.cs" />
     <Compile Include="NonlinFormVectorizer.cs" />
+    <Compile Include="PeriodicBoundaryUtils.cs" />
     <Compile Include="Point.cs" />
     <Compile Include="PolynomialList.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -289,6 +291,10 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
       <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
       <Name>ilPSP.Connectors.Matlab</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj">
+      <Project>{332083b9-c7fd-4b04-95ec-b0c729b21883}</Project>
+      <Name>ilPSP.LinSolvers.HYPRE</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{b18aedc3-c7a5-4da6-abd3-e981b002adde}</Project>

@@ -36,7 +36,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public DivergenceAtLevelSet_withEvaporation(int _D, LevelSetTracker lsTrk,
             double vorZeichen, bool RescaleConti, ThermalParameters thermParams, double _sigma) 
-            : base(_D, lsTrk, thermParams, _sigma) {
+            : base(_D, thermParams, _sigma) {
 
             scaleA = vorZeichen;
             scaleB = vorZeichen;

@@ -868,8 +868,16 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// Center-of-gravity
             /// </summary>
-            public double[] GetCenter(int jCell) {
-                return this.CellCenter.GetRow(jCell);
+            public Vector GetCenter(int jCell) {
+                if(IsCellAffineLinear(jCell)) {
+                    return this.CellCenter.GetRowPt(jCell);
+                } else {
+                    var Cen = this.GetRefElement(jCell).Center;
+                    Debug.Assert(Cen.GetLength(1) == m_owner.SpatialDimension);
+                    var CenGlobal = MultidimensionalArray.Create(1, 1, Cen.GetLength(1));
+                    m_owner.TransformLocal2Global(Cen, jCell, 1, CenGlobal);
+                    return CenGlobal.ExtractSubArrayShallow(0, -1, -1).GetRowPt(0);
+                }
             }
 
             /// <summary>

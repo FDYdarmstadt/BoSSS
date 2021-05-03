@@ -110,7 +110,7 @@ namespace ilPSP {
             if(other is MultidimensionalArray mda) {
                 if(mda.Dimension != 2)
                     throw new ArgumentException($"Not a matrix - MultidimensionalArray is {mda.Dimension} dimensional.");
-                Acc(1.0, mda);
+                Acc(scl, mda);
             } else {
                 int I = m_StorageLayout.m_Length0;
                 int J = m_StorageLayout.m_Length1;

@@ -750,7 +750,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// The core of the masking
         /// Generates index lists and the Ni0-struct-list corresponding to mask
         /// and is called by the child classes: local and external mask
-        /// Note: the smallest unit are DG sub blocks!
+        /// Note: the smallest sub blocks are DG blocks!
         /// </summary>
         protected void GenerateAllMasks() {
             int NoOfCells = m_NoOfCells;
@@ -778,11 +778,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var VarInstruction = m_sbs.VariableFilter;
             var SpecInstruction = m_sbs.SpeciesFilter;
             var ModeInstruction = m_sbs.ModeFilter;
-            bool emptysel = true;
+            bool emptysel = true; // for debugging, do not look at selections containing no cells, possible if external cells shall be considered but block has none
+            int totNoOfSpeciesInSelection = 0; // for debugging, in case of IBM, there may be empty selection, due to 0 species in cells 
+
+            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
             // loop over cells...
             for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
-                int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be concidered, you know ...
+                int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be considered, you know ...
                 emptysel &= !CellInstruction(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
                 if (!CellInstruction(jLoc))
                     continue;
@@ -796,6 +799,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // loop over species...
                     for (int iSpc = 0; iSpc < NoOfSpecies[iLoc][iVar]; iSpc++) {
+                        totNoOfSpeciesInSelection += NoOfSpecies[iLoc][iVar];
                         if (!SpecInstruction(jLoc, iVar, iSpc))
                             continue;
                         long GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
@@ -809,16 +813,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 int LocalModeOffset = m_Ni0[degree].i0 + LocalOffset;
                                 int ModeLength = m_Ni0[degree].N;
                                 var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset, SubOffset, ModeLength);
-                                    SubOffset += ModeLength;
-                                    // Fill int lists
-                                    for (int i = 0; i < newNi0.N; i++) {
-                                        Globalint.Add(newNi0.Gi0 + i);
-                                        Localint.Add(newNi0.Li0 + i);
-                                        SubBlockIdx.Add(newNi0.Si0 + i);
-                                        MaskLen++;
-                                    }
-                                    // Fill Ni0 Lists
-                                    tmpMod.Add(newNi0);
+                                    SubOffset += ModeLength;                      
+
+                                // Fill int lists
+                                for (int i = 0; i < newNi0.N; i++) {
+                                    Globalint.Add(newNi0.Gi0 + i);
+                                    Localint.Add(newNi0.Li0 + i);
+                                    SubBlockIdx.Add(newNi0.Si0 + i);
+                                    MaskLen++;
+                                }
+
+                                // Fill Ni0 Lists
+                                tmpMod.Add(newNi0);
                                     Ni0Length++;
                                     ListNi0.Add(newNi0);
                                 Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
@@ -847,9 +853,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
             // an empty selection is allowed,
             // e.g. consider a combination of empty external and non empty local mask
-            if (!emptysel) {
-                Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1));
-                Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1));
+            // In case of IBM, selections with no species are also allowed
+            if (!emptysel && totNoOfSpeciesInSelection > 0) {
+                Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1)); // test for uniqueness of local index
+                Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1)); // test for uniqueness of global index
                 Debug.Assert(ListNi0.Count() == NumOfNi0);
                 Debug.Assert(MaskLen <= m_LocalLength);
                 Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));

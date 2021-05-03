@@ -62,7 +62,7 @@ namespace BoSSS.Solution.Statistic {
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
         public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string,long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<double[], bool> SelectionFunc = null) {  
+          out double[] GridRes, out Dictionary<string,long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -208,6 +208,175 @@ namespace BoSSS.Solution.Statistic {
                 }
 
                 GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Pretty much the same functionality as <see cref="ComputeErrors(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[], Func{double[], bool})"/>.
+        /// However all compared timesteps are on the same grid (and physical time) and we compare to the simulation using the smallest temporal resolution
+        /// </summary>
+        /// <param name="FieldsToCompare">
+        /// Identification (<see cref="DGField.Identification"/>) of the fields which should be compared.
+        /// </param>
+        /// <param name="timestepS">
+        /// A collection of solutions on different grid resolutions.
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="L2Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="FieldsToCompare"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="FieldsToCompare"/>).
+        /// </param>
+        /// <param name="timestepIds">
+        /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
+        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
+        /// </param>
+        public static void ComputeErrorsTemporal(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
+          out double[] TempRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {
+            using (var tr = new FuncTrace()) {
+                if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
+                    throw new ArgumentException("empty list of field names.");
+                if (timestepS == null || timestepS.Count() < 1)
+                    throw new ArgumentException("requiring at least two different solutions.");
+
+                // sort according to temporal resolution
+                {
+                    timestepS = timestepS.OrderBy(f => f.TimeStepNumber.First()).ToArray();
+
+                    // filter unequal timesteps:
+                    double phystime = timestepS.Last().PhysicalTime;
+                    foreach (var timestep in timestepS)
+                        if (timestep.PhysicalTime != phystime) ((List<ITimestepInfo>)timestepS).Remove(timestep);
+
+                    // filter unequal grids
+                    int cells = timestepS.Last().Grid.NumberOfCells;
+                    foreach (var timestep in timestepS)
+                        if (timestep.Grid.NumberOfCells != cells) ((List<ITimestepInfo>)timestepS).Remove(timestep);
+
+                    // extract timestep Id's
+                    timestepIds = new Guid[timestepS.Count()];
+                    for (int z = 0; z < timestepIds.Length; z++) {
+                        timestepIds[z] = timestepS.ElementAt(z).ID;
+                    }
+                }
+
+                // load the DG-Fields
+                List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
+                int i = 1;
+                foreach (var timestep in timestepS) {
+                    //Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
+                    fields.Add(timestep.Fields);
+                    i++;
+                    //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
+                }
+
+
+                // clear cut-out cells 
+                if (SelectionFunc != null) {
+                    foreach (var fenum in fields) {
+                        foreach (var f in fenum) {
+                            GridData grd = (GridData)f.GridDat;
+                            //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
+                            CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
+                            Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
+                            f.Clear(cutout);
+                        }
+                    }
+                }
+
+                // extrapolate all solutions to same grid, this is necessary so references for grid and tracker are the same
+                Dictionary<string, List<DGField>> injectedFields = new Dictionary<string, List<DGField>>();
+                Dictionary<string, List<int>> DOFs = new Dictionary<string, List<int>>();
+
+                int[][] Fine2CoarseMapS = new int[timestepS.Count() - 1][]; // 1st index: level; 2n index: cell index on finest level
+                for (int iLevel = 0; iLevel < Fine2CoarseMapS.Length; iLevel++) {
+                    ComputeFine2CoarseMap((GridData)fields.Last().First().GridDat, (GridData)fields.ElementAt(iLevel).First().GridDat, out Fine2CoarseMapS[iLevel]);
+                }
+
+                foreach (string Identification in FieldsToCompare) {
+                    List<DGField> fields_Identification = new List<DGField>(); // fields for different resolutions
+                    List<int> dofs_Idenitification = new List<int>();
+
+                    DGField finestSolution = fields.Last().Single(f => f.Identification == Identification);
+
+                    for (int iLevel = 0; iLevel < timestepS.Count() - 1; iLevel++) {
+                        //Console.WriteLine("Injecting '{0}' from level {1} to finest grid...", Identification, iLevel);
+                        tr.Info(string.Format("Injecting '{0}' from level {1} to finest grid...", Identification, iLevel));
+
+
+                        DGField coarseSolution = fields[iLevel].Single(f => f.Identification == Identification);
+
+                        if (finestSolution.GetType() != coarseSolution.GetType())
+                            throw new NotSupportedException();
+                        if (coarseSolution.Basis.Degree != finestSolution.Basis.Degree)
+                            throw new NotSupportedException();
+
+                        if (finestSolution is XDGField) {
+                            XDGField _coarseSolution = (XDGField)coarseSolution;
+                            XDGField _finestSolution = (XDGField)finestSolution;
+                            XDGField injectedSolution = new XDGField(_finestSolution.Basis, Identification + "-inj-" + iLevel);
+
+                            InjectXDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
+
+                            fields_Identification.Add(injectedSolution);
+                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
+                        } else if (finestSolution is SinglePhaseField) {
+                            SinglePhaseField _coarseSolution = (SinglePhaseField)coarseSolution;
+                            SinglePhaseField _finestSolution = (SinglePhaseField)finestSolution;
+                            SinglePhaseField injectedSolution = new SinglePhaseField(_finestSolution.Basis, Identification + "-inj-" + iLevel);
+
+                            InjectDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
+
+                            fields_Identification.Add(injectedSolution);
+                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
+                        } else {
+                            throw new NotSupportedException("DG field type '" + finestSolution.GetType().FullName + "' not supported, Identification is '" + finestSolution.Identification + "'");
+                        }
+
+                        tr.Info(string.Format("done."));
+                        //Console.WriteLine("done.");
+                    }
+
+                    fields_Identification.Add(finestSolution);
+                    injectedFields.Add(Identification, fields_Identification);
+                    DOFs.Add(Identification, dofs_Idenitification);
+                }
+                __DOFs = new Dictionary<string, long[]>();
+                foreach (var kv in DOFs) {
+                    __DOFs.Add(kv.Key, kv.Value.Select((int iii) => (long)iii).ToArray());
+                }
+
+
+                // compute the errors
+                L2Errors = new Dictionary<string, double[]>();
+                foreach (string Identification in FieldsToCompare) {
+
+                    double[] L2Error = new double[timestepS.Count() - 1];
+
+                    for (int iLevel = 0; iLevel < timestepS.Count() - 1; iLevel++) {
+                        //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
+                        tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel));
+
+                        DGField Error = injectedFields[Identification].Last().CloneAs();
+                        DGField injSol = injectedFields[Identification].ElementAt(iLevel);
+                        Error.Acc(-1.0, injSol);
+
+                        L2Error[iLevel] = Error.L2Norm();
+
+                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
+                        tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
+                    }
+
+                    L2Errors.Add(Identification, L2Error);
+                }                           
+
+                TempRes = timestepS.Take(timestepS.Count() - 1).Select(gd => gd.PhysicalTime / (gd.TimeStepNumber.First() - 1)).ToArray();
             }
         }
 

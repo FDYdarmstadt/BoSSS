@@ -40,12 +40,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// component of the divergence
         /// </param>
         /// <param name="_bcmap"></param>
-        public DivergenceInSpeciesBulk_Edge(int _component, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
+        public DivergenceInSpeciesBulk_Edge(int _component, IncompressibleMultiphaseBoundaryCondMap _bcmap, string spcName,  
             double _rho, double _vorZeichen, bool _RescaleConti)
             : base(_component, _bcmap) {
 
             rho = _rho;
-            m_spcId = spcId;
+            //m_spcId = spcId;
             ValidSpecies = spcName;
 
             this.RescaleConti = _RescaleConti;
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         bool RescaleConti;
         double scale;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -120,5 +120,32 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
     }
 
+    /// <summary>
+    /// Variable density bulk term.
+    /// </summary>
+    public class Divergence_CentralDifferenceBulk : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
 
+        public Divergence_CentralDifferenceBulk(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
+            : base(Component, Bcmap, SpatDim, EoS, NumberOfChemicalSpecies) {
+            ValidSpecies = spcName;
+        }
+        /// <summary>
+        /// constructor for incompressible
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="Component"></param>
+        /// <param name="Bcmap"></param>
+        /// <param name="SpatDim"></param>
+        /// <param name="EoS"></param>
+        /// <param name="NumberOfChemicalSpecies"></param>
+        public Divergence_CentralDifferenceBulk(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
+            ValidSpecies = spcName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+
+    }
 }

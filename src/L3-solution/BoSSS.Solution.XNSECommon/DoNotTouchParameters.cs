@@ -179,7 +179,7 @@ namespace BoSSS.Solution.XNSECommon {
         ExplicitTransformation,
 
         /// <summary>
-        /// the full viscous stress tensor is discretized in thw bulk domain, i.e. 
+        /// the full viscous stress tensor is discretized in the bulk domain, i.e. 
         /// \f[ 
         ///    \mathrm{div} \left( \mu \left( \nabla \vec{u} + \vec{u}^T \right) \right),
         /// \f]
@@ -407,7 +407,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public object Clone() {
-            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value types
+            var cl = (DoNotTouchParameters)MemberwiseClone(); // ok for value type memebers
             return cl;
         }
     }

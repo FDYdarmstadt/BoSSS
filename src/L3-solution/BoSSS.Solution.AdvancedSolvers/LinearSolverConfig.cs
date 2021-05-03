@@ -220,6 +220,8 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int pMaxOfCoarseSolver = 1;
 
+        public bool UsePMGonly = false;
+
         /// <summary>
         /// Clones the LinearConfig
         /// </summary>

@@ -93,7 +93,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
             //}
         }
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             base.pressureFunction = this.m_bcMap.bndFunction[VariableNames.Pressure + "#" + speciesName];
         }
     }

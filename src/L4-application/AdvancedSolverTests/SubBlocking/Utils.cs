@@ -32,21 +32,57 @@ namespace AdvancedSolverTests.SubBlocking
         public long[] Global_IList_LocalCells;
     }
 
-    internal static class Utils
-    {
-        public static MultigridOperator CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
-            return CreateTestMGOperator(out double[] Vec, UseXdg, DGOrder, MShape, Resolution);
+    class MgoSolverPair : IDisposable {
+
+        public MgoSolverPair(SubBlockTestSolver2Var solver) {
+            MGOp = solver.MGOp;
+            Vec = solver.someVec;
+            this.Solver = solver;
+            MGSeq = solver.MgSeq;
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
         }
 
-        public static MultigridOperator CreateTestMGOperator(out double[] Vec, XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
-            MultigridOperator retMGOp;
-            using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
-                solver.Init(null);
-                solver.RunSolverMode();
-                retMGOp = solver.MGOp;
-                Vec = solver.someVec;
-            }
-            return retMGOp;
+        public MultigridOperator MGOp {
+            get;
+            private set;
+        }
+
+        public double[] Vec {
+            get;
+            private set;
+        }
+
+        public AggregationGridData[] MGSeq {
+            get;
+            private set;
+        }
+
+        public SubBlockTestSolver2Var Solver {
+            get;
+            private set;
+        }
+
+        public void Dispose() {
+            Solver.Dispose();
+        }
+    }
+
+
+    internal static class Utils
+    {
+        
+        public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {
+            //using (var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution }) {
+            var solver = new SubBlockTestSolver2Var() { m_UseXdg = UseXdg, m_DGorder = DGOrder, m_Mshape = MShape, m_Res = Resolution };
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            solver.Init(null);
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            solver.RunSolverMode();
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            //}
+            // Note to Jens:
+            // the "using"-block calls the Dispose()-Method, so the return value may depend on disposed object
+            return new MgoSolverPair(solver);
         }
 
 
@@ -82,15 +118,18 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         public static void WriteOutTestMatrices() {
-            MultigridOperator mgo;
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_var");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_spec);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_spec");
-            mgo = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var_spec);
-            mgo.OperatorMatrix.SaveToTextFileSparseDebug("M_var_spec");
+            using(var T1 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal)) {
+                T1.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M");
+            }
+            using(var T2 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var)) {
+                T2.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_var");
+            }
+            using(var T3 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_spec)) {
+                T3.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_spec");
+            }
+            using(var T4 = CreateTestMGOperator(UseXdg: XDGusage.all, MShape: MatrixShape.diagonal_var_spec)) {
+                T4.MGOp.OperatorMatrix.SaveToTextFileSparseDebug("M_var_spec");
+            }
         }
 
         public static void SetAll(this BlockMsrMatrix A, double val) {

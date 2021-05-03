@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
             {
                 centerOfGravity += vertex.Position;
             }
-            centerOfGravity.Scale(1.0 / cell.Vertices.Length);
+            centerOfGravity.ScaleInPlace(1.0 / cell.Vertices.Length);
             return centerOfGravity;
         }
 
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
                 centerOfGravity += (root + a + b) / 3 * area;
                 cellArea += area;
             }
-            centerOfGravity.Scale(1.0 / cellArea);
+            centerOfGravity.ScaleInPlace(1.0 / cellArea);
             return centerOfGravity;
         }
 

@@ -71,19 +71,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Use Lichtenberg 2?
+        /// Additional lines to be added to the auto-generated batch.sh file.
         /// </summary>
         [DataMember]
-        public bool UseLB2 {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Use the test partition on Lichtenberg 2?
-        /// </summary>
-        [DataMember]
-        public bool UseLB2TestPartition {
+        public string[] AdditionalBatchCommands {
             get;
             set;
         }
@@ -118,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-
+        [NonSerialized]
         SshClient m_SSHConnection;
 
         SshClient SSHConnection {
@@ -157,8 +148,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// runs an ls command
         /// </summary>
         public void TestSSH() {
-            var output = SSHConnection.RunCommand("ls");
-            Console.WriteLine(output);
+            Console.WriteLine($"Performing test for ssh connection of {this.ToString()} ...");
+            var output = SSHConnection.RunCommand("ls", verbose:true);
+            //Console.WriteLine(output);
+            Console.WriteLine($"Test finished.");
         }
 
         /// <summary>
@@ -342,8 +335,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// build batch script with all necessary parameters
         /// </summary>
-        /// <param name="myJob"></param>
-        /// <param name="moduleLoad"></param>
         void buildSlurmScript(Job myJob, string[] moduleLoad, string DeploymentDirectory) {
 
             //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
@@ -356,7 +347,7 @@ namespace BoSSS.Application.BoSSSpad {
             string userName = Username;
             string startupstring;
             string quote = "\"";
-            string HHLR_project = this.SlurmAccount;
+            string slurmAccount = this.SlurmAccount;
             string memPerCPU;
             if (myJob.MemPerCPU != null) {
                 memPerCPU = myJob.MemPerCPU;
@@ -390,14 +381,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -p test24");
-                }
-                if (HHLR_project != null) {
-                    sw.WriteLine("#SBATCH -A " + HHLR_project);
-                }
-                if (this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH --exclusive");
+                if (slurmAccount != null) {
+                    sw.WriteLine("#SBATCH -A " + slurmAccount);
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
@@ -412,8 +397,8 @@ namespace BoSSS.Application.BoSSSpad {
                     sw.WriteLine("#SBATCH --mail-user=" + email);
                     sw.WriteLine("#SBATCH --mail-type=ALL");
                 }
-                if (!this.UseLB2 && !this.UseLB2TestPartition) {
-                    sw.WriteLine("#SBATCH -C avx2");
+                foreach (var cmd in this.AdditionalBatchCommands ?? Enumerable.Empty<string>()) {
+                    sw.WriteLine(cmd);
                 }
                 //sw.WriteLine("#SBATCH --ntasks-per-node 1");    // Only start one MPI-process per node
 
@@ -473,7 +458,12 @@ namespace BoSSS.Application.BoSSSpad {
         ///
         /// </summary>
         public override string ToString() {
-            return "SlurmClient: " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
+
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return "SlurmClient" + NameString + ": " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
         }
 
     }

@@ -97,11 +97,11 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //VectorExtension = new VectorField<SinglePhaseField>(D, Velocity[0].Basis, "ExtVel", SinglePhaseField.Factory);
             if (Velocity[0].GetType() == typeof(SinglePhaseField)) {
                 NonXVelocityBasis = ((SinglePhaseField)Velocity[0]).Basis;
-                InterfaceFlux = new SingleComponentInterfaceForm(PenaltyBase, LSTrk);
+                InterfaceFlux = new SingleComponentInterfaceForm(PenaltyBase);
             }
             else if (Velocity[0].GetType() == typeof(XDGField)) {
                 NonXVelocityBasis = ((XDGField)Velocity[0]).Basis.NonX_Basis;
-                InterfaceFlux = new DensityWeightedExtVel(PenaltyBase, LSTrk, Density);
+                InterfaceFlux = new DensityWeightedExtVel(PenaltyBase, Density);
             }
             else {
                 throw new ArgumentException("VelocityField must be either a SinglePhaseField or a XDGField!");

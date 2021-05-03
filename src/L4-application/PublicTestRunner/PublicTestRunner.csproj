@@ -97,6 +97,10 @@
       <Project>{e1351588-3bc0-418a-bfa2-7ce3391aa167}</Project>
       <Name>BoSSSpad</Name>
     </ProjectReference>
+    <ProjectReference Include="..\CDG_ProjectionTest\CDG_ProjectionTest.csproj">
+      <Project>{ca250f2a-ad4e-4f96-bc29-692e28f6b140}</Project>
+      <Name>CDG_ProjectionTest</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CNS\CNS.csproj">
       <Project>{8bd7843e-8191-40b3-b208-75ec766a99fd}</Project>
       <Name>CNS</Name>

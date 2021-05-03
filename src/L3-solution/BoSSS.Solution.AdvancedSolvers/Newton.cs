@@ -263,6 +263,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         terminateLoop = true;
                     } else {
                         //Console.WriteLine("but continue as long as we make progress");
+                        //success = true;
+                        //terminateLoop = true;
                     }
                 }
 
@@ -361,7 +363,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // hard-coded constants
                 // ===============================
-                const double HomotopyStepAcceptedFactor = 10.0; // a solution for a specific homotopy value is accepted, 
+                const double HomotopyStepAcceptedFactor = 100.0; // a solution for a specific homotopy value is accepted,
                 //                                                 if the residual is below the convergence criterion, scaled by this factor
 
                 double allowedIncrease = 1e6; // initial value for acceptable residual increase when the homotopy parameter is increased.
@@ -369,7 +371,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // preventing step width being to long:
                 // ---------------------------------------
              
-                const int HomotopyStepLongFail = 10; // If, for a specific homotopy parameter value, Newton does not converges successfully,
+                const int HomotopyStepLongFail = 20; // If, for a specific homotopy parameter value, Newton does not converges successfully,
                 //   (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
                 const double StepWidthReductionFactor = 0.2; // Reduction factor (must be smaller 1.0) for the homotopy step (if homotopy step failed)
 
@@ -417,7 +419,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // test 
 
                         bool GoodForHomoIncrease = ResidualCrit(HomotopyStepAcceptedFactor) && HomotopyParameter < 1.0;
-                        bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail) && (AcceptedHomoSolutions.Count > 0);
+                        bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail
+                                        || TrustRegionDelta < 5e-6
+                        ) && (AcceptedHomoSolutions.Count > 0);
+
+                        if (TrustRegionDelta < 5e-6) {
+                            Console.WriteLine("Homotopy decrease because of low trust region");
+                        }
 
                         if(!GoodForHomoIncrease && BadHomo) {
                             allowedIncrease *= StepWidthReductionFactor;

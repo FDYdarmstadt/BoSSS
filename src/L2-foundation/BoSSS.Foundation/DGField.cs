@@ -1055,7 +1055,7 @@ namespace BoSSS.Foundation {
         /// <see cref="Basis"/>);
         /// </summary>
         /// <param name="other"></param>
-        virtual public void AverageWith(DGField other, double alpha = 0.5) {
+        virtual public void ScaleAndAcc(DGField other, double alpha = 0.5) {
             if (!other.Basis.Equals(this.Basis)) {
                 throw new ApplicationException(
                     "unable to copy because the DG polynomial basis of other field is different.");

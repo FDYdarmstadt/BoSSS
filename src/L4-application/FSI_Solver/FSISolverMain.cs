@@ -373,7 +373,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                         // Immersed boundary
                         // -----------------------------
-                        var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, LsTrk, boundaryCondMap, ParticleList.ToArray(), UseMovingMesh, GetMinGridLength());
+                        var convectionAtIB = new Solution.NSECommon.Operator.Convection.FSI_ConvectionAtIB(d, spatialDim, boundaryCondMap, ParticleList.ToArray(), UseMovingMesh, GetMinGridLength());
                         comps.Add(convectionAtIB);
                     }
                 }
@@ -391,7 +391,7 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // Immersed boundary
                 // -----------------------------
-                Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB pressureAtIB = new Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB(d, spatialDim, LsTrk);
+                Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB pressureAtIB = new Solution.NSECommon.Operator.Pressure.FSI_PressureAtIB(d, spatialDim);
                 comps.Add(pressureAtIB);
 
                 // if periodic boundary conditions are applied a fixed pressure gradient drives the flow
@@ -409,12 +409,12 @@ namespace BoSSS.Application.FSI_Solver {
 
                 // The bulk
                 // -----------------------------
-                swipViscosity_Term1 viscousBulk = new swipViscosity_Term1(penalty, d, spatialDim, boundaryCondMap, ViscosityOption.ConstantViscosity, FluidViscosity, double.NaN, null);
+                SipViscosity_GradU viscousBulk = new SipViscosity_GradU(penalty, d, spatialDim, boundaryCondMap, ViscosityOption.ConstantViscosity, FluidViscosity, double.NaN, null);
                 comps.Add(viscousBulk);
 
                 // Immersed boundary
                 // -----------------------------
-                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, LsTrk, penalty, FluidViscosity, ParticleList.ToArray(), GetMinGridLength());
+                var viscousAtIB = new Solution.NSECommon.Operator.Viscosity.FSI_ViscosityAtIB(d, spatialDim, penalty, FluidViscosity, ParticleList.ToArray(), GetMinGridLength());
                 comps.Add(viscousAtIB); // immersed boundary component
             }
 
@@ -426,7 +426,7 @@ namespace BoSSS.Application.FSI_Solver {
                 IBM_Op.EquationComponents["div"].Add(src);
                 IBM_Op.EquationComponents["div"].Add(flx);
             }
-            var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, LsTrk, ParticleList.ToArray(), GetMinGridLength());
+            var divPen = new Solution.NSECommon.Operator.Continuity.FSI_DivergenceAtIB(spatialDim, ParticleList.ToArray(), GetMinGridLength());
             IBM_Op.EquationComponents["div"].Add(divPen);
 
             // temporal operator

@@ -655,7 +655,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 double Disc = 0, FluxIn = 0, FluxOt = 0;
                  
                 for(int d = 0; d < D; d++) {
-                    Disc = (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
+                    Disc += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
                     FluxIn += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normal[d] * PhiIn[0];
                     FluxOt += (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * 0.5 * inp.Normal[d] * PhiOt[0];
                 }
@@ -1131,9 +1131,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // generate operators
                 ILevelSetForm InterfaceFlux;
                 if (ComponentMode)
-                    InterfaceFlux = new EllipticExtension.SingleComponentInterfaceForm(+penaltyBase, Tracker);
+                    InterfaceFlux = new EllipticExtension.SingleComponentInterfaceForm(+penaltyBase);
                 else
-                    InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
+                    InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker.GridDat.SpatialDimension);
 
                 XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 

@@ -743,10 +743,17 @@ namespace BoSSS.Solution.Gnuplot {
             newPath = pathWithoutExt + "Rgrs.txt";
             var regressionData = this.Regression();
             using (StreamWriter stw = new StreamWriter(newPath)) {
-                stw.WriteLine("\\$\\degree$ \t EOC");
-                foreach (var item in regressionData) {
-                    stw.WriteLine(item.Key + "\t" + item.Value);
+                if (writeGroupName) {
+                    stw.WriteLine("\\$\\degree$ \t EOC");
+                    foreach (var item in regressionData) {
+                        stw.WriteLine(item.Key + "\t" + item.Value);
+                    }
+                } else {
+                    foreach (var item in regressionData) {
+                        stw.WriteLine( item.Value);
+                    }
                 }
+
                 stw.Close();
             }
         }
@@ -813,6 +820,70 @@ namespace BoSSS.Solution.Gnuplot {
                     s.Write("\\makeatletter \n \\global\\let\\slope{0} = \\pgfplotstableregressiona \n	\\addlegendentry{{slope: $\\pgfmathprintnumber{{\\slope{0}}}$}}; \\makeatother", RegressionCounter);
                     s.Write("\n");
                     RegressionCounter++; //go to next letter
+                }
+                s.WriteLine("\\end{{{0}}}", axisdefinition);
+                s.WriteLine(@"\end{tikzpicture}");
+                s.Write(@"%\end{figure} 
+%\end{document}
+");
+                s.Close(); 
+            }
+        }
+
+        /// <summary>
+        /// Saves pgfplots code to a file which can in turn be used to plot
+        /// the data represented by this data set, special formatting for Waterfall Analysis! You crazy guy ...
+        /// </summary>
+        /// <param name="path">
+        /// Path to the gnuplot file
+        /// </param>
+        public void SavePgfplotsFile_WA(string path) {
+            using (StreamWriter s = new StreamWriter(path)) {
+                string axisdefinition;
+                axisdefinition = "axis";
+
+                char RegressionCounter = 'a';
+
+                s.Write(@"
+%% Uncomment these lines to test the raw output.
+%% The packages below are mandatory.
+%\documentclass{scrartcl} 
+%\usepackage{tikz} 
+%\usepackage{pgfplots} 
+%   \pgfplotsset{compat=1.3}
+%\usepackage{pgfplotstable}
+
+%\begin{document} 
+%\begin{figure} 
+%\centering ");
+                s.WriteLine(@"\begin{tikzpicture}");
+                s.WriteLine("\\begin{{{0}}}", axisdefinition);
+                s.WriteLine(@"[ymode=log, legend style={at={(1.1,0.95)},anchor=north west,fill=none,draw=none,nodes=right}]");
+                foreach (var group in dataGroups) {
+                    //Write raw data points
+                    s.WriteLine(@"\addplot[no marks] table{");
+                    for (int i = 0; i < group.Abscissas.Length; i++) {
+                        s.Write(group.Abscissas[i].ToString("E16", NumberFormatInfo.InvariantInfo));
+                        s.Write("\t");
+                        s.Write(group.Values[i].ToString("E16", NumberFormatInfo.InvariantInfo));
+                        s.Write("\n");
+                    }
+                    s.WriteLine(@"};");
+                    s.WriteLine("\\addlegendentry{{Group:{0}}};", group.Name);
+                    ////Write regression line
+                    //s.WriteLine(@"\addplot[mark=none, solid] table[x=X,y={create col/linear regression={y=Y}}]{");
+                    //s.WriteLine("X \t Y");
+                    //for (int i = 0; i < group.Abscissas.Length; i++) {
+                    //    s.Write(group.Abscissas[i].ToString("E16", NumberFormatInfo.InvariantInfo));
+                    //    s.Write("\t");
+                    //    s.Write(group.Values[i].ToString("E16", NumberFormatInfo.InvariantInfo));
+                    //    s.Write("\n");
+                    //}
+                    //s.WriteLine(@"};");
+                    ////add legend entry for slope of regression line
+                    //s.Write("\\makeatletter \n \\global\\let\\slope{0} = \\pgfplotstableregressiona \n	\\addlegendentry{{slope: $\\pgfmathprintnumber{{\\slope{0}}}$}}; \\makeatother", RegressionCounter);
+                    //s.Write("\n");
+                    //RegressionCounter++; //go to next letter
                 }
                 s.WriteLine("\\end{{{0}}}", axisdefinition);
                 s.WriteLine(@"\end{tikzpicture}");

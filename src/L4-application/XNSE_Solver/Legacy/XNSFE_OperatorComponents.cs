@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             int d, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.MomentumEquationComponent(d);
@@ -68,17 +68,17 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
             if (config.isTransport) {
                 if (!config.isMovingMesh) {
-                    comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
+                    comps.Add(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
                     comps.Add(new ConvectionAtLevelSet_nonMaterialLLF(d, D, LsTrk, thermParams, sigma));
                     comps.Add(new ConvectionAtLevelSet_Consistency(d, D, LsTrk, -1, false, thermParams, sigma));
                 } 
             } else {
-                comps.Add(new MassFluxAtInterface(d, D, LsTrk, thermParams, sigma, config.isMovingMesh));
+                comps.Add(new MassFluxAtInterface(d, D, thermParams, sigma, config.isMovingMesh));
             }
 
 
             if (config.isViscous) {
-                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
+                comps.Add(new ViscosityAtLevelSet_FullySymmetric_withEvap(LsTrk.GridDat.SpatialDimension, physParams.mu_A, physParams.mu_B, dntParams.PenaltySafety, d, thermParams, sigma));
             }
 
         }
@@ -109,7 +109,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         public static void AddInterfaceContinuityEq_withEvaporation(XSpatialOperatorMk2 XOp, XNSFE_OperatorConfiguration config, int D, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.ContinuityEquation;

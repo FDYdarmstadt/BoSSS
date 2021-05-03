@@ -354,15 +354,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                     C.savetodb = true;
                                     C.AgglomerationThreshold = alpha;
 
-                                    C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string, object>("TimesteppingMode", tm),
-                                    new Tuple<string, object>("scheme", scheme),
-                                    new Tuple<string, object>("NoOfTimesteps", N),
-                                    new Tuple<string, object>("DGdegree", p),
-                                    new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
-                                    new Tuple<string, object>("GridResolutionFactor", grf),
-                                    new Tuple<string, object>("MoveOrNotMove", true)
-                                    };
+                                    C.Paramstudy_CaseIdentification.AddRange(new[] {
+                                        new Tuple<string, object>("TimesteppingMode", tm),
+                                        new Tuple<string, object>("scheme", scheme),
+                                        new Tuple<string, object>("NoOfTimesteps", N),
+                                        new Tuple<string, object>("DGdegree", p),
+                                        new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
+                                        new Tuple<string, object>("GridResolutionFactor", grf),
+                                        new Tuple<string, object>("MoveOrNotMove", true)
+                                        });
 
                                     All.Add(C);
                                 }
@@ -450,15 +450,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                     C.AgglomerationThreshold = alpha;
                                     C.ProjectName += "/AgglomStudy";
 
-                                    C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                    new Tuple<string, object>("TimesteppingMode", tm),
-                                    new Tuple<string, object>("scheme", scheme),
-                                    new Tuple<string, object>("NoOfTimesteps", N),
-                                    new Tuple<string, object>("DGdegree", p),
-                                    new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
-                                    new Tuple<string, object>("GridResolutionFactor", grf),
-                                    new Tuple<string, object>("MoveOrNotMove", true)
-                                    };
+                                    C.Paramstudy_CaseIdentification.AddRange(new[] {
+                                        new Tuple<string, object>("TimesteppingMode", tm),
+                                        new Tuple<string, object>("scheme", scheme),
+                                        new Tuple<string, object>("NoOfTimesteps", N),
+                                        new Tuple<string, object>("DGdegree", p),
+                                        new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
+                                        new Tuple<string, object>("GridResolutionFactor", grf),
+                                        new Tuple<string, object>("MoveOrNotMove", true)
+                                        });
 
                                     All.Add(C);
                                 }
@@ -654,7 +654,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                 C.TimeSteppingScheme = scheme;
                                 C.savetodb = true;
 
-                                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                                C.Paramstudy_CaseIdentification.AddRange(new[] {
                                         new Tuple<string, object>("TimesteppingMode", tm),
                                         new Tuple<string, object>("scheme", scheme),
                                         new Tuple<string, object>("NoOfTimesteps", N),
@@ -662,7 +662,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                         new Tuple<string, object>("AgglomerationThreshold",C.AgglomerationThreshold),
                                         new Tuple<string, object>("GridResolutionFactor", grf),
                                         new Tuple<string, object>("MoveOrNotMove", true)
-                                        };
+                                        });
 
                                 All.Add(C);
                             }
@@ -810,7 +810,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                 C.InterfaceMode = tm;
                                 C.savetodb = true;
 
-                                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                                C.Paramstudy_CaseIdentification.AddRange(new[] {
                                     new Tuple<string, object>("TimesteppingMode", tm),
                                     new Tuple<string, object>("scheme", scheme),
                                     new Tuple<string, object>("NoOfTimesteps", N),
@@ -818,7 +818,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                     new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
                                     new Tuple<string, object>("GridResolutionFactor", grf),
                                     new Tuple<string, object>("MoveOrNotMove", true)
-                                    };
+                                    });
 
                                 All.Add(C);
                             }
@@ -1089,7 +1089,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                 C.InterfaceMode = tm;
                                 C.savetodb = true;
 
-                                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                                C.Paramstudy_CaseIdentification.AddRange(new[] {
                                     new Tuple<string, object>("TimesteppingMode", tm),
                                     new Tuple<string, object>("scheme", scheme),
                                     new Tuple<string, object>("NoOfTimesteps", N),
@@ -1097,7 +1097,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                                     new Tuple<string, object>("AgglomerationThreshold", C.AgglomerationThreshold),
                                     new Tuple<string, object>("GridResolutionFactor", grf),
                                     new Tuple<string, object>("MoveOrNotMove", true)
-                                    };
+                                    });
 
                                 All.Add(C);
                             }

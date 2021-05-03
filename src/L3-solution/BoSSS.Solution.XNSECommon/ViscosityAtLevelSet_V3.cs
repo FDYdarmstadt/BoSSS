@@ -31,20 +31,24 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
     /// <summary>
-    /// 
+    /// Coupling of the fully symmetric viscous stress, i.e.
+    /// ```math
+    ///    - \mu \left( \nabla \vec{u} + \nabla \vec{u}^T \right) .
+    /// ```
+    /// Must be used together with <see cref="ViscosityInSpeciesBulk_GradUTerm"/> **and** <see cref="ViscosityInSpeciesBulk_GradUtranspTerm"/> in the bulk.
     /// </summary>
-    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtLevelSet_FullySymmetric(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, 
+        public ViscosityAtLevelSet_FullySymmetric(int SpaceDim, double _muA, double _muB, double _penalty, int _component, 
             bool _freeSurface = false) {
-            this.m_LsTrk = lstrk;
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.m_penalty_base = _penalty;
             this.component = _component;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpaceDim;
             this.freeSurface = _freeSurface;
         }
 
@@ -192,6 +196,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         //private static bool rem = true;
 
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
         public int LevelSetIndex {
             get { return 0; }
         }
@@ -201,12 +209,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.IO;
+using BoSSS.Platform.LinAlg;
 using ilPSP;
 using MPI.Wrappers;
 using Newtonsoft.Json;
@@ -517,6 +518,21 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
 
             return new Foundation.Comm.Permutation(gid, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// list of transformations which describe how some edges should be
+        /// transformed to other edges;
+        /// </summary>
+        /// <remarks>
+        /// indices into this list are the
+        /// <see cref="GridData.EdgeData.EdgeTags"/> minus
+        /// <see cref="FIRST_PERIODIC_BC_TAG"/>
+        /// </remarks>
+        public IList<AffineTrafo> PeriodicTrafo {
+            get {
+                return RootGrid.PeriodicTrafo;
+            }
         }
     }
 }

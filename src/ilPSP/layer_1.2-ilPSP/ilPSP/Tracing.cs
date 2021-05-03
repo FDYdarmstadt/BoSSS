@@ -44,6 +44,15 @@ namespace ilPSP.Tracing {
                 return ((string[])(m_NamespacesToLog.Clone()));
             }
             set {
+                //Console.Write("Resetting logging namespaces: ");
+                //if(value == null || value.Length <= 0) {
+                //    Debugger.Launch();
+                //    Console.WriteLine("NIX2LOG.");
+                //} else {
+                //    foreach(string s in value)
+                //        Console.Write($"<{s}> ");
+                //    Console.WriteLine();
+                //}
                 var NameSpaceList = value;
                 if (NameSpaceList == null)
                     throw new ArgumentNullException();
@@ -96,6 +105,21 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
+        static private long GetMemory() {
+            long mem = 0;
+            Process myself = Process.GetCurrentProcess();
+            //{
+            //    try {
+            //        //mem = myself.WorkingSet64 / (1024 * 1024);
+            //        mem = myself.PrivateMemorySize64 / (1024 * 1024);
+            //        //mem = GC.GetTotalMemory(false) / (1024 * 1024);
+            //    } catch (Exception e) {
+            //        mem = 0;
+            //    }
+            //}
+            return mem;
+        }
+
         private static readonly object padlock = new object();
 
 
@@ -114,6 +138,7 @@ namespace ilPSP.Tracing {
             Tracer.Current = mcr;
             mcr.CallCount++;
             mcr.m_TicksSpentinBlocking = -GetMPITicks();
+            mcr.m_Memory = -GetMemory();
             //} else {
             //    Debug.Assert(Tracer.Root == null);
             //    var mcr = new MethodCallRecord(Tracer.Current, _name);
@@ -128,6 +153,8 @@ namespace ilPSP.Tracing {
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
             Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
+            Tracer.Current.m_Memory += GetMemory();
+            Tracer.Current.m_Memory = Tracer.Current.m_Memory < 0 ? 0 : Tracer.Current.m_Memory;
             Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
             Tracer.Current = Tracer.Current.ParrentCall;
         }
@@ -344,74 +371,74 @@ namespace ilPSP.Tracing {
         /// This seems to have a severe performance impact on server OS, therefore deactivated (fk,21dec20)
         /// </summary>
         public void LogMemoryStat() {
-            /*
-            if(!Tracer.InstrumentationSwitch)
-                return;
 
-            Process myself = Process.GetCurrentProcess();
+            //if (!Tracer.InstrumentationSwitch)
+            //    return;
 
-            {
-                string s = "MEMORY STAT.: garbage collector memory: ";
-                try {
-                    long virt = GC.GetTotalMemory(false) / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
+            //Process myself = Process.GetCurrentProcess();
 
-            {
-                string s = "MEMORY STAT.: working set memory: ";
-                try {
-                    long virt = myself.WorkingSet64 / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
-            {
-                string s = "MEMORY STAT.: peak working set memory: ";
-                try {
-                    long virt = myself.PeakWorkingSet64 / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
-            {
-                string s = "MEMORY STAT.: private memory: ";
-                try {
-                    long virt = myself.PrivateMemorySize64 / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
-            {
-                string s = "MEMORY STAT.: peak virtual memory: ";
-                try {
-                    long virt = myself.PeakVirtualMemorySize64 / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
-            {
-                string s = "MEMORY STAT.: virtual memory: ";
-                try {
-                    long virt = myself.VirtualMemorySize64 / (1024 * 1024);
-                    s += (virt + " Meg");
-                } catch (Exception e) {
-                    s += e.GetType().Name + ": " + e.Message;
-                }
-                Info(s);
-            }
-            */
+            //{
+            //    string s = "MEMORY STAT.: garbage collector memory: ";
+            //    try {
+            //        long virt = GC.GetTotalMemory(false) / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+
+            //{
+            //    string s = "MEMORY STAT.: working set memory: ";
+            //    try {
+            //        long virt = myself.WorkingSet64 / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+            //{
+            //    string s = "MEMORY STAT.: peak working set memory: ";
+            //    try {
+            //        long virt = myself.PeakWorkingSet64 / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+            //{
+            //    string s = "MEMORY STAT.: private memory: ";
+            //    try {
+            //        long virt = myself.PrivateMemorySize64 / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+            //{
+            //    string s = "MEMORY STAT.: peak virtual memory: ";
+            //    try {
+            //        long virt = myself.PeakVirtualMemorySize64 / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+            //{
+            //    string s = "MEMORY STAT.: virtual memory: ";
+            //    try {
+            //        long virt = myself.VirtualMemorySize64 / (1024 * 1024);
+            //        s += (virt + " Meg");
+            //    } catch (Exception e) {
+            //        s += e.GetType().Name + ": " + e.Message;
+            //    }
+            //    Info(s);
+            //}
+
         }
 
         /*

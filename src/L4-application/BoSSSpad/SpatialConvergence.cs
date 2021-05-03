@@ -21,18 +21,18 @@ namespace BoSSS.Application.BoSSSpad {
         L2_embedded,
 
         /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2"/>; less accurate than <see cref="L2_embedded"/>, but provides results on arbitrary meshes
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>; less accurate than <see cref="L2_embedded"/>, but provides results on arbitrary meshes
         /// </summary>
         L2_approximate,
 
         /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean"/>.
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>.
         /// </summary>
         L2noMean_approximate,
 
 
         /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_H1"/>
+        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_H1(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>
         /// </summary>
         H1_approximate
     }

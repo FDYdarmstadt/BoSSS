@@ -1363,7 +1363,7 @@ namespace BoSSS.Application.Rheology
                         }
 
 
-                        C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
+                        C.Paramstudy_CaseIdentification.AddRange(new Tuple<string, object>[] {
 
                                     new Tuple<string, object>("DGdegree", p),
 
@@ -1371,7 +1371,7 @@ namespace BoSSS.Application.Rheology
 
                                     new Tuple<string, object>("GridResolutionFactor", h),
 
-                                    };
+                                    });
                         All.Add(C);
 
                     }

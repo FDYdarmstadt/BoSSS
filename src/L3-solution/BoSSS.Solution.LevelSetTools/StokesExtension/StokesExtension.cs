@@ -62,7 +62,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new swipViscosity_Term1(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
+                    var visc = new SipViscosity_GradU(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
                 // Momentum, Pressure gradient:
@@ -134,7 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             
             for(int d = 0; d < D; d++) {
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new InteriorVelocityBoundary(LsTrk, d, InterfaceVelocity[d])
+                    new InteriorVelocityBoundary(d, InterfaceVelocity[d])
                     );
             }
 

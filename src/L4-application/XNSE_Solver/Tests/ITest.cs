@@ -47,9 +47,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetPhi();
 
-        /// <summary>
-        /// if known the exact solution will be set
-        /// </summary>
+        ///// <summary>
+        ///// if known the exact solution will be set
+        ///// </summary>
         //bool setExtSol { get; }
 
         /// <summary>

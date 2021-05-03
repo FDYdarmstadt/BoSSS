@@ -42,7 +42,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;
@@ -146,7 +146,7 @@ namespace BoSSS.Solution.EnergyCommon {
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU) {
 
             // check input
-            if (XOp.IsCommited)
+            if (XOp.IsCommitted)
                 throw new InvalidOperationException("Spatial Operator is already comitted. Adding of new components is not allowed");
 
             string CodName = EquationNames.KineticEnergyEquation;
@@ -198,7 +198,7 @@ namespace BoSSS.Solution.EnergyCommon {
             if (config.isPressureGradient) {
 
                 if (divergenceP) {
-                    comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk));
+                    comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk.GridDat.SpatialDimension));
                     //comps.Add(new ConvectivePressureTermAtLevelSet_LLF(D, LsTrk, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
                 }
             }
@@ -206,7 +206,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // surface energy
             // ==============
             {
-                comps.Add(new SurfaceEnergy(D, LsTrk, sigma, rhoA, rhoB));
+                comps.Add(new SurfaceEnergy(D, sigma, rhoA, rhoB));
             }
 
         }

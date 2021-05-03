@@ -92,17 +92,35 @@ namespace BoSSS.Application.BoSSSpad {
         [NonSerialized]
         IScheduler m__scheduler;
 
+        /// <summary>
+        /// Active Directory user name used on HPC cluster
+        /// </summary>
         [DataMember]
-        string Username;
+        public string Username;
 
+        /// <summary>
+        /// Unsafely stored password
+        /// </summary>
         [DataMember]
-        string Password;
+        public string Password;
 
+        /// <summary>
+        /// Active directory computer name of head node
+        /// </summary>
         [DataMember]
-        string ServerName;
+        public string ServerName;
 
+        /// <summary>
+        /// optional: a list of compute node on which some job should run
+        /// </summary>
         [DataMember]
-        string[] ComputeNodes;
+        public string[] ComputeNodes;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember]
+        public JobPriority DefaultJobPriority = JobPriority.Normal;
 
         /// <summary>
         /// Jobs are forced to run on a single node.
@@ -200,6 +218,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Running:
                         case JobState.Finishing:
+                        case JobState.Canceling:
                         return (JobStatus.InProgress, null);
 
                         case JobState.Finished:
@@ -210,7 +229,6 @@ namespace BoSSS.Application.BoSSSpad {
 
                         case JobState.Failed:
                         case JobState.Canceled:
-                        case JobState.Canceling:
                         Console.WriteLine($" ------------ MSHPC FailedOrCanceled; original " + JDstate);
                         return (JobStatus.FailedOrCanceled, ExitCode);
 
@@ -256,6 +274,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MsHpcJob.MaximumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.MinimumNumberOfCores = myJob.NumberOfMPIProcs;
                 MsHpcJob.SingleNode = this.SingleNode;
+                MsHpcJob.Priority = this.DefaultJobPriority;
 
                 MsHpcJob.UserName = Username;
 
@@ -303,7 +322,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            return $"MS HPC client {this.ServerName}, @{this.DeploymentBaseDirectory}";
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return $"MS HPC client {NameString}@{this.ServerName}, @{this.DeploymentBaseDirectory}";
         }
     }
 }

@@ -65,6 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
+            base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
         }
 
         /// <summary>
@@ -566,7 +567,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetGravity(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.Gravity_d(d), out ret);
             return ret;
         }
 
@@ -715,5 +718,34 @@ namespace BoSSS.Application.XNSE_Solver {
                     this.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            if(!base.Equals(obj))
+                return false;
+
+            var other = obj as XNSE_Control;
+            if(other == null)
+                return false;
+
+            if(!this.PhysicalParameters.Equals(other.PhysicalParameters))
+                return false;
+
+            if(!this.ThermalParameters.Equals(other.ThermalParameters))
+                return false;
+
+
+            return true;
+        }
+
     }
 }

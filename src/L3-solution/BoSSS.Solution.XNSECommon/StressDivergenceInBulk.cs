@@ -29,12 +29,12 @@ namespace BoSSS.Solution.RheologyCommon {
     /// </summary>
     public class StressDivergenceInBulk : StressDivergence_Cockburn, ISpeciesFilter {
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcMap;
+        IncompressibleBoundaryCondMap m_bcMap;
 
         /// <summary>
         /// Initialize Convection
         /// </summary>
-        public StressDivergenceInBulk(int _Component, IncompressibleMultiphaseBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName, SpeciesId spcId) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
+        public StressDivergenceInBulk(int _Component, IncompressibleBoundaryCondMap _BcMap, double _Reynolds, double[] _Penalty1, double _Penalty2, string spcName) : base(_Component, _BcMap, _Reynolds, _Penalty1, _Penalty2) {
             this.m_bcMap = _BcMap;
             this.ValidSpecies = spcName;
 

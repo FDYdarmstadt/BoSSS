@@ -22,6 +22,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 
 namespace ilPSP.Connectors.Matlab {
 
@@ -122,18 +123,14 @@ namespace ilPSP.Connectors.Matlab {
             MatlabExecuteable = null;  //"D:\\cygwin64\\bin\\bash.exe";
         }
 
+        /// <summary>
+        /// Inter-process synchronization of file IO
+        /// </summary>
+        static Mutex TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex");
 
         /// <summary>
         /// creates a new instance of the MATLAB connector.
         /// </summary>
-        /// <param name="Flav">
-        /// octave or MATLAB
-        /// </param>
-        /// <param name="ExecutablePath">
-        /// Where to find the executable on the current system.
-        /// If NULL, the standard installation path is assumed.
-        /// In the case of Cygwin/octave, the path to the Cygwin bash.exe;
-        /// </param>
         /// <param name="WorkingPath">
         /// working directory of the MATLAB instance;
         /// if NULL, a temporary directory is created.
@@ -147,18 +144,24 @@ namespace ilPSP.Connectors.Matlab {
 
             if (Rank == 0) {
                 if (WorkingPath == null) {
-                    var rnd = new Random();
-                    bool Exists = false;
-                    do {
-                        var tempPath = Path.GetTempPath();
-                        var tempDir = rnd.Next().ToString();
-                        WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
-                        Exists = WorkingDirectory.Exists;
-                        if (!Exists) {
-                            WorkingDirectory.Create();
-                            DelWorkingDir = true;
-                        }
-                    } while (Exists == true);
+                    try {
+                        TempDirMutex.WaitOne();
+
+                        var rnd = new Random();
+                        bool Exists = false;
+                        do {
+                            var tempPath = Path.GetTempPath();
+                            var tempDir = rnd.Next().ToString();
+                            WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                            Exists = WorkingDirectory.Exists;
+                            if(!Exists) {
+                                WorkingDirectory.Create();
+                                DelWorkingDir = true;
+                            }
+                        } while(Exists == true);
+                    } finally {
+                        TempDirMutex.ReleaseMutex();
+                    }
                 } else {
                     WorkingDirectory = new DirectoryInfo(WorkingPath);
                     if (!WorkingDirectory.Exists)
@@ -826,11 +829,16 @@ namespace ilPSP.Connectors.Matlab {
         /// </summary>
         public void Dispose() {
             if (SuccessfulExe) {
-                foreach (var f in CreatedFiles) {
-                    File.Delete(f);
-                }
-                if (DelWorkingDir) {
-                    Directory.Delete(WorkingDirectory.FullName, true);
+                try {
+                    TempDirMutex.WaitOne();
+                    foreach(var f in CreatedFiles) {
+                        File.Delete(f);
+                    }
+                    if(DelWorkingDir) {
+                        Directory.Delete(WorkingDirectory.FullName, true);
+                    }
+                } finally {
+                    TempDirMutex.ReleaseMutex();
                 }
             } else {
                 // keeping files for diagnostic purposes

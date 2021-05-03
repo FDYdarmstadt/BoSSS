@@ -890,7 +890,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         this.m_Edge2CellTrafos_SqrtGramian = MultidimensionalArray.Create(Edge2CellTrafos.Count);
                         for (int i = 0; i < Edge2CellTrafos.Count; i++) {
                             var tr = this.Edge2CellTrafos[i];
-                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.Transpose(), tr.Matrix).Determinant().Sqrt();
+                            this.Edge2CellTrafos_SqrtGramian[i] = IMatrixExtensions.GEMM(tr.Matrix.TransposeTo(), tr.Matrix).Determinant().Sqrt();
                         }
                     }
                     return m_Edge2CellTrafos_SqrtGramian;
@@ -1116,7 +1116,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 int ip2 = (i + 2) % first_polygon.Count;
                                 var Pin = first_polygon[ip2];
                                 if (H.PointDistance(Pin) < 0)
-                                    H.Normal.Scale(-1);
+                                    H.Normal.ScaleInPlace(-1);
                             }
 
                             var C = new List<Vector>();
@@ -1172,7 +1172,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     int ip2 = (i + 2) % N2;
                                     var Pin = second_polygon[ip2];
                                     if (H.PointDistance(Pin) < 0)
-                                        H.Normal.Scale(-1);
+                                        H.Normal.ScaleInPlace(-1);
                                 }
 
 

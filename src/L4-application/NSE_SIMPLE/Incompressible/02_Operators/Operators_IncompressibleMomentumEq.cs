@@ -72,7 +72,7 @@ namespace NSE_SIMPLE {
 
         protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, false)).Operator();            
-            return (new swipViscosity_Term1_variante(
+            return (new SipViscosity_Term1_segregatedVar(
                 SolverConf.PenaltyViscMomentum,
                 SpatialComponent,
                 SolverConf.SpatialDimension,

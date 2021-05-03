@@ -26,13 +26,15 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 IncompressibleMultiphaseBoundaryCondMap boundaryMap,
                 LevelSetTracker LsTrk,
                 INSE_Configuration config,
-                bool isMovingMesh) : base() //
+                bool isMovingMesh,
+                bool usePhoretic,
+                Particle[] AllParticles) : base() //
             {
                 m_fluidPhase = fluidPhase;
                 m_solidPhase = solidPhase;
                 m_iLevSet = iLevSet;
                 m_codomainName = EquationNames.MomentumEquationComponent(d);
-                AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh);
+                AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh, usePhoretic, AllParticles);
                 AddVariableNames(Solution.NSECommon.VariableNames.VelocityVector(D).Cat(Solution.NSECommon.VariableNames.Pressure));
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray());
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.SurfaceForceVector(D)).ToArray());
@@ -45,7 +47,9 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 IncompressibleMultiphaseBoundaryCondMap boundaryMap,
                 LevelSetTracker LsTrk,
                 INSE_Configuration config,
-                bool isMovingMesh) {
+                bool isMovingMesh,
+                bool usePhoretic,
+                Particle[] AllParticles) {
                 PhysicalParameters physParams = config.getPhysParams;
                 DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -70,7 +74,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 // convective operator
                 // ===================
                 if(physParams.IncludeConvection && config.isTransport) {
-                    var ConvIB = new ConvectionAtIB( d, D, LsTrk, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
+                    var ConvIB = new ConvectionAtIB( d, D, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
                     AddComponent(ConvIB);
                 }
                 if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
@@ -81,7 +85,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 // pressure gradient
                 // =================
                 if(config.isPressureGradient) {
-                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, LsTrk, m_iLevSet, m_fluidPhase, m_solidPhase);
+                    var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, m_iLevSet, m_fluidPhase, m_solidPhase);
                     AddComponent(presLs);
                 }
 
@@ -92,7 +96,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     switch(dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:
-                        AddComponent(new ViscosityAtIB(d, D, LsTrk, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                        AddComponent(new ViscosityAtIB(d, D, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, usePhoretic));
                         break;
                         case ViscosityMode.FullySymmetric:
                         case ViscosityMode.Viscoelastic:

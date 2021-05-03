@@ -195,6 +195,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int JAGG = compCells.Length;
             Debug.Assert(JAGG == agg.iLogicalCells.Count);
             int JAGGup = agg.iLogicalCells.NoOfLocalUpdatedCells;
+            var Regions = LsTrk.Regions;
 
             this.UsedSpecies = Agglomerator.SpeciesList.ToArray();
 
@@ -238,14 +239,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // check no of species:
                 int MaxNoOfSpecies = 0; // number of species in the composite cell
+                bool AnyUnusedSpecies = false;
                 for(int k = 0; k < K; k++) { // loop over original cells in composite cell
                     int jCell = compCell[k];
-                    _NoOfSpecies[k] = LsTrk.Regions.GetNoOfSpecies(jCell, out _RRcs[k]);
-                    MaxNoOfSpecies = Math.Max(_NoOfSpecies[k], MaxNoOfSpecies);
+                    int NoOfSpecies_k = Regions.GetNoOfSpecies(jCell, out _RRcs[k]);
+                    MaxNoOfSpecies = Math.Max(NoOfSpecies_k, MaxNoOfSpecies);
+                    _NoOfSpecies[k] = NoOfSpecies_k;
+
+                    if(MaxNoOfSpecies <= 1 && AnyUnusedSpecies == false) {
+                        for(int iSpc = 0; iSpc < NoOfSpecies_k; iSpc++) {
+                            var Spc = Regions.GetSpeciesIdFromIndex(jCell, iSpc);
+                            int b = Array.IndexOf(this.UsedSpecies, Spc);
+                            if(b < 0) {
+                                AnyUnusedSpecies = true;
+                            }
+                        }
+                    }
 
                 }
                 
-                if(MaxNoOfSpecies == 1) {
+                if(MaxNoOfSpecies == 1 && AnyUnusedSpecies == false) {
                     // only one species -- use single-phase implementation in underlying class
 
                     this.SpeciesIndexMapping[jagg] = null;
@@ -272,7 +285,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for(int iSpc = _NoOfSpecies[k] - 1; iSpc >= 0; iSpc--) {
                             SpeciesId spId = LsTrk.GetSpeciesIdFromIndex(rrc, iSpc);
-                            bool isPresent = LsTrk.Regions.IsSpeciesPresentInCell(spId, jCell);
+                            bool isPresent = Regions.IsSpeciesPresentInCell(spId, jCell);
                             bool isAgglomerated = agglomeratedCells.ContainsKey(spId) ? agglomeratedCells[spId][jCell] : false;
                             bool isUsed = Array.IndexOf(this.UsedSpecies, spId) >= 0;
 
@@ -337,8 +350,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
-
-       
 
         /// <summary>
         /// Mapping from species indices in composite/aggregate cells to species index in base grid.
@@ -618,11 +629,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public override int GetMaximalLength(int p) {
             if (XDGBasis.Tracker.TotalNoOfSpecies == 0)
                 throw new Exception("0 SPecies");
-            return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetMaximalLength(p);
+            Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
+            return this.XDGBasis.Tracker.TotalNoOfSpecies * base.GetLength(0, p);
         }
 
         public override int GetMinimalLength(int p) {
-            return base.GetMinimalLength(p);
+            Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
+            return base.GetLength(0, p);
         }
 
 

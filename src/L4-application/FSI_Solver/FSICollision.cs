@@ -189,7 +189,7 @@ namespace FSI_Solver {
                             ClosestPoints[p0][p1] = temp_ClosestPoints[0];
                             ClosestPoints[p1][p0] = temp_ClosestPoints[1];
                             DistanceVector[p0][p1] = new Vector(temp_DistanceVector);
-                            temp_DistanceVector.Scale(-1);
+                            temp_DistanceVector.ScaleInPlace(-1);
                             DistanceVector[p1][p0] = new Vector(temp_DistanceVector);
                             double temp_SaveTimeStep = DynamicTimestep(p0, p1);
                             AccumulatedLocalSaveTimestep[p0][p1] += temp_SaveTimeStep;
@@ -719,7 +719,7 @@ namespace FSI_Solver {
         private void ComputeMomentumBalanceCollision(int particleID, int secondObjectID, double threshold) {
             double distance = DistanceVector[particleID][secondObjectID].Abs();
             Vector normalVector = DistanceVector[particleID][secondObjectID];
-            normalVector.Normalize();
+            normalVector.NormalizeInPlace();
             if (distance > threshold && !Overlapping[particleID][secondObjectID])
                 return;
             if (Overlapping[particleID][secondObjectID])

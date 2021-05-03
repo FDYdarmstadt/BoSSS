@@ -45,7 +45,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Performs a mode decay analysis (<see cref="Waterfall(bool, bool, int)"/>) on this solver.
         /// </summary>
-        public static Plot2Ddata WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
+        public static Dictionary<string,Plot2Ddata> WaterfallAnalysis(ISolverWithCallback linearSolver, MultigridOperator mgOperator, BlockMsrMatrix MassMatrix) {
             int L = mgOperator.BaseGridProblemMapping.LocalLength;
 
             Console.WriteLine($"Waterfall analysis for {mgOperator.GridData.CellPartitioning.TotalLength} cells, {L} DOFs...");
@@ -59,12 +59,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var pc = linearSolver as IProgrammableTermination;
             var termBkup = pc?.TerminationCriterion;
-            if(pc != null) {
-                pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                        return (R_l2/R0_l2 > 1e-8) && (iter < 1500);
-                    };
-            }
-            
+            //if (pc != null) {
+            //    pc.TerminationCriterion = (iter, R0_l2, R_l2) => {
+            //        return (R_l2 / R0_l2 > 1e-8) && (iter < 1500);
+            //    };
+            //}
+
             // use a random init for intial guess.
             double[] x0 = GenericBlas.RandomVec(L, 0);
 
@@ -216,13 +216,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Visualization of data from <see cref="WriteTrendToTable"/> in gnuplot
+        /// Visualization of error data from <see cref="WriteTrendToTable"/> in gnuplot
         /// </summary>
-        public Plot2Ddata Waterfall(bool IncludeError, bool IncludeResidual, int NoOfIter = int.MaxValue) {
+        public Dictionary<string, Plot2Ddata> Waterfall(bool IncludeError, bool IncludeResidual, int NoOfIter = int.MaxValue) {
 
-            var Ret = new Plot2Ddata();
-            Ret.Title = "Waterfall";
 
+            var RetDict = new Dictionary<string, Plot2Ddata>();
 
             //string[] Titels;
             //MultidimensionalArray ConvTrendData;
@@ -230,61 +229,71 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
 
             int i = 0;
-            foreach(var AllData in new[] { this.ResNormTrend, this.ErrNormTrend }) {
+            //foreach(var AllData in new[] { this.ResNormTrend, this.ErrNormTrend }) {
+            foreach (var AllData in new[] { this.ErrNormTrend }) {
                 i++;
                
 
 
-                int DegMax = AllData.Keys.Max(tt => tt.deg);
+               
                 int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
+                int VarMax = AllData.Keys.Max(tt => tt.iVar);
                 int MaxIter = AllData.First().Value.Count - 1;
 
-                var WaterfallData = new List<double[]>();
-                var Row = new List<double>();
-                var xCoords = new List<double>();
-                for(int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                    Row.Clear();
-                    for(int iLv = MglMax; iLv >= 0; iLv--) {
-                        for(int p = 0; p <= DegMax; p++) {
-                            double Acc = 0;
+                for (int iVar = 0; iVar < VarMax+1; iVar++) {
+                    var Ret = new Plot2Ddata();
+                    Ret.Title = "Waterfall of Variable "+iVar;
 
-                            foreach(var kv in AllData) {
-                                if(kv.Key.deg == p && kv.Key.MGlevel == iLv)
-                                    Acc += kv.Value[iIter].Pow2();
-                            }
+                    int DegMax = AllData.Keys.Where(v=>v.iVar==iVar).Max(tt => tt.deg); // pressure may have DG-1
+                    var WaterfallData = new List<double[]>();
+                    var Row = new List<double>();
+                    var xCoords = new List<double>();
 
-                            Acc = Acc.Sqrt();
-                            Row.Add(Acc);
+                    for (int iIter = 0; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                        Row.Clear();
+                        for (int iLv = MglMax; iLv >= 0; iLv--) {
+                            for (int p = 0; p <= DegMax; p++) {
+                                double Acc = 0;
 
-                            if(iIter == 0) {
-                                double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
-                                xCoords.Add(xCoord);
+                                foreach (var kv in AllData) {
+                                    if (kv.Key.deg == p && kv.Key.MGlevel == iLv && kv.Key.iVar==iVar)
+                                        Acc += kv.Value[iIter].Pow2();
+                                }
+
+                                Acc = Acc.Sqrt();
+                                Row.Add(Acc);
+
+                                if (iIter == 0) {
+                                    double xCoord = -iLv + MglMax + 1.0 + (p) * 0.1;
+                                    xCoords.Add(xCoord);
+                                }
                             }
                         }
+
+                        WaterfallData.Add(Row.ToArray());
                     }
 
-                    WaterfallData.Add(Row.ToArray());
-                }
+                    Ret.LogY = true;
+                    Ret.ShowLegend = false;
 
-                Ret.LogY = true;
-                Ret.ShowLegend = false;
+                    for (int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
+                        var PlotRow = WaterfallData[iIter];
 
-                for(int iIter = 1; iIter <= Math.Min(NoOfIter, MaxIter); iIter++) {
-                    var PlotRow = WaterfallData[iIter];
+                        var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
+                        if (i == 1) {
+                            g.Format.PointType = PointTypes.OpenBox;
+                            g.Format.LineColor = LineColors.Black;
+                        } else {
+                            g.Format.PointType = PointTypes.Circle;
+                            g.Format.LineColor = LineColors.Black;
+                        }
+                        Ret.AddDataGroup(g);
 
-                    var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
-                    if(i == 1) {
-                        g.Format.PointType = PointTypes.OpenBox;
-                        g.Format.LineColor = LineColors.Red;
-                    } else {
-                        g.Format.PointType = PointTypes.Circle;
-                        g.Format.LineColor = LineColors.Black;
                     }
-                    Ret.AddDataGroup(g);
-
+                    RetDict.Add("Waterfall_of_Var"+iVar,Ret);
                 }
             }
-            return Ret;
+            return RetDict;
         }
 
 

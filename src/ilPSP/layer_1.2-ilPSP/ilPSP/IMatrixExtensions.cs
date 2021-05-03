@@ -959,7 +959,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="M">the matrix</param>
         /// <returns>The transpose of this matrix</returns>
-        static public MultidimensionalArray Transpose<TM>(this TM M) where TM : IMatrix {
+        static public MultidimensionalArray TransposeTo<TM>(this TM M) where TM : IMatrix {
             MultidimensionalArray result = MultidimensionalArray.Create(M.NoOfCols, M.NoOfRows);
 
             M.TransposeTo(result);
@@ -1291,7 +1291,7 @@ namespace ilPSP {
 
         /// <summary>
         /// Calculates the inverse of this matrix and stores the result in a
-        /// newly allocated matrix. Use <see cref="Invert{M1}(M1)"/> to
+        /// newly allocated matrix. Use <see cref="InvertInPlace{M1}(M1)"/> to
         /// avoid memory allocation.
         /// </summary>
         /// <returns>
@@ -1563,7 +1563,7 @@ namespace ilPSP {
                     {
 #if DEBUG
                         double Nrm = Math.Max(MtxClone.InfNorm(), B.InfNorm());
-                        var Test = GEMM(GEMM(B.Transpose(), MtxClone), B);
+                        var Test = GEMM(GEMM(B.TransposeTo(), MtxClone), B);
                         if(Diag != null) {
                             for(int n = 0; n < N; n++) {
                                 Test.RowScale(n, Diag[n]);
@@ -1843,7 +1843,7 @@ namespace ilPSP {
         /// </summary>
         /// <param name="Mtx"></param>
         /// <param name="target">the return value</param>
-        static public void Invert<M1>(this M1 Mtx)
+        static public void InvertInPlace<M1>(this M1 Mtx)
             where M1 : IMatrix {
             int m_NoOfCols = Mtx.NoOfCols, m_NoOfRows = Mtx.NoOfRows;
 

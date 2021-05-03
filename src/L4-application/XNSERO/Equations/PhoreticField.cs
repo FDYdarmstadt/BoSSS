@@ -67,10 +67,9 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
         public override string CodomainName => "PhoreticResidual";
 
 
-        public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk, int iLevSet) {
+        public ImmersedBoundaryPhoreticField(LevelSetTracker lstrk) {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Phoretic);
-            AddComponent(new XLaplace_Interface(lstrk, 1.0));
-            AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(iLevSet), Solution.NSECommon.VariableNames.Phoretic));
+            AddComponent(new XLaplace_Interface(1.0));
         }
 
 
@@ -81,7 +80,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
 
             
 
-            protected LevelSetTracker m_LsTrk;
+            //protected LevelSetTracker m_LsTrk;
 
             /// <summary>
             /// 
@@ -93,8 +92,8 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <param name="__penatly_baseFactor">
             /// multiplicative safety factor for the penalty; should be between 1 and 10.
             /// </param>
-            public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double __penatly_baseFactor = 4.0) {
-                this.m_LsTrk = lstrk;
+            public XLaplace_Interface(double _muA, double __penatly_baseFactor = 4.0) {
+                //this.m_LsTrk = lstrk;
                 this.muA = _muA;
                 this.penatly_baseFactor = __penatly_baseFactor;
             }
@@ -108,9 +107,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// Neumann boundary value
             /// </summary>
             double g_Neum(ref CommonParams inp) {
-                double activity = inp.Parameters_IN[0];
-                return activity;
-                //return 1.0;
+                return 1.0;
             }
 
 
@@ -123,8 +120,9 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             public virtual double InnerEdgeForm(ref CommonParams inp,
                 double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
                 double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
+                
                 //Vector N = inp.Normal;
+
                 double Acc = 0;
                 double g_N = this.g_Neum(ref inp);
                 Acc += muA * g_N * vA;
@@ -135,7 +133,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <summary>
             /// Note: for a pure Neumann boundary condition, the penalty is not required;
             /// However, if, at some point a Dirichlet or Robin b.c. should be tested, 
-            /// </summary>f
+            /// </summary>
             protected double GetPenalty(ref CommonParams inp) {
                 
                 double NegCellLengthScale = NegLengthScaleS[inp.jCellIn];
@@ -186,15 +184,15 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             /// <summary>
             /// The Solid Domain
             /// </summary>
-            public SpeciesId PositiveSpecies {
-                get { return m_LsTrk.GetSpeciesId("C"); }
+            public string PositiveSpecies {
+                get { return "C"; }
             }
 
             /// <summary>
             /// The fluid Domain
             /// </summary>
-            public SpeciesId NegativeSpecies {
-                get { return m_LsTrk.GetSpeciesId("A"); }
+            public string NegativeSpecies {
+                get { return "A"; }
             }
 
             /// <summary>
@@ -208,7 +206,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
             }
 
             public IList<string> ParameterOrdering {
-                get { return new string[] { Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(1), Solution.NSECommon.VariableNames.Phoretic) }; }
+                get { return null; }
             }
 
 
