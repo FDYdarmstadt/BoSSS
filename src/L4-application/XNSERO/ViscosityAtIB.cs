@@ -31,7 +31,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         public ViscosityAtIB(int _d, int _D, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
 
             m_penalty_base = penalty_base;
-            //this.m_LsTrk = t;
             this.FluidViscosity = _muA;
             Component = _d;
             this.m_D = _D;
@@ -53,17 +52,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Viskosity in species A
         /// </summary>
-        double FluidViscosity;
+        private readonly double FluidViscosity;
 
         /// <summary>
         /// safety factor
         /// </summary>
-        double m_penalty_base;
+        private readonly double m_penalty_base;
 
         /// <summary>
         /// degree and spatial dimension
         /// </summary>
-        double m_penalty_degree;
+        private double m_penalty_degree;
 
 
         /// <summary>
@@ -337,20 +336,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        ///// <summary>
-        ///// Species ID of the solid
-        ///// </summary>
-        //public SpeciesId PositiveSpecies {
-        //    get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
-        //}
-
-        ///// <summary>
-        ///// Species ID of the fluid; 
-        ///// </summary>
-        //public SpeciesId NegativeSpecies {
-        //    get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
-        //}
-
         /// <summary>
         /// Species ID of the solid
         /// </summary>
@@ -379,8 +364,9 @@ namespace BoSSS.Application.XNSERO_Solver {
                 return new[] { VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(0)),
                                VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(1)),
                                VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceComponent(0)),
-                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceComponent(1))};
-        }
+                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceComponent(1))
+                };
+            }
         }
 
         /// <summary>
@@ -389,6 +375,5 @@ namespace BoSSS.Application.XNSERO_Solver {
         virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
         }
-
     }
 }

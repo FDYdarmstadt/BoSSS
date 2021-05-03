@@ -142,10 +142,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             Vector position = new Vector(Position);
 
             double[,] rotMatrix = new double[2, 2];
-            rotMatrix[0, 0] = (m_Length + 0.15) * orientation[0];
-            rotMatrix[0, 1] = (-m_Thickness + 0.15) * orientation[1];
-            rotMatrix[1, 0] = (m_Length + 0.15) * orientation[1];
-            rotMatrix[1, 1] = (m_Thickness + 0.15) * orientation[0];
+            rotMatrix[0, 0] = (m_Length + 0.05) * orientation[0];
+            rotMatrix[0, 1] = (-m_Thickness + 0.05) * orientation[1];
+            rotMatrix[1, 0] = (m_Length + 0.05) * orientation[1];
+            rotMatrix[1, 1] = (m_Thickness + 0.05) * orientation[0];
             double[,] transposeRotMatrix = rotMatrix.CloneAs();
             transposeRotMatrix[0, 1] = rotMatrix[1, 0];
             transposeRotMatrix[1, 0] = rotMatrix[0, 1];

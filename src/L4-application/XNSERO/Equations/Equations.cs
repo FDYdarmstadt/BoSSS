@@ -96,7 +96,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     switch(dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:
-                        AddComponent(new ViscosityAtIB(d, D, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, usePhoretic));
+                        AddComponent(new ViscosityAtIB(d, D, AllParticles, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, usePhoretic));
                         break;
                         case ViscosityMode.FullySymmetric:
                         case ViscosityMode.Viscoelastic:

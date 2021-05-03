@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
             double activeStress = 1;
-            double nextParticleDistance = particleLength * 2.5;
+            double nextParticleDistance = particleLength * 2.25;
             double domainLength = nextParticleDistance * noOfParticles;
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 j += 1;
             }
             C.SetParticles(particles);
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LinearSolver.NoOfMultigridLevels = 1;
