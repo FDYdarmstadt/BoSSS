@@ -255,12 +255,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("B"); }
+        //public SpeciesId PositiveSpecies {
+        //    get { return this.m_lsTrk.GetSpeciesId("B"); }
+        //}
+
+        //public SpeciesId NegativeSpecies {
+        //    get { return this.m_lsTrk.GetSpeciesId("A"); }
+        //}
+        public string PositiveSpecies
+        {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_lsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies
+        {
+            get { return "A"; }
         }
 
 
