@@ -81,7 +81,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.00283955477369256;
+                double angularVelocitySol = -0.000525066469627393;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Console.WriteLine("         difference is " + diff_Velocity);
 
 
-                Assert.LessOrEqual(diff_Velocity, 0.00025, "Error in expected angular velocity is to high");
+                Assert.LessOrEqual(diff_Velocity, 1e-8, "Error in expected angular velocity is to high");
 
             }
         }

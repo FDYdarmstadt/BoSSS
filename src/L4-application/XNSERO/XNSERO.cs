@@ -301,7 +301,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             CalculateCollision(Particles, dt);
             if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
-            }
             Console.WriteLine("Particle rotational velocity " + Particles[0].Motion.GetRotationalVelocity(0));
             Console.WriteLine("Particle trans velocity " + Particles[0].Motion.GetTranslationalVelocity(0));
             Console.WriteLine("Particle position " + Particles[0].Motion.GetPosition(0));

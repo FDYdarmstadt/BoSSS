@@ -158,7 +158,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
 
             // Timestepping
             // ============
@@ -168,7 +168,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 120;
-            C.NoOfTimesteps = 25;
+            C.NoOfTimesteps = 10;
 
 
             // haben fertig...
