@@ -243,41 +243,44 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
                     //using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                        string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
-                        //int startindex = output.Result.IndexOf("\n");
-                        //int endindex = output.Result.IndexOf("\n", startindex + 1);
-                        int startindex = output.IndexOf("\n");
-                        int endindex = output.IndexOf("\n", startindex + 1);
-                        string jobstatus;
-                        if (startindex == -1 || endindex == -1) {
-                            jobstatus = "";
-                        } else {
-                            jobstatus = output.Substring(startindex + 1, (endindex - startindex) - 1);
-                        }
+                    string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
+                    using(var Reader = new StringReader(output)) {
 
-                        switch (jobstatus.ToUpperInvariant()) {
+                        string line = Reader.ReadLine();
+                        while(line != null && !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
+                            line = Reader.ReadLine();
+
+                        if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
+                            return (JobStatus.Unknown, null);
+
+                        string jobstatus = Reader.ReadLine();
+                        if(jobstatus == null)
+                            return (JobStatus.Unknown, null);
+
+                        switch(jobstatus.ToUpperInvariant()) {
                             case "PENDING":
-                               return (JobStatus.PendingInExecutionQueue, null);
+                            return (JobStatus.PendingInExecutionQueue, null);
 
                             case "RUNNING":
                             case "COMPLETING":
-                                return (JobStatus.InProgress, null);
+                            return (JobStatus.InProgress, null);
 
                             case "SUSPENDED":
                             case "STOPPED":
                             case "PREEMPTED":
                             case "FAILED":
-                                return (JobStatus.FailedOrCanceled, int.MinValue);
+                            return (JobStatus.FailedOrCanceled, int.MinValue);
 
                             case "":
                             case "COMPLETED":
-                                // completed, but 'exit.txt' does not exist, something is shady here
-                                return (JobStatus.FailedOrCanceled,-1);
+                            // completed, but 'exit.txt' does not exist, something is shady here
+                            return (JobStatus.FailedOrCanceled, -1);
 
                             default:
-                                return (JobStatus.Unknown, null);
+                            return (JobStatus.Unknown, null);
                         }
-                    //}
+                        //}
+                    }
                 }
             }
         }
@@ -300,13 +303,13 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        void VerifyDatabases() {
-            foreach (var db in this.AllowedDatabases) {
-                if (db.AlternateDbPaths.Length <= 0) {
-                    throw new IOException("Missing 'AlternatePaths.txt' in database -- required for sshfs-mounted remote databases.");
-                }
-            }
-        }
+        //void VerifyDatabases() {
+        //    foreach (var db in this.AllowedDatabases) {
+        //        if (db.AlternateDbPaths.Length <= 0) {
+        //            throw new IOException("Missing 'AlternatePaths.txt' in database -- required for sshfs-mounted remote databases.");
+        //        }
+        //    }
+        //}
 
         /// <summary>
         /// Sets debug flag for Mono
@@ -318,7 +321,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
             using (new FuncTrace()) {
-                VerifyDatabases();
+                //VerifyDatabases();
 
 
                 // load users .bashrc with all dependencies

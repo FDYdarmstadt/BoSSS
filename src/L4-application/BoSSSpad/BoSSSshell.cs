@@ -314,16 +314,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            return OpenOrCreateDatabase_Impl(dbDir, true);
+            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
         /// <summary>
         /// Opens an existing database at a specific path
         /// </summary>
         static public IDatabaseInfo OpenDatabase(string dbDir) {
-            return OpenOrCreateDatabase_Impl(dbDir, false);
+            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
+        /*
         static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
             foreach (var existing_dbi in InteractiveShell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
@@ -357,6 +358,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             return dbi;
         }
+        */
 
         static internal Document CurrentDoc = null;
 
@@ -673,7 +675,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
-            //executionQueues.AddRange(bpc.AllQueues);
+            executionQueues.AddRange(bpc.AllQueues);
             //foreach (var q in bpc.AllQueues)
             //    _ = q.AllowedDatabases;
 
