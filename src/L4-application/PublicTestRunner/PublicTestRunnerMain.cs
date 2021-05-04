@@ -139,7 +139,7 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4)
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
@@ -581,7 +581,7 @@ namespace PublicTestRunner {
             InteractiveShell.ReloadExecutionQueues();
 
             if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
-                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account.");
+                throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
@@ -704,6 +704,7 @@ namespace PublicTestRunner {
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
+
 
                             Console.WriteLine($"Successfully submitted {j.j.Name}.");
                             AllOpenJobs.Add(j);

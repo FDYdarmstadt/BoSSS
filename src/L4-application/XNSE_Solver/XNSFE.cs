@@ -62,8 +62,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            base.AddMultigridConfigLevel(configsLevel);
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
+            base.AddMultigridConfigLevel(configsLevel, iLevel);
             AddXHeatMultigridConfigLevel(configsLevel);
         }
 
@@ -170,10 +170,10 @@ namespace BoSSS.Application.XNSE_Solver {
             // === evaporation extension === //
             if (config.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, LsTrk, config));                    
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, config));                    
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     NonlinearCouplingEvaporation = true; // When using Newton evaporation coupling is always nonlinear
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, LsTrk, config));
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, config));
                 }                    
             }
             if (config.isBuoyancy && config.isGravity) {
@@ -189,9 +189,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // === evaporation extension === //
             if (config.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, LsTrk, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, config));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, LsTrk, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, config));
                 }
             }
         }
@@ -201,12 +201,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
-            opFactory.AddEquation(new SolidHeat("C", LsTrk, D, thermBoundaryMap, config));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config, LsTrk));
-            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config, LsTrk));
+            opFactory.AddEquation(new SolidHeat("C", D, thermBoundaryMap, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config));
 
-            // we need these "dummy" eqautions, otherwise the matrix has zero rows/columns
-            // If this is to be used frequently something more sophistucated should be implemented, e.g. strike out rows for unused variables...
+            // we need these "dummy" equations, otherwise the matrix has zero rows/columns
+            // If this is to be used frequently something more sophisticated should be implemented, e.g. strike out rows for unused variables...
             for(int d = 0; d < D; d++) {
                 opFactory.AddEquation(new ImmersedBoundaryDummyMomentum("C", d));
             }
@@ -225,39 +225,39 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // === linearized or parameter free variants, difference only in convective term === //
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                opFactory.AddEquation(new Heat("A", LsTrk, D, thermBoundaryMap, config));
-                opFactory.AddEquation(new Heat("B", LsTrk, D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat("A", D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat("B", D, thermBoundaryMap, config));
 
                 if (config.isEvaporation) {
-                    opFactory.AddEquation(new HeatInterface_Evaporation("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Evaporation("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface("A", "B", D, thermBoundaryMap, config));
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     for (int d = 0; d < D; ++d) {
                         throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
-                        opFactory.AddEquation(new HeatFlux("A", d, LsTrk, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFlux("B", d, LsTrk, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                        opFactory.AddEquation(new HeatFlux("A", d, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFlux("B", d, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, config));
                     }
                 }                
             } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                opFactory.AddEquation(new Heat_Newton("A", LsTrk, D, thermBoundaryMap, config));
-                opFactory.AddEquation(new Heat_Newton("B", LsTrk, D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat_Newton("A", D, thermBoundaryMap, config));
+                opFactory.AddEquation(new Heat_Newton("B", D, thermBoundaryMap, config));
 
                 if (config.isEvaporation) {
-                    opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, LsTrk, config));
+                    opFactory.AddEquation(new HeatInterface_Newton("A", "B", D, thermBoundaryMap, config));
                 }
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     for (int d = 0; d < D; ++d) {
                         throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
-                        opFactory.AddEquation(new HeatFlux("A", d, LsTrk, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFlux("B", d, LsTrk, D, thermBoundaryMap, config));
-                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, LsTrk, config));
+                        opFactory.AddEquation(new HeatFlux("A", d, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFlux("B", d, D, thermBoundaryMap, config));
+                        opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, config));
                     }
                 }
             } else {

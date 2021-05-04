@@ -29,8 +29,8 @@ namespace BoSSS.Solution.XheatCommon {
         /// <param name="LsTrk"></param>
         /// <param name="physicalParameters"></param>
         /// <param name="_movingMesh"></param>
-        public HeatConvectionAtLevelSet_MovingMesh_withMassflux(int _D, LevelSetTracker LsTrk, double _Tsat, PhysicalParameters physicalParameters, ThermalParameters thermalParameters)
-            : base(_D, LsTrk, physicalParameters) {
+        public HeatConvectionAtLevelSet_MovingMesh_withMassflux(int _D, double _Tsat, PhysicalParameters physicalParameters, ThermalParameters thermalParameters, string phaseA, string phaseB)
+            : base(_D, physicalParameters, phaseA, phaseB) {
 
             this.Tsat = _Tsat;
             c_A = thermalParameters.c_A;
@@ -66,23 +66,23 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class HeatConvectionAtLevelSet_LLF_material: ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_material(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet_LLF_material(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh ) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
             capA = _capA;
             capB = _capB;
@@ -142,7 +142,7 @@ namespace BoSSS.Solution.XheatCommon {
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
             double uJump = U_Neg[0] - U_Pos[0];
             //FlxNeg += uJump * LambdaIn * LFFA;
-            FlxNeg *= capA;
+            //FlxNeg *= capA;
 
             // POSITIVE
             Tavg = U_Pos[0];
@@ -156,22 +156,27 @@ namespace BoSSS.Solution.XheatCommon {
                 VelocityMeanOut[d] = ParamsPos[m_D + d];
             }
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, cp.Normal, false);
+            double Lambda = Math.Max(LambdaIn, LambdaOut);
             uJump = U_Neg[0] - U_Pos[0];
             //FlxPos += uJump * LambdaOut * LFFB;
-            FlxPos *= capB;
+            //FlxPos *= capB;
 
-            LLF = FlxNeg * v_Neg - FlxPos * v_Pos;
+            //LLF = FlxNeg * v_Neg - FlxPos * v_Pos;
+            LLF = 0.5 * (FlxPos + FlxNeg);
+            LLF += uJump * Lambda;
 
             //LLF = 0.5 * (FlxNeg + FlxPos) * (capA * v_Neg - capB * v_Neg);
 
             if (movingmesh)
                 return 0.0;
             else
-                return LLF;
+                return LLF * (capA * v_Neg - capB * v_Pos);
         }
 
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
@@ -197,12 +202,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -217,29 +222,31 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class HeatConvectionAtLevelSet_LLF_material_Newton : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_material_Newton(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet_LLF_material_Newton(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
             capA = _capA;
             capB = _capB;
             LFFA = _LFFA;
             LFFB = _LFFB;
 
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
         }
 
         int m_D;
@@ -299,7 +306,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
         }
@@ -332,12 +340,14 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -352,28 +362,31 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(int _D, double _capA, double _capB, double _LFFA, double _LFFB,
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk_Newton(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
             capA = _capA;
             capB = _capB;
             LFFA = _LFFA;
             LFFB = _LFFB;
+
+            this.NegativeSpecies = phaseA;
+            this.PositiveSpecies = phaseB;
 
         }
 
@@ -456,7 +469,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
         }
@@ -489,12 +503,14 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -512,19 +528,19 @@ namespace BoSSS.Solution.XheatCommon {
         bool movingmesh;
 
         public HeatConvectionAtLevelSet_LLF_withMassflux(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB,
-            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat, PhysicalParameters _physicalParameters) : base(_D, LsTrk, _physicalParameters){
+            ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat, PhysicalParameters _physicalParameters, string phaseA, string phaseB) : base(_D, _physicalParameters, phaseA, phaseB) {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
+            //m_LsTrk = LsTrk;
 
             //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
-            NegFlux.SetParameter("A", LsTrk.GetSpeciesId("A"));
-            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
-            PosFlux.SetParameter("B", LsTrk.GetSpeciesId("B"));
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
+            NegFlux.SetParameter("A");
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
+            PosFlux.SetParameter("B");
 
 
             //DirichletCond = _DiriCond;
@@ -679,6 +695,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
             base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
@@ -713,15 +731,12 @@ namespace BoSSS.Solution.XheatCommon {
     public class HeatConvectionAtLevelSet_Direct : ILevelSetForm {
 
         bool movingmesh;
-        LevelSetTracker m_LsTrk;
-        SpeciesId m_spcId;
-
+        string m_spcId;
         public HeatConvectionAtLevelSet_Direct(int _D, LevelSetTracker LsTrk, double _capA, double _capB,
-            double _Tsat, PhysicalParameters _physicalParameters, SpeciesId spcId)  {
+            double _Tsat, PhysicalParameters _physicalParameters, string spcId)  {
 
             m_D = _D;
 
-            m_LsTrk = LsTrk;
             m_spcId = spcId;
 
             Tsat = _Tsat;
@@ -778,12 +793,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         public int LevelSetIndex => 0;
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
     }
 
@@ -794,11 +809,9 @@ namespace BoSSS.Solution.XheatCommon {
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams) : base(_D, LsTrk, thermParams) {
+        public HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(int _D, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams, string phaseA, string phaseB) : base(_D, thermParams, phaseA, phaseB) {
 
             m_D = _D;
-
-            m_LsTrk = LsTrk;
 
             //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
@@ -1003,11 +1016,9 @@ namespace BoSSS.Solution.XheatCommon {
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams) : base(_D, LsTrk, thermParams) {
+        public HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(int _D, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams, string phaseA, string phaseB) : base(_D, thermParams, phaseA, phaseB) {
 
             m_D = _D;
-
-            m_LsTrk = LsTrk;
 
             //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
@@ -1139,13 +1150,13 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConductivityAtLevelSet_material : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
         string phaseA, phaseB;
-        public ConductivityAtLevelSet_material(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
+        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpatialDim;
 
             this.phaseA = phaseA;
             this.phaseB = phaseB;
@@ -1153,7 +1164,7 @@ namespace BoSSS.Solution.XheatCommon {
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
             this.iLevSet = iLevSet;
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
         }
 
@@ -1199,7 +1210,7 @@ namespace BoSSS.Solution.XheatCommon {
             double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
 
             double Ret = 0.0;
-           
+
             Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
             Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
 
@@ -1286,12 +1297,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(phaseB); }
+        public string PositiveSpecies {
+            get { return phaseB; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(phaseA); }
+        public string NegativeSpecies {
+            get { return phaseA; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -1313,18 +1324,18 @@ namespace BoSSS.Solution.XheatCommon {
     /// </summary>
     public class ConductivityAtLevelSet_withMassflux : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet_withMassflux(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet_withMassflux(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = SpatialDim;
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
 
-            m_LsTrk = lstrk;
+            //m_LsTrk = lstrk;
 
         }
 
@@ -1473,12 +1484,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return new string[] { VariableNames.Temperature }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

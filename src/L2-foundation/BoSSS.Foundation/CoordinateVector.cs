@@ -46,7 +46,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// scales all fields in this mapping (see <see cref="CoordinateMapping.Fields"/>) by a factor <paramref name="a"/>;
         /// </summary>
-        /// <param name="a"></param>
+        /// <param name="a">scaling factor</param>
         public void Scale(double a) {
             foreach (DGField f in m_mapping.m_Fields)
                 f.Scale(a);

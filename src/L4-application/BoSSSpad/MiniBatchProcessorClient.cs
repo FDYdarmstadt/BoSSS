@@ -194,7 +194,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            return $"MiniBatchProcessor client @{this.DeploymentBaseDirectory}";
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return $"MiniBatchProcessor client {NameString}@{this.DeploymentBaseDirectory}";
         }
 
     }

@@ -27,19 +27,20 @@ using BoSSS.Solution.Utils;
 using BoSSS.Foundation.Grid;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
-    public class ConvectionInBulk_LLF : LinearizedConvection, IEquationComponentSpeciesNotification {
+    public class ConvectionInBulk_LLF : LinearizedConvection, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public ConvectionInBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) :
+        public ConvectionInBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
             base(SpatDim, _bcmap, _component, false) 
         {
             //
             rhoA = _rhoA;
             rhoB = _rhoB;
             //varMode = _varMode;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFFA = _LFFA;
             this.LFFB = _LFFB;
             this.m_bcmap = _bcmap;
@@ -47,19 +48,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFFA;
         double LFFB;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": this.rho = this.rhoA; base.LaxFriedrichsSchemeSwitch = LFFA; this.SetBndfunc("A"); break;
                 case "B": this.rho = this.rhoB; base.LaxFriedrichsSchemeSwitch = LFFB; this.SetBndfunc("B"); break;
                 default: throw new ArgumentException("Unknown species.");
             }
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
+            //var SpcId= lsTrk.GetSpeciesId(speciesName);
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
         }
 
         void SetBndfunc(string S) {
@@ -151,20 +153,23 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             output.ScaleV(rho);
         }
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = cs.SpeciesSubGrdMask;
+        }
     }
 
     /// <summary>
     /// same as <see cref="ConvectionInBulk_LLF"/>, but inheriting from <see cref="LinearizedConvectionJacobi"/>
     /// </summary>
-    public class ConvectionInBulk_LLF_Newton : LinearizedConvectionJacobi, IEquationComponentSpeciesNotification {
+    public class ConvectionInBulk_LLF_Newton : LinearizedConvectionJacobi, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, LevelSetTracker _lsTrk) :
+        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
             base(SpatDim, _bcmap, _component, false) {
             //
             rhoA = _rhoA;
             rhoB = _rhoB;
             //varMode = _varMode;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFFA = _LFFA;
             this.LFFB = _LFFB;
             this.m_bcmap = _bcmap;
@@ -172,19 +177,20 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         }
 
         IncompressibleMultiphaseBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFFA;
         double LFFB;
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": this.rho = this.rhoA; base.LaxFriedrichsSchemeSwitch = LFFA; this.SetBndfunc("A"); break;
                 case "B": this.rho = this.rhoB; base.LaxFriedrichsSchemeSwitch = LFFB; this.SetBndfunc("B"); break;
                 default: throw new ArgumentException("Unknown species.");
             }
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
+            //SpeciesId SpcId = lsTrk.GetSpeciesId(speciesName);
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(SpcId).VolumeMask.GetBitMaskWithExternal();
         }
 
         void SetBndfunc(string S) {
@@ -276,5 +282,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             output.ScaleV(rho);
         }
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            SubGrdMask = cs.SpeciesSubGrdMask;
+        }
     }
 }

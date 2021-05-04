@@ -184,10 +184,10 @@ namespace BoSSS.Foundation.XDG {
 
             m_NonlinLsForm_V = EquationComponentArgMapping<INonlinLevelSetForm_V>.GetArgMapping(DiffOp, true,
                eq => ((eq.LevelSetTerms & (TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradUxV)) != 0) && Compfilter(eq),
-               eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+               eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_NonlinLsForm_GradV = EquationComponentArgMapping<INonlinLevelSetForm_GradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & (TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxGradV)) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new NonlinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
 
 
             m_ValueRequired = new bool[m_DomainAndParamFieldsA.Length];
@@ -266,7 +266,7 @@ namespace BoSSS.Foundation.XDG {
                 // component is not relevant for this level-set
                 return false;
 
-            if (!(this.SpeciesA == b.NegativeSpecies && this.SpeciesB == b.PositiveSpecies))
+            if (!(this.m_lsTrk.GetSpeciesName(this.SpeciesA) == b.NegativeSpecies && this.m_lsTrk.GetSpeciesName(this.SpeciesB) == b.PositiveSpecies))
                 // component is not relevant for this level-set
                 return false;
 

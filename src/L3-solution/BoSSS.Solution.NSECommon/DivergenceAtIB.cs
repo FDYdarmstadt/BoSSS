@@ -32,14 +32,14 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// </summary>
     public class DivergenceAtIB : ILevelSetForm, ISupportsJacobianComponent {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public DivergenceAtIB(int _D, LevelSetTracker lsTrk, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, double _vorZeichen = 1.0) {
+        public DivergenceAtIB(int _D, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, double _vorZeichen = 1.0) {
             this.D = _D;
-            this.m_LsTrk = lsTrk;
+            //this.m_LsTrk = lsTrk;
             this.LevelSetIndex = iLevSet;
-            this.PositiveSpecies = lsTrk.GetSpeciesId(SolidSpecies);
-            this.NegativeSpecies = lsTrk.GetSpeciesId(FluidSpc);
+            this.PositiveSpecies = SolidSpecies;
+            this.NegativeSpecies = FluidSpc;
             this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
             this.scale = _vorZeichen;
         }
@@ -90,12 +90,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             private set;
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get;
             private set;
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get;
             private set;
         }

@@ -21,6 +21,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using BoSSS.Foundation;
+using BoSSS.Foundation.XDG;
 using ilPSP;
 using NUnit.Framework;
 
@@ -39,8 +40,12 @@ namespace BoSSS.Solution.NSECommon {
         MaterialParamsMode MatParamsMode;
 
         [DataMember]
-        bool rhoOne;
+        protected bool rhoOne;
+        [DataMember]
+        protected bool cpOne;
 
+        [DataMember]
+        public double ConstantViscosityValue;
         /// <summary>
         /// Ctor.
         /// </summary>
@@ -48,12 +53,15 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="MatParamsMode"></param>
         /// <param name="rhoOne"></param>
         /// <param name="Prandtl"></param>
-        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne, double Prandtl)
+        public MaterialLawLowMach(double T_ref, MaterialParamsMode MatParamsMode, bool rhoOne, bool cpOne, double Prandtl, double viscValue = 1.0)
             : base() {
             this.rhoOne = rhoOne;
+            this.cpOne = cpOne;
             this.Prandtl = Prandtl;
             this.T_ref = T_ref;
             this.MatParamsMode = MatParamsMode;
+            this.ConstantViscosityValue = viscValue;
+
         }
 
         /// <summary>
@@ -70,7 +78,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected bool IsInitialized {
             get {
-                return ThermodynamicPressure != null;
+                return (ThermodynamicPressure != null || ThermodynamicPressure2 != null || ThermodynamicPressureValue != -1);
             }
         }
 
@@ -87,15 +95,40 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         //[NonSerialized]
         [DataMember]
-        protected ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
-        
+        public ScalarFieldHistory<SinglePhaseField> ThermodynamicPressure;
+
         /// <summary>
         /// 
         /// </summary>
         //[NonSerialized]
         [DataMember]
-        public double ThermodynamicPressureValue = -1;
+        public ScalarFieldHistory<XDGField> ThermodynamicPressure2;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        //[NonSerialized]
+        [DataMember]
+        public double ThermodynamicPressureValue = -1.0;
+
+
+        /// <summary>
+        /// Hack to initalize ThermodynamicPressure. 
+        /// </summary>
+        /// <param name="ThermodynamicPressure">
+        /// Hack for introducing the value of p0 as a double. has to be changed
+        /// </param>
+        /// <param name="ThermodynamicPressureValue"></param>
+        public void Initialize(XDGField ThermodynamicPressure) {
+            if (!IsInitialized) {
+                var p0 = ThermodynamicPressure.CloneAs();
+                ThermodynamicPressureValue = p0.GetMeanValueTotal(null);
+                //p0.Clear();
+                //this.ThermodynamicPressure2 = new ScalarFieldHistory<XDGField>(p0);
+            } else {
+               // throw new ApplicationException("Initialize() can be called only once.");
+            }
+        }
 
 
         /// <summary>
@@ -139,6 +172,9 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ApplicationException("Initialize() can be called only once.");
             }
         }
+
+
+
         /// <summary>
         /// Dimensionless ideal gas law - returns density as function of
         /// thermodynamic pressure (i.e. p0) and temperature.
@@ -168,6 +204,21 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
         }
+
+
+
+        public virtual double GetDensity(double p0, double[] phi) {
+            double rho = 1.0;
+            if (rhoOne) {
+                return rho;
+            } else {
+                rho = p0 / phi[0];
+                if (double.IsNaN(rho) || double.IsInfinity(rho))
+                    throw new ArithmeticException("Invalid value for density: " + rho);
+            } 
+            return rho;
+        }
+
 
         public override double GetMixtureHeatCapacity(double[] MassFraction) {
             double cp = 1.0;           
@@ -210,7 +261,7 @@ namespace BoSSS.Solution.NSECommon {
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
-                        visc = 1.0;
+                        visc = ConstantViscosityValue;
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
@@ -290,7 +341,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Temperature"></param>
         /// <returns></returns>
         public override double GetMassDeterminedThermodynamicPressure(double InitialMass, SinglePhaseField Temperature) {
-            SinglePhaseField omega = new SinglePhaseField(Temperature.Basis);
+            SinglePhaseField omega = new SinglePhaseField(Temperature.Basis); // 1 / T
             omega.ProjectField(1.0,
                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                     int K = result.GetLength(1); // No nof Nodes
@@ -302,8 +353,61 @@ namespace BoSSS.Solution.NSECommon {
                         }
                     }
                 }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
-            return (InitialMass / omega.IntegralOver(null));
+
+            double p0 = (InitialMass / omega.IntegralOver(null));
+
+
+            return p0;
         }
+
+        /// <summary>
+        /// Returns thermodynamic pressure as function of inital mass and temperature.
+        /// </summary>
+        /// <param name="InitialMass"></param>
+        /// <param name="Temperature"></param>
+        /// <returns></returns>
+        public  double GetMassDeterminedThermodynamicPressure(double InitialMass, XDGField Temperature) {
+
+            var TemperatureA = Temperature.GetSpeciesShadowField("A");
+
+
+            var omega = new SinglePhaseField(TemperatureA.Basis); // 1 / T
+            //var omega = new XDGField(Temperature.Basis); // 1 / T
+            omega.ProjectField(1.0,
+                delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                    int K = result.GetLength(1); // No nof Nodes
+
+
+                    MultidimensionalArray temp = MultidimensionalArray.Create(Len, K);
+
+
+                    TemperatureA.Evaluate(j0, Len, NS, temp);
+                    for (int j = 0; j < Len; j++) {
+                        for (int k = 0; k < K; k++) {
+                            result[j, k] = 1 / temp[j, k];
+                        }
+                    }
+                }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
+
+            
+            double p0 = (InitialMass / omega.IntegralOver(null));
+
+
+            //this.ThermodynamicPressure2.IncreaseHistoryLength(3);
+            //this.ThermodynamicPressure2.Current.Clear();
+            //this.ThermodynamicPressure2.Current.AccConstant(p0);
+            //this.ThermodynamicPressure2.Push();
+
+            //Console.WriteLine("push count : " + ThermodynamicPressure2.PushCount);
+            //Console.WriteLine("history length: " + ThermodynamicPressure2.HistoryLength);
+
+            //this.ThermodynamicPressureValue = p0;
+            //Console.WriteLine(p0);
+            return p0;
+        }
+
+
+
 
         /// <summary>
         /// Returns value of the parameter Lambda/cp

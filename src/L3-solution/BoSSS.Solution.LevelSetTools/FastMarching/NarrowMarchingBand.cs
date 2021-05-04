@@ -1131,9 +1131,9 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 // generate operators
                 ILevelSetForm InterfaceFlux;
                 if (ComponentMode)
-                    InterfaceFlux = new EllipticExtension.SingleComponentInterfaceForm(+penaltyBase, Tracker);
+                    InterfaceFlux = new EllipticExtension.SingleComponentInterfaceForm(+penaltyBase);
                 else
-                    InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker);
+                    InterfaceFlux = new EllipticExtension.ScalarVelocityInterfaceForm(+penaltyBase, Tracker.GridDat.SpatialDimension);
 
                 XSpatialOperatorMk2 InterfaceOperator = InterfaceFlux.XOperator(new string[] { "A", "B" }, (int[] A, int[] B, int[] C) => HMForder);
 

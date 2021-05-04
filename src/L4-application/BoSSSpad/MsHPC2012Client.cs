@@ -322,7 +322,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            return $"MS HPC client {this.ServerName}, @{this.DeploymentBaseDirectory}";
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return $"MS HPC client {NameString}@{this.ServerName}, @{this.DeploymentBaseDirectory}";
         }
     }
 }

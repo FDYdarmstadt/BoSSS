@@ -136,8 +136,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             
             for(int d = 0; d < D; d++) {
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new InteriorVelocityBoundary(LsTrk, d, InterfaceVelocity[d])
-                );
+                    new InteriorVelocityBoundary(d, InterfaceVelocity[d])
+                    );
             }
 
             Op.AgglomerationThreshold = 0.0;

@@ -33,12 +33,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
     /// </summary>
     public class ViscosityAtIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public ViscosityAtIB(int _d, int _D, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
             this.m_penalty_base = penalty_base;
-            this.m_LsTrk = t;
+            //this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
             this.m_D = _D;
@@ -177,15 +177,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// Species ID of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get { return m_SolidSpecies; }
         }
 
         /// <summary>
         /// Species ID of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get { return m_FluidSpc; }
         }
 
         /// <summary>
@@ -220,12 +220,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
     /// </summary>
     public class ViscosityAtIB_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
-
-        public ViscosityAtIB_FullySymmetric(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public ViscosityAtIB_FullySymmetric(int _d, int _D, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
             this.m_penalty_base = penalty_base;
-            this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
             this.m_D = _D;
@@ -233,6 +230,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
             this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+
+            this.NegativeSpecies = FluidSpc;
+            this.PositiveSpecies = SolidSpecies;
         }
         int m_iLevSet;
         string m_FluidSpc;
@@ -370,17 +370,19 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         }
 
         /// <summary>
-        /// Species ID of the solid
+        /// Species of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get;
+            private set;
         }
 
         /// <summary>
-        /// Species ID of the fluid; 
+        /// Species of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get;
+            private set;
         }
 
         /// <summary>
@@ -415,12 +417,12 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
     /// </summary>
     public class ViscosityAtSlipIB : BoSSS.Foundation.XDG.ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtSlipIB(int _d, int _D, LevelSetTracker t, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public ViscosityAtSlipIB(int _d, int _D, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
 
             this.m_penalty_base = penalty_base;
-            this.m_LsTrk = t;
+            //this.m_LsTrk = t;
             this.muA = _muA;
             this.component = _d;
             this.m_D = _D;
@@ -550,15 +552,15 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
         /// <summary>
         /// Species ID of the solid
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_SolidSpecies); }
+        public string PositiveSpecies {
+            get { return m_SolidSpecies; }
         }
 
         /// <summary>
         /// Species ID of the fluid; 
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId(m_FluidSpc); }
+        public string NegativeSpecies {
+            get { return m_FluidSpc; }
         }
 
         /// <summary>

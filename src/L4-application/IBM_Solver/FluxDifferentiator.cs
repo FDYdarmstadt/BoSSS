@@ -16,8 +16,8 @@ namespace BoSSS.Application.IBM_Solver {
  
    
     public class ConvectionAtIB : ILevelSetForm, ISupportsJacobianComponent {
-        public ConvectionAtIB(LevelSetTracker LsTrk, int _d, int _D, double fluidDensity, bool UseMovingMesh) {
-            m_LsTrk = LsTrk;
+        public ConvectionAtIB(int _d, int _D, double fluidDensity, bool UseMovingMesh) {
+            //m_LsTrk = LsTrk;
             m_D = _D;
             m_d = _d;
             fDensity = fluidDensity;
@@ -28,7 +28,7 @@ namespace BoSSS.Application.IBM_Solver {
         int m_d;
         double fDensity;
         bool m_UseMovingMesh;
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         // Use Fluxes as in Bulk Convection
         LinearizedConvection NegFlux;
@@ -50,12 +50,12 @@ namespace BoSSS.Application.IBM_Solver {
             get { return 0; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -89,9 +89,9 @@ namespace BoSSS.Application.IBM_Solver {
 
             public int LevelSetIndex => m_owner.LevelSetIndex;
 
-            public SpeciesId PositiveSpecies => m_owner.PositiveSpecies;
+            public string PositiveSpecies => m_owner.PositiveSpecies;
 
-            public SpeciesId NegativeSpecies => m_owner.NegativeSpecies;
+            public string NegativeSpecies => m_owner.NegativeSpecies;
 
             public TermActivationFlags LevelSetTerms => m_owner.LevelSetTerms;
 

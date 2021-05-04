@@ -201,22 +201,22 @@ namespace BoSSS.Foundation.XDG {
 
             m_LsForm_UxV = EquationComponentArgMapping<ILevelSetForm_UxV>.GetArgMapping(DiffOp, true,
                eq => ((eq.LevelSetTerms & TermActivationFlags.UxV) != 0) && Compfilter(eq),
-               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+               eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradUxV = EquationComponentArgMapping<ILevelSetForm_GradUxV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_UxGradV = EquationComponentArgMapping<ILevelSetForm_UxGradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.UxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradUxGradV = EquationComponentArgMapping<ILevelSetForm_GradUxGradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradUxGradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_V = EquationComponentArgMapping<ILevelSetForm_V>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.V) != 0 && Compfilter(eq)),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
             m_LsForm_GradV = EquationComponentArgMapping<ILevelSetForm_GradV>.GetArgMapping(DiffOp, true,
                 eq => ((eq.LevelSetTerms & TermActivationFlags.GradV) != 0) && Compfilter(eq),
-                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq, lsTrk) : null);
+                eq => (eq is ILevelSetForm) ? new LinearLevelSetFormVectorizer((ILevelSetForm)eq) : null);
 
             this.m_LsForm_UxV_Watches = this.m_LsForm_UxV.InitStopWatches(0, this);
             this.m_LsForm_GradUxV_Watches = this.m_LsForm_GradUxV.InitStopWatches(0, this);
@@ -249,8 +249,8 @@ namespace BoSSS.Foundation.XDG {
                 // component is not relevant for this level-set
                 return false;
 
-            if ((this.SpeciesA == b.NegativeSpecies && this.SpeciesB == b.PositiveSpecies)
-                || (this.SpeciesB == b.NegativeSpecies && this.SpeciesA == b.PositiveSpecies)) {
+            if ((this.m_lsTrk.GetSpeciesName(this.SpeciesA) == b.NegativeSpecies && this.m_lsTrk.GetSpeciesName(this.SpeciesB) == b.PositiveSpecies)
+                || (this.m_lsTrk.GetSpeciesName(this.SpeciesB) == b.NegativeSpecies && this.m_lsTrk.GetSpeciesName(this.SpeciesA) == b.PositiveSpecies)) {
 
             } else {
                 // component is not relevant for this level-set

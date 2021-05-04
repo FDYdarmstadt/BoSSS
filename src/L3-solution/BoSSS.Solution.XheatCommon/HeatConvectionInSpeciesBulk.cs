@@ -37,15 +37,14 @@ namespace BoSSS.Solution.XheatCommon {
 
         
 
-        public HeatConvectionInSpeciesBulk_LLF(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, 
-            double _cap, double _LFF, LevelSetTracker _lsTrk)
+        public HeatConvectionInSpeciesBulk_LLF(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, double _cap, double _LFF)
             : base(SpatDim, _bcmap) {
 
             this.cap = _cap;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             ValidSpecies = spcName;
 
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFF = _LFF;
             this.m_bcmap = _bcmap;
 
@@ -60,13 +59,13 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         ThermalMultiphaseBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFF;
 
         double cap;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -155,7 +154,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            //SubGrdMask = lsTrk.Regions.GetSpeciesSubGrid(m_spcId).VolumeMask.GetBitMaskWithExternal();
+            SubGrdMask = cs.SpeciesSubGrdMask;
         }
 
 
@@ -295,14 +295,13 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
-        public HeatConvectionInSpeciesBulk_Hamiltonian_Newton(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId,
-            double _cap, double _LFF, LevelSetTracker _lsTrk) { 
+        public HeatConvectionInSpeciesBulk_Hamiltonian_Newton(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, double _cap, double _LFF) { 
 
             this.cap = _cap;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             ValidSpecies = spcName;
             this.m_D = SpatDim;
-            this.lsTrk = _lsTrk;
+            //this.lsTrk = _lsTrk;
             this.LFF = _LFF;
             this.m_bcmap = _bcmap;
 
@@ -318,14 +317,14 @@ namespace BoSSS.Solution.XheatCommon {
 
         protected Func<double[], double, double>[] TempFunction;
         ThermalMultiphaseBoundaryCondMap m_bcmap;
-        LevelSetTracker lsTrk;
+        //LevelSetTracker lsTrk;
 
         double LFF;
         int m_D;
         double cap;
         double Scale = 1.0;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -494,12 +493,12 @@ namespace BoSSS.Solution.XheatCommon {
 
         protected Func<double[], double, double>[] TempFunction;
 
-        public HeatConvectionInSpeciesBulk_Upwind(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, SpeciesId spcId, double _cap) {
+        public HeatConvectionInSpeciesBulk_Upwind(int SpatDim, ThermalMultiphaseBoundaryCondMap _bcmap, string spcName, double _cap) {
 
             this.m_SpatialDimension = SpatDim;
 
             this.cap = _cap;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             this.ValidSpecies = spcName;
             this.m_bcmap = _bcmap;
 
@@ -512,7 +511,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double cap;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
