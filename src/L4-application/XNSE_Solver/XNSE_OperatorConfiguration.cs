@@ -43,6 +43,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
+            UseImmersedBoundary = control.UseImmersedBoundary;
             Transport = control.PhysicalParameters.IncludeConvection;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
@@ -211,6 +212,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool withDissP;
 
+        /// <summary>
+        /// Using some form of immersed boundary?
+        /// </summary>
+        public bool UseImmersedBoundary;
+
 
         // getter for interface
         // ====================
@@ -264,7 +270,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public virtual bool isPInterfaceSet {
             get { return false; }
         }
-
+        public bool isImmersedBoundary {
+            get { return UseImmersedBoundary; }
+        }
 
         public virtual KineticEnergyViscousSourceTerms getKinEviscousDiscretization {
             get { return kinEviscous; }
@@ -296,6 +304,7 @@ namespace BoSSS.Application.XNSE_Solver {
             HeatTransport = control.ThermalParameters.IncludeConvection;
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
+            Buoyancy = control.ThermalParameters.alpha_A != 0.0 || control.ThermalParameters.alpha_B != 0.0;
             if(control.prescribedMassflux_Evaluator != null)
                 prescribedMassflux = control.prescribedMassflux_Evaluator;
             if (control.prescribedMassflux != null)
@@ -363,6 +372,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool Evaporation;
 
         /// <summary>
+        /// include buoyancy, that is Boussinesq approximation
+        /// </summary>
+        public bool Buoyancy;
+
+        /// <summary>
         /// 
         /// </summary>
         public Func<double[], double, double> prescribedMassflux;
@@ -385,6 +399,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isEvaporation {
             get { return Evaporation; }
+        }
+        public bool isBuoyancy {
+            get { return Buoyancy; }
         }
     }
 }

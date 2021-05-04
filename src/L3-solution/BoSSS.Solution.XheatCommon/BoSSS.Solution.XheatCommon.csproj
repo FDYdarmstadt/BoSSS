@@ -49,6 +49,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BoussinesqBuoyancy.cs" />
     <Compile Include="ConductivityAtLevelSet.cs" />
     <Compile Include="ConductivityInBulk.cs" />
     <Compile Include="ConductivityInSpeciesBulk.cs" />

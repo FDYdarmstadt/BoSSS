@@ -103,6 +103,75 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public class ConductivityInSolid : swipConductivity, ISpeciesFilter, ISupportsJacobianComponent {
+
+        /// <summary>
+        /// different implementations for the conductivity part (laplace operator) of the heat equation 
+        /// </summary>
+        public enum ConductivityMode {
+
+            /// <summary>
+            /// direct discretization of the laplace operator via symmetric interior penalty
+            /// </summary>
+            SIP,
+
+            /// <summary>
+            /// splitting into two first order differential equations, explicit computation of the heat flux
+            /// </summary>
+            LDG
+
+        }
+
+
+        public ConductivityInSolid(double penalty, double sw, ThermalMultiphaseBoundaryCondMap bcMap, int D,
+            string spcName, SpeciesId spcId, double _k)
+            : base(penalty, D, bcMap) {
+
+            base.m_alpha = sw;
+            this.m_bcMap = bcMap;
+
+            this.m_spcId = spcId;
+            ValidSpecies = spcName;
+
+            currentk = _k;
+            complementk = 0.0;
+
+            double muFactor = Math.Max(currentk, complementk) / currentk;
+            base.m_penalty_base = penalty * muFactor;
+
+            base.tempFunction = this.m_bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
+            base.fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);
+
+        }
+
+
+        SpeciesId m_spcId;
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+
+
+        double currentk = double.NaN;
+        double complementk = double.NaN;
+
+
+        ThermalMultiphaseBoundaryCondMap m_bcMap;
+
+
+        protected override double Conductivity(double[] Parameters) {
+            return currentk;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+    }
+
 
     /// <summary>
     /// 

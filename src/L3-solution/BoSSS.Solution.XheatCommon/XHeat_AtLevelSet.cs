@@ -1084,7 +1084,7 @@ namespace BoSSS.Solution.XheatCommon {
             //===========================================================================================================
             //===========================================================================================================
             // Second variant using Roe-Type Scheme
-            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature
+            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature?
             double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
             FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
 
@@ -1140,16 +1140,19 @@ namespace BoSSS.Solution.XheatCommon {
     public class ConductivityAtLevelSet_material : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         LevelSetTracker m_LsTrk;
-
-        public ConductivityAtLevelSet_material(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat) {
+        string phaseA, phaseB;
+        public ConductivityAtLevelSet_material(LevelSetTracker lstrk, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
             this.m_D = lstrk.GridDat.SpatialDimension;
 
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
-
+            this.iLevSet = iLevSet;
             m_LsTrk = lstrk;
 
         }
@@ -1159,6 +1162,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double penalty;
         int m_D;
+        int iLevSet;
 
         //bool DirichletCond;
         double Tsat;
@@ -1275,7 +1279,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public int LevelSetIndex {
-            get { return 0; }
+            get { return iLevSet; }
         }
 
         public IList<string> ArgumentOrdering {
@@ -1283,11 +1287,11 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+            get { return m_LsTrk.GetSpeciesId(phaseB); }
         }
 
         public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+            get { return m_LsTrk.GetSpeciesId(phaseA); }
         }
 
         public TermActivationFlags LevelSetTerms {

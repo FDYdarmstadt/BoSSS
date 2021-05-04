@@ -292,6 +292,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return lsUpdater;
         }
 
+        /// <summary>
+        /// Cell-performance classes:
+        /// cell performance class equals number of species present in that cell
+        /// </summary>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
+            //throw new NotImplementedException("Dynamic Load Balancing not yet fully implemented - Look at Application MpiRedistributeAndMeshAdapt!");
+            NoOfClasses = this.LsTrk.TotalNoOfSpecies;
+            int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            CellPerfomanceClasses = new int[J];
+            for(int j = 0; j<J; j++) {
+                CellPerfomanceClasses[j] = this.LsTrk.Regions.GetNoOfSpecies(j) - 1;
+                //Console.WriteLine("No of Species in cell {0} : {1}", j, CellPerfomanceClasses[j]);
+            }
+        }
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
@@ -476,7 +490,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         //        base.RegisterField(f);
         //    }
         //}
-
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);

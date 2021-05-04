@@ -55,10 +55,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// </summary>
         SpatialOperator GetBulkOperator() {
             
-            SpatialOperator Op = new SpatialOperator();
-            Op.QuadOrderFunction = QuadOrderFunc.Linear();
+            SpatialOperator Op = new SpatialOperator(VariableNames.VelocityVector(D).Cat(VariableNames.Pressure), EquationNames.MomentumEquations(D).Cat(EquationNames.ContinuityEquation), QuadOrderFunc.Linear() );
+            //Op.QuadOrderFunction = QuadOrderFunc.Linear();
 
-           
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
@@ -102,11 +101,14 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 Console.Error.WriteLine("Rem: still missing cell length scales for grid type " + g.GetType().FullName);
             }
 
-            
+            MultidimensionalArray SlipLengths = MultidimensionalArray.Create(g.iGeomCells.NoOfLocalUpdatedCells);
+            SlipLengths.AccConstant(-1.0); // freeslip on all slipboundaries
+            r.UserDefinedValues["SlipLengths"] = SlipLengths;
+
             //foreach(var kv in UserDefinedValues) {
             //    r.UserDefinedValues[kv.Key] = kv.Value;
             //}
-            
+
 
             r.HomotopyValue = 1.0;
 
@@ -135,7 +137,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             for(int d = 0; d < D; d++) {
                 Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
                     new InteriorVelocityBoundary(LsTrk, d, InterfaceVelocity[d])
-                    );
+                );
             }
 
             Op.AgglomerationThreshold = 0.0;
@@ -216,6 +218,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             }
         }
 
+        static int timestepNo = 0;
         /// <summary>
         /// actually computing the extension velocity
         /// </summary>
@@ -226,7 +229,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <param name="ExtensionVelocity">
         /// output
         /// </param>
-        public void SolveExtension(LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity) {
+        public void SolveExtension(LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity, bool plotExtension = false) {
             var gDat = lsTrk.GridDat;
             int deg = ExtensionVelocity[0].Basis.Degree;
 
@@ -241,6 +244,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+
+            if (plotExtension) {
+                Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+                timestepNo++;
+            }
         }
     }
 }

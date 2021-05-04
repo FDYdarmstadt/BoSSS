@@ -58,7 +58,7 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
             this.d = d;
             this.D = D;
-            if(D != 2 && D != 3)
+            if (D != 2 && D != 3)
                 throw new ArgumentOutOfRangeException("only supported for 2D and 3D");
             if(d < 0 || d >= D)
                 throw new ArgumentOutOfRangeException();
@@ -820,7 +820,7 @@ namespace BoSSS.Solution.XNSECommon {
             m_SecondSpeciesName = solidPhase;
 
             // set components
-            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true, -1);
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB(D, LsTrk, iLevSet, FirstSpeciesName, SecondSpeciesName, true, -1.0);
             
             AddComponent(divPen);
             AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());

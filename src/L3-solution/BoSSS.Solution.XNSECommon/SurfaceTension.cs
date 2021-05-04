@@ -777,6 +777,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
+                case IncompressibleBcType.Wall:
                 case IncompressibleBcType.NavierSlip_Linear: {
 
                     Vector EdgeNormal = inp.Normal;

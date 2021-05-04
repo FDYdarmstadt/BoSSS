@@ -1298,7 +1298,9 @@ namespace BoSSS.Foundation.XDG {
             _LevSetCoincidingFaces = new (int iLevSet, int iFace)[Jup][];
             if(LSCF != null) {
                 for(int j = 0; j < Jup; j++) {
-                    _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                    if (LSCF[j] != null) {
+                        _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                    }
                 }
             }
 

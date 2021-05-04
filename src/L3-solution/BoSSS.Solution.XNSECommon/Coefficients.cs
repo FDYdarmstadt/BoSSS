@@ -25,7 +25,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Creates Slip length array, depending on NavierSlip_Localization and NavierSlip_SlipLength
         /// </summary>
-        public override DelCoefficientFactory Factory => PrescribedMassFluxFactory;
+        public override DelCoefficientFactory Factory => SlipLengthsFactory;
 
         /// <summary>
         /// Slip length coefficients for Generalized Navier-Stokes Boundary conditions.
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.degU = degU;
         }
 
-        (string, object)[] PrescribedMassFluxFactory(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+        (string, object)[] SlipLengthsFactory(LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
 
             CellMask SlipArea;
             switch (dntParams.GNBC_Localization) {

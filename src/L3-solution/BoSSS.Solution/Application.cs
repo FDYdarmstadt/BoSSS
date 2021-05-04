@@ -2384,6 +2384,10 @@ namespace BoSSS.Solution {
                     this.m_IOFields.Clear();
                     this.LsTrk = null;
 
+                    // re-set Level-Set tracker
+                    this.CreateTracker();
+                    int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
+
                     // re-create fields
                     if (this.Control != null) {
                         InitFromAttributes.CreateFieldsAuto(
@@ -2393,8 +2397,8 @@ namespace BoSSS.Solution {
                     PostRestart(physTime, TimeStepNo);
 
 
-                    // re-set Level-Set tracker
-                    int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
+                    //// re-set Level-Set tracker
+                    //int trackerVersion = loadbal.SetNewTracker(this.LsTrk);
                     //if(this.LsTrk != null) {
                     //    Debug.Assert(object.ReferenceEquals(this.LsTrk.GridDat, this.GridData));
                     //    Debug.Assert(this.LsTrk.Regions.Version == trackerVersion);

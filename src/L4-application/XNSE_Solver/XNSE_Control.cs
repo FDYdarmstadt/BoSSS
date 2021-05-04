@@ -695,6 +695,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>

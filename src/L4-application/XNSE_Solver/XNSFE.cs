@@ -76,8 +76,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected ThermalMultiphaseBoundaryCondMap thermBoundaryMap {
             get {
-                if (m_thermBoundaryMap == null)
-                    m_thermBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" });
+                if (m_thermBoundaryMap == null) {
+                    List<string> SpeciesList = new List<string>() { "A", "B" };
+                    if (this.Control.UseImmersedBoundary)
+                        SpeciesList.Add("C");
+                    m_thermBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, SpeciesList.ToArray());
+                }
                 return m_thermBoundaryMap;
             }
         }
@@ -138,7 +142,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
 
                 var config = new XNSFE_OperatorConfiguration(Control);
-                var levelSetVelocity = config.isEvaporation ? new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, config) : new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                ILevelSetParameter levelSetVelocity;
+
+                if (config.isEvaporation) {
+                    levelSetVelocity = new LevelSetVelocityGeneralNonMaterial(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, config);
+                } else {
+                    levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters); 
+                }
+
                 return levelSetVelocity;
             } else {
                 return base.GetLevelSetVelocity(iLevSet);
@@ -165,6 +176,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, LsTrk, config));
                 }                    
             }
+            if (config.isBuoyancy && config.isGravity) {
+                opFactory.AddEquation(new NavierStokesBuoyancy("A", D, d, config));
+                opFactory.AddEquation(new NavierStokesBuoyancy("B", D, d, config));
+            }
         }
 
 
@@ -179,7 +194,25 @@ namespace BoSSS.Application.XNSE_Solver {
                     opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, LsTrk, config));
                 }
             }
-        }    
+        }
+
+        protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+            base.DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+
+            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            opFactory.AddEquation(new SolidHeat("C", LsTrk, D, thermBoundaryMap, config));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config, LsTrk));
+            opFactory.AddEquation(new ImmersedBoundaryHeat("B", "C", 1, D, config, LsTrk));
+
+            // we need these "dummy" eqautions, otherwise the matrix has zero rows/columns
+            // If this is to be used frequently something more sophistucated should be implemented, e.g. strike out rows for unused variables...
+            for(int d = 0; d < D; d++) {
+                opFactory.AddEquation(new ImmersedBoundaryDummyMomentum("C", d));
+            }
+            opFactory.AddEquation(new ImmersedBoundaryDummyConti("C"));
+
+        }
 
         /// <summary>
         /// Override this method to customize the assembly of the heat equation
@@ -324,17 +357,35 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-
+        bool PrintOnlyOnce = true;
         private void PrintConfiguration() {
+            if (PrintOnlyOnce) {
+                PrintOnlyOnce = false;
+                XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
 
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
-
-            PropertyInfo[] properties = typeof(XNSFE_OperatorConfiguration).GetProperties();
-            foreach (PropertyInfo property in properties) {
-                if(property.PropertyType == typeof(bool)) {
-                    bool s = (bool)property.GetValue(config);
-                    Console.WriteLine("     {0,-30}:{1,3}", property.Name, "[" + (s == true ? "x" : " ") + "]");
+                Console.WriteLine("=============== {0} ===============", "Operator Configuration");
+                PropertyInfo[] properties = typeof(XNSFE_OperatorConfiguration).GetProperties();
+                foreach (PropertyInfo property in properties) {
+                    if (property.PropertyType == typeof(bool)) {
+                        bool s = (bool)property.GetValue(config);
+                        Console.WriteLine("     {0,-30}:{1,3}", property.Name, "[" + (s == true ? "x" : " ") + "]");
+                    }
                 }
+
+                Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
+                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
+                    Console.WriteLine("TODO");
+                }
+
+                Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);
+                Console.WriteLine("     {0,-30}:{1}", "Convergence Criterion", this.Control.NonLinearSolver.ConvergenceCriterion);
+                Console.WriteLine("     {0,-30}:{1}", "Globalization", this.Control.NonLinearSolver.Globalization);
+                Console.WriteLine("     {0,-30}:{1}", "Minsolver Iterations", this.Control.NonLinearSolver.MinSolverIterations);
+                Console.WriteLine("     {0,-30}:{1}", "Maxsolver Iterations", this.Control.NonLinearSolver.MaxSolverIterations);
+
+
             }
         }
         /*
