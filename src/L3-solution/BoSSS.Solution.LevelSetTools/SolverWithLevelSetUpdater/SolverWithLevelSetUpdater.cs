@@ -228,9 +228,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.StokesExtension: {
-                        var stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                        ILevelSetEvolver stokesExtEvo;
+                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData);
+                        } else {
+                            stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData);
+                        }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;
                     }
