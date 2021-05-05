@@ -98,7 +98,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 return new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
             }
 
-            AdamsBashforth abf = new(diffOp, levelSet.Mapping, new CoordinateMapping(Velocity), timeStepOrder);
+            AdamsBashforth abf = new AdamsBashforth(diffOp, levelSet.Mapping, new CoordinateMapping(Velocity), timeStepOrder);
             return abf;
         }
 
