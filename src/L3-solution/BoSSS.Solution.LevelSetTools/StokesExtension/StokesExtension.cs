@@ -133,8 +133,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             
             for(int d = 0; d < D; d++) {
                 foreach ((string, string) speciesPair in LsTrk.GetSpeciesPairsSeparatedByLevSet(levelSetIndex)) {
-                    SpeciesId negativeSpecies = LsTrk.GetSpeciesId(speciesPair.Item1);
-                    SpeciesId positiveSpecies = LsTrk.GetSpeciesId(speciesPair.Item2);
+                    string negativeSpecies = speciesPair.Item1;
+                    string positiveSpecies = speciesPair.Item2;
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
                         new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
                         );

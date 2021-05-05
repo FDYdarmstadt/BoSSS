@@ -21,11 +21,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         int m_d;
         int m_levelSetIndex;
         DGField m_InterfaceVelocityComponent;
-        SpeciesId m_negativeSpecies;
-        SpeciesId m_positiveSpecies;
+        string m_negativeSpecies;
+        string m_positiveSpecies;
         int m_D;
 
-        public InteriorVelocityBoundary(SpeciesId positiveSpecies, SpeciesId negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
+        public InteriorVelocityBoundary(string positiveSpecies, string negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
             m_InterfaceVelocityComponent = InterfaceVelocityComponent;
             m_d = d;
             m_D = D;
@@ -36,9 +36,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         public int LevelSetIndex => m_levelSetIndex;
 
-        public SpeciesId PositiveSpecies => m_positiveSpecies;
+        public string PositiveSpecies => m_positiveSpecies;
 
-        public SpeciesId NegativeSpecies => m_negativeSpecies;
+        public string NegativeSpecies => m_negativeSpecies;
 
         public TermActivationFlags LevelSetTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
