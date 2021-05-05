@@ -665,7 +665,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
             InterfaceQuadOrder = QuadOrderFunc.FixedOrder(Phi.Basis.Degree * 2 + 2);
 
             // Generate Interface Operator
-            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface, LSTrck)).XOperator(new[] { "A", "B" }, InterfaceQuadOrder);
+            this.Operator_interface = (new EllipticReInitInterfaceForm(Control.PenaltyMultiplierInterface)).XOperator(new[] { "A", "B" }, InterfaceQuadOrder);
             
             // Nonlinear Part on the RHS
             // switch for the potential functions

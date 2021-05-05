@@ -39,7 +39,7 @@ namespace BoSSS.Solution.EnergyCommon {
 
         public KineticEnergyLaplaceInSpeciesBulk(double penalty, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap,
             string spcName, SpeciesId spcId, int _D, double _muA, double _muB, double _betaS = 0.0)
-            : base(penalty, sw, bcMap, spcName, spcId, 0, _D, _muA, _muB, _betaS) {
+            : base(penalty, sw, bcMap, spcName, 0, _D, _muA, _muB, _betaS) {
         }
 
         public override IList<string> ArgumentOrdering {
@@ -147,12 +147,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return new string[] { VariableNames.KineticEnergy }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -355,10 +355,10 @@ namespace BoSSS.Solution.EnergyCommon {
 
     public class StressDivergenceAtLevelSet : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _muA, double _muB, bool transposed = false) {
-            this.m_LsTrk = lstrk;
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.m_D = lstrk.GridDat.SpatialDimension;
@@ -424,12 +424,12 @@ namespace BoSSS.Solution.EnergyCommon {
             get { return new string[] { }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

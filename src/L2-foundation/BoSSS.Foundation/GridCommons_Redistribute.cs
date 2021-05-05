@@ -896,19 +896,20 @@ namespace BoSSS.Foundation.Grid.Classic {
             return BB;
         }
 
+
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit>nBit*nDim).
+        /// Note: The identification of barycenter only works for rectangular-shaped cells.
         /// </summary>
         public int[] ComputePartitionHilbert(IList<int[]> localcellCosts = null, int Functype = 0, bool adjustRefinement=false) {
-#if DEBUG
-            System.Threading.Thread.Sleep(5000);
-#endif
 
             //CONSTRUCTIONSITE: GetShortestDistance will be called from here, the return argument will be used to calculate a refinement order
             //This refinement order has to be stored once and is available in here during runtime
 
             //Functype: Constraint mapping (0) or direct Costmapping (1)
             //Notice: Functype=1 will lead to bad behavior, when using Clusters
+
+            int[] local_Rank_RedistributionList;
 
             if (this.Size > 1) {
                 int D = this.SpatialDimension;
@@ -923,7 +924,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for (int j = 0; j < J; j++) {
                     Cell Cj = this.Cells[j];
                     int NoOfNodes = Cj.TransformationParams.NoOfRows;
-                    //Compute Barycenter
+                    //Compute Barycenter of rectangular cells
                     for (int d = 0; d < D; d++) {
                         double center = 0;
                         for (int k = 0; k < NoOfNodes; k++) {
@@ -932,7 +933,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         center = center / ((double)NoOfNodes); // ''center of gravity'' for coordinate direction 'd'
                         double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * Math.Pow(2, 64 / D);
-                        //double centerTrf = (center - GlobalBB.Min[d]) * (1.0 / (GlobalBB.Max[d] - GlobalBB.Min[d])) * ((double)long.MaxValue);
                         centerTrf = Math.Round(centerTrf);
                         if (centerTrf < 0)
                             centerTrf = 0;
@@ -1082,12 +1082,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Array.Sort(CellIndex, RankIndex);
                 }
                 //Scatter Rank-Array for local Process
-                int[] local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
-                return local_Rank_RedistributionList;
+                local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
             } else {
-                int[] local_Rank_RedistributionList = new int[NoOfUpdateCells];
-                return local_Rank_RedistributionList;
+                local_Rank_RedistributionList = new int[NoOfUpdateCells];
             }
+            return local_Rank_RedistributionList;
         }
 
         private bool CheckPartitioning(Master cm, int[] nodesPart) {

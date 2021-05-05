@@ -622,7 +622,7 @@ namespace BoSSS.Solution.XNSECommon {
             {
                 XSpatialOperatorMk2 qr = new XSpatialOperatorMk2(DomName, new string[] { "Curvature" }, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
-                    qr.EquationComponents[CodName[d]].Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, 1.0));
+                    qr.EquationComponents[CodName[d]].Add(new CurvatureBasedSurfaceTension(d, D, 1.0));
                 }
                 qr.Commit();
                 
@@ -1205,7 +1205,7 @@ namespace BoSSS.Solution.XNSECommon {
 
                 
                 for (int d = 0; d < D; d++) {
-                    xOp.EquationComponents[codName[d]].Add(new CurvatureBasedSurfaceTension(d, D, LsTrk, sigma));
+                    xOp.EquationComponents[codName[d]].Add(new CurvatureBasedSurfaceTension(d, D, sigma));
                 }
                 
             } else if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local 

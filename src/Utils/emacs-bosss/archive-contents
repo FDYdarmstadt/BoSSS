@@ -1,0 +1,10 @@
+(1
+ (bosss .
+        [(0 2)
+         nil "Support for the BoSSS solver" single
+         ((:authors
+           ("Dario Klingenberg" . "dario.klingenberg@web.de"))
+          (:maintainer "Dario Klingenberg" . "dario.klingenberg@web.de")
+          (:keywords "languages")
+          (:url . "http://github.com/dakling/emacs-bosss"))]))
+

@@ -148,8 +148,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// runs an ls command
         /// </summary>
         public void TestSSH() {
-            var output = SSHConnection.RunCommand("ls");
-            Console.WriteLine(output);
+            Console.WriteLine($"Performing test for ssh connection of {this.ToString()} ...");
+            var output = SSHConnection.RunCommand("ls", verbose:true);
+            //Console.WriteLine(output);
+            Console.WriteLine($"Test finished.");
         }
 
         /// <summary>
@@ -456,7 +458,12 @@ namespace BoSSS.Application.BoSSSpad {
         ///
         /// </summary>
         public override string ToString() {
-            return "SlurmClient: " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
+
+            string NameString = "";
+            if(!base.Name.IsEmptyOrWhite())
+                NameString = " " + base.Name + " ";
+
+            return "SlurmClient" + NameString + ": " + Username + "@" + ServerName + ", Slurm account: " + (SlurmAccount ?? "NONE");
         }
 
     }

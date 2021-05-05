@@ -198,7 +198,7 @@ namespace BoSSS.Solution.EnergyCommon {
             if (config.isPressureGradient) {
 
                 if (divergenceP) {
-                    comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk));
+                    comps.Add(new DivergencePressureEnergyAtLevelSet(LsTrk.GridDat.SpatialDimension));
                     //comps.Add(new ConvectivePressureTermAtLevelSet_LLF(D, LsTrk, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh));
                 }
             }
@@ -206,7 +206,7 @@ namespace BoSSS.Solution.EnergyCommon {
             // surface energy
             // ==============
             {
-                comps.Add(new SurfaceEnergy(D, LsTrk, sigma, rhoA, rhoB));
+                comps.Add(new SurfaceEnergy(D, sigma, rhoA, rhoB));
             }
 
         }

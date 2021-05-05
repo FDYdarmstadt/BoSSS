@@ -42,7 +42,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         double alpha;
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch(speciesName) {
                 case "A": alpha = alpha_A; break;
                 case "B": alpha = alpha_B; break;
@@ -59,11 +59,11 @@ namespace BoSSS.Application.LoadBalancingTest {
         double alpha_A;
         double alpha_B;
 
-        public LevSetFlx(LevelSetTracker _LsTrk, double _alpha_A, double _alpha_B) {
+        public LevSetFlx( double _alpha_A, double _alpha_B) {
             alpha_A = _alpha_A;
             alpha_B = _alpha_B;
-            this.PositiveSpecies = _LsTrk.GetSpeciesId("B");
-            this.NegativeSpecies = _LsTrk.GetSpeciesId("A");
+            this.PositiveSpecies = "B";
+            this.NegativeSpecies = "A";
         }
         
         public IList<string> ArgumentOrdering {
@@ -97,12 +97,12 @@ namespace BoSSS.Application.LoadBalancingTest {
             }
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get;
             private set;
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get;
             private set;
         }

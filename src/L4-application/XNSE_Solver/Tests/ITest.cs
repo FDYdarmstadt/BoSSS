@@ -29,7 +29,7 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
-    
+
     /// <summary>
     /// Interface for tests (historical stuff). 
     /// </summary>
@@ -41,7 +41,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         int SpatialDimension {
             get;
         }
-        
+
         /// <summary>
         /// Level set field in dependence of time.
         /// </summary>
@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Boundary conditions and values.
         /// </summary>
         IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig();
-        
+
         /// <summary>
         /// density of fluid A
         /// </summary>
@@ -81,7 +81,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         ///// <summary> interface speed in normal direction at time <paramref name="t"/>. </summary>
         //BoSSS.Foundation.ScalarFunction GetS(double time);
 
-        
+
         ///// <summary> some external surface force (usually, only of use for manufactured solutions)</summary>
         //ScalarFunction GetSF(double time, int d);
 
@@ -203,5 +203,26 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
     interface IXNSFETest : IXNSETest, IXHeatTest {
 
+    }
+
+
+
+    public interface IXNSECTest : IXNSETest {
+        
+        /// <summary>
+        /// Total number of chemical components involved in the solution
+        /// </summary>
+        int NumberOfChemicalComponents { get; }
+        
+        
+        /// <summary>
+        /// Activate chemical reaction related terms in the energy and species equations
+        /// </summary>
+        bool ChemicalReactionTermsActive { get; }
+
+        /// <summary>
+        /// Directional vector of gravity 
+        /// </summary>
+        double[] GravityDirection { get; }
     }
 }

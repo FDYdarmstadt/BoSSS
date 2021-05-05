@@ -452,7 +452,7 @@ namespace BoSSS.Foundation {
 
             int order = Math.Max(this.Basis.Degree, other.Basis.Degree) * 2;
             CellQuadratureScheme cqs = new CellQuadratureScheme(domain: cm);
-            return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order));
+            return LxError(other.Evaluate, null, cqs.Compile(this.GridDat, order)).Sqrt();
         }
 
         /// <summary>

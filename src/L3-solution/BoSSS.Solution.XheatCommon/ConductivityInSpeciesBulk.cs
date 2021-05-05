@@ -34,7 +34,7 @@ namespace BoSSS.Solution.XheatCommon {
     /// <summary>
     /// 
     /// </summary>
-    public class ConductivityInSpeciesBulk : swipConductivity, ISpeciesFilter {
+    public class ConductivityInSpeciesBulk : swipConductivity, ISpeciesFilter, ISupportsJacobianComponent {
 
         /// <summary>
         /// different implementations for the conductivity part (laplace operator) of the heat equation 
@@ -55,13 +55,13 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public ConductivityInSpeciesBulk(double penalty, double sw, ThermalMultiphaseBoundaryCondMap bcMap, int D,
-            string spcName, SpeciesId spcId, double _kA, double _kB)
+            string spcName, double _kA, double _kB)
             : base(penalty, D, bcMap) {
 
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             ValidSpecies = spcName;
 
             switch (spcName) {
@@ -79,7 +79,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -98,6 +98,9 @@ namespace BoSSS.Solution.XheatCommon {
             return currentk;
         }
 
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
     }
 
 
@@ -127,11 +130,11 @@ namespace BoSSS.Solution.XheatCommon {
         protected Func<double[], double, double>[] tempFunction;
 
 
-        public HeatFluxDivergenceInSpeciesBulk(int D, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId) {
+        public HeatFluxDivergenceInSpeciesBulk(int D, ThermalMultiphaseBoundaryCondMap bcMap, string spcName) {
 
             this.m_D = D;
 
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             ValidSpecies = spcName;
             //this.ksqrt = Math.Sqrt(_k);
 
@@ -141,7 +144,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -418,14 +421,14 @@ namespace BoSSS.Solution.XheatCommon {
         /// <summary>
         /// Initialize identity
         /// </summary>
-        public AuxiliaryHeatFlux_Identity(int component, string spcName, SpeciesId spcId) {
+        public AuxiliaryHeatFlux_Identity(int component, string spcName) {
             this.component = component;
 
             ValidSpecies = spcName;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
         }
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;
@@ -496,12 +499,12 @@ namespace BoSSS.Solution.XheatCommon {
         protected Func<double[], double, double>[] tempFunction;
 
 
-        public TemperatureGradientInSpeciesBulk(int _D, int _d, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, SpeciesId spcId, double _k) {
+        public TemperatureGradientInSpeciesBulk(int _D, int _d, ThermalMultiphaseBoundaryCondMap bcMap, string spcName, double _k) {
 
             this.m_D = _D;
             this.m_d = _d;
 
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             this.k = _k;
             this.ValidSpecies = spcName;
 
@@ -512,7 +515,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double k;
 
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
         public string ValidSpecies {
             get;

@@ -32,7 +32,9 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 using static BoSSS.Foundation.SpatialOperator;
-
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -155,8 +157,6 @@ namespace BoSSS.Foundation.XDG {
             protected override DGField[] GetTrxFields() {
                 return base.Parameters.ToArray();
             }
-
-
 
             /// <summary>
             /// computation of operator matrix, currently only two species are supported
@@ -281,6 +281,13 @@ namespace BoSSS.Foundation.XDG {
                                 Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
                                 Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+
+                            //IFormatter formatter = new BinaryFormatter();
+                            //using (Stream stream = new FileStream("MyFile.bin", FileMode.Create, FileAccess.Write, FileShare.None)) {
+                            //    formatter.Serialize(stream, m_lsTrk);
+                            //};
+
+
 #endif
 
                             var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
@@ -1023,9 +1030,9 @@ namespace BoSSS.Foundation.XDG {
 
                         if(c is ILevelSetForm lsc) {
                             // test if the component is actually relevant
-                            if(lsc.PositiveSpecies != spcB)
+                            if(lsc.PositiveSpecies != this.m_lsTrk.GetSpeciesName(spcB))
                                 continue;
-                            if(lsc.NegativeSpecies != spcA)
+                            if(lsc.NegativeSpecies != this.m_lsTrk.GetSpeciesName(spcA))
                                 continue;
                             if(lsc.LevelSetIndex != iLevSet)
                                 continue;
@@ -1058,7 +1065,7 @@ namespace BoSSS.Foundation.XDG {
                     foreach (var c in comps) {
                         if (c is IEquationComponentSpeciesNotification) {
                             var ce = c as IEquationComponentSpeciesNotification;
-                            ce.SetParameter(sNmn, id);
+                            ce.SetParameter(sNmn);
                         }
                     }
                 }

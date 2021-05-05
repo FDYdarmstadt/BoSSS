@@ -49,10 +49,10 @@ namespace BoSSS.Solution.XheatCommon {
         protected int m_D;
 
 
-        public EvaporationAtLevelSet(int _D, LevelSetTracker _LsTrk,  ThermalParameters thermParams, double _sigma) {
+        public EvaporationAtLevelSet(int _D, ThermalParameters thermParams, double _sigma) {
 
             this.m_D = _D;
-            this.m_LsTrk = _LsTrk;
+            //this.m_LsTrk = _LsTrk;
 
             this.m_hVap = thermParams.hVap;
 
@@ -166,7 +166,7 @@ namespace BoSSS.Solution.XheatCommon {
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
         protected BitArray evapMicroRegion;
 
         bool MEvapIsPrescribd = false;
@@ -203,12 +203,12 @@ namespace BoSSS.Solution.XheatCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public virtual TermActivationFlags LevelSetTerms {

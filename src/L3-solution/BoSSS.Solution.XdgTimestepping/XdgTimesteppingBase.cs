@@ -275,7 +275,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
                         builder.time = time;
-                        builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
+
+                        builder.ComputeMatrix(MassMatrix, new double[CurrentStateMapping.LocalLength], 1.0); // Remark: 1/dt - scaling is applied somewhere else
+                       // builder.ComputeMatrix(MassMatrix, default(double[]), 1.0); // Remark: 1/dt - scaling is applied somewhere else
                     } else {
                         Console.Error.WriteLine("Warning: no temporal operator specified: any result will always be steady-state.");
                     }

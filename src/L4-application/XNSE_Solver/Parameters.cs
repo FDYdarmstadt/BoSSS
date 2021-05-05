@@ -539,9 +539,15 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override DelParameterFactory Factory => ParameterFactory;
 
+        public override DelPartialParameterUpdate Update {
+            get {                
+                //return MassFluxExtension_Evaporation_Update;  // seems more stable to update once per timestep
+                return null;
+            }
+        }
+
         public MassFluxExtension_Evaporation(XNSFE_OperatorConfiguration config) {
-            this.config = config;
-            //Update = MassFluxExtension_Evaporation_Update; // Update only once per timestep for now, seems to give better convergence
+            this.config = config;            
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -552,7 +558,9 @@ namespace BoSSS.Application.XNSE_Solver {
             massfluxext[0] = (paramName, MassFluxExtension);
             return massfluxext;
         }
-
+        public void MassFluxExtension_Evaporation_Update(double phystime, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            MassFluxExtension_Evaporation_Update(DomainVarFields, ParameterVarFields);
+        }
         public void MassFluxExtension_Evaporation_Update(IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             var thermalParams = config.getThermParams;
             double kA = 0, kB = 0;
