@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Logging\MassfluxLogging.cs" />
+    <Compile Include="Logging\StefanProblemBenchmarkQuantities.cs" />
     <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
     <Compile Include="Logging\CapillaryHeightLogging.cs" />
     <Compile Include="Logging\ChannelFlowLogging.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="Tests\TaylorCouette.cs" />
     <Compile Include="XHeat.cs" />
     <Compile Include="XNSE.cs" />
+    <Compile Include="XNSFEinSituPostProcessingModule.cs" />
     <Compile Include="XNSEinSituPostProcessingModule.cs" />
     <Compile Include="XNSE_Control.cs" />
     <Compile Include="HardcodedControl.cs" />
