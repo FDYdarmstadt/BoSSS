@@ -135,6 +135,7 @@
     <Compile Include="SemiLagrangianLevelSet\TestSuite.cs" />
     <Compile Include="SolverWithLevelSetUpdater\PrescribedEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\RigidObjectLevelSet.cs" />
+    <Compile Include="StokesExtension\SmoothLevelSetPenalty.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdaterControl.cs" />
     <Compile Include="SolverWithLevelSetUpdater\PhasefieldEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
