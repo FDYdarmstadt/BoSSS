@@ -449,8 +449,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    C.Paramstudy_CaseIdentification = new Tuple<string, object>[] { new Tuple<string, object>("xkelem", h_k),
             foreach (double dt_h in dt_study) {
                 var C = RT_Test(p, h, dt_h, t_end, _DbPath);
-                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] { new Tuple<string, object>("dt", dt_h),
-                };
+                C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", dt_h));
                 R.Add(C);
             }
 

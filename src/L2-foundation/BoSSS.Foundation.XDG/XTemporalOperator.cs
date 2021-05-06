@@ -264,7 +264,7 @@ namespace BoSSS.Foundation.XDG {
             owner = __owner;
             InternalRepresentation = new XSpatialOperatorMk2(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction, __owner.Species.ToArray());
             InternalRepresentation.AgglomerationThreshold = __owner.AgglomerationThreshold;
-            InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
+            InternalRepresentation.LinearizationHint = LinearizationHint.FDJacobi;
             InternalRepresentation.m_UserDefinedValues = __owner.m_UserDefinedValues;
         }
 
@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void Commit() {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
-            InternalRepresentation.LinearizationHint = LinearizationHint.AdHoc;
+            InternalRepresentation.LinearizationHint = LinearizationHint.FDJacobi;
 
             InternalRepresentation.ParameterFactories.Clear();
             InternalRepresentation.ParameterFactories.AddRange(owner.ParameterFactories);
@@ -298,6 +298,7 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;
             InternalRepresentation.SurfaceElement_VolumeQuadraturSchemeProvider = owner.SurfaceElement_VolumeQuadraturSchemeProvider;
             InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
+            InternalRepresentation.ContactLine_VolumeQuadratureSchemeProvider = owner.ContactLine_VolumeQuadratureSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
@@ -309,18 +310,19 @@ namespace BoSSS.Foundation.XDG {
         /// as defined by interface
         /// </summary>
         public IEvaluatorLinear GetMassMatrixBuilder(UnsetteledCoordinateMapping DomainVarMap, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) {
-            InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
-            InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
-            InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;
-            InternalRepresentation.SurfaceElement_VolumeQuadraturSchemeProvider = owner.SurfaceElement_VolumeQuadraturSchemeProvider;
-            InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
+            //InternalRepresentation.EdgeQuadraturSchemeProvider = owner.EdgeQuadraturSchemeProvider;
+            //InternalRepresentation.VolumeQuadraturSchemeProvider = owner.VolumeQuadraturSchemeProvider;
+            //InternalRepresentation.SurfaceElement_EdgeQuadraturSchemeProvider = owner.SurfaceElement_EdgeQuadraturSchemeProvider;
+            //InternalRepresentation.SurfaceElement_VolumeQuadraturSchemeProvider = owner.SurfaceElement_VolumeQuadraturSchemeProvider;
+            //InternalRepresentation.GhostEdgeQuadraturSchemeProvider = owner.GhostEdgeQuadraturSchemeProvider;
+            //InternalRepresentation.ContactLine_VolumeQuadratureSchemeProvider = owner.ContactLine_VolumeQuadratureSchemeProvider;
 
             InternalRepresentation.m_UserDefinedValues = owner.m_UserDefinedValues;
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
 
-            InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;
-
-            return InternalRepresentation.GetMatrixBuilder(DomainVarMap, ParameterMap, CodomainVarMap);
+            InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;        
+      
+            return InternalRepresentation.GetFDJacobianBuilder((CoordinateMapping)DomainVarMap, ParameterMap, (CoordinateMapping)CodomainVarMap);
         }
     }
 

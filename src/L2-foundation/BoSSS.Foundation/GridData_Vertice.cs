@@ -1027,351 +1027,352 @@ namespace BoSSS.Foundation.Grid.Classic {
             out int[][] SendLists, out int[][] InsertLists,
             out Tuple<int,int>[] LocalDuplicates
             ) {
+            using (var tr = new FuncTrace()) {
 
-            int size, myRank;
-            csMPI.Raw.Comm_Rank(comm, out myRank);
-            csMPI.Raw.Comm_Size(comm, out size);
+                int size, myRank;
+                csMPI.Raw.Comm_Rank(comm, out myRank);
+                csMPI.Raw.Comm_Size(comm, out size);
 
-            int K = ItemIndicesOnOtherProcessors.Length; // 
-            BitArray ActiveItemsMarker = new BitArray(K);
-            for (int k = 0; k < K; k++) {
-                if (ItemIndicesOnOtherProcessors[k] == null || ItemIndicesOnOtherProcessors[k].Length <= 0) {
-                    ActiveItemsMarker[k] = false;
-                } else {
-                    var Test = ItemIndicesOnOtherProcessors[k].SingleOrDefault(t => t.Item1 == myRank && t.Item2 == k);
-                    ActiveItemsMarker[k] = (Test != null);
-                }
-            }
-
-            ItemPermutation = new int[K];
-            NoOfPureLocal = 0;
-            NoOfRelayed = 0;
-
-            // marks all vertices which are owned by this process
-            BitArray Owned = new BitArray(K);
-
-            BitArray LocalElim = new BitArray(K); // item 'k' where the 'LocalElim[k]'-flag is set will be moved
-            //                                       to the end, i.e. after the borrowed items.
-            //                                       It marks representants that are redundant locally.
-            List<Tuple<int, int>> LocalIdentities = new List<Tuple<int, int>>();
-
-            // find the local identities
-            // =========================
-            for (int k = 0; k < K; k++) { // loop over items...
-                if (!ActiveItemsMarker[k])
-                    // don't bother
-                    continue;
-                if (LocalElim[k]) {
-                    // already eliminated
-                    Debug.Assert(LocalIdentities.Where(T => T.Item1 == k).Count() == 1); // the 'LocalIdentities' must already contain item 'k'
-                    continue;
-                }
-
-                var Equivals = ItemIndicesOnOtherProcessors[k]; // equivalences of item 'k'
-                if (Equivals.Length <= 0)
-                    throw new ArgumentException();
-                if (Equivals.Length == 1) {
-                    Debug.Assert(Equivals[0].Item1 == myRank);
-                    // no known equivalences
-                    continue;
-                }
-
-                foreach (var T in Equivals) {
-                    if (T.Item1 == myRank && T.Item2 != k) {
-                        LocalElim[T.Item2] = true;
-
-                        var lid = new Tuple<int, int>(T.Item2, k);
-                        Debug.Assert(lid.Item1 > lid.Item2); // the eliminated representative 'lid.Item2' of some item must be higher than the representative 'k' which is kept
-                        Debug.Assert(LocalIdentities.Contains(lid, (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == false);
-                        LocalIdentities.Add(lid); // 'T.Item2' is equivalent to 'k': we select 'k' as a representative of the item.
+                int K = ItemIndicesOnOtherProcessors.Length; // 
+                BitArray ActiveItemsMarker = new BitArray(K);
+                for (int k = 0; k < K; k++) {
+                    if (ItemIndicesOnOtherProcessors[k] == null || ItemIndicesOnOtherProcessors[k].Length <= 0) {
+                        ActiveItemsMarker[k] = false;
+                    } else {
+                        var Test = ItemIndicesOnOtherProcessors[k].SingleOrDefault(t => t.Item1 == myRank && t.Item2 == k);
+                        ActiveItemsMarker[k] = (Test != null);
                     }
                 }
-            }
-            
 
-            // for each MPI process,
-            // collect the vertices that are shared with this process
-            // ======================================================
-            HashSet<int>[] _SharedVertices = new HashSet<int>[size];
-            for (int k = 0; k < K; k++) {
-                if (!ActiveItemsMarker[k])
-                    // don't consider representative k
-                    continue;
-                if (LocalElim[k])
-                    // already eliminated
-                    continue;
-                
-                var VS_k = ItemIndicesOnOtherProcessors[k];
-                Debug.Assert(VS_k.Length > 0);
-                if (VS_k.Length == 1 || VS_k.Select(T => T.Item1).ToSet().Count == 1) {
-                    // Vertex is purly local 
-                    Debug.Assert(VS_k[0].Item1 == myRank); // 'k's without 'myRank' should already be excluded by 'ActiveItemsMarker'
+                ItemPermutation = new int[K];
+                NoOfPureLocal = 0;
+                NoOfRelayed = 0;
 
-                    ItemPermutation[NoOfPureLocal] = k;
-                    NoOfPureLocal++;
-                    Owned[k] = true;
-                } else {
-                    foreach (Tuple<int, int> t in VS_k) {
-                        int proc = t.Item1;
-                        if (proc == myRank)
+                // marks all vertices which are owned by this process
+                BitArray Owned = new BitArray(K);
+
+                BitArray LocalElim = new BitArray(K); // item 'k' where the 'LocalElim[k]'-flag is set will be moved
+                                                      //                                       to the end, i.e. after the borrowed items.
+                                                      //                                       It marks representants that are redundant locally.
+                List<Tuple<int, int>> LocalIdentities = new List<Tuple<int, int>>();
+
+                // find the local identities
+                // =========================
+                for (int k = 0; k < K; k++) { // loop over items...
+                    if (!ActiveItemsMarker[k])
+                        // don't bother
+                        continue;
+                    if (LocalElim[k]) {
+                        // already eliminated
+                        Debug.Assert(LocalIdentities.Where(T => T.Item1 == k).Count() == 1); // the 'LocalIdentities' must already contain item 'k'
+                        continue;
+                    }
+
+                    var Equivals = ItemIndicesOnOtherProcessors[k]; // equivalences of item 'k'
+                    if (Equivals.Length <= 0)
+                        throw new ArgumentException();
+                    if (Equivals.Length == 1) {
+                        Debug.Assert(Equivals[0].Item1 == myRank);
+                        // no known equivalences
+                        continue;
+                    }
+
+                    foreach (var T in Equivals) {
+                        if (T.Item1 == myRank && T.Item2 != k) {
+                            LocalElim[T.Item2] = true;
+
+                            var lid = new Tuple<int, int>(T.Item2, k);
+                            Debug.Assert(lid.Item1 > lid.Item2); // the eliminated representative 'lid.Item2' of some item must be higher than the representative 'k' which is kept
+                            Debug.Assert(LocalIdentities.Contains(lid, (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == false);
+                            LocalIdentities.Add(lid); // 'T.Item2' is equivalent to 'k': we select 'k' as a representative of the item.
+                        }
+                    }
+                }
+
+
+                // for each MPI process,
+                // collect the vertices that are shared with this process
+                // ======================================================
+                HashSet<int>[] _SharedVertices = new HashSet<int>[size];
+                for (int k = 0; k < K; k++) {
+                    if (!ActiveItemsMarker[k])
+                        // don't consider representative k
+                        continue;
+                    if (LocalElim[k])
+                        // already eliminated
+                        continue;
+
+                    var VS_k = ItemIndicesOnOtherProcessors[k];
+                    Debug.Assert(VS_k.Length > 0);
+                    if (VS_k.Length == 1 || VS_k.Select(T => T.Item1).ToSet().Count == 1) {
+                        // Vertex is purly local 
+                        Debug.Assert(VS_k[0].Item1 == myRank); // 'k's without 'myRank' should already be excluded by 'ActiveItemsMarker'
+
+                        ItemPermutation[NoOfPureLocal] = k;
+                        NoOfPureLocal++;
+                        Owned[k] = true;
+                    } else {
+                        foreach (Tuple<int, int> t in VS_k) {
+                            int proc = t.Item1;
+                            if (proc == myRank)
+                                continue;
+                            if (_SharedVertices[proc] == null) {
+                                _SharedVertices[proc] = new HashSet<int>();
+                            }
+                            _SharedVertices[proc].Add(k);
+                        }
+                    }
+                }
+
+                // sort the shared vertices
+                // (i am not sure if that is really necessary)
+                List<int>[] SharedVertices = _SharedVertices.Select(hs => hs != null ? (new List<int>(hs)) : default(List<int>)).ToArray();
+                foreach (var lst in SharedVertices) {
+                    if (lst != null)
+                        lst.Sort();
+                }
+                Debug.Assert(SharedVertices[myRank] == null);
+
+                // determine 'RELAYED' and 'BORROWED' items,
+                // i.e. determine ownership of shared items
+                // ================================================
+
+                BitArray RankDetermined = new BitArray(K);
+                List<int> RelayedItems = new List<int>();
+
+
+                Dictionary<int, int[]> SendData2 = new Dictionary<int, int[]>();
+                for (int otherRank = myRank + 1; otherRank < size; otherRank++) {
+                    List<int> SV_proc = SharedVertices[otherRank];
+                    if (SV_proc == null)
+                        // sharing no vertex with processor 'otherRank'
+                        continue;
+
+                    // List of items for which this process is responsible to
+                    // distribute 
+                    List<int> ItemsToDistribute = new List<int>();
+
+
+                    foreach (int kItem in SV_proc) {  // loop over all items shared with processor 'otherRank'...
+                        if (LocalElim[kItem])
                             continue;
-                        if (_SharedVertices[proc] == null) {
-                            _SharedVertices[proc] = new HashSet<int>();
+                        if (!ActiveItemsMarker[kItem])
+                            continue;
+                        if (RankDetermined[kItem])
+                            // this item is shared by more than two processors, 
+                            // but an owner was already assigned.
+                            continue;
+
+                        Debug.Assert(Owned[kItem] == false);
+
+                        var OnOther = ItemIndicesOnOtherProcessors[kItem];
+                        int minProc = OnOther.Select(T => T.Item1).Min();
+                        Debug.Assert(OnOther.Select(T => T.Item1).Max() > minProc); // if not at least two different process ranks, something is worng with the sharing.
+
+                        if (minProc == myRank) {
+                            // ++++++++++++++++++++++++++++++++++++++++++++
+                            // This process is responsible for determining 
+                            // the ownership of the item represented by 'k' 
+                            // ++++++++++++++++++++++++++++++++++++++++++++
+
+
+                            Debug.Assert(!ItemsToDistribute.Contains(kItem));
+                            Debug.Assert(LocalElim[kItem] == false);
+                            ItemsToDistribute.Add(kItem);
+                            RankDetermined[kItem] = true; // the owner rank of this item will be determined immediately (see below)!
+                                                          //                               'kItem' will be owned either by 'myRank' or 'otherRank'
                         }
-                        _SharedVertices[proc].Add(k);
                     }
-                }
-            }
 
-            // sort the shared vertices
-            // (i am not sure if that is really necessary)
-            List<int>[] SharedVertices = _SharedVertices.Select(hs => hs != null ? (new List<int>(hs)) : default(List<int>)).ToArray();
-            foreach (var lst in SharedVertices) {
-                if (lst != null)
-                    lst.Sort();
-            }
-            Debug.Assert(SharedVertices[myRank] == null);
+                    // keep the first half of items for myself... (RELAYED)
+                    int L2 = ItemsToDistribute.Count / 2;
+                    int l;
+                    for (l = 0; l < L2; l++) {
 
-            // determine 'RELAYED' and 'BORROWED' items,
-            // i.e. determine ownership of shared items
-            // ================================================
-
-            BitArray RankDetermined = new BitArray(K);
-            List<int> RelayedItems = new List<int>();
+                        int kItem = ItemsToDistribute[l];
 
 
-            Dictionary<int, int[]> SendData2 = new Dictionary<int, int[]>();
-            for (int otherRank = myRank + 1; otherRank < size; otherRank++) { 
-                List<int> SV_proc = SharedVertices[otherRank];
-                if (SV_proc == null)
-                    // sharing no vertex with processor 'otherRank'
-                    continue;
-                
-                // List of items for which this process is responsible to
-                // distribute 
-                List<int> ItemsToDistribute = new List<int>();
-
-
-                foreach (int kItem in SV_proc) {  // loop over all items shared with processor 'otherRank'...
-                    if (LocalElim[kItem])
-                        continue;
-                    if (!ActiveItemsMarker[kItem])
-                        continue;
-                    if (RankDetermined[kItem])
-                        // this item is shared by more than two processors, 
-                        // but an owner was already assigned.
-                        continue;
-
-                    Debug.Assert(Owned[kItem] == false);
-
-                    var OnOther = ItemIndicesOnOtherProcessors[kItem];
-                    int minProc = OnOther.Select(T => T.Item1).Min();
-                    Debug.Assert(OnOther.Select(T => T.Item1).Max() > minProc); // if not at least two different process ranks, something is worng with the sharing.
-
-                    if (minProc == myRank) {
-                        // ++++++++++++++++++++++++++++++++++++++++++++
-                        // This process is responsible for determining 
-                        // the ownership of the item represented by 'k' 
-                        // ++++++++++++++++++++++++++++++++++++++++++++
-
-
-                        Debug.Assert(!ItemsToDistribute.Contains(kItem));
-                        Debug.Assert(LocalElim[kItem] == false);
-                        ItemsToDistribute.Add(kItem);
-                        RankDetermined[kItem] = true; // the owner rank of this item will be determined immediately (see below)!
-                        //                               'kItem' will be owned either by 'myRank' or 'otherRank'
-                    } 
-                }
-
-                // keep the first half of items for myself... (RELAYED)
-                int L2 = ItemsToDistribute.Count / 2;
-                int l;
-                for (l = 0; l < L2; l++) {
-
-                    int kItem = ItemsToDistribute[l];
-                    
-                    
-                    bool found = false;
-                    foreach (var T in ItemIndicesOnOtherProcessors[kItem]) {
-                        if (T.Item1 == myRank && ActiveItemsMarker[T.Item2] == true) {
-                            if (T.Item2 == kItem) {
-                                found = true;
-                                Debug.Assert(Owned[kItem] == false);
-                                Owned[kItem] = true;
-                                Debug.Assert(LocalElim[kItem] == false);
-                                ItemPermutation[NoOfPureLocal + NoOfRelayed] = kItem;
-                                RelayedItems.Add(kItem);
-                                NoOfRelayed++;
-                            } else {
-                                Debug.Assert(LocalIdentities.Contains(new Tuple<int, int>(T.Item2, kItem), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
-                                Debug.Assert(LocalElim[T.Item2] == true);
+                        bool found = false;
+                        foreach (var T in ItemIndicesOnOtherProcessors[kItem]) {
+                            if (T.Item1 == myRank && ActiveItemsMarker[T.Item2] == true) {
+                                if (T.Item2 == kItem) {
+                                    found = true;
+                                    Debug.Assert(Owned[kItem] == false);
+                                    Owned[kItem] = true;
+                                    Debug.Assert(LocalElim[kItem] == false);
+                                    ItemPermutation[NoOfPureLocal + NoOfRelayed] = kItem;
+                                    RelayedItems.Add(kItem);
+                                    NoOfRelayed++;
+                                } else {
+                                    Debug.Assert(LocalIdentities.Contains(new Tuple<int, int>(T.Item2, kItem), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
+                                    Debug.Assert(LocalElim[T.Item2] == true);
+                                }
                             }
-                        } 
-                    }
-                    Debug.Assert(found == true);
-
-                }
-                // ... and hand the second half of items to the other process (BORROWED)
-                int[] OwnedByOther = new int[ItemsToDistribute.Count - L2];
-                for (; l < ItemsToDistribute.Count; l++) {
-                    int k_myRank = ItemsToDistribute[l];
-                    var OnOther = ItemIndicesOnOtherProcessors[k_myRank];
-
-                    RankDetermined[k_myRank] = true;
-
-                    int k_otherRank = OnOther.Where(T => T.Item1 == otherRank).Min(T => T.Item2); // pick the minimum representative 'k_otherRank' on processor 'otherRank' 
-                    //                                                                               for the item represented by 'k_myRank' on this processor
-
-                    
-
-                    OwnedByOther[l - L2] = k_otherRank;
-                }
-                SendData2.Add(otherRank, OwnedByOther);
-            }
-
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-
-            // andere prozesse senden uns Indices, 
-            // mein schatz,
-            // die nur uns gehören.
-            var RcvData2 = SerialisationMessenger.ExchangeData(SendData2, comm);
-            foreach (var kv in RcvData2) {
-                int rcvProc = kv.Key; // data was received from process 'rcvProc'
-                int[] OurVertices = kv.Value;
-
-                foreach (int k_mein in OurVertices) { // loop over all items that belong to me!
-                    Debug.Assert(ItemIndicesOnOtherProcessors[k_mein].Where(T => T.Item1 == rcvProc).Count() >= 1);
-                    Debug.Assert(ItemIndicesOnOtherProcessors[k_mein].Where(T => T.Item1 == myRank && T.Item2 == k_mein).Count() >= 1);
-                    Debug.Assert(LocalElim[k_mein] == false);
-                    Debug.Assert(ActiveItemsMarker[k_mein] == true);
-
-                    bool found = false;
-                    foreach (var T in ItemIndicesOnOtherProcessors[k_mein]) {
-                        if (T.Item1 == myRank && ActiveItemsMarker[T.Item2] == true) {
-                            Debug.Assert(Owned[T.Item2] == false);
-
-                            if (T.Item2 == k_mein) {
-                                found = true;
-                                ItemPermutation[NoOfPureLocal + NoOfRelayed] = k_mein;
-                                NoOfRelayed++;
-                                Debug.Assert(Owned[k_mein] == false);
-                                RelayedItems.Add(k_mein);
-                                Owned[k_mein] = true;
-                                Debug.Assert(LocalElim[k_mein] == false);
-
-                            } else {
-                                Debug.Assert(LocalIdentities.Contains(new Tuple<int, int>(T.Item2, k_mein), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
-                                Debug.Assert(LocalElim[T.Item2] == true);
-                            }
-                        } 
-                    }
-                    Debug.Assert(found == true);
-                }
-            }
-
-
-
-            // ++++++++
-            // Nun sollten alle Items genau einen Besitzer haben!
-            // ++++++++
-
-            // collect borrowed vertices
-            // =========================
-            {
-                NoOfBorrowed = 0;
-                for (int k = 0; k < K; k++) {  // loop over vertices...
-                    if (Owned[k] || !ActiveItemsMarker[k] || LocalElim[k]) // ignore: owned, external, periodic eliminations
-                        continue;
-
-                    // if we reach this point, 'k' is (representing) a borrowed item
-
-                    ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed] = k;// sharedForeign[i].Item1;
-                    NoOfBorrowed++;
-                }
-            }
-
-
-            // determine send lists
-            // ====================
-            {
-                
-                List<int>[] _VtxSendLists = new List<int>[size];
-                List<int>[] TargetIndices = new List<int>[size];
-                foreach (int k in RelayedItems) {
-                    Debug.Assert(Owned[k]);
-                    Debug.Assert(ActiveItemsMarker[k]);
-                    Debug.Assert(!LocalElim[k]);
-
-                    var OnOther = ItemIndicesOnOtherProcessors[k];
-                    ISet<int> Processores = OnOther.Select(T => T.Item1).ToSet();
-                    Debug.Assert(Processores.Contains(myRank));
-                    Processores.Remove(myRank);
-
-                    foreach (int TargetRank in Processores) {
-                        int k_Target = OnOther.Where(T => T.Item1 == TargetRank).Min(T => T.Item2);
-
-                        if (_VtxSendLists[TargetRank] == null) {
-                            _VtxSendLists[TargetRank] = new List<int>();
-                            TargetIndices[TargetRank] = new List<int>();
                         }
-                        _VtxSendLists[TargetRank].Add(k);
-                        TargetIndices[TargetRank].Add(k_Target);
+                        Debug.Assert(found == true);
+
+                    }
+                    // ... and hand the second half of items to the other process (BORROWED)
+                    int[] OwnedByOther = new int[ItemsToDistribute.Count - L2];
+                    for (; l < ItemsToDistribute.Count; l++) {
+                        int k_myRank = ItemsToDistribute[l];
+                        var OnOther = ItemIndicesOnOtherProcessors[k_myRank];
+
+                        RankDetermined[k_myRank] = true;
+
+                        int k_otherRank = OnOther.Where(T => T.Item1 == otherRank).Min(T => T.Item2); // pick the minimum representative 'k_otherRank' on processor 'otherRank' 
+                                                                                                      //                                                                               for the item represented by 'k_myRank' on this processor
+
+
+
+                        OwnedByOther[l - L2] = k_otherRank;
+                    }
+                    SendData2.Add(otherRank, OwnedByOther);
+                }
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                // andere prozesse senden uns Indices, 
+                // mein schatz,
+                // die nur uns gehören.
+                var RcvData2 = SerialisationMessenger.ExchangeData(SendData2, comm);
+                foreach (var kv in RcvData2) {
+                    int rcvProc = kv.Key; // data was received from process 'rcvProc'
+                    int[] OurVertices = kv.Value;
+
+                    foreach (int k_mein in OurVertices) { // loop over all items that belong to me!
+                        Debug.Assert(ItemIndicesOnOtherProcessors[k_mein].Where(T => T.Item1 == rcvProc).Count() >= 1);
+                        Debug.Assert(ItemIndicesOnOtherProcessors[k_mein].Where(T => T.Item1 == myRank && T.Item2 == k_mein).Count() >= 1);
+                        Debug.Assert(LocalElim[k_mein] == false);
+                        Debug.Assert(ActiveItemsMarker[k_mein] == true);
+
+                        bool found = false;
+                        foreach (var T in ItemIndicesOnOtherProcessors[k_mein]) {
+                            if (T.Item1 == myRank && ActiveItemsMarker[T.Item2] == true) {
+                                Debug.Assert(Owned[T.Item2] == false);
+
+                                if (T.Item2 == k_mein) {
+                                    found = true;
+                                    ItemPermutation[NoOfPureLocal + NoOfRelayed] = k_mein;
+                                    NoOfRelayed++;
+                                    Debug.Assert(Owned[k_mein] == false);
+                                    RelayedItems.Add(k_mein);
+                                    Owned[k_mein] = true;
+                                    Debug.Assert(LocalElim[k_mein] == false);
+
+                                } else {
+                                    Debug.Assert(LocalIdentities.Contains(new Tuple<int, int>(T.Item2, k_mein), (A, B) => A.Item1 == B.Item1 && A.Item2 == B.Item2) == true);
+                                    Debug.Assert(LocalElim[T.Item2] == true);
+                                }
+                            }
+                        }
+                        Debug.Assert(found == true);
                     }
                 }
 
-                SendLists = _VtxSendLists.Select(list => list != null ? list.ToArray() : null).ToArray();
-
-                Dictionary<int, int[]> TargetIndicesBla = new Dictionary<int, int[]>();
-                for (int p = 0; p < size; p++) {
-                    if (TargetIndices[p] != null)
-                        TargetIndicesBla.Add(p, TargetIndices[p].ToArray());
-                }
-
-                var ReceiveIndices = SerialisationMessenger.ExchangeData(TargetIndicesBla, comm);
-
-                InsertLists = new int[size][];
-                foreach (var kv in ReceiveIndices) {
-                    int rcvRank = kv.Key;
-                    int[] InsList = kv.Value;
-                    InsertLists[rcvRank] = InsList;
-
-                    Debug.Assert(InsList.Where(k_Item => Owned[k_Item] == true).Count() <= 0);
-                    Debug.Assert(InsList.Where(k_Item => LocalElim[k_Item] == true).Count() <= 0);
-                    Debug.Assert(InsList.Where(k_Item => ActiveItemsMarker[k_Item] == false).Count() <= 0);
-                }
-            }
 
 
-            // sorting of periodic eliminations
-            // ================================
-            {
-                int ii = 0;
-                for (int k = 0; k < K; k++) {
-                    if (LocalElim[k] && ActiveItemsMarker[k]) {
-                        // vertex k is eliminated due to a periodic identity
-                        ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + ii] = k;
-                        ii++;
+                // ++++++++
+                // Nun sollten alle Items genau einen Besitzer haben!
+                // ++++++++
+
+                // collect borrowed vertices
+                // =========================
+                {
+                    NoOfBorrowed = 0;
+                    for (int k = 0; k < K; k++) {  // loop over vertices...
+                        if (Owned[k] || !ActiveItemsMarker[k] || LocalElim[k]) // ignore: owned, external, periodic eliminations
+                            continue;
+
+                        // if we reach this point, 'k' is (representing) a borrowed item
+
+                        ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed] = k;// sharedForeign[i].Item1;
+                        NoOfBorrowed++;
                     }
                 }
-                NoOfPeriodicElim = ii;
-                LocalDuplicates = LocalIdentities.ToArray();
-            }
 
-            // sorting of purly external
-            // =========================
-            {
-                int ii = 0;
-                for (int k = 0; k < K; k++) {
-                    if (ActiveItemsMarker != null && !ActiveItemsMarker[k]) {
-                        // vertex k is used purly by external cells
-                        ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + NoOfPeriodicElim + ii] = k;
-                        ii++;
+
+                // determine send lists
+                // ====================
+                {
+
+                    List<int>[] _VtxSendLists = new List<int>[size];
+                    List<int>[] TargetIndices = new List<int>[size];
+                    foreach (int k in RelayedItems) {
+                        Debug.Assert(Owned[k]);
+                        Debug.Assert(ActiveItemsMarker[k]);
+                        Debug.Assert(!LocalElim[k]);
+
+                        var OnOther = ItemIndicesOnOtherProcessors[k];
+                        ISet<int> Processores = OnOther.Select(T => T.Item1).ToSet();
+                        Debug.Assert(Processores.Contains(myRank));
+                        Processores.Remove(myRank);
+
+                        foreach (int TargetRank in Processores) {
+                            int k_Target = OnOther.Where(T => T.Item1 == TargetRank).Min(T => T.Item2);
+
+                            if (_VtxSendLists[TargetRank] == null) {
+                                _VtxSendLists[TargetRank] = new List<int>();
+                                TargetIndices[TargetRank] = new List<int>();
+                            }
+                            _VtxSendLists[TargetRank].Add(k);
+                            TargetIndices[TargetRank].Add(k_Target);
+                        }
+                    }
+
+                    SendLists = _VtxSendLists.Select(list => list != null ? list.ToArray() : null).ToArray();
+
+                    Dictionary<int, int[]> TargetIndicesBla = new Dictionary<int, int[]>();
+                    for (int p = 0; p < size; p++) {
+                        if (TargetIndices[p] != null)
+                            TargetIndicesBla.Add(p, TargetIndices[p].ToArray());
+                    }
+
+                    var ReceiveIndices = SerialisationMessenger.ExchangeData(TargetIndicesBla, comm);
+
+                    InsertLists = new int[size][];
+                    foreach (var kv in ReceiveIndices) {
+                        int rcvRank = kv.Key;
+                        int[] InsList = kv.Value;
+                        InsertLists[rcvRank] = InsList;
+
+                        Debug.Assert(InsList.Where(k_Item => Owned[k_Item] == true).Count() <= 0);
+                        Debug.Assert(InsList.Where(k_Item => LocalElim[k_Item] == true).Count() <= 0);
+                        Debug.Assert(InsList.Where(k_Item => ActiveItemsMarker[k_Item] == false).Count() <= 0);
                     }
                 }
-                NoOfExternal = ii;
+
+
+                // sorting of periodic eliminations
+                // ================================
+                {
+                    int ii = 0;
+                    for (int k = 0; k < K; k++) {
+                        if (LocalElim[k] && ActiveItemsMarker[k]) {
+                            // vertex k is eliminated due to a periodic identity
+                            ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + ii] = k;
+                            ii++;
+                        }
+                    }
+                    NoOfPeriodicElim = ii;
+                    LocalDuplicates = LocalIdentities.ToArray();
+                }
+
+                // sorting of purly external
+                // =========================
+                {
+                    int ii = 0;
+                    for (int k = 0; k < K; k++) {
+                        if (ActiveItemsMarker != null && !ActiveItemsMarker[k]) {
+                            // vertex k is used purly by external cells
+                            ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + NoOfPeriodicElim + ii] = k;
+                            ii++;
+                        }
+                    }
+                    NoOfExternal = ii;
+                }
+
             }
-
-
         }
     }
 }

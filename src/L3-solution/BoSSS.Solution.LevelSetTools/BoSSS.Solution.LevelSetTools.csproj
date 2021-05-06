@@ -50,6 +50,7 @@
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Diagnostics.Tracing" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
@@ -137,10 +138,12 @@
     <Compile Include="SolverWithLevelSetUpdater\SolverWithLevelSetUpdaterControl.cs" />
     <Compile Include="SolverWithLevelSetUpdater\PhasefieldEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\SplineLevelSet.cs" />
+    <Compile Include="SolverWithLevelSetUpdater\XStokesExtensionEvolver.cs" />
     <Compile Include="SolverWithLevelSetUpdater\StokesExtensionEvolver.cs" />
     <Compile Include="StokesExtension\InteriorVelocityBoundary.cs" />
     <Compile Include="StokesExtension\ScalarTransport.cs" />
     <Compile Include="StokesExtension\StokesExtension.cs" />
+    <Compile Include="StokesExtension\XStokesExtension.cs" />
     <Compile Include="TestCases\Flower.cs" />
     <Compile Include="TestCases\RotationFieldClipped.cs" />
     <Compile Include="TestCases\Torus.cs" />
@@ -188,6 +191,10 @@
       <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
       <Name>BoSSS.Foundation.XDG</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
       <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
       <Name>BoSSS.Solution.Statistic</Name>
@@ -211,10 +218,6 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
     <ProjectReference Include="..\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
       <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>

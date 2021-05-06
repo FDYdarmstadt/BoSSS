@@ -257,63 +257,58 @@ namespace BoSSS.Foundation.XDG {
                 // interface surface
                 // =================
 
-                // loop over level-sets
+                // loop over surfaces
                 if(species.Length > 0) {
-                    // find domain of all species: 
-                    CellMask SpeciesCommonDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[0]);
-                    for(int iSpc = 1; iSpc < species.Length; iSpc++) {
-                        SpeciesCommonDom = SpeciesCommonDom.Union(XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(species[iSpc]));
-                    }
-                    BitArray[] SpeciesBitMask = species.Select(spc => XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(spc).GetBitMask()).ToArray();
+                    var AllSpc = XDGSpaceMetrics.TotalSpeciesList;
+                    var requiredSpecies = XDGSpaceMetrics.SpeciesList;
 
-                    int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
-                    int NoOfSpc = species.Length;
-                    for(int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                    // loop over all possible pairs of species
+                    for (int iSpcA = 0; iSpcA < AllSpc.Count - 1; iSpcA++) {
+                        var SpeciesA = AllSpc[iSpcA];
+                        var SpeciesADom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesA);
+                        int iLocalSpcA = requiredSpecies.IndexOf(SpeciesA);
 
-                        var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
-                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
+                        // Standard XDG case, where level sets are always
+                        // an interface between species
+                        for (int iSpcB = iSpcA + 1; iSpcB < AllSpc.Count; iSpcB++) {
+                            var SpeciesB = AllSpc[iSpcB];
+                            int iLocalSpcB = requiredSpecies.IndexOf(SpeciesB);
+                            
+                            if(iLocalSpcA > -1 || iLocalSpcB > -1) {
+                                var SpeciesBDom = XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask(SpeciesB);
+                                var SpeciesCommonDom = SpeciesADom.Intersect(SpeciesBDom);
+                                int NoOfLs = XDGSpaceMetrics.NoOfLevelSets;
+                                for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                    if (schH.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
+                                        var LsDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet);
+                                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                        //if (IntegrationDom.NoOfItemsLocally > 0) { -> Doesn't work if Bjoerns HMF is used, eds up in an mpi dead lock
-                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // this level-set is actually relevant for someone in 'species'
-                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                        var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
-
-                        BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
-                            new int[] { 1 }, gd,
-                            rule,
-                            _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-                                EvalResult.SetAll(1.0);
-                            },
-                            _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                                for(int i = 0; i < Length; i++) {
-                                    int jCell = i + i0;
-
-
-
-                                    //if (cellMetrics[jCell, iSpcA, 0] != 0.0)
-                                    //    throw new NotSupportedException("More than one zero-level-set per cell is not supported yet.");
-                                    //if (cellMetrics[jCell, iSpcB, 0] != 0.0)
-                                    //    throw new NotSupportedException("More than one zero-level-set per cell is not supported yet.");
-
-                                    //cellMetrics[jCell, iSpcA, 0] = ResultsOfIntegration[i, 0];
-                                    //cellMetrics[jCell, iSpcB, 0] = ResultsOfIntegration[i, 0];
-
-
-                                    for(int iSpc = 0; iSpc < NoOfSpc; iSpc++) {
-                                        if(SpeciesBitMask[iSpc][jCell]) {
-                                            cellMetrics[jCell, iSpc, 0] += ResultsOfIntegration[i, 0];
-                                            Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iSpc, 0]) || double.IsInfinity(cellMetrics[jCell, iSpc, 0])));
-                                        }
-
+                                        CellQuadratureScheme SurfIntegration = schH.GetLevelSetquadScheme(iLevSet, SpeciesA, IntegrationDom);
+                                        var rule = SurfIntegration.Compile(gd, this.CutCellQuadratureOrder);
+                                        BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
+                                            new int[] { 1 }, gd,
+                                            rule,
+                                            _Evaluate: delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                                                EvalResult.SetAll(1.0);
+                                            },
+                                            _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                                                for (int i = 0; i < Length; i++) {
+                                                    int jCell = i + i0;
+                                                    if (iLocalSpcA > -1) {
+                                                        cellMetrics[jCell, iLocalSpcA, 0] += ResultsOfIntegration[i, 0];
+                                                        Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcA, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcA, 0])));
+                                                    }
+                                                    if (iLocalSpcB > -1) {
+                                                        cellMetrics[jCell, iLocalSpcB, 0] += ResultsOfIntegration[i, 0];
+                                                        Debug.Assert(!(double.IsNaN(cellMetrics[jCell, iLocalSpcB, 0]) || double.IsInfinity(cellMetrics[jCell, iLocalSpcB, 0])));
+                                                    }
+                                                }
+                                            }).Execute();
                                     }
                                 }
-                            }).Execute();
-                        //}
+                            }
+                        }
                     }
-
                 }
 
                 // MPI exchange & store

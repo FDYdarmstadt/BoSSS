@@ -42,11 +42,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[3][];
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[this.Control.LinearSolver.NoOfMultigridLevels][];
                 for(int iLevel = 0; iLevel < configs.Length; iLevel++) {
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
-                    AddMultigridConfigLevel(configsLevel);
+                    AddMultigridConfigLevel(configsLevel, iLevel);
 
                     configs[iLevel] = configsLevel.ToArray();
                 }
@@ -57,7 +57,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// Configuration of operator pre-pre-conditioning (not a typo), cf. <see cref="MultigridOperatorConfig"/>.
         /// </summary>
-        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel);
+        protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel);
 
 
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
@@ -525,20 +525,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            if (!this.Control.AdaptiveMeshRefinement) {
+            // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
+            if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
+                this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
 
-                Console.WriteLine("PostRestart temporarily switched off for AMR");
+            // set restart time, used later in the intial tracker updates
+            restartTime = time;
 
-                // Set DG LevelSet by CG LevelSet, if for some reason only the CG is loaded
-                if (this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.L2Norm() == 0.0 && this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet.L2Norm() != 0.0)
-                    this.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet.AccLaidBack(1.0, this.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet);
+            // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
+            this.LsUpdater.Tracker.PushStacks();
 
-                // set restart time, used later in the intial tracker updates
-                restartTime = time;
-
-                // push stacks, otherwise we get a problem when updating the tracker, parts of the xdg fields are cleared or something
-                this.LsUpdater.Tracker.PushStacks();
-            }
         }
 
     }

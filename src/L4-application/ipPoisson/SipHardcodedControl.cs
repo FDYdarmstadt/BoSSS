@@ -189,6 +189,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
+            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             return RR;
         }
@@ -197,6 +198,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
         public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
+            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2)'
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
@@ -212,7 +214,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
 
             R.GridFunc = delegate () {
-                double[] xNodes = CreateNodes(xRes, xStretch, -1, +1);
+                double[] xNodes = CreateNodes(xRes, xStretch, 0, +10);
                 double[] yNodes = CreateNodes(yRes, yStretch, -1, +1);
                 double[] zNodes = CreateNodes(zRes, zStretch, -1, +1);
 

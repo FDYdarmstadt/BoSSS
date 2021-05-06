@@ -4,6 +4,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Connectors;
 using ilPSP.LinSolvers;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +15,15 @@ namespace BoSSS.Application.ExternalBinding {
     
 
     public class FixedOperators : IForeignLanguageProxy {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [CodeGenExport]
+        public FixedOperators() {
+
+        }
+
 
         IntPtr m_ForeignPtr;
 
@@ -43,14 +53,14 @@ namespace BoSSS.Application.ExternalBinding {
         /// 
         /// </summary>
         [CodeGenExport]
-        public void Laplacian(OpenFOAMGrid grid, int DgDegree) {
+        public void Laplacian(OpenFoamMatrix mtx) {
 
             // grid, etc
             // =========
 
-            GridData grd = grid.GridData;
+            GridData grd = mtx.ColMap.GridDat as GridData;
 
-            var b = new Basis(grd, DgDegree);
+            var b = mtx.ColMap.BasisS[0];
             var map = new UnsetteledCoordinateMapping(b);
 
             var L = new Laplace(1.3);
@@ -61,18 +71,11 @@ namespace BoSSS.Application.ExternalBinding {
             // evaluate operator
             // =================
 
-            var Mtx = new BlockMsrMatrix(map, map);
-            double[] B = new double[map.LocalLength];
-
             var eval = op.GetMatrixBuilder(map, null, map);
-            eval.ComputeMatrix(Mtx, B);
+            eval.ComputeMatrix(mtx, mtx.RHSbuffer);
+            mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
 
-            // return data
-            // ===========
-
-            throw new NotImplementedException("todo");
-
-
+            Console.WriteLine("Computed Laplacian Matrix, norm is " + mtx.InfNorm());
         }
 
         /// <summary>

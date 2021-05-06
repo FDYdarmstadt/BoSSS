@@ -1,5 +1,6 @@
 restart
 **************
+
   BoSSSpad C# interpreter
   _______________________
 
@@ -13,13 +14,14 @@ List of 1 instances of IDatabaseInfo {
 ==============
 ExecutionQueues;
 **************
-List of 3 instances of BatchProcessorClient {
+List of 4 instances of BatchProcessorClient {
   0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
-  1: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
-  2: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: project01217
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\weber\dply
+  2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
+  3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
 }
 ==============
-var ExQueque = ExecutionQueues[1];
+var ExQueque = ExecutionQueues[3];
 **************
 ==============
 var myBatch = (SlurmClient)ExQueque;
@@ -28,21 +30,23 @@ ExQueque.AllowedDatabases;
 List of 0 instances of IDatabaseInfo {
 }
 ==============
-string WFlowName = "Xdg_Stokes_Schwarz_test2_1";
+string WFlowName = "Xdg_Stokes_Schwarz_debug";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'Xdg_Stokes_Schwarz_test2_1'.
+Project name is set to 'Xdg_Stokes_Schwarz_debug'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
-string dirname = "DB_XdgStokes_trans";
+string dirname = "DB_XdgStokes_hMG";
 string linpath = @"/work/scratch/jw52xeqa/"+dirname;
 string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
 ==============
 var tempDB = OpenOrCreateDatabase(winpath);
 **************
+Opening existing database 'W:\work\scratch\jw52xeqa\DB_XdgStokes_hMG'.
+
 ==============
 **************
 ==============
@@ -84,15 +88,17 @@ static class Utils {
 ==============
 tempDB.Grids;
 **************
-List of 5 instances of IGridInfo {
-  0: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
-  1: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
-  2: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  3: { Guid = f9a3a511-a7f0-4743-95fa-ae04b034f7b9; Name = Xdg_Stokes_Schwarz_1TS_J4096; Cell Count = 4096; Dim = 3 }
-  4: { Guid = d934345a-c0ac-4d95-affc-e0e87eaeb33d; Name = Xdg_Stokes_Schwarz_1TS_J512; Cell Count = 512; Dim = 3 }
+List of 7 instances of IGridInfo {
+  0: { Guid = 72b3afcf-61a4-42a6-9f58-bc14d1f3f1a2; Name = Xdg_Stokes_Schwarz_J13824; Cell Count = 13824; Dim = 3 }
+  1: { Guid = 87cee36a-7904-459e-b7f3-b7a028afad03; Name = Xdg_Stokes_Schwarz_J4096; Cell Count = 4096; Dim = 3 }
+  2: { Guid = eceac411-bc0d-4b37-9eab-a9624b8c01e5; Name = Xdg_Stokes_Schwarz_J512; Cell Count = 512; Dim = 3 }
+  3: { Guid = 92f76886-537c-435a-85d9-4e64454007c0; Name = Xdg_Stokes_Schwarz_J64; Cell Count = 64; Dim = 3 }
+  4: { Guid = 15338cc8-ef32-4797-a871-f16be734633b; Name = Xdg_Stokes_Schwarz_J262144; Cell Count = 262144; Dim = 3 }
+  5: { Guid = 14fc4b81-264a-4a13-bc83-633e4b2d6617; Name = Xdg_Stokes_Schwarz_J110592; Cell Count = 110592; Dim = 3 }
+  6: { Guid = 9344b741-f8be-41c8-8bdc-49b4fa764b6b; Name = Xdg_Stokes_Schwarz_J32768; Cell Count = 32768; Dim = 3 }
 }
 ==============
-int[] Resolutions_3D = new int[] { 32,48,64 };
+int[] Resolutions_3D = new int[] { 4,8,16,24 };
 //int[] Resolutions_3D = new int[] { 2 };
 IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
 for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
@@ -153,17 +159,24 @@ for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
     }
 }
 **************
-Found Grid: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-Found Grid: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
-Found Grid: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
+Creating grid with 64 cells.
+Grid Edge Tags changed.
+Creating grid with 512 cells.
+Grid Edge Tags changed.
+Creating grid with 4096 cells.
+Grid Edge Tags changed.
+Creating grid with 13824 cells.
+Grid Edge Tags changed.
 
+==============
+IGridInfo[] grids =  tempDB.Grids.Pick(3,2).ToArray();
+**************
 ==============
 grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  1: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
-  2: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
+List of 2 instances of IGridInfo {
+  0: { Guid = 92f76886-537c-435a-85d9-4e64454007c0; Name = Xdg_Stokes_Schwarz_J64; Cell Count = 64; Dim = 3 }
+  1: { Guid = eceac411-bc0d-4b37-9eab-a9624b8c01e5; Name = Xdg_Stokes_Schwarz_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 **************
@@ -245,6 +258,7 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     C.PhysicalParameters.Sigma             = 72.75e-3; // kg / sec²   
     C.PhysicalParameters.IncludeConvection = false;
     C.PhysicalParameters.Material          = true;
+    C.TracingNamespaces                    = "*";
     
     // Dont know
     // ============
@@ -293,9 +307,9 @@ Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegat
     C.TimeSteppingScheme           = TimeSteppingScheme.ImplicitEuler;
     C.Timestepper_BDFinit          = TimeStepperInit.SingleInit;
     C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-    //C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
-    C.TimesteppingMode             = AppControl._TimesteppingMode.Transient;
-    C.dtFixed                      = 1E-4;
+    C.TimesteppingMode             = AppControl._TimesteppingMode.Steady;
+    //C.TimesteppingMode             = AppControl._TimesteppingMode.Transient;
+    //C.dtFixed                      = 1E-4;
             
     C.SessionName += "_pLow"+C.LinearSolver.pMaxOfCoarseSolver ;
     return C;
@@ -316,7 +330,7 @@ No. of errors|warnings: 0|1.
 // - - - - - - - - - - - - -
 **************
 ==============
-int[] PolyDegS = new int[] {2};
+int[] PolyDegS = new int[] {3,5};
 //int[] PolyDegS = new int[] {2};
 **************
 ==============
@@ -340,14 +354,13 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 IGridInfo[] t_grids = grids;
 t_grids;
 **************
-List of 3 instances of IGridInfo {
-  0: { Guid = 0604b996-4318-43e6-9b6d-f5f8948db0b1; Name = Xdg_Stokes_Schwarz_1TS_J32768; Cell Count = 32768; Dim = 3 }
-  1: { Guid = bf5aab4b-fa8d-4cbf-8467-11cdd7f98ca1; Name = Xdg_Stokes_Schwarz_test2_J110592; Cell Count = 110592; Dim = 3 }
-  2: { Guid = c7c9e64b-cec3-47b0-b816-9ae10f2b6b4c; Name = Xdg_Stokes_Kcycle_Schwarz_4cores_J262144; Cell Count = 262144; Dim = 3 }
+List of 2 instances of IGridInfo {
+  0: { Guid = 92f76886-537c-435a-85d9-4e64454007c0; Name = Xdg_Stokes_Schwarz_J64; Cell Count = 64; Dim = 3 }
+  1: { Guid = eceac411-bc0d-4b37-9eab-a9624b8c01e5; Name = Xdg_Stokes_Schwarz_J512; Cell Count = 512; Dim = 3 }
 }
 ==============
 // MaxDof for one claculation (we skip fine grids for higher polynomial orders)
-int MaxDof = 10000000;
+int MaxDof = 5000000;
 **************
 ==============
 using BoSSS.Solution.XNSECommon;
@@ -379,9 +392,10 @@ foreach(IGridInfo grd in t_grids) {
 }
 }
 **************
-setting up: J32768_p2_exp_Kcycle_schwarz
-setting up: J110592_p2_exp_Kcycle_schwarz
-setting up: J262144_p2_exp_Kcycle_schwarz
+setting up: J64_p3_exp_Kcycle_schwarz
+setting up: J512_p3_exp_Kcycle_schwarz
+setting up: J64_p5_exp_Kcycle_schwarz
+setting up: J512_p5_exp_Kcycle_schwarz
 
 ==============
 **************
@@ -419,45 +433,55 @@ setting up: J262144_p2_exp_Kcycle_schwarz
 ==============
 foreach(var ctrl in controls) {
     Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    var aJob = new Job(ctrl.SessionName, typeof(XNSE_SolverMain));
+    var aJob = new Job(ctrl.SessionName, typeof(XNSE));
     aJob.SetControlObject(ctrl);
-    ((SlurmClient)ExQueque).SlurmAccount = "project01287";  // Jens 
     aJob.NumberOfMPIProcs         = 1;
     aJob.ExecutionTime            = "4:00:00";
-    aJob.MemPerCPU                = "50000";
+    aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 **************
- Submitting: J32768_p2_exp_Kcycle_schwarz_pLow2
-Deploying job J32768_p2_exp_Kcycle_schwarz_pLow2 ... 
+ Submitting: J64_p3_exp_Kcycle_schwarz_pLow3
+Note: found 1 successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. 0 sessions correlated to this job fount in total.
+Deploying job J64_p3_exp_Kcycle_schwarz_pLow3 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224022
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_debug-XNSE_Solver2021Feb06_131646
 copied 31 files.
    written file: control.obj
 deployment finished.
+17000425
 
-
- Submitting: J110592_p2_exp_Kcycle_schwarz_pLow2
-Deploying job J110592_p2_exp_Kcycle_schwarz_pLow2 ... 
+ Submitting: J512_p3_exp_Kcycle_schwarz_pLow3
+Deploying job J512_p3_exp_Kcycle_schwarz_pLow3 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224030
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_debug-XNSE_Solver2021Feb06_131650
 copied 31 files.
    written file: control.obj
 deployment finished.
+17000426
 
-
- Submitting: J262144_p2_exp_Kcycle_schwarz_pLow2
-Deploying job J262144_p2_exp_Kcycle_schwarz_pLow2 ... 
+ Submitting: J64_p5_exp_Kcycle_schwarz_pLow5
+Deploying job J64_p5_exp_Kcycle_schwarz_pLow5 ... 
 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_test2_1-XNSE_Solver2020Nov16_224038
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_debug-XNSE_Solver2021Feb06_131656
 copied 31 files.
    written file: control.obj
 deployment finished.
+17000427
 
+ Submitting: J512_p5_exp_Kcycle_schwarz_pLow5
+Deploying job J512_p5_exp_Kcycle_schwarz_pLow5 ... 
+
+Deploying executables and additional files ...
+Deployment directory: X:\Deployerie\Xdg_Stokes_Schwarz_debug-XNSE_Solver2021Feb06_131702
+copied 31 files.
+   written file: control.obj
+deployment finished.
+17000428
 
 
 ==============
@@ -854,6 +878,16 @@ SessTab.SaveToFile(docpath);
 **************
 ==============
 LastError;
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
 **************
 ==============
 **************

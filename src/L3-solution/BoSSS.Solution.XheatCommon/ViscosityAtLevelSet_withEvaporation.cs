@@ -35,9 +35,9 @@ namespace BoSSS.Solution.XheatCommon {
     public class ViscosityAtLevelSet_FullySymmetric_withEvap : EvaporationAtLevelSet {
 
 
-        public ViscosityAtLevelSet_FullySymmetric_withEvap(LevelSetTracker lstrk, double _muA, double _muB, double _penalty, int _component, 
+        public ViscosityAtLevelSet_FullySymmetric_withEvap(int SpacialDim, double _muA, double _muB, double _penalty, int _component, 
             ThermalParameters thermParams, double _sigma) 
-            : base(lstrk.GridDat.SpatialDimension, lstrk, thermParams, _sigma) {
+            : base(SpacialDim, thermParams, _sigma) {
 
             this.muA = _muA;
             this.muB = _muB;

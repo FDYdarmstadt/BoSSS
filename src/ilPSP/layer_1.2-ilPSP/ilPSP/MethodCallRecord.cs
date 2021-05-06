@@ -178,6 +178,33 @@ namespace ilPSP.Tracing {
             }
         }
 
+        [DataMember]
+        internal long m_Memory = 0;
+
+        /// <summary>
+        /// memory of call without childcalls
+        /// </summary>
+        [JsonIgnore]
+        public long ExclusiveMemory {
+            get {
+                long childs = 0;
+                foreach (var c in Calls.Values) {
+                    childs += c.m_Memory;
+                }
+                return m_Memory - childs;
+            }
+        }
+
+        /// <summary>
+        /// memory of call including all child calls
+        /// </summary>
+        [JsonIgnore]
+        public long InclusiveMemory {
+            get {
+                return m_Memory;
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -185,17 +212,26 @@ namespace ilPSP.Tracing {
         internal long m_TicksSpentinBlocking = 0;
 
         /// <summary>
-        /// Time spent in blocking MPI routines.
-        /// Time is exclusive the child calls.
+        /// Ticks spent in blocking MPI routines.
+        /// ticks are exclusive the child calls.
         /// </summary>
         [JsonIgnore]
-        public TimeSpan TimeSpentinBlocking {
+        public long ExclusiveBlockingTicks {
             get {
                 long childs = 0;
                 foreach (var c in Calls.Values) {
                     childs += c.m_TicksSpentinBlocking;
                 }
-                return new TimeSpan(m_TicksSpentinBlocking - childs);
+                return m_TicksSpentinBlocking - childs;
+            }
+        }
+
+        /// <summary>
+        /// Time spent in blocking MPI routines exclusive the child calls
+        /// </summary>
+        public TimeSpan ExclusiveBlockingTime {
+            get {
+                return new TimeSpan(ExclusiveBlockingTicks);
             }
         }
 
@@ -519,11 +555,20 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
-        /// 
+        /// ticks spent in blocking MPI routines within traced child calls
         /// </summary>
-        public long TicksSpentInBlocking {
+        public long ExclusiveBlockingTicks {
             get {
-                return AllCalls.Sum(a => a.m_TicksSpentinBlocking);
+                return AllCalls.Sum(a => a.ExclusiveBlockingTicks);
+            }
+        }
+
+        /// <summary>
+        /// Memory spent in traced child calls
+        /// </summary>
+        public long ExclusiveMemorySpent {
+            get {
+                return AllCalls.Sum(a => a.ExclusiveMemory);
             }
         }
 

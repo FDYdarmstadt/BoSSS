@@ -80,7 +80,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Convection {
             }
         }
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             this.speciesName = speciesName;
         }
 

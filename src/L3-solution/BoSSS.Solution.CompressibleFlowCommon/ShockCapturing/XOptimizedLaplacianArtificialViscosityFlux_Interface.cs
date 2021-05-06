@@ -28,12 +28,12 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
 
     public class XOptimizedLaplacianArtificialViscosityFlux_Interface : INonlinLevelSetForm_V, INonlinLevelSetForm_GradV {
 
-        private readonly LevelSetTracker levelSetTracker;
+        //private readonly LevelSetTracker levelSetTracker;
 
         private readonly XOptimizedLaplacianArtificialViscosityFlux bulkFlux;
 
         public XOptimizedLaplacianArtificialViscosityFlux_Interface(LevelSetTracker levelSetTracker, string ArgumentVarName, double penaltySafetyFactor, double penaltyFactor, Dictionary<SpeciesId, MultidimensionalArray> inverseLengthScales) {
-            this.levelSetTracker = levelSetTracker;
+            //this.levelSetTracker = levelSetTracker;
             this.ArgumentOrdering = new string[] { ArgumentVarName };
             this.bulkFlux = new XOptimizedLaplacianArtificialViscosityFlux(null, levelSetTracker, ArgumentVarName, penaltySafetyFactor, penaltyFactor, inverseLengthScales);
         }
@@ -44,15 +44,15 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockCapturing {
             }
         }
 
-        public SpeciesId PositiveSpecies {
+        public string PositiveSpecies {
             get {
-                return this.levelSetTracker.GetSpeciesId("B");
+                return "B";
             }
         }
 
-        public SpeciesId NegativeSpecies {
+        public string NegativeSpecies {
             get {
-                return this.levelSetTracker.GetSpeciesId("A");
+                return "A";
             }
         }
 

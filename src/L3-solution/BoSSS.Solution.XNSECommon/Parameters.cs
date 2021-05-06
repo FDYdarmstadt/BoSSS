@@ -201,6 +201,7 @@ namespace BoSSS.Solution.XNSECommon {
         public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D);
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            this.LsTrk = ((XDGBasis)DomainVarFields.First().Value.Basis).Tracker;
             var velocity0Mean = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
                 XDGBasis U0meanBasis = new XDGBasis(LsTrk, 0);
@@ -297,6 +298,13 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+    /// <summary>
+    /// Gravity Parameter, note a few specials:
+    /// 1.  When setting gravity in control file, set an acceleration. 
+    ///     However in this class the acceleration is multiplied by the density of the respective phase, thus representing a gravitational volume force.
+    /// 2.  The sign of this volume force is opposite to that of the acceleration. 
+    ///     This is due to the implementation, where the volume force is brought to the left-hand-side of the Navier-Stokes-Equations <see cref="Solution.XNSECommon.Operator.MultiPhaseSource"/>
+    /// </summary>
     public class Gravity : ParameterS {
         int degree;
 
@@ -332,13 +340,14 @@ namespace BoSSS.Solution.XNSECommon {
             //}
 
             int gravityDegree;
-            if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
-                gravityDegree = opts.Degree;
+            if (control.FieldOptions.TryGetValue(gravity, out FieldOpts opts)) {
+                gravityDegree = Math.Max(0, opts.Degree);                
             } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 gravityDegree = velOpts.Degree;
             } else {
                 gravityDegree = 0;
             }
+
             return new Gravity(species, d, D, gravityFunc, rho, gravityDegree);
         }
 
@@ -355,15 +364,11 @@ namespace BoSSS.Solution.XNSECommon {
             return new (string, DGField)[] { (names[0], gravity) };
         }
 
-        double timeOfLastUpdate = 0.0;
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (timeOfLastUpdate != time) {
-                timeOfLastUpdate = time;
-                DGField gravity = ParameterVarFields[names[0]];
-                gravity.Clear();
-                if(initial != null)
-                    gravity.ProjectField(-rho, initial.SetTime(time));
-            }
+            DGField gravity = ParameterVarFields[names[0]];
+            gravity.Clear();
+            if(initial != null)
+                gravity.ProjectField(-rho, initial.SetTime(time));
         }
     }
 
@@ -394,7 +399,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             int volForceDegree;
             if (control.FieldOptions.TryGetValue(gravityOfSpecies, out FieldOpts opts)) {
-                volForceDegree = opts.Degree;
+                volForceDegree = Math.Max(0, opts.Degree);
             } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
                 volForceDegree = velOpts.Degree;
             } else {
@@ -412,14 +417,10 @@ namespace BoSSS.Solution.XNSECommon {
             return new (string, DGField)[] { (names[0], volforce) };
         }
 
-        double timeOfLastUpdate = 0.0;
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            if (timeOfLastUpdate != time) {
-                timeOfLastUpdate = time;
-                DGField volforce = ParameterVarFields[names[0]];
-                volforce.Clear();
-                volforce.ProjectField(-1, initial.SetTime(time));
-            }
+            DGField volforce = ParameterVarFields[names[0]];
+            volforce.Clear();
+            volforce.ProjectField(-1, initial.SetTime(time));
         }
     }
 
@@ -430,18 +431,25 @@ namespace BoSSS.Solution.XNSECommon {
     /// - computed from broken derivatives, i.e. un-filtered
     /// </summary>
     public class Normals : ParameterS, ILevelSetParameter {
-        int D;
 
+        int D;
         int degree;
+        IList<string> parameterNames;
 
         public Normals(int D, int degree) {
             this.D = D;
             this.degree = degree;
+            parameterNames = BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        }
+
+        public Normals(int D, int degree, string levelSetName) : this(D, degree){
+            parameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable( 
+                levelSetName, BoSSS.Solution.NSECommon.VariableNames.NormalVector(D));
         }
 
         public override DelParameterFactory Factory => ParameterFactory;
 
-        public override IList<string> ParameterNames => BoSSS.Solution.NSECommon.VariableNames.NormalVector(D);
+        public override IList<string> ParameterNames => parameterNames;
 
         public void LevelSetParameterUpdate(DualLevelSet levelSet, double time,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
@@ -449,7 +457,7 @@ namespace BoSSS.Solution.XNSECommon {
             LevelSet Phi = levelSet.CGLevelSet;
             DGField[] Normals = new SinglePhaseField[D];
             for (int i = 0; i < D; ++i) {
-                Normals[i] = ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[i]];
+                Normals[i] = ParameterVarFields[parameterNames[i]];
             }
             VectorField<DGField> normalVector = new VectorField<DGField>(Normals);
             normalVector.Clear();
@@ -459,11 +467,11 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, "Normal", SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
-                normals[d] = (BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d], Normals[d]);
+                normals[d] = (parameterNames[d], Normals[d]);
             }
             return normals;
         }
@@ -581,7 +589,8 @@ namespace BoSSS.Solution.XNSECommon {
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < lsParameters.Length - 1; ++i) {
                 ParameterVarFields[lsParameters[i]].Clear();
-                ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                if(filtLevSetGradient != null)
+                    ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
             }
         }
     }

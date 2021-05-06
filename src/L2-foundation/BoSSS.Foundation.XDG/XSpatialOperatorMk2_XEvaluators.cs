@@ -32,7 +32,9 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 using static BoSSS.Foundation.SpatialOperator;
-
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -111,9 +113,27 @@ namespace BoSSS.Foundation.XDG {
 
             }
 
+            /// <summary>
+            /// creates a matrix builder
+            /// </summary>
+            protected override void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species) {
+                Debug.Assert(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.ContactLineOperator_Ls0, this.m_lsTrk, spcName, quadOrder, eqs, cqs, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
+                var ContactLineBuilder = tempOp.GetMatrixBuilder(DomainFrame.FrameMap, Params_4Species, CodomFrame.FrameMap);
+                ContactLineBuilder.MPITtransceive = false;
+                SpeciesContactLineBuilder.Add(SpeciesId, ContactLineBuilder);
+            }
+
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesBulkMtxBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesGhostEdgeBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
             Dictionary<SpeciesId, IEvaluatorLinear> SpeciesSurfElmBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
+            Dictionary<SpeciesId, IEvaluatorLinear> SpeciesContactLineBuilder = new Dictionary<SpeciesId, IEvaluatorLinear>();
 
             /// <summary>
             /// <see cref="IEvaluatorLinear.ComputeAffine{V}(V)"/>
@@ -137,8 +157,6 @@ namespace BoSSS.Foundation.XDG {
             protected override DGField[] GetTrxFields() {
                 return base.Parameters.ToArray();
             }
-
-
 
             /// <summary>
             /// computation of operator matrix, currently only two species are supported
@@ -205,7 +223,7 @@ namespace BoSSS.Foundation.XDG {
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
-                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder }) {
+                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder }) {
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
@@ -263,6 +281,13 @@ namespace BoSSS.Foundation.XDG {
                                 Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
                                 Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
+
+                            //IFormatter formatter = new BinaryFormatter();
+                            //using (Stream stream = new FileStream("MyFile.bin", FileMode.Create, FileAccess.Write, FileShare.None)) {
+                            //    formatter.Serialize(stream, m_lsTrk);
+                            //};
+
+
 #endif
 
                             var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
@@ -391,7 +416,7 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
 
-                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval }) {
+                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval }) {
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -546,11 +571,27 @@ namespace BoSSS.Foundation.XDG {
                 SpeciesSurfElmEval.Add(SpeciesId, SurfElmEval);
             }
 
+            /// <summary>
+            /// creates an evaluator
+            /// </summary>
+            protected override void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme SurfaceElement_volume, EdgeQuadratureScheme SurfaceElement_Edge, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld) {
+                Debug.Assert(m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0);
+                string spcName = m_lsTrk.GetSpeciesName(SpeciesId);
+
+                CellLengthScales.TryGetValue(SpeciesId, out var cls);
+                EdgeLengthScales.TryGetValue(SpeciesId, out var els);
+
+                var tempOp = m_Xowner.FilterSpeciesOperator(m_Xowner.ContactLineOperator_Ls0, m_lsTrk, spcName, quadOrder, SurfaceElement_Edge, SurfaceElement_volume, TrackerHistoryIndex, CellLengthScales, EdgeLengthScales);
+
+                var ContactLineEval = tempOp.GetEvaluatorEx(DomFld, Params_4Species, CodomFrame.FrameMap);
+                ContactLineEval.MPITtransceive = false;
+                SpeciesContactLineEval.Add(SpeciesId, ContactLineEval);
+            }
 
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesBulkEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesGhostEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
             Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesSurfElmEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
-
+            Dictionary<SpeciesId, IEvaluatorNonLin> SpeciesContactLineEval = new Dictionary<SpeciesId, IEvaluatorNonLin>();
 
         }
 
@@ -701,7 +742,7 @@ namespace BoSSS.Foundation.XDG {
                                 //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
                                 edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
 
-                                volRule.ToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
+                                volRule.ToTextFileCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
                                 volRule.SumOfWeightsToTextFileVolume(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
                             }
 
@@ -715,10 +756,26 @@ namespace BoSSS.Foundation.XDG {
                             ctorGhostSpeciesIntegrator(SpeciesId, quadOrder, nullvolumeScheme, ghostEdgeScheme, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
 
+                        //Only for ls0 so far:
+                        //Add species, if it is separated from another species by level set 0
+                        //For species not separated by ls0, nothing happens
                         if (m_Xowner.SurfaceElementOperator_Ls0.TotalNoOfComponents > 0) {
                             EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                             CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                            if (ruleDiagnosis) {
+                                SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                            }
                             ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
+                        }
+
+                        if (m_Xowner.ContactLineOperator_Ls0.TotalNoOfComponents > 0) {
+                            EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
+                            CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
+                            if (ruleDiagnosis) {
+                                ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                            }
+                            ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                         }
                     }
 
@@ -760,82 +817,81 @@ namespace BoSSS.Foundation.XDG {
                                     // loop over level-sets
                                     int NoOfLs = lsTrk.LevelSets.Count;
                                     for (int iLevSet = 0; iLevSet < NoOfLs; iLevSet++) {
+                                        if (SchemeHelper.SpeciesAreSeparatedByLevSet(iLevSet, SpeciesA, SpeciesB)) {
+                                            var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
+                                            var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
 
-                                        var LsDom = TrackerRegions.GetCutCellMask4LevSet(iLevSet);
-                                        var IntegrationDom = LsDom.Intersect(SpeciesCommonDom);
+                                            Chunk c = IntegrationDom.FirstOrDefault();
+                                            if (c.Len > 0) {
+                                                Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
+                                                int jtest = c.i0;
 
-                                        Chunk c = IntegrationDom.FirstOrDefault();
-                                        if(c.Len > 0) {
-                                            Debug.Assert(IntegrationDom.IsEmptyOnRank == false);
-                                            int jtest = c.i0;
+                                                LevelsetCellSignCode csc = lsTrk.RegionsHistory[__TrackerHistoryIndex].GetCellSignCode(jtest);
 
-                                            LevelsetCellSignCode csc = lsTrk.RegionsHistory[__TrackerHistoryIndex].GetCellSignCode(jtest);
+                                                if (!(csc.GetSign(iLevSet) == LevelsetSign.Both))
+                                                    throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
 
-                                            if(!(csc.GetSign(iLevSet) == LevelsetSign.Both))
-                                                throw new ApplicationException("Seem to perform level-set integration in a non-cut cell.");
-
-                                            var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
-                                            var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
-
-
-                                            bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
-                                            bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
-                                            bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
-                                            bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
-
-                                            if(SpeciesA_inPos == SpeciesA_inNeg) {
-                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                            }
-                                            if(SpeciesB_inPos == SpeciesB_inNeg) {
-                                                throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                            }
+                                                var cscNeg = csc; cscNeg.SetSign(iLevSet, LevelsetSign.Negative);
+                                                var cscPos = csc; cscPos.SetSign(iLevSet, LevelsetSign.Positive);
 
 
-                                            if(SpeciesA_inNeg && SpeciesB_inPos) {
-                                                // nothing to do
+                                                bool SpeciesA_inNeg = lsTrk.ContainesSpecies(SpeciesA, cscNeg);
+                                                bool SpeciesA_inPos = lsTrk.ContainesSpecies(SpeciesA, cscPos);
+                                                bool SpeciesB_inNeg = lsTrk.ContainesSpecies(SpeciesB, cscNeg);
+                                                bool SpeciesB_inPos = lsTrk.ContainesSpecies(SpeciesB, cscPos);
 
-                                                if(SpeciesA_inPos == true) {
+                                                if (SpeciesA_inPos == SpeciesA_inNeg) {
                                                     throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
                                                 }
-                                                if(SpeciesB_inNeg == true) {
-                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                                }
-                                            } else if(SpeciesA_inPos && SpeciesB_inNeg) {
-                                                // flip species
-                                                
-                                                if(SpeciesA_inNeg == true) {
-                                                    throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
-                                                }
-                                                if(SpeciesB_inPos == true) {
+                                                if (SpeciesB_inPos == SpeciesB_inNeg) {
                                                     throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
                                                 }
 
-                                                SpeciesId tmp = SpeciesA;
-                                                SpeciesA = SpeciesB;
-                                                SpeciesB = tmp;
+
+                                                if (SpeciesA_inNeg && SpeciesB_inPos) {
+                                                    // nothing to do
+
+                                                    if (SpeciesA_inPos == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                    if (SpeciesB_inNeg == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                } else if (SpeciesA_inPos && SpeciesB_inNeg) {
+                                                    // flip species
+
+                                                    if (SpeciesA_inNeg == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesA)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+                                                    if (SpeciesB_inPos == true) {
+                                                        throw new ApplicationException($"Species {m_lsTrk.GetSpeciesName(SpeciesB)} seems to be present in negative and positive domain of Level-Set No. {iLevSet} - internal error or illegal Level-Set and species map..");
+                                                    }
+
+                                                    SpeciesId tmp = SpeciesA;
+                                                    SpeciesA = SpeciesB;
+                                                    SpeciesB = tmp;
 
 
-                                            } else {
-                                                throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
+                                                } else {
+                                                    throw new ArgumentException($"Unable to determine negative (aka. In, A) and positive (aka. Out, B) species out of {m_lsTrk.GetSpeciesName(SpeciesA)}, {m_lsTrk.GetSpeciesName(SpeciesA)} w.r.t. Level-Set {iLevSet}.");
+                                                }
                                             }
-                                        }
+                                            ICompositeQuadRule<QuadRule> rule;
+                                            using (new BlockTrace("QuadRule-compilation", tr)) {
+                                                CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, SpeciesA,  IntegrationDom);
+                                                rule = SurfIntegration.Compile(GridData, quadOrder);
 
-                                        
-                                        ICompositeQuadRule<QuadRule> rule;
-                                        using (new BlockTrace("QuadRule-compilation", tr)) {
-                                            CellQuadratureScheme SurfIntegration = SchemeHelper.GetLevelSetquadScheme(iLevSet, IntegrationDom);
-                                            rule = SurfIntegration.Compile(GridData, quadOrder);
-
-                                            if (ruleDiagnosis) {
-                                                rule.ToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
-                                                rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                if (ruleDiagnosis) {
+                                                    rule.ToTextFileCell(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}-{lsTrk.CutCellQuadratureType}.csv");
+                                                    rule.SumOfWeightsToTextFileVolume(GridData, $"Levset{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                                }
                                             }
+
+                                            LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
+
+                                            CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
+                                            ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                         }
-
-                                        LECQuadratureLevelSet<IMutableMatrix, double[]>.TestNegativeAndPositiveSpecies(rule, m_lsTrk, __TrackerHistoryIndex, SpeciesA, SpeciesB, iLevSet);
-
-                                        CouplingRules.Add((iLevSet, SpeciesA, SpeciesB, rule));
-                                        ctorLevSetFormIntegrator(iLevSet, SpeciesA, SpeciesB, rule);
                                     }
                                 }
                             }
@@ -849,7 +905,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                 }
-            }
+           }
 
             /// <summary>
             /// 
@@ -876,6 +932,11 @@ namespace BoSSS.Foundation.XDG {
             /// Create integrator for <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
             /// </summary>
             abstract protected void ctorSurfaceElementSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
+
+            /// <summary>
+            /// Create Integrator for <see cref="XSpatialOperatorMk2.ContactLineOperator_Ls0"/>
+            /// </summary>
+            abstract protected void ctorContactLineSpeciesIntegrator(SpeciesId SpeciesId, int quadOrder, CellQuadratureScheme cqs, EdgeQuadratureScheme eqs, FrameBase DomainFrame, FrameBase CodomFrame, DGField[] Params_4Species, DGField[] DomFld4Species);
 
             /// <summary>
             /// Create integrator for <see cref="ILevelSetForm"/> components
@@ -967,9 +1028,9 @@ namespace BoSSS.Foundation.XDG {
 
                         if(c is ILevelSetForm lsc) {
                             // test if the component is actually relevant
-                            if(lsc.PositiveSpecies != spcB)
+                            if(lsc.PositiveSpecies != this.m_lsTrk.GetSpeciesName(spcB))
                                 continue;
-                            if(lsc.NegativeSpecies != spcA)
+                            if(lsc.NegativeSpecies != this.m_lsTrk.GetSpeciesName(spcA))
                                 continue;
                             if(lsc.LevelSetIndex != iLevSet)
                                 continue;
@@ -1002,7 +1063,7 @@ namespace BoSSS.Foundation.XDG {
                     foreach (var c in comps) {
                         if (c is IEquationComponentSpeciesNotification) {
                             var ce = c as IEquationComponentSpeciesNotification;
-                            ce.SetParameter(sNmn, id);
+                            ce.SetParameter(sNmn);
                         }
                     }
                 }

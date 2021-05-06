@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
             //throw new Exception("remove me");
-
+            
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
@@ -170,8 +170,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
                 }
 
-                opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D, LsTrk));
-                opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D, LsTrk));
+                opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
+                opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
                 opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
                 opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));
@@ -371,8 +371,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
-            base.AddMultigridConfigLevel(configsLevel);
+        protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
+            base.AddMultigridConfigLevel(configsLevel, iLevel);
 
             if(Control.UsePhoreticField) {
                 int pVel = VelocityDegree();

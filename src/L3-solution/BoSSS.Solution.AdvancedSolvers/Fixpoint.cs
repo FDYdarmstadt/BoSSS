@@ -59,11 +59,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double UnderRelax = 1;
 
 
-        ///// <summary>
-        ///// delays the evaluation of the coupled instance (e.g. Level-set) during update
-        ///// </summary>
-        //public event Action DelayCoupledIteration;
-
         /// <summary>
         /// delegate for checking the convergence criteria of the coupled iteration
         /// </summary>
@@ -78,13 +73,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public delegate int IterationCounter(int NoIter, ref int coupledIter);
 
         public IterationCounter Iteration_Count;
-
-
-        //bool solveVelocity = true;
-
-        //double VelocitySolver_ConvergenceCriterion = 1e-5;
-
-        //double StressSolver_ConvergenceCriterion = 1e-5;
 
 
         override public bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {

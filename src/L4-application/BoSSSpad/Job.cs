@@ -76,7 +76,6 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
             get;
         }
-
         
         /// <summary>
         /// The memory (in MB) that is reserved for every core
@@ -84,6 +83,16 @@ namespace BoSSS.Application.BoSSSpad {
         public string MemPerCPU {
             set;
             get;
+        }
+
+        private int m_NumberOfNodes = -1;
+
+        /// <summary>
+        /// overrides Memory per CPU criterion. MemoryPerCPU = memorypernode * nonode / cpupernode. Memory per node is architecture dependent.
+        /// </summary>
+        public int NumberOfNodes {
+            get { return m_NumberOfNodes;  }
+            set { m_NumberOfNodes = value;  }
         }
 
         /*
@@ -294,7 +303,11 @@ namespace BoSSS.Application.BoSSSpad {
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
-            if(bpc.AllowedDatabases != null && bpc.AllowedDatabases.Count > 0) {
+            if(!bpc.IsDatabaseAllowed(m_ctrl)) {
+                throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
+            }
+            /*
+            if(bpc.AllowedDatabasesPaths != null && bpc.AllowedDatabases.Count > 0) {
                 
                 IDatabaseInfo newDb = null;
                 if(ctrl_db == null) {
@@ -337,6 +350,7 @@ namespace BoSSS.Application.BoSSSpad {
             } else {
                 Console.WriteLine("");
             } 
+            */
 
             // check grid & restart info
             // =========================
@@ -1320,6 +1334,15 @@ namespace BoSSS.Application.BoSSSpad {
                     return JobStatus.FailedOrCanceled;
                 }
 
+                if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
+                    if(WriteHints) {
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Hint: want to re-activate the job.");
+                    }
+                    this.statusCache = JobStatus.FailedOrCanceled;
+                    return JobStatus.FailedOrCanceled;
+                }
+
                 // ============
                 // what now?
                 // ============
@@ -1395,7 +1418,8 @@ namespace BoSSS.Application.BoSSSpad {
             bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir) {
                 PlatformID CurrentSys = System.Environment.OSVersion.Platform;
                 switch(CurrentSys) {
-                    case PlatformID.Unix: { return Path.GetFullPath(Ass.Location).StartsWith("/home/"); }
+                    case PlatformID.Unix: { return Path.GetFullPath(Ass.Location).StartsWith("/home/")
+                            || Path.GetFullPath(Ass.Location).StartsWith("/Jenkins/"); }
                     case PlatformID.Win32S:
                     case PlatformID.Win32Windows:
                     default: {
@@ -1435,7 +1459,11 @@ namespace BoSSS.Application.BoSSSpad {
                     foreach (var a in AllDependentAssemblies) {
                         if (IsNotSystemAssembly(a, MainAssemblyDir)) {
                             files.Add(a.Location);
+                            if(File.Exists(a.Location + ".config")) {
+                                files.Add(a.Location + ".config");
+                            }
                         }
+
                     }
                
                     // test for really strange errors

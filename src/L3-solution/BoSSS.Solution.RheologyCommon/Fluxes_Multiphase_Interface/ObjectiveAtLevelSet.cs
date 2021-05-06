@@ -31,7 +31,7 @@ namespace BoSSS.Solution.RheologyCommon {
     /// </summary>
     public class ObjectiveAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         int Component;           // equation index (0: xx, 1: xy, 2: yy)
         BoundaryCondMap<IncompressibleBcType> m_BcMap;
@@ -41,8 +41,8 @@ namespace BoSSS.Solution.RheologyCommon {
         /// <summary>
         /// Initialize viscosity part
         /// </summary>
-        public ObjectiveAtLevelSet(LevelSetTracker lstrk, int Component, double _WeissenbergA, double _WeissenbergB) {
-            this.m_LsTrk = lstrk;
+        public ObjectiveAtLevelSet(int Component, double _WeissenbergA, double _WeissenbergB) {
+            //this.m_LsTrk = lstrk;
             this.Component = Component;
             this.WeissenbergA = _WeissenbergA;
             this.WeissenbergB = _WeissenbergB;
@@ -117,12 +117,12 @@ namespace BoSSS.Solution.RheologyCommon {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

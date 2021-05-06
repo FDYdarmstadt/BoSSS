@@ -40,14 +40,14 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
     public class EllipticReInitInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
         readonly double PenaltyBase;
 
-        readonly LevelSetTracker LSTrk;
+        //readonly LevelSetTracker LSTrk;
 
         /// <summary>
         /// old ctor
         /// </summary>
-        public EllipticReInitInterfaceForm(double PenaltyBase, LevelSetTracker LSTrk) {
+        public EllipticReInitInterfaceForm(double PenaltyBase) {
             this.PenaltyBase = PenaltyBase;
-            this.LSTrk = LSTrk;
+            //this.LSTrk = LSTrk;
         }
 
         /// <summary>
@@ -128,15 +128,15 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// <summary>
         /// B
         /// </summary>
-        public SpeciesId PositiveSpecies {
-            get { return this.LSTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
         /// <summary>
         /// A
         /// </summary>
-        public SpeciesId NegativeSpecies {
-            get { return this.LSTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {

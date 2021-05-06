@@ -54,7 +54,8 @@ namespace BoSSS.Foundation.Grid {
         /// redistributes this grid, i.e. sends cells to different processors
         /// </summary>
         /// <param name="part">
-        /// MPI processor rank for each cell; index: local cell index;
+        /// - index: local cell index;
+        /// - content: MPI processor rank for respective cell; 
         /// </param>
         void RedistributeGrid(int[] part);
                

@@ -37,10 +37,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         /// <summary>
         /// Upwinding, could be inflow or outflow
+        /// /// </summary>
         Pressure_Dirichlet = 4,
 
         /// <summary>
         /// like normal wall, all slip b.c. are treated in the same way
+        /// </summary>
         Slip = 5,
 
         /// <summary>

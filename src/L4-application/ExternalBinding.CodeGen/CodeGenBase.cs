@@ -7,10 +7,10 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.ExternalBinding.CodeGen {
 
-
-
-
     abstract class CodeFileBase {
+
+        protected static DateTime CreationTime = DateTime.Now;
+
 
         public string FileName;
         
@@ -36,6 +36,15 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
         public override string ToString() {
             using(var stw = new StringWriter()) {
+
+                stw.WriteLine("// ##########################################################################");
+                stw.WriteLine("// This is AUTO-GENERATED code created by the ");
+                stw.WriteLine("// BoSSS External Language Binding code generator.");
+                stw.WriteLine("// **Any manual changes are over-written if the code-generator is executed.**");
+                stw.WriteLine("// Creation Date: " + CreationTime);
+                stw.WriteLine("// ##########################################################################");
+                
+
                 foreach(var l in GetCode()) {
                     stw.WriteLine(l);
                 }

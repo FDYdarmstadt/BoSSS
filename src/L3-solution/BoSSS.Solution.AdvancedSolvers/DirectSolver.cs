@@ -42,6 +42,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
+        ///// <summary>
+        ///// Config of <see cref="DirectSolver"/>. Note none of <see cref="LinearSolverConfig"/> or any config is passed to the solvers right now.
+        ///// </summary>
+        //public class myConfig : ConfigBase {
+            /// <summary>
+            /// Set the type of Parallelism to be used for the linear Solver.
+            /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
+            /// </summary>
+            public Parallelism SolverVersion = Parallelism.SEQ;
+
+            /// <summary>
+            /// Switch between PARDISO and MUMPS.
+            /// </summary>
+            public _whichSolver WhichSolver = _whichSolver.PARDISO;
+
+        //    /// <summary>
+        //    /// ~
+        //    /// </summary>
+        //    /// <returns></returns>
+        //    public override ISolverSmootherTemplate GetInstance() {
+        //        return new DirectSolver();
+        //    }
+        //}
+
+        //myConfig m_config;
+
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public ConfigBase Config {
+        //    get {
+        //        if (m_config == null)
+        //            m_config = new myConfig();
+        //        return m_config;
+        //    }
+        //}
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -72,16 +110,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
    
 
-        /// <summary>
-        /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
-        /// </summary>
-        public Parallelism SolverVersion = Parallelism.SEQ;
 
-        /// <summary>
-        /// Switch between PARDISO and MUMPS.
-        /// </summary>
-        public _whichSolver WhichSolver = _whichSolver.PARDISO;
 
         public void Init(MultigridOperator op) {
             using (var tr = new FuncTrace()) {
@@ -323,21 +352,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void ResetStat() {
             m_ThisLevelIterations = 0;
-        }
-
-        private static T Switcher<T>(T origin,T setter) {
-            T thisreturn;
-            if (setter != null) {
-                thisreturn = setter;
-            } else {
-                thisreturn = origin;
-            }
-            return thisreturn;
-        }
-
-        public LinearSolverConfig LinConfig {
-            get;
-            set;
         }
 
         public object Clone() {
