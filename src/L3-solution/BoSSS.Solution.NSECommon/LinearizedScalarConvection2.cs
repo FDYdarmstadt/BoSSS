@@ -916,7 +916,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
             }
         }
 
@@ -925,7 +925,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
             }
         }
 
@@ -934,7 +934,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
+                return TermActivationFlags.UxGradV /*| TermActivationFlags.GradV*/;
             }
         }
     }

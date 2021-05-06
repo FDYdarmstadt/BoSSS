@@ -14,16 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -99,11 +95,84 @@ namespace BoSSS.Solution.XNSECommon {
             base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature + S0]);
 
             for (int s = 0; s < NoOfChemicalSpecies; s++) {
-                string varname = VariableNames.MassFractions(NoOfChemicalSpecies)[s] ;
+                string varname = VariableNames.MassFractions(NoOfChemicalSpecies)[s];
                 base.bndFunction.Add(varname, base.bndFunction[varname + S0]);
             }
         }
     }
+
+
+
+    /// <summary>
+    /// Boundary condition mapping for LowMachCombustion XDG multiphase methods.
+    /// </summary>
+    public class LowMachMixtureFractionMultiphaseBoundaryCondMap : BoSSS.Solution.NSECommon.IncompressibleBoundaryCondMap {
+
+        static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
+            int D = g.SpatialDimension;
+            List<string> scalarFields = new List<string>();
+
+            foreach (var S in SpeciesNames) {
+                for (int d = 0; d < D; d++) {
+                    scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
+                }
+                scalarFields.Add(VariableNames.Pressure + "#" + S);
+                scalarFields.Add(VariableNames.MixtureFraction + '#' + S);
+            }
+            scalarFields.Add(VariableNames.LevelSet);
+
+            return scalarFields.ToArray();
+        }
+
+        /// <summary>
+        /// Loops over all boundary conditions:
+        /// If e.g. `VelocityX` is defined, but not `VelocityX#A`, the value for `VelocityX#A` is inferred from `VelocityX`.
+        /// </summary>
+        static IDictionary<string, AppControl.BoundaryValueCollection> BndyModify(IDictionary<string, AppControl.BoundaryValueCollection> b, string[] SpeciesNames) {
+
+            bool isNonXname(string s) {
+                foreach (var sn in SpeciesNames) {
+                    string end = "#" + sn;
+                    if (s.Length > 2 && s.EndsWith(end))
+                        return false;
+                }
+                return true;
+            }
+
+            var ret = new Dictionary<string, AppControl.BoundaryValueCollection>();
+            foreach (var kv in b) {
+                var coll = kv.Value.CloneAs();
+                ret.Add(kv.Key, coll);
+
+                string[] definedKeys = coll.Evaluators.Keys.ToArray();
+                foreach (var varName in definedKeys) {
+                    if (isNonXname(varName)) {
+                        foreach (var spc in SpeciesNames) {
+                            string XvarName = varName + "#" + spc;
+                            if (!kv.Value.Evaluators.ContainsKey(XvarName)) {
+                                coll.Evaluators.Add(XvarName, coll.Evaluators[varName]);
+                            }
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+
+
+        public LowMachMixtureFractionMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
+           : base(f, BndyModify(b, SpeciesNames), PhysicsMode.MixtureFraction, BndFunctions(f, SpeciesNames)) {
+            string S0 = "#" + SpeciesNames[0];
+
+            int D = f.SpatialDimension;
+            for (int d = 0; d < D; d++) {
+                base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
+            }
+            base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
+            base.bndFunction.Add(VariableNames.MixtureFraction, base.bndFunction[VariableNames.MixtureFraction + S0]);
+        }
+    }
+
 
 
 }

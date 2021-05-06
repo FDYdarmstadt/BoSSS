@@ -33,7 +33,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
     public class ConvectionInBulk_LLF : LinearizedConvection, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public ConvectionInBulk_LLF(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
+        public ConvectionInBulk_LLF(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
             base(SpatDim, _bcmap, _component, false) 
         {
             //
@@ -47,7 +47,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             base.velFunction = null;
         }
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+        IncompressibleBoundaryCondMap m_bcmap;
         //LevelSetTracker lsTrk;
 
         double LFFA;
@@ -163,7 +163,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     /// </summary>
     public class ConvectionInBulk_LLF_Newton : LinearizedConvectionJacobi, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
-        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleMultiphaseBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
+        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
             base(SpatDim, _bcmap, _component, false) {
             //
             rhoA = _rhoA;
@@ -176,7 +176,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             base.velFunction = null;
         }
 
-        IncompressibleMultiphaseBoundaryCondMap m_bcmap;
+        IncompressibleBoundaryCondMap m_bcmap;
         //LevelSetTracker lsTrk;
 
         double LFFA;

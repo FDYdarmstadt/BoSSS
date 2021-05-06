@@ -38,7 +38,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh) {
+        public ConvectionAtLevelSet_LLF(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleBoundaryCondMap _bcmap, bool _movingmesh) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
@@ -252,7 +252,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         bool movingmesh;
 
-        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
+        public ConvectionAtLevelSet_LLF_Newton(int _d, int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _MaterialInterface, IncompressibleBoundaryCondMap _bcmap, bool _movingmesh, string phaseA, string phaseB) {
             m_D = _D;
             m_d = _d;
             rhoA = _rhoA;
