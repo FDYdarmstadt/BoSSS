@@ -263,13 +263,23 @@ namespace BoSSS.Foundation.XDG.Quadrature
     {
         #region Edge QuadRules
 
-        public static IQuadRuleFactory<CellBoundaryQuadRule> SayeGaussRule_Edge3D(
+        public static IQuadRuleFactory<CellBoundaryQuadRule> SayeGaussRule_EdgeVolume3D(
             LevelSetTracker.LevelSetData _lsData,
             IRootFindingAlgorithm RootFinder) {
             ISayeGaussEdgeRule rule = new SayeGaussRule_EdgeCube(
                 _lsData,
                 RootFinder,
                 SayeGaussRule_Cube.QuadratureMode.PositiveVolume);
+            return new SayeGaussEdgeRuleFactory(rule);
+        }
+
+        public static IQuadRuleFactory<CellBoundaryQuadRule> SayeGaussRule_EdgeSurface3D(
+            LevelSetTracker.LevelSetData _lsData,
+            IRootFindingAlgorithm RootFinder) {
+            ISayeGaussEdgeRule rule = new SayeGaussRule_EdgeCube(
+                _lsData,
+                RootFinder,
+                SayeGaussRule_Cube.QuadratureMode.Surface);
             return new SayeGaussEdgeRuleFactory(rule);
         }
 

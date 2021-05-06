@@ -134,7 +134,7 @@ namespace BoSSS.Foundation.XDG {
 
         Quadrature.HMF.LineAndPointQuadratureFactory[] LineAndPoint_in2D = null;
         IQuadRuleFactory<CellBoundaryQuadRule>[] CellFaceVolume_in3D = null;
-        Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory[] CellFaceSurface_in3D = null;
+        IQuadRuleFactory<CellBoundaryQuadRule>[] CellFaceSurface_in3D = null;
 
         /// <summary>
         /// Returns a rule for the edges of surface-elements (elements on the zero-level-set surface, 
@@ -165,20 +165,31 @@ namespace BoSSS.Foundation.XDG {
                 Debug.Assert(LineAndPoint_in2D == null);
 
                 if (CellFaceSurface_in3D == null)
-                    CellFaceSurface_in3D = new LevelSetEdgeSurfaceQuadRuleFactory[this.m_LevelSetDatas.Length];
+                    CellFaceSurface_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length];
+                if(CellFaceSurface_in3D[levSetIndex] == null) {
+                    var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
 
-                var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
-                var CoFaceQuadRuleFactory = new CutLineOnEdgeQuadRuleFactory(
-                    this.m_LevelSetDatas[levSetIndex],
-                    rootFindingAlgorithm,
-                    JumpTypes.Heaviside);
-                CellFaceSurface_in3D[levSetIndex] = new LevelSetEdgeSurfaceQuadRuleFactory(
-                    this.m_LevelSetDatas[levSetIndex],
-                    CoFaceQuadRuleFactory,
-                    JumpTypes.Heaviside);
-                //new LevelSetEdgeVolumeQuadRuleFactory(
-                //    lsTrk, levSetIndex, rootFindingAlgorithm, JumpTypes.Heaviside);
+                    switch (CutCellQuadratureType) {
+                        case MomentFittingVariants.Saye:
+                        CellFaceSurface_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeSurface3D(
+                            this.m_LevelSetDatas[levSetIndex],
+                            rootFindingAlgorithm);
+                        break;
+                        default:
+                        var CoFaceQuadRuleFactory = new CutLineOnEdgeQuadRuleFactory(
+                            this.m_LevelSetDatas[levSetIndex],
+                            rootFindingAlgorithm,
+                            JumpTypes.Heaviside);
+                        CellFaceSurface_in3D[levSetIndex] = new LevelSetEdgeSurfaceQuadRuleFactory(
+                            this.m_LevelSetDatas[levSetIndex],
+                            CoFaceQuadRuleFactory,
+                            JumpTypes.Heaviside);
+                        //new LevelSetEdgeVolumeQuadRuleFactory(
+                        //    lsTrk, levSetIndex, rootFindingAlgorithm, JumpTypes.Heaviside);
+                        break;
+                    }
 
+                }
                 return CellFaceSurface_in3D[levSetIndex];
 
             }
@@ -237,27 +248,28 @@ namespace BoSSS.Foundation.XDG {
                 return LineAndPoint_in2D[levSetIndex].GetLineFactory(jumpType == JumpTypes.Heaviside ? true : false);
             } else if (D == 3) {
                 Debug.Assert(LineAndPoint_in2D == null);
-
+                if (CellFaceVolume_in3D == null)
+                    CellFaceVolume_in3D = new IQuadRuleFactory<CellBoundaryQuadRule>[this.m_LevelSetDatas.Length];
                 if (jumpType != JumpTypes.Heaviside)
                     throw new NotSupportedException();
-                var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
-                switch (CutCellQuadratureType) {
-                    case MomentFittingVariants.Saye: 
+                
+                if(CellFaceVolume_in3D[levSetIndex] == null) {
+                    var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
+                    switch (CutCellQuadratureType) {
+                        case MomentFittingVariants.Saye:
                         if (CellFaceVolume_in3D == null)
                             CellFaceVolume_in3D = new SayeGaussEdgeRuleFactory[this.m_LevelSetDatas.Length];
-                    CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_Edge3D(
+                        CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_EdgeVolume3D(
                             this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm);
-                    break;
-                    default:
-                    if (CellFaceVolume_in3D == null)
-                        CellFaceVolume_in3D = new LevelSetEdgeVolumeQuadRuleFactory[this.m_LevelSetDatas.Length];
-                    CellFaceVolume_in3D[levSetIndex] = new LevelSetEdgeVolumeQuadRuleFactory(
+                        break;
+                        default:
+                        if (CellFaceVolume_in3D == null)
+                            CellFaceVolume_in3D = new LevelSetEdgeVolumeQuadRuleFactory[this.m_LevelSetDatas.Length];
+                        CellFaceVolume_in3D[levSetIndex] = new LevelSetEdgeVolumeQuadRuleFactory(
                             this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm, JumpTypes.Heaviside);
-                    break;
+                        break;
+                    }
                 }
-
-
-
                 return CellFaceVolume_in3D[levSetIndex];
             } else {
                 throw new NotSupportedException();
