@@ -15,7 +15,7 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    class SayeFactory_Square :
+    class SayeGaussRule_Square :
         SayeComboIntegrand<LinearPSI<Square>, SayeSquare>,
         ISayeGaussRule,
         ISayeGaussComboRule
@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         QuadratureMode quadratureMode;
 
-        public SayeFactory_Square(
+        public SayeGaussRule_Square(
             LevelSetTracker.LevelSetData _lsData, 
             IRootFindingAlgorithm RootFinder,
             QuadratureMode Mode
@@ -123,8 +123,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override MultidimensionalArray Gradient(LinearPSI<Square> psi, NodeSet Node, int Cell)
         {
-            //Move Node onto psi 
-            MultidimensionalArray gradient = ReferenceGradient(Node, Cell);
+            //Move Node onto psi
+            NodeSet nodeOnPsi = psi.ProjectOnto(Node);
+            MultidimensionalArray gradient = ReferenceGradient(nodeOnPsi, Cell);
 
             return gradient;
         }
@@ -138,8 +139,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
-
         static readonly double sqrt_2 = Math.Sqrt(2.0);
+        
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>

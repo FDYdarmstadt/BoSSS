@@ -133,7 +133,7 @@ namespace BoSSS.Foundation.XDG {
         // Factory creation
 
         Quadrature.HMF.LineAndPointQuadratureFactory[] LineAndPoint_in2D = null;
-        Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory[] CellFaceVolume_in3D = null;
+        IQuadRuleFactory<CellBoundaryQuadRule>[] CellFaceVolume_in3D = null;
         Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory[] CellFaceSurface_in3D = null;
 
         /// <summary>
@@ -219,7 +219,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Quadrature rule on cell boundaries
         /// </summary>
-        public IQuadRuleFactory<CellBoundaryQuadRule> GetCellFaceFactory(int levSetIndex, RefElement Kref, JumpTypes jumpType) {
+        IQuadRuleFactory<CellBoundaryQuadRule> GetCellFaceFactory(int levSetIndex, RefElement Kref, JumpTypes jumpType) {
             int D = this.m_LevelSetDatas[0].GridDat.SpatialDimension;
 
             if (D == 2) {
@@ -240,13 +240,21 @@ namespace BoSSS.Foundation.XDG {
 
                 if (jumpType != JumpTypes.Heaviside)
                     throw new NotSupportedException();
-
-                if (CellFaceVolume_in3D == null)
-                    CellFaceVolume_in3D = new LevelSetEdgeVolumeQuadRuleFactory[this.m_LevelSetDatas.Length];
-
                 var rootFindingAlgorithm = new LineSegment.SafeGuardedNewtonMethod(1e-14);
-                CellFaceVolume_in3D[levSetIndex] = new LevelSetEdgeVolumeQuadRuleFactory(
-                        this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm, JumpTypes.Heaviside);
+                switch (CutCellQuadratureType) {
+                    case MomentFittingVariants.Saye: 
+                        if (CellFaceVolume_in3D == null)
+                            CellFaceVolume_in3D = new SayeGaussEdgeRuleFactory[this.m_LevelSetDatas.Length];
+                    CellFaceVolume_in3D[levSetIndex] = SayeFactories.SayeGaussRule_Edge3D(
+                            this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm);
+                    break;
+                    default:
+                    if (CellFaceVolume_in3D == null)
+                        CellFaceVolume_in3D = new LevelSetEdgeVolumeQuadRuleFactory[this.m_LevelSetDatas.Length];
+                    CellFaceVolume_in3D[levSetIndex] = new LevelSetEdgeVolumeQuadRuleFactory(
+                            this.m_LevelSetDatas[levSetIndex], rootFindingAlgorithm, JumpTypes.Heaviside);
+                    break;
+                }
 
 
 
