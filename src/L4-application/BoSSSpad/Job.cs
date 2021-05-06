@@ -303,7 +303,11 @@ namespace BoSSS.Application.BoSSSpad {
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
-            if(bpc.AllowedDatabases != null && bpc.AllowedDatabases.Count > 0) {
+            if(!bpc.IsDatabaseAllowed(m_ctrl)) {
+                throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
+            }
+            /*
+            if(bpc.AllowedDatabasesPaths != null && bpc.AllowedDatabases.Count > 0) {
                 
                 IDatabaseInfo newDb = null;
                 if(ctrl_db == null) {
@@ -346,6 +350,7 @@ namespace BoSSS.Application.BoSSSpad {
             } else {
                 Console.WriteLine("");
             } 
+            */
 
             // check grid & restart info
             // =========================

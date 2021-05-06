@@ -84,26 +84,36 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         public MiniBatchProcessorClient(string DeployDir = null) {
             var userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
-            if (userDir == null || userDir.Length <= 0 || !Directory.Exists(userDir)) {
+            if(userDir == null || userDir.Length <= 0 || !Directory.Exists(userDir)) {
                 throw new ApplicationException("Unable to create local machine batch, user settings path ('.BoSSS' - directory) does not exist or unable to find.");
             }
 
             //base.DeployDirectory = Path.Combine(userDir, "batch");
 
-            if (string.IsNullOrWhiteSpace(DeployDir)) {
+            if(string.IsNullOrWhiteSpace(DeployDir)) {
                 string localAppData = System.Environment.GetEnvironmentVariable("LOCALAPPDATA")
                     ?? System.Environment.GetEnvironmentVariable("HOME");
 
                 this.DeploymentBaseDirectory = Path.Combine(localAppData, "BoSSS-LocalJobs");
-                if (!Directory.Exists(this.DeploymentBaseDirectory)) {
+                if(!Directory.Exists(this.DeploymentBaseDirectory)) {
                     Directory.CreateDirectory(this.DeploymentBaseDirectory);
                 }
             } else {
                 this.DeploymentBaseDirectory = DeployDir;
             }
 
-            if (!Directory.Exists(this.DeploymentBaseDirectory))
+            if(!Directory.Exists(this.DeploymentBaseDirectory))
                 throw new IOException("Deploy directory '" + this.DeploymentBaseDirectory + "' does not exist.");
+
+            {
+                string localUserDir = System.Environment.GetEnvironmentVariable("USERPROFILE") ?? System.Environment.GetEnvironmentVariable("HOME");
+                if(localUserDir != null)
+                    base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair(localUserDir, null));
+                if(Path.DirectorySeparatorChar == '\\')
+                    base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair("C:\\", null));
+                else
+                    base.AllowedDatabasesPaths.Add(new AllowedDatabasesPair("/", null));
+            }
         }
 
         

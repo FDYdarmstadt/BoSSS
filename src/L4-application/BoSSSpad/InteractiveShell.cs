@@ -334,7 +334,7 @@ namespace BoSSS.Application.BoSSSpad {
             return OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
-        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+        internal static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
             foreach (var existing_dbi in InteractiveShell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
@@ -684,8 +684,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
-            foreach (var q in bpc.AllQueues)
-                _ = q.AllowedDatabases;
+            //foreach (var q in bpc.AllQueues)
+            //    _ = q.AllowedDatabases;
 
         }
 
