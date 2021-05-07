@@ -134,7 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     string negativeSpecies = speciesPair.Item1;
                     string positiveSpecies = speciesPair.Item2;
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                        new NormalInteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
+                        new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
                         );
                 }
             }
