@@ -16,8 +16,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-
-
+S
 namespace BoSSS.Application.XNSERO_Solver {
 
     /// <summary>
