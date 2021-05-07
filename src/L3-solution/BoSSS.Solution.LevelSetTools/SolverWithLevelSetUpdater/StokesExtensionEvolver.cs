@@ -148,8 +148,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
             if(timeStepper == null) {
-                timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
-                //timeStepper = InitializeRungeKutta(levelSet.DGLevelSet, extensionVelocity);
+                //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
+                timeStepper = InitializeRungeKutta(levelSet.DGLevelSet, extensionVelocity);
             }
             if(!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)){
                 throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");

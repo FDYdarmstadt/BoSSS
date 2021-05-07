@@ -113,8 +113,6 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             return r;
         }
 
-
-
         /// <summary>
         /// Interface part of the Stokes extension; 
         /// this provides the coupling of the artificial Stokes equation for the extension
@@ -136,7 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     string negativeSpecies = speciesPair.Item1;
                     string positiveSpecies = speciesPair.Item2;
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                        new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
+                        new NormalInteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
                         );
                 }
             }
