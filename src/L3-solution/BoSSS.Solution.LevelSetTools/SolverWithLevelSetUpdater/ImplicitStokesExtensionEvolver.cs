@@ -1,9 +1,10 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.TimeStepping;
 using ilPSP;
+using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,15 +21,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// <remarks>
     /// - implemented by Fk, jan21
     /// </remarks>
-    public class XStokesExtensionEvolver : ILevelSetEvolver {
+    public class ImplicitStokesExtensionEvolver : ILevelSetEvolver {
 
 
         /// <summary>
         /// ctor
         /// </summary>
-        public XStokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
-            for(int d = 0; d < D; d++) {
-                if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
+        public ImplicitStokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
+            for (int d = 0; d < D; d++) {
+                if (!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
             }
 
@@ -64,12 +65,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Provides access to the internally constructed extension velocity.
         /// <see cref="ILevelSetEvolver.InternalFields"/>
         /// </summary>
-        public IDictionary<string, DGField> InternalFields { 
+        public IDictionary<string, DGField> InternalFields {
             get {
                 var Ret = new Dictionary<string, DGField>();
 
-                if(extensionVelocity != null) {
-                    foreach(var f in extensionVelocity)
+                if (extensionVelocity != null) {
+                    foreach (var f in extensionVelocity)
                         Ret.Add(f.Identification, f);
                 }
 
@@ -78,37 +79,31 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
+        BDFTimestepper implicitTimeStepper;
 
-        private XdgTimestepping.XdgTimestepping GetTimestepper(LevelSetTracker lsTrkr, SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
-            var diffOp = new XSpatialOperatorMk2(new string[] { "Phi" },
+        RungeKutta explicitTimeStepper;
+
+        private (BDFTimestepper, RungeKutta) InitializeTimeStepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+            var diffOp = new SpatialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
-                QuadOrderFunc.NonLinear(1), 
-                new string[] { "A", "B"});
+                QuadOrderFunc.NonLinear(1));
             diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap, this.SpatialDimension));
-            diffOp.TemporalOperator = new ConstantXTemporalOperator(diffOp, 1);
+            diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, 1);
             diffOp.IsLinear = true;
             diffOp.Commit();
 
-            XdgTimestepping.XdgTimestepping Timestepper = 
-                new XdgTimestepping.XdgTimestepping(
-                    diffOp, 
-                    levelSet.Mapping, 
-                    residualLevelSet.Mapping, 
-                    XdgTimestepping.TimeSteppingScheme.ExplicitEuler, 
-                    _AgglomerationThreshold: 0.0,
-                    _optTracker: lsTrkr,
-                    _Parameters: extensionVelocity);
-            
+            ISparseSolver Solver() {
+                return new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+            }
 
-            //var Timestepper = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
-            return Timestepper;
-
+            BDFTimestepper bdf = new BDFTimestepper(diffOp, levelSet.Mapping, Velocity, 3, Solver, false);
+            RungeKutta rk = new RungeKutta(RungeKuttaScheme.TVD3, diffOp, levelSet.Mapping, new CoordinateMapping(Velocity));
+            return (bdf, rk);
         }
 
-        SinglePhaseField[] extensionVelocity;
 
-        SinglePhaseField residualLevelSet;
+        SinglePhaseField[] extensionVelocity;
 
         /// <summary>
         /// 
@@ -126,22 +121,34 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
                 );
 
-            if(extensionVelocity == null) {
+            if (extensionVelocity == null) {
                 extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
             } else {
-                foreach(var f in extensionVelocity)
+                foreach (var f in extensionVelocity)
                     f.Clear();
             }
-            if (residualLevelSet == null) {
-                residualLevelSet = new SinglePhaseField(levelSet.DGLevelSet.Basis, $"levelSetResidual");
+
+            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
+            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+
+            if (implicitTimeStepper == null) {
+                (implicitTimeStepper, explicitTimeStepper)  = InitializeTimeStepper(levelSet.DGLevelSet, extensionVelocity);
             }
-
-                var ExtVelBuilder = new StokesExtension.XStokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
-            ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extensionVelocity);
-
-            var rk = GetTimestepper(levelSet.Tracker, levelSet.DGLevelSet, extensionVelocity);
-            rk.Solve(time ,dt);
-
+            if (!ReferenceEquals(implicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet) 
+                || ! ReferenceEquals(explicitTimeStepper.Mapping.Fields[0], levelSet.DGLevelSet)) {
+                throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
+            }
+            if(Math.Abs(time - internalTime) < dt * 1e-10 || first) {
+                implicitTimeStepper.FinishTimeStep();
+                internalTime = time + dt;
+                first = false;
+                Console.WriteLine("pushed LevelSet! Created initial guess!");
+                //explicitTimeStepper.Perform(dt);
+            }
+            Console.WriteLine("iterating levelSetposition");
+            implicitTimeStepper.Perform(dt);
         }
+        bool first = true;
+        double internalTime = 0.0;
     }
 }

@@ -2,7 +2,9 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.TimeStepping;
 using ilPSP;
+using ilPSP.LinSolvers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,6 +20,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// </summary>
     /// <remarks>
     /// - implemented by Fk, jan21
+    /// - added AdamsBashforth by Lb, april21
     /// </remarks>
     public class StokesExtensionEvolver : ILevelSetEvolver {
 
@@ -38,6 +41,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
+            timeStepOrder = 3;
         }
 
         IGridData m_grd;
@@ -46,6 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         int m_HMForder;
         string levelSetName;
         string[] parameters;
+        int timeStepOrder;
         IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
@@ -77,8 +82,29 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
+        ITimeStepper timeStepper;
 
-        private RungeKutta GetTimestepper(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+        private ITimeStepper InitializeAdamsBashforth(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
+            var diffOp = new SpatialOperator(new string[] { "Phi" },
+                Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
+                new string[] { "codom1" },
+                QuadOrderFunc.NonLinear(1));
+            diffOp.EquationComponents["codom1"].Add(new StokesExtension.ScalarTransportFlux(this.bcmap, this.SpatialDimension));
+            diffOp.TemporalOperator = new ConstantTemporalOperator(diffOp, 1);
+            diffOp.IsLinear = true;
+            diffOp.Commit();
+
+            ISparseSolver Solver() {
+                return new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+            }
+
+            AdamsBashforth abf = new AdamsBashforth(diffOp, levelSet.Mapping, new CoordinateMapping(Velocity), timeStepOrder);
+            return abf;
+        }
+
+
+
+        private ITimeStepper InitializeRungeKutta(SinglePhaseField levelSet, SinglePhaseField[] Velocity) {
             var diffOp = new SpatialOperator(new string[] { "Phi" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.SpatialDimension),
                 new string[] { "codom1" },
@@ -119,11 +145,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
 
             var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
-            ExtVelBuilder.SolveExtension(levelSet.Tracker, meanVelocity, extensionVelocity);
+            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
-            var rk = GetTimestepper(levelSet.DGLevelSet, extensionVelocity);
-            rk.Perform(dt);
+            if(timeStepper == null) {
+                //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
+                timeStepper = InitializeRungeKutta(levelSet.DGLevelSet, extensionVelocity);
+            }
+            if(!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)){
+                throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
+            }
 
+            timeStepper.Perform(dt);
         }
     }
 }
