@@ -120,7 +120,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 } else {
-                    rho = 1.0;
+                    rho = ConstantDensityValue;
                 }
                 return rho;
             } else {
@@ -172,6 +172,17 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public double ConstantDensityValue { get; set; } = 1.0;
+        /// <summary>
+        /// 
+        /// </summary>
+        public double ConstantViscosityValue { get; set; } = 1.0;
+
+
+
+        /// <summary>
         /// Dimensionless Sutherland's law.
         /// </summary>
         /// <param name="phi">Temperature</param>
@@ -183,7 +194,7 @@ namespace BoSSS.Solution.NSECommon {
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
-                    visc = 1.0;
+                    visc = ConstantViscosityValue;
                     break;
                 }
                 case MaterialParamsMode.Sutherland: {
