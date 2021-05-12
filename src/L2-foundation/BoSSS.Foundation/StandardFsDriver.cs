@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         public StandardFsDriver(string databasePath) {
             if(!File.Exists(databasePath) && !Directory.Exists(databasePath))
-                throw new FileNotFoundException("Database directory/file does not exist.");
+                throw new FileNotFoundException($"Database directory/file {databasePath} does not exist.");
 
             int Rank, Size;
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);

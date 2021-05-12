@@ -11,13 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.LevelSetTools.StokesExtension {
-    
+
     /// <summary>
     /// Implements the 'internal Dirichlet boundary', resp. the 'singular source term'
     /// which couples the artificial Stokes problem (used for construction of the extension velocity)
     /// to the physical one.
+    /// This flux only imposes the normal components of the internal Dirichlet boundary
     /// </summary>
-    class InteriorVelocityBoundary : ILevelSetForm, IParameterHandling, ILevelSetEquationComponentCoefficient {
+    class NormalInteriorVelocityBoundary : ILevelSetForm, IParameterHandling, ILevelSetEquationComponentCoefficient {
         int m_d;
         int m_levelSetIndex;
         DGField m_InterfaceVelocityComponent;
@@ -25,7 +26,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         string m_positiveSpecies;
         int m_D;
 
-        public InteriorVelocityBoundary(string positiveSpecies, string negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
+        public NormalInteriorVelocityBoundary(string positiveSpecies, string negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
             m_InterfaceVelocityComponent = InterfaceVelocityComponent;
             m_d = d;
             m_D = D;
@@ -48,19 +49,28 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Ret = 0;
+
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
-            Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
+
+            double uIn = 0;
+            double uOt = 0;
+
+            for (int d = 0; d < m_D; ++d) {
+                uIn += inp.Normal[d] * inp.Parameters_IN[d];
+                uOt += inp.Normal[d] * inp.Parameters_OUT[d];
+            }
+            Ret += (uA[m_d] - uIn * inp.Normal[m_d]) * (vA) * pnlty;
+            Ret += (uB[m_d] - uOt * inp.Normal[m_d]) * (vB) * pnlty;
 
             return Ret;
         }
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
             //throw new NotImplementedException();
-            if(Parameters.Length != 1) {
+            if (Parameters.Length != 1) {
                 throw new ArgumentException();
             }
-            if(!object.ReferenceEquals(Parameters[0], m_InterfaceVelocityComponent)) {
+            if (!object.ReferenceEquals(Parameters[0], m_InterfaceVelocityComponent)) {
                 Parameters[0].Clear();
                 Parameters[0].AccLaidBack(1.0, m_InterfaceVelocityComponent);
             }
@@ -99,7 +109,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             Debug.Assert(!double.IsInfinity(m_penalty));
 
             double scaledPenalty = penaltySizeFactor * m_penalty * m_penalty_base;
-            if(scaledPenalty.IsNaNorInf())
+            if (scaledPenalty.IsNaNorInf())
                 throw new ArithmeticException("NaN/Inf detected for penalty parameter.");
             return scaledPenalty;
 
