@@ -80,7 +80,7 @@ namespace BoSSS.Solution.XNSECommon {
             // ===================
             U0meanrequired = false;
             if(physParams.IncludeConvection && config.isTransport) {
-                var conv = new Operator.Convection.ConvectionInSpeciesBulk_LLF(D, BcMap, spcName, spcId, d, rhoSpc, LFFSpc, LsTrk);
+                var conv = new Operator.Convection.ConvectionInSpeciesBulk_LLF(D, BcMap, spcName, d, rhoSpc, LFFSpc);
                 comps.Add(conv);
                 U0meanrequired = true;
             }
@@ -88,7 +88,7 @@ namespace BoSSS.Solution.XNSECommon {
             // pressure gradient
             // =================
             if(config.isPressureGradient) {
-                var pres = new Operator.Pressure.PressureInSpeciesBulk(d, BcMap, spcName, spcId);
+                var pres = new Operator.Pressure.PressureInSpeciesBulk(d, BcMap, spcName);
                 comps.Add(pres);
 
                 //problably necessary for LDG Simulation. Only one species parameter reynoldsA!!!!!!
@@ -108,7 +108,7 @@ namespace BoSSS.Solution.XNSECommon {
                         var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                             penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
-                            BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
+                            BcMap, spcName, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                         comps.Add(Visc1);
 
                         //if(dntParams.UseGhostPenalties) {
@@ -125,13 +125,13 @@ namespace BoSSS.Solution.XNSECommon {
                         var Visc1 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
                             penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
-                            BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
+                            BcMap, spcName, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                         comps.Add(Visc1);
 
                         var Visc2 = new Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
                             penalty,  //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
-                            BcMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
+                            BcMap, spcName, d, D, physParams.mu_A, physParams.mu_B, _betaS: betaS);
                         comps.Add(Visc2);
 
 
@@ -173,16 +173,16 @@ namespace BoSSS.Solution.XNSECommon {
                         var Visc1 = new Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUTerm(
                             penalty, // dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
-                            BcMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
+                            BcMap, spcName, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         comps.Add(Visc1);
 
                         var Visc2 = new Operator.Viscosity.DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(
                             penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
                             1.0,
-                            BcMap, spcName, spcId, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
+                            BcMap, spcName, d, D, physParams.reynolds_A / ((PhysicalParametersRheology)physParams).beta_a, physParams.reynolds_B / ((PhysicalParametersRheology)physParams).beta_b);
                         comps.Add(Visc2);
 
-                        var div = new StressDivergenceInBulk(d, BcMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName, spcId);
+                        var div = new StressDivergenceInBulk(d, BcMap, ReSpc, dntParams.Penalty1, dntParams.Penalty2, spcName);
                         comps.Add(div);
 
                         break;
@@ -259,7 +259,7 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                var conv = new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, LsTrk, rhoA, rhoB, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh);
+                var conv = new Operator.Convection.ConvectionAtLevelSet_LLF(d, D, rhoA, rhoB, LFFA, LFFB, physParams.Material, BcMap, config.isMovingMesh);
                 comps.Add(conv);
             }
 
@@ -277,15 +277,15 @@ namespace BoSSS.Solution.XNSECommon {
                 double penalty = dntParams.PenaltySafety;
                 switch(dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, true));
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, D, d, true));
                     break;
 
                     case ViscosityMode.TransposeTermMissing:
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, muA, muB, penalty * 1.0, d, false));
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, D, d, false));
                     break;
 
                     case ViscosityMode.FullySymmetric:
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, muA, muB, penalty, d,
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(D, muA, muB, penalty, d,
                         _freeSurface: dntParams.freeSurfaceFlow));
                     break;
 
@@ -297,8 +297,8 @@ namespace BoSSS.Solution.XNSECommon {
                     double betaB = ((PhysicalParametersRheology)physParams).beta_b;
                     double[] penalty1 = dntParams.Penalty1;
                     double penalty2 = dntParams.Penalty2;
-                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(LsTrk.GridDat.SpatialDimension, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
-                    comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(LsTrk, reynoldsA, reynoldsB, penalty1, penalty2, d));
+                    comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(D, betaA / reynoldsA, betaB / reynoldsB, penalty, d));
+                    comps.Add(new Operator.Viscosity.StressDivergenceAtLevelSet(reynoldsA, reynoldsB, penalty1, penalty2, D, d));
                     break;
 
                     default:
@@ -547,7 +547,7 @@ namespace BoSSS.Solution.XNSECommon {
             for (int d = 0; d < D; d++) {
                 var src = new Operator.Continuity.DivergenceInSpeciesBulk_Volume(d, D, spcName, rhoSpc, -1, false);
                 comps.Add(src);
-                var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, spcId, rhoSpc, -1, false);
+                var flx = new Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, rhoSpc, -1, false);
                 comps.Add(flx);
                 //var stab = new PressureStabilizationInBulk(dntParams.PresPenalty2, physParams.reynolds_A, physParams.reynolds_B, spcName, spcId);
                 //comps.Add(stab);

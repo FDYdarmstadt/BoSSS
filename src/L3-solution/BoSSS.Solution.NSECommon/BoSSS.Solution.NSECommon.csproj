@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="Buoyancy.cs" />
     <Compile Include="ChemicalParameters.cs" />
+    <Compile Include="MaterialLawCombustion2.cs" />
     <Compile Include="ReactionParameters.cs" />
     <Compile Include="Resource1.Designer.cs">
       <AutoGen>True</AutoGen>
@@ -142,7 +143,6 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram1.cd" />
     <None Include="thermo30.dat.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -30,7 +30,7 @@ using ilPSP;
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetForm {
+    public class CurvatureBasedSurfaceTension : ILevelSetForm, ISupportsJacobianComponent {
 
         public static double hmin = double.NaN;
 
@@ -255,6 +255,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         public TermActivationFlags InnerEdgeTerms {
             get { return TermActivationFlags.None; }
         }
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
 
@@ -463,6 +467,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         }
 
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
+
         public override IList<string> ArgumentOrdering {
             get {
                 return new string[0]; 
@@ -619,12 +628,17 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 return TermActivationFlags.V;
             }
         }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
     }
 
     /// <summary>
     /// IsotropicSurfaceTension_LaplaceBeltrami with max sigma as parameter
     /// </summary>
-    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm {
+    public class IsotropicSurfaceTension_LaplaceBeltrami_Parameter : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
         int m_comp;
 
         int m_D;
@@ -675,6 +689,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             m_edgeTag2Type = edgeTag2Type;
             velFunction = bcmap.bndFunction[VariableNames.Velocity_d(d)];
             //m_staticInt = _staticInt;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
         }
 
         public virtual IList<string> ParameterOrdering {

@@ -34,18 +34,20 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         //LevelSetTracker m_LsTrk;
 
-        public DivergenceAtIB(int _D, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter) {
+        public DivergenceAtIB(int _D, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, double _vorZeichen = 1.0) {
             this.D = _D;
             //this.m_LsTrk = lsTrk;
             this.LevelSetIndex = iLevSet;
             this.PositiveSpecies = SolidSpecies;
             this.NegativeSpecies = FluidSpc;
             this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+            this.scale = _vorZeichen;
         }
 
         int D;
         bool m_UseLevelSetVelocityParameter;
-        
+        // this scale is important! E.g. the XNSE multiplies the whole continuity equation by -1. this scale has to be set accordingly.
+        double scale = 1.0;
 
         /// <summary>
         /// the penalty flux
@@ -65,7 +67,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             }
 
             double FlxNeg = -DirichletFlux(uAxN, uBxN); // flux on A-side
-            return FlxNeg * v_Neg;
+            return scale * FlxNeg * v_Neg;
         }
 
         public IList<string> ArgumentOrdering {

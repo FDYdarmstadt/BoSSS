@@ -143,7 +143,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="EoS">Equation of state for calculating density.</param>
         public BuoyancyJacobi(Vector GravityDirection, int SpatialComponent, double Froude, PhysicsMode physicsMode, MaterialLaw EoS, int noOfChemComponents) {
             // Check direction
-            if((GravityDirection.Abs() - 1.0) > 1.0e-13)
+            if ((GravityDirection.Abs() - 1.0) > 1.0e-13)
                 throw new ArgumentException("Length of GravityDirection vector has to be 1.0");
 
             // Initialize
@@ -153,22 +153,22 @@ namespace BoSSS.Solution.NSECommon {
             this.EoS = EoS;
             this.physicsMode = physicsMode;
 
-            switch(physicsMode) {
+            switch (physicsMode) {
                 case PhysicsMode.MixtureFraction:
-                    this.m_ParameterOrdering = null;
-                    this.m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
-                    break;
+                this.m_ParameterOrdering = null;
+                this.m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
+                break;
                 case PhysicsMode.LowMach:
-                    this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
-                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
-                    break;
+                this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
+                this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
+                break;
                 case PhysicsMode.Combustion:
-                    this.m_ParameterOrdering = null;
+                this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho };// null;
                 string[] MFs = VariableNames.MassFractions(noOfChemComponents);
-                this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs );
-                    break;
+                this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs);
+                break;
                 default:
-                    throw new ApplicationException("wrong physicsmode");
+                throw new ApplicationException("wrong physicsmode");
             }
         }
 

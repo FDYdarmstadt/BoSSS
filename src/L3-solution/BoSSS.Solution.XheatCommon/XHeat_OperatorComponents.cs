@@ -75,9 +75,9 @@ namespace BoSSS.Solution.XheatCommon {
 
                 IEquationComponent conv;
                 if (config.useUpwind)
-                    conv = new HeatConvectionInSpeciesBulk_Upwind(D, BcMap, spcName, spcId, capSpc);
+                    conv = new HeatConvectionInSpeciesBulk_Upwind(D, BcMap, spcName, capSpc);
                 else
-                    conv = new HeatConvectionInSpeciesBulk_LLF(D, BcMap, spcName, spcId, capSpc, LFFSpc, LsTrk);
+                    conv = new HeatConvectionInSpeciesBulk_LLF(D, BcMap, spcName, capSpc, LFFSpc);
 
                 comps.Add(conv);
 
@@ -92,7 +92,7 @@ namespace BoSSS.Solution.XheatCommon {
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, // ntParams.UseGhostPenalties ? 0.0 : penalty, 
                     1.0,
-                    BcMap, D, spcName, spcId, thermParams.k_A, thermParams.k_B);
+                    BcMap, D, spcName, thermParams.k_A, thermParams.k_B);
 
                 comps.Add(Visc);
 
@@ -104,15 +104,15 @@ namespace BoSSS.Solution.XheatCommon {
 
             } else {
 
-                comps.Add(new HeatFluxDivergenceInSpeciesBulk(D, BcMap, spcName, spcId));
+                comps.Add(new HeatFluxDivergenceInSpeciesBulk(D, BcMap, spcName));
                 //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                 //    comps.Add(new AuxiliaryStabilizationForm(D, BcMap, spcName, spcId));
 
                 for (int d = 0; d < D; d++) {
                     comps = XOp.EquationComponents[EquationNames.AuxHeatFluxComponent(d)];
 
-                    comps.Add(new AuxiliaryHeatFlux_Identity(d, spcName, spcId));   // cell local
-                    comps.Add(new TemperatureGradientInSpeciesBulk(D, d, BcMap, spcName, spcId, kSpc));
+                    comps.Add(new AuxiliaryHeatFlux_Identity(d, spcName));   // cell local
+                    comps.Add(new TemperatureGradientInSpeciesBulk(D, d, BcMap, spcName, kSpc));
                     //if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.LDGstabi)
                     //    comps.Add(new TemperatureStabilizationForm(d, BcMap, spcName, spcId));
                 }
@@ -163,7 +163,7 @@ namespace BoSSS.Solution.XheatCommon {
             if (thermParams.IncludeConvection) {
                 Console.WriteLine("include heat convection");
                 //ILevelSetForm conv;
-                comps.Add(new HeatConvectionAtLevelSet_LLF(D, LsTrk, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
+                comps.Add(new HeatConvectionAtLevelSet_LLF(D, capA, capB, LFFA, LFFB, BcMap, config.isMovingMesh, Tsat));
                 //if (config.isMovingMesh)
                 //    comps.Add(new HeatConvectionAtLevelSet_MassFlux(D, LsTrk, thermParams, config.getPhysParams.Sigma));
                 //conv = new HeatConvectionAtLevelSet_Upwind(D, LsTrk, capA, capB, thermParams, config.isMovingMesh, config.isEvaporation, Tsat);

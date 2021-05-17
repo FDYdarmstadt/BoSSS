@@ -32,10 +32,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.NoSlipNeumann:
                 case IncompressibleBcType.Wall:
-                return 0.0;
-
-
-
+                //return 0.0;
                 default:
                 Vector n = inp.Normal;
 

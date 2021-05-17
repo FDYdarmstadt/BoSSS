@@ -26,6 +26,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation;
 using System.Collections;
+using static BoSSS.Foundation.Grid.Classic.GridData;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
@@ -34,16 +35,16 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     /// </summary>
     public class StressDivergenceAtLevelSet : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
-        public StressDivergenceAtLevelSet(LevelSetTracker lstrk, double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int _component, bool _staticInt = false) {
-            this.m_LsTrk = lstrk;
+        public StressDivergenceAtLevelSet(double _reynoldsA, double _reynoldsB, double[] _penalty1, double _penalty2, int D, int _component, bool _staticInt = false) {
+            //this.m_LsTrk = lstrk;
             this.muA = 1 / _reynoldsA;
             this.muB = 1 / _reynoldsB;
             this.penalty1 = _penalty1;
             this.penalty2 = _penalty2;
             this.component = _component;
-            this.m_D = lstrk.GridDat.SpatialDimension;
+            this.m_D = D;//lstrk.GridDat.SpatialDimension;
             this.staticInt = _staticInt;
         }
 
@@ -63,7 +64,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             double[] TA, double[] TB, double[,] Grad_uA, double[,] Grad_uB,
             double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double[] N = inp.Normal;
-            double hCellMin = this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
+            double hCellMin = LengthScales[inp.jCellIn];//this.m_LsTrk.GridDat.Cells.h_min[inp.jCellIn];
 
             int D = N.Length;
             Debug.Assert(this.ArgumentOrdering.Count == 3);
@@ -101,8 +102,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         MultidimensionalArray PosLengthScaleS;
         MultidimensionalArray NegLengthScaleS;
+        MultidimensionalArray LengthScales;
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            LengthScales = csA.GrdDat.iGeomCells.h_min; // can use either csA or csB GridData should be equal
             NegLengthScaleS = csA.CellLengthScales;
             PosLengthScaleS = csB.CellLengthScales;
         }

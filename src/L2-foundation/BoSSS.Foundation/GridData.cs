@@ -152,8 +152,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Grid.CheckCellTypes();
                 int myRank = this.MpiRank;
                 if (m_Grid.NoOfUpdateCells <= 0)
+                {
+                    //Debugger.Launch();
                     throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
+                }
 
                 // start init
                 // ----------

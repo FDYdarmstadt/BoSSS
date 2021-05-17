@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
     /// ```
     /// Must be used together with <see cref="ViscosityInSpeciesBulk_GradUTerm"/> **and** <see cref="ViscosityInSpeciesBulk_GradUtranspTerm"/> in the bulk.
     /// </summary>
-    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    public class ViscosityAtLevelSet_FullySymmetric : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         //LevelSetTracker m_LsTrk;
 
@@ -195,6 +195,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
         //private static bool rem = true;
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            //var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
+            //return new IEquationComponent[] { DerivEdg };
+            return new IEquationComponent[] { this };
+        }
 
         public int LevelSetIndex {
             get { return 0; }

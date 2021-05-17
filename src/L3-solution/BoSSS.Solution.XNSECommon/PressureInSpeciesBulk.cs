@@ -34,14 +34,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Pressure {
         IncompressibleBoundaryCondMap m_bcMap;
 
         //string m_spcName;
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
 
-        public PressureInSpeciesBulk(int _d, IncompressibleBoundaryCondMap bcMap, string spcName, SpeciesId spcId)
+        public PressureInSpeciesBulk(int _d, IncompressibleBoundaryCondMap bcMap, string spcName)
             : base(_d, bcMap) {
             base.pressureFunction = bcMap.bndFunction[VariableNames.Pressure + "#" + spcName];
             this.m_bcMap = bcMap;
             //this.m_spcName = spcName;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
             ValidSpecies = spcName;
         }
 

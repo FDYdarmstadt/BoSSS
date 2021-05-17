@@ -67,7 +67,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
-
+            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
+            //Tests.ASUnitTest.CurvedElementsTest(3);
+            //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
+            //Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
             //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
@@ -314,8 +317,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="XOP"></param>
         protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.LinearizationHint = LinearizationHint.AdHoc;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
+            XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
         }
 
@@ -327,6 +330,8 @@ namespace BoSSS.Application.XNSE_Solver {
             GetBcMap();
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            // === momentum equations === //
             for (int d = 0; d < D; ++d) {
                 DefineMomentumEquation(opFactory, config, d, D);
 
@@ -346,47 +351,49 @@ namespace BoSSS.Application.XNSE_Solver {
                     opFactory.AddParameter(VolForceB);
                 }
             }
+
+            // === continuity equation === //
+            if (config.isContinuity) {
+                DefineContinuityEquation(opFactory, config, D);
+            }
+
+            // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if (config.physParams.IncludeConvection && config.isTransport) {
+            if (((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
 
+            // === level set related parameters === //
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
-            opFactory.AddParameter(normalsParameter);
-
-            if (config.isContinuity) {
-                opFactory.AddEquation(new Continuity(config, D, "A", LsTrk.GetSpeciesId("A"), boundaryMap));
-                opFactory.AddEquation(new Continuity(config, D, "B", LsTrk.GetSpeciesId("B"), boundaryMap));
-                opFactory.AddEquation(new InterfaceContinuity(config, D, config.isMatInt));
-            }
+            opFactory.AddParameter(normalsParameter);            
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
             switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
-                MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
-                opFactory.AddParameter(maxSigmaParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
-                break;
+                    MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                    opFactory.AddParameter(maxSigmaParameter);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
+                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
-                break;
+                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                BeltramiGradientAndCurvature lsGradientAndCurvature =
-                    FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
-                opFactory.AddParameter(lsGradientAndCurvature);
-                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
-                break;
+                    BeltramiGradientAndCurvature lsGradientAndCurvature =
+                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientAndCurvature);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
+                    break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
                     FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
@@ -417,10 +424,32 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="d">Momentum component index</param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
         virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
-            opFactory.AddEquation(new NavierStokes("A", d, LsTrk, D, boundaryMap, config));
-            opFactory.AddEquation(new NavierStokes("B", d, LsTrk, D, boundaryMap, config));
-            opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config));
+
+            // === linearized or parameter free variants, difference only in convective term === //
+            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
+            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
+                opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
+            } else {
+                throw new NotSupportedException();
+            }
+            opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
+        }
+
+        /// <summary>
+        /// Override this method to customize the assembly of the continuity equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+            opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
+            opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
+            opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
         }
 
         /// <summary>
@@ -430,8 +459,13 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
-                opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh));
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                    opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                    opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                }
             }
 
             opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));

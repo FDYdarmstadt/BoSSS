@@ -38,7 +38,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         bool movingmesh;
 
-        public HeatConvectionAtLevelSet_LLF(int _D, LevelSetTracker LsTrk, double _capA, double _capB, double _LFFA, double _LFFB, 
+        public HeatConvectionAtLevelSet_LLF(int _D, double _capA, double _capB, double _LFFA, double _LFFB, 
             ThermalMultiphaseBoundaryCondMap _bcmap, bool _movingmesh, double _Tsat) {
 
             m_D = _D;
@@ -48,9 +48,9 @@ namespace BoSSS.Solution.XheatCommon {
             //MaterialInterface = _MaterialInterface;
             movingmesh = _movingmesh;
 
-            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN, LsTrk);
+            NegFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, _LFFA, double.NaN);
             NegFlux.SetParameter("A");
-            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB, LsTrk);
+            PosFlux = new HeatConvectionInBulk(_D, _bcmap, _capA, _capB, double.NaN, _LFFB);
             PosFlux.SetParameter("B");
 
 
@@ -253,7 +253,8 @@ namespace BoSSS.Solution.XheatCommon {
 
 
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
-
+            this.NegFlux.CoefficientUpdate(csA, DomainDGdeg, TestDGdeg);
+            this.PosFlux.CoefficientUpdate(csB, DomainDGdeg, TestDGdeg);
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
 

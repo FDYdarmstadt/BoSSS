@@ -60,6 +60,7 @@
     <Compile Include="HeatConvectionAtLevelSet.cs" />
     <Compile Include="HeatConvectionInBulk.cs" />
     <Compile Include="HeatConvectionInSpeciesBulk.cs" />
+    <Compile Include="MassFluxAtLevelSet.cs" />
     <Compile Include="PressureAtLevelSet_WithEvaporation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ThermalBcType.cs" />

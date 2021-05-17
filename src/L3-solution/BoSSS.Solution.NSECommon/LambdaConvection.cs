@@ -19,6 +19,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Diagnostics;
+using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -49,6 +50,30 @@ namespace BoSSS.Solution.NSECommon {
             double Lambda = ScalarMean * V_n;
             if (FactorTwo)
                 Lambda *= 2.0;
+
+            if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
+                throw new NotFiniteNumberException();
+
+            return Math.Abs(Lambda);
+        }
+
+        /// <summary>
+        /// Lambda for convective operators of form \nabla(U Scalar)
+        /// Lambda = rho * V_n
+        /// </summary>
+        /// <param name="VelocityMean"></param>
+        /// <param name="Normal"></param>
+        /// </param>
+        /// <returns>        
+        /// </returns>
+        static public double GetLambda(Vector VelocityMean, Vector Normal) {
+            Debug.Assert(VelocityMean.Dim == Normal.Dim, "Mismatch in dimensions!");
+
+            double V_n = 0.0;
+            for (int d = 0; d < VelocityMean.Dim; d++)
+                V_n += VelocityMean[d] * Normal[d];
+
+            double Lambda = V_n;
 
             if (double.IsNaN(Lambda) || double.IsInfinity(Lambda))
                 throw new NotFiniteNumberException();

@@ -136,9 +136,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public List<Tuple<LinearPSI<T>, int>> psiAndS = new List<Tuple<LinearPSI<T>, int>>();
 
-        public LinearSayeSpace()
+        public LinearSayeSpace(T RefElement, bool _Surface)
         {
+            refElement = RefElement;
             dim = refElement.SpatialDimension;
+            surface = _Surface;
             StandardSetup();
         }
 
