@@ -522,17 +522,18 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = false) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 1,bool writeToDB = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
-            //C.AlternateDbPaths = new[] {
-            //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
-            //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-            ////C.savetodb = C.DbPath != null;
-            C.savetodb = false;
+            if (writeToDB) {
+                //C.DbPath = @"D:\trash_db";
+                C.AlternateDbPaths = new[] {
+                (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
+                (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+            }
+            C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
@@ -753,11 +754,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.001;
+            double dt = 0.01;
             //C.dtMax = dt;
             //C.dtMin = dt*1E-2;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = NoOfTimesteps;
 
             // haben fertig...
             // ===============

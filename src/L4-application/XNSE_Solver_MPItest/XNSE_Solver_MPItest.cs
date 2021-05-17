@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        //[Test]
+        [Test]
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
             
@@ -88,9 +88,10 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         //[Test]
-        static public void RotCube_HMFonLineSegment() {
-            //Passiert unabhängig von der Anzahl der Prozessoren
-            
+        static public void RotCube_OrderNotSupportedInHMF() {
+            // Passiert unabhängig von der Anzahl der Prozessoren
+            // partially HMF was executed for surface integration, instead Saye was selected
+            // Saye raises the order internally, higher order is not supported in HMF
             /*
              Unhandled Exception: System.NotSupportedException: Divergence-free basis for reference element 'BoSSS.Foundation.Grid.RefElements.Square' is not specified for degree 18, max. supported degree is 16.
    at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeBasis.GetPolynomials(RefElement simplex, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeBasis.cs:line 112
@@ -119,7 +120,7 @@ namespace BoSSS.Application.XNSE_Solver {
    at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_HMFonLineSegment() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 95
    at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 131
              */
-            var C = Rotating_Cube(4, 10, 3, false);
+            var C = Rotating_Cube(2, 10, 3, false);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -179,6 +180,89 @@ System.ArgumentException: DG degree seems different
             }
         }
 
+        static public void Rotating_Cube_dswaperror_in_CG_in_ConstrainedDG() {
+            //tritt ab 8 cores auf
+            /*
+            at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
+  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
+  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
+
+
+========================================
+========================================
+MPI rank 5: IndexOutOfRangeException :
+Index was outside the bounds of the array.
+========================================
+========================================
+*/
+            var C = Rotating_Cube(3, 25, 3, false);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
 
         /// <summary>
         /// 
@@ -210,7 +294,7 @@ System.ArgumentException: DG degree seems different
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            RotCube_GetSpeciesIDError();
+            RotCube_OrderNotSupportedInHMF();
             //RotCube_CG_ProjectionOutOfMemoryException();
             //Rotating_Cube_compare4to1();
             BoSSS.Solution.Application.FinalizeMPI();

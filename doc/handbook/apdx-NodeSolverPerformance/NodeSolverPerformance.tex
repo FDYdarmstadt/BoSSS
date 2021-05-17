@@ -28,7 +28,7 @@ Iterative Algorithms with \ac{dg}-specific preconditioners, such as aggregation 
 and multi-level additive Schwarz
 \end{itemize}
 
-The scaling and performance profile is investigated in subsequent sections. For Performance profiling we stick to our working horse: the kcycle-Schwarz algorithm.
+The scaling and performance is profiled subsequent sections. For Performance profiling we stick to our working horse: the kcycle-Schwarz algorithm (with optional p-two-grid as block solver).
 The performance profile of the krylov V-cycle with Schwarz pre and post-smoother is investigated. A direct solver (PARDISO) is used to solve the deepest coarse system. One may choose another direct solver for the coarse system, e.g. MUMPS. In practise PARDISO is more robust to ill-conditioned system, therefore in this performance analysis investigation we will stick to PARDISO as solver, wherever a direct solver is needed.
 NOTE: the p-two-grid used in Schwarz or as a standalone preconditioner, the coarse system is solved by a direct solver.
 
@@ -43,103 +43,27 @@ Matrix assembly and aggregation init is discritization specific, whereas, Solver
 
 \subsection{Introduction of solvers}
 
-\subsubsection{linear Solver: preconditioned GMRES}
+\subsubsection{linear Solver: p-two-grid}
 \label{sec:ptg_gmres}
 
-
-
-\newcommand{\gvec}[1]{\boldsymbol{#1}}
-%%\newcommand{\gmat}[1]{\underline{\underline{#1}}}
-\newcommand{\gmat}[1]{\boldsymbol{\mathrm{#1}}}
-%\newcommand{\setI}{\mathbb{I}}
-%\newcommand{\setV}{\mathbb{V}}
-
-The pTG algorithm, used as left preconditioner of the well known GMRES-algorithm ...
-
-... TBD: Darstellung klären ...
-%\begin{algorithmic}
-%	\label{alg:pMultigrid}
-%	\Require A right-hand-side $\gvec{b}$,
-%	a vector of DG polynomial degrees $\gvec{k}_{\text{lo}}$, 
-%	which separates low from high order modes, for each variable.
-%	Optionally, an index-set $\mathbb{I} \subset \mathbb{J}^\lambda$ of 
-%	sub-cells, denoting the block to solve.
-%	\Ensure  An approximate solution $\gvec{x}$
-%	\State
-%	$\gvec{x} := 0$ 
-%	\Comment{initialize approximate solution}
-%	\State $I_{\text{lo}} := m(\mathbb{I},-,-,\leq N_{\gvec{k}_{\text{lo}}})$
-%	\Comment{Indices for low-order modes in cells $\mathbb{I}$}
-%	\State 
-%	$\gmat{M}_{\text{lo}} := \gmat{M}_{ I_{\text{lo}} , I_{\text{lo}} }$
-%	\Comment{extract low-order system}
-%	\State 
-%	$\gvec{r}_{\text{lo}} := \gvec{b}_{ I_{\text{lo}} }$
-%	\Comment{extract low-order RHS}
-%	\State Solve: $\gvec{x}_{\text{lo}} := \gmat{M}_{\text{lo}} \setminus \gvec{r}_{\text{lo}}$
-%	\Comment{using a sparse direct solver}
-%	\State
-%	$\gvec{x}_{ I_{\text{lo}} } := \gvec{x}_{ I_{\text{lo}} } + \gvec{x}_{\text{lo}}$
-%	\Comment{accumulate low-order solution}
-%	\State
-%	$\gvec{r} := \gvec{b} - \gmat{M}\gvec{x}_{ I_{\text{lo}} }$
-%	\Comment{compute residual of solution}
-%	\ForAll {$j \in \mathbb{I}$}
-%	\Comment{loop over cells...}
-%	\State $I_{\text{hi},j} := m(j,-,-,> N_{\gvec{k}_{\text{lo}}})$
-%	\Comment{Indices for high-order modes in cell $j$}
-%	\State $\gmat{M}_{\text{hi},j} := \gmat{M}_{I_{\text{hi},j} \ I_{\text{hi},j}}$
-%	\Comment{extract high-order system in cell $j$}
-%	\State $\gvec{r}_{\text{hi},j} := \gvec{r}_{ I_{\text{hi},j} }$
-%	\Comment{extract high-order residuum in cell $j$}
-%	\State Solve: $\gvec{x}_{\text{hi},j} := \gmat{M}_{\text{hi},j} \setminus \gvec{r}_{\text{hi},j}$
-%	\Comment{using a dense direct solver}
-%	\State $\gvec{x}_{ I_{\text{hi},j} } := \gvec{x}_{ I_{\text{hi},j} } + \gvec{x}_{\text{hi},j}$
-%	\Comment{accumulate local high-order correction}
-%	\EndFor
-%\end{algorithmic}
-
+The p two grid algorithm can be used as left preconditioner for the well known GMRES-algorithm. Or as block solver of the Schwarz blocks in the Orthonormalization-multigrid algorithm, described in \ref{alg:OrthoMG}.
 
 \subsubsection{linear Solver: V-krylov-cycle with Schwarz smoother}
 \label{sec:kcycle}
 
-The V-krylov-cycle with Schwarz smoother with pTG, which is introduced in \ref{sec:ptg_gmres}, as block solver.
+The orthonormalization multigrid is a combination of a v-cycle of a geometric multigrid (or algebraic as the agglomeration of cells is graph based) with an additive Schwarz smoother and a projection method onto the history of residual contributions of parts of the algorithm (smoother and coarse grid correction). A schematic of the solver can be checked out in \ref{fig:SolverScheme}. 
+For more details on the solvers check \cite{OpenSoftwarePDE}.
 
-... TBD: Darstellung klären ...
-%\begin{algorithmic}
-%	\label{alg:OrthoMG}
-%	\Require A right-hand-side $\gvec{b}$ and an initial solution guess $\gvec{x}_0$ (can be zero).
-%	\Ensure An approximate solution $\gvec{x}$ whose residual norm is 
-%	less than or equal to the residual norm of the initial guess $\gvec{x}_0$. 
-%	\State $\gmat{Z} := (), \gmat{W} := ()$
-%	\Comment{Initialize as empty}
-%	\State $\gvec{r}_0 := \gvec{b} - \gmat{M} \gvec{x}_0$, $\gvec{r} := \gvec{r}_0$, $\gvec{x} := \gvec{x}_0$
-%	\Comment{residual of interstitial solution}
-%	\While{$|\gvec{r}|_2 > \varepsilon$}
-%	\State{ $\gvec{z} := \text{Swz}(\gvec{r})$}
-%	\Comment{pre-smoother}
-%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
-%	\Comment{minimize residual of pre-smoother}
-%	\State{$\gvec{r}_c := (\gmat{R}^{X,\lambda})^T \gvec{r}$}
-%	\Comment{restrict residual}
-%	\If {\text{ dimension of matrix } $L_{c}>L_{min}$ }  %%$\lambda + 1 < \lambda_{max}$
-%	\State{$(\gvec{z}_c, \gvec{r}_c) = \text{MG}(0,\gvec{r}_c, \gmat{M}^{\lambda + 1})$}
-%	\Comment{call multigrid on coarser level}
-%	\Else
-%	\State  $\gvec{z}_c := \gmat{M}_{c} \setminus \gvec{r}_{c}$
-%	\Comment{using a sparse direct solver}
-%	\EndIf
-%	\State{$\gvec{z} := \gmat{R}^{X,\lambda} \gvec{z}_c $}
-%	\Comment{prolongate coarse-grid correction}
-%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
-%	\Comment{minimize residual}
-%	\State{ $\gvec{z} := \text{Swz}(\gvec{r})$}
-%	\Comment{pre-smoother}
-%	\State{$(\gvec{x}, \gvec{r}) = \text{RM}(\gvec{x}_0, \gvec{z}, \gmat{W}, \gmat{Z})$}
-%	\Comment{minimize residual of pre-smoother}
-%	\EndWhile
-%\end{algorithmic}
-
+\begin{figure}[!h]
+	\begin{center}
+		\includegraphics[scale=0.65]{./apdx-NodeSolverPerformance/solver-scheme.png}
+		\input{./apdx-NodeSolverPerformance/solver-scheme.png}
+	\end{center}
+	\caption{
+		scheme of Orthonormalization Multigrid. The block solver is usually a direct solver like PARDISO. Note: for the smoother it is sufficient to solve the system approximately. This gives rise to approximate solutions of the Schwarz blocks, like a ILU algorithm.  
+	}
+	\label{fig:SolverScheme}
+\end{figure}
 
 \subsection{DG-Poisson test problem}
 \label{sec:ConstantDiffusionCoefficient}
@@ -393,6 +317,7 @@ The size of Schwarzblocks was set to 10.000 DOF. It is known, that this raises t
 	\label{fig:XdgStokes-kcylce}
 \end{figure}
 
+\cleardoublepage
 
 \section{Solver Performance - Navier-Stokes problems}
 \label{sec:SolverPerformanceNSE}

@@ -33,12 +33,12 @@ var myBatch                     = (SlurmClient)ExecutionQueues[3];
 myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"}; //new string[]{"#SLURM -p test24", "#SLURM -C avx512","#SLURM -N 3"}; 
 **************
 ==============
-string WFlowName = "IBM_RotCube_test";
+string WFlowName = "IBM_RotCube_BlockJackCG";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'IBM_RotCube_test'.
+Project name is set to 'IBM_RotCube_BlockJackCG'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -99,9 +99,9 @@ Utils.Np(0);
 **************
 ==============
 // set parameterz
-int[] core_sweep = {40};
+int[] core_sweep = {8,16};
 int p             = 3;
-int Problemsize   = 1000000;
+int Problemsize   = 1800000;
 int MemoryPerCore = 2000;
 **************
 ==============
@@ -109,14 +109,14 @@ int MemoryPerCore = 2000;
 double Res    = Math.Pow(Problemsize/(Utils.Np(p)*3+Utils.Np(p-1)),0.333333333);
 int ResRndup  = (int)Math.Ceiling(Res);
 int NoOfCells = ResRndup*ResRndup*ResRndup;
-double test   = NoOfCells*Utils.Np(p);
-test;
+double test   = NoOfCells*(Utils.Np(p)*3+Utils.Np(p-1));
+ResRndup;
 **************
-312500
+30
 ==============
 ResRndup
 **************
-25
+30
 ==============
 // - - - - - - - - - - - - -
 // setup of parameter study
@@ -151,18 +151,18 @@ int MaxDof = int.MaxValue;
 
 //foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {    
-    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2})",k,ResRndup,3);
+    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2}, false)",k,ResRndup,3);
     controls.Add(jobstr);
     Console.WriteLine(jobstr);
     }
 **************
-cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 30, 3, false)
 
 ==============
 controls
 **************
 List of 1 instances of String {
-  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 25, 3)
+  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 30, 3, false)
 }
 ==============
 //var solver = new XdgPoisson3Main();
@@ -185,21 +185,48 @@ foreach(var ctrlstr in controls){
     var aJob   = new Job("rotting_cube_"+rndnum,typeof(XNSE));
     aJob.SetControlStatement(ctrlstr);
     aJob.NumberOfMPIProcs         = cores;
-    aJob.ExecutionTime            = "1:00:00";
+    aJob.ExecutionTime            = "8:00:00";
     aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 }
 **************
-Deploying job rotting_cube_17823411 ... 
+Deploying job rotting_cube_474953610 ... 
 Deploying executables and additional files ...
-Deployment directory: X:\Deployerie\IBM_RotCube_test-XNSE_Solver2021Feb27_135212
-copied 31 files.
+Skipping: System.Threading.Tasks.Extensions
+Skipping: System.Text.Encoding.CodePages
+Skipping: System.Runtime.Loader
+Deployment directory: X:\Deployerie\IBM_RotCube_BlockJackCG-XNSE_Solver2021May10_133648
+copied 42 files.
 deployment finished.
-17101426
+17624921
+
+Deploying job rotting_cube_170765518 ... 
+Deploying executables and additional files ...
+Skipping: System.Threading.Tasks.Extensions
+Skipping: System.Text.Encoding.CodePages
+Skipping: System.Runtime.Loader
+Deployment directory: X:\Deployerie\IBM_RotCube_BlockJackCG-XNSE_Solver2021May10_133652
+copied 42 files.
+deployment finished.
+17624922
 
 
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
