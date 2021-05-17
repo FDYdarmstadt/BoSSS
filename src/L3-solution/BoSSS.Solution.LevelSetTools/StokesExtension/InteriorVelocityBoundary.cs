@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,40 +18,39 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
     /// to the physical one.
     /// </summary>
     class InteriorVelocityBoundary : ILevelSetForm, IParameterHandling, ILevelSetEquationComponentCoefficient {
+        int m_d;
+        int m_levelSetIndex;
+        DGField m_InterfaceVelocityComponent;
+        string m_negativeSpecies;
+        string m_positiveSpecies;
+        int m_D;
 
-        public InteriorVelocityBoundary(LevelSetTracker lsTrk, int d, DGField InterfaceVelocityComponent) {
-            m_lsTrk = lsTrk;
+        public InteriorVelocityBoundary(string positiveSpecies, string negativeSpecies, int levelSetIndex, int d, int D, DGField InterfaceVelocityComponent) {
             m_InterfaceVelocityComponent = InterfaceVelocityComponent;
             m_d = d;
+            m_D = D;
+            m_levelSetIndex = levelSetIndex;
+            m_positiveSpecies = positiveSpecies;
+            m_negativeSpecies = negativeSpecies;
         }
 
-        int m_d;
-        LevelSetTracker m_lsTrk;
-        DGField m_InterfaceVelocityComponent;
+        public int LevelSetIndex => m_levelSetIndex;
 
-        public int LevelSetIndex => 0;
+        public string PositiveSpecies => m_positiveSpecies;
 
-        public SpeciesId PositiveSpecies => m_lsTrk.GetSpeciesId("B");
-
-        public SpeciesId NegativeSpecies => m_lsTrk.GetSpeciesId("A");
+        public string NegativeSpecies => m_negativeSpecies;
 
         public TermActivationFlags LevelSetTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public IList<string> ArgumentOrdering => new[] { VariableNames.Velocity_d(m_d) };
+        public IList<string> ArgumentOrdering => VariableNames.VelocityVector(m_D);
 
-        public IList<string> ParameterOrdering => new[] { VariableNames.AsLevelSetVariable("Interface", VariableNames.Velocity_d(m_d)) };
+        public IList<string> ParameterOrdering => VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(m_D));
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Ret = 0;
-
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-
-            double uIn = inp.Parameters_IN[0];
-            double uOt = inp.Parameters_OUT[0];
-
-            
-            Ret += (uA[0] - uIn) * (vA) * pnlty;
-            Ret += (uB[0] - uOt) * (vB) * pnlty;
+            Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
+            Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
             return Ret;
         }
@@ -127,4 +127,5 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         }
 
     }
+
 }

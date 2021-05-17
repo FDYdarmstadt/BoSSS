@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="CellAgglomerator.cs" />
     <Compile Include="CoefficientsList.cs" />
+    <Compile Include="Quadrature\MultiLevelSetID.cs" />
     <Compile Include="CutCellMetrics.cs" />
     <Compile Include="FormDifferentiator.cs" />
     <Compile Include="IEquationComponentExtensionXDG.cs" />
@@ -59,6 +60,8 @@
     <Compile Include="LinearLevelSetFormVectorizer.cs" />
     <Compile Include="Quadrature\BruteForceSubdivisionStrategy.cs" />
     <Compile Include="Quadrature\CellEdgeBoundaryQuadratureScheme.cs" />
+    <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureSchemes.cs" />
+    <Compile Include="Quadrature\MultiLevelSetBruteForceQuadratureFactory.cs" />
     <Compile Include="Quadrature\CutCellQuadRuleFactory.cs" />
     <Compile Include="Quadrature\CutLineOnEdgeQuadRuleFactory.cs" />
     <Compile Include="Quadrature\DivergenceFreeBasis3D.cs" />
@@ -93,6 +96,7 @@
     <Compile Include="Quadrature\SayeGaussRule_Factories.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Helper.cs" />
     <Compile Include="Quadrature\SayeGaussRule_Square.cs" />
+    <Compile Include="Quadrature\SayeGaussRule_EdgeCube.cs" />
     <Compile Include="Quadrature\SurfaceStokes_2D.cs" />
     <Compile Include="ReducedRegionCode.cs" />
     <Compile Include="Quadrature\ScalarFieldLevelSetIntegrator.cs" />
@@ -150,13 +154,13 @@
       <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
       <Name>ilPSP</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17A60FBA-20B4-451D-98E1-8D742F368569}</Project>
-      <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
       <Project>{13585226-5046-494D-947C-B97479566081}</Project>
       <Name>BoSSS.Foundation.Grid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BoSSS.Foundation\BoSSS.Foundation.csproj">
+      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
+      <Name>BoSSS.Foundation</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

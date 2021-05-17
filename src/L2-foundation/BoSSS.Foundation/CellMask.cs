@@ -25,6 +25,7 @@ using BoSSS.Foundation.Comm;
 using BoSSS.Platform;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace BoSSS.Foundation.Grid {
 
@@ -170,31 +171,17 @@ namespace BoSSS.Foundation.Grid {
         /// Selects all cells according to their cell centers, where <paramref name="SelectionFunction"/> is true
         /// </summary>
         /// <param name="gridData"></param>
-        /// <param name="SelectionFunc"></param>
+        /// <param name="SelectionFunction"></param>
         /// <returns></returns>
-        public static CellMask GetCellMask(Foundation.Grid.Classic.GridData gridDat, Func<double[], bool> SelectionFunc) {
-            BitArray CellArray = new BitArray(gridDat.Cells.NoOfLocalUpdatedCells);
-            MultidimensionalArray CellCenters = gridDat.Cells.CellCenter;
-            for (int i = 0; i < gridDat.Cells.NoOfLocalUpdatedCells; i++) {
-                switch (gridDat.SpatialDimension) {
-                    case 1: {
-                            CellArray[i] = SelectionFunc(new double[] { CellCenters[i, 0] });
-                            break;
-                        }
-                    case 2: {
-                            CellArray[i] = SelectionFunc(new double[] { CellCenters[i, 0], CellCenters[i, 1] });
-                            break;
-                        }
-                    case 3: {
-                            CellArray[i] = SelectionFunc(new double[] { CellCenters[i, 0], CellCenters[i, 1], CellCenters[i, 2] });
-                            break;
-                        }
-                    default:
-                        throw new ArgumentException();
-                }
-                
+        public static CellMask GetCellMask(IGridData gridData, Func<ilPSP.Vector, bool> SelectionFunction) {
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+
+            BitArray CellArray = new BitArray(J);
+            for(int i = 0; i < J; i++) {
+                ilPSP.Vector X = gridData.iLogicalCells.GetCenter(i);
+                CellArray[i] = SelectionFunction(X);
             }
-            return new CellMask(gridDat, CellArray, MaskType.Logical);
+            return new CellMask(gridData, CellArray, MaskType.Logical);
         }
 
         /// <summary>
@@ -400,6 +387,30 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public override int GetHashCode() {
             return base.GetHashCode();
+        }
+
+        /// <summary>
+        /// Returns all connected Edges
+        /// </summary>
+        public EdgeMask AllEdges() {
+            int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
+
+            HashSet<int> edges = new HashSet<int>(this.ItemEnum.Count() * 2 * GridData.SpatialDimension);
+
+            foreach (int jCell in this.ItemEnum) {
+                int cell;
+                if(base.MaskType == MaskType.Geometrical && this.GridData.iGeomCells.GeomCell2LogicalCell != null) {
+                    cell = this.GridData.iGeomCells.GeomCell2LogicalCell[jCell];
+                } else {
+                    cell = jCell;
+                }
+                int[] Edges = C2E[cell];
+                foreach(int e in Edges) {
+                    edges.Add(Math.Abs(e));
+                }
+            }
+            int[] sequence = edges.ToArray();
+            return new EdgeMask(this.GridData, sequence, base.MaskType);
         }
 
         /// <summary>

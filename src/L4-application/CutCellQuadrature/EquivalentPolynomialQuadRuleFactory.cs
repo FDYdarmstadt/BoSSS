@@ -166,7 +166,7 @@ namespace CutCellQuadrature {
             MultidimensionalArray gradient = tracker.DataHistories[0].Current.GetLevelSetGradients(bla, cell, 1);
             Vector gradientVector = new Vector(
                 gradient[0, 0, 0], gradient[0, 0, 1]);
-            n.Scale(Math.Sign(gradientVector * n));
+            n.ScaleInPlace(Math.Sign(gradientVector * n));
 
             a = n[0];
             b = n[1];

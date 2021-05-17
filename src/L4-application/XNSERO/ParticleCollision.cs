@@ -187,7 +187,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             ClosestPoints[p0][p1] = temp_ClosestPoints[0];
                             ClosestPoints[p1][p0] = temp_ClosestPoints[1];
                             DistanceVector[p0][p1] = new Vector(temp_DistanceVector);
-                            temp_DistanceVector.Scale(-1);
+                            temp_DistanceVector.ScaleInPlace(-1);
                             DistanceVector[p1][p0] = new Vector(temp_DistanceVector);
                             double temp_SaveTimeStep = DynamicTimestep(p0, p1);
                             AccumulatedLocalSaveTimestep[p0][p1] += temp_SaveTimeStep;

@@ -201,13 +201,13 @@ namespace BoSSS.Solution.RheologyCommon {
 
                 // convective operator
                 // ===================
-                var convective = new ConvectiveAtLevelSet(LsTrk, d, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha);
+                var convective = new ConvectiveAtLevelSet(d, physParams.Weissenberg_a, physParams.Weissenberg_b, dntParams.alpha);
                 comps.Add(convective);
                 U0meanrequired = true;
 
                 // objective operator
                 // ===================
-                var objective = new ObjectiveAtLevelSet(LsTrk, d, physParams.Weissenberg_a, physParams.Weissenberg_b);
+                var objective = new ObjectiveAtLevelSet( d, physParams.Weissenberg_a, physParams.Weissenberg_b);
                 comps.Add(objective);
             }
 

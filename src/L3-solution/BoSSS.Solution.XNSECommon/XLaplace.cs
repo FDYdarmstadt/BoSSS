@@ -52,31 +52,30 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// 
         /// </summary>
-        public XLaplace_Bulk(LevelSetTracker __LsTrk, double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, XLaplace_Interface.Mode _m)
+        public XLaplace_Bulk(double __penatly_baseFactor, string n, XLaplaceBCs boundaries, double sw, double _muA, double _muB, XLaplace_Interface.Mode _m)
             : base(__penatly_baseFactor, n) {
             muA = _muA;
             muB = _muB;
             base.m_alpha = sw;
             this.boundaries = boundaries;
-            this.LsTrk = __LsTrk;
+            //this.LsTrk = __LsTrk;
             this.penatly_baseFactor = __penatly_baseFactor;
             this.m_Mode = _m;
         }
 
         double muA;
         double muB;
-        SpeciesId SpcId;
-        LevelSetTracker LsTrk;
+        //LevelSetTracker LsTrk;
         double penatly_baseFactor;
         XLaplace_Interface.Mode m_Mode;
         MultidimensionalArray m_LenScales;
 
         string current_species;
 
-        public void SetParameter(string speciesName, SpeciesId __SpcId) {
-            switch(speciesName) {
-                case "A": species_Mu = muA; otherSpecies_Mu = muB; SpcId = __SpcId; break;
-                case "B": species_Mu = muB; otherSpecies_Mu = muA; SpcId = __SpcId; break;
+        public void SetParameter(string speciesName) {
+            switch (speciesName) {
+                case "A": species_Mu = muA; otherSpecies_Mu = muB; break;
+                case "B": species_Mu = muB; otherSpecies_Mu = muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
             current_species = speciesName;
@@ -210,10 +209,10 @@ namespace BoSSS.Solution.XNSECommon {
             SIP
         }
 
-        protected LevelSetTracker m_LsTrk; 
+        //protected LevelSetTracker m_LsTrk; 
 
-        public XLaplace_Interface(LevelSetTracker lstrk, double _muA, double _muB, double __penatly_baseFactor, Mode _m) {
-            this.m_LsTrk = lstrk;
+        public XLaplace_Interface(double _muA, double _muB, double __penatly_baseFactor, Mode _m) {
+            //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
             this.penatly_baseFactor = __penatly_baseFactor;
@@ -349,12 +348,12 @@ namespace BoSSS.Solution.XNSECommon {
             get { return new string[] { "u" }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

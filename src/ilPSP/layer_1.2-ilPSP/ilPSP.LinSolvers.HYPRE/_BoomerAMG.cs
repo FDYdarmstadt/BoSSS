@@ -280,19 +280,19 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// </summary>
         internal Wrappers.T_Solver HypreSolver { get { return m_Solver; } }
 
-        /// <summary>
-        /// Defines threshold for ParaSAILS. For further explanation see description of ParaSAILS.
-        /// </summary>
-        public double Threshold {
-            set {
-                HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGSetThreshold(m_Solver, value));
-            }
-            get {
-                double r;
-                HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetThreshold(m_Solver, out r));
-                return r;
-            }
-        } // ok
+        ///// <summary>
+        ///// Defines threshold for ParaSAILS. For further explanation see description of ParaSAILS.
+        ///// </summary>
+        //public double StrongThreshold {
+        //    set {
+        //        HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGSetStrongThreshold(m_Solver, value));
+        //    }
+        //    get {
+        //        double r;
+        //        HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetStrongThreshold(m_Solver, out r));
+        //        return r;
+        //    }
+        //} // ok
 
 
 
@@ -307,7 +307,7 @@ namespace ilPSP.LinSolvers.HYPRE {
             }
             get {
                 double r;
-                HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetThreshold(m_Solver, out r));
+                HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetStrongThreshold(m_Solver, out r));
                 return r;
             }
         } // ok
@@ -445,10 +445,10 @@ namespace ilPSP.LinSolvers.HYPRE {
             /// <summary>
             /// number of levels;
             /// </summary>
-            public int NumLevels {
+            public int SmoothNumLevels {
                 get {
                     int nl;
-                    HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetNumLevels(m_Solver, out nl));
+                    HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetSmoothNumLevels(m_Solver, out nl));
                     return nl;
                 }
             }
@@ -467,14 +467,14 @@ namespace ilPSP.LinSolvers.HYPRE {
             /// <returns></returns>
             public double this[int level] {
                 get {
-                    if (level < 0 || level >= NumLevels)
+                    if (level < 0 || level >= SmoothNumLevels)
                         throw new IndexOutOfRangeException();
                     double val;
                     HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetLevelRelaxWt(m_Solver, out val, level));
                     return val;
                 }
                 set {
-                    if (level < 0 || level >= NumLevels)
+                    if (level < 0 || level >= SmoothNumLevels)
                         throw new IndexOutOfRangeException();
                     HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGSetLevelRelaxWt(m_Solver, value, level));
                 }
@@ -676,10 +676,10 @@ namespace ilPSP.LinSolvers.HYPRE {
             /// <summary>
             /// number of levels;
             /// </summary>
-            public int NumLevels {
+            public int SmoothNumLevels {
                 get {
                     int nl;
-                    HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetNumLevels(m_solver, out nl));
+                    HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetSmoothNumLevels(m_solver, out nl));
                     return nl;
                 }
             }
@@ -698,14 +698,14 @@ namespace ilPSP.LinSolvers.HYPRE {
             /// <returns></returns>
             public double this[int level] {
                 get {
-                    if (level < 0 || level >= NumLevels)
+                    if (level < 0 || level >= SmoothNumLevels)
                         throw new IndexOutOfRangeException();
                     double val;
                     HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGGetLevelOuterWt(m_solver, out val, level));
                     return val;
                 }
                 set {
-                    if (level < 0 || level >= NumLevels)
+                    if (level < 0 || level >= SmoothNumLevels)
                         throw new IndexOutOfRangeException();
                     HypreException.Check(Wrappers.BoomerAMG.HYPRE_BoomerAMGSetLevelOuterWt(m_solver, value, level));
                 }

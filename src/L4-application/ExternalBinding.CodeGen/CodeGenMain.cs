@@ -26,12 +26,14 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         static Type[] TypesToExport { 
             get {
                 if (s_TypesToExport == null) {
-                    var assis = BoSSS.Solution.Application.GetAllAssemblies();
+                    var assis = BoSSS.Solution.Application.GetAllAssemblies(typeof(CodeGenMain));
                     List<Type> classes = new List<Type>();
                     foreach (var a in assis) {
-                        foreach (var t in a.GetTypes()) {
-                            if (t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
-                                classes.Add(t);
+                        if(a.FullName.StartsWith("BoSSS") || a.FullName.StartsWith("ilPSP") || a.FullName.StartsWith("MPI.Wrappers")) {
+                            foreach(var t in a.GetTypes()) {
+                                if(t.IsClass && t.GetInterfaces().Contains(typeof(IForeignLanguageProxy))) {
+                                    classes.Add(t);
+                                }
                             }
                         }
                     }
@@ -347,7 +349,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 ctorImpl.AddInner("_MonoGCHandle = mono_gchandle_new(ThisObj, true);");
 
                 //argument 
-                CreateMethodWrapper("ctor_" + CtorCounter, Params, ctorImpl);
+                CreateMethodWrapper("ctor_" + CtorCounter, Params, ctorImpl, t);
 
                 // link c++ to .NET object
                 ctorImpl.AddInner("_SetForeignPointer(this);");
@@ -397,7 +399,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
                 BracedSection methImpl = new BracedSection();
                 Cnmnsp.Children.Add(methImpl);
                 methImpl.AddOutside("{0} {1}::{2}({3})", sRetType, t.Name, m.Name, sParams);
-                CreateMethodWrapper(m.Name, Params, methImpl);
+                CreateMethodWrapper(m.Name, Params, methImpl, t);
 
                 // return value handling
                 if (m.ReturnType == typeof(void)) {
@@ -419,7 +421,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
         }
 
-        private static void CreateMethodWrapper(string _Name, ParameterInfo[] Params, BracedSection methImpl) {
+        private static void CreateMethodWrapper(string _Name, ParameterInfo[] Params, BracedSection methImpl, Type declaringType) {
             //argument 
             methImpl.AddInner("void* args[{0}];", Math.Max(1, Params.Length));
             for (int i = 0; i < Params.Length; i++) {
@@ -439,7 +441,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             methImpl.AddInner("MonoObject* retval;");
             methImpl.AddInner("retval = mono_runtime_invoke(_{0}, mono_gchandle_get_target(_MonoGCHandle), args, &exception);", _Name);
             methImpl.AddInner("if (exception != NULL) {");
-            methImpl.AddInner("    printf( \"got exception from C#\\n\");");
+            methImpl.AddInner("    fprintf( stderr, \"got exception from C# (" + declaringType.Name + "." + _Name + ") \\n\");");
             methImpl.AddInner("}");
         }
 
@@ -683,6 +685,18 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
             }
             string outputDir = args[0];
 
+            // delete existing header and source files
+            // =======================================
+            {
+                foreach(string ext in new[] { "*.h", "*.cpp" }) {
+                    var fs = Directory.GetFiles(outputDir, ext);
+                    foreach(var f in fs) {
+                        File.Delete(f);
+                    }
+
+                }
+
+            }
 
 
             // create type decls

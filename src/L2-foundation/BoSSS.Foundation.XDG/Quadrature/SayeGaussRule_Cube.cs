@@ -13,7 +13,7 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    class SayeFactory_Cube :
+    class SayeGaussRule_Cube :
         SayeComboIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
         ISayeGaussRule,
         ISayeGaussComboRule
@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         QuadratureMode mode;
 
-        public SayeFactory_Cube(
+        public SayeGaussRule_Cube(
             LevelSetTracker.LevelSetData _lsData,
             IRootFindingAlgorithm RootFinder,
             QuadratureMode Mode)
@@ -94,8 +94,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return emptyRule;
         }
 
-
-
         #endregion
 
         #region Build SayeIntegrand
@@ -125,7 +123,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override MultidimensionalArray Gradient(LinearPSI<Cube> psi, NodeSet Node, int Cell)
         {
-            MultidimensionalArray gradient = ReferenceGradient(Node, Cell);
+            NodeSet nodeOnPsi = psi.ProjectOnto(Node);
+            MultidimensionalArray gradient = ReferenceGradient(nodeOnPsi, Cell);
             return gradient;
         }
 

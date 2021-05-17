@@ -41,7 +41,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
-        public void SetParameter(string speciesName, SpeciesId SpcId) {
+        public void SetParameter(string speciesName) {
             switch (speciesName) {
                 case "A": Viscosity = m_muA; rhs = m_rhsA; complementViscosity = m_muB; break;
                 case "B": Viscosity = m_muB; rhs = m_rhsB; complementViscosity = m_muA; break;
@@ -269,12 +269,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             get { return new string[] { "u" }; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

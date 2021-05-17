@@ -652,6 +652,90 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Returns the species that are speratated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
+        /// </summary>
+        /// <param name="levSetIdx"></param>
+        /// <returns></returns>
+        public IEnumerable<string> GetSpeciesSeparatedByLevSet(int levSetIdx) {
+            LinkedList<SpeciesPair> speciesPairsOfLevelSet = FindSeparatedSpeciesPairs(levSetIdx);
+            LinkedList<string> speciesOfLevelSet = new LinkedList<string>();
+            foreach (SpeciesPair pair in speciesPairsOfLevelSet) {
+                if (!speciesOfLevelSet.Contains(pair.NegativeSpecies)) {
+                    speciesOfLevelSet.AddLast(pair.NegativeSpecies);
+                }
+                if (!speciesOfLevelSet.Contains(pair.PositiveSpecies)) {
+                    speciesOfLevelSet.AddLast(pair.PositiveSpecies);
+                }
+            }
+            return speciesOfLevelSet;
+        }
+
+        /// <summary>
+        /// Returns the species that are speratated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
+        /// </summary>
+        /// <param name="levSetIdx"></param>
+        /// <returns>
+        /// Species Pair. First species is negative species, second species is positive species.
+        /// </returns>
+        public (string, string)[] GetSpeciesPairsSeparatedByLevSet(int levSetIdx) {
+            LinkedList<SpeciesPair> speciesOfLevelSet = FindSeparatedSpeciesPairs(levSetIdx);
+            (string, string)[] pairs = new (string, string)[speciesOfLevelSet.Count];
+            int i = 0;
+            foreach (SpeciesPair pair in speciesOfLevelSet) {
+                pairs[i].Item1 = pair.NegativeSpecies;
+                pairs[i].Item2 = pair.PositiveSpecies;
+                ++i;
+            }
+            return pairs;
+        }
+
+
+        /// <summary>
+        /// Returns species that are separated by levelSet with No. <paramref name="levSetIdx"/>
+        /// </summary>
+        LinkedList<SpeciesPair> FindSeparatedSpeciesPairs(int levSetIdx) {
+            int[] levelSetSigns = new int[SpeciesTable.Rank];
+            LinkedList<SpeciesPair> speciesOfLevelSet = new LinkedList<SpeciesPair>();
+            FindSeparatedSpecies(levelSetSigns, 0, levSetIdx, speciesOfLevelSet);
+            return speciesOfLevelSet;
+        }
+
+        struct SpeciesPair : IEquatable<SpeciesPair> {
+            public string PositiveSpecies;
+            public string NegativeSpecies;
+
+            public SpeciesPair(string negativeSpecies, string positiveSpecies) {
+                this.PositiveSpecies = positiveSpecies;
+                this.NegativeSpecies = negativeSpecies;
+            }
+
+            public bool Equals(SpeciesPair other) {
+                return other.PositiveSpecies == PositiveSpecies && other.NegativeSpecies == NegativeSpecies;
+            }
+        }
+
+        void FindSeparatedSpecies(int[] levelSetSigns, int level, int levSetIdx, LinkedList<SpeciesPair> species) {
+            if (level == levelSetSigns.Length) {
+                levelSetSigns[levSetIdx] = 0;
+                string negativeSpecies = (string)SpeciesTable.GetValue(levelSetSigns);
+                levelSetSigns[levSetIdx] = 1;
+                string positiveSpecies = (string)SpeciesTable.GetValue(levelSetSigns);
+                if (negativeSpecies != positiveSpecies) {
+                    SpeciesPair pair = new SpeciesPair(negativeSpecies, positiveSpecies);
+                    if (!species.Contains(pair))
+                        species.AddLast(pair);
+                }
+            } else if (level == levSetIdx) {
+                FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+            } else {
+                levelSetSigns[level] = 0;
+                FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+                levelSetSigns[level] = 1;
+                FindSeparatedSpecies(levelSetSigns, level + 1, levSetIdx, species);
+            }
+        }
+
+        /// <summary>
         /// computes the id of the species that is set for a specific sign
         /// </summary>
         /// <param name="levelSetValues">signs of all level set functions</param>
@@ -1298,7 +1382,10 @@ namespace BoSSS.Foundation.XDG {
             _LevSetCoincidingFaces = new (int iLevSet, int iFace)[Jup][];
             if(LSCF != null) {
                 for(int j = 0; j < Jup; j++) {
-                    _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                    if (_LevSetCoincidingFaces[j] != null)
+                        _LevSetCoincidingFaces[j] = LSCF[j].CloneAs();
+                    else
+                        _LevSetCoincidingFaces[j] = null;
                 }
             }
 

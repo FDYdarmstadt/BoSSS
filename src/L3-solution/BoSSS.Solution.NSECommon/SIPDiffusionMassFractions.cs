@@ -81,10 +81,10 @@ namespace BoSSS.Solution.NSECommon {
                 //Neumann boundary condition
                 Acc = 0.0;
                 break;
+                //case IncompressibleBcType.Wall:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-
                 // inhom. Dirichlet b.c.
                 // =====================
                 double u_D = BcMap.bndFunction[VariableNames.MassFraction_n(i - 1)][inp.EdgeTag](inp.X, inp.time);

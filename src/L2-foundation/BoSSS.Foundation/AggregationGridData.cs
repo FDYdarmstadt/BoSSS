@@ -425,7 +425,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             long[] Fine2CoarseGlobal = new long[JElocFine]; // index: local cell index on fine grid; maps to _global_ cell index on coarse grid.
             {
-                ArrayTools.SetAll(Fine2CoarseGlobal, -111l);
+                ArrayTools.SetAll(Fine2CoarseGlobal, -111L);
                 for (int jCellCoarse = 0; jCellCoarse < JlocCoarse; jCellCoarse++) {
                     foreach (int jCellFine in AggregationCells[jCellCoarse]) {
                         if (jCellFine < 0 || jCellFine >= JlocFine)

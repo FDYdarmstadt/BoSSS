@@ -1,0 +1,605 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XdgPoisson3;
+**************
+==============
+ExecutionQueues;
+**************
+List of 4 instances of BatchProcessorClient {
+  0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
+  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\weber\dply
+  2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
+  3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
+}
+==============
+// ==================================
+// setup Client & Workflow & Database
+// ==================================
+var myBatch = (MsHPC2012Client)ExecutionQueues[1];
+//var myBatch = (SlurmClient)ExecutionQueues[1];
+ExecutionQueues[1].AllowedDatabases;
+**************
+List of 0 instances of IDatabaseInfo {
+}
+==============
+//myBatch.MonoDebug = true;
+**************
+==============
+string WFlowName = "IBM_RotCube_test";
+WorkflowMgm.Init(WFlowName);
+WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
+WorkflowMgm.AllJobs;
+**************
+Project name is set to 'IBM_RotCube_test'.
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+// providing corresponding paths on both platforms:
+string DBname    = "DB_trash";
+var tempDB       = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\"+DBname);
+string DBpathHPC = tempDB.Path;
+**************
+Opening existing database '\\hpccluster\hpccluster-scratch\weber\DB_trash'.
+
+==============
+**************
+==============
+tempDB.Sessions
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+// ===================
+// Utility definitions
+// ===================
+**************
+==============
+double xMax = 1.0, yMax = 1.0, zMax=1.0;
+double xMin = -1.0, yMin = -1.0,zMin = -1.0;
+**************
+==============
+static class Utils {
+    // DOF per cell in 3D
+    public static int Np(int p) {
+        return (p*p*p + 6*p*p + 11*p + 6)/6;
+    }    
+    
+    //Non-equidistant nodes
+    public static double[] SinLinSpacing(double l, double r, double a, int n) {
+        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
+        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
+        double[] nodes = new double[n];
+
+        for (int i = 0; i < n; i++)
+            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
+            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
+
+        for (int i = 0; i < n; i++)
+            nodes[i] = nodes[i] * (r - l)*0.5 + l;
+        return nodes;
+    }
+    public static Func<double[],int> GetPartFunc(int cores){
+        Func<double[], int> MakeMyPartioning = delegate (double[] X) {
+        double x  = X[0];
+        double y  = X[1];
+        double z  = X[2];
+
+        int sx = 1;
+        int sy = 1;
+        int sz = 1;
+        for (int i = 0; i < Math.Log(cores, 2); i++) {
+            if (i % 3 == 0)
+                sx*= 2;
+            else if(i % 3 == 1)
+                sy*=2;
+            else
+                sz*=2;
+        }
+
+
+        double xspan = (xMax - xMin) / sx;
+        double yspan = (yMax - yMin) / sy;
+        double zspan = (zMax - zMin) / sz;
+        int rank     = int.MaxValue;
+        int icore    = 0;
+        for (int i = 0; i < sx; i++) {
+            for (int j = 0; j < sy; j++) {
+                for(int k=0;k<sz;k++){
+                    bool xtrue = x <= xspan * (i + 1) + xMin;
+                    bool ytrue = y <= yspan * (j + 1) + yMin;
+                    bool ztrue = z <= zspan * (k + 1) + zMin;
+                    if (xtrue && ytrue && ztrue) {
+                        rank = icore;
+                        return rank;
+                    }
+                    icore++;
+                }
+            }
+        }
+
+        return rank;
+        };
+    return MakeMyPartioning;
+}
+}
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+// set parameterz
+int[] core_sweep = {4};
+int p             = 4;
+int Problemsize   = 1000000;
+int MemoryPerCore = 2500;
+**************
+==============
+Func<int, int> Nodes4WeakScale = delegate(int NoOfCores){
+int MemPerNode = 64*1024;
+return (int)((double)MemoryPerCore / (double)MemPerNode * NoOfCores)+1;
+};
+Func<int, int> Nodes4StrongScale = delegate(int NoOfCores){
+int corespernode = 24;
+return (int)((double)NoOfCores / (double)corespernode) +1;
+};
+**************
+==============
+Nodes4StrongScale(128);
+**************
+6
+==============
+// calculate grid size
+double Res    = Math.Pow(Problemsize/Utils.Np(p),0.333333333);
+int ResRndup  = (int)Math.Ceiling(Res);
+int NoOfCells = ResRndup*ResRndup*ResRndup;
+double test   = NoOfCells*Utils.Np(p);
+test;
+**************
+1042685
+==============
+tempDB.Grids;
+**************
+List of 1 instances of IGridInfo {
+  0: { Guid = 6e0f94a3-fdbd-4525-8fe3-52d220c3e27f; Name = IBM_RotCube_test_J29791; Cell Count = 29791; Dim = 3 }
+}
+==============
+ResRndup
+**************
+31
+==============
+**************
+==============
+// resolution per dimension of space
+// corresponds to the predef partioning
+int sx = 1;
+int sy = 1;
+int sz = 1;
+for (int i = 0; i < Math.Log(64, 2); i++) {
+    if (i % 3 == 0)
+        sx*= 2;
+    else if(i % 3 == 1)
+        sy*=2;
+    else
+        sz*=2;
+}
+Console.WriteLine("sx:{0},sy:{1},sz:{2}",sx,sy,sz);
+**************
+sx:4,sy:4,sz:4
+
+==============
+**************
+==============
+int[] Resolutions_3D = new int[] { ResRndup };
+IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
+for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
+    int Res = Resolutions_3D[cnt];    
+    
+    double[] xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+    double[] yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
+    double[] zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
+    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
+    
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    
+    grids[cnt]=null;
+    foreach(IGridInfo grd in tempDB.Grids){
+        bool check = grd.Name.Contains(string.Format("_J"+ J));
+        if(check){
+          //grids[cnt]=grd;
+        }
+    }
+    
+    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
+    
+    if(grids[cnt] == null){
+        Console.WriteLine("Creating grid with " + J + " cells.");
+        
+        GridCommons g;
+        g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+        foreach(int cores in core_sweep){
+        g.AddPredefinedPartitioning("predef"+cores, Utils.GetPartFunc(cores));
+        }
+        g.Name = GridName;
+        g.EdgeTagNames.Add(1, "Wall");   
+        g.DefineEdgeTags(delegate (double[] X) {
+            //byte ret;
+            return 1;
+        });
+      
+        tempDB.SaveGrid(ref g,true);  
+        grids[cnt] = g;
+    } else {
+        Console.WriteLine("Found Grid: " + grids[cnt]);
+        if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+    }
+}
+**************
+Creating grid with 29791 cells.
+Grid Edge Tags changed.
+
+==============
+((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
+**************
+List of 1 instances of KeyValuePair{String,GridPartitioningVector} {
+  0: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
+}
+==============
+**************
+==============
+// Overwrite Selection
+//var ListOfgrids = new List<IGridInfo>();
+//ListOfgrids.AddRange(tempDB.Grids.Pick(0));
+//IGridInfo[] grids = ListOfgrids.ToArray();
+IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
+**************
+==============
+grids;
+**************
+List of 1 instances of IGridInfo {
+  0: { Guid = 1283ac21-c051-48e6-9fbc-d44e8e3161e8; Name = IBM_RotCube_test_J29791; Cell Count = 29791; Dim = 3 }
+}
+==============
+using BoSSS.Application.XNSE_Solver;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.LevelSetTools;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.NSECommon;
+**************
+==============
+Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int k, IGridInfo grid, int DOF){
+    XNSE_Control C = new XNSE_Control();
+            // basic database options
+            // ======================
+            C.GridGuid           = grid.ID;
+            int SpaceDim         = grid.SpatialDimension;
+            int J                = grid.NumberOfCells;
+            C.savetodb           = true;
+            C.ProjectName        = "XNSE/RotCube";
+            C.ProjectDescription = "rotating cube";
+            C.Tags.Add("rotating");
+
+            // DG degrees
+            // ==========
+
+            C.SetFieldOptions(k, 2);
+            //C.GridPartType = GridPartType.METIS;
+            C.GridPartType    = GridPartType.Predefined;
+            C.GridPartOptions = "predef4";
+            
+            C.SessionName  = "XNSE_rotcube";
+            C.saveperiod   = 1;
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+            double anglev = 0.1;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.13;
+            
+            double[] angVelo = new double[] {0,0, anglev };
+
+            C.InitialValues_Evaluators.Add("Phi", X => -1);
+            C.UseImmersedBoundary = true;
+            if (C.UseImmersedBoundary) { 
+                C.InitialValues_Evaluators_TimeDep.Add("Phi2", (X,t) =>
+                    - Math.Pow((X[0] - pos[0]) * Math.Cos(-(anglev * t) % (2 * Math.PI)) - (X[1] - pos[1]) * Math.Sin(-(anglev * t) % (2 * Math.PI)), power)
+                    - Math.Pow((X[0] - pos[0]) * Math.Sin(-(anglev * t) % (2 * Math.PI)) + (X[1] - pos[1]) * Math.Cos(-(anglev * t) % (2 * Math.PI)), power)
+                    - Math.Pow(X[2] - pos[2], power)
+                    + Math.Pow(particleRad, power););
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", (X,t) => angVelo[1]*(X[2] - pos[2])-angVelo[2]*(X[1] - pos[1]));
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", (X,t) => angVelo[2]*(X[0] - pos[0])-angVelo[0]*(X[2] - pos[2]));
+                if (SpaceDim == 3)
+                    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", (X,t) => angVelo[0]*(X[1] - pos[1])-angVelo[1]*(X[0] - pos[0]));
+            }
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.AddBoundaryValue("Wall");
+
+            // misc. solver options
+            // ====================
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            C.UseSchurBlockPrec                                        = true;
+            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.ViscosityMode              = ViscosityMode.Standard;
+            C.Option_LevelSetEvolution                                 = LevelSetEvolution.Prescribed;
+            C.Timestepper_LevelSetHandling                             = LevelSetHandling.Coupled_Once;
+            C.LinearSolver.TargetBlockSize                             = Math.Min(J*DOF/2,10000);
+            C.LinearSolver.MaxSolverIterations                         = 100;
+            C.LinearSolver.MaxKrylovDim                                = 30;
+            C.LinearSolver.verbose                                     = true;
+            C.LinearSolver.SolverCode                                  = solver;
+            C.LinearSolver.pMaxOfCoarseSolver                          = k;
+            C.NonLinearSolver.SolverCode                               = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.MaxSolverIterations                      = 50;
+            C.NonLinearSolver.verbose                                  = true;
+            C.VelocityBlockPrecondMode                                 = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.AdaptiveMeshRefinement                                   = false;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
+            //C.RefinementLevel = 2;
+
+            // Timestepping
+            // ============
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+            // haben fertig...
+            // ===============
+
+            return C;
+    
+    
+    
+    
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+// - - - - - - - - - - - - -
+// setup of parameter study
+// - - - - - - - - - - - - -
+**************
+==============
+List<XNSE_Control> controls = new List<XNSE_Control>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {2, 3, 4, 5, 6};
+//int[] PolyDegS = new int[] {2, 3 ,5};
+int[] PolyDegS = new int[] {p};
+**************
+==============
+// Solvers which we want to instrument:
+LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
+    //LinearSolverCode.classic_pardiso, 
+    //LinearSolverCode.classic_mumps, 
+    LinearSolverCode.exp_Kcycle_schwarz, 
+    //LinearSolverCode.exp_gmres_levelpmg, 
+}; 
+**************
+==============
+// MaxDof for each calculation, prohibit crashes, due to limited memory capabilities of lin solver
+int MaxDof = int.MaxValue;
+**************
+==============
+**************
+==============
+// --------------------
+// setup control object
+// --------------------
+controls.Clear();
+foreach(LinearSolverCode solver_name in solver_nameS) {
+foreach(int k in PolyDegS) {
+foreach(IGridInfo grd in grids) {
+
+    int Np_V = Utils.Np(k);
+    int Np_p = Utils.Np(k-1);
+    int J    = grd.NumberOfCells;
+    int DOF  = Np_V*3+Np_p;
+    if(J*DOF > MaxDof)
+        continue;
+    
+    var Ctrl = GenerateCObj(solver_name,k,grd,DOF);
+
+    controls.Add(Ctrl);
+}
+}
+}
+**************
+==============
+**************
+==============
+//var solver = new XdgPoisson3Main();
+//solver.Init(c+ontrols[0]);
+//solver.RunSolverMode();
+//solver.Dispose();
+**************
+==============
+// ==========
+// Launch Job
+// ==========
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls){
+    int ncores = Convert.ToInt32(ctrl.GridPartOptions.Substring(6));
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    var aJob = new Job(ctrl.SessionName, typeof(XNSE));
+    aJob.SetControlObject(ctrl);
+    aJob.NumberOfMPIProcs         = ncores;
+    aJob.ExecutionTime            = "02:00:00";
+    aJob.MemPerCPU                = "2000";
+    aJob.UseComputeNodesExclusive = true;
+    aJob.NumberOfNodes            = Nodes4StrongScale(ncores);
+    aJob.Activate(myBatch);
+}
+**************
+ Submitting: XNSE_rotcube
+System.ArgumentException: Unable to serialize/deserialize initial values correctly.. Type 'LastError' for details.
+
+==============
+LastError
+**************
+System.ArgumentException: Unable to serialize/deserialize initial values correctly.
+   at BoSSS.Application.BoSSSpad.AppControlExtensions.VerifyEx(AppControl ctrl) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 265
+   at BoSSS.Application.BoSSSpad.Job.SetControlObject(AppControl ctrl) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 455
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 359
+==============
+// ================
+// optional stuff
+// ===============
+var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
+//somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
+**************
+C# evaluator not initialized: use 'restart'.
+
+==============
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+using System.IO
+**************
+==============
+// write out stdout of all jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccess));
+var somelist = WorkflowMgm.AllJobs;
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stderr.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
+writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
+writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
+writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
+
+==============
+WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+// write out stdout of Failed Jobs
+Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
+var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
+somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
+foreach(KeyValuePair<string,string> stout in Stoutlist){
+    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
+    Console.Write("writing {0} ...",stout.Key);
+    sw.WriteLine(stout.Value);
+    Console.WriteLine("done.");
+    }
+}
+**************
+Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
+
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

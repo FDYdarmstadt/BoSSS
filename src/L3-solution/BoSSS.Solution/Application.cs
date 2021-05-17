@@ -31,7 +31,6 @@ using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net;
-using Mono.CSharp;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
@@ -261,20 +260,23 @@ namespace BoSSS.Solution {
         /// Re-loads optional user-configuration file for Matlab connector <see cref="ilPSP.Connectors.Matlab.BatchmodeConnector"/>.
         /// </summary>
         public static void ReadBatchModeConnectorConfig() {
-            string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
-            if (userDir.IsEmptyOrWhite())
-                return;
+            using(var tr = new FuncTrace()) {
+                string userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+                if(userDir.IsEmptyOrWhite())
+                    return;
 
-            try {
-                var o = MatlabConnectorConfig.LoadDefault(userDir);
+                try {
+                    var o = MatlabConnectorConfig.LoadDefault(userDir);
 
-                ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
-                ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.Flav = (ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor)System.Enum.Parse(typeof(ilPSP.Connectors.Matlab.BatchmodeConnector.Flavor), o.Flav);
+                    ilPSP.Connectors.Matlab.BatchmodeConnector.MatlabExecuteable = o.MatlabExecuteable;
 
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}");
+                } catch(Exception e) {
+                    var errStr = $"{e.GetType().Name} while reading/saving Matlab connector configuration file: {e.Message}";
+                    tr.Logger.Error(errStr);
+                    Console.Error.WriteLine(errStr);
+                }
             }
-
         }
 
         /// <summary>
@@ -294,18 +296,24 @@ namespace BoSSS.Solution {
             if (args == null)
                 args = new string[0];
 
+            m_Logger.Info("In BoSSS MPI init.");
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+
+            m_Logger.Info("Bootstrapping.");
+
 
             ilPSP.Environment.Bootstrap(
                 args,
                 GetNativeLibraryDir(),
                 out bool _MustFinalizeMPI);
 
+            m_Logger.Info("_MustFinalizeMPI = " + _MustFinalizeMPI);
+
+            int rank, size;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
             if (_MustFinalizeMPI) {
-                int rank, size;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
                 if (rank == 0) {
 
                     Console.WriteLine(@"      ___           ___           ___           ___           ___     ");
@@ -372,6 +380,9 @@ namespace BoSSS.Solution {
 
                 }
             }
+
+            m_Logger.Info("Hello from MPI rank " + rank + " of " + size + "!");
+
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
@@ -382,24 +393,29 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Recursive collection of all dependencies of some assembly.
         /// </summary>
-        public static IEnumerable<Assembly> GetAllAssemblies() {
+        public static IEnumerable<Assembly> GetAllAssemblies(Type EntryType) {
             StackTrace stackTrace = new StackTrace();
             List<Assembly> allAssis = new List<Assembly>();
 
-            // Start from entry assembly and _not_
-            // - don't use typeof(T).Assembly since T might be located different assembly than the control file
-            // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
-            // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
+            if(EntryType == null) {
+                // Start from entry assembly and _not_
+                // - don't use typeof(T).Assembly since T might be located different assembly than the control file
+                // - don't use Assembly.GetEntryAssembly() as it is undefined if called by Nunit
+                // - exclude mscorlib (does not even appear on Windows, but makes problems using mono)
 
-            for (int i = 0; i < stackTrace.FrameCount; i++) {
-                Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
-                if (Tuepe != null) {
-                    Assembly entryAssembly = Tuepe.Assembly;
-                    GetAllAssembliesRecursive(entryAssembly, allAssis);
+                for(int i = 0; i < stackTrace.FrameCount; i++) {
+                    Type Tuepe = stackTrace.GetFrame(i).GetMethod().DeclaringType;
+                    if(Tuepe != null) {
+                        Assembly entryAssembly = Tuepe.Assembly;
+                        GetAllAssembliesRecursive(entryAssembly, allAssis);
+                    }
                 }
+            } else {
+                GetAllAssembliesRecursive(EntryType.Assembly, allAssis);
             }
+            
 
-            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib"));
+            return allAssis.Where(a => !a.FullName.StartsWith("mscorlib")).Where(a => a.IsDynamic == false).ToArray();
         }
 
         /// <summary>
@@ -413,8 +429,11 @@ namespace BoSSS.Solution {
             if (a.GlobalAssemblyCache)
                 return;
 
+
             if (assiList.Contains(a))
                 return;
+
+
 
             assiList.Add(a);
 
@@ -445,6 +464,9 @@ namespace BoSSS.Solution {
             string[] args,
             bool noControlFile,
             Func<Application<T>> ApplicationFactory) {
+
+            m_Logger.Info("Entering _Main routine...");
+
 
             int MPIrank = int.MinValue;
 #if DEBUG
@@ -482,17 +504,22 @@ namespace BoSSS.Solution {
                 if (!argsParseSuccess) {
                     MPI.Wrappers.csMPI.Raw.mpiFinalize();
                     _MustFinalizeMPI = false;
+                    m_Logger.Error("Unable to parse arguments - exiting.");
                     System.Environment.Exit(-1);
                 }
 
                 if (opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
+                m_Logger.Info("Braodcasting command line options..");
                 opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                m_Logger.Info("done.");
 
                 // Delete old plots if requested
                 if (opt.delPlt) {
+                    m_Logger.Info("Deletion of old plot files...");
                     DeleteOldPlotFiles();
+                    m_Logger.Info("done.");
                 }
 
 
@@ -500,9 +527,12 @@ namespace BoSSS.Solution {
                 T ctrlV2 = null;
                 T[] ctrlV2_ParameterStudy = null;
                 if (!noControlFile) {
+                    m_Logger.Info("Loading control object...");
                     LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                    m_Logger.Info("done.");
                 } else {
                     ctrlV2 = new T();
+                    m_Logger.Info("No control Object.");
                 }
 
                 AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
@@ -738,8 +768,10 @@ namespace BoSSS.Solution {
                 // -------
 
                 using (Application<T> app = ApplicationFactory()) {
+                    m_Logger.Info("Running application...");
                     app.Init(ctrlV2);
                     app.RunSolverMode();
+                    m_Logger.Info("Application finished.");
                 }
             } else {
                 // no control file 
@@ -1090,40 +1122,50 @@ namespace BoSSS.Solution {
             // init database
             // =============
 
+            m_Logger.Info("Try to open database...");
             m_Database = GetDatabase();
+            if(m_Database == null)
+                m_Logger.Info("Database is NULL.");
+            else
+                m_Logger.Info("Opened database: " + m_Database.ToString());
 
-            if (this.Control != null) {
+            if(this.Control != null) {
                 this.passiveIo = !this.Control.savetodb;
-                if (this.DatabaseDriver.FsDriver is NullFileSystemDriver)
+                if(this.DatabaseDriver.FsDriver is NullFileSystemDriver)
                     this.passiveIo = true;
 
-                if (this.Control.TracingNamespaces == null) {
+                if(this.Control.TracingNamespaces == null) {
                     Tracer.NamespacesToLog = new string[0];
                 } else {
                     var NamespacesToLog = this.Control.TracingNamespaces.Split(new char[] { ',', ' ', '\n', '\t', '\r' }, StringSplitOptions.RemoveEmptyEntries);
 
-                    if (NamespacesToLog.Any(s => s.Equals("*"))) {
+                    if(NamespacesToLog.Any(s => s.Equals("*"))) {
                         Tracer.NamespacesToLog = new string[] { "" };
+                        m_Logger.Info("Logging ALL namespaces / full tracing");
                     } else {
                         Tracer.NamespacesToLog = NamespacesToLog;
+                        m_Logger.Info("Logging " + NamespacesToLog.Length + " namespaces.");
+                        foreach(var n in NamespacesToLog) {
+                            m_Logger.Info("Logging namespace: " + n);
+                        }
                     }
                 }
             } else {
                 this.passiveIo = true;
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            if (!passiveIo) {
+            if(!passiveIo) {
                 CurrentSessionInfo = m_Database.Controller.DBDriver.CreateNewSession(m_Database);
 
-                if (this.Control != null) {
+                if(this.Control != null) {
                     CurrentSessionInfo.Name = String.IsNullOrWhiteSpace(this.Control.SessionName) ? "empty-session-name" : this.Control.SessionName;
                     CurrentSessionInfo.ProjectName = String.IsNullOrWhiteSpace(this.Control.ProjectName) ? "empty-project-name" : this.Control.ProjectName;
 
                     CurrentSessionInfo.Description = this.Control.ProjectDescription;
 
-                    if (this.Control.ProjectName != null)
+                    if(this.Control.ProjectName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(PROJECTNAME_KEY, this.Control.ProjectName);
-                    if (this.Control.SessionName != null)
+                    if(this.Control.SessionName != null)
                         CurrentSessionInfo.KeysAndQueries.Add(SESSIONNAME_KEY, this.Control.SessionName);
                 }
 
@@ -1141,13 +1183,14 @@ namespace BoSSS.Solution {
                 CurrentSessionInfo.Tags = tags;
             }
 
+            
             this.DatabaseDriver.InitTraceFile(CurrentSessionInfo);
-            using (var ht = new FuncTrace()) {
+            using(var ht = new FuncTrace()) {
                 // create or load grid
                 //====================
 
                 Grid = CreateOrLoadGrid();
-                if (Grid == null) {
+                if(Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
 
@@ -1163,7 +1206,7 @@ namespace BoSSS.Solution {
                     && MPIRank == 0
                     && DatabaseDriver != null
                     && (!this.CurrentSessionInfo.ID.Equals(Guid.Empty));
-                if (DoDbLogging && this.Control != null) {
+                if(DoDbLogging && this.Control != null) {
                     //TextWriter tw = DatabaseDriver.FsDriver.GetNewLog("Control", this.CurrentSessionInfo.ID);
                     //if (this.Control.ControlFileText != null)
                     //    tw.WriteLine(this.Control.ControlFileText);
@@ -1182,14 +1225,14 @@ namespace BoSSS.Solution {
                     //}
                     //tw.Close();
 
-                    if (this.Control.GeneratedFromCode) {
-                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
+                    if(this.Control.GeneratedFromCode) {
+                        using(var tw = DatabaseDriver.FsDriver.GetNewLog("Control-script", this.CurrentSessionInfo.ID)) {
                             tw.WriteLine("//" + this.Control.GetType().AssemblyQualifiedName);
                             tw.Write(this.Control.ControlFileText);
                             tw.Close();
                         }
                     } else {
-                        using (var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
+                        using(var tw = DatabaseDriver.FsDriver.GetNewLog("Control-obj", this.CurrentSessionInfo.ID)) {
                             tw.Write(this.Control.Serialize());
                             tw.Close();
                         }
@@ -1200,11 +1243,11 @@ namespace BoSSS.Solution {
                     Dictionary<string, object> KV = new Dictionary<string, object>();
                     FindKeys(KV, this.Control);
 
-                    foreach (var kv in KV) {
+                    foreach(var kv in KV) {
                         try {
-                            if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
+                            if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey(kv.Key))
                                 this.CurrentSessionInfo.KeysAndQueries.Add(kv.Key, kv.Value);
-                        } catch (Exception e) {
+                        } catch(Exception e) {
                             Console.WriteLine("Exception " + e.GetType().Name + " during logging of key/value [" + kv.Key + "," + kv.Value + "].");
                         }
 
@@ -1212,13 +1255,13 @@ namespace BoSSS.Solution {
                 }
 
                 // Basic session init
-                if (DatabaseDriver != null) {
+                if(DatabaseDriver != null) {
                     string DBpath = this.CurrentSessionInfo.Database.Path;
-                    if (DBpath.Length <= 0)
+                    if(DBpath.Length <= 0)
                         DBpath = "EMPTY";
-                    if (DBpath == null)
+                    if(DBpath == null)
                         DBpath = "NULL";
-                    if (DatabaseDriver.MyRank == 0) {
+                    if(DatabaseDriver.MyRank == 0) {
                         Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
                     }
                 } else {
@@ -1231,14 +1274,14 @@ namespace BoSSS.Solution {
 
                 {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
-                    if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
+                    if(!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
                         DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
+                    if(this.Control == null || this.Control.NoOfMultigridLevels > 0) {
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     } else {
                         this.MultigridSequence = new AggregationGridData[0];
@@ -1248,19 +1291,19 @@ namespace BoSSS.Solution {
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if (this.CurrentSessionInfo != null) {
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
+                if(this.CurrentSessionInfo != null) {
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:NoOfCells"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:NoOfCells", Grid.NumberOfCells);
-                    if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
+                    if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:SpatialDimension"))
                         this.CurrentSessionInfo.KeysAndQueries.Add("Grid:SpatialDimension", GridData.SpatialDimension);
 
                     try //ToDo
                     {
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMax"))
                             this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMax", ((GridData)GridData).Cells.h_maxGlobal);
-                        if (!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
+                        if(!this.CurrentSessionInfo.KeysAndQueries.ContainsKey("Grid:hMin"))
                             this.CurrentSessionInfo.KeysAndQueries.Add("Grid:hMin", ((GridData)GridData).Cells.h_minGlobal);
-                    } catch (InvalidCastException e) {
+                    } catch(InvalidCastException e) {
                         Console.WriteLine("Error: Could not log everything.\n {0}", e);
                     }
                 }
@@ -1275,21 +1318,21 @@ namespace BoSSS.Solution {
                 // create fields
                 // =============
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                if (this.Control != null) {
+                if(this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateTracker();
                 CreateFields(); // full user control                
 
-                
+
 
                 // load queries from control file
                 //========================
                 m_queryHandler = QueryHandlerFactory();
 
-                if (this.Control != null && this.Control.Queries != null) {
-                    foreach (var queryIdPair in this.Control.Queries) {
+                if(this.Control != null && this.Control.Queries != null) {
+                    foreach(var queryIdPair in this.Control.Queries) {
                         m_queryHandler.AddQuery(queryIdPair.Key, queryIdPair.Value);
                     }
                 }
@@ -1304,7 +1347,7 @@ namespace BoSSS.Solution {
 
                 // save session information
                 // ========================
-                if (DatabaseDriver.FsDriver != null
+                if(DatabaseDriver.FsDriver != null
                     && !this.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
                     this.CurrentSessionInfo.Save();
                 }
@@ -3117,7 +3160,7 @@ namespace BoSSS.Solution {
                     Tuple<string, object> caseId = new Tuple<string, object>("pstudy_case", iPstudy);
                     if (!idl.Contains(caseId, ((Func<Tuple<string, object>, Tuple<string, object>, bool>)((a, b) => a.Item1.Equals(b.Item1))).ToEqualityComparer())) {
                         idl.Add(caseId);
-                        _control.Paramstudy_CaseIdentification = idl.ToArray();
+                        _control.Paramstudy_CaseIdentification.AddRange(idl.ToArray());
                     }
                 }
 

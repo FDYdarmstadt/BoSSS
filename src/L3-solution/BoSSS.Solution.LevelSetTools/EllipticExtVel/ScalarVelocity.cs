@@ -35,12 +35,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
     public class ScalarVelocityInterfaceForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
         int D;
-        LevelSetTracker LSTrk;
+        //LevelSetTracker LSTrk;
 
-        public ScalarVelocityInterfaceForm(double PenaltyBase, LevelSetTracker LSTrk) {
+        public ScalarVelocityInterfaceForm(double PenaltyBase, int SpacialDim) {
             this.PenaltyBase = PenaltyBase;
-            this.LSTrk = LSTrk;
-            this.D = LSTrk.GridDat.SpatialDimension;
+            //this.LSTrk = LSTrk;
+            this.D = SpacialDim;
         }
         double PenaltyBase;
 
@@ -83,7 +83,6 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
 
         public IList<string> ParameterOrdering {
             get {
-
                 return ArrayTools.Cat<string>(VariableNames.VelocityVector(D));
             }
         }
@@ -92,12 +91,12 @@ namespace BoSSS.Solution.LevelSetTools.EllipticExtension {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return this.LSTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return this.LSTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

@@ -111,14 +111,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
     public class BurgersFlux_Interface : ILevelSetForm {
 
-        LevelSetTracker m_LsTrk;
+        //LevelSetTracker m_LsTrk;
 
         Func<double[], double, double> m_NormalVel;
 
         Vector m_Direction;
 
-        public BurgersFlux_Interface(LevelSetTracker lstrk, Func<double[], double, double> NormalVel, Vector Direction) {
-            m_LsTrk = lstrk;
+        public BurgersFlux_Interface(Func<double[], double, double> NormalVel, Vector Direction) {
+            //m_LsTrk = lstrk;
             m_NormalVel = NormalVel;
             m_Direction = Direction;
         }
@@ -168,12 +168,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { return m_LsTrk.GetSpeciesId("B"); }
+        public string PositiveSpecies {
+            get { return "B"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { return m_LsTrk.GetSpeciesId("A"); }
+        public string NegativeSpecies {
+            get { return "A"; }
         }
 
         public TermActivationFlags LevelSetTerms {

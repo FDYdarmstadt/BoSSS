@@ -79,7 +79,7 @@ namespace ilPSP.Utils {
         _DGEQP3 dgeqp3;
         _DORGQR dorgqr;
         _DPOSV  dposv;
-        _DGESVD dgesvd;
+        //_DGESVD dgesvd;
         //_DSYTRF dsytrf;
         _DGECON dgecon;
         _DGEEV dgeev;
@@ -840,6 +840,8 @@ namespace ilPSP.Utils {
         /// </param>
         public unsafe void DGESVD(int JOBU, int JOBVT, int M, int N, double* A, int LDA, double* S, double* U, int LDU, double* VT, int LDVT)
         {
+            throw new NotImplementedException("temporarily deactivated");
+            /*
             // Determine optimal workspace size
             int INFO;
             int LWORK = -1;
@@ -867,7 +869,9 @@ namespace ilPSP.Utils {
             if (INFO != 0)
             {
                 throw new ApplicationException("Failed to compute Singular Value Decomposition");
+         
             }
+            */
         }
 
         /// <summary>
@@ -882,7 +886,8 @@ namespace ilPSP.Utils {
         {
             get
             {
-                return dgesvd;
+                throw new NotImplementedException("temporarily deactivated");
+                //return dgesvd;
             }
         }
 

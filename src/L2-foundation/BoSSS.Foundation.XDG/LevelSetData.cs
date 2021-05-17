@@ -1452,6 +1452,45 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// caches the values returned by <see cref="GetSpeciesRestrictedNearMask4LevSet"/>;
+            /// <br/>
+            /// 1st index: Level Set - index <br/>
+            /// 2nd index: width of subgrid around the cut cells
+            /// </summary>
+            CellMask[,] m_PresenceMask4LevelSet;
+
+            /// <summary>
+            /// gets a cell-mask of width <paramref name="FieldWidth"/>, around level set No. <paramref name="levSetIdx"/>;
+            /// The mask only contains the entries, where the phases that the level set separates are present, as defined in <see cref="m_SpeciesTable"/>. 
+            /// </summary>
+            /// <remarks>
+            /// In contrast to <see cref="SubGrid"/>'s, <see cref="CellMask"/>'s are not MPI-collective, and should therefore be preferred.
+            /// </remarks>
+            public CellMask GetSpeciesRestrictedNearMask4LevSet(int levSetIdx, int FieldWidth) {
+                if(m_owner.NoOfLevelSets == 1) {
+                    return GetNearMask4LevSet(levSetIdx, FieldWidth);
+                } else {
+                    Debug.Assert(m_owner.NoOfLevelSets == 2, "This method is untested for level set number > 2. Should work though. Proceed carefully.");
+                    if (m_PresenceMask4LevelSet == null || m_PresenceMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {
+                        m_PresenceMask4LevelSet = new CellMask[m_owner.NoOfLevelSets, m_owner.m_NearRegionWidth + 1];
+                    }
+                    if (m_PresenceMask4LevelSet[levSetIdx, FieldWidth] == null) {
+                        CellMask nearMask = GetNearMask4LevSet(levSetIdx, FieldWidth);
+                        IEnumerable<string> speciesOfLevelSet = m_owner.GetSpeciesSeparatedByLevSet(levSetIdx);
+
+                        CellMask support = CellMask.GetEmptyMask(m_owner.GridDat);
+                        foreach (string speciesName in speciesOfLevelSet) {
+                            CellMask species = GetSpeciesMask(speciesName);
+                            support = support.Union(species);
+                        }
+                        m_PresenceMask4LevelSet[levSetIdx, FieldWidth] = nearMask.Intersect(support);
+                    }
+                    return m_PresenceMask4LevelSet[levSetIdx, FieldWidth];
+                }
+            }
+
+
+            /// <summary>
             /// Equivalent to <see cref="GetSpeciesSubGrid(string)"/>
             /// </summary>
             public SubGrid GetSpeciesSubGrid(SpeciesId specId) {

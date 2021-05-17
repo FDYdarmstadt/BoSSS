@@ -636,8 +636,17 @@ namespace MiniBatchProcessor {
                 //psi.WorkingDirectory = exeFileInfo.DirectoryName;
 
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = "mpiexec.exe";
-                psi.Arguments = " -n " + data.NoOfProcs + " " + data.exefile + " ";
+                switch (System.Environment.OSVersion.Platform) {
+                    case System.PlatformID.Unix:
+                        psi.FileName = "mpirun";
+                        psi.Arguments = " -np " + data.NoOfProcs + " mono " + data.exefile + " ";
+                        break;
+                    default:
+                        psi.FileName = "mpiexec.exe";
+                        psi.Arguments = " -n " + data.NoOfProcs + " " + data.exefile + " ";
+                    break;
+                }
+
                 foreach (var a in data.Arguments)
                     psi.Arguments += a + " ";
                 psi.WorkingDirectory = data.ExeDir;

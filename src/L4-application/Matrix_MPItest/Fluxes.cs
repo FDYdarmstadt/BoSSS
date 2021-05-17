@@ -59,10 +59,10 @@ namespace BoSSS.Application.Matrix_MPItest {
     /// </summary>
     class LevSetFlx : ILevelSetForm {
 
-        protected LevelSetTracker m_LsTrk;
+        //protected LevelSetTracker m_LsTrk;
 
-        public LevSetFlx(LevelSetTracker _LsTrk, string varname, double factor) {
-            m_LsTrk = _LsTrk;
+        public LevSetFlx( string varname, double factor) {
+            //m_LsTrk = _LsTrk;
             m_varname = varname;
             m_factor = factor;
         }
@@ -98,16 +98,12 @@ namespace BoSSS.Application.Matrix_MPItest {
             get { return 0; }
         }
 
-        public SpeciesId PositiveSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("A"); 
-            }
+        public string PositiveSpecies {
+            get { return "A"; }
         }
 
-        public SpeciesId NegativeSpecies {
-            get { 
-                return m_LsTrk.GetSpeciesId("B"); 
-            }
+        public string NegativeSpecies {
+            get { return "B"; }
         }
     }
 

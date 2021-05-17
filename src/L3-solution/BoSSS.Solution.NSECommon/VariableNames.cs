@@ -497,6 +497,11 @@ namespace BoSSS.Solution.NSECommon {
         public const string VelocityX_GradientY = "VelocityX_GradientY";
 
         /// <summary>
+        /// gradient in z-direction of velocity component in x-direction
+        /// </summary>
+        public const string VelocityX_GradientZ = "VelocityX_GradientZ";
+
+        /// <summary>
         /// gradient in x-direction of velocity component in y-direction
         /// </summary>
         public const string VelocityY_GradientX = "VelocityY_GradientX";
@@ -505,6 +510,26 @@ namespace BoSSS.Solution.NSECommon {
         /// gradient in y-direction of velocity component in y-direction
         /// </summary>
         public const string VelocityY_GradientY = "VelocityY_GradientY";
+
+        /// <summary>
+        /// gradient in z-direction of velocity component in y-direction
+        /// </summary>
+        public const string VelocityY_GradientZ = "VelocityY_GradientZ";
+
+        /// <summary>
+        /// gradient in x-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientX = "VelocityZ_GradientX";
+
+        /// <summary>
+        /// gradient in y-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientY = "VelocityZ_GradientY";
+
+        /// <summary>
+        /// gradient in z-direction of velocity component in z-direction
+        /// </summary>
+        public const string VelocityZ_GradientZ = "VelocityZ_GradientZ";
 
 
         ///// <summary>
@@ -1177,11 +1202,27 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
+        /// the names of all mass fractions from last timestep listed in an array
+        /// </summary>
+        static public string[] MassFractions_t0(int NumberOfSpecies) {
+            switch (NumberOfSpecies) {
+                case 1: return new string[] { MassFraction0 + "_t0" };
+                case 2: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0" };
+                case 3: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0" };
+                case 4: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0", MassFraction3 + "_t0" };
+                case 5: return new string[] { MassFraction0 + "_t0", MassFraction1 + "_t0", MassFraction2 + "_t0", MassFraction3 + "_t0", MassFraction4 + "_t0" };
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
+        /// <summary>
         /// the names of all mass fractions (at linearization point) listed in an array
         /// </summary>
         static public string[] MassFractions0(int NumberOfSpecies) {
             switch (NumberOfSpecies) {
-                case 3: return new string[] {MassFraction0_0, MassFraction1_0, MassFraction2_0};
+                case 1: return new string[] { MassFraction0_0 };
+                case 2: return new string[] { MassFraction0_0, MassFraction1_0 };
+                case 3: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0 };
                 case 4: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0 };
                 case 5: return new string[] { MassFraction0_0, MassFraction1_0, MassFraction2_0, MassFraction3_0, MassFraction4_0 };
                 default: throw new NotSupportedException("unsupported number of species.");
@@ -1213,6 +1254,21 @@ namespace BoSSS.Solution.NSECommon {
                 default: throw new NotSupportedException("unsupported number of species.");
             }
         }
+
+        /// <summary>
+        /// the name of the n-th mass fraction
+        /// </summary>
+        static public string MassFraction_t0_n(int n) {
+            switch (n) {
+                case 0: return MassFraction0 + "_t0";
+                case 1: return MassFraction1 + "_t0";
+                case 2: return MassFraction2 + "_t0";
+                case 3: return MassFraction3 + "_t0";
+                case 4: return MassFraction4 + "_t0";
+                default: throw new NotSupportedException("unsupported number of species.");
+            }
+        }
+
 
         /// <summary>
         /// The name of the <paramref name="d"/>-th velocity component.
@@ -1481,6 +1537,21 @@ namespace BoSSS.Solution.NSECommon {
                 return new string[] { Momentum0X_Mean, Momentum0Y_Mean };
             else if (D == 3)
                 return new string[] { Momentum0X_Mean, Momentum0Y_Mean, Momentum0Z_Mean };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+        }
+
+        /// <summary>
+        /// vector of velocity gradient names
+        /// </summary>
+        /// <param name="D">
+        /// spatial dimension
+        /// </param>
+        public static string[,] Velocity_GradientVector(int D) {
+            if (D == 2)
+                return new string[,] { { VelocityX_GradientX, VelocityX_GradientY }, { VelocityY_GradientX, VelocityY_GradientY } };
+            else if (D == 3)
+                return new string[,] { { VelocityX_GradientX, VelocityX_GradientY, VelocityX_GradientZ }, { VelocityY_GradientX, VelocityY_GradientY, VelocityY_GradientZ }, { VelocityZ_GradientX, VelocityZ_GradientY, VelocityZ_GradientZ } };
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }

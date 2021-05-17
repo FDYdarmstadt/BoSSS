@@ -141,9 +141,16 @@ namespace BoSSS.Foundation {
         public double HomotopyValue;
 
         /// <summary>
+        /// Species Subgrid
+        /// </summary>
+        public System.Collections.BitArray SpeciesSubGrdMask;
+
+        /// <summary>
         /// collection of user-defined objects
         /// </summary>
         public Dictionary<string, object> UserDefinedValues = new Dictionary<string, object>();
+
+
     }
 
 

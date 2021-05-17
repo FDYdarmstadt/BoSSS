@@ -80,7 +80,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
                     AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
-                    //AggregationGridData grid = Coarsen_hardcoded(aggGrids.Last(), (int)(Math.Pow(2, D)));
+                    //var grid = ZeroAggregation(aggGrids.Last());
 
                     int Jloc = grid.CellPartitioning.LocalLength;
                     long Jtot = grid.CellPartitioning.TotalLength;

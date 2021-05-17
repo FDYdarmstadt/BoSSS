@@ -39,10 +39,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 IBM_Control C = new IBM_Control();
 
-                C.Paramstudy_CaseIdentification = new Tuple<string, object>[] {
-                                new Tuple<string,object>("k", i),
-                            };
-
+                C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("k", i));
                 k = i;
 
                 const double BaseSize = 1.0;
