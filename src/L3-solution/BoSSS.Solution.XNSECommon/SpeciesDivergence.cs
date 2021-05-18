@@ -172,8 +172,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             scaleB = vorZeichen;
 
             if (RescaleConti) {
-                scaleA /= rhoA;
-                scaleB /= rhoB;
+                scaleA *= rhoA;
+                scaleB *= rhoB;
             }
 
             this.wA = _wA;

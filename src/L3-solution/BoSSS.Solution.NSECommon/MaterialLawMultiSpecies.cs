@@ -211,7 +211,7 @@ namespace BoSSS.Solution.NSECommon {
                 default:
                 throw new NotImplementedException();
             }
-            if (double.IsNaN(visc) || double.IsInfinity(visc) || visc <= 0)
+            if (double.IsNaN(visc) || double.IsInfinity(visc) || visc < 0)
                 throw new ArithmeticException("Invalid value for viscosity: " + visc);
             return visc;
         }

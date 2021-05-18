@@ -163,6 +163,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
     /// </summary>
     public class ConvectionInBulk_LLF_Newton : LinearizedConvectionJacobi, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
+        public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB, MaterialLaw EoS, int NoOfChemicalSpecies) :  base(SpatDim, _bcmap, _component, EoS, NoOfChemicalSpecies) {
+
+            this.LFFA = _LFFA;
+            this.LFFB = _LFFB;
+            this.m_bcmap = _bcmap;
+            base.velFunction = null;
+            this.rho = 1.0; // Density is obtained from the EoS for lowMach flows
+        }
+
         public ConvectionInBulk_LLF_Newton(int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, double _rhoA, double _rhoB, double _LFFA, double _LFFB) :
             base(SpatDim, _bcmap, _component, false) {
             //
