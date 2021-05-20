@@ -16,17 +16,23 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         QuadratureMode mode;
 
+        IGridData grid;
+
         public SayeGaussRule_EdgeCube(LevelSetTracker.LevelSetData _lsData,
             IRootFindingAlgorithm rootFinder,
             QuadratureMode mode) : base(_lsData, rootFinder, mode) {
             this.mode = mode;
+            grid = _lsData.GridDat;
         }
 
+        LinearSayeSpace<Cube> activeSpace;
+
         public CellBoundaryQuadRule EvaluateEdges(int Cell) {
-            LinearSayeSpace<Cube>[] edgeSubspace = CreateEdgeSubspaces(false);
+            LinearSayeSpace<Cube>[] edgeSubspace = CreateEdgeSubspaces(mode == QuadratureMode.Surface);
             QuadRule[] edgeRules = new QuadRule[edgeSubspace.Length];
             for (int i = 0; i < edgeSubspace.Length; ++i) {
                 edgeSubspace[i].Reset();
+                activeSpace = edgeSubspace[i];
                 QuadRule edgeRule = Evaluate(Cell, edgeSubspace[i]);
                 edgeRules[i] = edgeRule;
             }
@@ -34,7 +40,15 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return combinedRules;
         }
 
-        LinearSayeSpace<Cube>[] CreateEdgeSubspaces(bool surface) {
+        static int[,] subspace2CubeMap = new int[6,2]{ 
+            { 0, -1 },
+            { 0,  1 },
+            { 1,  1 },
+            { 1, -1},
+            { 2, 1 },
+            { 2, -1 }};
+
+        LinearSayeSpace<Cube>[] CreateEdgeSubspaces(bool isSurface) {
             //6 Faces in a cube
             int domainSign = 1;
             if (mode == QuadratureMode.NegativeVolume) {
@@ -42,14 +56,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
             LinearSayeSpace<Cube>[] edges = new LinearSayeSpace<Cube>[6];
             LinearPSI<Cube> psi = new LinearPSI<Cube>(Cube.Instance);
-            for (int i = 0; i < 3; ++i) {
-                for(int j = 0; j < 2; ++j) {
-                    LinearSayeSpace<Cube> fullCube = new LinearSayeSpace<Cube>(Cube.Instance, surface);
-                    fullCube.RemoveDimension(i);
-                    LinearPSI<Cube> edge = psi.ReduceDim(i, 1 - 2 * j);
-                    fullCube.PsiAndS.Add(new Tuple<LinearPSI<Cube>, int>(edge, domainSign));
-                    edges[2 * i + j] = fullCube;
-                }
+            for (int i = 0; i < 6; ++i) {
+                LinearSayeSpace<Cube> fullCube = new LinearSayeSpace<Cube>(Cube.Instance, isSurface);
+                fullCube.RemoveDimension(subspace2CubeMap[i, 0]);
+                LinearPSI<Cube> edge = psi.ReduceDim(subspace2CubeMap[i,0], subspace2CubeMap[i, 1]);
+                fullCube.PsiAndS.Add(new Tuple<LinearPSI<Cube>, int>(edge, domainSign));
+                edges[i] = fullCube;
             }
             return edges;
         }
@@ -75,5 +87,39 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             combinedRule.Nodes.LockForever();
             return combinedRule;
         }
+
+        void RestrictToActiveSpace(MultidimensionalArray gradient) {
+            for(int i = 0; i > gradient.Lengths[1]; ++i) {
+                if (!activeSpace.DimActive(i)) {
+                    gradient[0, i] = 0;
+                }
+            }
+        }
+
+        
+        protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
+            double weight = X_weight;
+
+            NodeSet node = new NodeSet(RefElement, X.To2DArray());
+            MultidimensionalArray gradient = ReferenceGradient(node, cell);
+            RestrictToActiveSpace(gradient);
+
+            weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
+            //Scale weight
+            if (IsScalingMatrix(jacobian)) {
+                weight /= jacobian[heightDirection, heightDirection];
+            } else {
+                throw new NotImplementedException("To do");
+            }
+
+            MultidimensionalArray weightArr = new MultidimensionalArray(1);
+            weightArr.Allocate(1);
+            weightArr[0] = weight;
+            return new SayeQuadRule(node, weightArr);
+        }
+        
+
     }
 }

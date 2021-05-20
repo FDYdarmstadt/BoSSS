@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return OldSquare.DeriveNew();
         }
 
-        private MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
+        protected MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
         {
             
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
@@ -457,7 +457,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return new SayeQuadRule(node, weightArr);
         }
 
-        bool IsScalingMatrix(MultidimensionalArray matrix) {
+        protected bool IsScalingMatrix(MultidimensionalArray matrix) {
             double offDiag = 0.0;
             for(int i = 0; i < 3; ++i) {
                 for(int j = i + 1; j > 3; ++i) {
