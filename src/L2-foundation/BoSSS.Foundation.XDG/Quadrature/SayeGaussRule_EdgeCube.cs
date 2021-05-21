@@ -40,6 +40,9 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             return combinedRules;
         }
 
+        //Map from bosss-cube indices to saye edges (subspaces)
+        //RowNumber: index of edge in bosss-cube 
+        //Each Row: first entry: height direction, second entry: offset from center
         static int[,] subspace2CubeMap = new int[6,2]{ 
             { 0, -1 },
             { 0,  1 },
@@ -89,14 +92,13 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         void RestrictToActiveSpace(MultidimensionalArray gradient) {
-            for(int i = 0; i > gradient.Lengths[1]; ++i) {
+            for(int i = 0; i < 3; ++i) {
                 if (!activeSpace.DimActive(i)) {
-                    gradient[0, i] = 0;
+                    gradient[i] = 0;
                 }
             }
         }
 
-        
         protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
             double weight = X_weight;
 
@@ -119,7 +121,5 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             weightArr[0] = weight;
             return new SayeQuadRule(node, weightArr);
         }
-        
-
     }
 }

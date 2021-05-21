@@ -182,10 +182,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override bool HeightDirectionIsSuitable(
             LinearSayeSpace<Cube> arg, 
-            LinearPSI<Cube> psi, NodeSet 
-            x_center,
+            LinearPSI<Cube> psi, 
+            NodeSet x_center,
             int heightDirection, 
-            MultidimensionalArray agradient, int cell)
+            MultidimensionalArray gradient, 
+            int cell)
         {
 
             //throw new NotImplementedException();
@@ -202,22 +203,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
             levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
             hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
 
-            //hessian = jacobian * hessian;
+            hessian = jacobian * hessian;
             hessian.ApplyAll(x => Math.Abs(x));
-
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(nodeOnPsi, cell, 1);
-            gradient = gradient.ExtractSubArrayShallow( 0, 0, -1 ).CloneAs();
-
-            
 
             //abs(Hessian) * 0,5 * diameters.^2 = delta ,( square each entry of diameters) , 
             //this bounds the second error term from taylor series
             //+ + + + 
-            double[] arr = arg.Diameters.CloneAs();
+            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1], arg.Diameters[2] };
             psi.SetInactiveDimsToZero(arr);
             MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1 );
-            diameters = jacobian * diameters;
-            diameters.ApplyAll(x => 0.5 * x * x);
             MultidimensionalArray delta = hessian * diameters;
 
             delta = delta.ExtractSubArrayShallow( -1, 0 );
@@ -227,7 +221,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //|gk| > δk
             //Gradient should be able to turn arround
-            psi.SetInactiveDimsToZero(gradient.Storage);
             if (Math.Abs(gradient[heightDirection]) > delta[heightDirection])
             {
                 bool suitable = true;
@@ -237,7 +230,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                 for (int j = 0; j < delta.Length; ++j)
                 {
-                    sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
+                    if (!psi.DirectionIsFixed(j)) {
+                        sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
+                    }
                 }
                 sum /= Math.Pow(Math.Abs(gradient[heightDirection]) - delta[heightDirection], 2);
 
