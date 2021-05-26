@@ -150,6 +150,14 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string HeatEquation = "HeatEq";
 
+
+        /// <summary>
+        /// heat equation
+        /// </summary>
+        public const string MixtureFractionEquation = "MixtureFractionEquation";
+
+
+
         /// <summary>
         /// auxiliary heat flux x - component
         /// </summary>

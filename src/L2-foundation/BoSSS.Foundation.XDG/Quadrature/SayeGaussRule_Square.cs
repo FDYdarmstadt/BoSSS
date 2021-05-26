@@ -163,6 +163,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
             grad.ApplyAll(x => Math.Abs(x));     
             double delta = grad.InnerProduct(diameters) * sqrt_2;
+            //sqrt_2 is safety
 
             return delta;
         }
@@ -180,7 +181,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             //Determine bounds
             //-----------------------------------------------------------------------------------------------------------------
-            double[] arr = arg.Diameters;
+            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1]};
             psi.SetInactiveDimsToZero(arr);
             MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] {2, 1 });
 

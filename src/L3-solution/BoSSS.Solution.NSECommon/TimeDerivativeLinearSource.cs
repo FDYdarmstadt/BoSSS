@@ -229,7 +229,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.AllOn;
+                //return TermActivationFlags.AllOn;
+                return TermActivationFlags.UxV;
             }
         }
     }
