@@ -152,7 +152,7 @@ namespace BoSSS.Foundation.XDG {
         /// Computes Cell-volumes and edge areas before agglomeration.
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
                 var gd = XDGSpaceMetrics.GridDat;
                 int JE = gd.iLogicalCells.Count;
@@ -181,6 +181,7 @@ namespace BoSSS.Foundation.XDG {
                 //var schS = new List<CellQuadratureScheme>();
                 //var rulz = new List<ICompositeQuadRule<QuadRule>>();
 
+                tr.Info("Checkpoint1");
 
                 // edges and volumes
                 // =================
@@ -196,6 +197,7 @@ namespace BoSSS.Foundation.XDG {
                     var edgeScheme = schH.GetEdgeQuadScheme(spc);
                     var edgeRule = edgeScheme.Compile(gd, this.CutCellQuadratureOrder);
 
+
                     BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
                         edgeRule,
@@ -205,7 +207,7 @@ namespace BoSSS.Foundation.XDG {
                         },
                         _SaveIntegrationResults: delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) //
                         {
-                            for(int i = 0; i < Length; i++) {
+                            for (int i = 0; i < Length; i++) {
                                 int iEdge = i + i0;
                                 Debug.Assert(edgArea[iEdge] == 0);
                                 edgArea[iEdge] = ResultsOfIntegration[i, 0];
@@ -215,6 +217,8 @@ namespace BoSSS.Foundation.XDG {
 
                     // sum up edges for surface
                     // ------------------------
+
+                    tr.Info("Checkpoint1.1");
 
                     var cellSurf = cellMetrics.ExtractSubArrayShallow(-1, iSpc, 2);
 
@@ -228,11 +232,16 @@ namespace BoSSS.Foundation.XDG {
 
                     }
 
+                    tr.Info("Checkpoint1.2");
+
                     // compute cut cell volumes
                     // ------------------------
 
+                    tr.Info("Species: " + XDGSpaceMetrics.Tracker.GetSpeciesName(spc));
                     var volScheme = schH.GetVolumeQuadScheme(spc);
+                    tr.Info("Checkpoint1.3");
                     var volRule = volScheme.Compile(gd, this.CutCellQuadratureOrder);
+                    tr.Info("Checkpoint1.4");
 
                     BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                         new int[] { 1 }, gd,
@@ -253,12 +262,13 @@ namespace BoSSS.Foundation.XDG {
                         }).Execute();
                 }
 
+                tr.Info("Checkpoint2");
 
                 // interface surface
                 // =================
 
                 // loop over surfaces
-                if(species.Length > 0) {
+                if (species.Length > 0) {
                     var AllSpc = XDGSpaceMetrics.TotalSpeciesList;
                     var requiredSpecies = XDGSpaceMetrics.SpeciesList;
 
@@ -311,10 +321,12 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                tr.Info("Checkpoint3");
+
                 // MPI exchange & store
                 // ====================
 
-                if(species.Length > 0) {
+                if (species.Length > 0) {
 #if DEBUG
                     int NoOfSpc = species.Length;
                     var cellMetricsB4 = cellMetrics.ExtractSubArrayShallow(new[] { 0, 0, 0 }, new[] { J - 1, NoOfSpc - 1, 1 }).CloneAs();

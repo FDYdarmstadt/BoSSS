@@ -51,7 +51,7 @@ namespace ilPSP.LinSolvers.HYPRE {
 
             int jLower = (int) partition.i0;
             int jUpper = (int)partition.i0 + partition.LocalLength - 1;
-            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            MPI_Comm comm = partition.MPI_Comm;
             int Nupdate = partition.LocalLength;
 
             // create object

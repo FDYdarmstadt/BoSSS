@@ -15,12 +15,15 @@ List of 2 instances of IDatabaseInfo {
 ==============
 using BoSSS.Application.XdgPoisson3;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.XdgPoisson3' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
 ==============
 ExecutionQueues;
 **************
 List of 4 instances of BatchProcessorClient {
   0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
-  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\weber\dply
+  1: MS HPC client @DC2, @\\hpccluster\hpccluster-scratch\weber\dply
   2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
   3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
 }
@@ -33,12 +36,12 @@ var myBatch                     = (SlurmClient)ExecutionQueues[3];
 myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"}; //new string[]{"#SLURM -p test24", "#SLURM -C avx512","#SLURM -N 3"}; 
 **************
 ==============
-string WFlowName = "IBM_RotCube_BlockJackCG";
+string WFlowName = "IBM_RotCube_debugGridCommons";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'IBM_RotCube_BlockJackCG'.
+Project name is set to 'IBM_RotCube_debugGridCommons'.
 List of 0 instances of KeyValuePair{String,Job} {
 }
 ==============
@@ -55,21 +58,31 @@ Opening existing database 'W:\work\scratch\jw52xeqa\DB_IBM_test'.
 ==============
 tempDB.Sessions
 **************
-List of 14 instances of ISessionInfo {
-  0: XNSE/IBM_benchmark	XNSE_rotsphere	02/26/2021 17:30:39	8a132319...
-  1: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:35:09	4abfa7ef...
-  2: XNSE/IBM_benchmark	XNSE_rotsphere*	02/26/2021 17:30:55	36684c3b...
-  3: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:25:33	6fc6d6f6...
-  4: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:21:48	10b2437c...
-  5: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:16:46	7de3dcf4...
-  6: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:04:09	00348b81...
-  7: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:01	1fd4c0a7...
-  8: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	f07102c1...
-  9: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	fa414a6f...
-  10: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:32:44	77a9229f...
-  11: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:05:45	f06072f2...
-  12: XNSE/RotCube	XNSE_rotcube*	02/26/2021 15:51:57	88776311...
-  13: XNSE/RotCube	XNSE_rotcube*	02/25/2021 21:27:06	6e8461d3...
+List of 24 instances of ISessionInfo {
+  0: XNSE/IBM_benchmark	XNSE_rotsphere*	05/22/2021 00:55:09	46bb5996...
+  1: XNSE/IBM_benchmark	XNSE_rotsphere*	05/22/2021 00:36:29	65fb599b...
+  2: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 18:31:33	e001635d...
+  3: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 18:30:24	ee3ac23c...
+  4: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 17:30:01	43a8f315...
+  5: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 16:12:48	0d39b29a...
+  6: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 15:51:09	d5aeeb5d...
+  7: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 14:58:46	a8a1718b...
+  8: XNSE/IBM_benchmark	XNSE_rotsphere*	05/21/2021 14:20:43	1135bafe...
+  9: XNSE/IBM_benchmark	XNSE_rotsphere*	05/19/2021 12:10:29	ef95e77d...
+  10: XNSE/IBM_benchmark	XNSE_rotsphere	02/26/2021 17:30:39	8a132319...
+  11: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:35:09	4abfa7ef...
+  12: XNSE/IBM_benchmark	XNSE_rotsphere*	02/26/2021 17:30:55	36684c3b...
+  13: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:25:33	6fc6d6f6...
+  14: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:21:48	10b2437c...
+  15: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:16:46	7de3dcf4...
+  16: XNSE/RotCube	XNSE_rotcube*	02/26/2021 17:04:09	00348b81...
+  17: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:01	1fd4c0a7...
+  18: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	f07102c1...
+  19: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:53:00	fa414a6f...
+  20: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:32:44	77a9229f...
+  21: XNSE/RotCube	XNSE_rotcube*	02/26/2021 16:05:45	f06072f2...
+  22: XNSE/RotCube	XNSE_rotcube*	02/26/2021 15:51:57	88776311...
+  23: XNSE/RotCube	XNSE_rotcube*	02/25/2021 21:27:06	6e8461d3...
 }
 ==============
 // ===================
@@ -99,9 +112,9 @@ Utils.Np(0);
 **************
 ==============
 // set parameterz
-int[] core_sweep = {8,16};
-int p             = 3;
-int Problemsize   = 1800000;
+int[] core_sweep = {32,40};
+int p             = 2;
+int Problemsize   = 250000;
 int MemoryPerCore = 2000;
 **************
 ==============
@@ -112,11 +125,11 @@ int NoOfCells = ResRndup*ResRndup*ResRndup;
 double test   = NoOfCells*(Utils.Np(p)*3+Utils.Np(p-1));
 ResRndup;
 **************
-30
+20
 ==============
 ResRndup
 **************
-30
+20
 ==============
 // - - - - - - - - - - - - -
 // setup of parameter study
@@ -151,18 +164,18 @@ int MaxDof = int.MaxValue;
 
 //foreach(LinearSolverCode solver_name in solver_nameS) {
 foreach(int k in PolyDegS) {    
-    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2}, false)",k,ResRndup,3);
+    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2}, false,{3},true,true,false)",k,ResRndup,3,10);
     controls.Add(jobstr);
     Console.WriteLine(jobstr);
     }
 **************
-cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 30, 3, false)
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(2, 20, 3, false,10,true,true,false)
 
 ==============
 controls
 **************
 List of 1 instances of String {
-  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(3, 30, 3, false)
+  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(2, 20, 3, false,10,true,true,false)
 }
 ==============
 //var solver = new XdgPoisson3Main();
@@ -182,37 +195,67 @@ using BoSSS.Application.XNSE_Solver;
 foreach(var cores in core_sweep){
 foreach(var ctrlstr in controls){
     int rndnum = new Random().Next();
-    var aJob   = new Job("rotting_cube_"+rndnum,typeof(XNSE));
+    var aJob   = new Job("rotting_cube_"+cores,typeof(XNSE));
     aJob.SetControlStatement(ctrlstr);
     aJob.NumberOfMPIProcs         = cores;
-    aJob.ExecutionTime            = "8:00:00";
+    aJob.ExecutionTime            = "4:00:00";
     aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
     aJob.Activate(myBatch);
 }
 }
 **************
-Deploying job rotting_cube_474953610 ... 
+Deploying job rotting_cube_79812342 ... 
 Deploying executables and additional files ...
 Skipping: System.Threading.Tasks.Extensions
 Skipping: System.Text.Encoding.CodePages
 Skipping: System.Runtime.Loader
-Deployment directory: X:\Deployerie\IBM_RotCube_BlockJackCG-XNSE_Solver2021May10_133648
-copied 42 files.
+Deployment directory: X:\Deployerie\IBM_RotCube_debugGridCommons-XNSE_Solver2021May25_085415
+copied 43 files.
 deployment finished.
-17624921
+17895196
 
-Deploying job rotting_cube_170765518 ... 
+Deploying job rotting_cube_2037907729 ... 
 Deploying executables and additional files ...
 Skipping: System.Threading.Tasks.Extensions
 Skipping: System.Text.Encoding.CodePages
 Skipping: System.Runtime.Loader
-Deployment directory: X:\Deployerie\IBM_RotCube_BlockJackCG-XNSE_Solver2021May10_133652
-copied 42 files.
+Deployment directory: X:\Deployerie\IBM_RotCube_debugGridCommons-XNSE_Solver2021May25_085426
+copied 43 files.
 deployment finished.
-17624922
+17895203
 
 
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

@@ -396,6 +396,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             throw new NotImplementedException();
         }
 
+        private SinglePhaseField MPIrankField;
 
         /// <summary>
         /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
@@ -407,9 +408,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
             this.InitializeLevelSets(LsUpdater, t);
+            MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            MPIrankField.AccConstant(this.MPIRank);
+            base.m_IOFields.Add(MPIrankField);
         }
-
-
 
         /// <summary>
         /// - Matches <see cref="DelUpdateLevelset"/>, used by the <see cref="ApplicationWithSolver{T}.Timestepping"/> to advance the interfaces

@@ -91,6 +91,8 @@ namespace BoSSS.Foundation {
         private void DirectSolve<P, Q>(P X, Q B)
             where P : IList<double>
             where Q : IList<double> {
+            if (ILU_M.RowPartitioning.LocalLength == 0 && ILU_M.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF)
+                return; // there is nothing to do and we can safely skip the solve step
             dirsolver.Solve(X,B);
         }
 
@@ -242,16 +244,10 @@ namespace BoSSS.Foundation {
             int L = xl.Count;
             double[] ql = new double[L];
 
-            double iter0_ResNorm = 0;
-
             for (int iIter = 0; iIter<5; iIter++) {
-                ql.SetV(bl);
+                if(L>0) ql.SetV(bl);
                 m_Matrix.SpMV(-1.0, xl, 1.0, ql);
-                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
-
-                if (iIter == 0) {
-                    iter0_ResNorm = ResNorm;
-                }
+                //double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
 
                 Diag.SpMV(1.0, xl, 1.0, ql);
                 invDiag.SpMV(omega, ql, 1.0 - omega, xl);
@@ -268,10 +264,12 @@ namespace BoSSS.Foundation {
             dirsolver.DefineMatrix(ILU_M);
         }
 
-        private void MKL_ILU_Solve<U, V>(U xl, V bl)
-            where U : IList<double>
-            where V : IList<double> {
-            dirsolver.Solve(xl,bl);
+        private void HYPRE_ILU_Init() {
+            dirsolver = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                Level = 0,
+                Comm = csMPI.Raw._COMM.SELF
+            };
+            dirsolver.DefineMatrix(ILU_M);
         }
 
         private void PrecondInit() {
@@ -281,15 +279,15 @@ namespace BoSSS.Foundation {
             //DirectInit();
             //ILUDecomposition();
             //ICholDecomposition();
-            MKL_ILU_Init();
+            //MKL_ILU_Init();
+            HYPRE_ILU_Init();
         }
 
         private void PrecondSolve<U, V>(U xl, V bl) where U : IList<double>
             where V : IList<double> {
             //BlockJacSolve(xl,bl);
             //DecompSolve(xl, bl);
-            //DirectSolve(xl,bl);
-            MKL_ILU_Solve(xl,bl);
+            DirectSolve(xl,bl);
         }
 
         public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
@@ -315,18 +313,25 @@ namespace BoSSS.Foundation {
                 double[] V = new double[L];
                 double[] Z = new double[L];
 
+            int[] Lengths = L.MPIGather(0);
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                for(int i=0;i<Lengths.Length;i++)
+                    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
+            }
             // compute P0, R0
             // ==============
-            GenericBlas.dswap(L, x, 1, P, 1);
+            if (x.Length != 0)
+                GenericBlas.dswap(L, x, 1, P, 1);
                 m_Matrix.SpMV(-1.0, P, 1.0, R);
-
+            if (x.Length != 0)
                 GenericBlas.dswap(L, x, 1, P, 1);
 
-            //P.SetV(R);
+            //if (x.Length != 0) P.SetV(R);
             PrecondSolve(Z, R);
-            P.SetV(Z);
+            if (x.Length != 0) P.SetV(Z);
 
-            double alpha = R.InnerProd(P).MPISum();
+            double alpha_loc = x.Length != 0? R.InnerProd(P):0;
+            double alpha = alpha_loc.MPISum();
             double alpha_0 = alpha;
             Console.WriteLine(alpha);
             double ResNorm;
@@ -343,52 +348,60 @@ namespace BoSSS.Foundation {
                 // =======
                 for (int n = 1; true; n++) {
 
-                if (n % 1 == 0) {
-
-                    Xdummy.SetV(x);
+                if (n % 1 == 0 ) {
                     var theResidual = new double[R.Length];
-                    theResidual.SetV(ResReal);
+                    if (x.Length != 0) {
+                        theResidual.SetV(ResReal);
+                        Xdummy.SetV(x);
+                    }
                     m_Matrix.SpMV(-1.0, Xdummy, 1.0, theResidual);
-                    Console.WriteLine("Res real at n"+n+":"+ theResidual.MPI_L2Norm());
+                    double bla = (x.Length != 0 ? theResidual.L2NormPow2() : 0).MPISum().Sqrt();
+                    Console.WriteLine("Res real at n"+n+":"+ bla);
                 }
 
                 Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
-                    if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n > 100) {
-                        if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
-                        break;
-                    }
+                if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n > 100) {
+                    if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
+                    break;
+                }
 
-                    if (Math.Abs(alpha) <= double.Epsilon) {
-                        // numerical breakdown
-                        break;
-                    }
+                if (Math.Abs(alpha) <= double.Epsilon) {
+                    // numerical breakdown
+                    break;
+                }
 
 
-                    m_Matrix.SpMV(1.0, P, 0, V);
-                    double VxP = V.InnerProd(P).MPISum();
-                    if (double.IsNaN(VxP) || double.IsInfinity(VxP))
-                        throw new ArithmeticException();
-                    double lambda = alpha / VxP;
+                m_Matrix.SpMV(1.0, P, 0, V);
+                double VxP_loc = x.Length != 0 ? V.InnerProd(P):0;
+                double VxP = VxP_loc.MPISum();
+                if (double.IsNaN(VxP) || double.IsInfinity(VxP))
+                    throw new ArithmeticException();
+                double lambda = alpha / VxP;
                 if (double.IsNaN(lambda) || double.IsInfinity(lambda))
-                        throw new ArithmeticException();
+                    throw new ArithmeticException();
 
-
+                if (x.Length != 0) {
                     x.AccV(lambda, P);
-
                     R.AccV(-lambda, V);
+                }
 
-                //Z.SetV(R);
-                Z.Clear();
+                //if (x.Length != 0) Z.SetV(R);
+                if (x.Length != 0) Z.Clear();
                 PrecondSolve(Z, R);
+                
 
-                double alpha_neu = R.InnerProd(Z).MPISum();
-                    // compute residual norm
-                    ResNorm = R.MPI_L2Norm();
+                double alpha_neu_loc = x.Length != 0 ? R.InnerProd(Z) : 0;
+                double alpha_neu = alpha_neu_loc.MPISum();
 
+                // compute residual norm
+                ResNorm = (x.Length != 0? R.L2NormPow2():0).MPISum().Sqrt();
+
+                if (x.Length != 0) {
                     P.ScaleV(alpha_neu / alpha);
                     P.AccV(1.0, Z);
 
                     alpha = alpha_neu;
+                }
                 }
 
                 if (!object.ReferenceEquals(_x, x))
@@ -1368,52 +1381,53 @@ namespace BoSSS.Foundation {
                     // 
                     int maxCondAtVert = (D == 2) ? 4 : 12;
                     int OverdeterminedCondAtVertice = 0;
-                    //for (int i = 0; i < vertAtCell1.Length; i++) {
-                    //    int vert = vertAtCell1[i];
-                    //    if (vertAtCell2.Contains(vert)) {
-                    //        GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                    //        //geomVertAtEdge.Add(gVert);
-                    //        gVert.IncreaseNoOfConditions();
-                    //        int condAtVert = gVert.GetNoOfConditions();
-                    //        //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
-                    //        Debug.Assert(condAtVert <= maxCondAtVert);
-                    //        if (condAtVert == maxCondAtVert)
-                    //            OverdeterminedCondAtVertice++;
-                    //    }
-                    //}
-                    ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
+                    for (int i = 0; i < vertAtCell1.Length; i++) {
+                        int vert = vertAtCell1[i];
+                        if (vertAtCell2.Contains(vert)) {
+                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
+                            //geomVertAtEdge.Add(gVert);
+                            gVert.IncreaseNoOfConditions();
+                            int condAtVert = gVert.GetNoOfConditions();
+                            //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
+                            Debug.Assert(condAtVert <= maxCondAtVert);
+                            if (condAtVert == maxCondAtVert)
+                                OverdeterminedCondAtVertice++;
+                        }
+                    }
+                    //Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
 
                     // 
                     int OverdeterminedCondAtGeomEdge = 0;
-                    //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
-                    //if (D == 3) {
-                    //    List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
-                    //    List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
-                    //    foreach (var gEdge1 in edgesAtFace1) {
-                    //        if (edgesAtFace2.Contains(gEdge1)) {
-                    //            GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
-                    //            //geomEdgeAtEdge.Add(gEdge);
-                    //            gEdge.IncreaseNoOfConditions();
-                    //            int condAtEdge = gEdge.GetNoOfConditions();
-                    //            //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
-                    //            Debug.Assert(condAtEdge <= 4);
-                    //            if (condAtEdge == 4) {
-                    //                //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                    //                //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
-                    //                //if (dir1 != dir2)
-                    //                //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
-                    //                OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                    //                OverdeterminedCondAtGeomEdge++;
-                    //            }
-                    //        }
-                    //    }
-                    //}
+                    int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
+                    if (D == 3) {
+                        List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
+                        List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
+                        foreach (var gEdge1 in edgesAtFace1) {
+                            if (edgesAtFace2.Contains(gEdge1)) {
+                                GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
+                                //geomEdgeAtEdge.Add(gEdge);
+                                gEdge.IncreaseNoOfConditions();
+                                int condAtEdge = gEdge.GetNoOfConditions();
+                                //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
+                                Debug.Assert(condAtEdge <= 4);
+                                if (condAtEdge == 4) {
+                                    //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                                    //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
+                                    //if (dir1 != dir2)
+                                    //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
+                                    OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                                    OverdeterminedCondAtGeomEdge++;
+                                }
+                            }
+                        }
+                    }
 
 
                     //if (!isInterprocEdge) 
                     {
                         //AcceptedEdges.Add(j);
                         //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection);
+                        //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, 0);
                         NodeSet qNds = getEdgeInterpolationNodes(0, 0);
                         AcceptedNodes.Add(qNds);
 
@@ -1582,7 +1596,16 @@ namespace BoSSS.Foundation {
             //    RelaxType = ilPSP.LinSolvers.HYPRE.RelaxType.GaussSeidel,
             //    MaxLevels = 3,
             //};
-            //solver.NestedPrecond = precond;
+
+            //var solver = new ilPSP.LinSolvers.HYPRE.PCG() {
+            //    PrintLevel = 2,
+            //    MaxIterations = 1000,
+            //    Tolerance = 1E-6,
+            //};
+            ////var precond = new ilPSP.LinSolvers.HYPRE.Euclid() {
+            ////    Level = 1,
+            ////};
+            ////solver.NestedPrecond = precond;
             //StopInit.Start();
             //solver.DefineMatrix(AAT);
             //StopInit.Stop();
@@ -1608,7 +1631,8 @@ namespace BoSSS.Foundation {
 #if DEBUG
             var Rdummy = RHS.CloneAs(); 
             AAT.SpMV(-1.0, v.CloneAs(),1.0, Rdummy);
-            Console.WriteLine("ResNorm of Solution ... "+Rdummy.MPI_L2Norm());
+            double tmp = (Rdummy.Length != 0 ? Rdummy.L2NormPow2() : 0).MPISum().Sqrt();
+            Console.WriteLine("ResNorm of Solution ... "+ tmp);
 #endif
 
             // x = RHS - ATv

@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -92,8 +93,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Generic versions which should be used for derivatives 
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
-
-
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -251,6 +250,12 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// Cell-performance classes:
+        /// cell performance class equals number of species present in that cell
+        /// </summary>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
+            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.CType);
+        }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int pVel = VelocityDegree();

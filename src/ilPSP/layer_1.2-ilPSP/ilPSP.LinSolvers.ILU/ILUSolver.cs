@@ -13,24 +13,25 @@ namespace ilPSP.LinSolvers.ILU {
         public void DefineMatrix(IMutableMatrixEx inputMatrix) {
             m_Matrix= inputMatrix;
             wrapper = new Wrapper_MKL();
-            out_Matrix = new MsrMatrix(inputMatrix.RowPartitioning);
 
             if (tmpMatrix == null)
                 tmpMatrix = new Matrix(m_Matrix, this.UseDoublePrecision);
             Debug.Assert(tmpMatrix.Symmetric == false);
 
             SetParameters();
-
+            
             if (m_Matrix.RowPartitioning.MpiSize == 1)
                 LocalFactorization();
             else
                 throw new NotImplementedException("ILU is only implemented for local use only! Note: There is no parallel version available in the Intel MKL right now.");
+
+            mklHandleForCSRMatrix = CreateInternalMatrixFormat();
+
             tmpMatrix.Dispose();
             tmpMatrix = null;
         }
 
         IMutableMatrixEx m_Matrix;
-        MsrMatrix out_Matrix;
         Matrix tmpMatrix;
         Wrapper_MKL wrapper;
         bool UseDoublePrecision=true;
@@ -88,7 +89,7 @@ namespace ilPSP.LinSolvers.ILU {
 
         private unsafe void LocalSubstitution(double[] sol, double[] rhs, sparse_fill_mode_t Mode) {
             fixed (double* p_sol = sol, p_rhs = rhs) {
-                var spM = CreateInternalMatrixFormat();
+                
 
                 //double* outA;
                 //sparse_index_base_t outindexing;
@@ -118,7 +119,7 @@ namespace ilPSP.LinSolvers.ILU {
                     diag = Diag
                 };
                 //int* operation, double* alpha, SPARSE_MATRIX_T A, MATRIX_DESCR descr, double* x, double* y
-                int err = wrapper.Substitute(operation, alpha, spM, Mdescr, p_rhs, p_sol);
+                int err = wrapper.Substitute(operation, alpha, mklHandleForCSRMatrix, Mdescr, p_rhs, p_sol);
                 if (err != 0)
                     throw new Exception("PadaBuuum! "+ MKLstatus2string(err));
             }
@@ -182,27 +183,39 @@ namespace ilPSP.LinSolvers.ILU {
         }
 
         public void Dispose() {
+            int stat = wrapper.Destroy(mklHandleForCSRMatrix);
             m_Matrix = null;
             tmpMatrix.Dispose();
             tmpMatrix = null;
             ILUfactorization.Dispose();
             ILUfactorization=null;
+            Debug.Assert(stat == 0);
+            Debug.Assert(m_Matrix == null);
+            Debug.Assert(tmpMatrix == null);
         }
 
-        private unsafe void TranslateMatrixBack(double* M, int* rowoffsetinarray, int* colidx, int NoNZ) {
-            out_Matrix.Clear();
+        private unsafe MsrMatrix TranslateMatrixBack() {
+            int indexingoffset = 1;
+            double* M = (double*)ILUfactorization.aPtr;
+            int[] rowoffsetinarray = ILUfactorization.ia;
+            int[] colidx = ILUfactorization.ja;
+            int NoNZ = ILUfactorization.n;
+
+            var out_Matrix = new MsrMatrix(m_Matrix.RowPartitioning);
             int r = -1;
             for(int i =0;i< NoNZ; i++) {
-                int c = colidx[i]-1;
-                if (i >= rowoffsetinarray[r+1]-1)
+                int c = colidx[i]- indexingoffset;
+                if (i >= rowoffsetinarray[r+1]- indexingoffset)
                     r++;
                 out_Matrix[r, c] = M[i];
             }
+            return out_Matrix;
         }
 
-        //public MsrMatrix ILUfactorization {
-        //    get { return out_Matrix;  }
-        //}
+        public MsrMatrix GetILUFactorization {
+            get { return TranslateMatrixBack(); }
+        }
+
     }
 
 

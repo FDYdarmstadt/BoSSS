@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The owner object.
         /// </summary>
-        private LevelSetTracker Tracker {
+        public LevelSetTracker Tracker {
             get;
             set;
         }

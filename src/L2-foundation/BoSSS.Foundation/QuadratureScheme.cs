@@ -241,7 +241,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadratureScheme{S, T}.Compile"/>
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
-
+            ilPSP.MPICollectiveWatchDog.Watch();
             // set domain
             TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
             Debug.Assert(baseDomain.MaskType == MaskType.Geometrical);

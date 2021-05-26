@@ -120,7 +120,7 @@ namespace BoSSS.Application.XNSE_Solver {
    at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_HMFonLineSegment() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 95
    at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 131
              */
-            var C = Rotating_Cube(2, 10, 3, false);
+            var C = Rotating_Cube(4, 10, 3, false);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);

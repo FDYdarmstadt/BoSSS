@@ -80,6 +80,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Loadbalancing\XNSECellClassifiers.cs" />
     <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
     <Compile Include="Logging\CapillaryHeightLogging.cs" />
     <Compile Include="Logging\ChannelFlowLogging.cs" />

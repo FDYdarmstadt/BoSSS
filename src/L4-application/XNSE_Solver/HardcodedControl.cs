@@ -522,16 +522,17 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 1,bool writeToDB = false) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 20,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
             if (writeToDB) {
                 //C.DbPath = @"D:\trash_db";
-                C.AlternateDbPaths = new[] {
-                (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
-                (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                //C.AlternateDbPaths = new[] {
+                //(@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                //(@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
@@ -543,22 +544,33 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==========
 
             C.SetFieldOptions(k, Math.Max(6,k*2));
-            C.GridPartType = GridPartType.Hilbert;
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
-            //C.TracingNamespaces = "*";
-
+            if (tracing) C.TracingNamespaces = "*";
+            //IBMCestimator = new 
+            //C.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
 
             // grid and boundary conditions
             // ============================
 
             //// Create Grid
             Console.WriteLine("...generating grid");
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 1, yMax = 1, zMax = 1;
+
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+
+                double range = xMax - xMin;
+                double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
+
+                return (int)((x - xMin) / interval);
+            };
+
             C.GridFunc = delegate {
 
                 // x-direction
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
+                
                 var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                 // y-direction
@@ -581,6 +593,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentOutOfRangeException();
                 }
 
+                //grd.AddPredefinedPartitioning("debug", MakeDebugPart);
+
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -599,6 +613,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
 
             };
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "debug";
+            C.GridPartType = GridPartType.Hilbert;
+
+            C.DynamicLoadBalancing_On = loadbalancing;
+            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add((program,no) => new BoSSS.Solution.StaticCellCostEstimator(new int[]{ 10, 10, 10 }));
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);

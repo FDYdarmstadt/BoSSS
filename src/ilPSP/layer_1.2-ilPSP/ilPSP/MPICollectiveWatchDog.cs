@@ -36,7 +36,7 @@ namespace ilPSP {
         /// terminates the application if the method is not called by all MPI processes in 
         /// the MPI world communicator.
         /// </summary>
-        [Conditional("DEBUG")]
+        //[Conditional("DEBUG")]
         public static void Watch() {
             Watch(csMPI.Raw._COMM.WORLD);
         }
@@ -50,7 +50,7 @@ namespace ilPSP {
         /// the MPI communicator <paramref name="comm"/>
         /// </summary>
         /// <param name="comm"></param>
-        [Conditional("DEBUG")]
+        //[Conditional("DEBUG")]
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void Watch(MPI_Comm comm) {
             if (!Tracing.Tracer.InstrumentationSwitch)

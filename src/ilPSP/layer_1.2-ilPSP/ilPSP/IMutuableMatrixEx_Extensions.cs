@@ -570,9 +570,9 @@ namespace ilPSP.LinSolvers {
         static public void SaveToTextFileSparseDebug(this IMutableMatrixEx M, string path) {
             using (new FuncTrace()) {
                 int rank, size;
-
-                csMPI.Raw.Comm_Rank(M.MPI_Comm, out rank);
-                csMPI.Raw.Comm_Size(M.MPI_Comm, out size);
+                var comm = csMPI.Raw._COMM.WORLD;
+                csMPI.Raw.Comm_Rank(comm, out rank);
+                csMPI.Raw.Comm_Size(comm, out size);
 
                 var entries = M.GetAllEntries();
 

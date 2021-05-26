@@ -707,67 +707,68 @@ namespace BoSSS.Foundation.XDG {
         /// Fills up the volume scheme for species <paramref name="sp"/>.
         /// </summary>
         public CellQuadratureScheme GetVolumeQuadScheme(SpeciesId sp, bool UseDefaultFactories = true, CellMask IntegrationDomain = null, int? fixedOrder = null) {
-            if (!this.SpeciesList.Contains(sp))
-                throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
+                ilPSP.MPICollectiveWatchDog.Watch();
+                if (!this.SpeciesList.Contains(sp))
+                    throw new ArgumentException("Given species (id = " + sp.cntnt + ") is not supported.");
 
-            if (IntegrationDomain != null)
-                if (IntegrationDomain.MaskType != MaskType.Logical)
-                    throw new ArgumentException();
+                if (IntegrationDomain != null)
+                    if (IntegrationDomain.MaskType != MaskType.Logical)
+                        throw new ArgumentException();
 
-            CellMask CellMask = GetCellMask(sp, IntegrationDomain);
+                CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
-            /// Debugging Code
-            //if (IntegrationDomain != null) {
-            //    CellMask.ToTxtFile("VolDom-" + this.lsTrk.GridDat.MyRank + "of" + this.lsTrk.GridDat.Size + ".csv", false);
-            //}
+                /// Debugging Code
+                //if (IntegrationDomain != null) {
+                //    CellMask.ToTxtFile("VolDom-" + this.lsTrk.GridDat.MyRank + "of" + this.lsTrk.GridDat.Size + ".csv", false);
+                //}
 
-            // default rule for "normal" cells
-            var volQrIns = (new CellQuadratureScheme(UseDefaultFactories, CellMask));
+                // default rule for "normal" cells
+                var volQrIns = (new CellQuadratureScheme(UseDefaultFactories, CellMask));
 
-            // now: rules for the cut-cells:
-            for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
-                    var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
-                    var cutCells = cutDom.Intersect(CellMask);
+                // now: rules for the cut-cells:
+                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
+                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
+                        var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
+                        var cutCells = cutDom.Intersect(CellMask);
 
-                    var jmp = IdentifyWingA(iLevSet, sp);
+                        var jmp = IdentifyWingA(iLevSet, sp);
 
-                    for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
-                        RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
-                        var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
-                        var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
-                        volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
+                        for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
+                            RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
+                            var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
+                            var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
+                            volQrIns.AddFactoryDomainPair(factory, _cutDom, fixedOrder);
+                        }
                     }
                 }
-            }
 
-            //now: rules for the doubly cut-cells
-            for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
-                if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
-                    var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
-                    var cutCells = cutDom.Intersect(CellMask);
+                //now: rules for the doubly cut-cells
+                for (int iLevSet = 0; iLevSet < XDGSpaceMetrics.NoOfLevelSets; iLevSet++) { // loop over level sets
+                    if (!SpeciesAreSeparatedByLevSet(iLevSet, sp, sp)) {
+                        var cutDom = XDGSpaceMetrics.LevelSetRegions.GetCutCellMask4LevSet(iLevSet).ToGeometicalMask();
+                        var cutCells = cutDom.Intersect(CellMask);
 
-                    var jmp = IdentifyWingA(iLevSet, sp);
+                        var jmp = IdentifyWingA(iLevSet, sp);
 
-                    for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
-                        RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
-                        var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
+                        for (int iKref = 0; iKref < XDGSpaceMetrics.GridDat.Grid.RefElements.Length; iKref++) {
+                            RefElement Kref = XDGSpaceMetrics.GridDat.Grid.RefElements[iKref];
+                            var _cutDom = cutCells.Intersect(XDGSpaceMetrics.GridDat.Cells.GetCells4Refelement(iKref));
 
-                        //handle rules for cells/edges where two levelsets are present
-                        for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
-                            if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                                CellMask doublyCut = GetCutCells(iLevSet, jLevSet).Intersect(_cutDom);
-                                if (doublyCut.Count() > 0) {
-                                    var jmpJ = IdentifyWingA(jLevSet, sp);
-                                    var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
-                                    volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+                            //handle rules for cells/edges where two levelsets are present
+                            for (int jLevSet = iLevSet + 1; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
+                                if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
+                                    CellMask doublyCut = GetCutCells(iLevSet, jLevSet).Intersect(_cutDom);
+                                    if (doublyCut.Count() > 0) {
+                                        var jmpJ = IdentifyWingA(jLevSet, sp);
+                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
+                                        volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
-            return volQrIns;
+                return volQrIns;
         }
 
         private CellMask GetCellMask(SpeciesId sp, CellMask IntegrationDomain) {
