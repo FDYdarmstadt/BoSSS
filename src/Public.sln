@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.1145
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "L0", "L0", "{1EF7CF54-6462-4601-8335-13F5B16BFD2C}"
 EndProject
@@ -174,6 +174,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedSolverTests", "L4-application\AdvancedSolverTests\AdvancedSolverTests.csproj", "{196F67AF-062F-45EB-8598-3BC442C971E9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntersectingLevelSetTest", "L4-application\IntersectingLevelSetTest\IntersectingLevelSetTest.csproj", "{A53901A0-8968-4799-BCA5-7E526A5C9EEE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "XNSERO_Solver", "L4-application\XNSERO\XNSERO_Solver.csproj", "{08B50EFE-E463-4BAE-8D29-BC109B86290E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CDG_ProjectionTest", "L4-application\CDG_ProjectionTest\CDG_ProjectionTest.csproj", "{CA250F2A-AD4E-4F96-BC29-692E28F6B140}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -602,6 +606,18 @@ Global
 		{A53901A0-8968-4799-BCA5-7E526A5C9EEE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A53901A0-8968-4799-BCA5-7E526A5C9EEE}.TEST|Any CPU.ActiveCfg = Release|Any CPU
 		{A53901A0-8968-4799-BCA5-7E526A5C9EEE}.TEST|Any CPU.Build.0 = Release|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E}.TEST|Any CPU.Build.0 = Debug|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.TEST|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140}.TEST|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -685,6 +701,8 @@ Global
 		{CF280064-130D-4C5A-9AB1-0604F0AB01C6} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 		{196F67AF-062F-45EB-8598-3BC442C971E9} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 		{A53901A0-8968-4799-BCA5-7E526A5C9EEE} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
+		{08B50EFE-E463-4BAE-8D29-BC109B86290E} = {92405EB8-3356-435E-9969-26756C41A843}
+		{CA250F2A-AD4E-4F96-BC29-692E28F6B140} = {0AF02196-DCBF-4066-AC5A-CC14525B390C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B302C86E-A207-460C-8E9F-13EA258F7D8B}
