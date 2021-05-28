@@ -828,8 +828,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             XNSE_Control C = new XNSE_Control();
 
-            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
             bool quarterDomain = true;
 
@@ -902,15 +902,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.Sigma = 0.1;
 
 
-            C.Tags.Add("Ohnesorge Zahl = 0.1");
-            C.PhysicalParameters.rho_A = 100;
-            C.PhysicalParameters.rho_B = 100 * ratio;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1 * ratio;
-            C.PhysicalParameters.Sigma = 1;
+            //C.Tags.Add("Ohnesorge Zahl = 0.1");
+            //C.PhysicalParameters.rho_A = 100;
+            //C.PhysicalParameters.rho_B = 100 * ratio;
+            //C.PhysicalParameters.mu_A = 1;
+            //C.PhysicalParameters.mu_B = 1 * ratio;
+            //C.PhysicalParameters.Sigma = 1;
 
+            C.Tags.Add("Ohnesorge Zahl = 0.76");
+            C.PhysicalParameters.rho_A = 1260;
+            C.PhysicalParameters.rho_B = 1260 * ratio;
+            C.PhysicalParameters.mu_A = 0.714;
+            C.PhysicalParameters.mu_B = 0.714 * ratio;
+            C.PhysicalParameters.Sigma = 7e-3;
 
-            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.IncludeConvection = false;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -1161,7 +1167,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.TimesteppingMode = compMode;
 
             if (compMode == AppControl._TimesteppingMode.Transient) {
-                double dt = 0.025;
+                double dt = 5e-5;
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 1000;
