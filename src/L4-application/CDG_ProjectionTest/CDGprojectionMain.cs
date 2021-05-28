@@ -21,12 +21,12 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
 
-            BoSSS.Solution.Application.InitMPI();
-            var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            AUT.AllUp(3, 2, 4);
-            BoSSS.Solution.Application.FinalizeMPI();
-            Assert.IsTrue(false, "Remove me");
-            return;
+            //BoSSS.Solution.Application.InitMPI();
+            //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
+            //AUT.AllUp(3, 2, 4);
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //Assert.IsTrue(false, "Remove me");
+            //return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 CDGprojectionMain p = new CDGprojectionMain();
@@ -34,9 +34,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             });
         }
 
-        internal int dimension = 3;
-        internal int degree = 5;
-        internal int gridResolution = 2;
+        internal int dimension = 2;
+        internal int degree = 1;
+        internal int gridResolution = 8;
 
         internal bool periodicX = false;
         internal bool periodicY = false;
@@ -76,12 +76,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         protected override IGrid CreateOrLoadGrid() {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
-            double[] node2 = GenericBlas.Linspace(0, 1, 2);
+            double[] node2pi = GenericBlas.Linspace(0, 2 * Math.PI, (2 * gridResolution) + 1);
+            double[] node2 = GenericBlas.Linspace(0, (1.0 / 2.0 * gridResolution), 2);
             //double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
 
             GridCommons grid;
             if (dimension == 2)
                 grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+                //grid = Grid2D.Cartesian2DGrid(node2pi, node2, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
                 grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
             else
@@ -131,6 +133,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 //// for debugging purposes
                 //CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData),
                 //    X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
+
+
+                //Console.WriteLine("Test 2D projection function 1: sin(x)");
+                //Func<double[], double> projFunc = X => Math.Sin(X[0]);
+                //Console.WriteLine("project on full mask");
+                //string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
 
                 Console.WriteLine("Test 2D projection function 1: sin(x) + cos(x) + x - cos(y) - 1");
                 Func<double[], double> projFunc = X => Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (Math.Cos(X[1]) + 1);
@@ -192,7 +202,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField0
-            cdgField0.ProjectDGField(origin, domain);
+            var returnFields = cdgField0.ProjectDGField(origin, domain);
+            Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
             cdgField0.AccToDGField(1.0, result0, domain);
 
             var errField = origin.CloneAs();

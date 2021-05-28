@@ -31,6 +31,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using System.Diagnostics;
 using MPI.Wrappers;
+using ilPSP.Kraypis;
 
 namespace BoSSS.Foundation {
 
@@ -396,6 +397,143 @@ namespace BoSSS.Foundation {
     }
 
 
+    /// <summary>
+    /// Abstract base class, template for different strategies 
+    /// </summary>
+    public abstract class BlockingStrategy {
+
+        /// <summary>
+        /// Returns lists which form the blocks of the additive-Schwarz domain decomposition.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <returns>
+        /// - outer enumeration: corresponds to domain-decomposition blocks
+        /// - inner index: indices within the sub-blocks
+        /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
+        /// </returns>
+        abstract internal IEnumerable<List<int>> GetBlocking(GridData grdDat, CellMask mask);
+
+        /// <summary>
+        /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
+        /// </summary>
+        internal abstract int GetNoOfBlocks();
+    }
+
+
+    /// <summary>
+    /// creates a fixed number of blocks by using METIS
+    /// </summary>
+    public class METISBlockingStrategy : BlockingStrategy {
+
+        /// <summary>
+        /// Number of parts/additive Schwarz blocks on current MPI process (can be different on other processors)
+        /// </summary>
+        public int NoOfPartsOnCurrentProcess = 1;
+
+        internal override IEnumerable<List<int>> GetBlocking(GridData grdDat, CellMask mask) {
+
+            //if (cache != null) {
+            //    return cache.Select(orgList => new List<int>(orgList)).ToArray();
+            //}
+
+            SubGrid sbgrd = new SubGrid(mask);
+
+            int JComp = mask.NoOfItemsLocally; // number of local cells
+            int[] xadj = new int[JComp + 1];
+            List<int> adjncy = new List<int>();
+            for (int j = 0; j < JComp; j++) {
+                Debug.Assert(xadj[j] == adjncy.Count);
+
+                int j_loc = sbgrd.SubgridIndex2LocalCellIndex[j];
+                int[] neigh_j = grdDat.iLogicalCells.CellNeighbours[j_loc]; 
+                int nCnt = 0;
+                foreach (int jNeigh in neigh_j) {
+                    //adjncy.AddRange(neigh_j);
+                    if (jNeigh < JComp) {
+                        adjncy.Add(jNeigh);
+                        nCnt++;
+                    } else {
+                        //Console.WriteLine("Skipping external cell");
+                    }
+                }
+                xadj[j + 1] = xadj[j] + nCnt;
+            }
+            Debug.Assert(xadj[JComp] == adjncy.Count);
+
+            int MPIrank, MPIsize;
+            MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIrank);
+            MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
+            //if (MPIrank == 1)
+            //    NoOfParts = 1;
+            //Debugger.Launch();
+
+            int[] part = new int[JComp];
+            {
+                if (NoOfPartsOnCurrentProcess > 1) {
+                    int ncon = 1;
+                    int edgecut = 0;
+                    int[] options = new int[METIS.METIS_NOPTIONS];
+                    METIS.SETDEFAULTOPTIONS(options);
+
+                    options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = 1; // 
+                    options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
+                    options[(int)METIS.OptionCodes.METIS_OPTION_UFACTOR] = 30; // Maximum imbalance of 3 percent (this is the default kway clustering)
+                    options[(int)METIS.OptionCodes.METIS_OPTION_NUMBERING] = 0;
+
+                    Debug.Assert(xadj.Where(idx => idx > adjncy.Count).Count() == 0);
+                    Debug.Assert(adjncy.Where(j => j >= JComp).Count() == 0);
+
+                    METIS.PARTGRAPHKWAY(
+                            ref JComp, ref ncon,
+                            xadj,
+                            adjncy.ToArray(),
+                            null,
+                            null,
+                            null,
+                            ref NoOfPartsOnCurrentProcess,
+                            null,
+                            null,
+                            options,
+                            ref edgecut,
+                            part);
+                } else {
+                    part.SetAll(0);
+                }
+            }
+
+            {
+                List<List<int>> _Blocks = NoOfPartsOnCurrentProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsOnCurrentProcess))).ToList();
+                for (int j = 0; j < JComp; j++) {
+                    _Blocks[part[j]].Add(j);
+                }
+
+                for (int iB = 0; iB < _Blocks.Count; iB++) {
+                    if (_Blocks[iB].Count <= 0) {
+                        _Blocks.RemoveAt(iB);
+                        iB--;
+                    }
+                }
+
+                if (_Blocks.Count < NoOfPartsOnCurrentProcess)
+                    Console.WriteLine("METIS WARNING: requested " + NoOfPartsOnCurrentProcess + " blocks, but got " + _Blocks.Count);
+
+                //cache = _Blocks.ToArray();
+                //Console.WriteLine("MetisBlocking Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                return _Blocks.ToArray().Select(orgList => new List<int>(orgList)).ToArray();
+            }
+        }
+
+        //List<int>[] cache;
+
+
+        /// <summary>
+        /// %
+        /// </summary>
+        internal override int GetNoOfBlocks() {
+            return NoOfPartsOnCurrentProcess;
+        }
+    }
+
 
     /// <summary>
     /// continuous DG field via L2-projection with continuity constraints
@@ -436,12 +574,13 @@ namespace BoSSS.Foundation {
 
         ISparseSolver m_OpSolver;
 
-        //int[] CellMask2Coord;
+
+        //int NoOfPatchesPerProcess = 0;  // if < 1 the number of patches is determined by 
+        int maxNoOfCoordinates = 10000; 
+
 
         int[] GlobalVert2Local;
-
-
-        
+    
 
 
         /// <summary>
@@ -466,6 +605,7 @@ namespace BoSSS.Foundation {
             }
         }
 
+
         /// <summary>
         /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
         /// </summary>
@@ -473,7 +613,17 @@ namespace BoSSS.Foundation {
         /// input; unchanged on exit
         /// </param>
         /// <param name="mask"></param>
-        public void ProjectDGField2(ConventionalDGField DGField, CellMask mask = null) {
+        public DGField[] ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
+
+            int NoOfFixedPatches = 4;
+
+            return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
+
+        }
+
+
+        public DGField[] ProjectDGField_patchwise(ConventionalDGField DGField, CellMask mask = null, int NoOfPatchesPerProcess = 0) {
+
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
             this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
@@ -481,7 +631,894 @@ namespace BoSSS.Foundation {
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
             }
-            if(mask.NoOfItemsLocally.MPISum() <= 0) {
+            int J = mask.NoOfItemsLocally;
+
+            // determine number of patches
+            int NoPatches = 1;
+            if (NoOfPatchesPerProcess > 0) {
+                NoPatches = NoOfPatchesPerProcess;
+            } else {
+                int NoOfCoordOnProc = mask.NoOfItemsLocally * DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                if (NoOfCoordOnProc > maxNoOfCoordinates) {
+                    NoPatches = (NoOfCoordOnProc % maxNoOfCoordinates > 0) ? NoOfCoordOnProc / maxNoOfCoordinates : NoOfCoordOnProc / maxNoOfCoordinates + 1;
+                }
+            }
+
+            // divide projection domain into non-overlapping patches
+            var m_BlockingStrategy = new METISBlockingStrategy() {
+                NoOfPartsOnCurrentProcess = NoPatches
+            };
+            var blocking = m_BlockingStrategy.GetBlocking(m_grd, mask);
+
+
+            // constrained projection on all patches
+            List<CellMask> patches = new List<CellMask>();
+            int pC = 0;
+            foreach (List<int> block in blocking) {
+
+                BitArray patchBA = new BitArray(J);
+                foreach (int j in block) {
+                    patchBA[j] = true;
+                }
+                CellMask patch = new CellMask(m_grd, patchBA);
+                patches.Add(patch);
+
+                Console.WriteLine("======================");
+                Console.WriteLine("project patch {0}:", pC);
+                this.ProjectDGFieldOnPatch(DGField, patch);
+                pC++;
+            }
+
+
+            if (NoPatches > 1 || m_grd.MpiSize > 1) {
+
+                // determine merging domain and 
+                // corresponding inner edges and on the boundary 
+                SubGrid maskSG = new SubGrid(mask);
+                EdgeMask innerEM = maskSG.InnerEdgesMask;
+                EdgeMask mergeEM = innerEM;
+                foreach (CellMask patch in patches) {
+                    SubGrid maskPatch = new SubGrid(patch);
+                    EdgeMask innerPatch = maskPatch.InnerEdgesMask;
+                    mergeEM = mergeEM.Except(innerPatch);
+                }
+
+                BitArray mergePatchBA = new BitArray(J);
+                foreach (var chunk in mergeEM) {
+                    int j0 = chunk.i0;
+                    int jE = chunk.JE;
+                    for (int j = j0; j < jE; j++) {
+                        int cell1 = m_grd.Edges.CellIndices[j, 0];
+                        mergePatchBA[cell1] = true;
+                        int cell2 = m_grd.Edges.CellIndices[j, 1];
+                        mergePatchBA[cell2] = true;
+                    }
+                }
+                CellMask mergePatchCM = new CellMask(mask.GridData, mergePatchBA);
+                SubGrid mergePatch = new SubGrid(mergePatchCM);
+                EdgeMask mergeBoundary = mergePatch.BoundaryEdgesMask.Intersect(innerEM);
+
+                // projection of local projection on separate patches
+                DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
+                int stride = DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+
+                //Console.WriteLine("project transition patch:");
+                //this.ProjectDGFieldOnPatch(DGField, mergePatchCM, mergeBoundary, true);
+
+                // plot patches for debugging
+                SinglePhaseField patchField = new SinglePhaseField(m_Basis, "Patches");
+                int pColor = 1;
+                foreach (CellMask patch in patches) {
+                    patchField.AccConstant(pColor, patch);
+                    pColor++;
+                }
+
+                SinglePhaseField mergePatchField = new SinglePhaseField(m_Basis, "Merging-Patch");
+                mergePatchField.AccConstant(1.0, mergePatchCM);
+
+                List<DGField> returnFields = new List<DGField>();
+                returnFields.Add(patchField);
+                returnFields.Add(mergePatchField);
+                returnFields.Add(localProj);
+
+
+
+                // 1. merge between two adjacent patches
+                // =====================================
+
+
+                for (int p1 = 0; p1 < NoPatches; p1++) {
+
+                    SubGrid patch1 = new SubGrid(patches.ElementAt(p1));
+                    EdgeMask allEM1 = patch1.AllEdgesMask;
+                    EdgeMask innerEM1 = patch1.InnerEdgesMask;
+
+                    for (int p2 = p1 + 1; p2 < NoPatches; p2++) {
+
+                        SubGrid patch2 = new SubGrid(patches.ElementAt(p2));
+                        EdgeMask allEM2 = patch2.AllEdgesMask;
+                        EdgeMask innerEM2 = patch2.InnerEdgesMask;
+
+                        // inner edges between patch 1 and patch 2
+                        EdgeMask mergeEM12 = allEM1.Intersect(allEM2);
+
+                        // 
+                        BitArray merge12PatchBA = new BitArray(J);
+                        foreach (var chunk in mergeEM12) {
+                            int j0 = chunk.i0;
+                            int jE = chunk.JE;
+                            for (int j = j0; j < jE; j++) {
+                                int cell1 = m_grd.Edges.CellIndices[j, 0];
+                                merge12PatchBA[cell1] = true;
+                                int cell2 = m_grd.Edges.CellIndices[j, 1];
+                                merge12PatchBA[cell2] = true;
+                            }
+                        }
+                        CellMask merge12PatchCM = new CellMask(mask.GridData, merge12PatchBA);
+                        SubGrid merge12Patch = new SubGrid(merge12PatchCM);
+                        EdgeMask merge12Boundary = merge12Patch.BoundaryEdgesMask.Intersect(innerEM);
+                        EdgeMask innerMergeEM = mergePatch.InnerEdgesMask;
+                        merge12Boundary = merge12Boundary.Except(innerMergeEM);
+
+                        if (!merge12PatchCM.IsEmptyOnRank) {
+                            Console.WriteLine("======================");
+                            Console.WriteLine("project merging patch {0}-{1}:", p1, p2);
+                            Console.WriteLine("number of cells in merge patch: {0}", merge12PatchCM.NoOfItemsLocally);
+                            Console.WriteLine("number of edges in merge boundary: {0}", merge12Boundary.NoOfItemsLocally);
+                            this.ProjectDGFieldOnPatch(DGField, merge12PatchCM, merge12Boundary, true);
+
+                            string mergePatchName = "Merging-Patch_" + p1 + p2;
+                            SinglePhaseField mergePatch12Field = new SinglePhaseField(m_Basis, mergePatchName);
+                            mergePatch12Field.AccConstant(1.0, merge12PatchCM);
+                            returnFields.Add(mergePatch12Field);
+
+                        } else {
+                            Console.WriteLine("======================");
+                            Console.WriteLine("no projection on merging patch {0}-{1}:", p1, p2);
+                        }
+                    }
+                }
+
+                // projection of local projections on separate merge patches
+                localProj = new SinglePhaseField(m_Basis, "localMergeProjection");
+                localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+                returnFields.Add(localProj);
+
+
+                return returnFields.ToArray();
+            }
+
+            return null;
+        }
+
+
+        public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask = null, 
+            EdgeMask fixedBoundaryMask = null, bool onInternalValues = false) {
+
+            //if (DGField.Basis.Degree > this.m_Basis.Degree)
+            //    throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
+            //this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
+
+            int D = this.Basis.GridDat.SpatialDimension;
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(m_grd);
+            }
+            if (mask.NoOfItemsLocally.MPISum() <= 0) {
+                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
+            }
+
+            // list of masked vertices inside domain mask
+            List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
+            List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
+                    foreach (int vert in vertAtCell) {
+                        GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
+                        if (!maskedVert.Contains(gVert)) {
+                            maskedVert.Add(gVert);
+                        }
+                    }
+                    List<GeometricEdgeForProjection> edgesAtCell = GetGeometricEdgesForCell(vertAtCell);
+                    foreach (var gEdge in edgesAtCell) {
+                        if (!maskedEdges.Contains(gEdge)) {
+                            maskedEdges.Add(gEdge);
+                        }
+                    }
+                }
+            }
+
+
+            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
+            if (!onInternalValues) {
+                foreach (var chunk in mask) {
+                    int j0 = chunk.i0;
+                    int jE = chunk.JE;
+                    for (int j = j0; j < jE; j++) {
+                        int N = DGField.Basis.GetLength(j);
+                        for (int n = 0; n < N; n++) {
+                            m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = DGField.Coordinates[j, n];
+                        }
+                    }
+                }
+            }
+
+
+            // construction of constraints matrix A
+            // ====================================
+
+            SubGrid maskSG = new SubGrid(mask);
+            EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
+                Console.WriteLine("no inner edges: return without changes");
+                return;
+            }
+
+            //List<int> AcceptedEdges = new List<int>();
+            List<NodeSet> AcceptedNodes = new List<NodeSet>();
+
+
+            if (fixedBoundaryMask != null) {
+                // in case of fixed boundary projection (higher priority regarding constrains)
+                determineConstrainsNodes(fixedBoundaryMask, maskedVert, maskedEdges, AcceptedNodes, true, mask);
+
+                // inner edges on merge domain
+                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes, false, mask);
+
+            } else {
+
+                // local inner edges per process
+                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes);  // check if switch for 2D/3D is possible (overdetermined vertices in 3D?)
+
+            }
+
+
+            List<long> BlockI0 = new List<long>();
+            List<int> BlockLen = new List<int>();
+            long i0 = 0;
+            int nodeCount = 0;
+            foreach (NodeSet ns in AcceptedNodes) {
+                if (ns != null) {
+                    BlockI0.Add(i0);
+                    BlockLen.Add(ns.Lengths[0]);
+                    i0 += ns.Lengths[0];
+                    nodeCount += ns.NoOfNodes;
+                }
+            }
+
+            BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
+            BlockMsrMatrix A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
+
+            int count = 0;
+            long _nodeCount = A.RowPartitioning.i0; // start at global index
+            double[] RHS_non0c = new double[nodeCount];   // non-zero equality constrains
+
+            if (fixedBoundaryMask != null) {
+
+                DGField internalProj = new SinglePhaseField(m_Basis);
+                int stride = DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                internalProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+
+                var retCount = assembleConstrainsMatrix_nonZeroConstrains(A, fixedBoundaryMask, AcceptedNodes, mask, internalProj, RHS_non0c, count, _nodeCount);
+                count = retCount.Item1;
+                _nodeCount = retCount.Item2;
+
+            }
+
+            assembleConstrainsMatrix(A, innerEM, AcceptedNodes, count, _nodeCount);
+
+
+            // test with matlab
+            MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
+            Console.WriteLine("Calling MATLAB/Octave...");
+            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                bmc.PutSparseMatrix(A, "A");
+                bmc.Cmd("rank_A = rank(full(A))");
+                bmc.Cmd("rank_AT = rank(full(A'))");
+                bmc.GetMatrix(output, "[rank_A, rank_AT]");
+
+                bmc.Execute(false);
+            }
+
+            Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
+            Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+
+
+
+            // solve system
+            // ============
+
+            BlockMsrMatrix AT = A.Transpose();
+
+            BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
+            BlockMsrMatrix.Multiply(AAT, A, AT);
+
+            double[] RHS = new double[rowBlockPart.LocalLength];           
+            A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
+            RHS.AccV(-1.0, RHS_non0c);
+
+            double[] v = new double[rowBlockPart.LocalLength];
+            double[] x = new double[m_Coordinates.Length];          
+
+            OpSolver.DefineMatrix(AAT);
+            OpSolver.Solve(v, RHS);
+            OpSolver.Dispose();
+
+            // x = RHS - ATv
+            AT.SpMV(-1.0, v, 0.0, x);
+            m_Coordinates.AccVector(1.0, x);          
+
+        }
+
+
+        void determineConstrainsNodes(EdgeMask constrainsEdges, List<GeometricVerticeForProjection> maskedVert,
+            List<GeometricEdgeForProjection> maskedEdges, List<NodeSet> AcceptedNodes, 
+            bool onFixedBoundary = false, CellMask mergeDomain = null) {
+
+            int D = m_grd.SpatialDimension;
+
+            foreach (var chunk in constrainsEdges) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+
+                    var edgeInfo = m_grd.Edges.Info[j];
+
+                    int cell1 = m_grd.Edges.CellIndices[j, 0];
+                    int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+                    int trafoIdx1 = m_grd.Edges.Edge2CellTrafoIndex[j, 0];
+                    int trafoIdx2 = m_grd.Edges.Edge2CellTrafoIndex[j, 1];
+
+                    int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
+                    int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
+
+                    // get geometric vertices/edges(3d) at considered edge/(face)
+                    //List<GeometricVerticeForProjection> geomVertAtEdge = new List<GeometricVerticeForProjection>();
+                    //List<GeometricEdgeForProjection> geomEdgeAtEdge = new List<GeometricEdgeForProjection>();
+
+
+                    if (onFixedBoundary) {
+                        if (mergeDomain != null) {
+                            if (mergeDomain.Contains(cell2)) {
+                                cell1 = cell2;
+                                trafoIdx1 = trafoIdx2;
+                                vertAtCell1 = vertAtCell2;
+                            } else if (!mergeDomain.Contains(cell1))
+                                throw new ArgumentException("fixed boundary not within mask for projection");
+
+                            cell2 = int.MinValue;
+                            trafoIdx2 = int.MinValue;
+                            vertAtCell2 = null;
+                        } else {
+                            throw new ArgumentException("no mask given for fixed boundary projection");
+                        }
+                    }
+
+
+                    // 
+                    int maxCondAtVert = (D == 2) ? 4 : 12;
+                    int OverdeterminedCondAtVertice = 0;
+                    for (int i = 0; i < vertAtCell1.Length; i++) {
+                        int vert = vertAtCell1[i];
+                        if (onFixedBoundary || vertAtCell2.Contains(vert)) {
+                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
+                            //geomVertAtEdge.Add(gVert);
+                            gVert.IncreaseNoOfConditions();
+                            int condAtVert = gVert.GetNoOfConditions();
+                            //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
+                            Debug.Assert(condAtVert <= maxCondAtVert);
+                            if (condAtVert == maxCondAtVert)
+                                OverdeterminedCondAtVertice++;
+                        }
+                    }
+                    //Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
+
+                    // 
+                    int OverdeterminedCondAtGeomEdge = 0;
+                    int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
+                    if (D == 3) {
+                        List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
+                        List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
+                        foreach (var gEdge1 in edgesAtFace1) {
+                            if (onFixedBoundary || edgesAtFace2.Contains(gEdge1)) {
+                                GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
+                                //geomEdgeAtEdge.Add(gEdge);
+                                gEdge.IncreaseNoOfConditions();
+                                int condAtEdge = gEdge.GetNoOfConditions();
+                                //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
+                                Debug.Assert(condAtEdge <= 4);
+                                if (condAtEdge == 4) {
+                                    //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                                    //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
+                                    //if (dir1 != dir2)
+                                    //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
+                                    OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                                    OverdeterminedCondAtGeomEdge++;
+                                }
+                            }
+                        }
+                    }
+
+
+                    {
+                        if (!onFixedBoundary && mergeDomain != null)
+                            OverdeterminedCondAtVertice++;
+
+                        NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, 
+                            OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection);
+                        //NodeSet qNds = getEdgeInterpolationNodes(0, 0);
+                        AcceptedNodes.Add(qNds);
+
+                        //if (qNds != null) {
+                        //    Console.WriteLine("continuity at edge {0}: numVcond = {1}, numEcond = {2}, nodeCount = {3}",
+                        //        j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, qNds.NoOfNodes);
+                        //} else {
+                        //    Console.WriteLine("no continuity at edge {0}: numVcond = {1}, numEcond = {2}",
+                        //        j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge);
+                        //}
+                    }
+
+                }
+            }
+
+
+        }
+
+        Tuple<int, long> assembleConstrainsMatrix(BlockMsrMatrix A, EdgeMask constrainsEdges, List<NodeSet> AcceptedNodes,
+            int countOffset = 0, long _nodeCountOffset = 0) {
+
+            int count = countOffset;
+            long _nodeCount = _nodeCountOffset;
+            foreach (var chunk in constrainsEdges) {
+                foreach (int j in chunk.Elements) {
+
+                    int cell1 = m_grd.Edges.CellIndices[j, 0];
+                    int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+                    // set continuity constraints
+                    NodeSet qNodes = AcceptedNodes.ElementAt(count);
+                    if (qNodes == null)
+                        break;
+
+                    var results = m_Basis.EdgeEval(qNodes, j, 1);
+
+                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                        // Cell1   
+                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                        }
+                        // Cell2
+                        for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
+                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                        }
+                    }
+                    count++;
+                    _nodeCount += qNodes.NoOfNodes;
+                }
+            }
+
+            return new Tuple<int, long>(count, _nodeCount);
+        }
+
+        Tuple<int, long> assembleConstrainsMatrix_nonZeroConstrains(BlockMsrMatrix A, EdgeMask constrainsEdges, List<NodeSet> AcceptedNodes,
+            CellMask mask, DGField internalProj, double[] RHS_non0c, int countOffset = 0, long _nodeCountOffset = 0) {
+
+            int count = countOffset;
+            long _nodeCount = _nodeCountOffset;
+            foreach (var chunk in constrainsEdges) {
+                foreach (int j in chunk.Elements) {
+
+                    int cell1 = m_grd.Edges.CellIndices[j, 0];
+                    int cell2 = m_grd.Edges.CellIndices[j, 1];
+
+                    bool isCell1;
+                    if (mask.Contains(cell1)) {
+                        isCell1 = true;
+                    } else if (mask.Contains(cell2)) {
+                        isCell1 = false;
+                    } else
+                        throw new ArgumentException("fixed boundary not within mask for projection");
+
+                    // set continuity constraints
+                    NodeSet qNodes = AcceptedNodes.ElementAt(count);
+                    if (qNodes == null)
+                        break;
+
+                    var resultsA = m_Basis.EdgeEval(qNodes, j, 1);
+
+                    MultidimensionalArray valueIN = MultidimensionalArray.Create(1, qNodes.NoOfNodes);
+                    MultidimensionalArray valueOT = MultidimensionalArray.Create(1, qNodes.NoOfNodes);
+
+                    internalProj.EvaluateEdge(j, 1, qNodes, valueIN, valueOT, null, null, null, null, 0, 0.0);
+
+                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
+                        // jCell   
+                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
+                            if (isCell1)
+                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = resultsA.Item1[0, qN, p];
+                            else
+                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = resultsA.Item2[0, qN, p];
+                        }
+                        // non-zero equality constrain
+                        RHS_non0c[_nodeCount + qN] = valueIN[0, qN];
+                    }
+                    count++;
+                    _nodeCount += qNodes.NoOfNodes;
+                }
+            }
+
+            return new Tuple<int, long>(count, _nodeCount);
+        }
+
+
+
+        class GeometricVerticeForProjection {
+
+            int VerticeIndex;
+
+            int NoOfConditions;
+
+            public GeometricVerticeForProjection(int vertInd) {
+                VerticeIndex = vertInd;
+                NoOfConditions = 0;
+            }
+
+            public void IncreaseNoOfConditions() {
+                this.NoOfConditions++;
+            }
+
+            public int GetNoOfConditions() {
+                return this.NoOfConditions;
+            }
+
+            public override bool Equals(Object obj) {
+
+                if (obj is GeometricVerticeForProjection) {
+                    return (this.VerticeIndex - ((GeometricVerticeForProjection)obj).VerticeIndex) == 0;
+                } else if (obj is int) {
+                    return (this.VerticeIndex - (int)obj) == 0;
+                } else
+                    throw new ArgumentException("wrong type of object");
+             
+            }
+
+        }
+
+        class GeometricEdgeForProjection {
+
+            public int VerticeInd1;
+            public int VerticeInd2;
+
+            List<int> edgeList;
+            int NoOfConditions;
+
+            public GeometricEdgeForProjection(int vertInd1, int vertInd2) {
+                this.VerticeInd1 = vertInd1;
+                this.VerticeInd2 = vertInd2;
+                edgeList = new List<int>();
+                NoOfConditions = 0;
+            }
+
+            public override bool Equals(object obj) {
+
+                if (obj is GeometricEdgeForProjection) {
+
+                    if ((this.VerticeInd1 == ((GeometricEdgeForProjection)obj).VerticeInd1 
+                        && this.VerticeInd2 == ((GeometricEdgeForProjection)obj).VerticeInd2)
+                        || (this.VerticeInd1 == ((GeometricEdgeForProjection)obj).VerticeInd2 
+                        && this.VerticeInd2 == ((GeometricEdgeForProjection)obj).VerticeInd1))
+                        return true;
+                    else
+                        return false;
+
+                } else
+                    throw new ArgumentException("wrong type of object");
+            }
+
+            public void AddEdge(int jEdge) {
+                if (edgeList.Count == 4)
+                    throw new InvalidOperationException("edgeList: maximum count of 4 elements reached");
+                edgeList.Add(jEdge);
+            }
+
+            public List<int> GetEdgeList() {
+                return edgeList;
+            }
+
+            public void IncreaseNoOfConditions() {
+                this.NoOfConditions++;
+            }
+
+            public int GetNoOfConditions() {
+                return this.NoOfConditions;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public int GetRefDirection(GridData m_grd, int jCell, int iFace) {
+
+                double[] vertCoord1 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(this.VerticeInd1, -1).To1DArray();
+                double[] vertCoord2 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(this.VerticeInd2, -1).To1DArray();
+
+                int D = vertCoord1.Length;
+                MultidimensionalArray vertCoord1_glb = MultidimensionalArray.Create(1, D);
+                MultidimensionalArray vertCoord2_glb = MultidimensionalArray.Create(1, D);
+                vertCoord1_glb.SetRow<double[]>(0, vertCoord1);
+                vertCoord2_glb.SetRow<double[]>(0, vertCoord2);
+
+                MultidimensionalArray vertCoord1_loc = MultidimensionalArray.Create(1, 1, D);
+                MultidimensionalArray vertCoord2_loc = MultidimensionalArray.Create(1, 1, D);
+
+                m_grd.TransformGlobal2Local(vertCoord1_glb, vertCoord1_loc, jCell, 1, 0);
+                m_grd.TransformGlobal2Local(vertCoord2_glb, vertCoord2_loc, jCell, 1, 0);
+                double[] vertCellCoord1 = vertCoord1_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
+                double[] vertCellCoord2 = vertCoord2_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
+
+                // identify face ref vertices
+                NodeSet refV = m_grd.Edges.EdgeRefElements[0].Vertices;
+                NodeSet refVvol = m_grd.Edges.EdgeRefElements[0].Vertices.GetVolumeNodeSet(m_grd, iFace);
+                //var trafo = m_grd.Edges.Edge2CellTrafos[iFace];
+                int idx1 = -1; int idx2 = -1;
+                for (int i = 0; i < refV.Lengths[0]; i++) {
+                    double dist1 = 0.0; double dist2 = 0.0;
+                    for (int d = 0; d < vertCoord1.Length; d++) {
+                        dist1 += (vertCellCoord1[d] - refVvol[i,d]).Pow2();
+                        dist2 += (vertCellCoord2[d] - refVvol[i,d]).Pow2();
+                    }
+                    dist1 = dist1.Sqrt();
+                    if (dist1 < 1.0e-12)
+                        idx1 = i;
+                    dist2 = dist2.Sqrt();
+                    if (dist2 < 1.0e-12)
+                        idx2 = i;            
+                }
+                Debug.Assert(idx1 != idx2);
+
+                // identify direction of edge in ref element
+                double dist = 0.0;
+                for (int d = 0; d < refV.Lengths[1]; d++) {
+                    dist += (refV[idx1,d] - refV[idx2,d]).Pow2();
+                }
+                dist = dist.Sqrt();
+                int dir = -1;
+                for (int d = 0; d < refV.Lengths[1]; d++) {
+                    if (Math.Abs(Math.Abs(refV[idx1, d] - refV[idx2, d]) - dist) < 1.0e-15) {
+                        dir = d;
+                    }
+                }
+
+                return dir;
+
+            }
+
+        }
+
+
+        List<GeometricEdgeForProjection> GetGeometricEdgesForCell(int[] vertAtCell) {
+
+            List<GeometricEdgeForProjection> geomEdges = new List<GeometricEdgeForProjection>();
+
+            //int[] vertAtCell = m_grd.Cells.CellVertices[jCell];
+            for (int v1 = 0; v1 < vertAtCell.Length; v1++) {
+                double[] vertCoord1 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(vertAtCell[v1], -1).To1DArray();
+                for (int v2 = v1+1; v2 < vertAtCell.Length; v2++) {
+                    double[] vertCoord2 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(vertAtCell[v2], -1).To1DArray();
+                    double dist = 0.0;
+                    for (int d = 0; d < vertCoord1.Length; d++) {
+                        dist += (vertCoord2[d] - vertCoord1[d]).Pow2();
+                    }
+                    dist = dist.Sqrt();
+                    bool isEdge = false;
+                    //int dir = -1;
+                    for (int d = 0; d < vertCoord1.Length; d++) {
+                        if (Math.Abs(Math.Abs(vertCoord2[d] - vertCoord1[d]) - dist) < 1.0e-15) {
+                            isEdge = true;
+                            //dir = d;
+                        }
+                    }
+                    if (isEdge) {
+                        GeometricEdgeForProjection gEdge = new GeometricEdgeForProjection(vertAtCell[v1], vertAtCell[v2]);
+                        //Console.WriteLine("define edge ({0},{1}) in direction {2}", gEdge.VerticeInd1, gEdge.VerticeInd2, dir);
+                        geomEdges.Add(gEdge);
+                    }
+                }
+            }
+
+            return geomEdges;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="numVCond"></param>
+        /// <param name="numECond"></param>
+        /// <returns></returns>
+        private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null) {
+
+            int degree = m_Basis.Degree;
+
+            switch (m_grd.SpatialDimension) {
+                case 2: {
+                    if (numVcond > degree) {
+                        return null;
+                    } else {
+                        QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule((degree - numVcond) * 2);
+                        return quad.Nodes;
+                    }
+                }
+                case 3: {
+
+                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                    NodeSet qNodes = quad1D.Nodes;
+                    int Nnds = ((degree + 1) * (degree + 2) / 2); 
+
+                    int degreeR = degree - numEcond; 
+                    int NoNdsR = ((degreeR + 1) * (degreeR + 2) / 2);
+                    if (NoNdsR <= 0) {
+                        return null;
+
+                    } else {
+                        if (edgeOrientation == null && numEcond > 0)
+                            throw new ArgumentException();
+                        if (edgeOrientation == null && numEcond < 1)
+                            edgeOrientation = new int[degree + 1];
+
+                        MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
+                        int node = 0;
+                        int[] dirCount = new int[2];
+                        for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
+                            int dir = edgeOrientation[dirIdx];
+                            int m = dirCount[dir];
+                            int n0 = dirCount[(dir == 0) ? 1 : 0];
+                            int nL = quad1D.NoOfNodes - dirIdx;
+                            for (int n = n0; n < n0 + nL; n++) {
+                                if (dir == 0) {
+                                    nds[node, 0] = qNodes[n, 0];
+                                    nds[node, 1] = qNodes[m, 0];
+                                }
+                                if (dir == 1) {
+                                    nds[node, 0] = qNodes[m, 0];
+                                    nds[node, 1] = qNodes[n, 0];
+                                }
+                                node++;
+                            }
+                            dirCount[dir]++;
+                        }
+                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] {Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
+                        //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
+                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
+                    }
+                }
+                default:
+                    throw new NotSupportedException("spatial dimension not supported");
+            }
+
+        }
+
+
+        /// <summary>
+        /// Accumulate the internal continuous field to a DG Field
+        /// </summary>
+        /// <param name="alpha">Scaling factor</param>
+        /// <param name="DGField">output</param>
+        /// <param name="mask"></param>
+        public void AccToDGField(double alpha, ConventionalDGField DGField, CellMask mask = null) {
+            if (!DGField.Basis.Equals(this.m_Basis))
+                throw new ArgumentException("Basis does not match.");
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(m_grd);
+            }
+
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int JE = chunk.JE;
+                for (int j = j0; j < JE; j++) {
+                    // collect coordinates for cell j
+                    int N = DGField.Basis.GetLength(j);
+                    double[] CDGcoord = new double[N];
+                    for (int n = 0; n < N; n++) {
+                        CDGcoord[n] = m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)];
+                        //CDGcoord[n] = m_Coordinates[CellMask2Coord[j] + n];
+                    }
+
+                    double[] DGcoord = new double[N];
+                    DGField.Coordinates.GetRow(j, DGcoord);
+
+                    DGcoord.AccV(alpha, CDGcoord);
+
+                    DGField.Coordinates.SetRow(j, DGcoord);
+
+                }
+            }
+
+        }
+    }
+
+
+    /// <summary>
+    /// continuous DG field via L2-projection with continuity constraints
+    /// old variant without patch-wise procedure (old geometric approach)
+    /// </summary>
+    public class ConstrainedDGField2 {
+
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="b"></param>
+        public ConstrainedDGField2(Basis b) {
+            m_Basis = b;
+            m_grd = (GridData)b.GridDat;
+            m_Mapping = new UnsetteledCoordinateMapping(b);
+            m_Coordinates = MultidimensionalArray.Create(m_Mapping.LocalLength);
+        }
+
+        Basis m_Basis;
+
+        public Basis Basis {
+            get {
+                return m_Basis;
+            }
+        }
+
+        GridData m_grd;
+
+        UnsetteledCoordinateMapping m_Mapping;
+
+        MultidimensionalArray m_Coordinates;
+
+        public MultidimensionalArray Coordinates {
+            get {
+                return m_Coordinates;
+            }
+        }
+
+        ISparseSolver m_OpSolver;
+
+        int[] GlobalVert2Local;
+
+
+
+        /// <summary>
+        /// linear solver for the quadratic optimization problem, matrix A has to be defined! 
+        /// </summary>
+        public ilPSP.LinSolvers.ISparseSolver OpSolver {
+            get {
+                if (m_OpSolver == null) {
+                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    m_OpSolver = solver;
+                }
+
+                return m_OpSolver;
+            }
+        }
+
+        /// <summary>
+        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// </summary>
+        /// <param name="DGField">
+        /// input; unchanged on exit
+        /// </param>
+        /// <param name="mask"></param>
+        public void ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
+            if (DGField.Basis.Degree > this.m_Basis.Degree)
+                throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
+            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(m_grd);
+            }
+            if (mask.NoOfItemsLocally.MPISum() <= 0) {
                 throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
 
@@ -589,13 +1626,13 @@ namespace BoSSS.Foundation {
                         for (int iL = 0; iL < EdgeSend.Count(); iL++) {
                             int[] sendList = EdgeSend[iL];
                             int[] insertList = EdgeInsert[iL];
-                            if ((sendList != null && sendList.Contains(j)) || (insertList != null && insertList.Contains(j))) {     
+                            if ((sendList != null && sendList.Contains(j)) || (insertList != null && insertList.Contains(j))) {
                                 if (sendList != null && sendList.Contains(j)) {     // find owned edge
                                     InterprocEdges.Remove(j);
                                 }
                                 neighbourProc = iL;
                                 break;
-                            } 
+                            }
                         }
                     }
 
@@ -700,7 +1737,7 @@ namespace BoSSS.Foundation {
                         }
                     }
 
-                   
+
                     if (!isInterprocEdge) { // && !nonConformEdge) {
 
                         AcceptedEdges.Add(j);
@@ -739,7 +1776,7 @@ namespace BoSSS.Foundation {
                 }
             }
 
-#region hanging nodes
+            #region hanging nodes
 
             //BitArray ishangingNode = new BitArray(m_grd.Vertices.NoOfNodes4LocallyUpdatedCells);
 
@@ -1047,7 +2084,7 @@ namespace BoSSS.Foundation {
             //    }
             //    edge++;
             //}
-#endregion
+            #endregion
 
             //int nodeCount_OnProc = nodeCount;
 
@@ -1066,45 +2103,45 @@ namespace BoSSS.Foundation {
 
                 switch (m_grd.SpatialDimension) {
                     case 1: {
-                            throw new NotImplementedException("TODO");
-                        }
+                        throw new NotImplementedException("TODO");
+                    }
                     case 2: {
-                            // condtions at vertices
-                            foreach (int vert in VertAtEdge) {
-                                int lvert = GlobalVert2Local[vert];// = vert, vorher IndexOutOfRange exeption
-                                numVCond += NegotiateNumVCond(lvert, CondAtVert, ProcsAtInterprocVert[local2Interproc[lvert]]);
-                                CondAtVert[lvert, 0] += 1;
-                            }
-                            break;
+                        // condtions at vertices
+                        foreach (int vert in VertAtEdge) {
+                            int lvert = GlobalVert2Local[vert];// = vert, vorher IndexOutOfRange exeption
+                            numVCond += NegotiateNumVCond(lvert, CondAtVert, ProcsAtInterprocVert[local2Interproc[lvert]]);
+                            CondAtVert[lvert, 0] += 1;
                         }
+                        break;
+                    }
                     case 3: {
-                            // conditions at edges 
-                            //Console.WriteLine("proc {0}: edge {1}", m_grd.MpiRank, j);
-                            int i0 = 0;
-                            for (int indV1 = 0; indV1 < VertAtEdge.Count; indV1++) {
-                                i0++;
+                        // conditions at edges 
+                        //Console.WriteLine("proc {0}: edge {1}", m_grd.MpiRank, j);
+                        int i0 = 0;
+                        for (int indV1 = 0; indV1 < VertAtEdge.Count; indV1++) {
+                            i0++;
                             for (int indV2 = i0; indV2 < VertAtEdge.Count; indV2++) {
-                                    int v1 = GlobalVert2Local[VertAtEdge.ElementAt(indV1)];
-                                    int v2 = GlobalVert2Local[VertAtEdge.ElementAt(indV2)];
-                                    int m, n;
-                                    if (local2Interproc[v1] >= 0 && local2Interproc[v2] >= 0) {
-                                        if (v1 <= v2) {
-                                            m = v1;
-                                            n = v2;
-                                        } else {
-                                            m = v2;
-                                            n = v1;
-                                        }
+                                int v1 = GlobalVert2Local[VertAtEdge.ElementAt(indV1)];
+                                int v2 = GlobalVert2Local[VertAtEdge.ElementAt(indV2)];
+                                int m, n;
+                                if (local2Interproc[v1] >= 0 && local2Interproc[v2] >= 0) {
+                                    if (v1 <= v2) {
+                                        m = v1;
+                                        n = v2;
                                     } else {
-                                        throw new ArgumentException("should not occur");
+                                        m = v2;
+                                        n = v1;
                                     }
-
-                                    numECond += NegotiateNumECond(m, n, CondIncidenceMatrix, ProcsAtInterprocVert[local2Interproc[m]]);
-                                    CondIncidenceMatrix[m, n, 0] += 1;
+                                } else {
+                                    throw new ArgumentException("should not occur");
                                 }
+
+                                numECond += NegotiateNumECond(m, n, CondIncidenceMatrix, ProcsAtInterprocVert[local2Interproc[m]]);
+                                CondIncidenceMatrix[m, n, 0] += 1;
                             }
-                            break;
                         }
+                        break;
+                    }
                 }
 
 
@@ -1187,9 +2224,9 @@ namespace BoSSS.Foundation {
                 }
                 count++;
                 _nodeCount += qNodes.NoOfNodes;
-                    
 
-         
+
+
             }
 
 
@@ -1202,20 +2239,20 @@ namespace BoSSS.Foundation {
 
             //A.SaveToTextFile("C:\\tmp\\AMatrix.txt");
 
-            // test with matlab
-            MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-            Console.WriteLine("Calling MATLAB/Octave...");
-            using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                bmc.PutSparseMatrix(A, "A");
-                bmc.Cmd("rank_A = rank(full(A))");
-                bmc.Cmd("rank_AT = rank(full(A'))");
-                bmc.GetMatrix(output, "[rank_A, rank_AT]");
+            //// test with matlab
+            //MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
+            //Console.WriteLine("Calling MATLAB/Octave...");
+            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+            //    bmc.PutSparseMatrix(A, "A");
+            //    bmc.Cmd("rank_A = rank(full(A))");
+            //    bmc.Cmd("rank_AT = rank(full(A'))");
+            //    bmc.GetMatrix(output, "[rank_A, rank_AT]");
 
-                bmc.Execute(false);
-            }
+            //    bmc.Execute(false);
+            //}
 
-            Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
-            Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+            //Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
+            //Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
 
 
             //var r = IMatrixExtensions.ReducedRowEchelonForm(Amtx);
@@ -1250,940 +2287,6 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
-        /// </summary>
-        /// <param name="DGField">
-        /// input; unchanged on exit
-        /// </param>
-        /// <param name="mask"></param>
-        public void ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
-
-            bool useRowEchelonForm = false;
-
-            if (useRowEchelonForm)
-                ProjectDGField_rowEchelonForm(DGField, mask);
-            else
-                ProjectDGField_geometric(DGField, mask);
-        }
-
-
-        public void ProjectDGField_geometric(ConventionalDGField DGField, CellMask mask = null) {
-            if (DGField.Basis.Degree > this.m_Basis.Degree)
-                throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
-            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
-
-            int D = this.Basis.GridDat.SpatialDimension;
-
-            if (mask == null) {
-                mask = CellMask.GetFullMask(m_grd);
-            }
-            if (mask.NoOfItemsLocally.MPISum() <= 0) {
-                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
-            }
-
-            // list of masked vertices inside domain mask
-            List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
-            List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
-                    foreach (int vert in vertAtCell) {
-                        GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
-                        if (!maskedVert.Contains(gVert)) {
-                            maskedVert.Add(gVert);
-                        }
-                    }
-                    List<GeometricEdgeForProjection> edgesAtCell = GetGeometricEdgesForCell(vertAtCell);
-                    foreach (var gEdge in edgesAtCell) {
-                        if (!maskedEdges.Contains(gEdge)) {
-                            maskedEdges.Add(gEdge);
-                        }
-                    }
-                }
-            }
-
-
-            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-                    int N = DGField.Basis.GetLength(j);
-                    for (int n = 0; n < N; n++) {
-                        m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = DGField.Coordinates[j, n];
-                    }
-                }
-            }
-
-
-            // construction of constraints matrix A
-            // ====================================
-
-            SubGrid maskSG = new SubGrid(mask);
-            EdgeMask innerEM = maskSG.InnerEdgesMask;
-
-            if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
-                Console.WriteLine("no inner edges: return without changes");
-                return;
-            }
-
-            //List<int> AcceptedEdges = new List<int>();
-            List<NodeSet> AcceptedNodes = new List<NodeSet>();
-
-            int nodeCount = 0;
-
-
-            // local edges per process
-            foreach (var chunk in innerEM) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-
-                    var edgeInfo = m_grd.Edges.Info[j];
-
-                    int cell1 = m_grd.Edges.CellIndices[j, 0];
-                    int cell2 = m_grd.Edges.CellIndices[j, 1];
-
-                    int trafoIdx1 = m_grd.Edges.Edge2CellTrafoIndex[j, 0];
-                    int trafoIdx2 = m_grd.Edges.Edge2CellTrafoIndex[j, 1];
-
-                    int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
-                    int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
-
-                    // get geometric vertices/edges(3d) at considered edge/(face)
-                    //List<GeometricVerticeForProjection> geomVertAtEdge = new List<GeometricVerticeForProjection>();
-                    //List<GeometricEdgeForProjection> geomEdgeAtEdge = new List<GeometricEdgeForProjection>();
-
-
-                    // 
-                    int maxCondAtVert = (D == 2) ? 4 : 12;
-                    int OverdeterminedCondAtVertice = 0;
-                    //for (int i = 0; i < vertAtCell1.Length; i++) {
-                    //    int vert = vertAtCell1[i];
-                    //    if (vertAtCell2.Contains(vert)) {
-                    //        GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                    //        //geomVertAtEdge.Add(gVert);
-                    //        gVert.IncreaseNoOfConditions();
-                    //        int condAtVert = gVert.GetNoOfConditions();
-                    //        //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
-                    //        Debug.Assert(condAtVert <= maxCondAtVert);
-                    //        if (condAtVert == maxCondAtVert)
-                    //            OverdeterminedCondAtVertice++;
-                    //    }
-                    //}
-                    ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
-
-                    // 
-                    int OverdeterminedCondAtGeomEdge = 0;
-                    //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
-                    //if (D == 3) {
-                    //    List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
-                    //    List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
-                    //    foreach (var gEdge1 in edgesAtFace1) {
-                    //        if (edgesAtFace2.Contains(gEdge1)) {
-                    //            GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
-                    //            //geomEdgeAtEdge.Add(gEdge);
-                    //            gEdge.IncreaseNoOfConditions();
-                    //            int condAtEdge = gEdge.GetNoOfConditions();
-                    //            //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
-                    //            Debug.Assert(condAtEdge <= 4);
-                    //            if (condAtEdge == 4) {
-                    //                //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                    //                //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
-                    //                //if (dir1 != dir2)
-                    //                //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
-                    //                OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                    //                OverdeterminedCondAtGeomEdge++;
-                    //            }
-                    //        }
-                    //    }
-                    //}
-
-
-                    //if (!isInterprocEdge) 
-                    {
-                        //AcceptedEdges.Add(j);
-                        //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection);
-                        NodeSet qNds = getEdgeInterpolationNodes(0, 0);
-                        AcceptedNodes.Add(qNds);
-
-                        if (qNds != null) {
-                            nodeCount += qNds.NoOfNodes;
-
-                            //Console.WriteLine("continuity at edge {0}: numVcond = {1}, numEcond = {2}, nodeCount = {3}",
-                            //    j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, qNds.NoOfNodes);
-                        } else {
-                            //Console.WriteLine("no continuity at edge {0}: numVcond = {1}, numEcond = {2}",
-                            //    j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge);
-                        }
-
-                    }
-
-                }
-            }
-            //Console.WriteLine("node count: {0}", nodeCount);
-
-            //NodeSet qNodes = getEdgeInterpolationNodes(0,0);
-            //int nodeCount = innerEM.NoOfItemsLocally * qNodes.Lengths[0];
-
-            List<long> BlockI0 = new List<long>();
-            List<int> BlockLen = new List<int>();
-            long i0 = 0;
-            //for (int i = 0; i < innerEM.NoOfItemsLocally; i++) {
-            foreach (NodeSet ns in AcceptedNodes) {
-                if (ns != null) {
-                    BlockI0.Add(i0);
-                    BlockLen.Add(ns.Lengths[0]);
-                    i0 += ns.Lengths[0];
-                }
-            }
-
-            BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
-            BlockMsrMatrix A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
-
-            //MultidimensionalArray Amtx = MultidimensionalArray.Create(rowBlockPart.LocalLength, m_Mapping.LocalLength);
-
-            //MsrMatrix AAT = new MsrMatrix(rowPart, rowPart);
-
-            //Console.WriteLine("rank {0}: construct constraint matrix A", this.m_grd.MpiRank);
-            //Console.WriteLine("No of nodes on rank {0}: {1}", this.m_grd.MpiRank, nodeCount);
-
-            int count = 0;
-            long _nodeCount = A.RowPartitioning.i0; // start at global index
-            foreach (var chunk in innerEM) {
-                foreach (int j in chunk.Elements) {
-
-                    int cell1 = m_grd.Edges.CellIndices[j, 0];
-                    int cell2 = m_grd.Edges.CellIndices[j, 1];
-
-                    // set continuity constraints
-                    NodeSet qNodes = AcceptedNodes.ElementAt(count);
-                    if (qNodes == null)
-                        break;
-
-                    var results = m_Basis.EdgeEval(qNodes, j, 1);
-
-                    //int eToCell1 = m_grd.Edges.Edge2CellTrafoIndex[j, 0];
-                    //int eToCell2 = m_grd.Edges.Edge2CellTrafoIndex[j, 1];
-
-                    //// results cell 1
-                    //var trafo = m_grd.Edges.Edge2CellTrafos[eToCell1];
-                    //MultidimensionalArray qCellNodes = trafo.Transform(qNodes);
-                    //NodeSet qCellNdset = new NodeSet(m_grd.Cells.RefElements[0], qCellNodes);
-                    //MultidimensionalArray results1 = m_Basis.Evaluate(qCellNdset);
-                    //results1.Scale(m_grd.Cells.JacobiDet[cell1]);
-
-                    //// results cell 2
-                    //trafo = m_grd.Edges.Edge2CellTrafos[eToCell2];
-                    //qCellNodes = trafo.Transform(qNodes);
-                    //qCellNdset = new NodeSet(m_grd.Cells.RefElements[0], qCellNodes);
-                    //MultidimensionalArray results2 = m_Basis.Evaluate(qCellNdset);
-                    //results2.Scale(m_grd.Cells.JacobiDet[cell2]);
-
-                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                        // Cell1   
-                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                            //A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results1[0, qN, p];
-                        }
-                        // Cell2
-                        for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
-                            //A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results2[0, qN, p];
-                        }
-                    }
-                    count++;
-                    _nodeCount += qNodes.NoOfNodes;
-                }
-            }
-
-            //Console.WriteLine("rank {0}: finished assembly", this.m_grd.MpiRank);
-
-            //Partitioning rowPart = new Partitioning(nodeCount);
-            //MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
-            //A.AccBlock(rowPart.i0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, (int)m_Mapping.GlobalCount - 1 }));
-            //MsrMatrix A = new MsrMatrix(nodeCount, m_Coordinates.Length, 1, 1);
-            //A.AccBlock(0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, m_Coordinates.Length - 1 }));
-            //A.AccBlock(rowPart.i0 + nodeCount, 0, 1.0, B2);
-
-            //A.SaveToTextFileSparse("C:\\tmp\\AMatrix.txt");
-            //Console.WriteLine("Writing A-matrix to text file!!!");
-
-            //// test with matlab
-            //MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-            //Console.WriteLine("Calling MATLAB/Octave...");
-            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-            //    bmc.PutSparseMatrix(A, "A");
-            //    bmc.Cmd("rank_A = rank(full(A))");
-            //    //bmc.Cmd("rank_AT = rank(full(A'))");
-            //    //bmc.GetMatrix(output, "[rank_A, rank_AT]");
-            //    bmc.GetMatrix(output, "[rank_A, 0]");
-
-            //    bmc.Execute(false);
-            //}
-
-            //Console.WriteLine("A: No of Rows = {0}; rank = {1} (MATLAB)", A.NoOfRows, output[0, 0]);
-            ////Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
-
-            // solve
-            BlockMsrMatrix AT = A.Transpose();
-
-            BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
-            BlockMsrMatrix.Multiply(AAT, A, AT);
-
-            //Console.WriteLine("A: No of Rows = {0}", A.NoOfRows);
-            //double condNum = AAT.condest();
-            //Console.WriteLine("Condition Number of AAT is " + condNum);
-
-            double[] RHS = new double[rowBlockPart.LocalLength];
-            //A.SpMVpara(1.0, m_Coordinates.To1DArray(), 0.0, RHS);            
-            A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-
-            //m_Coordinates.To1DArray().SaveToTextFile("C:\\tmp\\Coord.txt");
-            //Console.WriteLine("Writing coordinates to text file!!!");
-            ////AAT.SaveToTextFileSparse("C:\\tmp\\AATMatrix.txt");
-            ////Console.WriteLine("Writing AAT-matrix to text file!!!");
-            //RHS.SaveToTextFile("C:\\tmp\\RHS.txt");
-            //Console.WriteLine("Writing RHS to text file!!!");
-
-            double[] v = new double[rowBlockPart.LocalLength];
-            double[] x = new double[m_Coordinates.Length];
-
-            //var StopInit = new Stopwatch();
-            //var StopSolve = new Stopwatch();
-
-            //Process myself = Process.GetCurrentProcess();
-            //long memstart = myself.PrivateMemorySize64 / (1024 * 1024);
-
-            //var expSolver = new myCG();
-            //StopInit.Start();
-            //expSolver.Init(AAT);
-            //StopInit.Stop();
-            //StopSolve.Start();
-            //expSolver.Solve(v, RHS);
-            //StopSolve.Stop();
-            //long memend = myself.PrivateMemorySize64 / (1024 * 1024);
-            //expSolver.Dispose();
-
-            ////var solver = new ilPSP.LinSolvers.HYPRE.GMRES();
-            ////var precond = new ilPSP.LinSolvers.HYPRE.ParaSails();
-            ////solver.NestedPrecond = precond;
-            ////solver.DefineMatrix(AT);
-            ////solver.Solve(v,RHS);
-            ////solver.Dispose();
-
-            //Console.WriteLine("Init time: " + StopInit.Elapsed.TotalSeconds);
-            //Console.WriteLine("Solve time: " + StopSolve.Elapsed.TotalSeconds);
-            ////Console.WriteLine("Memory: " + (memend - memstart));
-
-            OpSolver.DefineMatrix(AAT);
-            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            OpSolver.Solve(v, RHS);
-            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            OpSolver.Dispose();
-
-#if DEBUG
-            var Rdummy = RHS.CloneAs(); 
-            AAT.SpMV(-1.0, v.CloneAs(),1.0, Rdummy);
-            Console.WriteLine("ResNorm of Solution ... "+Rdummy.MPI_L2Norm());
-#endif
-
-            // x = RHS - ATv
-            AT.SpMV(-1.0, v, 0.0, x);
-            m_Coordinates.AccVector(1.0, x);
-
-            //// solve with matlab
-            //double[] RHS = new double[rowBlockPart.LocalLength];
-            //A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-            //MultidimensionalArray v = MultidimensionalArray.Create(rowBlockPart.LocalLength, 1);
-
-            //Console.WriteLine("Calling MATLAB/Octave...");
-            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-            //    bmc.PutSparseMatrix(A, "A");
-            //    bmc.PutVector(RHS, "b");
-            //    bmc.Cmd("AAT = A * (A.');");
-            //    bmc.Cmd("[L, U] = ilu(AAT);");
-            //    bmc.Cmd("v = pcg(AAT, b, 1e-8, 500, L, U);");
-            //    bmc.GetMatrix(v, "v");
-
-            //    bmc.Execute(false);
-            //}
-            //Console.WriteLine("Closing MATLAB/Octave.");
-
-            //double[] x = new double[m_Coordinates.Length];
-
-            //BlockMsrMatrix AT = A.Transpose();
-            //AT.SpMV(-1.0, v.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray(), 0.0, x);
-
-            //m_Coordinates.AccVector(1.0, x);
-
-
-            //// row echelon form
-            //var r = IMatrixExtensions.ReducedRowEchelonForm(Amtx);
-            //Console.WriteLine("rank of A = {0} (reduced row-echelon form)", r.Item4);
-
-            //MultidimensionalArray rMtx = MultidimensionalArray.Create(r.Item2.Length, m_Mapping.LocalLength);
-            //rMtx.SetMatrix(r.Item1.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { r.Item4 - 1, m_Mapping.LocalLength - 1 }));
-
-            //MsrMatrix R = rMtx.ToMsrMatrix();
-            //MsrMatrix RT = R.Transpose();
-            //MsrMatrix RRT = R * RT;
-
-            //double condNum = RRT.condest();
-            //Console.WriteLine("Condition Number of RRT is " + condNum);
-
-            //double[] RHS = new double[r.Item2.Length];
-            ////A.SpMVpara(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-            //R.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-
-            //double[] v = new double[r.Item2.Length];
-            //double[] x = new double[m_Coordinates.Length];
-
-            ////OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-
-            //OpSolver.DefineMatrix(RRT);
-            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            //OpSolver.Solve(v, RHS);
-            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            //OpSolver.Dispose();
-
-            ////A.Transpose().SpMVpara(-1.0, v, 0.0, x);
-            //RT.SpMV(-1.0, v, 0.0, x);
-
-            //m_Coordinates.AccVector(1.0, x);
-
-        }
-
-
-        public void ProjectDGField_rowEchelonForm(ConventionalDGField DGField, CellMask mask = null) {
-            if (DGField.Basis.Degree > this.m_Basis.Degree)
-                throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
-            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
-
-            int D = this.Basis.GridDat.SpatialDimension;
-
-            if (mask == null) {
-                mask = CellMask.GetFullMask(m_grd);
-            }
-            if (mask.NoOfItemsLocally.MPISum() <= 0) {
-                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
-            }
-
-            // list of masked vertices inside domain mask
-            List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
-            List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
-                    foreach (int vert in vertAtCell) {
-                        GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
-                        if (!maskedVert.Contains(gVert)) {
-                            maskedVert.Add(gVert);
-                        }
-                    }
-                    List<GeometricEdgeForProjection> edgesAtCell = GetGeometricEdgesForCell(vertAtCell);
-                    foreach (var gEdge in edgesAtCell) {
-                        if (!maskedEdges.Contains(gEdge)) {
-                            maskedEdges.Add(gEdge);
-                        }
-                    }
-                }
-            }
-
-
-            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-                    int N = DGField.Basis.GetLength(j);
-                    for (int n = 0; n < N; n++) {
-                        m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = DGField.Coordinates[j, n];
-                    }
-                }
-            }
-
-
-            // construction of constraints matrix A
-            // ====================================
-
-            SubGrid maskSG = new SubGrid(mask);
-            EdgeMask innerEM = maskSG.InnerEdgesMask;
-
-            if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
-                Console.WriteLine("no inner edges: return without changes");
-                return;
-            }
-
-            List<int> edgeList = new List<int>();
-            List<NodeSet> AcceptedNodes = new List<NodeSet>();
-
-            int edgeCount = 0;
-            int nodeCount = 0;
-
-            int OverdeterminedCondAtGeomEdge = 0;
-
-            // local edges per process
-            foreach (var chunk in innerEM) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-
-                    var edgeInfo = m_grd.Edges.Info[j];
-
-                    int cell1 = m_grd.Edges.CellIndices[j, 0];
-                    int cell2 = m_grd.Edges.CellIndices[j, 1];
-
-                    int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
-                    int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
-
-                    // get geometric vertices/edges(3d) at considered edge/(face)
-                    //List<GeometricVerticeForProjection> geomVertAtEdge = new List<GeometricVerticeForProjection>();
-                    //List<GeometricEdgeForProjection> geomEdgeAtEdge = new List<GeometricEdgeForProjection>();
-
-                    edgeList.Add(j);
-                    edgeCount++;
-
-                    // 
-                    int maxCondAtVert = (D == 2) ? 4 : 12;
-                    int OverdeterminedCondAtVertice = 0;
-                    for (int i = 0; i < vertAtCell1.Length; i++) {
-                        int vert = vertAtCell1[i];
-                        if (vertAtCell2.Contains(vert)) {
-                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                            //geomVertAtEdge.Add(gVert);
-                            gVert.IncreaseNoOfConditions();
-                            int condAtVert = gVert.GetNoOfConditions();
-                            //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
-                            Debug.Assert(condAtVert <= maxCondAtVert);
-                            if (condAtVert == maxCondAtVert)
-                                OverdeterminedCondAtVertice++;
-                        }
-                    }
-                    //Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
-
-                    // 
-                    //int OverdeterminedCondAtGeomEdge = 0;
-                    if (D == 3) {
-                        List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
-                        List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
-                        foreach (var gEdge1 in edgesAtFace1) {
-                            if (edgesAtFace2.Contains(gEdge1)) {
-                                GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
-                                gEdge.AddEdge(j);
-                                gEdge.IncreaseNoOfConditions();
-                                int condAtEdge = gEdge.GetNoOfConditions();
-                                //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
-                                Debug.Assert(condAtEdge <= 4);
-                                if (condAtEdge == 4)
-                                    OverdeterminedCondAtGeomEdge++;
-                            }
-                        }
-                    }
-
-
-                    //if (!isInterprocEdge) 
-                    {
-                        //AcceptedEdges.Add(j);
-                        //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge);
-                        NodeSet qNds = getEdgeInterpolationNodes(0, 0);
-                        AcceptedNodes.Add(qNds);
-
-                        if (qNds != null) {
-                            nodeCount += qNds.NoOfNodes;
-
-                            //Console.WriteLine("continuity at edge {0}: numVcond = {1}, numEcond = {2}, nodeCount = {3}",
-                            //    j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, qNds.NoOfNodes);
-                        } else {
-                            //Console.WriteLine("no continuity at edge {0}: numVcond = {1}, numEcond = {2}",
-                            //    j, OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge);
-                        }
-
-                    }
-
-                }
-            }
-
-            NodeSet qNodes = getEdgeInterpolationNodes(0,0);
-            //int nodeCount = innerEM.NoOfItemsLocally * qNodes.Lengths[0];
-
-            int NoConditions = OverdeterminedCondAtGeomEdge * 4 * qNodes.NoOfNodes;
-            MultidimensionalArray rMtx = MultidimensionalArray.Create(NoConditions, m_Mapping.LocalLength);
-
-            int _nodeCount = 0;
-            foreach (var gEdge in maskedEdges) {
-                List<int> blockList = gEdge.GetEdgeList();
-                if (blockList.Count == 4) {
-                    MultidimensionalArray Ablock = MultidimensionalArray.Create(4 * qNodes.NoOfNodes, m_Mapping.LocalLength);
-                    int _nodeBlockCount = 0;
-                    foreach (int jEdge in blockList) {
-
-                        int cell1 = m_grd.Edges.CellIndices[jEdge, 0];
-                        int cell2 = m_grd.Edges.CellIndices[jEdge, 1];
-
-                        // set continuity constraints
-                        var results = m_Basis.EdgeEval(qNodes, jEdge, 1);
-
-                        for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                            // Cell1       
-                            for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                                Ablock[(int)(_nodeBlockCount + qN), (int)m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                            }
-                            // Cell2
-                            for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                                Ablock[(int)(_nodeBlockCount + qN), (int)(m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p))] = -results.Item2[0, qN, p];
-                            }
-                        }
-                        _nodeBlockCount += qNodes.NoOfNodes;
-                    }
-
-                    var rblock = IMatrixExtensions.ReducedRowEchelonForm(Ablock);
-                    //MultidimensionalArray rblockMtx = MultidimensionalArray.Create(rblock.Item2.Length, m_Mapping.LocalLength);
-                    //rblockMtx.SetMatrix(rblock.Item1.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { rblock.Item4 - 1, m_Mapping.LocalLength - 1 }));
-                    rMtx.SetSubMatrix(rblock.Item1, new int[] { _nodeCount, 0 }, new int[] { _nodeCount + _nodeBlockCount - 1, m_Mapping.LocalLength - 1 });
-
-                    _nodeCount += _nodeBlockCount;
-                }
-            }
-            rMtx.SaveToTextFile("C:\\tmp\\rMtx.txt");
-
-
-            List<long> BlockI0 = new List<long>();
-            List<int> BlockLen = new List<int>();
-            long i0 = 0;
-            //for (int i = 0; i < innerEM.NoOfItemsLocally; i++) {
-            foreach (NodeSet ns in AcceptedNodes) {
-                if (ns != null) {
-                    BlockI0.Add(i0);
-                    BlockLen.Add(ns.Lengths[0]);
-                    i0 += ns.Lengths[0];
-                }
-            }
-
-            BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
-            BlockMsrMatrix A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
-
-            MultidimensionalArray Amtx = MultidimensionalArray.Create(rowBlockPart.LocalLength, m_Mapping.LocalLength);
-
-            int count = 0;
-            long _nodeCountLong = A.RowPartitioning.i0; // start at global index
-            foreach (var chunk in innerEM) {
-                foreach (int j in chunk.Elements) {
-
-                    int cell1 = m_grd.Edges.CellIndices[j, 0];
-                    int cell2 = m_grd.Edges.CellIndices[j, 1];
-
-                    // set continuity constraints
-                    //NodeSet qNodes = AcceptedNodes.ElementAt(count);
-                    //if (qNodes == null)
-                    //    break;
-
-                    var results = m_Basis.EdgeEval(qNodes, j, 1);
-
-                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                        // Cell1       
-                        for (int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                            //A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                            Amtx[(int)(_nodeCountLong + qN), (int)m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                        }
-                        // Cell2
-                        for (int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                            //A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
-                            Amtx[(int)(_nodeCountLong + qN), (int)(m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p))] = -results.Item2[0, qN, p];
-                        }
-                    }
-                    count++;
-                    _nodeCountLong += qNodes.NoOfNodes;
-                }
-            }
-
-            //Console.WriteLine("rank {0}: finished assembly", this.m_grd.MpiRank);
-
-            //Partitioning rowPart = new Partitioning(nodeCount);
-            //MsrMatrix A = new MsrMatrix(rowPart, m_Mapping);
-            //A.AccBlock(rowPart.i0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, (int)m_Mapping.GlobalCount - 1 }));
-            //MsrMatrix A = new MsrMatrix(nodeCount, m_Coordinates.Length, 1, 1);
-            //A.AccBlock(0, 0, 1.0, B.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { nodeCount - 1, m_Coordinates.Length - 1 }));
-            //A.AccBlock(rowPart.i0 + nodeCount, 0, 1.0, B2);
-
-            //A.SaveToTextFile("C:\\tmp\\AMatrix.txt");
-
-            //// test with matlab
-            //MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-            //Console.WriteLine("Calling MATLAB/Octave...");
-            //using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-            //    bmc.PutSparseMatrix(A, "A");
-            //    bmc.Cmd("rank_A = rank(full(A))");
-            //    //bmc.Cmd("rank_AT = rank(full(A'))");
-            //    //bmc.GetMatrix(output, "[rank_A, rank_AT]");
-            //    bmc.GetMatrix(output, "[rank_A, 0]");
-
-            //    bmc.Execute(false);
-            //}
-
-            //Console.WriteLine("A: No of Rows = {0}; rank = {1} (MATLAB)", A.NoOfRows, output[0, 0]);
-            ////Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
-
-
-            //// solve
-            //BlockMsrMatrix AT = A.Transpose();
-
-            //BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
-            //BlockMsrMatrix.Multiply(AAT, A, AT);
-
-            //double condNum = AAT.condest();
-            //Console.WriteLine("Condition Number of AAT is " + condNum);
-
-            //double[] RHS = new double[rowBlockPart.LocalLength];
-            ////A.SpMVpara(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-            //A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-
-            ////AAT.SaveToTextFileSparse("C:\\tmp\\AATMatrix.txt");
-            ////Console.WriteLine("Writing AAT-matrix to text file!!!");
-            ////RHS.SaveToTextFile("C:\\tmp\\RHS.txt");
-            ////Console.WriteLine("Writing RHS to text file!!!");
-
-            //double[] v = new double[rowBlockPart.LocalLength];
-            //double[] x = new double[m_Coordinates.Length];
-
-            ////OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-
-            //OpSolver.DefineMatrix(AAT);
-            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            //OpSolver.Solve(v, RHS);
-            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            //OpSolver.Dispose();
-
-            ////A.Transpose().SpMVpara(-1.0, v, 0.0, x);
-            //AT.SpMV(-1.0, v, 0.0, x);
-
-            //m_Coordinates.AccVector(1.0, x);
-
-
-            // row echelon form
-            var r = IMatrixExtensions.ReducedRowEchelonForm(Amtx);
-            Console.WriteLine("rank of A = {0} (reduced row-echelon form)", r.Item4);
-
-            rMtx = MultidimensionalArray.Create(r.Item2.Length, m_Mapping.LocalLength);
-            rMtx.SetMatrix(r.Item1.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { r.Item4 - 1, m_Mapping.LocalLength - 1 }));
-
-            MsrMatrix R = rMtx.ToMsrMatrix();
-            MsrMatrix RT = R.Transpose();
-            MsrMatrix RRT = R * RT;
-
-            rMtx.SaveToTextFile("C:\\tmp\\RMatrix.txt");
-            double condNum = RRT.condest();
-            Console.WriteLine("Condition Number of RRT is " + condNum);
-
-            double[] RHS = new double[NoConditions];
-            //A.SpMVpara(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-            R.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
-
-            double[] v = new double[NoConditions];
-            double[] x = new double[m_Coordinates.Length];
-
-            //OpSolver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-
-            OpSolver.DefineMatrix(RRT);
-            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            OpSolver.Solve(v, RHS);
-            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            OpSolver.Dispose();
-
-            //A.Transpose().SpMVpara(-1.0, v, 0.0, x);
-            RT.SpMV(-1.0, v, 0.0, x);
-
-            m_Coordinates.AccVector(1.0, x);
-
-        }
-
-
-
-
-        class GeometricVerticeForProjection {
-
-            int VerticeIndex;
-
-            int NoOfConditions;
-
-            public GeometricVerticeForProjection(int vertInd) {
-                VerticeIndex = vertInd;
-                NoOfConditions = 0;
-            }
-
-            public void IncreaseNoOfConditions() {
-                this.NoOfConditions++;
-            }
-
-            public int GetNoOfConditions() {
-                return this.NoOfConditions;
-            }
-
-            public override bool Equals(Object obj) {
-
-                if (obj is GeometricVerticeForProjection) {
-                    return (this.VerticeIndex - ((GeometricVerticeForProjection)obj).VerticeIndex) == 0;
-                } else if (obj is int) {
-                    return (this.VerticeIndex - (int)obj) == 0;
-                } else
-                    throw new ArgumentException("wrong type of object");
-             
-            }
-
-        }
-
-        class GeometricEdgeForProjection {
-
-            public int VerticeInd1;
-            public int VerticeInd2;
-
-            List<int> edgeList;
-            int NoOfConditions;
-
-            public GeometricEdgeForProjection(int vertInd1, int vertInd2) {
-                this.VerticeInd1 = vertInd1;
-                this.VerticeInd2 = vertInd2;
-                edgeList = new List<int>();
-                NoOfConditions = 0;
-            }
-
-            public override bool Equals(object obj) {
-
-                if (obj is GeometricEdgeForProjection) {
-
-                    if ((this.VerticeInd1 == ((GeometricEdgeForProjection)obj).VerticeInd1 
-                        && this.VerticeInd2 == ((GeometricEdgeForProjection)obj).VerticeInd2)
-                        || (this.VerticeInd1 == ((GeometricEdgeForProjection)obj).VerticeInd2 
-                        && this.VerticeInd2 == ((GeometricEdgeForProjection)obj).VerticeInd1))
-                        return true;
-                    else
-                        return false;
-
-                } else
-                    throw new ArgumentException("wrong type of object");
-            }
-
-            public void AddEdge(int jEdge) {
-                if (edgeList.Count == 4)
-                    throw new InvalidOperationException("edgeList: maximum count of 4 elements reached");
-                edgeList.Add(jEdge);
-            }
-
-            public List<int> GetEdgeList() {
-                return edgeList;
-            }
-
-            public void IncreaseNoOfConditions() {
-                this.NoOfConditions++;
-            }
-
-            public int GetNoOfConditions() {
-                return this.NoOfConditions;
-            }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <returns></returns>
-            public int GetRefDirection(GridData m_grd, int jCell, int iFace) {
-
-                double[] vertCoord1 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(this.VerticeInd1, -1).To1DArray();
-                double[] vertCoord2 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(this.VerticeInd2, -1).To1DArray();
-
-                int D = vertCoord1.Length;
-                MultidimensionalArray vertCoord1_glb = MultidimensionalArray.Create(1, D);
-                MultidimensionalArray vertCoord2_glb = MultidimensionalArray.Create(1, D);
-                vertCoord1_glb.SetRow<double[]>(0, vertCoord1);
-                vertCoord2_glb.SetRow<double[]>(0, vertCoord2);
-
-                MultidimensionalArray vertCoord1_loc = MultidimensionalArray.Create(1, 1, D);
-                MultidimensionalArray vertCoord2_loc = MultidimensionalArray.Create(1, 1, D);
-
-                m_grd.TransformGlobal2Local(vertCoord1_glb, vertCoord1_loc, jCell, 1, 0);
-                m_grd.TransformGlobal2Local(vertCoord2_glb, vertCoord2_loc, jCell, 1, 0);
-                double[] vertCellCoord1 = vertCoord1_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
-                double[] vertCellCoord2 = vertCoord2_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
-
-                // identify face ref vertices
-                NodeSet refV = m_grd.Edges.EdgeRefElements[0].Vertices;
-                NodeSet refVvol = m_grd.Edges.EdgeRefElements[0].Vertices.GetVolumeNodeSet(m_grd, iFace);
-                //var trafo = m_grd.Edges.Edge2CellTrafos[iFace];
-                int idx1 = -1; int idx2 = -1;
-                for (int i = 0; i < refV.Lengths[0]; i++) {
-                    double dist1 = 0.0; double dist2 = 0.0;
-                    for (int d = 0; d < vertCoord1.Length; d++) {
-                        dist1 += (vertCellCoord1[d] - refVvol[i,d]).Pow2();
-                        dist2 += (vertCellCoord2[d] - refVvol[i,d]).Pow2();
-                    }
-                    dist1 = dist1.Sqrt();
-                    if (dist1 < 1.0e-12)
-                        idx1 = i;
-                    dist2 = dist2.Sqrt();
-                    if (dist2 < 1.0e-12)
-                        idx2 = i;            
-                }
-                Debug.Assert(idx1 != idx2);
-
-                // identify direction of edge in ref element
-                double dist = 0.0;
-                for (int d = 0; d < refV.Lengths[1]; d++) {
-                    dist += (refV[idx1,d] - refV[idx2,d]).Pow2();
-                }
-                dist = dist.Sqrt();
-                int dir = -1;
-                for (int d = 0; d < refV.Lengths[1]; d++) {
-                    if (Math.Abs(Math.Abs(refV[idx1, d] - refV[idx2, d]) - dist) < 1.0e-15) {
-                        dir = d;
-                    }
-                }
-
-                return dir;
-
-            }
-
-        }
-
-
-        List<GeometricEdgeForProjection> GetGeometricEdgesForCell(int[] vertAtCell) {
-
-            List<GeometricEdgeForProjection> geomEdges = new List<GeometricEdgeForProjection>();
-
-            //int[] vertAtCell = m_grd.Cells.CellVertices[jCell];
-            for (int v1 = 0; v1 < vertAtCell.Length; v1++) {
-                double[] vertCoord1 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(vertAtCell[v1], -1).To1DArray();
-                for (int v2 = v1+1; v2 < vertAtCell.Length; v2++) {
-                    double[] vertCoord2 = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(vertAtCell[v2], -1).To1DArray();
-                    double dist = 0.0;
-                    for (int d = 0; d < vertCoord1.Length; d++) {
-                        dist += (vertCoord2[d] - vertCoord1[d]).Pow2();
-                    }
-                    dist = dist.Sqrt();
-                    bool isEdge = false;
-                    //int dir = -1;
-                    for (int d = 0; d < vertCoord1.Length; d++) {
-                        if (Math.Abs(Math.Abs(vertCoord2[d] - vertCoord1[d]) - dist) < 1.0e-15) {
-                            isEdge = true;
-                            //dir = d;
-                        }
-                    }
-                    if (isEdge) {
-                        GeometricEdgeForProjection gEdge = new GeometricEdgeForProjection(vertAtCell[v1], vertAtCell[v2]);
-                        //Console.WriteLine("define edge ({0},{1}) in direction {2}", gEdge.VerticeInd1, gEdge.VerticeInd2, dir);
-                        geomEdges.Add(gEdge);
-                    }
-                }
-            }
-
-            return geomEdges;
-        }
-
-
-
-        /// <summary>
         /// 
         /// </summary>
         /// <param name="numVCond"></param>
@@ -2206,9 +2309,9 @@ namespace BoSSS.Foundation {
 
                     QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
                     NodeSet qNodes = quad1D.Nodes;
-                    int Nnds = ((degree + 1) * (degree + 2) / 2); 
+                    int Nnds = ((degree + 1) * (degree + 2) / 2);
 
-                    int degreeR = degree - numEcond; 
+                    int degreeR = degree - numEcond;
                     int NoNdsR = ((degreeR + 1) * (degreeR + 2) / 2);
                     if (NoNdsR <= 0) {
                         return null;
@@ -2240,7 +2343,7 @@ namespace BoSSS.Foundation {
                             }
                             dirCount[dir]++;
                         }
-                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] {Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
+                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] { Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
                         //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
                         return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
                     }
@@ -2250,92 +2353,6 @@ namespace BoSSS.Foundation {
             }
 
         }
-
-        ///// <summary>
-        ///// 
-        ///// </summary>
-        ///// <param name="basis"></param>
-        ///// <returns></returns>
-        //private PolynomialList[,] ComputePartialDerivatives(Basis basis) {
-
-        //    int deg = basis.Degree;
-        //    int D = basis.GridDat.SpatialDimension;
-
-        //    PolynomialList[,] edgeDeriv = new PolynomialList[deg, D];
-
-        //    for (int drv = 0; drv < deg; drv++) {
-        //        for (int d = 0; d < D; d++) {
-        //            List<Polynomial> polyList = new List<Polynomial>();
-        //            int[] deriv = new int[D];
-        //            deriv[d] = drv + 1;
-        //            foreach (Polynomial poly in basis.Polynomials[0]) {
-        //                Polynomial polyDeriv = poly.Derive(deriv);
-        //                polyList.Add(polyDeriv);
-        //            }
-        //            edgeDeriv[drv, d] = new PolynomialList(polyList);
-        //        }
-        //    }
-
-        //    return edgeDeriv;
-
-        //}
-
-
-        //BitArray ishangingNode;
-
-        //int[] hangVert2hangEdge;
-
-        //int[] hangVert2NonConformCell;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="hangNode"></param>
-        /// <param name="hangCell"></param>
-        /// <param name="numVCond"></param>
-        //private void ProcessNonConformEdge(int currentHNode, int currentHCell, int NonConformCell, ref int numVCond) {
-
-        //    // set conditions at current hanging node
-        //    CondAtVert[currentHNode, 0] += 1;
-        //    CondAtVert[currentHNode, 1] += 1;
-        //    CondAtVert[currentHNode, 2] += 1;
-
-        //    // search for the next hanging node and cell / or terminate
-        //    int currentHEdge = hangVert2hangEdge[currentHNode];
-
-        //    int cell1 = m_grd.Edges.CellIndices[currentHEdge, 0];
-        //    int cell2 = m_grd.Edges.CellIndices[currentHEdge, 1];
-
-        //    int nextHCell;
-        //    if (cell1 == currentHCell) {
-        //        nextHCell = cell2;
-        //    } else {
-        //        nextHCell = cell1;
-        //    }
-
-        //    int[] vertAtHCell = m_grd.Cells.CellVertices[nextHCell];
-        //    int[] vertAtNcCell = m_grd.Cells.CellVertices[NonConformCell];
-        //    foreach (int vert in vertAtHCell) {
-        //        if (ishangingNode[vert] && vert != currentHNode && hangVert2NonConformCell[vert] == NonConformCell) {   // next recursion
-        //            // set conditions at next hanging node
-        //            CondAtVert[vert, 0] += 1;
-        //            CondAtVert[vert, 1] += 1;
-        //            CondAtVert[vert, 2] += 1;
-        //            ProcessNonConformEdge(vert, nextHCell, NonConformCell, ref numVCond);
-        //        }
-        //        if (vertAtNcCell.Contains(vert)) {      // terminate
-        //            // set conditions at non conform edge
-        //            CondAtVert[vert, 0] += 1;
-        //            CondAtVert[vert, 1] += 1;
-        //            CondAtVert[vert, 2] += 1;
-        //            if (CondAtVert[vert, 0] > maxVCond) {
-        //                numVCond++;
-        //            }
-        //        }
-        //    }
-
-
-        //}
 
 
         private int NegotiateNumVCond(int vert, MultidimensionalArray CondAtVert, List<int> procsAtVert = null) {
@@ -2488,7 +2505,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// Accumulate this field to a DG Field
+        /// Accumulate the internal continuous field to a DG Field
         /// </summary>
         /// <param name="alpha">Scaling factor</param>
         /// <param name="DGField">output</param>
@@ -2524,6 +2541,7 @@ namespace BoSSS.Foundation {
             }
 
         }
-    }
 
+
+    }
 }
