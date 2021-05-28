@@ -18,21 +18,21 @@ bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Debug\NSE_SIMPLE.exe         
 bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Release\NSE_SIMPLE.exe             .\bin\Release  1
 bcl deploy-at ..\src\L4-application\CNS\bin\Debug\CNS.exe                             .\bin\Debug    1
 bcl deploy-at ..\src\L4-application\CNS\bin\Release\CNS.exe                           .\bin\Release  1
-bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
-bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
+::bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
+::bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
 mkdir bin\native
 xcopy "%BOSSS_INSTALL%\bin\native" .\bin\native /E /Y
 IF EXIST "installer-tmp_win-amd64" (
     echo patching installer native binaries (windows)
     rmdir .\bin\native\win\amd64\* /S /Q
-	xcopy .\installer-tmp_win-amd64 .\bin\native\win\amd64\* /E /Y
+    xcopy .\installer-tmp_win-amd64 .\bin\native\win\amd64\* /E /Y
 ) else (
     echo not using new native binaries (Windows)
 )
 IF EXIST "installer-tmp_linux-amd64-openmpi" (
     echo patching installer native binaries (Linux, amd64-openmpi)
     rmdir .\bin\native\linux\amd64-openmpi /S /Q
-	xcopy .\installer-tmp_linux-amd64-openmpi .\bin\native\linux\amd64-openmpi\* /E /Y
+    xcopy .\installer-tmp_linux-amd64-openmpi .\bin\native\linux\amd64-openmpi\* /E /Y
 ) else (
     echo not using new native binaries (Linux, amd64-openmpi)
 )
