@@ -43,7 +43,7 @@ Source: ".\bin\*"; Excludes: "old" ;DestDir: "{app}\bin"; Flags: ignoreversion r
 Source: ".\doc\BoSSSPad_Command_Overview.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: ".\doc\BoSSShandbook.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: ".\doc\ControlExamples\IBM\*"; DestDir: "{app}\doc\ControlExamples\IBM"; Flags: ignoreversion recursesubdirs createallsubdirs
-:Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
