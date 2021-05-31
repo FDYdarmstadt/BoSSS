@@ -221,7 +221,6 @@ namespace BoSSS.Foundation.IO {
                     string fullpath = Path.Combine(BasePath, RelPath);
 
                     FileStream fs = null;
-                    int i = 0;
 
                     fs = new FileStream(fullpath,
                         ForceOverride ? FileMode.Create : FileMode.CreateNew,
@@ -233,8 +232,6 @@ namespace BoSSS.Foundation.IO {
                     // ++++++++++++++++++++++++++++
                     // try to open file for reading
                     // ++++++++++++++++++++++++++++
-
-                    FileNotFoundException exc = null;
 
                     FileStream fs = new FileStream(Path.Combine(BasePath, RelPath),
                                 FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

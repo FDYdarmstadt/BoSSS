@@ -1356,7 +1356,7 @@ namespace BoSSS.Foundation {
 
                     // 
                     int maxCondAtVert = (D == 2) ? 4 : 12;
-                    int OverdeterminedCondAtVertice = 0;
+                    //int OverdeterminedCondAtVertice = 0;
                     //for (int i = 0; i < vertAtCell1.Length; i++) {
                     //    int vert = vertAtCell1[i];
                     //    if (vertAtCell2.Contains(vert)) {
@@ -1373,7 +1373,7 @@ namespace BoSSS.Foundation {
                     ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
 
                     // 
-                    int OverdeterminedCondAtGeomEdge = 0;
+                    //int OverdeterminedCondAtGeomEdge = 0;
                     //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
                     //if (D == 3) {
                     //    List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
@@ -2031,6 +2031,10 @@ namespace BoSSS.Foundation {
              
             }
 
+            public override int GetHashCode() {
+                return base.GetHashCode();
+            }
+
         }
 
         class GeometricEdgeForProjection {
@@ -2062,6 +2066,10 @@ namespace BoSSS.Foundation {
 
                 } else
                     throw new ArgumentException("wrong type of object");
+            }
+
+            public override int GetHashCode() {
+                return base.GetHashCode();
             }
 
             public void AddEdge(int jEdge) {
