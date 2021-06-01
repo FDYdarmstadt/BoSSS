@@ -579,10 +579,6 @@ namespace BoSSS.Foundation {
         int maxNoOfCoordinates = 10000; 
 
 
-        int[] GlobalVert2Local;
-    
-
-
         /// <summary>
         /// linear solver for the quadratic optimization problem, matrix A has to be defined! 
         /// </summary>
@@ -666,6 +662,8 @@ namespace BoSSS.Foundation {
                 Console.WriteLine("======================");
                 Console.WriteLine("project patch {0}:", pC);
                 this.ProjectDGFieldOnPatch(DGField, patch);
+                double jumpNorm = CheckLocalProjection(patch);
+                Console.WriteLine("L2 jump norm = {0}", jumpNorm);
                 pC++;
             }
 
@@ -700,7 +698,7 @@ namespace BoSSS.Foundation {
 
                 // projection of local projection on separate patches
                 DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
-                int stride = DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
                 localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
 
                 //Console.WriteLine("project transition patch:");
@@ -767,6 +765,9 @@ namespace BoSSS.Foundation {
                             Console.WriteLine("number of cells in merge patch: {0}", merge12PatchCM.NoOfItemsLocally);
                             Console.WriteLine("number of edges in merge boundary: {0}", merge12Boundary.NoOfItemsLocally);
                             this.ProjectDGFieldOnPatch(DGField, merge12PatchCM, merge12Boundary, true);
+                            CellMask mergedPatch12 = patch1.VolumeMask.Union(patch2.VolumeMask).Union(merge12PatchCM);
+                            double jumpNorm = CheckLocalProjection(mergedPatch12);
+                            Console.WriteLine("L2 jump norm = {0}", jumpNorm);
 
                             string mergePatchName = "Merging-Patch_" + p1 + p2;
                             SinglePhaseField mergePatch12Field = new SinglePhaseField(m_Basis, mergePatchName);
@@ -791,6 +792,71 @@ namespace BoSSS.Foundation {
 
             return null;
         }
+
+
+        double CheckLocalProjection(CellMask mask = null) {
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(m_grd);
+            }
+            SubGrid maskSG = new SubGrid(mask);
+            EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
+            int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
+            localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+
+            double Unorm = 0;
+
+            EdgeQuadrature.GetQuadrature(
+                new int[] { 1 }, m_grd,
+                (new EdgeQuadratureScheme(true, innerEM)).Compile(m_grd, localProj.Basis.Degree * 2),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    NodeSet NS = QR.Nodes;
+                    EvalResult.Clear();
+                    int NoOfNodes = NS.NoOfNodes;
+                    for (int j = 0; j < Length; j++) {
+                        int iEdge = j + i0;
+                        int jCell_IN = m_grd.Edges.CellIndices[iEdge, 0];
+                        int jCell_OT = m_grd.Edges.CellIndices[iEdge, 1];
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+
+                        if (jCell_OT >= 0) {
+
+                            int iTrafo_IN = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
+                            int iTrafo_OT = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
+
+                            MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
+                            MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
+
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+
+                            localProj.Evaluate(jCell_IN, 1, NS_IN, uIN);
+                            localProj.Evaluate(jCell_OT, 1, NS_OT, uOT);
+
+                            uDiff.Acc(+1.0, uIN);
+                            uDiff.Acc(-1.0, uOT);
+
+                            //if (uDiff.L2Norm() > 1e-10)
+                            //    Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                        } else {
+                            uDiff.Clear();
+                        }
+                    }
+
+                    EvalResult.ApplyAll(x => x * x);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    Unorm += ResultsOfIntegration.Sum();
+                }).Execute();
+
+            Unorm = Unorm.MPISum();
+
+            return Unorm.Sqrt();
+
+        }
+
 
 
         public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask = null, 

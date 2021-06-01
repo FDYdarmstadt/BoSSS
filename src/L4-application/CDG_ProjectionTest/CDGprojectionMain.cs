@@ -280,7 +280,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             double Unorm = 0;
 
             EdgeQuadrature.GetQuadrature(
-                new int[] { D + 1 }, grd,
+                new int[] { 1 }, grd,
                 (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, f.Basis.Degree * 2),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;
