@@ -137,7 +137,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             public RefElement RefElement => ruleStatus.ReferenceElement;
 
-            int counter = 0;
+            //int counter = 0;
 
             public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
             {

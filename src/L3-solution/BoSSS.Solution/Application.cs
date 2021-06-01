@@ -2065,9 +2065,9 @@ namespace BoSSS.Solution {
                 m_queryHandler.QueryResults.Clear();
 
 
-                //// =========================================
-                //// Adaptive-Mesh-Refinement on startup
-                //// =========================================
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
                 if (this.Control.AdaptiveMeshRefinement) {
 

@@ -22,6 +22,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Linq;
+//using Microsoft.AspNetCore.Html;
 
 namespace BoSSS.Solution.Gnuplot {
 
@@ -31,7 +32,7 @@ namespace BoSSS.Solution.Gnuplot {
     /// </summary>
     public static class GnuplotExtensions {
         
-        
+        /*
         /// <summary>
         /// Plot to a gif file ('set terminal gif').
         /// </summary>
@@ -79,7 +80,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="gp"></param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
-        static public System.Web.HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
+        static public HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
             if(xRes <= 0)
                 throw new ArgumentOutOfRangeException();
             if(yRes <= 0)
@@ -105,14 +106,14 @@ namespace BoSSS.Solution.Gnuplot {
             if (fi.Exists && fi.Length > 0) {
                 string SVGtext = File.ReadAllText(OutfileName);
                 File.Delete(OutfileName);
-                return new System.Web.HtmlString(SVGtext);
+                return new HtmlString(SVGtext);
                 //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
             } else {
                 Console.WriteLine("Gnuplot output file empty or non-existent.");
                 return null;
             }
         }
-
+        */
 
         /// <summary>
         /// Plotting using Gnuplot with Cairolatex output.
