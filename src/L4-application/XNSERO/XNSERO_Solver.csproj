@@ -103,6 +103,7 @@
     <Compile Include="Particle\Shapes\Particle_superEllipsoid.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapLeft.cs" />
     <Compile Include="Particle\Shapes\Particle_TrapRight.cs" />
+    <Compile Include="RTree.cs" />
     <Compile Include="Tests\XNSEROTests_Control.cs" />
     <Compile Include="Tests\XNSEROTests.cs" />
     <Compile Include="ViscosityAtIB.cs" />

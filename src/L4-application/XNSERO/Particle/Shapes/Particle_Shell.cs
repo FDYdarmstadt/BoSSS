@@ -173,13 +173,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             double[] position = Position;
-            double angle = Motion.GetAngle(0);
+            if (Angle.Dim > 1)
+                throw new NotImplementedException("Only 2D support");
+            double angle = Angle[0]; // hardcoded 2D
             double[] subPosition = position.CloneAs();
             double[] length = position.CloneAs();
 

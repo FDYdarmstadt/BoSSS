@@ -278,6 +278,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             return levelSetVelocity;
         }
 
+        RTree tree = new RTree(2, 2 / 6);
+
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
         /// </summary>
@@ -295,6 +297,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                 CreatePhysicalDataLogger();
             }
             InitializeParticlesNewTimestep(dt);
+            if (TimestepNo - 1 % 10 == 0)
+                tree.InitializeTree(Particles, dt);
+            else
+                tree.UpdateTree(Particles, dt);
+            //tree.PrintTreeStructure();
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             
@@ -350,11 +357,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         private void CalculateCollision(Particle[] Particles, double dt, bool DetermineOnlyOverlap = false) {
             using (new FuncTrace()) {
-                foreach (Particle p in Particles) {
-                    p.IsCollided = false;
+                int[][] potentialCollisionPartners = new int[Particles.Length][];
+                for (int p = 0; p < Particles.Length; p++) {
+                    Particles[p].IsCollided = false;
+                    //potentialCollisionPartners[p] = tree.SearchForOverlap(Particles[p], p).ToArray();
                 }
                 ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
-                Collision.Calculate(Particles);
+                Collision.Calculate(Particles, tree);
             }
         }
 

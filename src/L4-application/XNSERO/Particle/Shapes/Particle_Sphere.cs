@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
             double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
             double CosT = supportVector[0] / length;
             double SinT = supportVector[1] / length;

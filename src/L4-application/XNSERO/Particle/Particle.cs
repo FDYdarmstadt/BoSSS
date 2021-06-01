@@ -250,15 +250,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) => throw new NotImplementedException();
 
         /// <summary>
-        /// Calculates the support point with an analytic formula (if applicable)
+        /// Calculates the support point with an analytic formula (if applicable), else it uses a binary search.
         /// </summary>
         /// <param name="supportVector"></param>
         /// <param name="SubParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
         /// <param name="Position"></param>
-        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
             int spatialDim = Position.Dim;
             Vector currentSupportPoint = new Vector(spatialDim);
-            double angle = Motion.GetAngle(0);
+            if (Angle.Dim > 1)
+                throw new NotImplementedException("Only 2D support");
+            double angle = Angle[0]; // hardcoded 2D
             Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
             double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
             double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());

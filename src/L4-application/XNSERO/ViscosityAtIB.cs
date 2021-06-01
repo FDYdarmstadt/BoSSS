@@ -28,7 +28,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, bool UsePhoretic) {
+        public ViscosityAtIB(int _d, int _D, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UsePhoretic) {
 
             m_penalty_base = penalty_base;
             this.FluidViscosity = _muA;
@@ -37,7 +37,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.m_iLevSet = iLevSet;
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
-            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
             this.m_UsePhoretic = UsePhoretic;
             this.AllParticles = AllParticles;
         }
@@ -46,7 +45,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         readonly string m_SolidSpecies;
         readonly int Component;
         readonly int m_D;
-        private readonly bool m_UseLevelSetVelocityParameter;
         readonly bool m_UsePhoretic;
 
         /// <summary>
