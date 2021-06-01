@@ -72,8 +72,8 @@ namespace BoSSS.Solution.Gnuplot {
                 Console.Error.WriteLine("Gnuplot output file empty or non-existent.");
                 return null;
             }
-        }
-
+        }*/
+        /*
         /// <summary>
         /// Plot to a scalable vector graphics file ('set terminal gif').
         /// </summary>

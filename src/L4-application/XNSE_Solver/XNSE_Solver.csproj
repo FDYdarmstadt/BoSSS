@@ -1,17 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3D867374-BF9A-475E-8F5C-E1C067605B9C}</ProjectGuid>
+    <TargetFramework>net5.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Application.XNSE_Solver</RootNamespace>
-    <AssemblyName>XNSE_Solver</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -27,220 +18,56 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize>false</Optimize>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <Prefer32Bit>false</Prefer32Bit>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisIgnoreBuiltInRules>true</CodeAnalysisIgnoreBuiltInRules>
-    <WarningLevel>4</WarningLevel>
     <DocumentationFile>
     </DocumentationFile>
     <UseVSHostingProcess>false</UseVSHostingProcess>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MathNet.Numerics, Version=4.9.1.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
     <Reference Include="nunit.framework">
       <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PhysicalBasedTestcases\BasicControls.cs" />
-    <Compile Include="Logging\CapillaryHeightLogging.cs" />
-    <Compile Include="Logging\ChannelFlowLogging.cs" />
-    <Compile Include="Coefficients.cs" />
-    <Compile Include="Logging\Dropletlike.cs" />
-    <Compile Include="Equations.cs" />
-    <Compile Include="Logging\EvaporationLogging.cs" />
-    <Compile Include="Logging\FourierLevelSetLogger.cs" />
-    <Compile Include="Logging\InterfacePointsLogger.cs" />
-    <Compile Include="Logging\L2ErrorLogger.cs" />
-    <Compile Include="Logging\MovingContactLineLogging.cs" />
-    <Compile Include="Parameters.cs" />
-    <Compile Include="Logging\RisingBubble2DBenchmarkQuantities.cs" />
-    <Compile Include="Tests\ASUnitTest.cs" />
-    <Compile Include="Tests\BasicThreePhase.cs" />
-    <Compile Include="Tests\ErrorEvaluator.cs" />
-    <Compile Include="PhysicalBasedTestcases\CapillaryRise.cs" />
-    <Compile Include="PhysicalBasedTestcases\ContactLine.cs" />
-    <Compile Include="PhysicalBasedTestcases\ElementalTestProgramm.cs" />
-    <Compile Include="PhysicalBasedTestcases\HeatedWall.cs" />
-    <Compile Include="PhysicalBasedTestcases\TwoPhaseCouetteFlow.cs" />
-    <Compile Include="PhysicalBasedTestcases\CapillaryWave.cs" />
-    <Compile Include="PhysicalBasedTestcases\ChannelFlow.cs" />
-    <Compile Include="PhysicalBasedTestcases\Droplet.cs" />
-    <Compile Include="PhysicalBasedTestcases\RayleighTaylorInstability.cs" />
-    <Compile Include="PhysicalBasedTestcases\RisingBubble.cs" />
-    <Compile Include="PhysicalBasedTestcases\PhysicalTestProgram.cs" />
-    <Compile Include="Tests\BcTest_PressureOutlet.cs" />
-    <Compile Include="Tests\ChannelTest.cs" />
-    <Compile Include="Tests\HeatTransportTest.cs" />
-    <Compile Include="Tests\IBMChannel.cs" />
-    <Compile Include="Tests\LevelSetShearingTest.cs" />
-    <Compile Include="Tests\LevelSetScalingTest.cs" />
-    <Compile Include="Tests\LevelSetBaseTest.cs" />
-    <Compile Include="Tests\LevelSetRotationTest.cs" />
-    <Compile Include="Tests\LevelSetAdvectionTest.cs" />
-    <Compile Include="Tests\LevelSetContinuityTest.cs" />
-    <Compile Include="Tests\LevelSetInitializationTest.cs" />
-    <Compile Include="Tests\LevelSetReinitializationTest.cs" />
-    <Compile Include="Tests\LevelSetUnitTests.cs" />
-    <Compile Include="Tests\SinglePhaseChannel.cs" />
-    <Compile Include="Tests\StaticDropletTest.cs" />
-    <Compile Include="Logging\WaveLikeLogging.cs" />
-    <Compile Include="Tests\SteadyStateEvaporationTest.cs" />
-    <Compile Include="Tests\TaylorCouette.cs" />
-    <Compile Include="XHeat.cs" />
-    <Compile Include="XNSE.cs" />
-    <Compile Include="XNSEinSituPostProcessingModule.cs" />
-    <Compile Include="XNSE_Control.cs" />
-    <Compile Include="HardcodedControl.cs" />
-    <Compile Include="Tests\ITest.cs" />
-    <Compile Include="Tests\MovingDropletTest.cs" />
-    <Compile Include="Tests\PolynomialTestForConvection.cs" />
-    <Compile Include="Legacy\LevelSetMovement.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tests\TranspiratingChannelTest.cs" />
-    <Compile Include="Legacy\LegacyTests\UnitTest.cs" />
-    <Compile Include="Tests\ViscosityJumpTest.cs" />
-    <Compile Include="XNSE_OperatorConfiguration.cs" />
-    <Compile Include="Legacy\XNSE_SolverMain_Energy.cs" />
-    <Compile Include="Legacy\XNSE_SolverMain_Heat.cs" />
-    <Compile Include="Legacy\XNSE_SolverMain.cs" />
-    <Compile Include="Legacy\XNSE_SolverMain_LevelSet.cs" />
-    <Compile Include="Legacy\XNSE_SolverMain_Utils.cs" />
-    <Compile Include="XNSFE.cs" />
-    <Compile Include="Legacy\XNSFE_OperatorComponents.cs" />
-    <Compile Include="Legacy\XNSFE_OperatorFactory.cs" />
-    <Compile Include="XNSFE_Control.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
-      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
-      <Name>ilPSP.LinSolvers.monkey</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
-      <Project>{13585226-5046-494D-947C-B97479566081}</Project>
-      <Name>BoSSS.Foundation.Grid</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
-      <Project>{9D01688E-9372-4185-ADCF-D64D47F3A44A}</Project>
-      <Name>BoSSS.Foundation.SpecFEM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
-      <Project>{9A8CDC1F-64F7-441E-849D-66F2C56600F2}</Project>
-      <Name>BoSSS.Foundation.XDG</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
-      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
-      <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.AdvancedSolvers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj">
-      <Project>{7c92a61e-a113-4093-9e37-2786ac737f36}</Project>
-      <Name>BoSSS.Solution.EnergyCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
-      <Project>{d4fadb7c-0b11-4f41-a97a-146dc1f7034e}</Project>
-      <Name>BoSSS.Solution.Gnuplot</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj">
-      <Project>{02864872-ff49-4bd2-96fc-9769ac268b5a}</Project>
-      <Name>BoSSS.Solution.RheologyCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
-      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
-      <Name>BoSSS.Solution.Statistic</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
-      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
-      <Name>BoSSS.Solution.XdgTimestepping</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
-      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
-      <Name>BoSSS.Solution.XheatCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
-      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
-      <Name>BoSSS.Solution</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj">
-      <Project>{E56B9CE4-14DC-4256-A337-46E5D298B722}</Project>
-      <Name>BoSSS.Solution.NSECommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
-      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
-      <Name>BoSSS.Solution.Tecplot</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
-      <Project>{DD9BF776-38CA-4FC9-8F42-5ED700BDE7AD}</Project>
-      <Name>MPI.Wrappers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
-      <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
-      <Project>{6886ABB3-CE89-4537-9F2A-25F926D1840B}</Project>
-      <Name>ilPSP.Connectors.Matlab</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
-      <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
-      <Name>ilPSP.LinSolvers.PARDISO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
-      <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
-      <Name>BoSSS.Solution.LevelSetTools</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
-      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
-      <Name>BoSSS.Solution.XNSECommon</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.RheologyCommon\BoSSS.Solution.RheologyCommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0">
@@ -267,13 +94,10 @@
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+  <ItemGroup>
+    <Compile Remove="NewXNSE_SimpleTests\BasicControls.cs" />
+    <Compile Remove="Operators.cs" />
+    <Compile Remove="SolverType.cs" />
+    <Compile Remove="XNSE_OperatorFactory.cs" />
+  </ItemGroup>
 </Project>

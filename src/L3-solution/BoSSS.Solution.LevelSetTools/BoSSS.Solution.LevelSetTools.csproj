@@ -20,7 +20,7 @@
   <ItemGroup>
     <Reference Include="MathNet.Numerics">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
