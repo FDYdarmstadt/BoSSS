@@ -1217,7 +1217,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// the gird on which this DG field is defined
+        /// the grid on which this DG field is defined
         /// </summary>
         public IGridData GridDat {
             get {

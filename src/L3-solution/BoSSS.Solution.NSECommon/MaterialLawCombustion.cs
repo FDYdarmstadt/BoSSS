@@ -61,8 +61,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         /// <param name="Prandtl"></param>
         /// <param name="MolarMasses">Array of the molar masses of the fuel, oxidizer and products.</param>
-        public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double gasConstant, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl)
-            : base(T_ref_Sutherland, MatParamsMode, rhoOne, Prandtl) {
+        public MaterialLawCombustion(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, bool _cpOne, double gasConstant, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl, double viscValue = 1.0)
+            : base(T_ref_Sutherland, MatParamsMode, rhoOne,_cpOne, Prandtl, viscValue) {
             this.MatParamsMode = MatParamsMode;
             this.Prandtl = Prandtl;
             this.MolarMasses = MolarMasses;
@@ -82,6 +82,45 @@ namespace BoSSS.Solution.NSECommon {
 
         public ThermodynamicalProperties thermoProperties;
 
+        ///// <summary>
+        ///// Dimensionless ideal gas law for multicomponent flow - returns density as function of
+        ///// thermodynamic pressure (i.e. p0), temperature, mass fractions and molar masses.
+        ///// </summary>
+        ///// <param name="phi">Temperature, MassFractions_SpeciesIndex</param>
+        ///// <returns>
+        ///// Density
+        ///// </returns>
+        //public override double GetDensity(params double[] phi) {
+        //    if (IsInitialized) {
+        //        double rho;
+
+        //        if (!rhoOne) {
+        //            if (phi.Length < 2 )
+        //                throw new ArgumentException("Error in density computation. Number of chemical component needs to be atleast 1.");
+
+        //            double MassFractionsOverMolarFractions = 0.0;
+        //            double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+        //            for (int n = 1; n < phi.Length; n++) {
+        //                lastMassFract -= phi[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+        //            }
+
+        //            phi = ArrayTools.Cat(phi, lastMassFract);
+        //            for (int n = 1; n < phi.Length; n++) {
+        //                MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
+        //            }
+
+        //            rho = ThermodynamicPressureValue / (R * phi[0] * MassFractionsOverMolarFractions);
+        //            Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
+        //            //Debug.Assert((rho > 0.0));
+        //        } else {
+        //            rho = 1.0;
+        //        }
+        //        return rho;
+        //    } else {
+        //        throw new ApplicationException("ThermodynamicPressure is not initialized.");
+        //    }
+        //}
+
         /// <summary>
         /// Dimensionless ideal gas law for multicomponent flow - returns density as function of
         /// thermodynamic pressure (i.e. p0), temperature, mass fractions and molar masses.
@@ -91,11 +130,21 @@ namespace BoSSS.Solution.NSECommon {
         /// Density
         /// </returns>
         public override double GetDensity(params double[] phi) {
+            return GetDensity(ThermodynamicPressureValue, phi);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="p0"></param>
+        /// <param name="phi"></param>
+        /// <returns></returns>
+        public double GetDensity(double p0, params double[] phi) {
             if (IsInitialized) {
                 double rho;
 
                 if (!rhoOne) {
-                    if (phi.Length < 2 )
+                    if (phi.Length < 2)
                         throw new ArgumentException("Error in density computation. Number of chemical component needs to be atleast 1.");
 
                     double MassFractionsOverMolarFractions = 0.0;
@@ -109,9 +158,9 @@ namespace BoSSS.Solution.NSECommon {
                         MassFractionsOverMolarFractions += phi[n] / MolarMasses[n - 1];
                     }
 
-                    rho = ThermodynamicPressureValue / (R * phi[0] * MassFractionsOverMolarFractions);
-                    Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
-                    //Debug.Assert((rho > 0.0));
+                    rho = p0 / (R * phi[0] * MassFractionsOverMolarFractions);
+
+                    Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho))); 
                 } else {
                     rho = 1.0;
                 }
@@ -119,8 +168,8 @@ namespace BoSSS.Solution.NSECommon {
             } else {
                 throw new ApplicationException("ThermodynamicPressure is not initialized.");
             }
-        }
 
+        }
 
         /// <summary>
         /// Calculation of the heat capacity of the mixture. 

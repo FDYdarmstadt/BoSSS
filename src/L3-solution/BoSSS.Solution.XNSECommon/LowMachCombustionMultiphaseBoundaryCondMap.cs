@@ -14,16 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -99,7 +95,7 @@ namespace BoSSS.Solution.XNSECommon {
             base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature + S0]);
 
             for (int s = 0; s < NoOfChemicalSpecies; s++) {
-                string varname = VariableNames.MassFractions(NoOfChemicalSpecies)[s] ;
+                string varname = VariableNames.MassFractions(NoOfChemicalSpecies)[s];
                 base.bndFunction.Add(varname, base.bndFunction[varname + S0]);
             }
         }
@@ -107,18 +103,10 @@ namespace BoSSS.Solution.XNSECommon {
 
 
 
-
-
-
-
-
-
-
-
     /// <summary>
-    /// Just for testing. 
+    /// Boundary condition mapping for LowMachCombustion XDG multiphase methods.
     /// </summary>
-    public class LowMachIncompressibleMultiphaseBoundaryCondMap : BoSSS.Solution.NSECommon.IncompressibleBoundaryCondMap {
+    public class LowMachMixtureFractionMultiphaseBoundaryCondMap : BoSSS.Solution.NSECommon.IncompressibleBoundaryCondMap {
 
         static string[] BndFunctions(IGridData g, string[] SpeciesNames) {
             int D = g.SpatialDimension;
@@ -129,7 +117,7 @@ namespace BoSSS.Solution.XNSECommon {
                     scalarFields.Add(VariableNames.Velocity_d(d) + "#" + S);
                 }
                 scalarFields.Add(VariableNames.Pressure + "#" + S);
-                scalarFields.Add(VariableNames.Temperature + "#" + S);
+                scalarFields.Add(VariableNames.MixtureFraction + '#' + S);
             }
             scalarFields.Add(VariableNames.LevelSet);
 
@@ -172,8 +160,8 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public LowMachIncompressibleMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
-           : base(f, BndyModify(b, SpeciesNames), PhysicsMode.LowMach, BndFunctions(f, SpeciesNames)) {
+        public LowMachMixtureFractionMultiphaseBoundaryCondMap(IGridData f, IDictionary<string, BoSSS.Solution.Control.AppControl.BoundaryValueCollection> b, string[] SpeciesNames)
+           : base(f, BndyModify(b, SpeciesNames), PhysicsMode.MixtureFraction, BndFunctions(f, SpeciesNames)) {
             string S0 = "#" + SpeciesNames[0];
 
             int D = f.SpatialDimension;
@@ -181,12 +169,9 @@ namespace BoSSS.Solution.XNSECommon {
                 base.bndFunction.Add(VariableNames.Velocity_d(d), base.bndFunction[VariableNames.Velocity_d(d) + S0]);
             }
             base.bndFunction.Add(VariableNames.Pressure, base.bndFunction[VariableNames.Pressure + S0]);
-            base.bndFunction.Add(VariableNames.Temperature, base.bndFunction[VariableNames.Temperature+ S0]);
+            base.bndFunction.Add(VariableNames.MixtureFraction, base.bndFunction[VariableNames.MixtureFraction + S0]);
         }
     }
-
-
-
 
 
 

@@ -182,6 +182,8 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             var C = TestParticleInShearFlow(k);
             C.UsePhoreticField = true;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-12;
             return C;
         }
 

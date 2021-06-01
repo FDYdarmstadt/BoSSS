@@ -3,10 +3,10 @@ rmdir .\bin /S /Q
 rmdir .\doc /S /Q
 bcl deploy-at ..\src\Utils\bcl\bin\Debug\bcl.exe                                             .\bin\Debug    1
 bcl deploy-at ..\src\Utils\bcl\bin\Release\bcl.exe                                           .\bin\Release  1
-bcl deploy-at ..\src\Utils\AllSpark\bin\Debug\AllSpark.exe                                             .\bin\Debug    1
-bcl deploy-at ..\src\Utils\AllSpark\bin\Release\AllSpark.exe                                           .\bin\Release  1
-bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Debug\MatrixVisualizerVS15.dll    .\bin\Debug    1
-bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Release\MatrixVisualizerVS15.dll  .\bin\Release  1
+::bcl deploy-at ..\src\Utils\AllSpark\bin\Debug\AllSpark.exe                                             .\bin\Debug    1
+::bcl deploy-at ..\src\Utils\AllSpark\bin\Release\AllSpark.exe                                           .\bin\Release  1
+::bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Debug\MatrixVisualizerVS15.dll    .\bin\Debug    1
+::bcl deploy-at ..\src\Utils\MatrixVisualizer\MatrixVisualizerVS15\bin\Release\MatrixVisualizerVS15.dll  .\bin\Release  1
 bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Debug\BoSSSpad.exe                   .\bin\Debug    1
 bcl deploy-at ..\src\L4-application\BoSSSpad\bin\Release\BoSSSpad.exe                 .\bin\Release  1
 ::Include xml files for 'Describe' feature in BoSSSpad
@@ -18,20 +18,34 @@ bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Debug\NSE_SIMPLE.exe         
 bcl deploy-at ..\src\L4-application\NSE_SIMPLE\bin\Release\NSE_SIMPLE.exe             .\bin\Release  1
 bcl deploy-at ..\src\L4-application\CNS\bin\Debug\CNS.exe                             .\bin\Debug    1
 bcl deploy-at ..\src\L4-application\CNS\bin\Release\CNS.exe                           .\bin\Release  1
-bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
-bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
+::bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Debug\IBM_Solver.exe               .\bin\Debug    1
+::bcl deploy-at ..\src\L4-application\IBM_Solver\bin\Release\IBM_Solver.exe             .\bin\Release  1
 mkdir bin\native
 xcopy "%BOSSS_INSTALL%\bin\native" .\bin\native /E /Y
+IF EXIST "installer-tmp_win-amd64" (
+    echo patching installer native binaries (windows)
+    rmdir .\bin\native\win\amd64\* /S /Q
+    xcopy .\installer-tmp_win-amd64 .\bin\native\win\amd64\* /E /Y
+) else (
+    echo not using new native binaries (Windows)
+)
+IF EXIST "installer-tmp_linux-amd64-openmpi" (
+    echo patching installer native binaries (Linux, amd64-openmpi)
+    rmdir .\bin\native\linux\amd64-openmpi /S /Q
+    xcopy .\installer-tmp_linux-amd64-openmpi .\bin\native\linux\amd64-openmpi\* /E /Y
+) else (
+    echo not using new native binaries (Linux, amd64-openmpi)
+)
 mkdir doc
 mkdir doc\ControlExamples
 mkdir doc\ControlExamples\CNS
 mkdir doc\ControlExamples\IBM
-mkdir doc\APIreference
+::mkdir doc\APIreference
 xcopy ..\doc\
 xcopy ..\doc\handbook\ControlExamples\IBM\* .\doc\ControlExamples\IBM /Y
 xcopy ..\doc\handbook\ControlExamples\CNS\* .\doc\ControlExamples\CNS /Y
 xcopy ..\doc\notes\0030-BoSSSPad_Command_Overview\BoSSSPad_Command_Overview.pdf .\doc\ /Y
-xcopy ..\doc\handbook\BoSSShandbook.pdf .\doc\ /Y
-xcopy ..\doc\doxygen\html\* .\doc\APIreference /E /Q
-xcopy ..\src\BoSSSpadGUI\InnoSetup\bin\* .\bin /c /e
+::xcopy ..\doc\handbook\BoSSShandbook.pdf .\doc\ /Y
+::xcopy ..\doc\doxygen\html\* .\doc\APIreference /E /Q
+::xcopy ..\src\BoSSSpadGUI\InnoSetup\bin\* .\bin /c /e
 ISCC.exe BoSSS-setup.iss

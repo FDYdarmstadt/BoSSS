@@ -197,6 +197,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //private static bool rem = true;
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            //var DerivEdg = new LevelSetFormDifferentiator(this, SpatialDimension);
+            //return new IEquationComponent[] { DerivEdg };
             return new IEquationComponent[] { this };
         }
 

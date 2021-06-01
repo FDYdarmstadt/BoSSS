@@ -22,6 +22,7 @@ namespace BoSSS.Application.ExternalBinding {
         {
             RowMap = f.Mapping;
             ColMap = f.Mapping;
+            m_SolBuffer = f;
         }
 
         /// <summary>
@@ -67,15 +68,13 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
 
-        double[] m_SolBuffer;
+        OpenFoamDGField m_SolBuffer;
 
         /// <summary>
         /// additional buffer to store the Solution of the system
         /// </summary>
-        public double[] SolBuffer {
+        public OpenFoamDGField SolBuffer {
             get {
-                if(m_SolBuffer == null)
-                    m_SolBuffer = new double[_ColPartitioning.LocalLength];
                 return m_SolBuffer;
             }
         }
@@ -101,7 +100,12 @@ namespace BoSSS.Application.ExternalBinding {
         /// </remarks>
         [CodeGenExport]
         public void Solve() {
-            this.Solve_Direct(SolBuffer, RHSbuffer);
+            try {
+                Console.WriteLine("Solving Matrix, norm is " + this.InfNorm());
+                this.Solve_Direct(this.SolBuffer, RHSbuffer);
+            } catch(Exception e) {
+                Console.WriteLine(e.GetType().FullName + ": " + e.Message);
+            }
         }
 
 

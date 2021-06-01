@@ -674,9 +674,9 @@ namespace BoSSS.Solution.NSECommon {
                         case PhysicsMode.Combustion: {
                             // opt1: (using Dirichlet values)
                             Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                            for(int n = 1; n < NumberOfReactants - 1 + 1; n++) {
+                            for(int n = 0; n < NumberOfReactants; n++) {
                                 //Using inner values for species
-                                Uout[m_SpatialDimension + n] = Uin[m_SpatialDimension + n];
+                                Uout[m_SpatialDimension + 1 + n] = Uin[m_SpatialDimension+ 1 + n];
                             }
                             break;
                         }
@@ -741,9 +741,9 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Combustion: {
                                     // opt1: (using Dirichlet values)
                                     Uout[m_SpatialDimension] = m_bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                    for(int n = 1; n < NumberOfReactants+1; n++) {
+                                    for(int n = 0; n < NumberOfReactants; n++) {
                                         // opt1: (using Dirichlet values)
-                                        Uout[m_SpatialDimension+n]= m_bcmap.bndFunction[VariableNames.MassFraction_n(n - 1)][inp.EdgeTag](inp.X, inp.time);
+                                        Uout[m_SpatialDimension+1+n]= m_bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
                                     }                             
                                     break;
                                 }
@@ -916,7 +916,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
             }
         }
 
@@ -925,7 +925,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.V;
+                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
             }
         }
 
@@ -934,7 +934,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
+                return TermActivationFlags.UxGradV /*| TermActivationFlags.GradV*/;
             }
         }
     }

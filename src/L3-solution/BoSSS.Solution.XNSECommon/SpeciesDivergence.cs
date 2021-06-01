@@ -123,9 +123,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     /// <summary>
     /// Variable density bulk term.
     /// </summary>
-    public class Divergence_CentralDifferenceBulk : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
+    public class DivergenceInSpeciesBulk_CentralDifference : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
 
-        public Divergence_CentralDifferenceBulk(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
             : base(Component, Bcmap, SpatDim, EoS, NumberOfChemicalSpecies) {
             ValidSpecies = spcName;
         }
@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// <param name="SpatDim"></param>
         /// <param name="EoS"></param>
         /// <param name="NumberOfChemicalSpecies"></param>
-        public Divergence_CentralDifferenceBulk(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
             ValidSpecies = spcName;
         }
 
@@ -146,6 +146,135 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             get;
             private set;
         }
+    }
+
+
+
+
+
+    /// <summary>
+    /// velocity jump penalty for the divergence operator, on the level set
+    /// </summary>
+    public class DivergenceAtLevelSetLowMach : ILevelSetForm, ISupportsJacobianComponent {
+
+        LevelSetTracker m_lsTrk;
+
+        public DivergenceAtLevelSetLowMach(int _D, LevelSetTracker lsTrk, double _rhoA, double _rhoB,
+            bool _MaterialInterface, double vorZeichen, bool RescaleConti,
+            double _wA = 1.0, double _wB = 1.0) {
+            this.D = _D;
+            this.rhoA = _rhoA;
+            this.rhoB = _rhoB;
+            this.m_lsTrk = lsTrk;
+            MaterialInterface = _MaterialInterface;
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if (RescaleConti) {
+                scaleA *= rhoA;
+                scaleB *= rhoB;
+            }
+
+            this.wA = _wA;
+            this.wB = _wB;
+        }
+
+        bool MaterialInterface;
+        int D;
+        double rhoA;
+        double rhoB;
+
+        double scaleA;
+        double scaleB;
+
+        double wA;
+        double wB;
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public double InnerEdgeForm(ref CommonParams cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
+            //uAxN *= rhoA;
+            //uBxN *= rhoB;
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            uAxN_fict = uBxN;
+
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            uBxN_fict = uAxN;
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg;
+            double FlxPos;
+            FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
+            FlxPos = -Flux(uBxN_fict, uBxN, 1.0, 1.0);  // flux on B-side
+
+            FlxNeg *= scaleA;
+            FlxPos *= scaleB;
+
+
+            return FlxNeg * vA - FlxPos * vB;
+        }
+
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out, double w_in, double w_out) {
+            return (UxN_in + UxN_out) * w_in / (w_in + w_out);
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return VariableNames.VelocityVector(this.D);
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        //public SpeciesId PositiveSpecies {
+        //    get { return this.m_lsTrk.GetSpeciesId("B"); }
+        //}
+
+        //public SpeciesId NegativeSpecies {
+        //    get { return this.m_lsTrk.GetSpeciesId("A"); }
+        //}
+        public string PositiveSpecies
+        {
+            get { return "B"; }
+        }
+
+        public string NegativeSpecies
+        {
+            get { return "A"; }
+        }
+
 
     }
+
+
 }

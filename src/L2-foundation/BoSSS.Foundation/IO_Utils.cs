@@ -51,7 +51,7 @@ namespace BoSSS.Foundation.IO {
         /// The search priority should be:
         /// 1. if defined, the <see cref="BOSSS_NATIVE_OVERRIDE"/> environment variable
         /// 2. if existent, a local 'amd64' subdirectory
-        /// 3. if <see cref="BOSSS_INSTALL"/>, the respective subdirectory, e.g. 'C:\Program Files\FDY\BoSSS\bin\native\win\amd64'
+        /// 3. if <see cref="BOSSS_INSTALL"/>, the respective subdirectory, e.g. `C:\Program Files\FDY\BoSSS\bin\native\win\amd64`
         /// </summary>
         public static string GetNativeLibraryDir(ILog logger = null) {
             {

@@ -81,10 +81,10 @@ namespace BoSSS.Solution.NSECommon {
                 //Neumann boundary condition
                 Acc = 0.0;
                 break;
+                //case IncompressibleBcType.Wall:
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-
                 // inhom. Dirichlet b.c.
                 // =====================
                 double u_D = BcMap.bndFunction[VariableNames.MassFraction_n(i - 1)][inp.EdgeTag](inp.X, inp.time);
@@ -110,7 +110,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="Parameters"></param>
         /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
-            double rhoDAd = ((MaterialLawLowMach)EoS).GetDiffusivity(U[0]);
+            //double rhoDAd = ((MaterialLawLowMach)EoS).GetDiffusivity(U[0]);
+            double rhoDAd = ((MaterialLawMultiSpecies)EoS).GetDiffusivity(U[0]);
+
             int massfractionIndex = this.i - 1;
             double Lewis = m_lewis[massfractionIndex];
             double res = rhoDAd / (m_reynolds * m_schmidt * Lewis);
