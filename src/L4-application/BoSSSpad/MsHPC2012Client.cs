@@ -82,11 +82,11 @@ namespace BoSSS.Application.BoSSSpad {
 
             if (!Directory.Exists(base.DeploymentBaseDirectory))
                 Directory.CreateDirectory(base.DeploymentBaseDirectory);
-
+#pragma warning disable CA1416
             if (this.Username == null)
                 this.Username = System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+#pragma warning restore CA1461
 
-           
         }
 
         [NonSerialized]
