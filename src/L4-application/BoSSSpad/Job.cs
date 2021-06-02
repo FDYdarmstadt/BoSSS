@@ -1425,8 +1425,8 @@ namespace BoSSS.Application.BoSSSpad {
                     default: {
                         return Path.GetDirectoryName(Ass.Location).Equals(MainAssemblyDir)
                             || Path.GetFileName(Ass.Location).StartsWith("BoSSS")
-                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP")
-                            || !Ass.GlobalAssemblyCache;
+                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP");
+                            //|| !Ass.GlobalAssemblyCache;
                     }
                 }
             }

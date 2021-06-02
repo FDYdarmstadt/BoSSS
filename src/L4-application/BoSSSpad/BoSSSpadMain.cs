@@ -75,7 +75,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// application entry point
         /// </summary>
-        [STAThread]
+        //[STAThread]
         public static int Main(string[] args) {
             
             /*
@@ -144,21 +144,22 @@ namespace BoSSS.Application.BoSSSpad {
 
             switch (mode) {
                 case Modes.Worksheet:
-                var ws = new Worksheet(fileToOpen);
-                ws.Shown += Worksheet.OnShown; // Workaround for wrong word-wrap on start-up of the application
-                System.Windows.Forms.Application.Run(ws);
+                throw new NotSupportedException("GUI has been removed; use Jupyter notebook!");
+                //var ws = new Worksheet(fileToOpen);
+                //ws.Shown += Worksheet.OnShown; // Workaround for wrong word-wrap on start-up of the application
+                //System.Windows.Forms.Application.Run(ws);
 
-                ws.m_ExecutorOfCommandQueue_RegularTermination = false;
-                Thread.Sleep(800);
+                //ws.m_ExecutorOfCommandQueue_RegularTermination = false;
+                //Thread.Sleep(800);
 
-                if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                    // hardcore
-                    Thread.Sleep(5000);
-                    if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                        ws.m_ExecutorOfCommandQueue.Abort();
-                    }
-                }
-                break;
+                //if (ws.m_ExecutorOfCommandQueue.IsAlive) {
+                //    // hardcore
+                //    Thread.Sleep(5000);
+                //    if (ws.m_ExecutorOfCommandQueue.IsAlive) {
+                //        ws.m_ExecutorOfCommandQueue.Abort();
+                //    }
+                //}
+                //break;
 
                 case Modes.Console:
                 ReadEvalPrintLoop.REPL();

@@ -1259,9 +1259,8 @@ namespace PublicTestRunner {
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
 
-            var ll = System.Diagnostics.Debug.Listeners;
-            ll.Clear();
-            ll.Add(new MyListener());
+            System.Diagnostics.Trace.Listeners.Clear();
+            System.Diagnostics.Trace.Listeners.Add(new MyListener());
 
 
             if(args.Length < 1) {
