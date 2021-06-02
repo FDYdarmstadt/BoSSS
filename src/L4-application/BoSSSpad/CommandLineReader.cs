@@ -33,7 +33,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// Adapted from Mono.Terminal.LineEditor, see
     /// https://github.com/mono/mono/blob/master/mcs/tools/csharp/getline.cs
     /// </remarks>
-    public class CommandLineReader : IDisposable {
+    public sealed class CommandLineReader : IDisposable {
 
         /// <summary>
         /// Invoked when the user requests auto-completion using the tab
@@ -705,6 +705,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public void Dispose() {
             SaveHistory();
+            if(history != null)
+                history.Dispose();
         }
 
         #endregion

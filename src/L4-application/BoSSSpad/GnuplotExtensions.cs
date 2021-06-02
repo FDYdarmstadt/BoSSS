@@ -190,7 +190,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (xSize >= 0 && ySize >= 0)
                 gp.Terminal = string.Format("cairolatex {0} size {1}cm,{2}cm", Options != null ? Options : " ", xSize.ToStringDot(), ySize.ToStringDot());
             else
-                gp.Terminal = string.Format("cairolatex {0} size {1}cm,{2}cm", Options != null ? Options : " ");
+                gp.Terminal = string.Format("cairolatex {0}", Options != null ? Options : " ");
 
             // set output file
             string baseName = Path.GetTempFileName();
