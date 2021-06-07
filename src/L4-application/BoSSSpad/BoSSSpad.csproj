@@ -44,6 +44,18 @@
     <Reference Include="MathNet.Numerics">
       <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
+      <HintPath>..\..\..\..\..\..\.nuget\packages\microsoft.aspnetcore.app.ref\3.1.10\ref\netcoreapp3.1\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive.CSharp">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive.Formatting">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Hpc.Azure.FileStaging.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>

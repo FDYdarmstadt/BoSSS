@@ -87,6 +87,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Just Demo
+        /// </summary>
+        public static void SayHello() {
+            Console.WriteLine("Hello");
+        }
+
+
+
+        /// <summary>
         /// Opens the folder containing config files like the DBE.xml
         /// </summary>
         public static void OpenConfigDirectory() {
@@ -484,7 +493,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                return gp.PlotNow();
+                return gp.PlotSVG();
             }
         }
 
