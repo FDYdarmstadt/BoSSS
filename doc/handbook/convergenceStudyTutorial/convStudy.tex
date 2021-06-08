@@ -15,7 +15,7 @@
 \begin{itemize}
 	\item basic knowledge of \BoSSSpad{}
 	\item executing runs on your local machine, e.g. the quick-start guide of the \ac{cns}, see chapter \ref{sec:CNS}
-    \item knowlede of the meta job scheduler, see chapter \ref{sec:WorkflowMgm}
+    \item knowlede of the meta job scheduler, see chapter \ref{sec:BoSSSshell.WorkflowMgm}
 \end{itemize}
 
 The fully programmable workflow management tools in \BoSSS{} are powerful helpers in
@@ -65,7 +65,7 @@ using NUnit.Framework;
  }
 \BoSSSexeSilent
 \BoSSScmd{
-WorkflowMgm.Init("ConvStudyTutorial");
+BoSSSshell.WorkflowMgm.Init("ConvStudyTutorial");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -83,7 +83,7 @@ var db = CreateTempDatabase();
 /// This is handy e.g. when simulations are running on a cluster for a long 
 /// time, and we usually don't want to re-submit the calculation 
 /// every time we execute the worksheet.
-//WorkflowMgm.Sessions.ForEach(si => si.Delete(true));
+//BoSSSshell.WorkflowMgm.Sessions.ForEach(si => si.Delete(true));
  }
 \BoSSSexe
 \BoSSScmd{
@@ -239,7 +239,7 @@ foreach(var C in Runs)\newline
 /// The following line ensures that all jobs are complete before 
 /// post-processing analysis is started, although, there is a one-hour (3600-seconds )
 /// time-out.
-WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
+BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -248,13 +248,13 @@ WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
 /// Instead, one might split process into two workseets 
 /// (eactly at this line here), one for set-up and
 /// job sumbission and another one for the analysis.
-WorkflowMgm.AllJobs;
+BoSSSshell.WorkflowMgm.AllJobs;
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can take a closer inspection of anything that failed (should not be,
 /// anyway).
-foreach(var job in WorkflowMgm.AllJobs.Values) \{\newline 
+foreach(var job in BoSSSshell.WorkflowMgm.AllJobs.Values) \{\newline 
 \btab if(job.Status != JobStatus.FinishedSuccessful) \{\newline 
 \btab \btab Console.WriteLine("###############################################");\newline 
 \btab \btab Console.WriteLine($"Job \{job\}");\newline 
@@ -287,7 +287,7 @@ foreach(var job in WorkflowMgm.AllJobs.Values) \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-var Tab = WorkflowMgm.SessionTable;
+var Tab = BoSSSshell.WorkflowMgm.SessionTable;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -411,11 +411,11 @@ Assert.IsTrue(Math.Abs(conv4 - (+5)) < 0.7, "experimental convergence failed on 
 \BoSSSexe
 \BoSSScmd{
 /// We can augment the current session table with experimental errors:
-WorkflowMgm.hConvergence.Update();
+BoSSSshell.WorkflowMgm.hConvergence.Update();
  }
 \BoSSSexe
 \BoSSScmd{
-var Tab = WorkflowMgm.SessionTable;
+var Tab = BoSSSshell.WorkflowMgm.SessionTable;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -472,7 +472,7 @@ var ExpPlotS = new List<Plot2Ddata>();\newline
  \newline 
 foreach(int pDeg in Degrees) \{ // loop over polynomial degrees\newline 
 \btab // extract sessions with DG degree pDeg\newline 
-\btab var pDegSessions = WorkflowMgm.Sessions.Where(\newline 
+\btab var pDegSessions = BoSSSshell.WorkflowMgm.Sessions.Where(\newline 
 \btab \btab \btab   // function which is true on all sessions we are interested in:\newline 
 \btab \btab \btab   Si => Convert.ToInt32(Si.KeysAndQueries["DGdegree:T"]) == pDeg\newline 
 \btab \btab ).ToArray();\newline 

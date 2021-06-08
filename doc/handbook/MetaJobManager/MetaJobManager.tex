@@ -139,17 +139,17 @@ var myBatch = ExecutionQueues[0];
 /// a project name. 
 /// This is used to generate names for the compute jobs and to 
 /// identify sessions in the database:
-WorkflowMgm.Init("MetaJobManager\_Tutorial");
+BoSSSshell.WorkflowMgm.Init("MetaJobManager\_Tutorial");
  }
 \BoSSSexe
 \BoSSScmd{
 /// We verify that we have no jobs defined so far ...
-WorkflowMgm.AllJobs;
+BoSSSshell.WorkflowMgm.AllJobs;
  }
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-NUnit.Framework.Assert.IsTrue(WorkflowMgm.AllJobs.Count == 0, "MetaJobManager tutorial: expecting 0 jobs on entry.");
+NUnit.Framework.Assert.IsTrue(BoSSSshell.WorkflowMgm.AllJobs.Count == 0, "MetaJobManager tutorial: expecting 0 jobs on entry.");
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -372,7 +372,7 @@ JobLocal.Activate(myBatch,  // execute the job in 'myBatch'\newline
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.AllJobs
+BoSSSshell.WorkflowMgm.AllJobs
  }
 \BoSSSexe
 \BoSSScmd{
@@ -389,7 +389,7 @@ NUnit.Framework.Assert.IsTrue(\newline
 \BoSSSexeSilent
 \BoSSScmd{
 /// Here, we block until both of our jobs have finished:
-WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
+BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{

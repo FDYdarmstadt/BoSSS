@@ -18,7 +18,7 @@ restart;
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.Init("Name of Workflow");
+BoSSSshell.WorkflowMgm.Init("Name of Workflow");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -35,7 +35,7 @@ var myDb = CreateTempDatabase();
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.Sessions;
+BoSSSshell.WorkflowMgm.Sessions;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -75,7 +75,7 @@ int k = 10;\newline
 double[] xNodes = GenericBlas.Linspace(0, 1, k + 1);\newline 
 double[] yNodes = GenericBlas.Linspace(0, 1, k + 1);\newline 
 int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
-string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
+string GridName = string.Format(BoSSSshell.WorkflowMgm.CurrentProject + "\_J" +J);\newline 
  \newline 
 Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
  \newline 
@@ -245,7 +245,7 @@ ctrl.RunBatch(myBatch);
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \textbackslash t" + kv.Value.Status);
+BoSSSshell.WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \textbackslash t" + kv.Value.Status);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -254,7 +254,7 @@ WorkflowMgm.AllJobs.Select(kv => kv.Key + ": \textbackslash t" + kv.Value.Status
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.AllJobs.ElementAt(1).Value.Stdout;
+BoSSSshell.WorkflowMgm.AllJobs.ElementAt(1).Value.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
@@ -263,7 +263,7 @@ WorkflowMgm.AllJobs.ElementAt(1).Value.Stdout;
  }
 \BoSSSexe
 \BoSSScmd{
- ITimestepInfo[] AllSolutionS = WorkflowMgm.AllJobs.Select(kv => kv.Value.LatestSession.Timesteps.Last()).ToArray();
+ ITimestepInfo[] AllSolutionS = BoSSSshell.WorkflowMgm.AllJobs.Select(kv => kv.Value.LatestSession.Timesteps.Last()).ToArray();
  }
 \BoSSSexe
 \BoSSScmd{
@@ -388,7 +388,7 @@ static class AddCols \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-var SessTab = WorkflowMgm.SessionTable;
+var SessTab = BoSSSshell.WorkflowMgm.SessionTable;
  }
 \BoSSSexe
 \BoSSScmd{
