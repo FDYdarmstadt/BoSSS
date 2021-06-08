@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon {
             m_EoS = EoS;
             m_dt = dt;
             m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
-            m_ParameterOrdering = new string[] { "Density0", "Density" };
+            m_ParameterOrdering = new string[] { "Density_t0", "Density" }; // Density is only added as a dummy  in order to be able to recognize it in the operator
         }
 
         public string ValidSpecies {
