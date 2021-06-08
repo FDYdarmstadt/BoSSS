@@ -1414,7 +1414,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Copies the executable files to the <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, but does not submit the job.
         /// </summary>
         string DeployExecuteables() {
-
+            /*
             bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir) {
                 PlatformID CurrentSys = System.Environment.OSVersion.Platform;
                 switch(CurrentSys) {
@@ -1430,7 +1430,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
             }
-
+            */
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
@@ -1457,17 +1457,23 @@ namespace BoSSS.Application.BoSSSpad {
                     //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                     string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
                     foreach (var a in AllDependentAssemblies) {
-                        if (IsNotSystemAssembly(a, MainAssemblyDir)) {
-                            files.Add(a.Location);
+                        // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
+                        // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
+                        string DelpoyAss = Path.Combine(MainAssemblyDir,  Path.GetFileName(a.Location));
 
-                            string a_config = a.Location + ".config";
-                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(a.Location) + ".runtimeconfig.json";
+                        if (File.Exists(DelpoyAss)) {
+                            files.Add(DelpoyAss);
+
+                            string a_config = DelpoyAss + ".config";
+                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json";
 
                             foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
                                 if(File.Exists(a_acc)) {
                                     files.Add(a_acc);
                                 }
                             }
+                        } else {
+                            //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
                         }
                     }
                

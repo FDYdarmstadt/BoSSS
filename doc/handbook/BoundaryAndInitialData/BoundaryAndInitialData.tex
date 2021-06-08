@@ -99,11 +99,11 @@ c1.AddInitialValue("RHS","X => Math.Sin(X[0])*Math.Cos(X[1])",\newline
  }
 \BoSSSexe
 \BoSSScmd{
-c1.InitialValues;
+c1.InitialValues
  }
 \BoSSSexe
 \BoSSScmd{
-c1.InitialValues["RHS"];
+c1.InitialValues["RHS"]
  }
 \BoSSSexe
 \BoSSScmd{
@@ -113,15 +113,14 @@ c1.InitialValues["RHS"];
  }
 \BoSSSexe
 \BoSSScmd{
-static class BndyValue \{\newline 
-\btab public static double BndyFunction(double[] X) \{\newline 
-\btab \btab return 1.0;\newline 
-\btab \}\newline 
-\}
- }
-\BoSSSexe
-\BoSSScmd{
-Formula BndyFormula = GetFormulaObject(BndyValue.BndyFunction);
+Formula BndyFormula = new Formula(\newline 
+\btab "BndyValue.BndyFunction",\newline 
+\btab false,\newline 
+"static class BndyValue \{"+\newline 
+"    public static double BndyFunction(double[] X) \{"+\newline 
+"        return 1.0;"+\newline 
+"    \}"+\newline 
+"\}");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -139,16 +138,12 @@ var J1 = c1.RunBatch();
  }
 \BoSSSexe
 \BoSSScmd{
-LastError;
- }
-\BoSSSexe
-\BoSSScmd{
 BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
 /// What happened to the job?
-J1.Status;
+J1.Status
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -216,7 +211,7 @@ BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
-J2.Status;
+J2.Status
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -244,11 +239,11 @@ var j2Sess = J2.LatestSession;
  }
 \BoSSSexe
 \BoSSScmd{
-j2Sess;
+j2Sess
  }
 \BoSSSexe
 \BoSSScmd{
-j2Sess.Timesteps;
+j2Sess.Timesteps
  }
 \BoSSSexe
 \BoSSScmd{
@@ -313,7 +308,7 @@ BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
-J3.Status;
+J3.Status
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -402,7 +397,7 @@ BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
  }
 \BoSSSexe
 \BoSSScmd{
-J4.Status;
+J4.Status
  }
 \BoSSSexe
 \BoSSScmdSilent{
