@@ -107,7 +107,7 @@ restart;
 /// mini batch processor, is initialized. 
 ///
 /// The list of all execution queues can be accessed through:
-ExecutionQueues;
+ExecutionQueues
  }
 \BoSSSexe
 \BoSSScmd{
@@ -144,7 +144,7 @@ BoSSSshell.WorkflowMgm.Init("MetaJobManager\_Tutorial");
 \BoSSSexe
 \BoSSScmd{
 /// We verify that we have no jobs defined so far ...
-BoSSSshell.WorkflowMgm.AllJobs;
+BoSSSshell.WorkflowMgm.AllJobs
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -161,7 +161,7 @@ var myLocalDb = CreateTempDatabase();\newline
 \BoSSSexe
 \BoSSScmdSilent{
 /// BoSSScmdSilent BoSSSexeSilent
-databases;
+databases
  }
 \BoSSSexeSilent
 \BoSSScmd{
@@ -257,6 +257,7 @@ WallVelocity.Evaluate(new[]\{0.0, 0.0\}, 0.0); // evaluationg at (0,0), at time 
  }
 \BoSSSexe
 \BoSSScmd{
+// [Deprecated]\newline 
 /// A disadvantage of string-formulas is that they look a bit ``alien''
 /// within the worksheet; therefore, there is also a little hack which allows 
 /// the conversion of a static memeber function of a static class into a 
@@ -264,6 +265,7 @@ WallVelocity.Evaluate(new[]\{0.0, 0.0\}, 0.0); // evaluationg at (0,0), at time 
  }
 \BoSSSexe
 \BoSSScmd{
+// Deprecated, this option is no longer supported in .NET5\newline 
 static class StaticFormulas \{\newline 
 \btab public static double VelX\_Inlet(double[] X) \{\newline 
 \btab \btab //double x  = X[0];\newline 
@@ -279,8 +281,13 @@ static class StaticFormulas \{\newline
  }
 \BoSSSexe
 \BoSSScmd{
-var InletVelocityX = GetFormulaObject(StaticFormulas.VelX\_Inlet);\newline 
-var InletVelocityY = GetFormulaObject(StaticFormulas.VelY\_Inlet);
+// InletVelocityX = GetFormulaObject(StaticFormulas.VelX\_Inlet);\newline 
+//var InletVelocityY = GetFormulaObject(StaticFormulas.VelY\_Inlet);
+ }
+\BoSSSexe
+\BoSSScmd{
+var InletVelocityX = new Formula("X => 1 - X[0]*X[0]", false);\newline 
+var InletVelocityY = new Formula("X => 0.0", false);
  }
 \BoSSSexe
 \BoSSScmd{
@@ -323,7 +330,7 @@ var JobLocal = c.CreateJob();
  }
 \BoSSSexe
 \BoSSScmd{
-JobLocal.Status;
+JobLocal.Status
  }
 \BoSSSexe
 \BoSSScmd{
@@ -377,7 +384,7 @@ BoSSSshell.WorkflowMgm.AllJobs
 \BoSSSexe
 \BoSSScmd{
 /// Check the present job status:
-JobLocal.Status;
+JobLocal.Status
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -397,12 +404,12 @@ BoSSSshell.WorkflowMgm.BlockUntilAllJobsTerminate(3600*4);
 /// This directly accesses the {\tt stdout}-redirection of the respective job
 /// manager, which may contain a bit more information than the 
 /// {\tt stdout}-copy in the session directory.
-JobLocal.Stdout;
+JobLocal.Stdout
  }
 \BoSSSexe
 \BoSSScmd{
 /// Additionally we display the error stream and hope that it is empty:
-JobLocal.Stderr;
+JobLocal.Stderr
  }
 \BoSSSexe
 \BoSSScmd{
@@ -412,12 +419,12 @@ JobLocal.Stderr;
 \BoSSSexe
 \BoSSScmd{
 var Sloc = JobLocal.LatestSession;\newline 
-Sloc;
+Sloc
  }
 \BoSSSexe
 \BoSSScmd{
 /// We can also list all attempts to run the job at the assigend processor:
-JobLocal.AllDeployments;
+JobLocal.AllDeployments
  }
 \BoSSSexe
 \BoSSScmdSilent{
@@ -430,7 +437,7 @@ NUnit.Framework.Assert.IsTrue(JobLocal.AllDeployments.Count == 1, "MetaJobManage
  }
 \BoSSSexe
 \BoSSScmd{
-JobLocal.Status;
+JobLocal.Status
  }
 \BoSSSexe
 \BoSSScmd{
@@ -439,7 +446,7 @@ JobLocal.Status;
  }
 \BoSSSexe
 \BoSSScmd{
-JobLocal.GetStatus(WriteHints:true);
+JobLocal.GetStatus(WriteHints:true)
  }
 \BoSSSexe
 \BoSSScmdSilent{
