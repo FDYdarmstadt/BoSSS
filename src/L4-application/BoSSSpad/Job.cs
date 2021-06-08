@@ -1459,11 +1459,16 @@ namespace BoSSS.Application.BoSSSpad {
                     foreach (var a in AllDependentAssemblies) {
                         if (IsNotSystemAssembly(a, MainAssemblyDir)) {
                             files.Add(a.Location);
-                            if(File.Exists(a.Location + ".config")) {
-                                files.Add(a.Location + ".config");
+
+                            string a_config = a.Location + ".config";
+                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(a.Location) + ".runtimeconfig.json";
+
+                            foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                                if(File.Exists(a_acc)) {
+                                    files.Add(a_acc);
+                                }
                             }
                         }
-
                     }
                
                     // test for really strange errors

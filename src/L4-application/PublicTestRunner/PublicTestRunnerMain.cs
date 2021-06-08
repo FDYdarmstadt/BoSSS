@@ -403,7 +403,7 @@ namespace PublicTestRunner {
                 return true;
             string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var filter in sFilters) {
-                if (filter.WildcardMatch(Path.GetFileName(a.Location)))
+                if (filter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)))
                     return true;
             }
             return false;
@@ -1041,7 +1041,7 @@ namespace PublicTestRunner {
                 j.SessionReqForSuccess = false;
                 j.RetryCount = 1;
                 string resultFile = $"result-{dor}-{cnt}.xml";
-                j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
+                j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }

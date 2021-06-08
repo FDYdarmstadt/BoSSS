@@ -28,9 +28,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using ilPSP.LinSolvers;
-
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Application.BoSSSpad {
 

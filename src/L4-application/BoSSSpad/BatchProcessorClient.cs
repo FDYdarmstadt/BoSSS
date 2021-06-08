@@ -26,8 +26,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -112,6 +110,15 @@ namespace BoSSS.Application.BoSSSpad {
             get;
             set;
         }
+
+        [DataMember] 
+        public string DotnetRuntime {
+            get;
+            set;
+        }
+
+
+
 
         /// <summary>
         /// Specifies paths to databases which are accessible (i.e. allowed) to the computer system 

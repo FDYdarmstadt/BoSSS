@@ -180,7 +180,7 @@ namespace MiniBatchProcessor {
                     if(ServerInternal != null) {
                         if(ServerInternal.IsAlive) {
                             try {
-                                ServerInternal.Abort();
+                                MiniBatchProcessor.Server.SendTerminationSignal();
                             } catch(Exception e) {
                                 Console.Error.WriteLine($"Server startup fail: {e.GetType().Name}: {e.Message}");
                             }
@@ -639,7 +639,7 @@ namespace MiniBatchProcessor {
                 switch (System.Environment.OSVersion.Platform) {
                     case System.PlatformID.Unix:
                         psi.FileName = "mpirun";
-                        psi.Arguments = " -np " + data.NoOfProcs + " mono " + data.exefile + " ";
+                        psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
                         break;
                     default:
                         psi.FileName = "mpiexec.exe";

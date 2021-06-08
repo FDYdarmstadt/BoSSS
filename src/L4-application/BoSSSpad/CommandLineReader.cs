@@ -16,12 +16,12 @@ limitations under the License.
 
 using System;
 using System.Linq;
-using System.Text;
 using System.IO;
 using System.Threading;
 using System.Collections.Generic;
 using BoSSS.Platform;
 using ilPSP;
+using System.Text;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -72,7 +72,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// The text being edited
         /// </summary>
-        private StringBuilder text;
+        private System.Text.StringBuilder text;
 
         /// <summary>
         /// The current cursor position, i.e. index into <see cref="text"/>.
@@ -85,7 +85,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// The text as it is rendered (replaces (char)1 with ^A on display for
         /// example).
         /// </summary>
-        private StringBuilder renderedText;
+        private System.Text.StringBuilder renderedText;
 
         /// <summary>
         /// The prompt shown to the user at the beginning of each input line

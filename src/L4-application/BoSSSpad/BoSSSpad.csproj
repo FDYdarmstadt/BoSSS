@@ -45,7 +45,7 @@
       <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
-      <HintPath>..\..\..\..\..\..\.nuget\packages\microsoft.aspnetcore.app.ref\3.1.10\ref\netcoreapp3.1\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>

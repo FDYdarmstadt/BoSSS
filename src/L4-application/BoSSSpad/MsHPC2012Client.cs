@@ -286,6 +286,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (var str = new StringWriter()) {
                     str.Write("mpiexec ");
+                    if(!base.DotnetRuntime.IsEmptyOrWhite())
+                        str.Write(base.DotnetRuntime + " ");
                     str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
                     foreach (string arg in myJob.CommandLineArguments) {
                         str.Write(" ");
