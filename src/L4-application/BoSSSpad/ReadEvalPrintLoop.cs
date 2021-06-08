@@ -73,7 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             cmpCont = new CompilerContext(
                 Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
+            Evaluator eval = new(cmpCont);
             eval.InteractiveBaseClass = typeof(InteractiveShell);
 
             return eval;

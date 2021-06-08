@@ -111,13 +111,16 @@ namespace BoSSS.Application.BoSSSpad {
             set;
         }
 
+        /// <summary>
+        /// Runtime on the machine to execute Dotnet code.
+        /// - typically, this should be `dotnet` (for .NET5 and higher)
+        /// - could also be `mono` on Linux/Unix machines
+        /// </summary>
         [DataMember] 
         public string DotnetRuntime {
             get;
             set;
         }
-
-
 
 
         /// <summary>

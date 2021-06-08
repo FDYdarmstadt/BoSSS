@@ -63,6 +63,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// ```
         /// </remarks>
         public static void Init() {
+            BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.SVG;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();
             try {

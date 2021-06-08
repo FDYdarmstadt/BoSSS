@@ -206,7 +206,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                     fileToOpen = args[1];
 
-                    RunJupyter(fileToOpen);
+                    errCount = RunJupyter(fileToOpen);
                     break;
                 }
 
@@ -218,7 +218,10 @@ namespace BoSSS.Application.BoSSSpad {
                         return int.MinValue;
                     }
                     fileToOpen = args[1];
+                    string ConvFile = OldFileToJupyter(fileToOpen);
+                    errCount = RunJupyter(ConvFile);
 
+                    /*
                     Document doc;
                     if(fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
                         LatexIO.SplitTexFile(fileToOpen, out _, out doc);
@@ -234,7 +237,7 @@ namespace BoSSS.Application.BoSSSpad {
                     int f = 0;
                     if(mode == Modes.TexBatch) {
 
-                        // bws was produced by Latex - some string replacements are necessary
+                       
                         for(int iEntry = 0; iEntry < doc.CommandAndResult.Count; iEntry++) {
                             var Entry = doc.CommandAndResult[iEntry];
 
@@ -243,10 +246,11 @@ namespace BoSSS.Application.BoSSSpad {
                                 f = iEntry;
                             }
 
+                            // bws was produced by Latex - some string replacements are necessary
                             Entry.Command = LatexIO.Tex2Bws(Entry.Command);
                         }
 
-                        BoSSSpadGnuplotExtensions.UseCairoLatex = true;
+                        BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.CairoLatex;
                     }
 
                     // All boxes before 'restart' should not be counted as error
@@ -275,6 +279,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
                     InteractiveShell.CurrentDoc = null;
+                    */
                     break;
                 }
 
@@ -289,7 +294,10 @@ namespace BoSSS.Application.BoSSSpad {
             return errCount;
         }
 
-        private static void RunJupyter(string fileToOpen) {
+
+        private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
+
+        private static int RunJupyter(string fileToOpen) {
             ProcessStartInfo psi = new ProcessStartInfo();
             psi.FileName = @"C:\Windows\System32\cmd.exe";
 
@@ -299,17 +307,26 @@ namespace BoSSS.Application.BoSSSpad {
             //psi.RedirectStandardOutput = true;
             //psi.RedirectStandardError = true;
 
-            var p = Process.Start(psi);
+            try {
+                Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                JupyterMutex.WaitOne();
+                Console.WriteLine("Mutex obtained!");
 
-            //p.StandardInput.WriteLine("dir");
-            p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
-            p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
-            p.StandardInput.WriteLine("exit");
-            p.WaitForExit();
+                var p = Process.Start(psi);
 
-            Console.WriteLine("--------------------------------");
-            Console.WriteLine("Done with fucking notebook");
-            Console.WriteLine("Exshit code " + p.ExitCode);
+                //p.StandardInput.WriteLine("dir");
+                p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
+                p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
+                p.StandardInput.WriteLine("exit");
+                p.WaitForExit();
+
+                Console.WriteLine("--------------------------------");
+                Console.WriteLine("Done with notebook");
+                Console.WriteLine("Exit code " + p.ExitCode);
+                return p.ExitCode;
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         static string GetStartupCode() {

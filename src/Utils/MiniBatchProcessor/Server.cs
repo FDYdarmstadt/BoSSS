@@ -52,7 +52,7 @@ namespace MiniBatchProcessor {
         /// `MiniBatchProcessor-ServerMutex.txt`.
         /// </summary>
         public static bool GetIsRunning(string __BatchInstructionDir) {
-            __BatchInstructionDir = __BatchInstructionDir != null ? __BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+            __BatchInstructionDir ??= Configuration.GetDefaultBatchInstructionDir();
 
             {
                 if(MiniBatchThreadIsMyChild) {
@@ -111,7 +111,7 @@ namespace MiniBatchProcessor {
         /// - false: the server is already running
         /// </returns>
         public static bool StartIfNotRunning(bool RunExternal = true, string BatchInstructionDir = null, bool Reset = false) {
-            BatchInstructionDir = BatchInstructionDir != null ? BatchInstructionDir : Configuration.GetDefaultBatchInstructionDir();
+            BatchInstructionDir ??= Configuration.GetDefaultBatchInstructionDir();
             
             if (ServerExternal != null && ServerExternal.HasExited) {
                 ServerExternal.Dispose();
@@ -218,10 +218,10 @@ namespace MiniBatchProcessor {
             
             if (WaitForOtherJobstoFinish) {
 
-                Client cln = new Client(BatchInstructionDir);
+                Client cln = new(BatchInstructionDir);
 
 
-                Random rnd = new Random();
+                Random rnd = new();
 
                 JobData[] Q = cln.Queue.ToArray();
                 JobData[] W = cln.Working.ToArray();
