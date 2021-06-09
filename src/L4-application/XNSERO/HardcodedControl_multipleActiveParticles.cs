@@ -25,7 +25,7 @@ using MPI.Wrappers;
 namespace BoSSS.Application.XNSERO_Solver {
 
     public static class MultiplePacticles {
-        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 14, double noOfParticles = 6) {
+        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.5, int cellsPerUnitLength = 5, double noOfParticles = 10) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -40,12 +40,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.IncludeConvection = true;
+            C.LS_TrackerWidth = 2;
 
             // Particle Properties
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
             double activeStress = 1e0;
-            double nextParticleDistance = particleLength * 2.5;
+            double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
@@ -67,7 +68,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 j += 1;
             }
             C.SetParticles(particles);
-            C.SetTimesteps(dt: 1e0, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-1, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
             C.LinearSolver.NoOfMultigridLevels = 1;

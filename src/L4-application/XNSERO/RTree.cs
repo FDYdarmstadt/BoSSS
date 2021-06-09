@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 using ilPSP;
-using ilPSP.Utils;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSERO_Solver {
@@ -26,15 +25,14 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         private readonly int SpatialDimension;
         private readonly int MaxEntriesPerNode = 4;
-        //private readonly int MinEntriesPerNode = 2;
-        private List<TreeNode> Nodes = new List<TreeNode>();
+        private readonly List<TreeNode> Nodes = new List<TreeNode>();
         private readonly double Tolerance;
 
         /// <summary>
         /// Constructor for an R-Tree (Rectangle-tree)
         /// </summary>
         /// <param name="SpatialDimension"></param>
-        /// <param name="Timestep"></param>
+        /// <param name="Tolerance">Tolerance parameter for periodic boundaries. Only effects performance, not accuracy. Should be at least in the order of the minimal grid length.</param>
         public RTree(int SpatialDimension, double Tolerance) {
             this.SpatialDimension = SpatialDimension;
             this.Tolerance = Tolerance;
@@ -46,33 +44,42 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Initializes an R-Tree based on the minimal bounding rectangle (MBR) of the particles.
         /// </summary>
         /// <param name="Particles"></param>
+        /// <param name="Timestep"></param>
         public void InitializeTree(Particle[] Particles, double Timestep) {
-            TreeNode firstNode = new TreeNode(true, -1, 0, new Vector(SpatialDimension));
+            using (new FuncTrace()) {
+                TreeNode firstNode = new TreeNode(true, -1, 0, new Vector(SpatialDimension));
             Nodes.Add(firstNode);
             for(int p = 0; p < Particles.Length; p++) {
                 List<Vector> virtualDomainOrigin = Particles[p].Motion.OriginInVirtualPeriodicDomain;
                 TreeNode particleNode = new TreeNode(false, 0, FindSmallestEmptyID(), new Vector(SpatialDimension));
-                if (particleNode.NodeID < Nodes.Count)
-                    Nodes.Insert(particleNode.NodeID, particleNode);
-                else
-                    Nodes.Add(particleNode);
+                InsertNodeToList(particleNode);
                 particleNode.ParticleID = p;
                 particleNode.MBR = CalculateParticleMBR(Particles[p], Timestep, new Vector(SpatialDimension));
                 InsertParticle(particleNode, Nodes[0]);
-                for (int i = 0; i < virtualDomainOrigin.Count(); i++) {
-                    Vector virtualPosition = virtualDomainOrigin[i] + Particles[p].Motion.GetPosition();
-                    if (Particles[p].Motion.IsInsideOfPeriodicDomain(virtualPosition, (Tolerance + Particles[p].GetLengthScales().Max()))) {
-                        TreeNode particleNodePeriodic = new TreeNode(false, 0, FindSmallestEmptyID(), virtualDomainOrigin[i]);
-                        if (particleNodePeriodic.NodeID < Nodes.Count)
-                            Nodes.Insert(particleNode.NodeID, particleNode);
-                        else
-                            Nodes.Add(particleNode);
-                        particleNodePeriodic.ParticleID = p;
-                        particleNodePeriodic.MBR = CalculateParticleMBR(Particles[p], Timestep, virtualDomainOrigin[i]);
-                        InsertParticle(particleNode, Nodes[0]);
+                    for (int i = 0; i < virtualDomainOrigin.Count(); i++) {
+                        Vector virtualPosition = virtualDomainOrigin[i] + Particles[p].Motion.GetPosition();
+                        if (Particles[p].Motion.IsInsideOfPeriodicDomain(virtualPosition, (Tolerance + Particles[p].GetLengthScales().Max()))) {
+                            TreeNode particleNodePeriodic = new TreeNode(false, 0, FindSmallestEmptyID(), virtualDomainOrigin[i]);
+                            InsertNodeToList(particleNodePeriodic);
+                            particleNodePeriodic.ParticleID = p;
+                            particleNodePeriodic.MBR = CalculateParticleMBR(Particles[p], Timestep, virtualDomainOrigin[i]);
+                            InsertParticle(particleNodePeriodic, Nodes[0]);
+                        }
+
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Insert node to the Node-list at the correct position.
+        /// </summary>
+        /// <param name="CurrentNode"></param>
+        private void InsertNodeToList(TreeNode CurrentNode) {
+            if (CurrentNode.NodeID < Nodes.Count)
+                Nodes.Insert(CurrentNode.NodeID, CurrentNode);
+            else
+                Nodes.Add(CurrentNode);
         }
 
         /// <summary>
@@ -81,87 +88,75 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="Particles"></param>
         public void UpdateTree(Particle[] Particles, double Timestep) {
-            for(int i = 0; i < Nodes.Count; i++) {
-                if (Nodes[i].ParticleID > -1) 
-                    Nodes[i].MBR = CalculateParticleMBR(Particles[Nodes[i].ParticleID], Timestep, Nodes[i].Origin);
-            }
-            for(int i = 0; i < Nodes.Count; i++) {
-                if (Nodes[i].IsLeaf)
-                    UpdateMBR(Nodes[i]);
+            using (new FuncTrace()) {
+                for (int i = 0; i < Nodes.Count; i++) {
+                    if (Nodes[i].ParticleID > -1)
+                        Nodes[i].MBR = CalculateParticleMBR(Particles[Nodes[i].ParticleID], Timestep, Nodes[i].Origin);
+                }
+                for (int i = 0; i < Nodes.Count; i++) {
+                    if (Nodes[i].IsLeaf)
+                        UpdateMBR(Nodes[i]);
+                }
             }
         }
 
+        /// <summary>
+        /// Search for overlapping MBRs of particles. If two particle MBRs overlap we should check for collisions.
+        /// </summary>
+        /// <param name="Particle">The current particle</param>
+        /// <param name="ParticleID">The position of the particle in the particle-array in the main solver.</param>
+        /// <param name="Timestep">Timestep size.</param>
+        /// <returns>A list of all particle IDs with an overlapping MBR</returns>
         public List<int> SearchForOverlap(Particle Particle, int ParticleID, double Timestep) {
-            //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höherer Knoten mit zwei Partikeln überlappt und dann beide Pfade untersucht werden.
-            List<Vector> virtualDomainOrigin = Particle.Motion.OriginInVirtualPeriodicDomain;
-            MinimalBoundingRectangle particleMBR = CalculateParticleMBR(Particle, Timestep, new Vector(SpatialDimension));
-            List<int> overlappingParticles = new List<int>();
-            for(int i = 0; i < Nodes[0].Children.Count; i++) {
-                if(particleMBR.Intersect(Nodes[0].Children[i].MBR).Volume > 0) {
-                    if (Nodes[0].Children[i].ParticleID > -1 && Nodes[0].Children[i].ParticleID != ParticleID)
-                        overlappingParticles.Add(Nodes[0].Children[i].ParticleID);
-                    else
-                        overlappingParticles.AddRange(SearchForOverlapRecursive(particleMBR, Nodes[0].Children[i], ParticleID));
-                }
-            }
-            for (int j = 0; j < virtualDomainOrigin.Count(); j++) {
-                MinimalBoundingRectangle particleMBRPeriodic = CalculateParticleMBR(Particle, Timestep, virtualDomainOrigin[j]);
+            using (new FuncTrace()) {
+                //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höherer Knoten mit zwei Partikeln überlappt und dann beide Pfade untersucht werden.
+                List<Vector> virtualDomainOrigin = Particle.Motion.OriginInVirtualPeriodicDomain;
+                MinimalBoundingRectangle particleMBR = CalculateParticleMBR(Particle, Timestep, new Vector(SpatialDimension));
+                List<int> overlappingParticles = new List<int>();
                 for (int i = 0; i < Nodes[0].Children.Count; i++) {
-                    if (particleMBRPeriodic.Intersect(Nodes[0].Children[i].MBR).Volume > 0) {
-                        if (Nodes[0].Children[i].ParticleID > -1 && Nodes[0].Children[i].ParticleID != ParticleID)
+                    if (particleMBR.Intersect(Nodes[0].Children[i].MBR).Volume > 0) {
+                        if (Nodes[0].Children[i].ParticleID > -1 && Nodes[0].Children[i].ParticleID != ParticleID) {
                             overlappingParticles.Add(Nodes[0].Children[i].ParticleID);
-                        else
-                            overlappingParticles.AddRange(SearchForOverlapRecursive(particleMBRPeriodic, Nodes[0].Children[i], ParticleID));
+                        } else {
+                            overlappingParticles.AddRange(SearchForOverlapRecursive(particleMBR, Nodes[0].Children[i], ParticleID));
+                        }
                     }
                 }
+                for (int j = 0; j < virtualDomainOrigin.Count(); j++) {
+                    MinimalBoundingRectangle particleMBRPeriodic = CalculateParticleMBR(Particle, Timestep, virtualDomainOrigin[j]);
+                    for (int i = 0; i < Nodes[0].Children.Count; i++) {
+                        if (particleMBRPeriodic.Intersect(Nodes[0].Children[i].MBR).Volume > 0) {
+                            if (Nodes[0].Children[i].ParticleID > -1 && Nodes[0].Children[i].ParticleID != ParticleID) {
+                                overlappingParticles.Add(Nodes[0].Children[i].ParticleID);
+                            } else {
+                                overlappingParticles.AddRange(SearchForOverlapRecursive(particleMBRPeriodic, Nodes[0].Children[i], ParticleID));
+                            }
+                        }
+                    }
+                }
+                return overlappingParticles;
             }
-            return overlappingParticles;
         }
 
+        /// <summary>
+        /// Recursive search for overlapping particle MBRs
+        /// </summary>
+        /// <param name="ParticleMBR"></param>
+        /// <param name="CurrentNode"></param>
+        /// <param name="ParticleID"></param>
+        /// <returns></returns>
         private List<int> SearchForOverlapRecursive(MinimalBoundingRectangle ParticleMBR, TreeNode CurrentNode, int ParticleID) {
             List<int> overlappingParticles = new List<int>();
             for (int i = 0; i < CurrentNode.Children.Count; i++) {
                 if (ParticleMBR.Intersect(CurrentNode.Children[i].MBR).Volume > 0) {
-                    if (CurrentNode.Children[i].ParticleID > -1 && CurrentNode.Children[i].ParticleID != ParticleID)
+                    if (CurrentNode.Children[i].ParticleID > -1 && CurrentNode.Children[i].ParticleID != ParticleID) {
                         overlappingParticles.Add(CurrentNode.Children[i].ParticleID);
+                    }
                     else
                         overlappingParticles.AddRange(SearchForOverlapRecursive(ParticleMBR, CurrentNode.Children[i], ParticleID));
                 }
             }
             return overlappingParticles;
-        }
-
-        /// <summary>
-        /// Prints the tree to the console.
-        /// </summary>
-        public void PrintTreeStructure() {
-            Console.WriteLine("Head Node " + 0);
-            int NodeRank = 1;
-            for(int i = 0; i < Nodes[0].Children.Count; i++) {
-                Console.WriteLine("NodeRank " + NodeRank + " Node ID " + Nodes[0].Children[i].NodeID);
-                if (Nodes[0].Children[i].ParticleID > -1)
-                    Console.WriteLine("ParticleID " + Nodes[0].Children[i].ParticleID);
-                else
-                    PrintRecursive(Nodes[0].Children[i], NodeRank + 1);
-            }
-        }
-
-        /// <summary>
-        /// Recursive print.
-        /// </summary>
-        /// <param name="CurrentNode"></param>
-        /// <param name="NodeRank"></param>
-        private void PrintRecursive(TreeNode CurrentNode, int NodeRank) {
-            if (CurrentNode.Children.IsNullOrEmpty())
-                return;
-
-            for (int i = 0; i < CurrentNode.Children.Count; i++) {
-                Console.WriteLine("NodeRank " + NodeRank + " Node ID " + CurrentNode.Children[i].NodeID);
-                if (CurrentNode.Children[i].ParticleID > -1)
-                    Console.WriteLine("ParticleID " + CurrentNode.Children[i].ParticleID);
-                else
-                    PrintRecursive(CurrentNode.Children[i], NodeRank + 1);
-            }
         }
 
         /// <summary>
@@ -243,11 +238,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Node.Children.Clear();
 
             TreeNode NewNode = new TreeNode(Node.IsLeaf, Node.ParentNodeID, FindSmallestEmptyID(), new Vector(SpatialDimension));
-            if (NewNode.NodeID < Nodes.Count)
-                Nodes.Insert(NewNode.NodeID, NewNode);
-            else
-                Nodes.Add(NewNode);
-
+            InsertNodeToList(NewNode);
             InsertNode(temp[0], Node);
             InsertNode(temp.Last(), NewNode);
             if (NewNode.ParentNodeID == -1) {
@@ -255,10 +246,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 TreeNode NewParentNode = new TreeNode(false, -1, Node.NodeID, new Vector(SpatialDimension));
                 Node.NodeID = FindSmallestEmptyID();
                 Nodes.RemoveAt(0);
-                if (Node.NodeID < Nodes.Count)
-                    Nodes.Insert(Node.NodeID, Node);
-                else
-                    Nodes.Add(Node);
+                InsertNodeToList(Node);
                 Nodes.Insert(0, NewParentNode);
                 for (int i = 0; i < Node.Children.Count; i++) {
                     Node.Children[i].ParentNodeID = Node.NodeID;
@@ -313,7 +301,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 if (minIntersect > tempIntersect) {
                     minIntersect = tempIntersect;
                     minIntersectEntry = i;
-                }
+                } else if(minIntersect == tempIntersect && currentNode.Children.Count < ParentNode.Children[minIntersectEntry].Children.Count) 
+                    minIntersectEntry = i;
             }
             InsertNode(NewNode, ParentNode.Children[minIntersectEntry]);
         }
@@ -379,13 +368,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             for (int i = 0; i < 2; i++)
                 vertices[i] = new Vector(SpatialDimension);
             int noOfSubParticles = Particle.NoOfSubParticles;
-            int noOfTimesteps = 1;
+            int noOfTimesteps = 2;
             MinimalBoundingRectangle mbr = new MinimalBoundingRectangle(new Vector(SpatialDimension), new Vector(SpatialDimension));
             for (int j = 0; j < noOfTimesteps; j++) {
                 for (int i = 0; i < noOfSubParticles; i++) {
                     if (i > 0)
                         throw new Exception("No support for sub-particles");
-                    Vector Position = j == 0 ? Particle.Motion.GetPosition(0) + Origin : PredictParticePositionNextTimestep(Particle, Timestep) + Origin;
+                    Vector Position = new Vector(SpatialDimension);
+                    if (j == 0)
+                        Position = new Vector(Particle.Motion.GetPosition(0));
+                    else
+                        Position = new Vector(PredictParticePositionNextTimestep(Particle, Timestep));
+                    Position += Origin;
                     Vector Angle = j == 0 ? new Vector(Particle.Motion.GetAngle(0)) : PredictParticleAngleNextTimestep(Particle,Timestep);
                     Vector LeftUp = new Vector(SpatialDimension);
                     Vector RightLow = new Vector(SpatialDimension);
@@ -397,7 +391,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                         supportVector[d] = -sign;
                         RightLow[d] = Particle.GetSupportPoint(supportVector, Position, Angle, i)[d] - sign * Tolerance;
                     }
-                    mbr.Sum(new MinimalBoundingRectangle(LeftUp, RightLow));
+                    if (j == 0)
+                        mbr = new MinimalBoundingRectangle(LeftUp, RightLow);
+                    else
+                        mbr = mbr.Sum(new MinimalBoundingRectangle(LeftUp, RightLow));
                 }
             }
             return mbr;

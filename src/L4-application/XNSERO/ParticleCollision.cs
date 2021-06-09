@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -122,6 +123,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
             double distanceThreshold = GridLengthScale / 10;
+            int counter = 0;
             if (MinDistance != 0)
                 distanceThreshold = MinDistance;
             // Step 2
@@ -142,6 +144,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     // -------------------------------------------------------
                     MoveParticlesWithSaveTimestep(Particles, saveTimestep);
                     saveTimestep = double.MaxValue;
+                    bool[][] AlreadyAnalysed = new bool[particles.Length][];
                     for (int p0 = 0; p0 < Particles.Length; p0++) {
                         // Step 2.1.2
                         // Test for wall collisions for all particles 
@@ -149,42 +152,42 @@ namespace BoSSS.Application.XNSERO_Solver {
                         // -------------------------------------------------------
                         Vector[] nearFieldWallPoints = GetNearFieldWall(Particles[p0]);
                         for (int w = 0; w < nearFieldWallPoints.Length; w++) {
-                            Particles[p0].ClosestPointOnOtherObjectToThis = new Vector(Particles[p0].Motion.GetPosition(0));
-                            if (nearFieldWallPoints[w].IsNullOrEmpty())
-                                continue;
-                            else
+                            if (!nearFieldWallPoints[w].IsNullOrEmpty()) {
+                                particles[p0].ClosestPointOnOtherObjectToThis = new Vector(Particles[p0].Motion.GetPosition(0));
                                 particles[p0].ClosestPointOnOtherObjectToThis = new Vector(nearFieldWallPoints[w]);
-                            CalculateMinimumDistance(Particles[p0], out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
-                            int wallID = ParticleOffset + w;
-                            DistanceVector[p0][wallID] = new Vector(temp_DistanceVector);
-                            ClosestPoints[p0][wallID] = new Vector(temp_ClosestPoint_p0);
-                            double temp_SaveTimeStep = DynamicTimestep(p0, ParticleOffset + w);
-                            AccumulatedLocalSaveTimestep[p0][wallID] += temp_SaveTimeStep;
-                            if (temp_SaveTimeStep < saveTimestep && temp_SaveTimeStep > 0) {
-                                saveTimestep = temp_SaveTimeStep;
-                            }
-                            if (DistanceVector[p0][wallID].Abs() < globalMinimalDistance) {
-                                globalMinimalDistance = DistanceVector[p0][wallID].Abs();
-                            }
-                            if (temp_Overlapping) {
-                                if (DetermineOnlyOverlap)
-                                    throw new Exception("Static particles overlap");
-                                Console.WriteLine("Particle " + p0 + " and wall " + w + " overlap");
-                                DistanceVector[p0][w] = new Vector(Particles[p0].Motion.GetPosition(0));
-                                DistanceVector[w][p0] = new Vector(-Particles[p0].Motion.GetPosition(0)[0], -Particles[p0].Motion.GetPosition(0)[1]);
-                                globalMinimalDistance = 0;
+                                CalculateMinimumDistance(Particles[p0], out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
+                                int wallID = ParticleOffset + w;
+                                DistanceVector[p0][wallID] = new Vector(temp_DistanceVector);
+                                ClosestPoints[p0][wallID] = new Vector(temp_ClosestPoint_p0);
+                                double temp_SaveTimeStep = DynamicTimestep(p0, ParticleOffset + w);
+                                AccumulatedLocalSaveTimestep[p0][wallID] += temp_SaveTimeStep;
+                                if (temp_SaveTimeStep < saveTimestep && temp_SaveTimeStep > 0) {
+                                    saveTimestep = temp_SaveTimeStep;
+                                }
+                                if (DistanceVector[p0][wallID].Abs() < globalMinimalDistance) {
+                                    globalMinimalDistance = DistanceVector[p0][wallID].Abs();
+                                }
+                                if (temp_Overlapping) {
+                                    if (DetermineOnlyOverlap)
+                                        throw new Exception("Static particles overlap");
+                                    Console.WriteLine("Particle " + p0 + " and wall " + w + " overlap");
+                                    DistanceVector[p0][w] = new Vector(Particles[p0].Motion.GetPosition(0));
+                                    DistanceVector[w][p0] = new Vector(-Particles[p0].Motion.GetPosition(0)[0], -Particles[p0].Motion.GetPosition(0)[1]);
+                                    globalMinimalDistance = 0;
+                                }
                             }
                         }
-
                         potentialCollisionPartners[p0] = Tree.SearchForOverlap(Particles[p0], p0, TimestepSize - AccumulatedCollisionTimestep).ToArray();
-
+                        AlreadyAnalysed[p0] = new bool[particles.Length];
                         // Step 2.1.3
                         // Test for particle-particle collisions for all particles 
                         // of the current color.
                         // -------------------------------------------------------
                         for (int p1 = 0; p1 < potentialCollisionPartners[p0].Length; p1++) {
                             int pID = potentialCollisionPartners[p0][p1];
-                            if (pID > p0) {//otherwise this collision pair was already considered.
+                            if (!AlreadyAnalysed[p0][pID] && pID > p0) {
+                                AlreadyAnalysed[p0][pID] = true;
+                                Console.WriteLine("Calculating distance between particle " + p0 + " and " + pID + " Length " + potentialCollisionPartners[p0].Length);
                                 Particle[] currentParticles = new Particle[] { Particles[p0], Particles[pID] };
                                 CalculateMinimumDistance(currentParticles, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out bool temp_Overlapping);
                                 Overlapping[p0][pID] = temp_Overlapping;
@@ -220,6 +223,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         break;
                     if(DetermineOnlyOverlap)
                         break;
+                    counter += 1;
                 }
                 if(DetermineOnlyOverlap)
                     break;
@@ -253,6 +257,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 Tree.UpdateTree(Particles, AccumulatedCollisionTimestep);
             }
+            Console.WriteLine("Counter " + counter);
         }
 
         private int[][] ClusterCollisionsContainingSameParticles() {
@@ -294,9 +299,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int w = 0; w < 4; w++) {
                     FindCollisionPartners(p0, ParticleOffset + w, currentParticleCollidedWith, distanceThreshold);
                 }
-                //for (int p1 = p0 + 1; p1 < Particles.Length; p1++) {
-                //    FindCollisionPartners(p0, p1, currentParticleCollidedWith, distanceThreshold);
-                //}
                 for (int p1 = 0; p1 < PotentialCollisionPartners[p0].Length; p1++) {
                     FindCollisionPartners(p0, PotentialCollisionPartners[p0][p1], currentParticleCollidedWith, distanceThreshold);
                 }
@@ -349,6 +351,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         private void CalculateMinimumDistance(Particle[] Particles, out Vector DistanceVector, out Vector[] ClosestPoints, out bool Overlapping) {
+            using (new FuncTrace()) {
             int spatialDim = Particles[0].Motion.GetPosition(0).Dim;
             double distance = double.MaxValue;
             DistanceVector = new Vector(spatialDim);
@@ -358,15 +361,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             Overlapping = false;
             int NoOfSubParticles1 = Particles[1] == null ? 1 : Particles[1].NoOfSubParticles;
 ;
-            for (int i = 0; i < Particles[0].NoOfSubParticles; i++) {
-                for (int j = 0; j < NoOfSubParticles1; j++) {
-                    GJK_DistanceAlgorithm(Particles[0], i, Particles[1], j, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
-                    if (Overlapping)
-                        break;
-                    if (temp_DistanceVector.Abs() < distance) {
-                        distance = temp_DistanceVector.Abs();
-                        DistanceVector = new Vector(temp_DistanceVector);
-                        ClosestPoints = temp_ClosestPoints.CloneAs();
+                for (int i = 0; i < Particles[0].NoOfSubParticles; i++) {
+                    for (int j = 0; j < NoOfSubParticles1; j++) {
+                        GJK_DistanceAlgorithm(Particles[0], i, Particles[1], j, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
+                        if (Overlapping)
+                            break;
+                        if (temp_DistanceVector.Abs() < distance) {
+                            distance = temp_DistanceVector.Abs();
+                            DistanceVector = new Vector(temp_DistanceVector);
+                            ClosestPoints = temp_ClosestPoints.CloneAs();
+                        }
                     }
                 }
             }
@@ -388,20 +392,22 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         internal void CalculateMinimumDistance(Particle particle, out Vector DistanceVector, out Vector ClosestPoint, out bool Overlapping) {
+            using (new FuncTrace()) {
             int spatialDim = particle.Motion.GetPosition(0).Dim;
             double distance = double.MaxValue;
             DistanceVector = new Vector(spatialDim);
             ClosestPoint = new Vector(spatialDim);
             Overlapping = false;
 
-            for (int i = 0; i < particle.NoOfSubParticles; i++) {
-                GJK_DistanceAlgorithm(particle, i, null, 1, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
-                if (Overlapping)
-                    break;
-                if (temp_DistanceVector.Abs() < distance) {
-                    distance = temp_DistanceVector.Abs();
-                    DistanceVector = new Vector(temp_DistanceVector);
-                    ClosestPoint = new Vector(temp_ClosestPoints[0]);
+                for (int i = 0; i < particle.NoOfSubParticles; i++) {
+                    GJK_DistanceAlgorithm(particle, i, null, 1, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
+                    if (Overlapping)
+                        break;
+                    if (temp_DistanceVector.Abs() < distance) {
+                        distance = temp_DistanceVector.Abs();
+                        DistanceVector = new Vector(temp_DistanceVector);
+                        ClosestPoint = new Vector(temp_ClosestPoints[0]);
+                    }
                 }
             }
         }
@@ -806,15 +812,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleMaxLengthscale = particle.GetLengthScales().Max();
             for (int w0 = 0; w0 < WallCoordinates.Length; w0++) {
                 for(int w1 = 0; w1 < WallCoordinates[w0].Length; w1++) {
-                    if (WallCoordinates[w0][w1] == 0 || IsPeriodicBoundary[w0])
-                        continue;
-                    double minDistance = Math.Abs(particlePosition[w0] - WallCoordinates[w0][w1]) - particleMaxLengthscale;
-                    if(minDistance < 5 * GridLengthScale || minDistance < 1e-2)
-                    {
-                        if (w0 == 0)
-                            nearFieldWallPoint[w0 + w1] = new Vector(WallCoordinates[0][w1], particlePosition[1]);
-                        else
-                            nearFieldWallPoint[w0 * 2 + w1] = new Vector(particlePosition[0], WallCoordinates[1][w1]);
+                    if (WallCoordinates[w0][w1] != 0 && !IsPeriodicBoundary[w0]) {
+                        double minDistance = Math.Abs(particlePosition[w0] - WallCoordinates[w0][w1]) - particleMaxLengthscale;
+                        if (minDistance < 5 * GridLengthScale || minDistance < 1e-2) {
+                            if (w0 == 0)
+                                nearFieldWallPoint[w0 + w1] = new Vector(WallCoordinates[0][w1], particlePosition[1]);
+                            else
+                                nearFieldWallPoint[w0 * 2 + w1] = new Vector(particlePosition[0], WallCoordinates[1][w1]);
+                        }
                     }
                 }
             }

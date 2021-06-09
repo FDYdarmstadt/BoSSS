@@ -277,7 +277,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return levelSetVelocity;
         }
 
-        RTree tree = new RTree(2, 2 / 6);
+        RTree tree = new RTree(2, 0.4);
 
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
