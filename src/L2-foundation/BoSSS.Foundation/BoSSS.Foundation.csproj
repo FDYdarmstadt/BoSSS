@@ -117,6 +117,5 @@
     <Compile Remove="SubgridCoordinateMapping.cs" />
     <Compile Remove="SubgridCoordinateMappingExt.cs" />
     <Compile Remove="Tensor2Field.cs" />
-    <Compile Remove="ZipStorer.cs" />
   </ItemGroup>
 </Project>
