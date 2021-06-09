@@ -56,26 +56,6 @@
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Hpc.Azure.FileStaging.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.NodeManagement, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.NodeManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.Properties, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Properties.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.Store, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Store.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
     </Reference>
