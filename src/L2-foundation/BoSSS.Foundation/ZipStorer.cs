@@ -21,6 +21,7 @@ limitations under the License.
 using System.Collections.Generic;
 using System.Text;
 
+
 namespace System.IO.Compression
 {
     /// <summary>
@@ -759,3 +760,4 @@ namespace System.IO.Compression
         #endregion
     }
 }
+
