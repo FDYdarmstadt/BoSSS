@@ -26,6 +26,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -98,9 +100,16 @@ namespace BoSSS.Application.BoSSSpad {
                 m_owner = __owner;
             }
 
+            Assembly a = typeof(BoSSS.Solution.Statistic.CellLocalization).Assembly;
+
             
             public override Type BindToType(string assemblyName, string typeName) {
-                throw new NotImplementedException();
+                Console.WriteLine(a.FullName);
+                var tts = a.GetExportedTypes();
+                var tt = tts.First(t => t.FullName == typeName);
+                return tt;
+                //throw new NotImplementedException();
+
             }
         }
    */

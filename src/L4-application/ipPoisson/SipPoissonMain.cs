@@ -475,15 +475,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
 
-        /// <summary>
-        /// public member to 
-        /// ensures binding of respective assembly,
-        /// makes de-serialization more robust.
-        /// </summary>
-        /// <returns></returns>
-        public BoSSS.Solution.Statistic.CellLocalization BinderDummy() {
-            return new CellLocalization(null);
-        }
+       
     }
 
     /// <summary>

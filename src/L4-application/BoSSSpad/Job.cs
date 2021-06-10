@@ -774,9 +774,17 @@ namespace BoSSS.Application.BoSSSpad {
 
             internal KnownTypesBinder(Job __owner) {
                 m_owner = __owner;
+
+                foreach(var a in __owner.AllDependentAssemblies) {
+                    var tt = new Dictionary<string, Type>();
+                    knownTypes.Add(a.GetName().Name, tt);
+                    foreach(var t in a.GetExportedTypes()) {
+                        tt.Add(t.FullName, t);
+                    }
+                }
             }
 
-            //Dictionary<string, D>
+            Dictionary<string, Dictionary<string, Type>> knownTypes = new Dictionary<string, Dictionary<string, Type>>();
 
             /*
             public IList<Type> KnownTypes { get; set; }
@@ -791,7 +799,10 @@ namespace BoSSS.Application.BoSSSpad {
             }
             */
             public override Type BindToType(string assemblyName, string typeName) {
-                throw new NotImplementedException();
+                var dd = knownTypes[assemblyName];
+                var tt = dd[typeName];
+
+                return tt;
             }
         }
 
