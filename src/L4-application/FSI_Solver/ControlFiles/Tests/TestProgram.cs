@@ -53,7 +53,7 @@ namespace BoSSS.Application.FSI_Solver {
             }
         }
 
-        [Test]
+        //[Test]
         public static void TestParticleInShearFlow() {
             using (FSI_SolverMain p = new FSI_SolverMain()) {
 

@@ -71,7 +71,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
             C.SkipSolveAndEvaluateResidual = C.AdvancedDiscretizationOptions.CellAgglomerationThreshold <= 1e-6;
-
             XNSESolverTest(Tst, C);
         }
 
@@ -873,11 +872,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
             
-            if(Tst.SpatialDimension == 3) {
-                Console.WriteLine($"Reminder: skipping 3D test for now...");
+            if(Tst.SpatialDimension == 3 && C.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye) {
+                Console.WriteLine($"Reminder: only starting 3D tests with Saye's quadrature. All other 3D Tests are skipped automatically!");
                 return;
             }
-
+            
             using (var solver = new XNSE()) {
 
                 //Console.WriteLine("Warning! - enabled immediate plotting");

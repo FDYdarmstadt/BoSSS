@@ -12,7 +12,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// EvapMicroRegion, provides a BitArray to tag cells for a Evaporation Model
     /// </summary>
-    class EvapMicroRegion : Coefficient {
+    public class EvapMicroRegion : Coefficient {
         public override IList<string> CoefficientsNames => new string[] { "EvapMicroRegion" };
         public override DelCoefficientFactory Factory => EvapMicroRegionFactory;
 

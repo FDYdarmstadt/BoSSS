@@ -208,7 +208,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
     public interface IXNSECTest : IXNSETest {
-        
+
+        /// <summary>
+        /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
+        /// </summary>
+        Func<double[], double, double> GetTemperature(string species);
+
+
+        /// <summary>
+        /// Exact solution/Initial value for mass fractions, for species <paramref name="species"/>, component <paramref name="comp"/>.
+        /// </summary>
+        Func<double[], double, double> GetMassFractions(string species, int comp);
+
+
         /// <summary>
         /// Total number of chemical components involved in the solution
         /// </summary>

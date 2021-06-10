@@ -40,6 +40,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// class providing Controls for the droplet testcases
     /// </summary>
     public static class Droplet {
+        
+        
+
+
 
         /// <summary>
         /// 
@@ -821,14 +825,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
         /// <summary>
-        /// 
+        /// Movement induced by surface terms.
         /// </summary>
         /// <returns></returns>
         public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 9) {
 
             XNSE_Control C = new XNSE_Control();
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
 
             bool quarterDomain = true;
@@ -852,7 +860,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
-           
+
             // DG degrees
             // ==========
             #region degrees

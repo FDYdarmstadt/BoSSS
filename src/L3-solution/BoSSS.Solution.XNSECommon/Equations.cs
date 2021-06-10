@@ -351,7 +351,7 @@ namespace BoSSS.Solution.XNSECommon {
             string phaseB,
             int d,
             int dimension,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             INSE_Configuration config,
             bool isMovingMesh) : base() {
 
@@ -373,7 +373,7 @@ namespace BoSSS.Solution.XNSECommon {
         void AddInterfaceNSE(
             int dimension,
             int d,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             INSE_Configuration config,
             bool isMovingMesh) {
             PhysicalParameters physParams = config.getPhysParams;
@@ -444,7 +444,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         }
 
-        protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+        protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
             AddComponent(conv);
         }
@@ -461,13 +461,13 @@ namespace BoSSS.Solution.XNSECommon {
             string phaseB,
             int d,
             int dimension,
-            IncompressibleMultiphaseBoundaryCondMap boundaryMap,
+            IncompressibleBoundaryCondMap boundaryMap,
             INSE_Configuration config,
             bool isMovingMesh) : base(phaseA, phaseB, d, dimension, boundaryMap, config, isMovingMesh) {
 
         }
 
-        protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
+        protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
             AddComponent(conv);
         }
