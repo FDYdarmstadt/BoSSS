@@ -367,7 +367,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
 
-            string DestFile = Path.GetFileNameWithoutExtension(fileToOpen) + ".ipynb";
+            string DestFile = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen)) + ".ipynb";
 
             var cells = new List<NotebookCell>();
             foreach(var entry in doc.CommandAndResult) {

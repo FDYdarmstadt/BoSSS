@@ -93,10 +93,10 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
+        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
+            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -191,10 +191,11 @@ namespace BoSSS.Application.TutorialTests {
  
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 #endif
 
