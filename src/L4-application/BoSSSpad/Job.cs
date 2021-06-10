@@ -728,29 +728,32 @@ namespace BoSSS.Application.BoSSSpad {
                     foreach(DirectoryInfo dir in AllDirs) {
                         if(!DirIsKnown(dir)) {
 
-
-                            string ControlObj = Path.Combine(dir.FullName, "control.obj");
-                            if(File.Exists(ControlObj)) {
-                                var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
-                                if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
-                                    filtDirs.Add(new DirectoryInfo(dir.FullName));
-                                    continue;
-                                }
-                            }
-
-                            string ControlScript = Path.Combine(dir.FullName, "control.cs");
-                            if(File.Exists(ControlScript)) {
-                                int control_index = 0;
-                                int i = CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
-                                if(i >= 0) {
-                                    control_index = int.Parse(CommandLineArguments[i + 1]);
+                            try {
+                                string ControlObj = Path.Combine(dir.FullName, "control.obj");
+                                if(File.Exists(ControlObj)) {
+                                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
+                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                        filtDirs.Add(new DirectoryInfo(dir.FullName));
+                                        continue;
+                                    }
                                 }
 
-                                var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                                if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
-                                    filtDirs.Add(dir);
-                                    continue;
+                                string ControlScript = Path.Combine(dir.FullName, "control.cs");
+                                if(File.Exists(ControlScript)) {
+                                    int control_index = 0;
+                                    int i = CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
+                                    if(i >= 0) {
+                                        control_index = int.Parse(CommandLineArguments[i + 1]);
+                                    }
+
+                                    var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
+                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                        filtDirs.Add(dir);
+                                        continue;
+                                    }
                                 }
+                            } catch (Exception e) {
+                                Console.Error.WriteLine($"Warning: unable process deployment directory {dir}: " + e.Message);
                             }
                         }
                     }

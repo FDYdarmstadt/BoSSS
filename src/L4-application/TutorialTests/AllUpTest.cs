@@ -96,6 +96,7 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
