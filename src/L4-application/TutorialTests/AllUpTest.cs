@@ -222,7 +222,7 @@ namespace BoSSS.Application.TutorialTests {
                 FullTexName = TexFileName;
             }
 
-            Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
+            Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
 
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
@@ -232,7 +232,14 @@ namespace BoSSS.Application.TutorialTests {
             
             try {
                 // run test:
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
+                string mode;
+                if(Path.GetExtension(FullTexName).Equals("tex", StringComparison.InvariantCultureIgnoreCase))
+                    mode = "--texbatch";
+                else
+                    mode = "--JupyterBatch";
+
+                
+                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, FullTexName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
                 Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
