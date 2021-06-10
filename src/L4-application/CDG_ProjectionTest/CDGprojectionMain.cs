@@ -35,7 +35,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         internal int dimension = 2;
-        internal int degree = 1;
+        internal int degree = 3;
         internal int gridResolution = 8;
 
         internal bool periodicX = false;

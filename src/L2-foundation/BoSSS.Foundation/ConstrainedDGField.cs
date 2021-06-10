@@ -611,7 +611,7 @@ namespace BoSSS.Foundation {
         /// <param name="mask"></param>
         public DGField[] ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
 
-            int NoOfFixedPatches = 4;
+            int NoOfFixedPatches = 3;
 
             return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
 
@@ -701,8 +701,11 @@ namespace BoSSS.Foundation {
                 int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
                 localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
 
-                //Console.WriteLine("project transition patch:");
-                //this.ProjectDGFieldOnPatch(DGField, mergePatchCM, mergeBoundary, true);
+                Console.WriteLine("======================");
+                Console.WriteLine("project on merging patch:");
+                this.ProjectDGFieldOnPatch(DGField, mergePatchCM, mergeBoundary, true);
+                double jumpNorm = CheckLocalProjection(mergePatchCM);
+                Console.WriteLine("L2 jump norm = {0}", jumpNorm);
 
                 // plot patches for debugging
                 SinglePhaseField patchField = new SinglePhaseField(m_Basis, "Patches");
@@ -725,7 +728,7 @@ namespace BoSSS.Foundation {
                 // 1. merge between two adjacent patches
                 // =====================================
 
-
+                /*
                 for (int p1 = 0; p1 < NoPatches; p1++) {
 
                     SubGrid patch1 = new SubGrid(patches.ElementAt(p1));
@@ -765,8 +768,8 @@ namespace BoSSS.Foundation {
                             Console.WriteLine("number of cells in merge patch: {0}", merge12PatchCM.NoOfItemsLocally);
                             Console.WriteLine("number of edges in merge boundary: {0}", merge12Boundary.NoOfItemsLocally);
                             this.ProjectDGFieldOnPatch(DGField, merge12PatchCM, merge12Boundary, true);
-                            CellMask mergedPatch12 = patch1.VolumeMask.Union(patch2.VolumeMask).Union(merge12PatchCM);
-                            double jumpNorm = CheckLocalProjection(mergedPatch12);
+                            //CellMask mergedPatch12 = patch1.VolumeMask.Union(patch2.VolumeMask).Union(merge12PatchCM);
+                            double jumpNorm = CheckLocalProjection(merge12PatchCM);
                             Console.WriteLine("L2 jump norm = {0}", jumpNorm);
 
                             string mergePatchName = "Merging-Patch_" + p1 + p2;
@@ -785,7 +788,7 @@ namespace BoSSS.Foundation {
                 localProj = new SinglePhaseField(m_Basis, "localMergeProjection");
                 localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
                 returnFields.Add(localProj);
-
+                */
 
                 return returnFields.ToArray();
             }
@@ -878,10 +881,15 @@ namespace BoSSS.Foundation {
             // list of masked vertices inside domain mask
             List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
             List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
+            List<GeometricCellForProjection> maskedCells = new List<GeometricCellForProjection>();
             foreach (var chunk in mask) {
                 int j0 = chunk.i0;
                 int jE = chunk.JE;
                 for (int j = j0; j < jE; j++) {
+
+                    GeometricCellForProjection gCell = new GeometricCellForProjection(j);
+                    maskedCells.Add(gCell);
+
                     int[] vertAtCell = m_grd.Cells.CellVertices[j];
                     foreach (int vert in vertAtCell) {
                         GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
@@ -897,6 +905,10 @@ namespace BoSSS.Foundation {
                     }
                 }
             }
+            //if (fixedBoundaryMask != null) {
+            //    Console.WriteLine("Number of masked vertices: {0}", maskedVert.Count);
+            //    Console.WriteLine("Number of masked edges: {0}", maskedEdges.Count);
+            //}
 
 
             // get DG-coordinates (change of basis for projection on a higher polynomial degree)
@@ -931,10 +943,10 @@ namespace BoSSS.Foundation {
 
             if (fixedBoundaryMask != null) {
                 // in case of fixed boundary projection (higher priority regarding constrains)
-                determineConstrainsNodes(fixedBoundaryMask, maskedVert, maskedEdges, AcceptedNodes, true, mask);
+                determineConstrainsNodes(fixedBoundaryMask, maskedVert, maskedEdges, AcceptedNodes, true, maskedCells);
 
                 // inner edges on merge domain
-                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes, false, mask);
+                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes, false, maskedCells);
 
             } else {
 
@@ -1024,7 +1036,7 @@ namespace BoSSS.Foundation {
 
         void determineConstrainsNodes(EdgeMask constrainsEdges, List<GeometricVerticeForProjection> maskedVert,
             List<GeometricEdgeForProjection> maskedEdges, List<NodeSet> AcceptedNodes, 
-            bool onFixedBoundary = false, CellMask mergeDomain = null) {
+            bool onFixedBoundary = false, List<GeometricCellForProjection> maskedCells = null) { //CellMask mergeDomain = null) {
 
             int D = m_grd.SpatialDimension;
 
@@ -1044,27 +1056,31 @@ namespace BoSSS.Foundation {
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
                     int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
 
+                    //Console.WriteLine("edge {0} between cell {1} and cell {2}", j, cell1, cell2);
+
                     // get geometric vertices/edges(3d) at considered edge/(face)
                     //List<GeometricVerticeForProjection> geomVertAtEdge = new List<GeometricVerticeForProjection>();
                     //List<GeometricEdgeForProjection> geomEdgeAtEdge = new List<GeometricEdgeForProjection>();
 
-
-                    if (onFixedBoundary) {
-                        if (mergeDomain != null) {
-                            if (mergeDomain.Contains(cell2)) {
-                                cell1 = cell2;
-                                trafoIdx1 = trafoIdx2;
-                                vertAtCell1 = vertAtCell2;
-                            } else if (!mergeDomain.Contains(cell1))
+                    int fixedEdgeInCell = 0;
+                    if (maskedCells != null) {
+                        GeometricCellForProjection gCell1 = maskedCells.Find(gC => gC.Equals(cell1));
+                        GeometricCellForProjection gCell2 = maskedCells.Find(gC => gC.Equals(cell2));
+                        if (onFixedBoundary) {
+                            if (gCell1 == null && gCell2 == null)
                                 throw new ArgumentException("fixed boundary not within mask for projection");
-
-                            cell2 = int.MinValue;
-                            trafoIdx2 = int.MinValue;
-                            vertAtCell2 = null;
+                            else if (gCell1 != null) {
+            
+                                gCell1.IncreaseNoOfConditions();
+                                fixedEdgeInCell = gCell1.GetNoOfConditions();
+                            } else {
+                                gCell2.IncreaseNoOfConditions();
+                                fixedEdgeInCell = gCell2.GetNoOfConditions();
+                            }
                         } else {
-                            throw new ArgumentException("no mask given for fixed boundary projection");
+                            fixedEdgeInCell = Math.Min(gCell1.GetNoOfConditions(), gCell2.GetNoOfConditions());
                         }
-                    }
+                    } 
 
 
                     // 
@@ -1072,7 +1088,7 @@ namespace BoSSS.Foundation {
                     int OverdeterminedCondAtVertice = 0;
                     for (int i = 0; i < vertAtCell1.Length; i++) {
                         int vert = vertAtCell1[i];
-                        if (onFixedBoundary || vertAtCell2.Contains(vert)) {
+                        if (vertAtCell2.Contains(vert)) {
                             GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
                             //geomVertAtEdge.Add(gVert);
                             gVert.IncreaseNoOfConditions();
@@ -1113,12 +1129,18 @@ namespace BoSSS.Foundation {
 
 
                     {
-                        if (!onFixedBoundary && mergeDomain != null)
-                            OverdeterminedCondAtVertice++;
-
-                        NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, 
-                            OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection);
-                        //NodeSet qNds = getEdgeInterpolationNodes(0, 0);
+                        //if (!onFixedBoundary && mergeDomain != null)
+                        //    OverdeterminedCondAtVertice++;
+                        NodeSet qNds;
+                        if (onFixedBoundary) {
+                            qNds = getFixedEdgeNodes(fixedEdgeInCell);
+                        } else {
+                            //if (fixedEdgeInCell > 0)
+                            //    Console.WriteLine("edge {0} between cell {1} and cell {2}", j, cell1, cell2);
+                            qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice,
+                                OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection, 0); // fixedEdgeInCell);
+                            //NodeSet qNds = getEdgeInterpolationNodes(0, 0);
+                        }
                         AcceptedNodes.Add(qNds);
 
                         //if (qNds != null) {
@@ -1402,22 +1424,63 @@ namespace BoSSS.Foundation {
         }
 
 
+        class GeometricCellForProjection {
+
+            int CellIndex;
+
+            int NoOfConditions;
+
+            public GeometricCellForProjection(int cellInd) {
+                CellIndex = cellInd;
+                NoOfConditions = 0;
+            }
+
+            public void IncreaseNoOfConditions() {
+                this.NoOfConditions++;
+            }
+
+            public int GetNoOfConditions() {
+                return this.NoOfConditions;
+            }
+
+            public override bool Equals(Object obj) {
+
+                if (obj is GeometricCellForProjection) {
+                    return (this.CellIndex - ((GeometricCellForProjection)obj).CellIndex) == 0;
+                } else if (obj is int) {
+                    return (this.CellIndex - (int)obj) == 0;
+                } else
+                    throw new ArgumentException("wrong type of object");
+
+            }
+
+        }
+
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="numVCond"></param>
         /// <param name="numECond"></param>
         /// <returns></returns>
-        private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null) {
+        private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null, int minNoFixedEdges = 0) {
 
             int degree = m_Basis.Degree;
 
             switch (m_grd.SpatialDimension) {
                 case 2: {
+                    int NDOFinCell = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
+                    int NDOFonEdge = (degree + 1);
+                    int freeNDOF = NDOFinCell - (minNoFixedEdges * NDOFonEdge);
+                    if ((freeNDOF - 1) < degree )
+                        degree = freeNDOF - 1;
+
                     if (numVcond > degree) {
                         return null;
                     } else {
                         QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule((degree - numVcond) * 2);
+                        //if (minNoFixedEdges > 0)
+                        //    Console.WriteLine("No. of nodes at inner edge: {0}", quad.NoOfNodes);
                         return quad.Nodes;
                     }
                 }
@@ -1467,6 +1530,82 @@ namespace BoSSS.Foundation {
                 default:
                     throw new NotSupportedException("spatial dimension not supported");
             }
+
+        }
+
+
+        private NodeSet getFixedEdgeNodes(int fixEdgInCell) {
+
+
+            int degree = m_Basis.Degree;
+
+            switch (m_grd.SpatialDimension) {
+                case 2: {
+                    int NDOFinCell = (degree + 1) * (degree + 1) + (degree + 1) / 2;
+                    int NDOFonEdge = (degree + 1);
+                    int freeNDOF = NDOFinCell - ((fixEdgInCell - 1) * NDOFonEdge);
+                    if (freeNDOF < NDOFonEdge) {
+                        degree = freeNDOF - 1;
+                        if (degree < 0)
+                            return null;
+                        else {
+                            QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule(degree * 2);
+                            return quad.Nodes;
+                        }
+                    } else {
+                        QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule(degree * 2);
+                        return quad.Nodes;
+                    }
+                }
+                case 3: {
+
+                    throw new NotImplementedException();
+
+                    //QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                    //NodeSet qNodes = quad1D.Nodes;
+                    //int Nnds = ((degree + 1) * (degree + 2) / 2);
+
+                    //int degreeR = degree - numEcond;
+                    //int NoNdsR = ((degreeR + 1) * (degreeR + 2) / 2);
+                    //if (NoNdsR <= 0) {
+                    //    return null;
+
+                    //} else {
+                    //    if (edgeOrientation == null && numEcond > 0)
+                    //        throw new ArgumentException();
+                    //    if (edgeOrientation == null && numEcond < 1)
+                    //        edgeOrientation = new int[degree + 1];
+
+                    //    MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
+                    //    int node = 0;
+                    //    int[] dirCount = new int[2];
+                    //    for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
+                    //        int dir = edgeOrientation[dirIdx];
+                    //        int m = dirCount[dir];
+                    //        int n0 = dirCount[(dir == 0) ? 1 : 0];
+                    //        int nL = quad1D.NoOfNodes - dirIdx;
+                    //        for (int n = n0; n < n0 + nL; n++) {
+                    //            if (dir == 0) {
+                    //                nds[node, 0] = qNodes[n, 0];
+                    //                nds[node, 1] = qNodes[m, 0];
+                    //            }
+                    //            if (dir == 1) {
+                    //                nds[node, 0] = qNodes[m, 0];
+                    //                nds[node, 1] = qNodes[n, 0];
+                    //            }
+                    //            node++;
+                    //        }
+                    //        dirCount[dir]++;
+                    //    }
+                    //    MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] { Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
+                    //    //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
+                    //    return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
+                    //}
+                }
+                default:
+                    throw new NotSupportedException("spatial dimension not supported");
+            }
+
 
         }
 
