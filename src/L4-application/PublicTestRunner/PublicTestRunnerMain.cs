@@ -104,7 +104,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program),
                         typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
@@ -116,7 +116,7 @@ namespace PublicTestRunner {
                 return new Type[] {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
+                        //typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
@@ -125,9 +125,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain), // solver s deprecated
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
-                        //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
