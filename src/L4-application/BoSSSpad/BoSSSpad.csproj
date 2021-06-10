@@ -50,9 +50,6 @@
     <Reference Include="Microsoft.DotNet.Interactive">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.CSharp">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
