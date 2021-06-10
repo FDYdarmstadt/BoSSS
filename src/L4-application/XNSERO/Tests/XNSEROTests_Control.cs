@@ -152,13 +152,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-12;
 
             // Timestepping
             // ============

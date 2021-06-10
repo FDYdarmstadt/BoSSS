@@ -47,6 +47,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
+
 #pragma warning disable 649
         /// <summary>
         /// dependent variable
@@ -472,6 +474,16 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, Path.Combine(AnalyseOutputpath, "poisson_MG_coloring" + timestepNo + caseStr), phystime, superSampling);
         }
 
+
+        /// <summary>
+        /// public member to 
+        /// ensures binding of respective assembly,
+        /// makes de-serialization more robust.
+        /// </summary>
+        /// <returns></returns>
+        public BoSSS.Solution.Statistic.CellLocalization BinderDummy() {
+            return new CellLocalization(null);
+        }
     }
 
     /// <summary>

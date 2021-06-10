@@ -725,13 +725,16 @@ namespace BoSSS.Application.BoSSSpad {
                 // =======================
                 var filtDirs = new List<DirectoryInfo>();
                 using(new BlockTrace("DIRECTORY_FILTERING", tr)) {
+                    var mybind = new KnownTypesBinder(this);
+
+
                     foreach(DirectoryInfo dir in AllDirs) {
                         if(!DirIsKnown(dir)) {
 
                             try {
                                 string ControlObj = Path.Combine(dir.FullName, "control.obj");
                                 if(File.Exists(ControlObj)) {
-                                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
+                                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj), mybind);
                                     if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
                                         filtDirs.Add(new DirectoryInfo(dir.FullName));
                                         continue;
@@ -762,6 +765,33 @@ namespace BoSSS.Application.BoSSSpad {
                 // return
                 // ======
                 return filtDirs.ToArray();
+            }
+        }
+
+        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+
+            Job m_owner;
+
+            internal KnownTypesBinder(Job __owner) {
+                m_owner = __owner;
+            }
+
+            //Dictionary<string, D>
+
+            /*
+            public IList<Type> KnownTypes { get; set; }
+
+            public Type BindToType(string assemblyName, string typeName) {
+                return KnownTypes.SingleOrDefault(t => t.Name == typeName);
+            }
+
+            public void BindToName(Type serializedType, out string assemblyName, out string typeName) {
+                assemblyName = null;
+                typeName = serializedType.Name;
+            }
+            */
+            public override Type BindToType(string assemblyName, string typeName) {
+                throw new NotImplementedException();
             }
         }
 

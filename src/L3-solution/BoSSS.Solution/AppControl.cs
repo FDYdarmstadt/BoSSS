@@ -1123,6 +1123,14 @@ namespace BoSSS.Solution.Control {
         /// re-loads  an object from memory.
         /// </summary>
         public static AppControl Deserialize(string Str) {
+            return Deserialize(Str, null);
+        }
+
+        /// <summary>
+        /// Used for control objects in work-flow management, 
+        /// re-loads  an object from memory.
+        /// </summary>
+        public static AppControl Deserialize(string Str, SerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1130,6 +1138,8 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
+            if(binder != null)
+                formatter.Binder = binder;
             
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
