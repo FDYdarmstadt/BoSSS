@@ -95,49 +95,7 @@ namespace BoSSS.Application.BoSSSpad {
             set { m_NumberOfNodes = value;  }
         }
 
-        /*
-        string m_BatchProcessorIdentifierToken;
-
-        /// <summary>
-        /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
-        /// in order to identify the job.
-        /// </summary>
-        public string BatchProcessorIdentifierToken {
-            private set {
-                m_BatchProcessorIdentifierToken = value;
-            }
-            get {
-                var bpcToken = m_BatchProcessorIdentifierToken;
-
-                if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
-                    var directories = GetAllDeploymantDirectories();
-
-                    if(directories == null || directories.Length <= 0) {
-                        return null;
-                    }
-                    Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
-                    DirectoryInfo _DD = directories.Last();
-                    var DD = _DD.FullName;
-
-                    try {
-                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                        m_BatchProcessorIdentifierToken = l.Trim();
-
-                    } catch(Exception) {
-                        // job was probably deployed, but never submitted
-                        // ignore this.
-                    }
-                }
-
-                return m_BatchProcessorIdentifierToken;
-            }
-        }
-
-        /// <summary>
-        /// Some internal object that the job keeps for the batch processor
-        /// </summary>
-        object BatchProcessorObject;
-        */
+        
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -1447,6 +1405,18 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            static void CopyFilesRecursively(string sourcePath, string targetPath) {
+                //Now Create all of the directories
+                foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                    Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+                }
+
+                //Copy all the files & Replaces any files with the same name
+                foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                    File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+                }
+            }
+
 
             using (var tr = new FuncTrace()) {
                 Console.WriteLine("Deploying executables and additional files ...");
@@ -1506,6 +1476,13 @@ namespace BoSSS.Application.BoSSSpad {
                         if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                             OriginDir = Path.GetDirectoryName(fOrg);
                         }
+                    }
+
+                    // copy "runtimes" directory from .NET core/.NET5
+                    string runtimes_Src = Path.Combine(Path.GetDirectoryName(EntryAssembly.Location), "runtimes");
+                    string runtimes_Dst = Path.Combine(DeployDir, "runtimes");
+                    if(Directory.Exists(runtimes_Src)) {
+                        CopyFilesRecursively(runtimes_Src, runtimes_Dst);
                     }
                 }
                 Console.WriteLine("copied " + files.Count + " files.");
