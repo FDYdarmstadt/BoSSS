@@ -79,10 +79,10 @@ namespace BoSSS.Application.TutorialTests {
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.tex")]
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
         [Test]
         static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.tex");
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -183,10 +183,10 @@ namespace BoSSS.Application.TutorialTests {
 #if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
+        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
         [Test]
         static public void Run__StokesEq() {
-            RunWorksheet("tutorial11-Stokes/StokesEq.tex");
+            RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
  
