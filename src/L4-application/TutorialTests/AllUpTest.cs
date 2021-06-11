@@ -234,7 +234,7 @@ namespace BoSSS.Application.TutorialTests {
             try {
                 // run test:
                 string mode;
-                if(Path.GetExtension(FullTexName).Equals("tex", StringComparison.InvariantCultureIgnoreCase))
+                if(Path.GetExtension(FullTexName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
                     mode = "--texbatch";
                 else
                     mode = "--JupyterBatch";
@@ -254,7 +254,7 @@ namespace BoSSS.Application.TutorialTests {
 
         static string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot;
-            if(DirectoryOffset.IsEmptyOrWhite())
+            if(!DirectoryOffset.IsEmptyOrWhite())
                 repoRoot = new DirectoryInfo(DirectoryOffset);
             else
                 repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());

@@ -1246,7 +1246,7 @@ namespace BoSSS.Solution.Control {
             }
             */
             public override Type BindToType(string assemblyName, string typeName) {
-                Console.WriteLine("Type lookup: " + assemblyName + "+" + typeName);
+                //Console.WriteLine("Type lookup: " + assemblyName + "+" + typeName);
                 var dd = knownTypes[assemblyName];
                 var tt = dd[typeName];
 
