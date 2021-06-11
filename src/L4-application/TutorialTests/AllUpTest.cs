@@ -202,10 +202,10 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
+        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            RunWorksheet("convergenceStudyTutorial/convStudy.tex");
+            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
 
