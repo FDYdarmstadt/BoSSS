@@ -11,7 +11,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 {
     abstract class SayeComboIntegrand<S, T>
         : SayeIntegrand<S, T>
-        where S : IPsi
         where T : SayeArgument<S>    
     {
         //The surface quadrature rule is saved here.
@@ -34,7 +33,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //Build Integrand
             //----------------------------------------------------------------------
-            SayeRecursion(fullSpace);
+            SayeRecursion(fullSpace, 0);
 
             //Evaluate Integrand
             //----------------------------------------------------------------------

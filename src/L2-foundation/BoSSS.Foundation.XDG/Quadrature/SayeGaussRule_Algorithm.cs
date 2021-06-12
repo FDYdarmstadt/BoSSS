@@ -23,11 +23,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
         QuadRule GetQuadRule();
     }
 
-    interface IPsi
-    {
-       
-    }
-
     interface ISortedBoundedList<T>
         : IEnumerable<T>
         where T : IComparable<T>
@@ -41,7 +36,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
 
     abstract class SayeArgument<S>
-        where S : IPsi
     {
         public enum Mode
         {
@@ -82,7 +76,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
 
     abstract class SayeIntegrand<S, T>
-        where S : IPsi
         where T : SayeArgument<S>
     {
         protected int cell;
@@ -100,7 +93,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //Build Integrand
             //----------------------------------------------------------------------
-            SayeRecursion(fullSpace);
+            SayeRecursion(fullSpace, 0);
 
             //Evaluate Integrand
             //----------------------------------------------------------------------
@@ -291,7 +284,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         //Algorithm 3
         //page: A1006
-        protected void SayeRecursion(TreeNode<T> treeNode)
+        protected void SayeRecursion(TreeNode<T> treeNode, int subdivisionCount)
         {
             T arg = treeNode.Value;
 
@@ -381,14 +374,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 {
                     //The height function direction ek is not suitable for ψi. If already subdivided too
                     //many times, revert to a low - order method(see discussion).Otherwise split U (line 23)
-                    if (SubdivideSuitable(arg))
+                    if (SubdivideSuitable(subdivisionCount))
                     {
                         //Subdivide
                         T siblingArg = Subdivide(arg);
                         TreeNode<T>sibling = treeNode.AddSibling(siblingArg);
                         //Recalculate
-                        SayeRecursion(treeNode);
-                        SayeRecursion(sibling);
+                        SayeRecursion(treeNode, subdivisionCount++);
+                        SayeRecursion(sibling, subdivisionCount++);
                     }
                     else
                     {
@@ -403,7 +396,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             subspaceArg.Surface = false;
             subspaceArg.RemoveDimension(k);
             TreeNode<T> subSpaceNode = treeNode.AddChild(subspaceArg);
-            SayeRecursion(subSpaceNode);
+            SayeRecursion(subSpaceNode, subdivisionCount);
         }
 
         #endregion
@@ -446,7 +439,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected abstract S[] ExtractSubPsis(S psi_i, T arg, int heightDirection);
 
-        protected abstract bool SubdivideSuitable(T arg);
+        protected abstract bool SubdivideSuitable(int numberOfSubdivisions);
 
         protected abstract T Subdivide(T arg);
 
