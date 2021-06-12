@@ -523,7 +523,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
             /// look at formula (7).
             /// </remarks>
-            public MultidimensionalArray cj;
+            public MultidimensionalArray penalty_base;
 
             /// <summary>
             /// the inverse (one-over) of <see cref="cj"/>;

@@ -164,19 +164,20 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
+        [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
         [Test]
         static public void Run__sip() {
-            RunWorksheet("tutorial9-SIP/sip.tex");
+            RunWorksheet("tutorial9-SIP/sip.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
+        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
         [Test]
         static public void Run__Poisson() {
-            RunWorksheet("tutorial10-PoissonSystem/Poisson.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
+            RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
         }
 #endif
 
