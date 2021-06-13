@@ -198,6 +198,14 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
         /// </summary>
+        public XYvalues AddDataGroup(XYvalues dataGroup) {
+            dataGroup.AddToArray(ref dataGroups);
+            return dataGroup;
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
         public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values, PlotFormat Format = null) {
             var r = new XYvalues(name, Abscissas.ToArray(), values.ToArray());
             return AddDataGroup(r, Format);

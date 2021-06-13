@@ -137,10 +137,10 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex")]
+        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
         [Test]
         static public void Run__SpatialOperatorNexpTimeInt() {
-            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex");
+            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
         }
 #endif
 
