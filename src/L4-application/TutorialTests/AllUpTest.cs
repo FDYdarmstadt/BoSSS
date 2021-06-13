@@ -146,10 +146,10 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.tex")]
+        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
         [Test]
         static public void Run__ue5NumFluxConv() {
-            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.tex");
+            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
         }
 #endif
 
