@@ -106,7 +106,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     case ThermalWallType.fixedTemperature:
                     u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                    Acc = -1 * base.BoundaryEdgeFormDirichlet(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
                     break;
                 }
 
@@ -120,7 +120,7 @@ namespace BoSSS.Solution.NSECommon {
                 // inhom. Dirichlet b.c.
                 // =====================
                 u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                Acc = -1 * base.BoundaryEdgeFormDirichlet(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
                 break;
 
                 case IncompressibleBcType.Outflow:
@@ -135,6 +135,40 @@ namespace BoSSS.Solution.NSECommon {
 
             return -Acc;
         }
+
+
+        /// <summary>
+        ///   The BoundaryEdgeForm for Dirichlet b.c. with value u_D
+        /// </summary>
+        protected double BoundaryEdgeFormDirichlet2(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double u_D) {
+            double Acc = 0.0;
+
+            double pnlty = 2 * GetPenalty(inp.jCellIn, -1);
+            double[] difusivityArguments_IN = _uA;
+
+            double DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA, inp.X);
+            Debug.Assert(!double.IsNaN(DiffusivityA));
+            Debug.Assert(!double.IsInfinity(DiffusivityA));
+            double DiffusivityB = Diffusivity(new double[] { u_D}, _Grad_uA, inp.X);
+
+
+            // penalty term          
+            double  DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
+
+
+            // inhom. Dirichlet b.c.
+            // =====================
+            for (int d = 0; d < m_D; d++) {
+                Acc += (DiffusivityA * _Grad_uA[i, d]) * (_vA) * inp.Normal[d];
+                Acc += (DiffusivityA * _Grad_vA[d]) * (_uA[i] - u_D) * inp.Normal[d];
+            }
+
+            Acc -= DiffusivityMax * (_uA[i] - u_D) * (_vA - 0) * pnlty;
+            return -Acc;
+        }
+
+
+
 
         /// <summary>
         /// For the
