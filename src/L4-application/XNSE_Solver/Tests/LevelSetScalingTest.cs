@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        public double[] AcceptableL2Error {
+        override public double[] AcceptableL2Error {
             get {
                   return new double[] { 1.0e-6, 1.0e-6, 1.0e-1 };
             }

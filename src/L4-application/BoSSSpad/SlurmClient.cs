@@ -20,10 +20,9 @@ using System.IO;
 using System.Runtime.Serialization;
 using ilPSP;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using ilPSP.Tracing;
 using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
+//using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -360,8 +359,10 @@ namespace BoSSS.Application.BoSSSpad {
             string email = Email;
 
             using (var str = new StringWriter()) {
-                str.Write("mpiexec mono ");
-                if (MonoDebug) { str.Write("-v --debug "); }
+                str.Write($"mpiexec {base.DotnetRuntime} ");
+                if (MonoDebug) { 
+                    str.Write("-v --debug "); 
+                }
                 str.Write(jobpath_unix + "/" + Path.GetFileName(myJob.EntryAssembly.Location));
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);

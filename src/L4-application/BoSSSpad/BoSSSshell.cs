@@ -13,7 +13,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -64,6 +63,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// ```
         /// </remarks>
         public static void Init() {
+            BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.SVG;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();
             try {
@@ -85,6 +85,15 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
         }
+
+        /// <summary>
+        /// Just Demo
+        /// </summary>
+        public static void SayHello() {
+            Console.WriteLine("Hello");
+        }
+
+
 
         /// <summary>
         /// Opens the folder containing config files like the DBE.xml
@@ -484,7 +493,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                return gp.PlotNow();
+                return gp.PlotSVG();
             }
         }
 

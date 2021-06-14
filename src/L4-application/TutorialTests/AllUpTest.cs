@@ -244,7 +244,11 @@ namespace BoSSS.Application.TutorialTests {
 
 
         static string[] LocateFile(string PartialPath) {
-            DirectoryInfo repoRoot = new DirectoryInfo(DirectoryOffset);
+            DirectoryInfo repoRoot;
+            if(DirectoryOffset.IsEmptyOrWhite())
+                repoRoot = new DirectoryInfo(DirectoryOffset);
+            else
+                repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);

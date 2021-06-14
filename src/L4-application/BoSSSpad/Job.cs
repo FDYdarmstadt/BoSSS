@@ -95,49 +95,7 @@ namespace BoSSS.Application.BoSSSpad {
             set { m_NumberOfNodes = value;  }
         }
 
-        /*
-        string m_BatchProcessorIdentifierToken;
-
-        /// <summary>
-        /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
-        /// in order to identify the job.
-        /// </summary>
-        public string BatchProcessorIdentifierToken {
-            private set {
-                m_BatchProcessorIdentifierToken = value;
-            }
-            get {
-                var bpcToken = m_BatchProcessorIdentifierToken;
-
-                if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
-                    var directories = GetAllDeploymantDirectories();
-
-                    if(directories == null || directories.Length <= 0) {
-                        return null;
-                    }
-                    Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
-                    DirectoryInfo _DD = directories.Last();
-                    var DD = _DD.FullName;
-
-                    try {
-                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                        m_BatchProcessorIdentifierToken = l.Trim();
-
-                    } catch(Exception) {
-                        // job was probably deployed, but never submitted
-                        // ignore this.
-                    }
-                }
-
-                return m_BatchProcessorIdentifierToken;
-            }
-        }
-
-        /// <summary>
-        /// Some internal object that the job keeps for the batch processor
-        /// </summary>
-        object BatchProcessorObject;
-        */
+        
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -1414,7 +1372,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Copies the executable files to the <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, but does not submit the job.
         /// </summary>
         string DeployExecuteables() {
-
+            /*
             bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir) {
                 PlatformID CurrentSys = System.Environment.OSVersion.Platform;
                 switch(CurrentSys) {
@@ -1425,12 +1383,12 @@ namespace BoSSS.Application.BoSSSpad {
                     default: {
                         return Path.GetDirectoryName(Ass.Location).Equals(MainAssemblyDir)
                             || Path.GetFileName(Ass.Location).StartsWith("BoSSS")
-                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP")
-                            || !Ass.GlobalAssemblyCache;
+                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP");
+                            //|| !Ass.GlobalAssemblyCache;
                     }
                 }
             }
-
+            */
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
@@ -1447,6 +1405,18 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            static void CopyFilesRecursively(string sourcePath, string targetPath) {
+                //Now Create all of the directories
+                foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                    Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+                }
+
+                //Copy all the files & Replaces any files with the same name
+                foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                    File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+                }
+            }
+
 
             using (var tr = new FuncTrace()) {
                 Console.WriteLine("Deploying executables and additional files ...");
@@ -1457,13 +1427,24 @@ namespace BoSSS.Application.BoSSSpad {
                     //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                     string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
                     foreach (var a in AllDependentAssemblies) {
-                        if (IsNotSystemAssembly(a, MainAssemblyDir)) {
-                            files.Add(a.Location);
-                            if(File.Exists(a.Location + ".config")) {
-                                files.Add(a.Location + ".config");
-                            }
-                        }
+                        // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
+                        // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
+                        string DelpoyAss = Path.Combine(MainAssemblyDir,  Path.GetFileName(a.Location));
 
+                        if (File.Exists(DelpoyAss)) {
+                            files.Add(DelpoyAss);
+
+                            string a_config = DelpoyAss + ".config";
+                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json";
+
+                            foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                                if(File.Exists(a_acc)) {
+                                    files.Add(a_acc);
+                                }
+                            }
+                        } else {
+                            //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
+                        }
                     }
                
                     // test for really strange errors
@@ -1495,6 +1476,13 @@ namespace BoSSS.Application.BoSSSpad {
                         if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                             OriginDir = Path.GetDirectoryName(fOrg);
                         }
+                    }
+
+                    // copy "runtimes" directory from .NET core/.NET5
+                    string runtimes_Src = Path.Combine(Path.GetDirectoryName(EntryAssembly.Location), "runtimes");
+                    string runtimes_Dst = Path.Combine(DeployDir, "runtimes");
+                    if(Directory.Exists(runtimes_Src)) {
+                        CopyFilesRecursively(runtimes_Src, runtimes_Dst);
                     }
                 }
                 Console.WriteLine("copied " + files.Count + " files.");

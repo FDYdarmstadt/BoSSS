@@ -842,7 +842,7 @@ namespace BoSSS.Solution.Gnuplot {
                 string axisdefinition;
                 axisdefinition = "axis";
 
-                char RegressionCounter = 'a';
+                //char RegressionCounter = 'a';
 
                 s.Write(@"
 %% Uncomment these lines to test the raw output.

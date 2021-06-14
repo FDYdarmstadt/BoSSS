@@ -2073,9 +2073,9 @@ namespace BoSSS.Solution {
                         LsTrk.PushStacks();
                 }
 
-                //// =========================================
-                //// Adaptive-Mesh-Refinement on startup
-                //// =========================================
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
                 if (this.Control.AdaptiveMeshRefinement) {
 

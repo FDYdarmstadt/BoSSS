@@ -86,7 +86,7 @@ using CNS;
  }
 \BoSSSexe
 \BoSSScmd{
-typeof(CNS.Program).Assembly.Location;
+typeof(CNS.Program).Assembly.Location
  }
 \BoSSSexe
 \BoSSScmd{
@@ -132,12 +132,12 @@ c.GridFunc = delegate \{       \newline
 \BoSSSexe
 \BoSSScmd{
 /// The \code{CNS} solver is able to solve the Euler and the compressible Navier-Stokes equations. By setting
-c.ActiveOperators;
+c.ActiveOperators
  }
 \BoSSSexe
 \BoSSScmd{
 /// we only use the convective fluxes, i.e the Euler equations, and set it to
-c.ConvectiveFluxType;
+c.ConvectiveFluxType
  }
 \BoSSSexe
 \BoSSScmd{
@@ -149,17 +149,17 @@ c.MachNumber
 \BoSSSexe
 \BoSSScmd{
 /// Further, we have to define a simulation time, i.e
-c.Endtime;
+c.Endtime
  }
 \BoSSSexe
 \BoSSScmd{
 /// Finally, we need a time stepping scheme
-c.ExplicitScheme;
+c.ExplicitScheme
  }
 \BoSSSexe
 \BoSSScmd{
 /// of order
-c.ExplicitOrder;\newline 
+c.ExplicitOrder\newline 
 /// to run the simulation.
  }
 \BoSSSexe
@@ -169,7 +169,7 @@ c.ExplicitOrder;\newline
 /// For example, we can reduce the order of our timestepping scheme to 3, 
 /// because we only use DG order 2:
 c.ExplicitOrder = 3;      \newline 
-c.ExplicitOrder;
+c.ExplicitOrder
  }
 \BoSSSexe
 \BoSSScmd{
@@ -190,7 +190,7 @@ var SI          = c.Run();
 \BoSSScmd{
 /// The \code{Run()} command finally returns a session info, which carries some
 /// basic information on the solver run (mainly where ist was stored).
-SI;
+SI
  }
 \BoSSSexe
 \BoSSScmd{

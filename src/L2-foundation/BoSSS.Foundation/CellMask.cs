@@ -395,7 +395,7 @@ namespace BoSSS.Foundation.Grid {
         public EdgeMask AllEdges() {
             int[][] C2E = this.GridData.iLogicalCells.Cells2Edges;
 
-            HashSet<int> edges = new HashSet<int>(this.ItemEnum.Count() * 2 * GridData.SpatialDimension);
+            HashSet<int> edges = new HashSet<int>();
 
             foreach (int jCell in this.ItemEnum) {
                 int cell;
