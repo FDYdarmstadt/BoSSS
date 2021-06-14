@@ -155,10 +155,10 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.tex")]
+        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {
-            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.tex");
+            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
         }
 #endif
 
