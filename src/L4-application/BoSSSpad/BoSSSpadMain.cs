@@ -26,6 +26,8 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
+using System.Reflection;
 using System.Threading;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -79,10 +81,43 @@ namespace BoSSS.Application.BoSSSpad {
             /// <summary>
             /// Executing a notebook in batch mode
             /// </summary>
-            JupyterBatch
+            JupyterBatch,
+
+
+            /// <summary>
+            /// Create a Jupyter notebook with BoSSS-init code
+            /// </summary>
+            Jupyterfile,
+
+            /// <summary>
+            /// application deployment
+            /// </summary>
+            deploy
+
         }
 
-   
+        /*
+        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+
+            Job m_owner;
+
+            internal KnownTypesBinder(Job __owner) {
+                m_owner = __owner;
+            }
+
+            Assembly a = typeof(BoSSS.Solution.Statistic.CellLocalization).Assembly;
+
+            
+            public override Type BindToType(string assemblyName, string typeName) {
+                Console.WriteLine(a.FullName);
+                var tts = a.GetExportedTypes();
+                var tt = tts.First(t => t.FullName == typeName);
+                return tt;
+                //throw new NotImplementedException();
+
+            }
+        }
+   */
 
 
         /// <summary>
@@ -90,7 +125,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
-            
+
+            /*
+            string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
+            string text = File.ReadAllText(path);
+            var obj = Solution.Control.AppControl.Deserialize(text, new KnownTypesBinder(null));
+            Console.WriteLine("desez: " + obj.GetType());
             /*
             SshClient_exp ssh = new SshClient_exp("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
 
@@ -283,6 +323,19 @@ namespace BoSSS.Application.BoSSSpad {
                     break;
                 }
 
+                case Modes.Jupyterfile: {
+                    string fileToOpen;
+                    if(args.Length != 2) {
+                        PrintUsage();
+                        return int.MinValue;
+                    }
+                    fileToOpen = args[1];
+                    Jupyterfile(fileToOpen);
+                    break;
+                }
+
+                case Modes.deploy:
+                throw new NotImplementedException("will come soon");
 
                 default:
                 throw new NotImplementedException();
@@ -331,7 +384,8 @@ namespace BoSSS.Application.BoSSSpad {
 
         static string GetStartupCode() {
             using(var stw = new StringWriter()) {
-                stw.WriteLine("#r \"BoSSSpad.dll\"");
+                string path = typeof(BoSSSpadMain).Assembly.Location;
+                stw.WriteLine("#r \"" + path + "\"");
                 stw.WriteLine("using System;");
                 stw.WriteLine("using System.Collections.Generic;");
                 stw.WriteLine("using System.Linq;");
@@ -339,6 +393,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using ilPSP.Utils;");
                 stw.WriteLine("using BoSSS.Platform;");
                 stw.WriteLine("using BoSSS.Foundation;");
+                stw.WriteLine("using BoSSS.Foundation.XDG;");
                 stw.WriteLine("using BoSSS.Foundation.Grid;");
                 stw.WriteLine("using BoSSS.Foundation.Grid.Classic;");
                 stw.WriteLine("using BoSSS.Foundation.IO;");
@@ -347,6 +402,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using BoSSS.Solution.GridImport;");
                 stw.WriteLine("using BoSSS.Solution.Statistic;");
                 stw.WriteLine("using BoSSS.Solution.Utils;");
+                stw.WriteLine("using BoSSS.Solution.AdvancedSolvers;");
                 stw.WriteLine("using BoSSS.Solution.Gnuplot;");
                 stw.WriteLine("using BoSSS.Application.BoSSSpad;");
                 stw.WriteLine("using BoSSS.Application.XNSE_Solver;");
@@ -358,6 +414,18 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        private static void Jupyterfile(string fileToCreate) {
+
+            var cells = new List<NotebookCell>();
+            string cmd = GetStartupCode();
+            cells.Add(new NotebookCell("csharp", cmd));
+
+            var docNew = new NotebookDocument(cells.ToArray());
+
+            var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
+            System.IO.File.WriteAllBytes(fileToCreate, data);
+        }
+
         private static string OldFileToJupyter(string fileToOpen) {
             Document doc;
             if(fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
@@ -367,7 +435,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
 
-            string DestFile = Path.GetFileNameWithoutExtension(fileToOpen) + ".ipynb";
+            string DestFile = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen)) + ".ipynb";
 
             var cells = new List<NotebookCell>();
             foreach(var entry in doc.CommandAndResult) {
@@ -422,10 +490,19 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --OldFileUpgrade file.bws        Upgrade file.bws to Jupyter");
             Console.WriteLine();
-            Console.WriteLine("Option 3: Installation check:");
+            Console.WriteLine("Option 3: Jupyter notebook for BoSSS:");
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("    BoSSSpad.exe --Jupyterfile file.ipynb   Create file prepared for BoSSS");
+            Console.WriteLine();
+            Console.WriteLine("Option 4: App deployment:");
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("    BoSSSpad.exe --deploy Solver.dll dest-dir  send some Solver app & deps to ");
+            Console.WriteLine("                                               destination directory dest-dir.");
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Option 5: Installation check:");
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --check               Check the BoSSS installation.");
-            Console.WriteLine();
             
         }
 

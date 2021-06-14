@@ -47,6 +47,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
+
 #pragma warning disable 649
         /// <summary>
         /// dependent variable
@@ -369,7 +371,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
-                this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -472,6 +474,8 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, Path.Combine(AnalyseOutputpath, "poisson_MG_coloring" + timestepNo + caseStr), phystime, superSampling);
         }
 
+
+       
     }
 
     /// <summary>
