@@ -101,10 +101,10 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
+        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            RunWorksheet("MetaJobManager/MetaJobManager.tex");
+            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
