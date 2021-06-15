@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -209,6 +210,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //Console.WriteLine("Warning! - enabled immediate plotting");
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
+
+                MultiphaseCellAgglomerator.Katastrophenplot = delegate (DGField[] plotFields) {
+                    Tecplot.PlotFields(plotFields, "AgglomFail", 0.0, 4);
+                };
 
                 solver.Init(C);
                 solver.RunSolverMode();

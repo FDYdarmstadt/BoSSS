@@ -29,7 +29,10 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
 
         static int Main(string[] args) {
-            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", ".." , "doc", "handbook");
+            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
+            
+            if(!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), AllUpTest.DirectoryOffset)))
+                throw new IOException();
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
             // so delete any local tex files since we want to run the scripts from doc/handbook

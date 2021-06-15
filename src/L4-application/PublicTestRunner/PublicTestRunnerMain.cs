@@ -116,7 +116,7 @@ namespace PublicTestRunner {
                 return new Type[] {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
-                        //typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
