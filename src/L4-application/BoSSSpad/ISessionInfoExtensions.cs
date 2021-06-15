@@ -2063,9 +2063,13 @@ namespace BoSSS.Foundation.IO {
                         break;
                     }
                 case Application.XNSE_Solver.PhysicalBasedTestcases.EvaporationLogging.LogfileName: {
-                        values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
-                        break;
-                    }
+                    values = new string[] { "#timestep", "time", "interfacePosition", "meanInterfaceVelocity", "meanMassFlux" };
+                    break;
+                }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.StefanProblemBenchmarkQuantities.LogfileName: {
+                    values = new string[] { "#timestep", "time", "interface-x-pos-min", "interface-x-pos-max", "mass-vapor", "mass-liquid", "massflux-interface", "massflux-outlet" };
+                    break;
+                }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }

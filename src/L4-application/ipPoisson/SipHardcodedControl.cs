@@ -131,6 +131,56 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /// <summary>
+        /// Test on a curved grid.
+        /// </summary>
+        public static SipControl TestSpherical() {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCurved();
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/curved";
+            R.savetodb = false;
+
+            //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
+            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 1.0 / 6.0 * (X[0]*X[0]+ X[1] * X[1] + X[2]*X[2]) + 5.0/6.0);
+            R.ExactSolution_provided = true;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //R.LinearSolver.TargetBlockSize = 1000;
+            R.SuperSampling = 2;
+            //R.NoOfMultigridLevels = 4;
+
+            R.GridFunc = delegate () {
+                double Ra = 0.1;
+                double Rb = 1;
+                int res = 32;
+                // phi, theta +/-5°
+                var grd = Grid3D.SphereCutout(GenericBlas.Logspace(Ra, Rb, res+1), GenericBlas.Linspace(-0.5 * 5.0/360,0.5 * 5.0/360, 2), GenericBlas.Linspace(-5.0 / 360, 5.0 / 360, 2));
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    if (Math.Abs(X.L2Norm() - Ra) < 1e-10 || Math.Abs(X.L2Norm() - Rb) < 1e-10) {
+                        ret = 1;
+                    } else {
+                        ret = 2;
+                    }
+                    return ret;
+                });
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     return 1.0 / 6.0 * (X[0] * X[0] + X[1] * X[1] + X[2] * X[2]) + 5.0 / 6.0;
+                 });
+
+
+            return R;
+        }
+
+        /// <summary>
         /// Creates Nodes, yes it really does!
         /// </summary>
         /// <param name="res"></param>
@@ -189,7 +239,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
-            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;            
 
             return RR;
         }
