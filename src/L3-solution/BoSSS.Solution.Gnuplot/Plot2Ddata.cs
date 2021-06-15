@@ -218,6 +218,14 @@ namespace BoSSS.Solution.Gnuplot {
             var r = new XYvalues(null, Abscissas.ToArray(), values.ToArray());
             return AddDataGroup(r, Format);
         }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values) {
+            var r = new XYvalues(null, Abscissas.ToArray(), values.ToArray());
+            return AddDataGroup(r, default(string));
+        }
         
         /// <summary>
         /// Indicates whether the abscissas should be scaled logarithmically.
