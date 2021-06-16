@@ -139,12 +139,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void CreateFields() {
 
-            /// Before creating fields make sure the operator is cleared, so that the equations are instantiated with the correct LsTrk and stuff...
-            /// This is not that clear: This functionality should theoretically belong to <see cref="CreateEquationsAndSolvers(GridUpdateDataVaultBase)"/>,
-            /// However the Operator and its equations are instantiated on the first call of <see cref="Operator"/> when it is empty. 
-            /// These occur in this method e.g. in <see cref="InstantiateSolutionFields"/> in the derived classes <see cref="DgApplicationWithSolver{T}"/> and <see cref="XdgApplicationWithSolver{T}"/>
-            /// So nulling the Operator here ensures, that it is created again with the updated LsTrk and stuff...
-            ClearOperator();
+            ///// Before creating fields make sure the operator is cleared, so that the equations are instantiated with the correct LsTrk and stuff...
+            ///// This is not that clear: This functionality should theoretically belong to <see cref="CreateEquationsAndSolvers(GridUpdateDataVaultBase)"/>,
+            ///// However the Operator and its equations are instantiated on the first call of <see cref="Operator"/> when it is empty. 
+            ///// These occur in this method e.g. in <see cref="InstantiateSolutionFields"/> in the derived classes <see cref="DgApplicationWithSolver{T}"/> and <see cref="XdgApplicationWithSolver{T}"/>
+            ///// So nulling the Operator here ensures, that it is created again with the updated LsTrk and stuff...
+            //ClearOperator();
 
             base.CreateFields();
 
