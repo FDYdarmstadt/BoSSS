@@ -2070,6 +2070,10 @@ namespace BoSSS.Foundation.IO {
                     values = new string[] { "#timestep", "time", "interface-x-pos-min", "interface-x-pos-max", "mass-vapor", "mass-liquid", "massflux-interface", "massflux-outlet" };
                     break;
                 }
+                case Application.XNSE_Solver.PhysicalBasedTestcases.MassfluxLogging.LogfileName: {
+                    values = new string[] { "#timestep", "time", "mass-liq", "mass-vap", "mass-total", "masschange-evap", "masschange-vapor", "masschange-liquid", "masschange-total", "interface length" };
+                    break;
+                }
                 default:
                     throw new ArgumentException("No specified LogFormat");
             }
