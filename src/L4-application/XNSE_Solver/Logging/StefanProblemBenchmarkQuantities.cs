@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -56,9 +57,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         protected override void PerformTimestepPostProcessing(int iTimestep, double PhysTime) {
             using (new FuncTrace()) {
                 var R = ComputeBenchmarkQuantities_Massflux();
+                ITuple RT = R;
+                double[] RR = new double[RT.Length];
+                for (int i = 0; i < RT.Length; i++)
+                    RR[i] = (double)RT[i];
+
                 AppendToLog(iTimestep);
                 AppendToLog(PhysTime);
-                AppendToLog(R);
+                AppendToLog(RR);
 
                 base.QueryResultTable.LogValue("xPos", (R.interface_xpos_max + R.interface_xpos_min)/2); // log mean interface position
             }

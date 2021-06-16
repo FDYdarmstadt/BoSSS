@@ -246,10 +246,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
 
-            if (plotExtension) {
-                Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
-                timestepNo++;
-            }
+            // plotting for debug reasons
+            //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+            //timestepNo++;
         }
     }
 }
