@@ -34,9 +34,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             });
         }
 
-        internal int dimension = 2;
-        internal int degree = 3;
-        internal int gridResolution = 8;
+        internal int dimension = 3;
+        internal int degree = 1;
+        internal int gridResolution = 1;
 
         internal bool periodicX = false;
         internal bool periodicY = false;
@@ -77,15 +77,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
             double[] node2pi = GenericBlas.Linspace(0, 2 * Math.PI, (2 * gridResolution) + 1);
-            double[] node2 = GenericBlas.Linspace(0, (1.0 / 2.0 * gridResolution), 2);
-            //double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
+            double[] node2 = GenericBlas.Linspace(0, (1.0 / 2.0 * gridResolution), 3);
+            double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
 
             GridCommons grid;
             if (dimension == 2)
                 grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
                 //grid = Grid2D.Cartesian2DGrid(node2pi, node2, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
-                grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+                grid = Grid3D.Cartesian3DGrid(nodes, node3, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
             else
                 throw new NotSupportedException("Not supported spatial dimension");
 
@@ -97,7 +97,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         SinglePhaseField result0;
         SinglePhaseField result1;
 
-        ConstrainedDGField cdgField0;    // projection on the same DG basis
+        ConstrainedDGField cdgField0;   // projection on the same DG basis
         ConstrainedDGField cdgField1;   // projection on a DG basis with degree + 1
 
 
@@ -203,7 +203,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             // project and check cdgField0
             var returnFields = cdgField0.ProjectDGField(origin, domain);
-            Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
+            //Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
             cdgField0.AccToDGField(1.0, result0, domain);
 
             var errField = origin.CloneAs();
