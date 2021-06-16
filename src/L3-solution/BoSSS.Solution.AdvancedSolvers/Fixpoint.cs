@@ -50,7 +50,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int MaxIter = 400;
         public int MinIter = 4;
         public double ConvCrit = 1e-9;
-
+        public int MinCoupledIterations = 4;
 
         public ISolverSmootherTemplate m_LinearSolver;
 
@@ -92,6 +92,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     ((SoftGMRES)m_LinearSolver).m_SessionPath = m_SessionPath;
 
                 OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
+                
 
                 if (CoupledIteration_Converged == null) 
                     CoupledIteration_Converged = delegate () {
@@ -117,8 +118,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //int NoOfMainIterations = 0;
                 using (new BlockTrace("Slv Iter", tr)) {
                     bool success = false;
+                    
                     while (true) {
-                        if(NoOfIterations >= MinIter) {
+                        if(NoOfIterations >= MinIter || NoOfCoupledIteration >= MinCoupledIterations) {
                             if(ResidualNorm < ConvCrit && CoupledIteration_Converged()) {
                                 success = true;
                                 break;
@@ -130,7 +132,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         NoOfIterations = Iteration_Count(NoOfIterations, ref NoOfCoupledIteration);
-                        //Console.WriteLine("NoOfIterations = {0}", NoOfIterations);
 
                         //DirectSolver ds = new DirectSolver();
                         //ds.Init(this.CurrentLin);

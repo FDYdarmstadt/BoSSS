@@ -13,7 +13,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -64,6 +63,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// ```
         /// </remarks>
         public static void Init() {
+            BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.SVG;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();
             try {
@@ -85,6 +85,15 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
         }
+
+        /// <summary>
+        /// Just Demo
+        /// </summary>
+        public static void SayHello() {
+            Console.WriteLine("Hello");
+        }
+
+
 
         /// <summary>
         /// Opens the folder containing config files like the DBE.xml
@@ -314,16 +323,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            return OpenOrCreateDatabase_Impl(dbDir, true);
+            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
         /// <summary>
         /// Opens an existing database at a specific path
         /// </summary>
         static public IDatabaseInfo OpenDatabase(string dbDir) {
-            return OpenOrCreateDatabase_Impl(dbDir, false);
+            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
+        /*
         static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
             foreach (var existing_dbi in InteractiveShell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
@@ -357,6 +367,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             return dbi;
         }
+        */
 
         static internal Document CurrentDoc = null;
 
@@ -482,7 +493,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                return gp.PlotNow();
+                return gp.PlotSVG();
             }
         }
 
@@ -674,8 +685,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
-            foreach (var q in bpc.AllQueues)
-                _ = q.AllowedDatabases;
+            //foreach (var q in bpc.AllQueues)
+            //    _ = q.AllowedDatabases;
 
         }
 

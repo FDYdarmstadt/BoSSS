@@ -225,26 +225,38 @@ namespace BoSSS.Solution.NSECommon {
 
              rho = EoS.GetDensity(U);
 
-            double ReactionRate = m_Da * Math.Exp( -Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
+            
+            //double T_ad = 10;//  TODO include the right adiabatic temperature
+            //if(Temperature > T_ad) { // Limit the value of the temperature
+            //    //Console.WriteLine("Warning: Value of temperature too high (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
+            //    Temperature = T_ad;
+            //}
+
+            //if (Temperature < 1.0) { // Limit the value of the temperature
+            //    //Console.WriteLine("Warning: Value of temperature too low (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
+            //    Temperature = 1.0;
+            //}
 
 
+            double ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 
             if ( double.IsInfinity(ReactionRate)) {
                 Console.WriteLine("Infinite found");
-                Console.WriteLine("Temperature:", Temperature);
-                Console.WriteLine("rho:", rho);
-                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+                Console.WriteLine("Temperature: {0}", Temperature);
+                Console.WriteLine("rho:{0}", rho);
+                Console.WriteLine("ExponentialTerm:{0}", Math.Exp(-Ta / Temperature));
 
             }
 
             if (double.IsNaN(ReactionRate) ) {
                 Console.WriteLine("Nan found");
-                Console.WriteLine("Temperature:", Temperature);
-                Console.WriteLine("rho:", rho);
-                Console.WriteLine("ExponentialTerm:", Math.Exp(-Ta / Temperature));
+                Console.WriteLine("Temperature:{0}", Temperature);
+                Console.WriteLine("rho:{0}", rho);
+                Console.WriteLine("ExponentialTerm:{0}", Math.Exp(-Ta / Temperature));
             }
 
 
+         
             return -MolarMasses[SpeciesIndex] *  StoichiometricCoefficients[SpeciesIndex] * ReactionRate;
         }
     }

@@ -1123,6 +1123,14 @@ namespace BoSSS.Solution.Control {
         /// re-loads  an object from memory.
         /// </summary>
         public static AppControl Deserialize(string Str) {
+            return Deserialize(Str, null);
+        }
+
+        /// <summary>
+        /// Used for control objects in work-flow management, 
+        /// re-loads  an object from memory.
+        /// </summary>
+        public static AppControl Deserialize(string Str, SerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1130,10 +1138,18 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
+
             
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
                 Type ControlObjectType = Type.GetType(typeName);
+
+                if(binder != null)
+                    formatter.Binder = binder;
+                else
+                    formatter.Binder = new KnownTypesBinder(ControlObjectType);
+
+
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
 
@@ -1156,6 +1172,90 @@ namespace BoSSS.Solution.Control {
             }
             */
         }
+
+        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+
+            
+
+            internal KnownTypesBinder(Type entry) {
+
+                HashSet<Assembly> assiList = new HashSet<Assembly>();
+                GetAllAssemblies(entry.Assembly, assiList);
+
+                foreach(var a in assiList) {
+                    var tt = new Dictionary<string, Type>();
+                    knownTypes.Add(a.GetName().Name, tt);
+                    foreach(var t in a.GetExportedTypes()) {
+                        tt.Add(t.FullName, t);
+                    }
+                }
+            }
+
+
+            /// <summary>
+            /// Recursive collection of all dependencies of some assembly.
+            /// </summary>
+            /// <param name="a"></param>
+            /// <param name="assiList">
+            /// Output, list where all dependent assemblies are collected.
+            /// </param>
+            private static void GetAllAssemblies(Assembly a, HashSet<Assembly> assiList) {
+                if(assiList.Contains(a))
+                    return;
+                assiList.Add(a);
+
+                string fileName = Path.GetFileName(a.Location);
+                var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
+                if(allMatch.Length > 1) {
+                    throw new ApplicationException("internal error in assembly collection.");
+                }
+
+
+                foreach(AssemblyName b in a.GetReferencedAssemblies()) {
+                    Assembly na;
+                    try {
+                        na = Assembly.Load(b);
+                    } catch(FileNotFoundException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
+                    }
+
+                    GetAllAssemblies(na, assiList);
+                }
+            }
+
+
+            Dictionary<string, Dictionary<string, Type>> knownTypes = new Dictionary<string, Dictionary<string, Type>>();
+
+            /*
+            public IList<Type> KnownTypes { get; set; }
+
+            public Type BindToType(string assemblyName, string typeName) {
+                return KnownTypes.SingleOrDefault(t => t.Name == typeName);
+            }
+
+            public void BindToName(Type serializedType, out string assemblyName, out string typeName) {
+                assemblyName = null;
+                typeName = serializedType.Name;
+            }
+            */
+            public override Type BindToType(string assemblyName, string typeName) {
+                //Console.WriteLine("Type lookup: " + assemblyName + "+" + typeName);
+                var dd = knownTypes[assemblyName];
+                var tt = dd[typeName];
+
+
+                return tt;
+            }
+        }
+
+
 
         /// <summary>
         /// Read control object from a script file.

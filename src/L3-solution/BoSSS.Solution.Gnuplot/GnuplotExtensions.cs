@@ -22,6 +22,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Linq;
+//using Microsoft.AspNetCore.Html;
 
 namespace BoSSS.Solution.Gnuplot {
 
@@ -31,7 +32,7 @@ namespace BoSSS.Solution.Gnuplot {
     /// </summary>
     public static class GnuplotExtensions {
         
-        
+        /*
         /// <summary>
         /// Plot to a gif file ('set terminal gif').
         /// </summary>
@@ -40,21 +41,22 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         static public Image PlotGIF(this Gnuplot gp, int xRes = 800, int yRes = 600) {
 
+            if(xRes <= 0)
+                throw new ArgumentOutOfRangeException();
+            if(yRes <= 0)
+                throw new ArgumentOutOfRangeException();
+
             // set terminal
             gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
             // set output file
-            //string OutfileName = null;
-            //while (OutfileName == null || File.Exists(OutfileName)) {
-            //    OutfileName = Path.GetTempFileName() + ".gif";
-            //}
             string OutfileName = Path.GetTempFileName();
             gp.OutputFile = OutfileName;
 
             // call gnuplot
             int exCode = gp.RunAndExit(); // run & close gnuplot
             if (exCode != 0) {
-                Console.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
                 return null;
             }
 
@@ -67,10 +69,51 @@ namespace BoSSS.Solution.Gnuplot {
                 return Image.FromStream(new MemoryStream(IOMmem));
                 //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
             } else {
+                Console.Error.WriteLine("Gnuplot output file empty or non-existent.");
+                return null;
+            }
+        }*/
+        /*
+        /// <summary>
+        /// Plot to a scalable vector graphics file ('set terminal gif').
+        /// </summary>
+        /// <param name="gp"></param>
+        /// <param name="xRes">Horizontal resolution in pixels.</param>
+        /// <param name="yRes">Vertical resolution in pixels.</param>
+        static public HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
+            if(xRes <= 0)
+                throw new ArgumentOutOfRangeException();
+            if(yRes <= 0)
+                throw new ArgumentOutOfRangeException();
+
+
+            // set terminal
+            gp.Terminal = string.Format("set terminal svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
+
+            // set output file
+            string OutfileName = Path.GetTempFileName();
+            gp.OutputFile = OutfileName;
+
+            // call gnuplot
+            int exCode = gp.RunAndExit(); // run & close gnuplot
+            if (exCode != 0) {
+                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
+                return null;
+            }
+
+            // return image
+            var fi = (new FileInfo(OutfileName));
+            if (fi.Exists && fi.Length > 0) {
+                string SVGtext = File.ReadAllText(OutfileName);
+                File.Delete(OutfileName);
+                return new HtmlString(SVGtext);
+                //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
+            } else {
                 Console.WriteLine("Gnuplot output file empty or non-existent.");
                 return null;
             }
         }
+        */
 
         /// <summary>
         /// Plotting using Gnuplot with Cairolatex output.

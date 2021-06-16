@@ -79,10 +79,10 @@ namespace BoSSS.Application.TutorialTests {
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.tex")]
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
         [Test]
         static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.tex");
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -93,17 +93,18 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
+        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
+        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            RunWorksheet("MetaJobManager/MetaJobManager.tex");
+            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -136,74 +137,76 @@ namespace BoSSS.Application.TutorialTests {
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex")]
+        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
         [Test]
         static public void Run__SpatialOperatorNexpTimeInt() {
-            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex");
+            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.tex")]
+        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
         [Test]
         static public void Run__ue5NumFluxConv() {
-            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.tex");
+            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.tex")]
+        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {
-            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.tex");
+            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
+        [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
         [Test]
         static public void Run__sip() {
-            RunWorksheet("tutorial9-SIP/sip.tex");
+            RunWorksheet("tutorial9-SIP/sip.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
+        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
         [Test]
         static public void Run__Poisson() {
-            RunWorksheet("tutorial10-PoissonSystem/Poisson.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
+            RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
         }
 #endif
 
 #if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
+        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
         [Test]
         static public void Run__StokesEq() {
-            RunWorksheet("tutorial11-Stokes/StokesEq.tex");
+            RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
  
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
+        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            RunWorksheet("convergenceStudyTutorial/convStudy.tex");
+            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
 
@@ -221,7 +224,7 @@ namespace BoSSS.Application.TutorialTests {
                 FullTexName = TexFileName;
             }
 
-            Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
+            Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
 
             // start the minibatchprocessor which is used internally
             bool iStartedThisShit = OneTimeSetUp();
@@ -231,7 +234,14 @@ namespace BoSSS.Application.TutorialTests {
             
             try {
                 // run test:
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
+                string mode;
+                if(Path.GetExtension(FullTexName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
+                    mode = "--texbatch";
+                else
+                    mode = "--JupyterBatch";
+
+                
+                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, FullTexName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
                 Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
@@ -244,7 +254,11 @@ namespace BoSSS.Application.TutorialTests {
 
 
         static string[] LocateFile(string PartialPath) {
-            DirectoryInfo repoRoot = new DirectoryInfo(DirectoryOffset);
+            DirectoryInfo repoRoot;
+            if(!DirectoryOffset.IsEmptyOrWhite())
+                repoRoot = new DirectoryInfo(DirectoryOffset);
+            else
+                repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);

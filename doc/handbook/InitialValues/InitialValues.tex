@@ -51,50 +51,51 @@ var C = new XNSE\_Control();
  }
 \BoSSSexe
 \BoSSScmd{
-/// If the Formula is simple enougth to be represented by C\# code,
-/// it can be embedded in the control file. The most
+/// If the Formula is simple enough to be represented by C\# code,
+/// it can be embedded in the control file.
  }
 \BoSSSexe
 \BoSSScmd{
-/// First option: from code, e.g.:
+/// However, the code bust be put into a string, since it is not 
+/// possible to serialize classes/objects from the notebook
+/// into a control object:
  }
 \BoSSSexe
 \BoSSScmd{
-static class MyInitialValue \{ // class should be static!\newline 
+string code =  \newline 
+ "static class MyInitialValue \{" // class must be static!\newline 
  \newline 
 \btab // Warning: static constants are allowed,\newline 
 \btab // but any changes outside of the current text box in BoSSSpad\newline 
 \btab // will not be recorded for the code that is passed to the solver.\newline 
-\btab public static double alpha = 0.7;\newline 
++ " public static double alpha = 0.7;"\newline 
  \newline 
 \btab // a method, which should be used for an initial value,\newline 
 \btab // must be static!\newline 
-\btab public static double VelocityX(double[] X, double t) \{\newline 
-\btab \btab double x = X[0];\newline 
-\btab \btab double y = X[1];\newline 
-\btab \btab return Math.Sin(x*y*alpha);\newline 
-\btab \}   \newline 
-\}
++ " public static double VelocityX(double[] X, double t) \{"\newline 
++ "    double x = X[0];"\newline 
++ "    double y = X[1];"\newline 
++ "   return Math.Sin(x*y*alpha);"\newline 
++ " \}"  \newline 
++ "\}";
  }
 \BoSSSexe
 \BoSSScmd{
- % 
+var fo = new BoSSS.Solution.Control.Formula("MyInitialValue.VelocityX", \newline 
+\btab \btab \btab \btab \btab \btab \btab \btab \btab \btab \btab  true, code);
  }
 \BoSSSexe
 \BoSSScmd{
-/// Use the BoSSSpad-intrinsic \code{GetFormulaObject} to set tie hinital value:
-C.AddInitialValue("VelocityX", GetFormulaObject(MyInitialValue.VelocityX));
+/// Use the BoSSSpad-intrinsic \code{GetFormulaObject} to set tie inital value:
+C.AddInitialValue("VelocityX", fo);
  }
 \BoSSSexe
 \BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
+/// Deprecated:
 /// Note: such a declaration is very restrictive;
 /// \code{GetFormulaObject} works only for 
 /// \begin{itemize}
-/// \item use a static class
+/// \item a static class
 /// \item no dependence on any external parameters
 /// \end{itemize}
 /// E.g. the following code would only change the behavior in BoSSSpad,
@@ -102,24 +103,13 @@ C.AddInitialValue("VelocityX", GetFormulaObject(MyInitialValue.VelocityX));
  }
 \BoSSSexe
 \BoSSScmd{
-MyInitialValue.alpha = 0.5;\newline 
-MyInitialValue.VelocityX(new double[]\{ 0.5, 0.5 \}, 0.0);
+//Deprecated:\newline 
+//MyInitialValue.alpha = 0.5;\newline 
+//MyInitialValue.VelocityX(new double[]\{ 0.5, 0.5 \}, 0.0);
  }
 \BoSSSexe
 \BoSSScmd{
-C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0);
- }
-\BoSSSexe
-\BoSSScmd{
-/// Obviously, both values are different.
- }
-\BoSSSexe
-\BoSSScmd{
- % 
- }
-\BoSSSexe
-\BoSSScmd{
- % 
+C.InitialValues["VelocityX"].Evaluate(new double[]\{ 0.5, 0.5 \}, 0.0)
  }
 \BoSSSexe
 \BoSSScmd{
@@ -202,7 +192,7 @@ delegate(MultidimensionalArray input, MultidimensionalArray output) \{\newline
    \}\newline 
    output.Set(output\_vec.ExtractSubArrayShallow(0,-1)); // extract row 0 from \newline 
    //                       'output\_vec' and store it in 'output'\newline 
-\}
+\};
  }
 \BoSSSexe
 \BoSSScmd{
@@ -223,7 +213,7 @@ VelocityXInitial(inputTest, outputTest);
 \BoSSSexe
 \BoSSScmd{
 /// We recive the following velocity values for our input coordinates:
-outputTest.To1DArray();
+outputTest.To1DArray()
  }
 \BoSSSexe
 \BoSSScmd{
@@ -305,7 +295,7 @@ var VelX = new SinglePhaseField(b,"VelocityX"); // important: name the DG field\
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.Init("TestProject");
+BoSSSshell.WorkflowMgm.Init("TestProject");
  }
 \BoSSSexe
 \BoSSScmd{
@@ -314,7 +304,7 @@ var InitalValueTS = db.SaveTimestep(VelX); // further fields an be \newline
  }
 \BoSSSexe
 \BoSSScmd{
-WorkflowMgm.Sessions;
+BoSSSshell.WorkflowMgm.Sessions
  }
 \BoSSSexe
 \BoSSScmd{

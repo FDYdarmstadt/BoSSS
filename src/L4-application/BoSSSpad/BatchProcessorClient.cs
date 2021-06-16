@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Solution.Control;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -24,11 +26,56 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
+
+    /// <summary>
+    /// Pair to correlate deferent paths to the same physical directory on two different computers.
+    /// </summary>
+    /// <remarks>
+    /// Realized as a separate class (instead of using some tuple structure) to allow have nicer JSON files.
+    /// </remarks>
+    [DataContract]
+    public class AllowedDatabasesPair {
+
+        /// <summary>
+        /// Empty constructor
+        /// </summary>
+        public AllowedDatabasesPair() { }
+
+        /// <summary>
+        /// Constructor with parameters
+        /// </summary>
+        public AllowedDatabasesPair(string _LocalMountPath, string _PathAtRemote) {
+            LocalMountPath = _LocalMountPath;
+            PathAtRemote = _PathAtRemote;
+        }
+        
+        /// <summary>
+        /// Path to some directory on the remote computer, mounted on the local computer,
+        /// e.g. `X:\\UserName` (in the case that some linux HPC is locally mouted using e.g. sshfs-win, see https://github.com/billziss-gh/sshfs-win)
+        /// </summary>
+        [DataMember]
+        public string LocalMountPath;
+
+        /// <summary>
+        /// Path to some directory on the remote computer, within the file system of the remote computer,
+        /// e.g. `/work/scratch/UserName`;
+        /// Can be null or empty if it is the same as <see cref="LocalMountPath"/>, i.e. if the local and the remote computer share (or partly share) the same file-system (resp. file-system namespace).
+        /// </summary>
+        [DataMember]
+        public string PathAtRemote;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return LocalMountPath + " == " + PathAtRemote;
+        }
+    }
+
+
+
     /// <summary>
     /// Abstraction for all kind of batch systems (aka. job managers).
     /// </summary>
@@ -65,15 +112,101 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// If not null, specifies paths to databases which are accessible to the computer system 
+        /// Runtime on the machine to execute Dotnet code.
+        /// - typically, this should be `dotnet` (for .NET5 and higher)
+        /// - could also be `mono` on Linux/Unix machines
+        /// </summary>
+        [DataMember] 
+        public string DotnetRuntime {
+            get;
+            set;
+        }
+
+
+        /// <summary>
+        /// Specifies paths to databases which are accessible (i.e. allowed) to the computer system 
         /// on which this batch processor submits its jobs.
-        /// This triggers data synchronization on job submission, if e.g. grid or restart timestep
-        /// are in some other database.
+        /// 
+        /// If null or empty, ignored, i.e. in this case all databases are assumed to be allowed for this batch system.
         /// </summary>
         [DataMember]
-        public string[] AllowedDatabasesPaths;
+        public List<AllowedDatabasesPair> AllowedDatabasesPaths = new List<AllowedDatabasesPair>();
 
 
+        /// <summary>
+        /// Verifies whether a specific database can be used on this batch processor system.
+        /// This is to prevent the user from starting simulations at some computer which has no 
+        /// access to the database he specified in the control object.
+        /// 
+        /// Furthermore, this routine modifies the <see cref="AppControl.AlternateDbPaths"/> member 
+        /// of the control object to contain the respective remote path.
+        /// </summary>
+        /// <seealso cref="AllowedDatabasesPaths"/>
+        public bool IsDatabaseAllowed(AppControl ctrl) {
+            if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                return true;
+            var dbi = ctrl.GetDatabase();
+            if(dbi == null)
+                return true;
+
+            // fix any relative path
+            string fullDbPath;
+            if(!System.IO.Path.IsPathRooted(dbi.Path)) {
+
+                fullDbPath = Path.GetFullPath(dbi.Path);
+                //ilPSP.Environment.MPIEnv.Hostname
+                (fullDbPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+
+            } else {
+                fullDbPath = dbi.Path;
+            }
+
+            // check if path is allowed
+            foreach(var pp in AllowedDatabasesPaths) {
+                if(!Path.IsPathRooted(pp.LocalMountPath)) {
+                    throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+                }
+
+                if(fullDbPath.StartsWith(pp.LocalMountPath, StringComparison.InvariantCultureIgnoreCase)) {
+                    var relDbPath = fullDbPath.Substring(pp.LocalMountPath.Length);
+                    relDbPath = relDbPath.TrimStart(new char[] { '\\', '/' });
+
+
+                    string PathAtRemote = pp.PathAtRemote;
+                    if(PathAtRemote.IsEmptyOrWhite())
+                        PathAtRemote = pp.LocalMountPath;
+                    
+                    if(PathAtRemote.StartsWith("/")) {
+                        // very likely to be a Unix path
+
+                        // convert Windows path to UNIX
+                        relDbPath = relDbPath.Replace('\\', '/');
+
+                        // (don't consider the other way, i.e. Unix to Windows:
+                        // nobody who works on Linux seriously 
+                        // considers a Windows HPC system).
+                    }
+
+                    string fullAltPath = PathAtRemote + relDbPath;
+                    
+                    if(ctrl.AlternateDbPaths != null) {
+                        if(ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
+                            return true;
+                    }
+
+                    (fullDbPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+
+                    return true;
+                }
+
+            }
+
+            return false;
+        }
+
+
+
+        /*
         List<IDatabaseInfo> m_AllowedDatabases;
 
         /// <summary>
@@ -130,32 +263,30 @@ namespace BoSSS.Application.BoSSSpad {
                 ret.AddRange(m_AllowedDatabases);
 
                 // add any local database which might be acceptable
-                /*
-                if(InteractiveShell.databases != null) {
-                    foreach(var db in InteractiveShell.databases) {
+                //if(InteractiveShell.databases != null) {
+                //    foreach(var db in InteractiveShell.databases) {
 
-                        bool found = false;
-                        foreach(var odb in m_AllowedDatabases) {
-                            if(odb.Equals(db)) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if(found)
-                            continue;
+                //        bool found = false;
+                //        foreach(var odb in m_AllowedDatabases) {
+                //            if(odb.Equals(db)) {
+                //                found = true;
+                //                break;
+                //            }
+                //        }
+                //        if(found)
+                //            continue;
 
-                        if(!found) {
-                            // 'db' is not in the list to return, but is it located on the local machine?
+                //        if(!found) {
+                //            // 'db' is not in the list to return, but is it located on the local machine?
 
-                            db.
-                        }
-                    }
+                //            db.
+                //        }
+                //    }
                 }
-                */
                 return ret.AsReadOnly();
             }
         }
-
+        */
 
 
 
@@ -192,6 +323,24 @@ namespace BoSSS.Application.BoSSSpad {
         public abstract string GetStderrFile(string idToken, string DeployDir);
 
 
+        /// <summary>
+        /// Creates (or opens) a database in a location which is ensured to work with this batch processor
+        /// </summary>
+        public IDatabaseInfo CreateOrOpenCompatibleDatabase(string dbDir) {
+            if(Path.IsPathRooted(dbDir))
+                throw new ArgumentException("Expecting a relative path.");
+            if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database.");
+
+            var pp = AllowedDatabasesPaths[0];
+
+            if(!Path.IsPathRooted(pp.LocalMountPath))
+                throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
+
+            var fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
+
+            return InteractiveShell.OpenOrCreateDatabase(fullPath);
+        }
     }
 
     /// <summary>
@@ -312,6 +461,9 @@ namespace BoSSS.Application.BoSSSpad {
                 CopyDirectoryRec(srcAbsDir, dstSubDir, null);
             }
         }
+
+
+       
 
     }
 }

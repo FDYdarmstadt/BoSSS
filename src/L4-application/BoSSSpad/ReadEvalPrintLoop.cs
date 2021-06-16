@@ -28,9 +28,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using ilPSP.LinSolvers;
-
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -74,7 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             cmpCont = new CompilerContext(
                 Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
+            Evaluator eval = new(cmpCont);
             eval.InteractiveBaseClass = typeof(InteractiveShell);
 
             return eval;
@@ -90,6 +89,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // Assembly References
             eval.ReferenceAssembly(typeof(System.Data.DataTable).Assembly); // required for session tables
+            //eval.ReferenceAssembly(typeof(System.ValueTuple).Assembly);
             eval.ReferenceAssembly(typeof(ilPSP.Environment).Assembly);
             eval.ReferenceAssembly(typeof(ilPSP.LinSolvers.SimpleSolversInterface).Assembly);
             eval.ReferenceAssembly(typeof(BatchmodeConnector).Assembly); // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise

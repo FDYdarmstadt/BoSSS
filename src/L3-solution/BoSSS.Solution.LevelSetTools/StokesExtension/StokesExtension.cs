@@ -61,19 +61,19 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new SipViscosity_GradU(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
                 // Momentum, Pressure gradient:
                 for(int d = 0; d < D; d++) {
-                    var PresDeriv = new PressureGradientLin_d(d, map);
+                    var PresDeriv = new ExtensionPressureGradient(d, map);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(PresDeriv);
                 }
                 
                 // Continuity:
                 for(int d = 0; d < D; d++) {
                     var divVol = new Divergence_DerivativeSource(d, D);
-                    var divEdg = new Divergence_DerivativeSource_Flux(d, map);
+                    var divEdg = new ExtensionDivergenceFlux(d, map);
                     Op.EquationComponents[EquationNames.ContinuityEquation].Add(divVol);
                     Op.EquationComponents[EquationNames.ContinuityEquation].Add(divEdg);
                 }
@@ -115,41 +115,42 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             return r;
         }
 
-
-
         /// <summary>
         /// Interface part of the Stokes extension; 
         /// this provides the coupling of the artificial Stokes equation for the extension
         /// to the physical equation, <see cref="InteriorVelocityBoundary"/>.
         /// </summary>
-        XSpatialOperatorMk2 GetInterfaceOperator(LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
+        XSpatialOperatorMk2 GetInterfaceOperator(int levelSetIndex, LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
             var BulkOp = GetBulkOperator();
 
-
+            IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSetIndex);
             var Op = new XSpatialOperatorMk2(
                 BulkOp.DomainVar, 
                 VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(D)),
                 BulkOp.CodomainVar,
                 (int[] a, int[] b, int[] c) => m_CutCellQuadOrder,
-                new[] { "A", "B" });
-
+                requiredSpecies);
             
             for(int d = 0; d < D; d++) {
-                Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
-                    new InteriorVelocityBoundary(d, InterfaceVelocity[d])
-                    );
+                foreach ((string, string) speciesPair in LsTrk.GetSpeciesPairsSeparatedByLevSet(levelSetIndex)) {
+                    string negativeSpecies = speciesPair.Item1;
+                    string positiveSpecies = speciesPair.Item2;
+                    Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(
+                        new InteriorVelocityBoundary(positiveSpecies, negativeSpecies, levelSetIndex, d, D, InterfaceVelocity[d])
+                        );
+                }
             }
 
             Op.AgglomerationThreshold = 0.0;
             Op.TemporalOperator = null;
             Op.IsLinear = true;
-            Op.FreeMeanValue[Op.DomainVar.Last()] = !this.map.DirichletPressureBoundary;
+            Op.FreeMeanValue[Op.DomainVar.Last()] = false;
             Op.Commit();
 
             return Op;
         }
 
-        (BlockMsrMatrix OpMtx, double[] RHS) ComputeMatrix(LevelSetTracker lsTrk, UnsetteledCoordinateMapping mapping, DGField[] Velocity) {
+        (BlockMsrMatrix OpMtx, double[] RHS) ComputeMatrix(int levelSetIndex, LevelSetTracker lsTrk, UnsetteledCoordinateMapping mapping, DGField[] Velocity) {
             BlockMsrMatrix opmtx = new BlockMsrMatrix(mapping, mapping);
             double[] RHS = new double[mapping.LocalLength];
 
@@ -159,7 +160,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             }
 
             {
-                var IntfOp = GetInterfaceOperator(lsTrk, Velocity);
+                var IntfOp = GetInterfaceOperator(levelSetIndex, lsTrk, Velocity);
                 var builder = IntfOp.GetMatrixBuilder(lsTrk, mapping, Velocity, mapping);
 
                 foreach(var s in m_LatestAgglom.SpeciesList)
@@ -229,7 +230,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <param name="ExtensionVelocity">
         /// output
         /// </param>
-        public void SolveExtension(LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity, bool plotExtension = false) {
+        public void SolveExtension(int levelSetIndex, LevelSetTracker lsTrk, DGField[] VelocityAtInterface, SinglePhaseField[] ExtensionVelocity) {
             var gDat = lsTrk.GridDat;
             int deg = ExtensionVelocity[0].Basis.Degree;
 
@@ -240,7 +241,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             CoordinateVector ExtenstionSolVec = new CoordinateVector(ExtensionVelocity.Cat(dummyPressure));
 
-            (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
+            (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
             // should be replaced by something more sophisticated
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);

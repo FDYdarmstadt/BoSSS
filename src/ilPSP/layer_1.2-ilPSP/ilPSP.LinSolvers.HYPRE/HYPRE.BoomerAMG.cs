@@ -276,7 +276,7 @@ namespace ilPSP.LinSolvers.HYPRE.Wrappers {
         /// number of AMG levels
         /// </summary>
         [DllImport("HYPRE")]
-        public static extern int HYPRE_BoomerAMGGetNumLevels(T_Solver solver, out int num_levels);
+        public static extern int HYPRE_BoomerAMGGetSmoothNumLevels(T_Solver solver, out int num_levels);
 
         /// <summary>
         /// (Optional) Defines the relaxation weight for smoothed Jacobi and hybrid
@@ -469,6 +469,7 @@ namespace ilPSP.LinSolvers.HYPRE.Wrappers {
         [DllImport("HYPRE")]
         public static extern int HYPRE_BoomerAMGSetLevel(T_Solver solver, int level);
 
+        /*
         /// <summary>
         /// (Optional) Defines threshold for ParaSAILS.
         /// </summary>
@@ -480,6 +481,7 @@ namespace ilPSP.LinSolvers.HYPRE.Wrappers {
         /// </summary>
         [DllImport("HYPRE")]
         public static extern int HYPRE_BoomerAMGGetThreshold(T_Solver solver, out double threshold);
+        */
 
         /// <summary>
         /// (Optional) Defines filter for ParaSAILS.

@@ -334,7 +334,7 @@ namespace BoSSS.Application.BoSSSpad {
             return OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
-        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+        internal static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
             foreach (var existing_dbi in InteractiveShell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
@@ -370,6 +370,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         static internal Document CurrentDoc = null;
 
+        /*
         /// <summary>
         /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
         /// </summary>
@@ -389,6 +390,7 @@ namespace BoSSS.Application.BoSSSpad {
         static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double, double> f) {
             return GetFormulaObject(f, true);
         }
+        */
 
         private static Solution.Control.Formula GetFormulaObject(System.Delegate f, bool timedep) {
             if (CurrentDoc == null) {
@@ -684,8 +686,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
-            foreach (var q in bpc.AllQueues)
-                _ = q.AllowedDatabases;
+            //foreach (var q in bpc.AllQueues)
+            //    _ = q.AllowedDatabases;
 
         }
 

@@ -588,7 +588,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
 
             foreach (var a in ass) {
                 string nmn = a.GetName().Name;
-                string FileName = Path.GetFileName(a.CodeBase); 
+                string FileName = Path.GetFileName(a.Location); 
                 if(FileName.EndsWith(".DLL")) {
                     FileName = FileName.Substring(0, FileName.Length - 4);
                     FileName = FileName + ".dll";

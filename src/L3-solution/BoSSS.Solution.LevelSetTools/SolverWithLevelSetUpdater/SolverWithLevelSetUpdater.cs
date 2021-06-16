@@ -157,13 +157,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
-                //ScalarFunction Phi_InitialValue = null;
-                //if(!isRestart) {
-                //    if(Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
-                //        Phi_InitialValue = scalarFunctionTimeDep.SetTime(0.0);
-                //    }
-                //}
-
                 int levelSetDegree = Control.FieldOptions[LevelSetCG].Degree;    // need to change naming convention of old XNSE_Solver
 
                 switch (Control.Get_Option_LevelSetEvolution(iLevSet)) {
@@ -178,8 +171,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.None: 
                     case LevelSetEvolution.SplineLS: {
                         LevelSet levelSetDG = new LevelSet(new Basis(GridData, levelSetDegree), LevelSetDG);
-                        //levelSetDG.Clear();
-                        //levelSetDG.ProjectField(Control.InitialValues_EvaluatorsVec[LevelSetCG].SetTime(0.0));
                         DGlevelSets[iLevSet] = levelSetDG;
                         break;
                     }
@@ -238,9 +229,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.StokesExtension: {
-                        var stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                        ILevelSetEvolver stokesExtEvo;
+                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData);
+                        } else {
+                            stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData);
+                        }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;
                     }
@@ -430,27 +428,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         protected override void SetInitial(double t) {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
-
-            
-            //foreach (var NamePair in this.LevelSetNames) {
-            //    string LevelSetCG = NamePair.ContLs;
-
-            //    // we just overwrite the DG-level-set, continuity projection is set later when the operator is fully set-up
-            //    var pair1 = LsUpdater.LevelSets[LevelSetCG];
-            //    pair1.DGLevelSet.Clear();
-
-            //    if (Control.InitialValues_EvaluatorsVec.TryGetValue(LevelSetCG, out var scalarFunctionTimeDep)) {
-            //        pair1.DGLevelSet.ProjectField(scalarFunctionTimeDep.SetTime(t));
-            //    }
-
-            //    if (pair1.DGLevelSet.L2Norm() == 0.0) {
-            //        Console.WriteLine($"Level-Set field {LevelSetCG} is **exactly** zero: setting entire field to -1.");
-            //        pair1.DGLevelSet.AccConstant(-1.0);
-            //    }
-            //}
-
             this.InitializeLevelSets(LsUpdater, t);
-
         }
 
 
@@ -475,29 +453,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             Console.WriteLine("Residual of level-set update: " + residual);
             return 0.0;
         }
-
-
-        //protected override void CreateAdditionalFields() {
-        //    base.CreateAdditionalFields();
-
-        //    // Level Set Parameters
-        //    var domainFields = CurrentState.Fields;
-        //    var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Count);
-        //    for (int iVar = 0; iVar < domainFields.Count; iVar++) {
-        //        DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-        //    }
-
-        //    var parameterFields = base.Parameters;
-        //    var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-        //    for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
-        //        ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
-        //    }
-        //    LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
-
-        //    foreach (var f in LsUpdater.Parameters.Values) {
-        //        base.RegisterField(f);
-        //    }
-        //}
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);

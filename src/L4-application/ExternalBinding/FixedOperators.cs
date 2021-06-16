@@ -16,6 +16,15 @@ namespace BoSSS.Application.ExternalBinding {
 
     public class FixedOperators : IForeignLanguageProxy {
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [CodeGenExport]
+        public FixedOperators() {
+
+        }
+
+
         IntPtr m_ForeignPtr;
 
         /// <summary>
@@ -65,6 +74,8 @@ namespace BoSSS.Application.ExternalBinding {
             var eval = op.GetMatrixBuilder(map, null, map);
             eval.ComputeMatrix(mtx, mtx.RHSbuffer);
             mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
+
+            Console.WriteLine("Computed Laplacian Matrix, norm is " + mtx.InfNorm());
         }
 
         /// <summary>

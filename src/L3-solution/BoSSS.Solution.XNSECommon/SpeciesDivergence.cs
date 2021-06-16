@@ -172,8 +172,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
             scaleB = vorZeichen;
 
             if (RescaleConti) {
-                scaleA /= rhoA;
-                scaleB /= rhoB;
+                scaleA *= rhoA;
+                scaleB *= rhoB;
             }
 
             this.wA = _wA;
@@ -203,8 +203,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
+            //uAxN *= rhoA;
+            //uBxN *= rhoB;
 
-  
             // transform from species B to A: we call this the "A-fictitious" value
             double uAxN_fict;
             uAxN_fict = uBxN;

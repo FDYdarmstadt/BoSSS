@@ -170,7 +170,8 @@ namespace ilPSP.Connectors.Matlab {
 
             }
 
-            MPIExtensions.MPIBroadcast(this.WorkingDirectory, 0, csMPI.Raw._COMM.WORLD);
+            var wd_FullName = MPIExtensions.MPIBroadcast(this.WorkingDirectory?.FullName, 0, csMPI.Raw._COMM.WORLD);
+            this.WorkingDirectory = new DirectoryInfo(wd_FullName);
 
             // more checks
             // ===========

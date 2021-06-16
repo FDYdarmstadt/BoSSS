@@ -1869,7 +1869,7 @@ namespace BoSSS.Solution {
                     LevelPmg TGP = null;
                     try {
                         TGP = (LevelPmg)((SoftGMRES)solver).Precond;
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         throw new ApplicationException("levelpmg setting is messed up");
                     }
 
@@ -1881,7 +1881,7 @@ namespace BoSSS.Solution {
                     DirectSolver sparsesolver = null;
                     try {
                         sparsesolver = (DirectSolver)solver;
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     }
 

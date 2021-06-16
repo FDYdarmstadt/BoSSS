@@ -652,7 +652,7 @@ namespace BoSSS.Foundation {
         public double time;
 
         /// <summary>
-        /// edge tag for the respective edge (see <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeTags"/>)
+        /// edge tag for the respective edge (see <see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>)
         /// For interior edges, this is 
         /// - equal to 0 on ordinary edges
         /// - greater or equal to <see cref="Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/> on periodic edges
@@ -681,7 +681,7 @@ namespace BoSSS.Foundation {
         public double[] Parameters_IN;
 
         /// <summary>
-        /// edge tag for the respective edge (see <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeTags"/>).
+        /// edge tag for the respective edge (see <see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>).
         /// </summary>
         public byte EdgeTag;
 

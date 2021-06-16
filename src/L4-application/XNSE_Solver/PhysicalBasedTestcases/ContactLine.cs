@@ -47,12 +47,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             XNSE_Control C = new XNSE_Control();
-
-            int D = 2;
-
-            if(D == 3)
-                C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
-
+            int D = 3;
+            C.ImmediatePlotPeriod = 1;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
@@ -71,7 +68,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ContinueOnIoError = false;
 
             //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            C.PostprocessingModules.Add(new MovingContactLineLogging());
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
 
             #endregion
 
@@ -267,12 +264,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.AddBoundaryValue("navierslip_linear_lower");
-            //C.AddBoundaryValue("navierslip_linear_upper");
-            //C.AddBoundaryValue("navierslip_linear_left");
-            //C.AddBoundaryValue("navierslip_linear_right");
-            C.AddBoundaryValue("wall_upper");
-            C.AddBoundaryValue("wall_left");
-            C.AddBoundaryValue("wall_right");
+            C.AddBoundaryValue("navierslip_linear_upper");
+            C.AddBoundaryValue("navierslip_linear_left");
+            C.AddBoundaryValue("navierslip_linear_right");
+            //C.AddBoundaryValue("wall_upper");
+            //C.AddBoundaryValue("wall_left");
+            //C.AddBoundaryValue("wall_right");
 
             if (D == 3) {
                 C.AddBoundaryValue("navierslip_linear_front");
