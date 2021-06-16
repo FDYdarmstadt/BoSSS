@@ -4,7 +4,10 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.Advection;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -12,8 +15,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
-    
-    
+
+
 
     /// <summary>
     /// Driver class for the <see cref="NarrowMarchingBand.Evolve_Mk2"/>
@@ -41,9 +44,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         string levelSetName;
 
-        public FastMarchingEvolver(string levelSetName, int hMForder, int D) {
+        public FastMarchingEvolver(string levelSetName, int hMForder, int D, int ReInitPeriod) {
             this.m_HMForder = hMForder;
             this.levelSetName = levelSetName;
+
+            this.ReInit_Period = ReInitPeriod;
+            ReInit_Control = new EllipticReInitAlgoControl();
+
             parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
             parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
         }
@@ -52,16 +59,19 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> ParameterNames => parameters;
 
+        // reinitilization
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
+
         /// <summary>
         /// Provides access to the internally constructed extension velocity.
         /// <see cref="ILevelSetEvolver.InternalFields"/>
         /// </summary>
-        public IDictionary<string, DGField> InternalFields { 
+        public IDictionary<string, DGField> InternalFields {
             get {
                 var Ret = new Dictionary<string, DGField>();
 
-                if(extensionVelocity != null) {
-                    foreach(var f in extensionVelocity)
+                if (extensionVelocity != null) {
+                    foreach (var f in extensionVelocity)
                         Ret.Add(f.Identification, f);
                 }
 
@@ -88,7 +98,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 d => new SinglePhaseField(phaseInterface.DGLevelSet.Basis)
                 ));
 
-            if(extensionVelocity == null) {
+            if (extensionVelocity == null) {
                 extensionVelocity = new SinglePhaseField[D];
                 Basis basis;
                 try {
@@ -98,7 +108,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
                 }
 
-                for(int d = 0; d < D; ++d) {
+                for (int d = 0; d < D; ++d) {
                     extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity[" + d + "]");
                 }
             }
@@ -119,6 +129,35 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
             //Tecplot.Tecplot.PlotFields(plotFields, "NarrowMarchingBand" + tsn, 0.0, 2);
             //Tecplot.Tecplot.PlotFields(plotFields, this.GetType().ToString().Split('.').Last() + "-" + TimestepNo, (double)TimestepNo, 2);            
+        }
+
+        private EllipticReInitAlgoControl ReInit_Control;
+        private int ReInit_TimestepIndex = 0;
+        private int ReInit_Period = 0;
+        public void Reinitialize(
+            DualLevelSet phaseInterface,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            // after level-set evolution and for initializing non-signed-distance level set fields
+            if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+                
+                Console.WriteLine("Performing ReInit");
+                ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
+                EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
+                ReInitPDE.ReInitialize(Restriction: phaseInterface.Tracker.Regions.GetCutCellSubGrid());
+
+                FastMarchReinit FastMarchReinitSolver = new FastMarchReinit(phaseInterface.DGLevelSet.Basis);
+                CellMask Accepted = phaseInterface.Tracker.Regions.GetCutCellMask();
+                CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
+                CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
+                FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, ActiveField);
+            }
+
+            ReInit_TimestepIndex++;
         }
     }
 }

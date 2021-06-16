@@ -224,7 +224,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.FastMarching: {
-                        var fastMarcher = new FastMarchingEvolver(LevelSetCG, QuadOrder(), D);
+                        var fastMarcher = new FastMarchingEvolver(LevelSetCG, QuadOrder(), D, Control.FastMarchingReInitPeriod);
                         lsUpdater.AddEvolver(LevelSetCG, fastMarcher);
                         break;
                     }
