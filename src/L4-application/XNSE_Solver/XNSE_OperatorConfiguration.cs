@@ -37,9 +37,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
-
-            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z')));
-            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z')));
+            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("Gravity")).Any();
+            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("VolumeForce")).Any();
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
@@ -292,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSFE_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
 
 
-        public XNSFE_OperatorConfiguration(XNSE_Control control) 
+        public XNSFE_OperatorConfiguration(XNSE_Control control)
             : base(control) {
 
             AgglomerationTreshold = control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
@@ -388,7 +387,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode getConductMode {
             get { return conductMode; }
         }
-        
+
         public bool isHeatTransport {
             get { return HeatTransport; }
         }

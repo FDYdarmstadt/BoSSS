@@ -1394,6 +1394,7 @@ namespace BoSSS.Solution.XheatCommon {
             //Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
             */
 
+            /*
             // new standalone non-material form
             // symmetry term
             Ret -=  kA * Grad_vA_xN * (uA[0] - Tsat) - kB * Grad_vB_xN * (Tsat - uB[0]);
@@ -1401,8 +1402,30 @@ namespace BoSSS.Solution.XheatCommon {
             // consistency term
             Ret -= (vA * kA * Grad_uA_xN - vB * kB * Grad_uB_xN);
 
-            // penalty, like a dirichlet condition for temperature from both sides
+            // penalty, like a dirichlet condition /for temperature from both sides
             Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
+            */
+
+            double g_D = Tsat;
+
+            // dirichlet condition from A-side
+            for (int d = 0; d < inp.D; d++) {
+                double nd = inp.Normal[d];
+                Ret += (kA * Grad_uA[0, d]) * (vA) * nd;
+                Ret += (kA * Grad_vA[d]) * (uA[0] - g_D) * nd;
+            }
+
+            Ret -= wPenalty * (uA[0] - g_D) * (vA - 0) * pnlty;
+
+            // dirichlet condition from B-side
+            for (int d = 0; d < inp.D; d++) {
+                double nd = inp.Normal[d];
+                Ret += (kB * Grad_uB[0, d]) * (-vB) * nd;
+                Ret += (kB * Grad_vB[d]) * (g_D - uB[0]) * nd;
+            }
+
+            Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
+            Ret *= -1.0;
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
