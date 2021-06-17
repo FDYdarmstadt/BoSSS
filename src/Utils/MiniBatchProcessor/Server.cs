@@ -136,8 +136,11 @@ namespace MiniBatchProcessor {
             if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
-                ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = typeof(Server).Assembly.Location;
+                ProcessStartInfo psi = new ProcessStartInfo() { 
+                    UseShellExecute = true,
+                    FileName = "dotnet",
+                    Arguments= typeof(Server).Assembly.Location
+                };
 
                 Process p = Process.Start(psi);
 

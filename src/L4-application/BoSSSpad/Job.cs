@@ -1479,9 +1479,9 @@ namespace BoSSS.Application.BoSSSpad {
                             files.Add(DelpoyAss);
 
                             string a_config = DelpoyAss + ".config";
-                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json";
+                            string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss)) + ".runtimeconfig.json";
 
-                            foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                            foreach (var a_acc in new[] { a_config, a_runtimeconfig_json }) {
                                 if(File.Exists(a_acc)) {
                                     files.Add(a_acc);
                                 }
