@@ -89,7 +89,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>

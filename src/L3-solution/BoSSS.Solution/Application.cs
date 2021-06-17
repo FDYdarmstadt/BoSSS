@@ -1728,11 +1728,12 @@ namespace BoSSS.Solution {
                 tsi_toLoad_ID = GetRestartTimestepID();
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
-                if(Convert.ToInt32(session.KeysAndQueries["TimesteppingMode"]) == 0) {
-                    time = tsi_toLoad.PhysicalTime;
-                } else {
-                    Console.WriteLine("Restarting from steady-state, resetting time ...");
-                    time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                time = tsi_toLoad.PhysicalTime;
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
+                    if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
+                        Console.WriteLine("Restarting from steady-state, resetting time ...");
+                        time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                    }
                 }
 
                 if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
