@@ -26,7 +26,8 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
     
     public static class CellClassifier{ 
         public static (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IApplication<XNSE_Control> program, ClassifierType CType) {
-
+            if (program.LsTrk == null)
+                throw new ArgumentNullException("LsTrk not initialized! Not good, I need it!");
             switch (CType) {
                 case ClassifierType.Species:
                     return SpeciesClassification(program);
@@ -41,7 +42,7 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
             XNSE_Control XNSECtrl = program.Control as XNSE_Control;
             var LsTrk = program.LsTrk;
             if (LsTrk == null)
-                throw new NotSupportedException("Needs a Information of Levelset tracker");
+                throw new NotSupportedException("Needs Information of Levelset tracker");
 
             int noOfClasses = LsTrk.TotalNoOfSpecies;
             int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;

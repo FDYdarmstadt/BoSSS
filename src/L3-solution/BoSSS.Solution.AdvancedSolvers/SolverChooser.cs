@@ -415,20 +415,21 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_AS:
                 case LinearSolverCode.exp_AS_MG:
                 case LinearSolverCode.automatic:
-                    precond[0] = null;
-                    break;
-               
-                case LinearSolverCode.exp_gmres_AS_MG:
-                    precond[0] = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = lc.NoOfMultigridLevels-1,
-                        },
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS,    //PARDISO
-                        },
+                precond[0] = null;
+                break;
 
-                        Overlap = 1
-                    };
+                case LinearSolverCode.exp_gmres_AS_MG:
+                var dirSolver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.PARDISO,
+                };
+                var Smoother = new Schwarz() {
+                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
+                    },
+                    CoarseSolver = null,
+                    Overlap = 1
+                };
+                precond[0] = BareMGSquence(lc.NoOfMultigridLevels, dirSolver, Smoother);
                     break;
 
                 /*

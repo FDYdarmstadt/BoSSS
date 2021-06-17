@@ -522,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 20,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 1,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -530,6 +530,7 @@ namespace BoSSS.Application.XNSE_Solver {
             if (writeToDB) {
                 //C.DbPath = @"D:\trash_db";
                 C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                //C.DbPath = @"W:\work\scratch\jw52xeqa\DB_IBM_test";
                 //C.AlternateDbPaths = new[] {
                 //(@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
                 //(@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
@@ -615,12 +616,12 @@ namespace BoSSS.Application.XNSE_Solver {
             };
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "debug";
-            C.GridPartType = GridPartType.Hilbert;
+            C.GridPartType = GridPartType.clusterHilbert;
 
             C.DynamicLoadBalancing_On = loadbalancing;
-            C.DynamicLoadBalancing_RedistributeAtStartup = false;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add((program,no) => new BoSSS.Solution.StaticCellCostEstimator(new int[]{ 10, 10, 10 }));
+            C.DynamicLoadBalancing_CellCostEstimatorFactories=Loadbalancing.XNSECellCostEstimator.Factory().ToList();
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -642,7 +643,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
+            double particleRad = 0.261;
 
 
 
@@ -666,6 +667,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
+                    // Inf-Norm
                     return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
                                             Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
                                             Math.Abs(X[2] - pos[2])))
@@ -766,7 +768,7 @@ namespace BoSSS.Application.XNSE_Solver {
             
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
-                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
                 C.AMR_startUpSweeps = 1;
             }
 

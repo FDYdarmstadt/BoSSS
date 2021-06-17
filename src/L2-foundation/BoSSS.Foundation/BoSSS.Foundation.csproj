@@ -296,10 +296,6 @@
       <Project>{332083b9-c7fd-4b04-95ec-b0c729b21883}</Project>
       <Name>ilPSP.LinSolvers.HYPRE</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.ILU\ilPSP.LinSolvers.ILU.csproj">
-      <Project>{07d750c8-58c6-498c-b2b9-7320538f208e}</Project>
-      <Name>ilPSP.LinSolvers.ILU</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
       <Project>{b18aedc3-c7a5-4da6-abd3-e981b002adde}</Project>
       <Name>ilPSP.LinSolvers.monkey</Name>

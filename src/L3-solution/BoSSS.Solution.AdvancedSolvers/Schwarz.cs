@@ -590,12 +590,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullSel.CellSelector(bc.ToList(), false);
                         fullMask = new BlockMask(fullSel, ExtRows);
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
-                        
+
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,
                             Parallelism = Parallelism.SEQ
                         };
+
+                        // ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO
+                        //blockSolvers[iPart] = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                        //    Level = 4,
+                        //    Comm = csMPI.Raw._COMM.SELF
+                        //};
+
                         blockSolvers[iPart].DefineMatrix(fullBlock);
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
 

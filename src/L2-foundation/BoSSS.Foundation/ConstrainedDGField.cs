@@ -259,17 +259,12 @@ namespace BoSSS.Foundation {
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
 
-        private void MKL_ILU_Init() {
-            dirsolver = new ilPSP.LinSolvers.ILU.ILUSolver();
-            dirsolver.DefineMatrix(ILU_M);
-        }
-
         private void HYPRE_ILU_Init() {
             dirsolver = new ilPSP.LinSolvers.HYPRE.Euclid() {
                 Level = 0,
                 Comm = csMPI.Raw._COMM.SELF
             };
-            dirsolver.DefineMatrix(ILU_M);
+            if (ILU_M != null && ILU_M.RowPartitioning.LocalLength>0) dirsolver.DefineMatrix(ILU_M);
         }
 
         private void PrecondInit() {
@@ -360,7 +355,7 @@ namespace BoSSS.Foundation {
                 }
 
                 Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
-                if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n > 100) {
+                if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n >= 100) {
                     if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
                     break;
                 }
@@ -1379,48 +1374,48 @@ namespace BoSSS.Foundation {
 
 
                     // 
-                    int maxCondAtVert = (D == 2) ? 4 : 12;
-                    int OverdeterminedCondAtVertice = 0;
-                    for (int i = 0; i < vertAtCell1.Length; i++) {
-                        int vert = vertAtCell1[i];
-                        if (vertAtCell2.Contains(vert)) {
-                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                            //geomVertAtEdge.Add(gVert);
-                            gVert.IncreaseNoOfConditions();
-                            int condAtVert = gVert.GetNoOfConditions();
-                            //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
-                            Debug.Assert(condAtVert <= maxCondAtVert);
-                            if (condAtVert == maxCondAtVert)
-                                OverdeterminedCondAtVertice++;
-                        }
-                    }
-                    //Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
+                    //int maxCondAtVert = (D == 2) ? 4 : 12;
+                    //int OverdeterminedCondAtVertice = 0;
+                    //for (int i = 0; i < vertAtCell1.Length; i++) {
+                    //    int vert = vertAtCell1[i];
+                    //    if (vertAtCell2.Contains(vert)) {
+                    //        GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
+                    //        //geomVertAtEdge.Add(gVert);
+                    //        gVert.IncreaseNoOfConditions();
+                    //        int condAtVert = gVert.GetNoOfConditions();
+                    //        //Console.WriteLine("conditions at vertice {0}: {1}", vert, condAtVert);
+                    //        Debug.Assert(condAtVert <= maxCondAtVert);
+                    //        if (condAtVert == maxCondAtVert)
+                    //            OverdeterminedCondAtVertice++;
+                    //    }
+                    //}
+                    ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
 
-                    // 
-                    int OverdeterminedCondAtGeomEdge = 0;
-                    int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
-                    if (D == 3) {
-                        List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
-                        List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
-                        foreach (var gEdge1 in edgesAtFace1) {
-                            if (edgesAtFace2.Contains(gEdge1)) {
-                                GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
-                                //geomEdgeAtEdge.Add(gEdge);
-                                gEdge.IncreaseNoOfConditions();
-                                int condAtEdge = gEdge.GetNoOfConditions();
-                                //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
-                                Debug.Assert(condAtEdge <= 4);
-                                if (condAtEdge == 4) {
-                                    //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                                    //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
-                                    //if (dir1 != dir2)
-                                    //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
-                                    OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                                    OverdeterminedCondAtGeomEdge++;
-                                }
-                            }
-                        }
-                    }
+                    //// 
+                    //int OverdeterminedCondAtGeomEdge = 0;
+                    //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
+                    //if (D == 3) {
+                    //    List<GeometricEdgeForProjection> edgesAtFace1 = GetGeometricEdgesForCell(vertAtCell1);
+                    //    List<GeometricEdgeForProjection> edgesAtFace2 = GetGeometricEdgesForCell(vertAtCell2);
+                    //    foreach (var gEdge1 in edgesAtFace1) {
+                    //        if (edgesAtFace2.Contains(gEdge1)) {
+                    //            GeometricEdgeForProjection gEdge = maskedEdges.Find(edg => edg.Equals(gEdge1));
+                    //            //geomEdgeAtEdge.Add(gEdge);
+                    //            gEdge.IncreaseNoOfConditions();
+                    //            int condAtEdge = gEdge.GetNoOfConditions();
+                    //            //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
+                    //            Debug.Assert(condAtEdge <= 4);
+                    //            if (condAtEdge == 4) {
+                    //                //int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                    //                //int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
+                    //                //if (dir1 != dir2)
+                    //                //    throw new ArgumentException("constrainedDG field: dir1 != dir2");
+                    //                OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                    //                OverdeterminedCondAtGeomEdge++;
+                    //            }
+                    //        }
+                    //    }
+                    //}
 
 
                     //if (!isInterprocEdge) 
@@ -1576,18 +1571,15 @@ namespace BoSSS.Foundation {
             var StopInit = new Stopwatch();
             var StopSolve = new Stopwatch();
 
-            //Process myself = Process.GetCurrentProcess();
-            //long memstart = myself.PrivateMemorySize64 / (1024 * 1024);
-
-            var expSolver = new myCG();
-            StopInit.Start();
-            expSolver.Init(AAT);
-            StopInit.Stop();
-            StopSolve.Start();
-            expSolver.Solve(v, RHS);
-            StopSolve.Stop();
-            //long memend = myself.PrivateMemorySize64 / (1024 * 1024);
-            expSolver.Dispose();
+            //var expSolver = new myCG();
+            //StopInit.Start();
+            //expSolver.Init(AAT);
+            //StopInit.Stop();
+            //StopSolve.Start();
+            //expSolver.Solve(v, RHS);
+            //StopSolve.Stop();
+            ////long memend = myself.PrivateMemorySize64 / (1024 * 1024);
+            //expSolver.Dispose();
 
             //var solver = new ilPSP.LinSolvers.HYPRE.GMRES();
             //var precond = new ilPSP.LinSolvers.HYPRE.BoomerAMG() {
@@ -1614,15 +1606,15 @@ namespace BoSSS.Foundation {
             //StopSolve.Stop();
             //solver.Dispose();
 
-            //StopInit.Start();
-            //OpSolver.DefineMatrix(AAT);
-            //StopInit.Stop();
-            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            //StopSolve.Start();
-            //OpSolver.Solve(v, RHS);
-            //StopSolve.Stop();
-            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            //OpSolver.Dispose();
+            StopInit.Start();
+            OpSolver.DefineMatrix(AAT);
+            StopInit.Stop();
+            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
+            StopSolve.Start();
+            OpSolver.Solve(v, RHS);
+            StopSolve.Stop();
+            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
+            OpSolver.Dispose();
 
             Console.WriteLine("Init time: " + StopInit.Elapsed.TotalSeconds);
             Console.WriteLine("Solve time: " + StopSolve.Elapsed.TotalSeconds);
@@ -2249,46 +2241,27 @@ namespace BoSSS.Foundation {
                 }
                 case 3: {
 
-                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
-                    NodeSet qNodes = quad1D.Nodes;
-                    int Nnds = ((degree + 1) * (degree + 2) / 2); 
-
-                    int degreeR = degree - numEcond; 
-                    int NoNdsR = ((degreeR + 1) * (degreeR + 2) / 2);
-                    if (NoNdsR <= 0) {
+                    int degreeR = degree - numEcond;
+                    int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
+                    if (NoNdsR <= 0)
                         return null;
 
-                    } else {
-                        if (edgeOrientation == null && numEcond > 0)
-                            throw new ArgumentException();
-                        if (edgeOrientation == null && numEcond < 1)
-                            edgeOrientation = new int[degree + 1];
+                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degreeR * 2);
+                    NodeSet qNodes = quad1D.Nodes;
 
-                        MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
-                        int node = 0;
-                        int[] dirCount = new int[2];
-                        for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
-                            int dir = edgeOrientation[dirIdx];
-                            int m = dirCount[dir];
-                            int n0 = dirCount[(dir == 0) ? 1 : 0];
-                            int nL = quad1D.NoOfNodes - dirIdx;
-                            for (int n = n0; n < n0 + nL; n++) {
-                                if (dir == 0) {
-                                    nds[node, 0] = qNodes[n, 0];
-                                    nds[node, 1] = qNodes[m, 0];
-                                }
-                                if (dir == 1) {
-                                    nds[node, 0] = qNodes[m, 0];
-                                    nds[node, 1] = qNodes[n, 0];
-                                }
-                                node++;
-                            }
-                            dirCount[dir]++;
+                    MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
+                    int node = 0;
+                    for (int n1 = 0; n1 <= degreeR; n1++) {
+                        for (int n2 = 0; n2 <= degreeR - n1; n2++) {
+                            nds[node, 0] = qNodes[n1, 0];
+                            nds[node, 1] = qNodes[n2, 0];
+                            node++;
                         }
-                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] {Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
-                        //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
-                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
                     }
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+
+                    return ndsR;
+
                 }
                 default:
                     throw new NotSupportedException("spatial dimension not supported");

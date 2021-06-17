@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -153,7 +154,10 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         void ComputeNonAgglomeratedMetrics() {
             using(var tr = new FuncTrace()) {
-                MPICollectiveWatchDog.Watch();
+#if TEST
+                MPICollectiveWatchDog.WatchAtRelease();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+#endif
                 var gd = XDGSpaceMetrics.GridDat;
                 int JE = gd.iLogicalCells.Count;
                 int J = gd.iLogicalCells.NoOfLocalUpdatedCells;
@@ -164,7 +168,6 @@ namespace BoSSS.Foundation.XDG {
                 int[,] E2C = gd.iLogicalEdges.CellIndices;
 
                 var schH = new XQuadSchemeHelper(XDGSpaceMetrics);
-
 
                 // collect all per-cell-metrics in the same MultidimArry, for MPI-exchange (only 1 exchange instead of three, saving some overhead)
                 // 1st index: cell

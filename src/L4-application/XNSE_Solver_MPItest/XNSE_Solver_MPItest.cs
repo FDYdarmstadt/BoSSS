@@ -34,6 +34,7 @@ using BoSSS.Application.XNSE_Solver.Legacy;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -257,6 +258,16 @@ Index was outside the bounds of the array.
 ========================================
 */
             var C = Rotating_Cube(3, 25, 3, false);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        public static void LoadbalancingAndAMR_Activated() {
+            // 3 cores
+            var C = Rotating_Cube(2, 10, 3, false);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -615,7 +626,7 @@ Index was outside the bounds of the array.
         }
 
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -771,6 +782,11 @@ Index was outside the bounds of the array.
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
                 C.AMR_startUpSweeps = 1;
             }
+
+            C.DynamicLoadBalancing_On = useLoadBal;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
 
             // Timestepping
             // ============

@@ -385,8 +385,29 @@ namespace BoSSS.Foundation.Grid.Classic {
                             else {
                                 conCount2 = Cl2.CellFaceTags.Where(cfTag => cfTag.NeighCell_GlobalID == Cl1.GlobalID).Count();
                             }
+
+                            ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                            if (conCount1 != conCount2) {
+                                //int D = Cl2.TransformationParams.;
+                                int D = this.SpatialDimension;
+                                var centercoordinates = new double[D];
+                                int NoOfNodes = Cl2.TransformationParams.NoOfRows;
+                                //Compute Barycenter of rectangular cells
+                                for (int d = 0; d < D; d++) {
+                                    double center = 0;
+                                    for (int k = 0; k < NoOfNodes; k++) {
+                                        center += Cl2.TransformationParams[k, d];
+                                    }
+
+                                    centercoordinates[d] = center / ((double)NoOfNodes);
+                                }
+                                Console.WriteLine("proc{2} reporting: coord of {0}:{1}", Cl2.GlobalID, String.Join(",",centercoordinates),ilPSP.Environment.MPIEnv.MPI_Rank);
+                            }
+                            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
                             Debug.Assert(conCount1 == conCount2);
-#endif                            
+#endif                          
+                            
                             if (conCount1 > 0)
                                 continue;
 
