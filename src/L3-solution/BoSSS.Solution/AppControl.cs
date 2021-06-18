@@ -1175,8 +1175,6 @@ namespace BoSSS.Solution.Control {
 
         class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
 
-            
-
             internal KnownTypesBinder(Type entry) {
 
                 HashSet<Assembly> assiList = new HashSet<Assembly>();
