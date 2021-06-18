@@ -49,9 +49,9 @@ Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS";
 [Icons]
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"         
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
-Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
-Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
+;Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
+;Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
+;Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
 ;Name: "{group}\BoSSSpad (electron)"; Filename: "{app}\bin\BoSSSpad-win32-x64\BoSSSpad.exe"         
 ;Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
 ;Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
