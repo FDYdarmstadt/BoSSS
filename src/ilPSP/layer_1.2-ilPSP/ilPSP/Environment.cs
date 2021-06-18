@@ -134,8 +134,8 @@ namespace ilPSP {
             // ===================
             m_MpiEnv = new MPIEnviroment();
             //System.Threading.Thread.Sleep(10000);
-            //Console.WriteLine("StdoutOnlyOnRank0 set to false");
-            StdoutOnlyOnRank0 = true;
+            Console.WriteLine("StdoutOnlyOnRank0 set to false");
+            StdoutOnlyOnRank0 = false;
             NativeLibraryDir = ret;
             return ret;
         }

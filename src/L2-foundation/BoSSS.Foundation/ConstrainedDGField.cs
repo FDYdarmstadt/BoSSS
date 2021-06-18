@@ -437,8 +437,8 @@ namespace BoSSS.Foundation {
             //}
 
             SubGrid sbgrd = new SubGrid(mask);
-
             int JComp = mask.NoOfItemsLocally; // number of local cells
+
             int[] xadj = new int[JComp + 1];
             List<int> adjncy = new List<int>();
             for (int j = 0; j < JComp; j++) {
@@ -449,8 +449,9 @@ namespace BoSSS.Foundation {
                 int nCnt = 0;
                 foreach (int jNeigh in neigh_j) {
                     //adjncy.AddRange(neigh_j);
-                    if (jNeigh < JComp) {
-                        adjncy.Add(jNeigh);
+                    int jNeigh_sbgrd = sbgrd.LocalCellIndex2SubgridIndex[jNeigh]; 
+                    if (jNeigh_sbgrd >= 0) {
+                        adjncy.Add(jNeigh_sbgrd);
                         nCnt++;
                     } else {
                         //Console.WriteLine("Skipping external cell");
@@ -504,7 +505,7 @@ namespace BoSSS.Foundation {
             {
                 List<List<int>> _Blocks = NoOfPartsOnCurrentProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsOnCurrentProcess))).ToList();
                 for (int j = 0; j < JComp; j++) {
-                    _Blocks[part[j]].Add(j);
+                    _Blocks[part[j]].Add(sbgrd.SubgridIndex2LocalCellIndex[j]);
                 }
 
                 for (int iB = 0; iB < _Blocks.Count; iB++) {
@@ -576,7 +577,7 @@ namespace BoSSS.Foundation {
 
 
         //int NoOfPatchesPerProcess = 0;  // if < 1 the number of patches is determined by 
-        int maxNoOfCoordinates = 10000; 
+        int maxNoOfCoordinates = 4000; 
 
 
         /// <summary>
@@ -611,18 +612,6 @@ namespace BoSSS.Foundation {
         /// <param name="mask"></param>
         public DGField[] ProjectDGField(ConventionalDGField DGField, CellMask mask = null) {
 
-            int NoOfFixedPatches = 1;
-
-            return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
-
-        }
-
-
-        bool diagOutput = true;
-
-
-        public DGField[] ProjectDGField_patchwise(ConventionalDGField DGField, CellMask mask = null, int NoOfPatchesPerProcess = 0) {
-
             if (DGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
             this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
@@ -630,16 +619,36 @@ namespace BoSSS.Foundation {
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
             }
+            if (mask.NoOfItemsLocally.MPISum() <= 0) {
+                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
+            }
+
+            int NoOfFixedPatches = 0;
+
+            return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
+
+        }
+
+
+        bool diagOutput0 = true;
+        bool diagOutput1 = false;
+        //bool diagOutput2 = true;
+
+        bool diagOutputMatlab = false;
+
+
+        public DGField[] ProjectDGField_patchwise(ConventionalDGField DGField, CellMask mask = null, int NoOfPatchesPerProcess = 0) {
+
             int J = m_grd.CellPartitioning.LocalLength;
 
-            // determine number of patches
+            // determine number of patches (per process)
             int NoPatches = 1;
             if (NoOfPatchesPerProcess > 0) {
                 NoPatches = NoOfPatchesPerProcess;
             } else {
                 int NoOfCoordOnProc = mask.NoOfItemsLocally * DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
                 if (NoOfCoordOnProc > maxNoOfCoordinates) {
-                    NoPatches = (NoOfCoordOnProc % maxNoOfCoordinates > 0) ? NoOfCoordOnProc / maxNoOfCoordinates : NoOfCoordOnProc / maxNoOfCoordinates + 1;
+                    NoPatches = (NoOfCoordOnProc / maxNoOfCoordinates) + 1;
                 }
             }
 
@@ -662,20 +671,24 @@ namespace BoSSS.Foundation {
                 CellMask patch = new CellMask(m_grd, patchBA);
                 patches.Add(patch);
 
-                if (diagOutput) {
+                if (diagOutput0) {
                     Console.WriteLine("======================");
-                    Console.WriteLine("project patch {0}:", pC);
+                    Console.WriteLine("project patch {0}; No of cells {1}", pC, patch.NoOfItemsLocally);
                 }
                 this.ProjectDGFieldOnPatch(DGField, patch);
-                if (diagOutput) {
+                if (diagOutput0) {
                     double jumpNorm = CheckLocalProjection(patch);
                     Console.WriteLine("L2 jump norm = {0}", jumpNorm);
                 }
                 pC++;
             }
 
+            MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
-            if (NoPatches > 1 || m_grd.MpiSize > 1) {
+            List<DGField> returnFields = new List<DGField>();
+
+            // continuity projection on patches within one process
+            if (NoPatches > 1) {
 
                 // determine merging domain and 
                 // corresponding inner edges and on the boundary 
@@ -708,11 +721,16 @@ namespace BoSSS.Foundation {
                 int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
                 localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
 
-                Console.WriteLine("======================");
-                Console.WriteLine("project on merging patch:");
+
+                if (diagOutput0) {
+                    Console.WriteLine("======================");
+                    Console.WriteLine("project on merging patch:");
+                }
                 this.ProjectDGFieldOnPatch(DGField, mergePatchCM, mergeBoundary, true);
-                double jumpNorm = CheckLocalProjection(mergePatchCM);
-                Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+                if (diagOutput0) {
+                    double jumpNorm = CheckLocalProjection(mergePatchCM);
+                    Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+                }
 
                 // plot patches for debugging
                 SinglePhaseField patchField = new SinglePhaseField(m_Basis, "Patches");
@@ -725,7 +743,7 @@ namespace BoSSS.Foundation {
                 SinglePhaseField mergePatchField = new SinglePhaseField(m_Basis, "Merging-Patch");
                 mergePatchField.AccConstant(1.0, mergePatchCM);
 
-                List<DGField> returnFields = new List<DGField>();
+                //List<DGField> returnFields = new List<DGField>();
                 returnFields.Add(patchField);
                 returnFields.Add(mergePatchField);
                 returnFields.Add(localProj);
@@ -797,10 +815,43 @@ namespace BoSSS.Foundation {
                 returnFields.Add(localProj);
                 */
 
-                return returnFields.ToArray();
+                //return returnFields.ToArray();
             }
 
-            return null;
+            MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+
+            // continuity projection between processes
+            if (m_grd.MpiSize > 1) {
+
+                //// determine merging domain and 
+                //// corresponding inner edges and on the boundary 
+                //SubGrid maskSG = new SubGrid(mask);
+                //EdgeMask innerEM = maskSG.InnerEdgesMask;
+                //EdgeMask mergeEM = innerEM;
+                //foreach (CellMask patch in patches) {
+                //    SubGrid maskPatch = new SubGrid(patch);
+                //    EdgeMask innerPatch = maskPatch.InnerEdgesMask;
+                //    mergeEM = mergeEM.Except(innerPatch);
+                //}
+
+                //BitArray mergePatchBA = new BitArray(J);
+                //foreach (var chunk in mergeEM) {
+                //    int j0 = chunk.i0;
+                //    int jE = chunk.JE;
+                //    for (int j = j0; j < jE; j++) {
+                //        int cell1 = m_grd.Edges.CellIndices[j, 0];
+                //        mergePatchBA[cell1] = true;
+                //        int cell2 = m_grd.Edges.CellIndices[j, 1];
+                //        mergePatchBA[cell2] = true;
+                //    }
+                //}
+                //CellMask mergePatchCM = new CellMask(mask.GridData, mergePatchBA);
+                //SubGrid mergePatch = new SubGrid(mergePatchCM);
+                //EdgeMask mergeBoundary = mergePatch.BoundaryEdgesMask.Intersect(innerEM);
+
+            }
+
+            return returnFields.ToArray();
         }
 
 
@@ -869,21 +920,11 @@ namespace BoSSS.Foundation {
 
 
 
-        public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask = null, 
+        public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask, 
             EdgeMask fixedBoundaryMask = null, bool onInternalValues = false) {
 
-            //if (DGField.Basis.Degree > this.m_Basis.Degree)
-            //    throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
-            //this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
 
             int D = this.Basis.GridDat.SpatialDimension;
-
-            if (mask == null) {
-                mask = CellMask.GetFullMask(m_grd);
-            }
-            if (mask.NoOfItemsLocally.MPISum() <= 0) {
-                throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
-            }
 
             // list of masked vertices inside domain mask
             List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
@@ -939,10 +980,10 @@ namespace BoSSS.Foundation {
             SubGrid maskSG = new SubGrid(mask);
             EdgeMask innerEM = maskSG.InnerEdgesMask;
 
-            if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
-                Console.WriteLine("no inner edges: return without changes");
-                return;
-            }
+            //if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
+            //    Console.WriteLine("no inner edges: return without changes");
+            //    return;
+            //}
 
             //List<int> AcceptedEdges = new List<int>();
             List<NodeSet> AcceptedNodes = new List<NodeSet>();
@@ -999,7 +1040,7 @@ namespace BoSSS.Foundation {
 
 
             // test with matlab
-            if (diagOutput) {
+            if (diagOutputMatlab) {
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
                 Console.WriteLine("Calling MATLAB/Octave...");
                 using (BatchmodeConnector bmc = new BatchmodeConnector()) {
@@ -1064,7 +1105,7 @@ namespace BoSSS.Foundation {
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
                     int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
 
-                    if (diagOutput) {
+                    if (diagOutput1) {
                         Console.WriteLine("==========================");
                         Console.WriteLine("edge {0} between cell {1} and cell {2}", j, cell1, cell2);
                         var cell1c = m_grd.Cells.GetCenter(cell1);
@@ -1132,20 +1173,22 @@ namespace BoSSS.Foundation {
                                 //geomEdgeAtEdge.Add(gEdge);
                                 gEdge.IncreaseNoOfConditions();
                                 int condAtEdge = gEdge.GetNoOfConditions();
-                                if (diagOutput) {
+                                if (diagOutput1) {
                                     Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
                                 }
                                 Debug.Assert(condAtEdge <= 4);
                                 if (condAtEdge == 4) {
-                                    if (diagOutput) {
+                                    if (diagOutput1) {
                                         int dir1 = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
                                         int dir2 = gEdge.GetRefDirection(m_grd, cell2, trafoIdx2);
                                         if (dir1 != dir2)
                                             throw new ArgumentException("constrainedDG field: dir1 != dir2");
                                     }
-                                    OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
-                                    OverdeterminedCondAtGeomEdge++;
-                                    if (diagOutput) {
+                                    if (OverdeterminedCondAtGeomEdge < m_Basis.Degree + 1) {
+                                        OverdeterminedEdgeDirection[OverdeterminedCondAtGeomEdge] = gEdge.GetRefDirection(m_grd, cell1, trafoIdx1);
+                                        OverdeterminedCondAtGeomEdge++;
+                                    }
+                                    if (diagOutput1) {
                                         //Console.WriteLine("conditions at edge ({0}/{1}): {2}", gEdge1.VerticeInd1, gEdge1.VerticeInd2, condAtEdge);
                                         var vert1c = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(gEdge1.VerticeInd1, -1);
                                         var vert2c = m_grd.Vertices.Coordinates.ExtractSubArrayShallow(gEdge1.VerticeInd2, -1);
@@ -1164,7 +1207,7 @@ namespace BoSSS.Foundation {
                             }
                         }
                     }
-                    if (diagOutput) {
+                    if (diagOutput1) {
                         Console.WriteLine("________________________");
                         for (int i = 0; i < OverdeterminedCondAtGeomEdge; i++) {
                             Console.WriteLine("overdetermined edge direction {0}: {1}", i, OverdeterminedEdgeDirection[i]);
@@ -1181,8 +1224,8 @@ namespace BoSSS.Foundation {
                         } else {
                             //if (fixedEdgeInCell > 0)
                             //    Console.WriteLine("edge {0} between cell {1} and cell {2}", j, cell1, cell2);
-                            qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection, 0); // fixedEdgeInCell);
-                            //qNds = getEdgeInterpolationNodes(0, 0);
+                            //qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection, 0); // fixedEdgeInCell);
+                            qNds = getEdgeInterpolationNodes(0, 0);
                         }
                         AcceptedNodes.Add(qNds);
 
@@ -1610,7 +1653,7 @@ namespace BoSSS.Foundation {
 
             switch (m_grd.SpatialDimension) {
                 case 2: {
-                    int NDOFinCell = (degree + 1) * (degree + 1) + (degree + 1) / 2;
+                    int NDOFinCell = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
                     int NDOFonEdge = (degree + 1);
                     int freeNDOF = NDOFinCell - ((fixEdgInCell - 1) * NDOFonEdge);
                     if (freeNDOF < NDOFonEdge) {
@@ -1628,7 +1671,65 @@ namespace BoSSS.Foundation {
                 }
                 case 3: {
 
-                    throw new NotImplementedException();
+                    int NDOFinCell = ((int)Math.Pow(degree, 3) / 6) + ((int)Math.Pow(degree, 2)) + (11 * degree / 6) + 1; 
+                    int NDOFonEdge = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
+                    int freeNDOF = NDOFinCell - ((fixEdgInCell - 1) * NDOFonEdge);
+                    if (freeNDOF < NDOFonEdge) {
+                        degree = (int)Math.Floor((-3 + Math.Sqrt(9 + 2*(freeNDOF - 1))) / 2.0);
+                        if (degree < 0)
+                            return null;
+                        else {
+                            QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                            NodeSet qNodes = quad1D.Nodes;
+                            int NoNds = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
+                            MultidimensionalArray nds = MultidimensionalArray.Create(NoNds, 2);
+                            int node = 0;
+                            for (int n1 = 0; n1 <= degree; n1++) {
+                                for (int n2 = 0; n2 <= degree - n1; n2++) {
+                                    nds[node, 0] = qNodes[n1, 0];
+                                    nds[node, 1] = qNodes[n2, 0];
+                                    node++;
+                                }
+                            }
+                            return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                        }
+                    } else {
+                        QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                        NodeSet qNodes = quad1D.Nodes;
+                        int NoNds = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
+                        MultidimensionalArray nds = MultidimensionalArray.Create(NoNds, 2);
+                        int node = 0;
+                        for (int n1 = 0; n1 <= degree; n1++) {
+                            for (int n2 = 0; n2 <= degree - n1; n2++) {
+                                nds[node, 0] = qNodes[n1, 0];
+                                nds[node, 1] = qNodes[n2, 0];
+                                node++;
+                            }
+                        }
+                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                    }
+                    /*
+                    int degreeR = degree - numEcond;
+                    int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
+                    if (NoNdsR <= 0)
+                        return null;
+
+                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
+                    NodeSet qNodes = quad1D.Nodes;
+
+                    MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
+                    int node = 0;
+                    for (int n1 = 0; n1 <= degreeR; n1++) {
+                        for (int n2 = 0; n2 <= degreeR - n1; n2++) {
+                            nds[node, 0] = qNodes[n1, 0];
+                            nds[node, 1] = qNodes[n2, 0];
+                            node++;
+                        }
+                    }
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+
+                    return ndsR;
+                    */
 
                     //QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
                     //NodeSet qNodes = quad1D.Nodes;

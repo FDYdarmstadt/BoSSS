@@ -7,8 +7,8 @@ restart
 Databases loaded:
 List of 3 instances of IDatabaseInfo {
   0: { Session Count = 16; Grid Count = 24; Path = D:\local\local_test_db2 }
-  1: { Session Count = 71; Grid Count = 108; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
-  2: { Session Count = 790; Grid Count = 22635; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+  1: { Session Count = 73; Grid Count = 108; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  2: { Session Count = 809; Grid Count = 23491; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
 }
 
  Console ready for input. Type 'help' for help.
@@ -46,7 +46,7 @@ List of 1 instances of AllowedDatabasesPair {
 var myDb = myBatch.CreateOrOpenCompatibleDatabase("XNSE_testDB");
 myDb
 **************
-{ Session Count = 71; Grid Count = 108; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+{ Session Count = 73; Grid Count = 108; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
 ==============
 **************
 ==============
@@ -220,7 +220,7 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
     XNSE_Control C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet3D_LegendrePolynomials(R0, m, aP_Index);
     
-    C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
+    C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
     
     C.savetodb          = true;
     C.ContinueOnIoError = false;
@@ -259,7 +259,7 @@ for(int iGrd = 0; iGrd < GridSeq.Length; iGrd++) {
     
     C.saveperiod = 2;
     
-    C.SessionName = "Droplet3D_k" + pDeg + "_mesh9_LPm" + m + "_Oh" + OhTag;
+    C.SessionName = "Droplet3D_k" + pDeg + "_mesh9_LPm" + m + "_Oh" + OhTag + "_Saye";
     
     C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
     //C.LinearSolver.SolverCode          = LinearSolverCode.exp_Kcycle_schwarz;
@@ -281,7 +281,7 @@ controls.Count;
 ==============
 controls.ElementAt(0).SessionName
 **************
-Droplet3D_k3_mesh9_LPm2_Oh076
+Droplet3D_k3_mesh9_LPm2_Oh076_Saye
 ==============
 **************
 ==============
@@ -309,7 +309,7 @@ foreach(var cntrl in controls) {
     }
 }
 **************
-Submitting Session: Droplet3D_k3_mesh9_LPm2_Oh076
+Submitting Session: Droplet3D_k3_mesh9_LPm2_Oh076_Saye
 Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
 Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
 Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
@@ -334,12 +334,12 @@ Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpe
 Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
 Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
 Loading session b2086d2b-23ca-46e4-b4a9-fb1a580007cb failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\b2086d2b-23ca-46e4-b4a9-fb1a580007cb\Session.info'.'
-Deploying job Droplet3D_k3_mesh9_LPm2_Oh076 ... 
+Deploying job Droplet3D_k3_mesh9_LPm2_Oh076_Saye ... 
 Deploying executables and additional files ...
 Skipping: System.Threading.Tasks.Extensions
 Skipping: System.Text.Encoding.CodePages
 Skipping: System.Runtime.Loader
-Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\LegendreDroplet3D_ver5-XNSE_Solver2021May19_160121
+Deployment directory: \\hpccluster\hpccluster-scratch\smuda\binaries\LegendreDroplet3D_ver5-XNSE_Solver2021Jun18_171924
 copied 41 files.
    written file: control.obj
 deployment finished.
@@ -378,6 +378,10 @@ C:\Users\smuda\AppData\Local\BoSSS\plots\sessions\LegendreDroplet3D_ver4__Drople
 ==============
 **************
 LegendreDroplet3D_ver3  Droplet3D_k3_mesh12_LPm2_Oh055* 04/28/2021 15:14:28 21440ed5...
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============
