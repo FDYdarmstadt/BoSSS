@@ -35,8 +35,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             });
         }
 
-        internal int dimension = 3;
-        internal int degree = 3;
+        internal int dimension = 2;
+        internal int degree = 1;
         internal int gridResolution = 6;
 
         internal bool periodicX = false;
@@ -78,7 +78,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
             double[] node2pi = GenericBlas.Linspace(0, 2 * Math.PI, (2 * gridResolution) + 1);
-            double[] node2 = GenericBlas.Linspace(0, (1.0 / 2.0 * gridResolution), 3);
+            double[] node2 = GenericBlas.Linspace(0, (1.0 / (2.0 * gridResolution)), 3);
             double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
 
             double[] droplet_xy = GenericBlas.Linspace(0, 3, (2 * gridResolution) + 1);
@@ -86,7 +86,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             GridCommons grid;
             if (dimension == 2)
-                grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+                grid = Grid2D.Cartesian2DGrid(nodes, node2, periodicX: periodicX, periodicY: periodicY);
                 //grid = Grid2D.Cartesian2DGrid(node2pi, node2, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
                 //grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
