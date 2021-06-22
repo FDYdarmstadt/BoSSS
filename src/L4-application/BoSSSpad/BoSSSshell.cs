@@ -92,6 +92,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
+            AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
             AddObjectFormatter<IGridData>();
 
             AddObjectFormatter<ISessionInfo>();
@@ -152,6 +153,7 @@ namespace BoSSS.Application.BoSSSpad {
                             keyString = kv.Key != null ? optKeyFormatter(kv.Value) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + kv.Value + "\t" + kv.Value.ToString());
+                        i++;
                     }
                 });
         }
@@ -178,6 +180,7 @@ namespace BoSSS.Application.BoSSSpad {
                             valString = v != null ? optValFormatter(v) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + v.ToString());
+                        i++;
                     }
                 });
         }

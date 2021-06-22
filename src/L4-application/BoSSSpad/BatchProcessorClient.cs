@@ -83,6 +83,14 @@ namespace BoSSS.Application.BoSSSpad {
     abstract public class BatchProcessorClient {
 
         /// <summary>
+        /// 
+        /// </summary>
+        protected BatchProcessorClient() {
+            DotnetRuntime = "dotnet";
+        }
+
+
+        /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
         /// </summary>

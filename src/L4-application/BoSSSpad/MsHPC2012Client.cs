@@ -146,7 +146,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Empty Constructor for de-serialization
         /// </summary>
-        private MsHPC2012Client() {
+        private MsHPC2012Client() : base() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
 
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
@@ -174,7 +174,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="DeployRuntime">
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
-        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) {
+        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
@@ -764,10 +764,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Synchonous wrapper around process execution, 
+        /// Synchronous wrapper around process execution, 
         /// see https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
         /// </summary>
-        static (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout)
+        (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout)
         {
             using (Process process = new Process())
             {
@@ -817,7 +817,9 @@ namespace BoSSS.Application.BoSSSpad {
                     {
                         if (process.ExitCode != 0)
                         {
-                            throw new IOException(filename + " " + arguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
+                            string modArguments = arguments;
+                            modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                            throw new IOException(filename + " " + modArguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
                         }
 
 
@@ -827,7 +829,9 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                     {
                         // Timed out.
-                        throw new IOException("timeout waiting for " + filename + " " + arguments);
+                        string modArguments = arguments;
+                        modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                        throw new IOException("timeout waiting for " + filename + " " + modArguments);
                     }
                 }
 

@@ -140,7 +140,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
-        private SlurmClient() {
+        private SlurmClient() : base() {
         }
 
         /// <summary>
@@ -156,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Client for submitting jobs directly from the BoSSSpad to slurm systems
         /// </summary>
-        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username, string PrivateKeyFilePath = null, bool AskForPassword = true) {
+        public SlurmClient(string DeploymentBaseDirectory, string ServerName, string Username, string PrivateKeyFilePath = null, bool AskForPassword = true) : base() {
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             this.Username = Username;
             this.ServerName = ServerName;
