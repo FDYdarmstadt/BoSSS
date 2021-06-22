@@ -424,7 +424,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-            Debugger.Launch();
+           
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 

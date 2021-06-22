@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Serialization;
+﻿using ilPSP;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,11 +11,11 @@ namespace BoSSS.Foundation.IO {
     /// Helps within Jupyter notebook, where <see cref="jsonFormatter"/>
     /// sometimes is not able to resolve all types and assemblies automatically.
     /// </summary>
-    class AdvancedLookupBinder : System.Runtime.Serialization.SerializationBinder {
+    class AdvancedLookupBinder : DefaultSerializationBinder {
 
         internal AdvancedLookupBinder() {
 
-            this.defBinder = new DefaultSerializationBinder();
+            //this.defBinder = new DefaultSerializationBinder();
 
             var allAssis = System.AppDomain.CurrentDomain.GetAssemblies();
 
@@ -25,8 +26,14 @@ namespace BoSSS.Foundation.IO {
             foreach(var a in assiList) {
                 var tt = new Dictionary<string, Type>();
                 knownTypes.Add(a.GetName().Name, tt);
-                foreach(var t in a.GetExportedTypes()) {
-                    tt.Add(t.FullName, t);
+
+                try {
+                    var Types_in_a = a.GetExportedTypes();
+                    foreach(var t in Types_in_a) {
+                        tt.Add(t.FullName, t);
+                    }
+                } catch  (Exception ) {
+
                 }
             }
         }
@@ -76,16 +83,29 @@ namespace BoSSS.Foundation.IO {
         Dictionary<string, Dictionary<string, Type>> knownTypes = new Dictionary<string, Dictionary<string, Type>>();
 
 
+        public override Type BindToType(string assemblyName, string typeName) {
+            if(assemblyName != null && knownTypes.TryGetValue(assemblyName, out var typesInAssembly)) {
+                if(typeName != null && typesInAssembly.TryGetValue(typeName, out Type t)) {
+                    return t;
+                }
+            }
+
+
+            return base.BindToType(assemblyName, typeName);
+        }
+
+        /*
         internal DefaultSerializationBinder defBinder;
 
         public override Type BindToType(string assemblyName, string typeName) {
-
+            var t = defBinder.BindToType(assemblyName, typeName);
+            return t;
+            /*
             try {
-                var t = defBinder.BindToType(assemblyName, typeName);
-                if(t != null)
-                    return t;
             } catch(Exception) { }
 
+            if(typeName.IsEmptyOrWhite())
+                return null;
 
             //Console.WriteLine("Type lookup: " + assemblyName + "+" + typeName);
             var dd = knownTypes[assemblyName];
@@ -93,5 +113,6 @@ namespace BoSSS.Foundation.IO {
 
             return tt;
         }
+        */
     }
 }
