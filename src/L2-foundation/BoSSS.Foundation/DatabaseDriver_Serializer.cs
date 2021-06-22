@@ -155,8 +155,5 @@ namespace BoSSS.Foundation.IO
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
             Binder = new AdvancedLookupBinder()
         };
-
-
-        
     }
 }
