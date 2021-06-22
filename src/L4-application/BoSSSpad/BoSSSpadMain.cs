@@ -87,7 +87,12 @@ namespace BoSSS.Application.BoSSSpad {
             /// <summary>
             /// Create a Jupyter notebook with BoSSS-init code
             /// </summary>
-            Jupyterfile
+            Jupyterfile,
+
+            /// <summary>
+            /// application deployment
+            /// </summary>
+            deploy
 
         }
 
@@ -329,6 +334,9 @@ namespace BoSSS.Application.BoSSSpad {
                     break;
                 }
 
+                case Modes.deploy:
+                throw new NotImplementedException("will come soon");
+
                 default:
                 throw new NotImplementedException();
             }
@@ -376,7 +384,8 @@ namespace BoSSS.Application.BoSSSpad {
 
         static string GetStartupCode() {
             using(var stw = new StringWriter()) {
-                stw.WriteLine("#r \"BoSSSpad.dll\"");
+                string path = typeof(BoSSSpadMain).Assembly.Location;
+                stw.WriteLine("#r \"" + path + "\"");
                 stw.WriteLine("using System;");
                 stw.WriteLine("using System.Collections.Generic;");
                 stw.WriteLine("using System.Linq;");
@@ -384,6 +393,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using ilPSP.Utils;");
                 stw.WriteLine("using BoSSS.Platform;");
                 stw.WriteLine("using BoSSS.Foundation;");
+                stw.WriteLine("using BoSSS.Foundation.XDG;");
                 stw.WriteLine("using BoSSS.Foundation.Grid;");
                 stw.WriteLine("using BoSSS.Foundation.Grid.Classic;");
                 stw.WriteLine("using BoSSS.Foundation.IO;");
@@ -392,6 +402,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using BoSSS.Solution.GridImport;");
                 stw.WriteLine("using BoSSS.Solution.Statistic;");
                 stw.WriteLine("using BoSSS.Solution.Utils;");
+                stw.WriteLine("using BoSSS.Solution.AdvancedSolvers;");
                 stw.WriteLine("using BoSSS.Solution.Gnuplot;");
                 stw.WriteLine("using BoSSS.Application.BoSSSpad;");
                 stw.WriteLine("using BoSSS.Application.XNSE_Solver;");
@@ -483,10 +494,15 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --Jupyterfile file.ipynb   Create file prepared for BoSSS");
             Console.WriteLine();
-            Console.WriteLine("Option 4: Installation check:");
+            Console.WriteLine("Option 4: App deployment:");
+            Console.WriteLine("--------------------------------------------------");
+            Console.WriteLine("    BoSSSpad.exe --deploy Solver.dll dest-dir  send some Solver app & deps to ");
+            Console.WriteLine("                                               destination directory dest-dir.");
+            Console.WriteLine();
+            Console.WriteLine();
+            Console.WriteLine("Option 5: Installation check:");
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --check               Check the BoSSS installation.");
-            Console.WriteLine();
             
         }
 
