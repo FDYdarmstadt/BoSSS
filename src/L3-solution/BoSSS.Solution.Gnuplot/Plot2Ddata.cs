@@ -179,6 +179,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
         /// </summary>
+        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values){
+            return AddDataGroup(name, Abscissas, values, default(string));
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
         public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values, string FormatString = null) {
             var fmt = FormatString != null ? new PlotFormat(FormatString) : null;
             return AddDataGroup(Abscissas, values, fmt);
