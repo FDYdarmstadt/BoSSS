@@ -424,6 +424,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+            Debugger.Launch();
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
@@ -773,7 +774,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-
+            //Debugger.Launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();

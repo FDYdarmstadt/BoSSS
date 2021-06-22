@@ -3,6 +3,10 @@ using System.IO;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using BoSSS.Foundation.Grid;
+using System.Collections.Generic;
+using System.Reflection;
+using System.Linq;
+using Newtonsoft.Json.Serialization;
 
 namespace BoSSS.Foundation.IO
 {
@@ -35,7 +39,7 @@ namespace BoSSS.Foundation.IO
                 object obj = JsonFormatter.Deserialize(reader, objectType);
                 if (obj == null)
                 {
-                    throw new Exception("Deserializing failed.");
+                    throw new IOException("Deserializing failed.");
                 }
                 return obj;
             }
@@ -91,6 +95,10 @@ namespace BoSSS.Foundation.IO
             Binder = new MySerializationBinder()
         };
 
+        /// <summary>
+        /// Serialization binder to ensure compatibility with older file versions, where certain classes
+        /// were organized in a different namespace.
+        /// </summary>
         class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
         {
 
@@ -145,7 +153,10 @@ namespace BoSSS.Foundation.IO
             TypeNameHandling = TypeNameHandling.Objects,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-
+            Binder = new AdvancedLookupBinder()
         };
+
+
+        
     }
 }
