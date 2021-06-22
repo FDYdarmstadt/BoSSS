@@ -24,10 +24,10 @@ namespace BoSSS.Foundation.IO {
                 GetAllAssemblies(a, assiList);
 
             foreach(var a in assiList) {
-                var tt = new Dictionary<string, Type>();
-                knownTypes.Add(a.GetName().Name, tt);
-
                 try {
+                    var tt = new Dictionary<string, Type>();
+                    knownTypes.Add(a.GetName().Name, tt);
+
                     var Types_in_a = a.GetExportedTypes();
                     foreach(var t in Types_in_a) {
                         tt.Add(t.FullName, t);
