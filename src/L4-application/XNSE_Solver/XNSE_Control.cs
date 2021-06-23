@@ -207,6 +207,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public string methodTagLS;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Obsolete] // really?
         public void SetLevelSetMethod(int method, FourierLevSetControl _FourierControl = null) {
 
             LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -387,7 +391,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
         /// <summary>
-        /// defines the number of incremental timesteps in one gloabl timestep (for incrementInit)
+        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
         /// </summary>
         public int incrementTimesteps = 1;
 

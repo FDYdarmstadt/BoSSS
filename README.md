@@ -14,8 +14,9 @@ the rapid prototyping discretization of partial differential equations.
 
 ## Getting Started
 
-See our installation instructions for Windows, Linux and Mac in the [Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/home)  
-
+See our installation instructions for Windows, Linux and Mac in the Wiki:
+- [BoSSS Wiki on RWTH Gitlab](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/home) (primary, restricted access)
+- [BoSSS Wiki on Github](https://github.com/FDYdarmstadt/BoSSS/wiki) (mirror, publicly accessible)
 
 ## Note for publication
 
