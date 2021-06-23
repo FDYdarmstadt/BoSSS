@@ -397,7 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using BoSSS.Foundation.XDG;");
                 stw.WriteLine("using BoSSS.Foundation.Grid;");
                 stw.WriteLine("using BoSSS.Foundation.Grid.Classic;");
-                stw.WriteLine("using BoSSS.Foundation.Grid.Refelements;");
+                stw.WriteLine("using BoSSS.Foundation.Grid.RefElements;");
                 stw.WriteLine("using BoSSS.Foundation.IO;");
                 stw.WriteLine("using BoSSS.Solution;");
                 stw.WriteLine("using BoSSS.Solution.Control;");
