@@ -108,6 +108,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.EnergyCommon.Dissipation).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);

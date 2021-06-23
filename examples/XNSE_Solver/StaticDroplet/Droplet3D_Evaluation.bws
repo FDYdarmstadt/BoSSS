@@ -1,0 +1,226 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 16; Grid Count = 24; Path = D:\local\local_test_db2 }
+  1: { Session Count = 35; Grid Count = 101; Path = \\hpccluster\hpccluster-scratch\smuda\XNSE_testDB }
+  2: { Session Count = 763; Grid Count = 21040; Path = \\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation.XDG;
+using BoSSS.Solution.XNSECommon;
+using BoSSS.Solution.EnergyCommon;
+**************
+==============
+WorkflowMgm.Init("LegendreDroplet3D_ver3");
+**************
+Project name is set to 'LegendreDroplet3D_ver3'.
+
+==============
+WorkflowMgm.Sessions;
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+Loading session b2086d2b-23ca-46e4-b4a9-fb1a580007cb failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\b2086d2b-23ca-46e4-b4a9-fb1a580007cb\Session.info'.'
+List of 8 instances of ISessionInfo {
+  0: LegendreDroplet3D_ver3	Droplet3D_k3_mesh8_quarterDomain_AMR0_Oh1_Ratio0.001_StokesExt_pardiso_NoProc4	04/03/2021 20:01:05	3b59f0f6...
+  1: LegendreDroplet3D_ver3	Droplet3D_k3_mesh8_quarterDomain_AMR0_Oh0.5_Ratio0.001_StokesExt_pardiso_NoProc4*	04/10/2021 16:34:10	9c8b7148...
+  2: LegendreDroplet3D_ver3	Droplet3D_k3_mesh8_quarterDomain_AMR0_Oh0.3_Ratio0.001_StokesExt_pardiso_NoProc4*	04/09/2021 13:14:34	d87936d1...
+  3: LegendreDroplet3D_ver3	Droplet3D_k3_mesh8_quarterDomain_AMR0_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*	04/03/2021 20:02:28	aacb30a6...
+  4: LegendreDroplet3D_ver3	Droplet3D_k3_mesh10_quarterDomain_AMR0_Oh1_Ratio0.001_StokesExt_pardiso_NoProc4*	04/03/2021 18:51:25	c9b845fc...
+  5: LegendreDroplet3D_ver3	Droplet3D_k3_mesh10_quarterDomain_AMR0_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*	04/03/2021 18:47:22	63936e1e...
+  6: LegendreDroplet3D_ver3	Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*	03/25/2021 14:40:13	78808235...
+  7: LegendreDroplet3D_ver3	Droplet3D_k3_mesh5_quarterDomain_AMR1_Oh0.1_Ratio0.001_StokesExt_pardiso_NoProc4*	03/25/2021 09:19:25	2d633e49...
+}
+==============
+var sess = WorkflowMgm.Sessions.Pick(0);
+**************
+Loading session d5d0e3a2-b47e-4602-b644-7be3d6a02bc6 failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session b3e86543-1b07-405c-a359-ae9592e5d3df failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.PressureBlockPrecondMode'.'
+Loading session 097e1b7d-e16c-4525-a5dc-1c47cd35a00a failed with message 'Unexpected end when deserializing object. Path 'm_KeysAndQueries.Timestepper_Scheme'.'
+Loading session 137b157c-93c2-4d88-9971-8d3c688eba75 failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\137b157c-93c2-4d88-9971-8d3c688eba75\Session.info'.'
+Loading session 28adc7a7-a336-435b-b560-d3c02f46c43d failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\28adc7a7-a336-435b-b560-d3c02f46c43d\Session.info'.'
+Loading session b2086d2b-23ca-46e4-b4a9-fb1a580007cb failed with message 'Could not find file '\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB\sessions\b2086d2b-23ca-46e4-b4a9-fb1a580007cb\Session.info'.'
+
+==============
+sess
+**************
+LegendreDroplet3D_ver3	Droplet3D_k3_mesh8_quarterDomain_AMR0_Oh1_Ratio0.001_StokesExt_pardiso_NoProc4	04/03/2021 20:01:05	3b59f0f6...
+==============
+string setupName = "Oh1";
+**************
+==============
+double sigma = (double)sess.KeysAndQueries["PhysicalParameters.Sigma"];
+**************
+==============
+var timesteps     = sess.Timesteps.Every(3).Every(2);
+int NoOfTimesteps = timesteps.Count();
+**************
+==============
+NoOfTimesteps
+**************
+101
+==============
+double[] time = new double[NoOfTimesteps];
+double[] Az = new double[NoOfTimesteps];
+double[] SE = new double[NoOfTimesteps];
+double[] KE = new double[NoOfTimesteps];
+double[] VA = new double[NoOfTimesteps]; 
+**************
+==============
+int i  = 0; 
+//var ts = timesteps.Pick(1);
+foreach (var ts in timesteps) {
+    time[i] = ts.PhysicalTime;
+    
+    DGField Phi     = ts.Fields.Pick(0);
+    LevelSet LevSet = new LevelSet(Phi.Basis, "LevelSet"); 
+    LevSet.Acc(1.0, Phi);  
+    LevelSetTracker LsTrk = new LevelSetTracker((BoSSS.Foundation.Grid.Classic.GridData) Phi.GridDat, 
+    XQuadFactoryHelper.MomentFittingVariants.Saye, 1, new string[] { "A", "B" }, LevSet);
+    LsTrk.UpdateTracker(ts.PhysicalTime);
+    
+    // get interface points
+    MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(LsTrk, LevSet, quadRuleOrderForNodeSet:8);
+    //double[] x = interP.ExtractSubArrayShallow(new int[] { -1, 0 }).To1DArray();
+    //double[] y = interP.ExtractSubArrayShallow(new int[] { -1, 1 }).To1DArray();
+    double[] z = interP.ExtractSubArrayShallow(new int[] { -1, 2 }).To1DArray();
+    Az[i] = z.Max();
+    
+    // get surface energy
+    double InterfaceArea = XNSEUtils.GetInterfaceLength(LsTrk, quadRuleOrder:8);
+    SE[i] = sigma * InterfaceArea; //EnergyUtils.GetSurfaceEnergy(LsTrk, sigma, 8);
+    
+    // get kinteic energy
+    
+    XDGField VelX = (XDGField)ts.Fields.Pick(2);
+    XDGField VelY = (XDGField)ts.Fields.Pick(3);
+    XDGField VelZ = (XDGField)ts.Fields.Pick(4);
+    XDGField[] Velocity = new XDGField[] {VelX, VelY, VelZ};
+    double[] rhoS = new double[] { (double)sess.KeysAndQueries["PhysicalParameters.rho_A"], 
+    (double)sess.KeysAndQueries["PhysicalParameters.rho_B"] };
+    //KE[i] = EnergyUtils.GetKineticEnergy(LsTrk, VelVec, rhoS, 6);  
+    int momentFittingOrder = 6;
+    double kinE            = 0.0;
+    {
+                int D = LsTrk.GridDat.SpatialDimension;
+                if(Velocity.Count() != D) {
+                    throw new ArgumentException();
+                }
+                if(LsTrk.SpeciesIdS.Count != rhoS.Length)
+                    throw new ArgumentException();
+
+                var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), momentFittingOrder, 1).XQuadSchemeHelper;
+                
+                for(int iSpc = 0; iSpc < LsTrk.SpeciesIdS.Count; iSpc++) {
+                    double _rho    = rhoS[iSpc];
+                    SpeciesId spId = LsTrk.SpeciesIdS[iSpc];
+
+                    var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
+
+                    for(int d = 0; d < D; d++) {
+                        DGField U = Velocity.ElementAt(d);
+                        kinE += U.L2Error(null, momentFittingOrder, scheme).Pow2() * _rho * 0.5;
+                    }
+                }
+    }   
+    KE[i] = kinE; 
+    
+    
+    // get droplet volume
+    //var spc        = LsTrk.GetSpeciesId("A");
+    //double spcVolA = XNSEUtils.GetSpeciesArea(LsTrk, spc, quadRuleOrder:8);
+    //VA[i] = spcVolA; 
+    
+    i++;
+}
+**************
+==============
+**************
+==============
+**************
+==============
+// =========
+// plot data
+// =========
+**************
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(time, Az);
+plt.PlotNow();
+**************
+System.Drawing.Bitmap
+==============
+var plt = new Gnuplot();
+**************
+Using gnuplot: C:\Users\smuda\AppData\Local\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+plt.PlotXY(time, E);
+plt.PlotNow();
+**************
+(1,19): error CS0103: The name `E' does not exist in the current context
+No. of errors|warnings: 1|0.
+
+==============
+// ===========
+// export data
+// ===========
+**************
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, time, Az);
+dat.AddDataGroup(xyVal);
+string name = "Droplet3D_"+setupName+"_Amplitude.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Solution.Gnuplot.Plot2Ddata+XYvalues
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, time, SE);
+dat.AddDataGroup(xyVal);
+string name = "Droplet3D_"+setupName+"_SurfaceEnergy.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Solution.Gnuplot.Plot2Ddata+XYvalues
+==============
+Plot2Ddata dat            = new Plot2Ddata();
+Plot2Ddata.XYvalues xyVal = new Plot2Ddata.XYvalues(null, time, KE);
+dat.AddDataGroup(xyVal);
+string name = "Droplet3D_"+setupName+"_KineticEnergy.txt";
+dat.SaveToTextFile(name);
+**************
+Warning: Handling of logarithms still unclear in 'SaveToTextFile', Raw Data Written
+BoSSS.Solution.Gnuplot.Plot2Ddata+XYvalues
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

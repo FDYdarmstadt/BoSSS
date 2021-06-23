@@ -13,6 +13,7 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using System.Collections;
 using NUnit.Framework;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.CDG_ProjectionTest {
 
@@ -21,12 +22,12 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
 
-            BoSSS.Solution.Application.InitMPI();
-            var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
-            AUT.AllUp(3, 2, 4);
-            BoSSS.Solution.Application.FinalizeMPI();
-            Assert.IsTrue(false, "Remove me");
-            return;
+            //BoSSS.Solution.Application.InitMPI();
+            //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
+            //AUT.AllUp(3, 2, 4);
+            //BoSSS.Solution.Application.FinalizeMPI();
+            //Assert.IsTrue(false, "Remove me");
+            //return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
                 CDGprojectionMain p = new CDGprojectionMain();
@@ -34,9 +35,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             });
         }
 
-        internal int dimension = 3;
-        internal int degree = 5;
-        internal int gridResolution = 2;
+        internal int dimension = 2;
+        internal int degree = 1;
+        internal int gridResolution = 6;
 
         internal bool periodicX = false;
         internal bool periodicY = false;
@@ -76,14 +77,20 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         protected override IGrid CreateOrLoadGrid() {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
-            double[] node2 = GenericBlas.Linspace(0, 1, 2);
-            //double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
+            double[] node2pi = GenericBlas.Linspace(0, 2 * Math.PI, (2 * gridResolution) + 1);
+            double[] node2 = GenericBlas.Linspace(0, (1.0 / (2.0 * gridResolution)), 3);
+            double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
+
+            double[] droplet_xy = GenericBlas.Linspace(0, 3, (2 * gridResolution) + 1);
+            double[] droplet_z = GenericBlas.Linspace(-3, 3, (4 * gridResolution) + 1);
 
             GridCommons grid;
             if (dimension == 2)
-                grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+                grid = Grid2D.Cartesian2DGrid(nodes, node2, periodicX: periodicX, periodicY: periodicY);
+                //grid = Grid2D.Cartesian2DGrid(node2pi, node2, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
-                grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+                //grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+                grid = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
             else
                 throw new NotSupportedException("Not supported spatial dimension");
 
@@ -95,7 +102,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         SinglePhaseField result0;
         SinglePhaseField result1;
 
-        ConstrainedDGField cdgField0;    // projection on the same DG basis
+        ConstrainedDGField cdgField0;   // projection on the same DG basis
         ConstrainedDGField cdgField1;   // projection on a DG basis with degree + 1
 
 
@@ -132,6 +139,14 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 //CellMask msk2D = CellMask.GetCellMask((BoSSS.Foundation.Grid.Classic.GridData)(this.GridData),
                 //    X => (X[0] > 0.0 && X[0] < 4.0 && X[1] > 0.0 && X[1] < 1.0));
 
+
+                //Console.WriteLine("Test 2D projection function 1: sin(x)");
+                //Func<double[], double> projFunc = X => Math.Sin(X[0]);
+                //Console.WriteLine("project on full mask");
+                //string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
+
                 Console.WriteLine("Test 2D projection function 1: sin(x) + cos(x) + x - cos(y) - 1");
                 Func<double[], double> projFunc = X => Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (Math.Cos(X[1]) + 1);
                 Console.WriteLine("project on full mask");
@@ -151,11 +166,41 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             if (this.dimension == 3) {
 
-                Console.WriteLine("Test 3D projection function 1: sin(x) + cos(x) + x - y + sin(z) - 1");
-                Func<double[], double> projFunc = X => (Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (X[1] + 1) + Math.Sin(X[2]));
-                Console.WriteLine("project on full mask");
-                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
-                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //Console.WriteLine("Test 3D projection function 1: sin(x) + cos(x) + x - y + sin(z) - 1");
+                //Func<double[], double> projFunc = X => (Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (X[1] + 1) + Math.Sin(X[2]));
+                //Console.WriteLine("project on full mask");
+                //string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
+
+                Console.WriteLine("Test 3D projection function: Legendre Polynomial");
+                double r_0 = 1;
+                double a_P = 0.5;  
+                double a_0 = 0.94754;   
+                Func<double[], double> projFunc = delegate (double[] X) {
+                    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+                    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+                    double theta = Math.Atan2(r_xy, -X[2]);
+                    double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));   
+                    double phi = r - f;
+                    return phi;
+                };
+                //Console.WriteLine("project on full mask");
+
+                SinglePhaseField phiField = new SinglePhaseField(new Basis(this.GridData, degree));
+                phiField.ProjectField(projFunc);
+                var LevSet = new LevelSet(phiField.Basis, "LevelSet");
+                LevSet.Acc(1.0, phiField);
+                var LsTrk = new LevelSetTracker((GridData)phiField.GridDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
+                LsTrk.UpdateTracker(0.0);
+                CellMask near = LsTrk.Regions.GetNearFieldMask(1);
+                //SinglePhaseField nearField = new SinglePhaseField(new Basis(this.GridData, 0));
+                //nearField.AccConstant(1.0, near);
+                //Tecplot.PlotFields(new DGField[]{ nearField }, "CDGproj_nearField", 0.0, 0);
+                Console.WriteLine("project on near field mask; no of cells {0}", near.NoOfItemsLocally);
+
+                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-funcL";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), near, name_disc);
 
 
                 //// should be exact for p >= 3
@@ -173,8 +218,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         }
 
-        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.PlotFields(new DGField[] { this.origin, this.result0, this.result1 }, "CDGproj_" + timestepNo, physTime, superSampling);
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 3) {
+            Tecplot.PlotFields(new DGField[] { this.origin, this.result0, this.result1 }, "CDGproj_" + timestepNo, physTime, 3);
         }
 
 
@@ -192,7 +237,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField0
-            cdgField0.ProjectDGField(origin, domain);
+            var returnFields = cdgField0.ProjectDGField(origin, domain);
+            //Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
             cdgField0.AccToDGField(1.0, result0, domain);
 
             var errField = origin.CloneAs();
@@ -209,9 +255,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 Console.WriteLine("projection0 FAILED");
                 _passed &= false;
                 Console.WriteLine("L2err0 = {0}; L2jump = {1}", L2err0, L2jump);
-                PlotCurrentState(0.0, 0, 3);
+                PlotCurrentState(0.0, new TimestepNumber(1, 0), 3);
             }
-            Console.WriteLine("L2 jump result0 field = {0}", L2jump);
+            Console.WriteLine("L2 jump result0 field = {0}; L2 error norm = {1}", L2jump, L2err0);
 
             //// project and check cdgField1
             //cdgField1.ProjectDGField(origin, domain);
@@ -229,8 +275,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             //} else {
             //    Console.WriteLine("projection1 FAILED");
             //    _passed &= false;
-            //    Console.WriteLine("L2err1 = {0}; L2err0 = {1}; L2jump = {1}", L2err1, L2err0, L2jump);
-            //    PlotCurrentState(0.0, 0, 3);
+            //    Console.WriteLine("L2err1 = {0}; L2err0 = {1}; L2jump = {2}", L2err1, L2err0, L2jump);
+            //    PlotCurrentState(0.0, new TimestepNumber(1, 1), 3);
             //}
             //Console.WriteLine("L2 jump result1 field = {0}", L2jump);
 
@@ -269,7 +315,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             double Unorm = 0;
 
             EdgeQuadrature.GetQuadrature(
-                new int[] { D + 1 }, grd,
+                new int[] { 1 }, grd,
                 (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, f.Basis.Degree * 2),
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     NodeSet NS = QR.Nodes;

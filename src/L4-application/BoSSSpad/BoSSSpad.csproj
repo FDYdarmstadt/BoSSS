@@ -164,10 +164,6 @@
     <Compile Include="XmlDocumentationExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\internal\src\private-gutz\L4-application\LowMachCombustionNSE\LowMachCombustionNSE.csproj">
-      <Project>{9a1b20c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
-      <Name>LowMachCombustionNSE</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
       <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
       <Name>ilPSP.LinSolvers.MUMPS</Name>
@@ -187,6 +183,10 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj">
       <Project>{c0c92515-fc32-49b7-b128-29cc7bfa7b6c}</Project>
       <Name>BoSSS.Solution.CompressibleFlowCommon</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj">
+      <Project>{7c92a61e-a113-4093-9e37-2786ac737f36}</Project>
+      <Name>BoSSS.Solution.EnergyCommon</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
       <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
