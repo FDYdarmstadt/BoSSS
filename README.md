@@ -14,18 +14,16 @@ the rapid prototyping discretization of partial differential equations.
 
 ## Getting Started
 
-See our installation instructions for Windows, Linux and Mac in the [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest)  
-
-
-## Quickstart guides and Tutorials
-
-See in our [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest) 
+See our installation instructions for Windows, Linux and Mac in the [Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/home)  
 
 
 ## Note for publication
 
-If you are using BoSSS for one of your publications, we kindly ask you to cite one of our own publications, which corresponds most to your work. 
-See in the appendix of the [BoSSS handbook](https://github.com/FDYdarmstadt/BoSSS/releases/latest) a list of our publications.  
+If you are using BoSSS for one of your works, 
+we kindly ask you to cite one of our own publications, which corresponds most to your work. 
+See at the homepage of 
+[TU Darmstadt - Fluid Dynamics](https://www.fdy.tu-darmstadt.de/fdyresearch/bossscode/bosss_publications/publications.en.jsp)
+for a list of publications.  
 
 
 ## License
