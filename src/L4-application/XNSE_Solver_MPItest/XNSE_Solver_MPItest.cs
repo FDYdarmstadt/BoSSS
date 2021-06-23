@@ -267,12 +267,17 @@ Index was outside the bounds of the array.
 
         public static void LoadbalancingAndAMR_Activated() {
             // 3 cores
-            var C = Rotating_Cube(2, 10, 3, false);
+            var C = Rotating_Cube(2, 10, 3, true,true);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
+        }
+
+        public static void RotatingSphereWithAMR() {
+            // 8 cores
+            var C = Rotating_Sphere(2,20,30,true,false);
         }
 
         /// <summary>
@@ -625,8 +630,20 @@ Index was outside the bounds of the array.
 
         }
 
-
         public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube);
+        }
+
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere);
+        }
+
+        enum Geometry {
+            Cube = 0,
+            Sphere = 1,
+        }
+
+        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -694,19 +711,32 @@ Index was outside the bounds of the array.
             double particleRad = 0.26;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double power = 10;
                 double angle = -(anglev * t) % (2 * Math.PI);
-                switch (SpaceDim) {
-                    case 2:
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-                    case 3:
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                switch (Gshape) {
+                    case Geometry.Cube:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                            + particleRad;
+                        case 3:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                                Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                                + particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    };
+                    case Geometry.Sphere:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                        case 3:
+                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    }
                     default:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("Shape unknown");
                 }
             };
 
@@ -759,8 +789,6 @@ Index was outside the bounds of the array.
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.UseSchurBlockPrec = true;
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
