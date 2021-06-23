@@ -1333,8 +1333,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 27, int method = 0, double mu_scl = 1.0, bool onlyB = false) {
-
+        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 27) {
+            // --control cs:BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet_Kummer()
             XNSE_Control C = new XNSE_Control();
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
@@ -1359,35 +1359,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             // DG degrees
             // ==========
-            #region degrees
-
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-
-
-            #endregion
-
+            C.SetDGdegree(p);
 
             // Physical Parameters
             // ===================
@@ -1409,7 +1381,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 9e-2;
+            double L = 9e-2; // 
             //double xSize = 1.0;
             //double ySize = 1.0;
 
@@ -1418,19 +1390,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-                grd.EdgeTagNames.Add(1, "wall");
-
+                
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
-                    if (Math.Abs(X[1] + (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[1] - (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] + (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    if (Math.Abs(X[0] - (L / 2.0)) <= 1.0e-8)
-                        et = 1;
-                    return et;
+                    return "wall";
                 });
 
                 return grd;
@@ -1450,49 +1412,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
-
-            //double Pjump = sigma / r;
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
-            //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
-
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
-
-
-            //// restart
-            //var database = new DatabaseInfo(_DbPath);
-            //Guid restartID = new Guid("c95b2833-288e-4014-ba08-affa65a2398e");
-            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-
+            
             #endregion
 
 
-            // exact solution
-            // ==============
-            #region exact
-
-            //C.Phi = ((X, t) => PhiFunc(X));
-
-            //C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            //C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-            //C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-
-            //C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            //C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            //C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
-
-            #endregion
-
-
-            // boundary conditions
-            // ===================
-            #region BC
-
-            C.AddBoundaryValue("wall");
-
-            #endregion
 
 
             // misc. solver options
