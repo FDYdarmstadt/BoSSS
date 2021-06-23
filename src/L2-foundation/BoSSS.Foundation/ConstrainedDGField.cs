@@ -37,11 +37,6 @@ namespace BoSSS.Foundation {
     public class myCG : IDisposable {
         public void Init(BlockMsrMatrix M) {
             m_Matrix = M;
-//#if TEST
-//            var tmp=M.ToFullMatrixOnProc0();
-//            if(M.RowPartitioning.MpiRank==0)
-//                tmp.SaveToTextFile("fullM");
-//#endif
             //var M_test = M.CloneAs();
             //M_test.Acc(-1.0, M.Transpose());
             //Console.WriteLine("Symm-test: " + M_test.InfNorm());
@@ -1571,15 +1566,15 @@ namespace BoSSS.Foundation {
             var StopInit = new Stopwatch();
             var StopSolve = new Stopwatch();
 
-            //var expSolver = new myCG();
-            //StopInit.Start();
-            //expSolver.Init(AAT);
-            //StopInit.Stop();
-            //StopSolve.Start();
-            //expSolver.Solve(v, RHS);
-            //StopSolve.Stop();
-            ////long memend = myself.PrivateMemorySize64 / (1024 * 1024);
-            //expSolver.Dispose();
+            var expSolver = new myCG();
+            StopInit.Start();
+            expSolver.Init(AAT);
+            StopInit.Stop();
+            StopSolve.Start();
+            expSolver.Solve(v, RHS);
+            StopSolve.Stop();
+            //long memend = myself.PrivateMemorySize64 / (1024 * 1024);
+            expSolver.Dispose();
 
             //var solver = new ilPSP.LinSolvers.HYPRE.GMRES();
             //var precond = new ilPSP.LinSolvers.HYPRE.BoomerAMG() {
@@ -1606,15 +1601,15 @@ namespace BoSSS.Foundation {
             //StopSolve.Stop();
             //solver.Dispose();
 
-            StopInit.Start();
-            OpSolver.DefineMatrix(AAT);
-            StopInit.Stop();
-            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            StopSolve.Start();
-            OpSolver.Solve(v, RHS);
-            StopSolve.Stop();
-            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            OpSolver.Dispose();
+            //StopInit.Start();
+            //OpSolver.DefineMatrix(AAT);
+            //StopInit.Stop();
+            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
+            //StopSolve.Start();
+            //OpSolver.Solve(v, RHS);
+            //StopSolve.Stop();
+            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
+            //OpSolver.Dispose();
 
             Console.WriteLine("Init time: " + StopInit.Elapsed.TotalSeconds);
             Console.WriteLine("Solve time: " + StopSolve.Elapsed.TotalSeconds);

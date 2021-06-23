@@ -1491,24 +1491,37 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
-                        CoarseSolveOfCutcells = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
                     };
 
                     //var solve1 = new LevelPmg() {
-                    //    CoarseLowOrder = 1,
+                    //    OrderOfCoarseSystem = 1,
+                    //    UseHiOrderSmoothing = true,
+                    //    FullSolveOfCutcells = true,
+                    //    SkipLowOrderSolve = true,
+                    //};
+
+                    //var solve2 = new LevelPmg() {
+                    //    OrderOfCoarseSystem = 1,
                     //    UseHiOrderSmoothing = false,
-                    //    AssignXdGCellsToLowBlocks = true
+                    //    FullSolveOfCutcells = true,
+                    //    SkipLowOrderSolve = false,
+                    //};
+
+                    //var smoother1 = new LevelPmg() {
+                    //    OrderOfCoarseSystem = 1,
+                    //    UseHiOrderSmoothing = true,
+                    //    FullSolveOfCutcells = false,
+                    //    UseDiagonalPmg = false,
+                    //    SkipLowOrderSolve = true
                     //};
 
                     //var solve2 = new BlockJacobi() { omega = 0.3 };
 
-                    //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve1, solve2 } };
+                    //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve2, solve1 } };
 
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
@@ -1608,8 +1621,8 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                            NoOfPartsOnCurrentProcess = 4
+                            NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks
+                            //NoOfPartsOnCurrentProcess = 4
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
@@ -1618,11 +1631,7 @@ namespace BoSSS.Solution {
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                     };
 
-                    //var solve1 = new LevelPmg() {
-                    //    CoarseLowOrder = 1,
-                    //    UseHiOrderSmoothing = false,
-                    //    AssignXdGCellsToLowBlocks = true
-                    //};
+                    
 
                     //var solve2 = new BlockJacobi() { omega = 0.5 };
 

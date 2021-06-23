@@ -522,18 +522,29 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 1,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
             if (writeToDB) {
-                //C.DbPath = @"D:\trash_db";
-                C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                //C.DbPath = @"W:\work\scratch\jw52xeqa\DB_IBM_test";
-                //C.AlternateDbPaths = new[] {
-                //(@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
-                //(@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                var thisOS = System.Environment.OSVersion.Platform;
+                var MachineName = System.Environment.MachineName;
+                switch (thisOS) {
+                    case PlatformID.Unix:
+                        C.AlternateDbPaths = new[] {
+                        (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                        (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                        break;
+                    case PlatformID.Win32NT:
+                        if (MachineName == "PCMIT32")
+                        C.DbPath = @"D:\trash_db";
+                        else
+                        C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                        break;
+                    default:
+                        throw new Exception("No Db-path specified. You stupid?");
+                }               
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
@@ -653,41 +664,44 @@ namespace BoSSS.Application.XNSE_Solver {
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (SpaceDim) {
                     case 2:
-                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
-                    //+ particleRad; // 1e6
-
+                    // Inf-Norm square
                     return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
                         Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
                         + particleRad;
 
+                    // p-Norm square
+                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
+                    //+ particleRad; // 1e6
+
+                    // 0-Norm square
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //+ Math.Abs(particleRad);
+
+                    // circle
                     //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
-                    // Inf-Norm
+                    // Inf-Norm cube
                     return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
                                             Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
                                             Math.Abs(X[2] - pos[2])))
                                             + particleRad;
 
+                    // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                     //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
                     //+ Math.Pow(X[2] - pos[2], power),1.0/power)
                     //+ particleRad;
 
-                    //return -Math.Max(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power))
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power), 1.0 / power)
-                    //+ particleRad;
-
+                    // 0-Norm cube
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //- Math.Abs(X[2] - pos[2])
                     //+ Math.Abs(particleRad);
 
+                    // sphere
                     //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
