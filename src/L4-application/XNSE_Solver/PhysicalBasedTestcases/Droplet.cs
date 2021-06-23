@@ -1413,11 +1413,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            
+
             #endregion
-
-
-
+            
+            C.AdaptiveMeshRefinement = false;
+            /*
+            C.activeAMRlevelIndicators.Add(
+                new AMRonNarrowband() {
+                    maxRefinementLevel = 3
+                });
+            C.AMR_startUpSweeps = 2;
+            */
 
             // misc. solver options
             // ====================
@@ -1445,23 +1451,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            //C.LinearSolver.NoOfMultigridLevels = 1;
-            //C.NonLinearSolver.MaxSolverIterations = 50;
-            //C.LinearSolver.MaxSolverIterations = 50;
-            ////C.Solver_MaxIterations = 80;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            //C.LinearSolver.ConvergenceCriterion = 1e-8;
-            ////C.Solver_ConvergenceCriterion = 1e-8;
-            //C.LevelSet_ConvergenceCriterion = 1e-6;
-
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             
-            C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
-            
-
-
             //C.SetLevelSetMethod(method, FourierCntrl);
             //C.SessionName = "OscillatingDroplet_setup3_muScl"+mu_scl+"_methodStudy_k2_" + C.methodTagLS;
 

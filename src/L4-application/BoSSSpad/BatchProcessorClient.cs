@@ -210,7 +210,7 @@ namespace BoSSS.Application.BoSSSpad {
                             return true;
                     }
 
-                    (fullDbPath, fullAltPath).AddToArray(ref ctrl.AlternateDbPaths);
+                    (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
 
                     return true;
                 }

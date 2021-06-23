@@ -314,18 +314,21 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
         public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// desired minimum refinement level at interface
         /// </summary>
         [DataMember]
         public int BaseRefinementLevel = 0;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
@@ -333,6 +336,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// additional refinement of the navier slip boundary 
         /// </summary>
         [DataMember]
