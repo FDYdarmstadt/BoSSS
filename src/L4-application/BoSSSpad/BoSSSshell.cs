@@ -243,6 +243,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Alias for <see cref="WorkflowMgm"/>
+        /// </summary>
+        public static WorkflowMgm wmg {
+            get {
+                return WorkflowMgm;
+            }
+        }
+
+        /// <summary>
         /// Reset states which survive a restart of the interpreter.
         /// </summary>
         static void Reset() {
