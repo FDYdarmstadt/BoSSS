@@ -564,7 +564,7 @@ namespace BoSSS.Foundation {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
             m_Mapping = new UnsetteledCoordinateMapping(b);
-            m_Coordinates = MultidimensionalArray.Create(m_Mapping.LocalLength);
+            m_Coordinates = new double[m_Mapping.LocalLength];
         }
 
         Basis m_Basis;
@@ -579,9 +579,9 @@ namespace BoSSS.Foundation {
 
         UnsetteledCoordinateMapping m_Mapping;
 
-        MultidimensionalArray m_Coordinates;
+        double[] m_Coordinates;
 
-        public MultidimensionalArray Coordinates {
+        public double[] Coordinates {
             get {
                 return m_Coordinates;
             }
@@ -591,7 +591,7 @@ namespace BoSSS.Foundation {
 
 
         //int NoOfPatchesPerProcess = 0;  // if < 1 the number of patches is determined by 
-        int maxNoOfCoordinates = 4000; 
+        int maxNoOfCoordinates = 10000; 
 
 
         /// <summary>
@@ -637,14 +637,14 @@ namespace BoSSS.Foundation {
                 throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
 
-            int NoOfFixedPatches = 0;
+            int NoOfFixedPatches = 1;
 
             return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
 
         }
 
 
-        bool diagOutput0 = true;
+        bool diagOutput0 = false;
         bool diagOutput1 = false;
         //bool diagOutput2 = true;
 
@@ -660,7 +660,7 @@ namespace BoSSS.Foundation {
             if (NoOfPatchesPerProcess > 0) {
                 NoPatches = NoOfPatchesPerProcess;
             } else {
-                int NoOfCoordOnProc = mask.NoOfItemsLocally * DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
+                int NoOfCoordOnProc = mask.NoOfItemsLocally * m_Basis.Length;
                 if (NoOfCoordOnProc > maxNoOfCoordinates) {
                     NoPatches = (NoOfCoordOnProc / maxNoOfCoordinates) + 1;
                 }
@@ -733,7 +733,7 @@ namespace BoSSS.Foundation {
                 // projection of local projection on separate patches
                 DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
                 int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
-                localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+                localProj._Acc(1.0, m_Coordinates, 0, stride, true);
 
 
                 if (diagOutput0) {
@@ -834,6 +834,12 @@ namespace BoSSS.Foundation {
 
             MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
+            //// projection of local projection on separate patches
+            //DGField exchangeProj = new SinglePhaseField(m_Basis, "exchangeProjection");
+            //exchangeProj._Acc(1.0, m_Coordinates, 0, m_Mapping.MaxTotalNoOfCoordinatesPerCell, true);
+            //exchangeProj.MPIExchange();
+            //m_Coordinates = exchangeProj.CoordinateVector.ToArray();
+
             // continuity projection between processes
             if (m_grd.MpiSize > 1) {
 
@@ -912,7 +918,7 @@ namespace BoSSS.Foundation {
 
             DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
-            localProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+            localProj._Acc(1.0, m_Coordinates, 0, stride, true);
 
             double Unorm = 0;
 
@@ -1069,13 +1075,13 @@ namespace BoSSS.Foundation {
 
             int count = 0;
             long _nodeCount = A.RowPartitioning.i0; // start at global index
-            double[] RHS_non0c = new double[nodeCount];   // non-zero equality constrains
+            double[] RHS_non0c = new double[rowBlockPart.LocalLength];   // non-zero equality constrains
 
             if (fixedBoundaryMask != null) {
 
                 DGField internalProj = new SinglePhaseField(m_Basis);
-                int stride = DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
-                internalProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+                int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
+                internalProj._Acc(1.0, m_Coordinates, 0, stride, true);
 
                 var retCount = assembleConstrainsMatrix_nonZeroConstrains(A, fixedBoundaryMask, AcceptedNodes, mask, internalProj, RHS_non0c, count, _nodeCount);
                 count = retCount.Item1;
@@ -1113,7 +1119,7 @@ namespace BoSSS.Foundation {
             BlockMsrMatrix.Multiply(AAT, A, AT);
 
             double[] RHS = new double[rowBlockPart.LocalLength];           
-            A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
+            A.SpMV(1.0, m_Coordinates, 0.0, RHS);
             RHS.AccV(-1.0, RHS_non0c);
 
             double[] v = new double[rowBlockPart.LocalLength];
@@ -1125,7 +1131,7 @@ namespace BoSSS.Foundation {
 
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
-            m_Coordinates.AccVector(1.0, x);          
+            m_Coordinates.AccV(1.0, x);          
 
         }
 
@@ -1204,8 +1210,10 @@ namespace BoSSS.Foundation {
             {
 
                 DGField internalProj = new SinglePhaseField(m_Basis);
-                int stride = DGField.Mapping.MaxTotalNoOfCoordinatesPerCell;
-                internalProj._Acc(1.0, m_Coordinates.To1DArray(), 0, stride, true);
+                int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
+                internalProj._Acc(1.0, m_Coordinates, 0, stride, true);
+                internalProj.MPIExchange();
+                m_Coordinates = internalProj.CoordinateVector.ToArray();
 
                 var retCount = assembleConstrainsMatrix_nonZeroConstrains(A, fixedBoundaryMask, AcceptedNodes, mask, internalProj, RHS_non0c, count, _nodeCountA);
                 count = retCount.Item1;
@@ -1243,7 +1251,7 @@ namespace BoSSS.Foundation {
             BlockMsrMatrix.Multiply(AAT, A, AT);
 
             double[] RHS = new double[rowBlockPart.LocalLength];
-            A.SpMV(1.0, m_Coordinates.To1DArray(), 0.0, RHS);
+            A.SpMV(1.0, m_Coordinates, 0.0, RHS);
             RHS.AccV(-1.0, RHS_non0c);
 
             double[] v = new double[rowBlockPart.LocalLength];
@@ -1255,7 +1263,7 @@ namespace BoSSS.Foundation {
 
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
-            m_Coordinates.AccVector(1.0, x);
+            m_Coordinates.AccV(1.0, x);
 
         }
 
