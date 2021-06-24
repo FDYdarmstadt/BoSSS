@@ -8,6 +8,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -271,6 +272,16 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                         ErrMsg = stw.ToString();
                     }
                     Console.Error.WriteLine(ErrMsg);
+
+                    string curDir = System.IO.Directory.GetCurrentDirectory();
+                    string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
+                    foreach(var plt in System.IO.Directory.GetFiles(failVault, "*.plt")) {
+                        System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(failVault)));
+                    }
+
+                    OpMtx.SaveToTextFileSparse(Path.Combine(failVault, "StokesExtMtx.txt"));
+                    RHS.SaveToTextFile(Path.Combine(failVault, "StokesExtRHS.txt"));
+                    ExtenstionSolVec.SaveToTextFile(Path.Combine(failVault, "StokesExtSOL.txt"));
 
                     throw new ArithmeticException(ErrMsg);
 
