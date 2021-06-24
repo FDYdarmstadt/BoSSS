@@ -1871,7 +1871,7 @@ namespace BoSSS.Solution {
 
                 if(LsTrk != null) {
                     LsTrk.UpdateTracker(time);
-                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
+                    LsTrk.UpdateTracker(time); // doppeltes Update hï¿½lt besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)

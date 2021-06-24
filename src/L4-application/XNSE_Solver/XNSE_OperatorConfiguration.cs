@@ -294,7 +294,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public XNSFE_OperatorConfiguration(XNSE_Control control)
             : base(control) {
 
-            AgglomerationTreshold = control.AdvancedDiscretizationOptions.CellAgglomerationThreshold;
+            AgglomerationTreshold = control.AgglomerationThreshold;
 
             thermParams = control.ThermalParameters;
 

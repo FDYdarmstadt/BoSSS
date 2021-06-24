@@ -83,6 +83,14 @@ namespace BoSSS.Application.BoSSSpad {
     abstract public class BatchProcessorClient {
 
         /// <summary>
+        /// 
+        /// </summary>
+        protected BatchProcessorClient() {
+            DotnetRuntime = "dotnet";
+        }
+
+
+        /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
         /// </summary>
@@ -143,6 +151,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <seealso cref="AllowedDatabasesPaths"/>
         public bool IsDatabaseAllowed(AppControl ctrl) {
+            //Debugger.Launch();
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 return true;
             var dbi = ctrl.GetDatabase();
@@ -161,6 +170,7 @@ namespace BoSSS.Application.BoSSSpad {
                 fullDbPath = dbi.Path;
             }
 
+
             // check if path is allowed
             foreach(var pp in AllowedDatabasesPaths) {
                 if(!Path.IsPathRooted(pp.LocalMountPath)) {
@@ -175,7 +185,9 @@ namespace BoSSS.Application.BoSSSpad {
                     string PathAtRemote = pp.PathAtRemote;
                     if(PathAtRemote.IsEmptyOrWhite())
                         PathAtRemote = pp.LocalMountPath;
-                    
+                    PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
+
+                    string DirSep;
                     if(PathAtRemote.StartsWith("/")) {
                         // very likely to be a Unix path
 
@@ -185,16 +197,20 @@ namespace BoSSS.Application.BoSSSpad {
                         // (don't consider the other way, i.e. Unix to Windows:
                         // nobody who works on Linux seriously 
                         // considers a Windows HPC system).
+
+                        DirSep = "/";
+                    } else {
+                        DirSep = @"\";
                     }
 
-                    string fullAltPath = PathAtRemote + relDbPath;
+                    string fullAltPath = PathAtRemote + DirSep + relDbPath;
                     
                     if(ctrl.AlternateDbPaths != null) {
                         if(ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
                             return true;
                     }
 
-                    (fullDbPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+                    (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
 
                     return true;
                 }

@@ -207,6 +207,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public string methodTagLS;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Obsolete] // really?
         public void SetLevelSetMethod(int method, FourierLevSetControl _FourierControl = null) {
 
             LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -310,18 +314,21 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
         public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// desired minimum refinement level at interface
         /// </summary>
         [DataMember]
         public int BaseRefinementLevel = 0;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
@@ -329,6 +336,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// additional refinement of the navier slip boundary 
         /// </summary>
         [DataMember]
@@ -387,7 +395,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
         /// <summary>
-        /// defines the number of incremental timesteps in one gloabl timestep (for incrementInit)
+        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
         /// </summary>
         public int incrementTimesteps = 1;
 

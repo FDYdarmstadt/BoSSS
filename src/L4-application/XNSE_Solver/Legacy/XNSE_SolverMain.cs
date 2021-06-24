@@ -818,7 +818,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                 R.Clear();
 
                 Mgop.TransformRhsFrom(R, currentRes);
-                this.LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                this.LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AgglomerationThreshold,
                     AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true).Extrapolate(R.Mapping);
 
                 for (int i = 0; i < NF; i++) {
@@ -933,7 +933,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
                     this.MultigridOperatorConfig, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
-                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    this.Control.AgglomerationThreshold,
                     true,
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver

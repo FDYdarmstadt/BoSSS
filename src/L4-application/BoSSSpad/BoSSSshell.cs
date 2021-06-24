@@ -92,18 +92,20 @@ namespace BoSSS.Application.BoSSSpad {
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
+            AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
             AddObjectFormatter<IGridData>();
 
             AddObjectFormatter<ISessionInfo>();
             AddObjectFormatter<IDatabaseInfo>();
 
-            AddListFormatter<IGridInfo>();
-            AddListFormatter<IDatabaseInfo>();
-            AddListFormatter<ISessionInfo>();
+            AddEnumFormatter<IGridInfo>();
+            AddEnumFormatter<IDatabaseInfo>();
+            AddEnumFormatter<ISessionInfo>();
 
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
-
+            AddObjectFormatter<Job>();
+            AddEnumFormatter<Job>();
         }
 
         static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
@@ -160,7 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Text Formatter for <see cref="IEnumerable{t}"/> 
         /// </summary>
-        static void AddListFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
+        static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
             Formatter.SetPreferredMimeTypeFor(t, "text/plain");
@@ -238,6 +240,15 @@ namespace BoSSS.Application.BoSSSpad {
                 if (m_WorkflowMgm == null)
                     m_WorkflowMgm = new WorkflowMgm();
                 return m_WorkflowMgm;
+            }
+        }
+
+        /// <summary>
+        /// Alias for <see cref="WorkflowMgm"/>
+        /// </summary>
+        public static WorkflowMgm wmg {
+            get {
+                return WorkflowMgm;
             }
         }
 
@@ -423,6 +434,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+           
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
@@ -772,7 +784,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-
+            //Debugger.Launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();

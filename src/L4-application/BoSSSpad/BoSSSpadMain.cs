@@ -189,7 +189,7 @@ namespace BoSSS.Application.BoSSSpad {
             // launch the app
             // ==============
             bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
-
+            
             switch (mode) {
                 //case Modes.Worksheet:
                 //throw new NotSupportedException("GUI has been removed; use Jupyter notebook!");
@@ -392,10 +392,12 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using ilPSP;");
                 stw.WriteLine("using ilPSP.Utils;");
                 stw.WriteLine("using BoSSS.Platform;");
+                stw.WriteLine("using BoSSS.Platform.LinAlg;");
                 stw.WriteLine("using BoSSS.Foundation;");
                 stw.WriteLine("using BoSSS.Foundation.XDG;");
                 stw.WriteLine("using BoSSS.Foundation.Grid;");
                 stw.WriteLine("using BoSSS.Foundation.Grid.Classic;");
+                stw.WriteLine("using BoSSS.Foundation.Grid.RefElements;");
                 stw.WriteLine("using BoSSS.Foundation.IO;");
                 stw.WriteLine("using BoSSS.Solution;");
                 stw.WriteLine("using BoSSS.Solution.Control;");

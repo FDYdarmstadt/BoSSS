@@ -311,7 +311,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("velocity_inlet", "VelocityY#B", (X, t) => X[1]);
 
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+            C.AgglomerationThreshold = 0.0;
 
             C.PhysicalParameters.useArtificialSurfaceForce = true;
             C.PhysicalParameters.rho_A = RHO_A;
@@ -501,7 +501,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
@@ -725,7 +725,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1140,7 +1140,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1566,7 +1566,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -1765,7 +1765,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -3455,7 +3455,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4117,7 +4117,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -4320,7 +4320,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -4501,7 +4501,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.LinearSolver.MaxSolverIterations = 50;

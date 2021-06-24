@@ -666,7 +666,7 @@ System.ArgumentException: DG degree seems different
             C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
