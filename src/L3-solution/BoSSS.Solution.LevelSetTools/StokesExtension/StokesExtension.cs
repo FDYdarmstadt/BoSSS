@@ -275,6 +275,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
                     string curDir = System.IO.Directory.GetCurrentDirectory();
                     string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
+                    Directory.CreateDirectory(failVault);
                     foreach(var plt in System.IO.Directory.GetFiles(failVault, "*.plt")) {
                         System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(failVault)));
                     }
