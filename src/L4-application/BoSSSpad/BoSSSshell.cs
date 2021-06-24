@@ -152,6 +152,7 @@ namespace BoSSS.Application.BoSSSpad {
                             keyString = kv.Key != null ? optKeyFormatter(kv.Value) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + kv.Value + "\t" + kv.Value.ToString());
+                        i++;
                     }
                 });
         }
@@ -178,6 +179,7 @@ namespace BoSSS.Application.BoSSSpad {
                             valString = v != null ? optValFormatter(v) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + v.ToString());
+                        i++;
                     }
                 });
         }
