@@ -163,6 +163,48 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
         /// </summary>
+        public XYvalues AddDataGroup(XYvalues dataGroup, string FormatString = null) {
+            var fmt = FormatString != null ? new PlotFormat(FormatString) : null;
+            return AddDataGroup(dataGroup, fmt);
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values, string FormatString = null) {
+            var fmt = FormatString != null ? new PlotFormat(FormatString) : null;
+            return AddDataGroup(name, Abscissas, values, fmt);
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values){
+            return AddDataGroup(name, Abscissas, values, default(string));
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values, string FormatString = null) {
+            var fmt = FormatString != null ? new PlotFormat(FormatString) : null;
+            return AddDataGroup(Abscissas, values, fmt);
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(XYvalues dataGroup, PlotFormat Format = null) {
+            dataGroup.AddToArray(ref dataGroups);
+            if(Format != null) {
+                dataGroups[dataGroups.Length - 1].Format = Format;
+            }
+            return dataGroup;
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
         public XYvalues AddDataGroup(XYvalues dataGroup) {
             dataGroup.AddToArray(ref dataGroups);
             return dataGroup;
@@ -171,9 +213,17 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
         /// </summary>
-        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values) {
+        public XYvalues AddDataGroup(string name, IEnumerable<double> Abscissas, IEnumerable<double> values, PlotFormat Format = null) {
             var r = new XYvalues(name, Abscissas.ToArray(), values.ToArray());
-            return AddDataGroup(r);
+            return AddDataGroup(r, Format);
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="XYvalues"/> objects to <see cref="dataGroups"/>.
+        /// </summary>
+        public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values, PlotFormat Format = null) {
+            var r = new XYvalues(null, Abscissas.ToArray(), values.ToArray());
+            return AddDataGroup(r, Format);
         }
 
         /// <summary>
@@ -181,7 +231,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         public XYvalues AddDataGroup(IEnumerable<double> Abscissas, IEnumerable<double> values) {
             var r = new XYvalues(null, Abscissas.ToArray(), values.ToArray());
-            return AddDataGroup(r);
+            return AddDataGroup(r, default(string));
         }
         
         /// <summary>
@@ -842,7 +892,7 @@ namespace BoSSS.Solution.Gnuplot {
                 string axisdefinition;
                 axisdefinition = "axis";
 
-                char RegressionCounter = 'a';
+                //char RegressionCounter = 'a';
 
                 s.Write(@"
 %% Uncomment these lines to test the raw output.

@@ -1864,7 +1864,7 @@ namespace BoSSS.Solution {
 
                 if(LsTrk != null) {
                     LsTrk.UpdateTracker(time);
-                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
+                    LsTrk.UpdateTracker(time); // doppeltes Update hï¿½lt besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)
@@ -2064,10 +2064,18 @@ namespace BoSSS.Solution {
 
                 m_queryHandler.QueryResults.Clear();
 
+                if (this.Control.RestartInfo != null) {
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                //// =========================================
-                //// Adaptive-Mesh-Refinement on startup
-                //// =========================================
+                    if (LsTrk != null)
+                        LsTrk.PushStacks();
+                }
+
+                // =========================================
+                // Adaptive-Mesh-Refinement on startup
+                // =========================================
 
                 if (this.Control.AdaptiveMeshRefinement) {
 
@@ -2102,13 +2110,14 @@ namespace BoSSS.Solution {
                 // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
                 // resp. 'LoadRestart(..)'!!!
                 // ================================================================================
-                CreateEquationsAndSolvers(null);
-                tr.LogMemoryStat();
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                if (this.Control.RestartInfo == null) {
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                if(LsTrk != null)
-                    LsTrk.PushStacks();
-
+                    if (LsTrk != null)
+                        LsTrk.PushStacks();
+                }
 
                 // ========================================================================
                 // initial value IO:
@@ -2725,8 +2734,12 @@ namespace BoSSS.Solution {
                         Guid oldGridId = oldGrid.ID;
                         //Permutation tau;
                         GridUpdateDataVault_Adapt remshDat = new GridUpdateDataVault_Adapt(oldGridData, this.LsTrk);
-                        BackupDataOnInit(oldGridData, this.LsTrk, remshDat);
-
+                        if (this.Control.RestartInfo == null) {
+                            BackupDataOnInit(oldGridData, this.LsTrk, remshDat);
+                        } else {
+                            Permutation tau;
+                            BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                        }
                         // save new grid to database
                         // ==========================
 
@@ -2824,8 +2837,22 @@ namespace BoSSS.Solution {
                         }
                         CreateFields(); // full user control   
                         //PostRestart(physTime, TimeStepNo);
-                        if (this.Control.RestartInfo == null)
+                        if (this.Control.RestartInfo == null) {
                             SetInitial(physTime);
+                        } else {
+                            //set dg coordinates
+                            foreach (var f in m_RegisteredFields) {
+                                if (f is XDGField) {
+                                    XDGBasis xb = ((XDGField)f).Basis;
+                                    if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                                        throw new ApplicationException();
+                                }
+                                remshDat.RestoreDGField(f);
+                            }
+
+                            // re-create solvers, etc.
+                            CreateEquationsAndSolvers(remshDat);
+                        }
 
                         //if (plotAdaption)
                         //    PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);

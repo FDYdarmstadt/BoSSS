@@ -220,6 +220,9 @@ namespace BoSSS.Solution.NSECommon {
             if (j == 2)
                 ret = 0.0;
 
+            //if (j == 2)
+            //    ret = rho * V ;
+
             return ret;
         }
 
@@ -229,7 +232,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.AllOn;
+                //return TermActivationFlags.AllOn;
+                return TermActivationFlags.UxV;
             }
         }
     }

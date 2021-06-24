@@ -427,7 +427,7 @@ namespace BoSSS.Foundation.XDG {
                     // Thus, agglomeration levels are only necessary, if agglomeration chains cross processor boundaries.
                     Basis b = new Basis(GridDat, 0);
                     DGField FailedViz = new SinglePhaseField(b, "FailedCells");
-                    bool exception = false;
+
                     for (int iPair = 0; iPair < AggPairs.Count; iPair++) {
                         int jSource = AggPairs[iPair].Item1;
                         int jTarget = AggPairs[iPair].Item2;

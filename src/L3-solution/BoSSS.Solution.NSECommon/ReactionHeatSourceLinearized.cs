@@ -124,7 +124,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="EoS">MaterialLawCombustion</param>  
         public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
             m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
-            m_ParameterOrdering = null;
+            m_ParameterOrdering = new string[] { "kReact" };
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReactionRateConstants = ReactionRateConstants;
             this.molarMasses = molarmasses;
@@ -189,14 +189,50 @@ namespace BoSSS.Solution.NSECommon {
             double YF = U[1];
             double YO = U[2];
 
+
+            //===================================================
+            // Limiting the value of variables using known bounds
+            //====================================================
+            //double T_ad = 10;//  TODO include the right adiabatic temperature
+            //if (Temperature > T_ad) { // Limit the value of the temperature
+            //    //Console.WriteLine("Warning: Value of temperature too high (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
+            //    Temperature = T_ad;
+            //}
+
+            //double lowBoundTemperature = 0.7; // actually should be 1
+            //if (Temperature < lowBoundTemperature) { // Limit the value of the temperature
+            //    //Console.WriteLine("Warning: Value of temperature too low (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
+            //    Temperature = lowBoundTemperature;
+            //}
+
+
+            double PM_CH4 = molarMasses[0];
+            double PM_O2 = molarMasses[1];
+            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2);
+
+            if (double.IsInfinity(ReactionRate)) {
+                Console.WriteLine("Infinite found");
+                Console.WriteLine("Temperature: {0}", Temperature);
+                Console.WriteLine("rho:{0}", rho);
+                Console.WriteLine("ExponentialTerm:{0}", Math.Exp(-Ta / Temperature));
+
+            }
+
+            if (double.IsNaN(ReactionRate)) {
+                Console.WriteLine("Nan found");
+                Console.WriteLine("Temperature:{0}", Temperature);
+                Console.WriteLine("rho:{0}", rho);
+                Console.WriteLine("ExponentialTerm:{0}", Math.Exp(-Ta / Temperature));
+            }
+
+
             if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = ((MaterialLawCombustion)EoS).getTa(YF, YO) / TRef;
                 HeatReleaseFactor = ((MaterialLawCombustion)EoS).getHeatRelease(YF, YO) / (cpRef * TRef);
             }
-            double PM_CH4 = molarMasses[0];
-            double PM_O2 = molarMasses[1];
+    
 
-            ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2);
+        
 
             return -HeatReleaseFactor * ReactionRate * PM_CH4;
 

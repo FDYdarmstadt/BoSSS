@@ -1105,14 +1105,16 @@ namespace BoSSS.Application.FSI_Solver {
                 if (DebugSerialization) {
                     return new JsonTextReader(new StreamReader(s));
                 } else {
-                    return new BsonReader(s);
+                    throw new NotSupportedException("deprecated shit");
+                    //return new BsonReader(s);
                 }
             }
             JsonWriter GetJsonWriter(Stream s) {
                 if (DebugSerialization) {
                     return new JsonTextWriter(new StreamWriter(s));
                 } else {
-                    return new BsonWriter(s);
+                    throw new NotSupportedException("deprecated shit");
+                    //return new BsonWriter(s);
                 }
             }
             byte[] buffer = null;

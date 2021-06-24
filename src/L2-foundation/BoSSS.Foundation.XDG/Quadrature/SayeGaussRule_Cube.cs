@@ -13,7 +13,7 @@ using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    class SayeFactory_Cube :
+    class SayeGaussRule_Cube :
         SayeComboIntegrand<LinearPSI<Cube>, LinearSayeSpace<Cube>>,
         ISayeGaussRule,
         ISayeGaussComboRule
@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         QuadratureMode mode;
 
-        public SayeFactory_Cube(
+        public SayeGaussRule_Cube(
             LevelSetTracker.LevelSetData _lsData,
             IRootFindingAlgorithm RootFinder,
             QuadratureMode Mode)
@@ -94,8 +94,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return emptyRule;
         }
 
-
-
         #endregion
 
         #region Build SayeIntegrand
@@ -125,7 +123,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override MultidimensionalArray Gradient(LinearPSI<Cube> psi, NodeSet Node, int Cell)
         {
-            MultidimensionalArray gradient = ReferenceGradient(Node, Cell);
+            NodeSet nodeOnPsi = psi.ProjectOnto(Node);
+            MultidimensionalArray gradient = ReferenceGradient(nodeOnPsi, Cell);
             return gradient;
         }
 
@@ -183,10 +182,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override bool HeightDirectionIsSuitable(
             LinearSayeSpace<Cube> arg, 
-            LinearPSI<Cube> psi, NodeSet 
-            x_center,
+            LinearPSI<Cube> psi, 
+            NodeSet x_center,
             int heightDirection, 
-            MultidimensionalArray agradient, int cell)
+            MultidimensionalArray gradient, 
+            int cell)
         {
 
             //throw new NotImplementedException();
@@ -203,22 +203,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
             levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
             hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
 
-            //hessian = jacobian * hessian;
+            hessian = jacobian * hessian;
             hessian.ApplyAll(x => Math.Abs(x));
-
-            MultidimensionalArray gradient = lsData.GetLevelSetGradients(nodeOnPsi, cell, 1);
-            gradient = gradient.ExtractSubArrayShallow( 0, 0, -1 ).CloneAs();
-
-            
 
             //abs(Hessian) * 0,5 * diameters.^2 = delta ,( square each entry of diameters) , 
             //this bounds the second error term from taylor series
             //+ + + + 
-            double[] arr = arg.Diameters.CloneAs();
+            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1], arg.Diameters[2] };
             psi.SetInactiveDimsToZero(arr);
             MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1 );
-            diameters = jacobian * diameters;
-            diameters.ApplyAll(x => 0.5 * x * x);
             MultidimensionalArray delta = hessian * diameters;
 
             delta = delta.ExtractSubArrayShallow( -1, 0 );
@@ -228,7 +221,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //|gk| > δk
             //Gradient should be able to turn arround
-            psi.SetInactiveDimsToZero(gradient.Storage);
             if (Math.Abs(gradient[heightDirection]) > delta[heightDirection])
             {
                 bool suitable = true;
@@ -238,7 +230,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                 for (int j = 0; j < delta.Length; ++j)
                 {
-                    sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
+                    if (!psi.DirectionIsFixed(j)) {
+                        sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
+                    }
                 }
                 sum /= Math.Pow(Math.Abs(gradient[heightDirection]) - delta[heightDirection], 2);
 
@@ -266,7 +260,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return OldSquare.DeriveNew();
         }
 
-        private MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
+        protected MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
         {
             
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
@@ -458,7 +452,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return new SayeQuadRule(node, weightArr);
         }
 
-        bool IsScalingMatrix(MultidimensionalArray matrix) {
+        protected bool IsScalingMatrix(MultidimensionalArray matrix) {
             double offDiag = 0.0;
             for(int i = 0; i < 3; ++i) {
                 for(int j = i + 1; j > 3; ++i) {

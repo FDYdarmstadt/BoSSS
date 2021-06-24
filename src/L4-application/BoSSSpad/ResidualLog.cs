@@ -24,14 +24,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Windows.Forms;
+//using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
     /// Wrapper class for residual data and meta-data.
     /// </summary>
-    public class ResidualLog : IDisposable {
+    sealed public class ResidualLog : IDisposable {
 
         /// <summary>
         /// Residual values
@@ -331,7 +331,7 @@ namespace BoSSS.Application.BoSSSpad {
        
 
 
-
+        /*
         /// <summary>
         /// Live plotting of residuals during simulation. The LivePlotting tool runs in a new Thread.
         /// </summary>
@@ -349,6 +349,7 @@ namespace BoSSS.Application.BoSSSpad {
             Thread threadLivePlotter = new Thread(() => AutonomuousPlotter.DisplayWindow(LivePlotter));
             threadLivePlotter.Start();
         }
+        */
 
         /// <summary>
         /// Displays the last line(s) of the residual log.

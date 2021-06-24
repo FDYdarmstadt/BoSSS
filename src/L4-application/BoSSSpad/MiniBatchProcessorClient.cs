@@ -43,7 +43,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Empty constructor for de-serialization
         /// </summary>
-        private MiniBatchProcessorClient() {
+        private MiniBatchProcessorClient() : base() {
         }
 
         [NonSerialized]
@@ -82,7 +82,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="DeployDir">
         /// If null, a default choice is made.
         /// </param>
-        public MiniBatchProcessorClient(string DeployDir = null) {
+        public MiniBatchProcessorClient(string DeployDir = null) : base() {
             var userDir = BoSSS.Foundation.IO.Utils.GetBoSSSUserSettingsPath();
             if(userDir == null || userDir.Length <= 0 || !Directory.Exists(userDir)) {
                 throw new ApplicationException("Unable to create local machine batch, user settings path ('.BoSSS' - directory) does not exist or unable to find.");
@@ -190,7 +190,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Name = FullName,
                 NoOfProcs = myJob.NumberOfMPIProcs,
                 ExeDir = DeploymentDirectory,
-                exefile = Path.GetFileName(myJob.EntryAssembly.Location),
+                exefile = base.DotnetRuntime + " " + Path.GetFileName(myJob.EntryAssembly.Location),
                 Arguments = myJob.CommandLineArguments,
                 EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive

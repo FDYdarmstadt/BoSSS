@@ -17,7 +17,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
-
 namespace BoSSS.Application.XNSERO_Solver {
 
     /// <summary>
@@ -47,7 +46,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow_Phoretic();
+            //TestProgram.TestParticleInShearFlow();
             //throw new Exception("remove me");
             
             void KatastrophenPlot(DGField[] dGFields) {

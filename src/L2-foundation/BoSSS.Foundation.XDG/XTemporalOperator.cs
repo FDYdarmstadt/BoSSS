@@ -264,7 +264,7 @@ namespace BoSSS.Foundation.XDG {
             owner = __owner;
             InternalRepresentation = new XSpatialOperatorMk2(__owner.DomainVar, __owner.ParameterVar, __owner.CodomainVar, __owner.QuadOrderFunction, __owner.Species.ToArray());
             InternalRepresentation.AgglomerationThreshold = __owner.AgglomerationThreshold;
-            InternalRepresentation.LinearizationHint = LinearizationHint.FDJacobi;
+            InternalRepresentation.LinearizationHint = LinearizationHint.GetJacobiOperator;
             InternalRepresentation.m_UserDefinedValues = __owner.m_UserDefinedValues;
         }
 
@@ -285,7 +285,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void Commit() {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
-            InternalRepresentation.LinearizationHint = LinearizationHint.FDJacobi;
+            InternalRepresentation.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
             InternalRepresentation.ParameterFactories.Clear();
             InternalRepresentation.ParameterFactories.AddRange(owner.ParameterFactories);
@@ -321,7 +321,6 @@ namespace BoSSS.Foundation.XDG {
             InternalRepresentation.OperatorCoefficientsProvider = owner.OperatorCoefficientsProvider;
 
             InternalRepresentation.CurrentHomotopyValue = owner.CurrentHomotopyValue;        
-      
             return InternalRepresentation.GetFDJacobianBuilder((CoordinateMapping)DomainVarMap, ParameterMap, (CoordinateMapping)CodomainVarMap);
         }
     }
