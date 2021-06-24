@@ -64,7 +64,7 @@ namespace ilPSP.LinSolvers {
         {
             //*
             using (var slv = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
-                slv.DefineMatrix(Matrix);
+                slv.DefineMatrix(Matrix); 
                 var SolRes = slv.Solve(X, B.ToArray());
             }
             /*

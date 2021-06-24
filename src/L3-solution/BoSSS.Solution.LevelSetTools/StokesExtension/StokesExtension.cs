@@ -5,6 +5,7 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -241,7 +242,41 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
             // should be replaced by something more sophisticated
+            var Residual = RHS.CloneAs();
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+
+
+            {
+                double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                double MatrixInfNorm = OpMtx.InfNorm();
+                OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, Residual);
+
+                double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+                double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+                double RelResidualNorm = ResidualNorm / Denom;
+
+                //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
+
+                if(RelResidualNorm > 1.0e-10) {
+                    string ErrMsg;
+                    using(var stw = new System.IO.StringWriter()) {
+                        stw.WriteLine("Stokes Extension: High residual from direct solver.");
+                        stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                        stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                        stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                        stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                        stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+
+                        ErrMsg = stw.ToString();
+                    }
+                    Console.Error.WriteLine(ErrMsg);
+
+                    throw new ArithmeticException(ErrMsg);
+
+                }
+            }
+
         }
     }
 }

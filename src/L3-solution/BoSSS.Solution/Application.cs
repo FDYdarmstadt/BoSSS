@@ -1605,12 +1605,21 @@ namespace BoSSS.Solution {
         /// <summary>
         /// all DG fields that were decorated by an <see cref="InstantiateFromControlFileAttribute"/>.
         /// </summary>
-        protected ICollection<DGField> m_RegisteredFields = new List<DGField>();
+        protected List<DGField> m_RegisteredFields = new List<DGField>();
+
+        /// <summary>
+        /// List of DG Fields which were somehow made known to the app
+        /// </summary>
+        public ICollection<DGField> RegisteredFields {
+            get {
+                return m_RegisteredFields.AsReadOnly();
+            }
+        }
 
         /// <summary>
         /// see <see cref="IOFields"/>
         /// </summary>        
-        protected ICollection<DGField> m_IOFields = new List<DGField>();
+        protected List<DGField> m_IOFields = new List<DGField>();
 
         /// <summary>
         /// All fields, for which IO should be performed by
@@ -1622,7 +1631,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public ICollection<DGField> IOFields {
             get {
-                return m_IOFields;
+                return m_IOFields.AsReadOnly();
             }
         }
 
