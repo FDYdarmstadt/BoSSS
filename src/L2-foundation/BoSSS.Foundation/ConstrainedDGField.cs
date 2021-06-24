@@ -866,10 +866,13 @@ namespace BoSSS.Foundation {
                     int cell2 = cellInd[edge, 1];
                     //int J = this.m_grd.Cells.NoOfLocalUpdatedCells;
                     Debug.Assert(!(cell1 < J && cell2 < J), "both cells stored locally: no interproc edge!");
-                    if (cell1 < J)
-                        localInterProcBA[cell1] = true;
-                    else
-                        localInterProcBA[cell2] = true;
+                    if (cell1 < J) {
+                        if (mask.Contains(cell1))
+                            localInterProcBA[cell1] = true;
+                    } else {
+                        if (mask.Contains(cell2))
+                            localInterProcBA[cell2] = true;
+                    }
                 }
                 CellMask localInterProcPatch = new CellMask(this.m_grd, localInterProcBA);
                 SubGrid localInterProcSbgrd = new SubGrid(localInterProcPatch);
