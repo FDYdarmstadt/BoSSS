@@ -86,8 +86,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             GridCommons grid;
             if (dimension == 2)
-                grid = Grid2D.Cartesian2DGrid(nodes, node2, periodicX: periodicX, periodicY: periodicY);
-                //grid = Grid2D.Cartesian2DGrid(node2pi, node2, periodicX: periodicX, periodicY: periodicY);
+                //grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+                grid = Grid2D.Cartesian2DGrid(droplet_z, droplet_z, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
                 //grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
                 grid = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
@@ -147,11 +147,40 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
 
 
-                Console.WriteLine("Test 2D projection function 1: sin(x) + cos(x) + x - cos(y) - 1");
-                Func<double[], double> projFunc = X => Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (Math.Cos(X[1]) + 1);
-                Console.WriteLine("project on full mask");
-                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
-                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+                //Console.WriteLine("Test 2D projection function 1: sin(x) + cos(x) + x - cos(y) - 1");
+                //Func<double[], double> projFunc = X => Math.Sin(X[0]) + Math.Cos(X[0]) + X[0] - (Math.Cos(X[1]) + 1);
+                //Console.WriteLine("project on full mask");
+                //string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-func1";
+                //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
+
+
+                Console.WriteLine("Test 2D projection function: Legendre Polynomial");
+                double r_0 = 1;
+                double a_P = 0.5;
+                double a_0 = 0.94754;
+                Func<double[], double> projFunc = delegate (double[] X) {
+                    double r = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+                    double theta = Math.Atan2(X[0], -X[1]);
+                    double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));
+                    double phi = r - f;
+                    return phi;
+                };
+                //Console.WriteLine("project on full mask");
+
+                SinglePhaseField phiField = new SinglePhaseField(new Basis(this.GridData, degree));
+                phiField.ProjectField(projFunc);
+                var LevSet = new LevelSet(phiField.Basis, "LevelSet");
+                LevSet.Acc(1.0, phiField);
+                var LsTrk = new LevelSetTracker((GridData)phiField.GridDat, XQuadFactoryHelper.MomentFittingVariants.Classic, 1, new string[] { "A", "B" }, LevSet);
+                LsTrk.UpdateTracker(0.0);
+                CellMask near = LsTrk.Regions.GetNearFieldMask(1);
+                //SinglePhaseField nearField = new SinglePhaseField(new Basis(this.GridData, 0));
+                //nearField.AccConstant(1.0, near);
+                //Tecplot.PlotFields(new DGField[]{ nearField }, "CDGproj_nearField", 0.0, 0);
+                Console.WriteLine("project on near field mask; no of cells {0}", near.NoOfItemsLocally);
+
+                string name_disc = $"dim{this.dimension}-deg{this.degree}-grdRes{this.gridResolution}-funcL";
+                passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), near, name_disc);
 
 
                 //// should be exact for p >= 3
