@@ -252,7 +252,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, Residual);
 
                 double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-                double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+                double SolutionNorm = ExtenstionSolVec.L2NormPow2().MPISum().Sqrt();
                 double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                 double RelResidualNorm = ResidualNorm / Denom;
 
