@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -107,7 +107,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -151,7 +151,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // misc. solver options
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // misc. solver options
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;

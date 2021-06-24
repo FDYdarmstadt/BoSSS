@@ -23,6 +23,7 @@ using System.Reflection;
 using BoSSS.Platform;
 using System.Runtime.Serialization;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.BoSSSpad {
     
@@ -190,8 +191,8 @@ namespace BoSSS.Application.BoSSSpad {
                 Name = FullName,
                 NoOfProcs = myJob.NumberOfMPIProcs,
                 ExeDir = DeploymentDirectory,
-                exefile = base.DotnetRuntime + " " + Path.GetFileName(myJob.EntryAssembly.Location),
-                Arguments = myJob.CommandLineArguments,
+                exefile = base.DotnetRuntime,
+                 Arguments = ArrayTools.Cat(new[] { Path.GetFileName(myJob.EntryAssembly.Location) }, myJob.CommandLineArguments),
                 EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };

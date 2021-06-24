@@ -249,6 +249,16 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+
+        /// <summary>
+        /// Control, if set;
+        /// </summary>
+        public BoSSS.Solution.Control.AppControl Control {
+            get {
+                return m_ctrl;
+            }
+        }
+
    
         BoSSS.Solution.Control.AppControl m_ctrl;
         int m_ctrl_index;
@@ -1478,8 +1488,8 @@ namespace BoSSS.Application.BoSSSpad {
                         if (File.Exists(DelpoyAss)) {
                             files.Add(DelpoyAss);
 
-                            string a_config = DelpoyAss + ".config";
-                            string a_runtimeconfig_json = Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json";
+                            string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
+                            string a_runtimeconfig_json = Path.Combine(MainAssemblyDir,Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
 
                             foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
                                 if(File.Exists(a_acc)) {
