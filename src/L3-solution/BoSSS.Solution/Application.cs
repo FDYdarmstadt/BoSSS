@@ -1631,7 +1631,7 @@ namespace BoSSS.Solution {
         /// </summary>
         public ICollection<DGField> IOFields {
             get {
-                return m_IOFields.AsReadOnly();
+                return m_IOFields;
             }
         }
 
