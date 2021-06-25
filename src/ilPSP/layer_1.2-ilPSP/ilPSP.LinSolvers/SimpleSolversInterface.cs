@@ -16,6 +16,8 @@ limitations under the License.
 
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -57,23 +59,74 @@ namespace ilPSP.LinSolvers {
         /// <param name="Matrix">the matrix of the linear problem.</param>
         /// <param name="X">Output, (hopefully) the solution.</param>
         /// <param name="B">Input, the right-hand-side.</param>
-        /// <returns>Actual number of iterations.</returns>
+        /// <remarks>
+        /// The solver checks the residual norm and tries a different solver library if the norm is deemed to high.
+        /// (E.g. on some processor architectures, <see cref="PARDISO.PARDISOSolver"/> is known to fail from time to time,
+        /// especially in OpenMP-Mode).
+        /// </remarks>
         static public void Solve_Direct<V, W>(this IMutableMatrixEx Matrix, V X, W B)
             where V : IList<double>
             where W : IList<double> //
         {
+            var SolverFallbackSeq = new Func<ISparseSolver>[] {
+                () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver() { Parallelism = Parallelism.OMP }, 
+                () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver() { Parallelism = Parallelism.SEQ },
+                () => new ilPSP.LinSolvers.MUMPS.MUMPSSolver() { Parallelism = Parallelism.SEQ }
+            };
+
+            if(Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF))
+                SolverFallbackSeq = SolverFallbackSeq.Skip(1).ToArray();
+
+            string CheckResidual() {
+                double[] Residual = B.ToArray();
+                if(object.ReferenceEquals(B, Residual))
+                    throw new ApplicationException("ToArray does not work as expected.");
+                double RhsNorm = B.L2NormPow2().MPISum().Sqrt();
+                double MatrixInfNorm = Matrix.InfNorm();
+                Matrix.SpMV(-1.0, X, 1.0, Residual);
+
+                double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+                double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+                double RelResidualNorm = ResidualNorm / Denom;
+
+
+                if(RelResidualNorm > 1.0e-10) {
+                    string ErrMsg;
+                    using(var stw = new System.IO.StringWriter()) {
+                        stw.WriteLine("Stokes Extension: High residual from direct solver.");
+                        stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                        stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                        stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                        stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                        stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+
+                        ErrMsg = stw.ToString();
+                    }
+                    return ErrMsg;
+                } else {
+                    return null;
+                }
+            }
+
+
+
             //*
-            using (var slv = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
-                slv.DefineMatrix(Matrix); 
-                var SolRes = slv.Solve(X, B.ToArray());
+
+            string LastError = null;
+            foreach(var f in SolverFallbackSeq) {
+                using(var slv = f()) {
+                    slv.DefineMatrix(Matrix);
+                    var SolRes = slv.Solve(X, B.ToArray());
+
+                    LastError = CheckResidual();
+                    if(LastError == null)
+                        return;
+                }
             }
-            /*
-            using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
-                //slv.Parallelism = Parallelism.OMP;
-                slv.DefineMatrix(Matrix);
-                var SolRes = slv.Solve(X, B.ToArray());
-            }
-            */
+
+            throw new ArithmeticException(LastError);
+            
         }
 
         /// <summary>

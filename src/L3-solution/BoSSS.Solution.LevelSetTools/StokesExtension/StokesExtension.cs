@@ -246,7 +246,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             var Residual = RHS.CloneAs();
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
 
-
+            /*
             {
                 double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
                 double MatrixInfNorm = OpMtx.InfNorm();
@@ -287,7 +287,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     throw new ArithmeticException(ErrMsg);
 
                 }
-            }
+            }*/
 
         }
     }
