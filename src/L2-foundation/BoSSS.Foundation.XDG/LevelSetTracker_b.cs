@@ -276,6 +276,17 @@ namespace BoSSS.Foundation.XDG {
                 m_PushCount++;
             }
 
+            internal T Pop(Func<T, T, T> Replacor1) {
+                T ret = m_Current;
+                m_Current = Replacor1(m_Current, History[0]);
+                for(int i = 0; i <= History.Count - 2; i++) {
+                    History[i] = History[i + 1];
+                }
+                History.RemoveAt(History.Count - 1);
+                m_PushCount--;
+                return ret;
+            }
+
 
 
             /// <summary>

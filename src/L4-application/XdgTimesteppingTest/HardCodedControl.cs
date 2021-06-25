@@ -529,8 +529,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             int NoOfTimesteps = 20,
             InterfaceMode tsm = InterfaceMode.MovingInterface,
             int GridResolutionFactor = 2) {
+            //BoSSS.Application.XdgTimesteppingTest.HardCodedControl2.Rarefaction()
+
 
             XdgTimesteppingTestControl R = new XdgTimesteppingTestControl();
+            R.Eq = Equation.ScalarTransport;
 
             R.ProjectName = "XdgMassMatrixEvolution/Rarefaction";
             R.savetodb = false;
@@ -596,8 +599,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             R.S = ((double[] X, double t) => S);
             R.Phi = ((double[] X, double t) => X[0].Pow2() + X[1].Pow2() - (1.0 + t).Pow2());
 
-            R.CircleRadius = t => (1.0 + t);
-            R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
+            //R.CircleRadius = t => (1.0 + t);
+            //R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
 
             R.InitialValues_Evaluators.Add("Phi", X => R.Phi(X, 0.0));
             R.InitialValues_Evaluators.Add("Vx", X => X[0] / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));

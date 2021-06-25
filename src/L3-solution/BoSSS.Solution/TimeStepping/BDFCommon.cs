@@ -187,16 +187,23 @@ namespace BoSSS.Solution.Timestepping {
     /// </summary>
     public enum TimeStepperInit {
 
+        
+        /// <summary>
         /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
         /// it starts with BDF1, BDF2, BDF3 in the first, second and third time-step.
+        /// </summary>
         SingleInit,
 
-        /// same initialization for SingleInit, but the first timesteps 
-        /// are computed with a smaller timestepsize
-        IncrementInit,
+        ///// <summary>
+        ///// same initialization for SingleInit, but the first timesteps 
+        ///// are computed with a smaller timestepsize
+        ///// </summary>
+        //IncrementInit,
 
+        /// <summary>
         /// Initialization for a multi-step method, e.g. BDF4 requires 4 timesteps.
         /// can be used if an analytic solution is known or simulation is restarted form another session
+        /// </summary>
         MultiInit
     }
 

@@ -741,6 +741,19 @@ namespace BoSSS.Solution.XdgTimestepping {
             return success;
         }
 
+        
+        public void UndoLastTs() {
+
+            LsTrk.PopStacks();
+            m_BDF_Timestepper.PopStack();
+
+
+
+        }
+
+
+
+
         /// <summary>
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.

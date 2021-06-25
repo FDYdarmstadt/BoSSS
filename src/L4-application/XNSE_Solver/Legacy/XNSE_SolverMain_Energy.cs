@@ -315,7 +315,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             KineticEnergyTimestepper.m_ResLogger = m_EnergyResLogger;
             KineticEnergyTimestepper.m_ResidualNames = this.ResidualKineticEnergy.Mapping.Fields.Select(f => f.Identification).ToArray();
             KineticEnergyTimestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-            KineticEnergyTimestepper.incrementTimesteps = this.Control.incrementTimesteps;
+            //KineticEnergyTimestepper.incrementTimesteps = this.Control.incrementTimesteps;
             KineticEnergyTimestepper.PushLevelSet = delegate() { }; // dummy push does nothing
             KineticEnergyTimestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
 

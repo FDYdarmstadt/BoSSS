@@ -168,13 +168,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            /*
-            // operator matrix - stack
-            // -----------------------
-
-            m_Stack_OpMatrix = new BlockMsrMatrix[m_TSCchain[0].theta0 != 0.0 ? 2 : 1]; // only required for Crank.Nic. and Expl. Euler,
-            m_Stack_OpAffine = new double[m_Stack_OpMatrix.Length][]; //      in this case 'theta0' is unequal 0.0.
-            */
+          
 
             // m_Stack_u
             // ---------
@@ -242,14 +236,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         //
         BlockMsrMatrix[] m_Stack_MassMatrix;
 
-        /*
-        //
-        // stack of operator matrices and affine vectors (matrices _without_ agglomeration)
-        // (since we also do Crank-Nicolson, we may need one previous operator matrix)
-        //
-        BlockMsrMatrix[] m_Stack_OpMatrix;
-        double[][] m_Stack_OpAffine;
-        */
 
         //
         // stack of solution vectors
@@ -299,7 +285,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        void PushStack(int increment) {
+        void PushStack() {
 
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
@@ -334,6 +320,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // --------------
             if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
                 // entry 0 should remain the same object all the time
+
                 var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
                     m_Stack_u[i] = m_Stack_u[i - 1];
@@ -361,15 +348,90 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
 
-
+            /*
             // special hack: increment init
             // ----------------------------
 
             // saves first timesteps (actual timerstpe size dt) in  case of incrementInit
             if (incrementTimesteps > 1 && increment == 1 && m_CurrentPhystime > 0.0)
                 PushIncrementStack();
+            */
         }
 
+        internal void PopStack() {
+            //m_PopulatedStackDepth++;
+            //if (m_PopulatedStackDepth > m_TSCchain[0].S)
+            //    m_PopulatedStackDepth = m_TSCchain[0].S;
+
+            m_PopulatedStackDepth--;
+
+
+            /*
+            // Level-Set tracker
+            // -----------------
+
+            switch (Config_LevelSetHandling) {
+                case LevelSetHandling.None:
+                    // noop
+                    break;
+
+                case LevelSetHandling.LieSplitting:
+                case LevelSetHandling.StrangSplitting:
+                case LevelSetHandling.FSILieSplittingFullyCoupled:
+                    // noop.
+                    break;
+
+                case LevelSetHandling.Coupled_Iterative:
+                case LevelSetHandling.Coupled_Once:
+                    m_LsTrk.IncreaseHistoryLength(m_TSCchain[0].S);
+                    m_LsTrk.PushStacks();
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+            */
+
+
+
+            // Solution-Stack
+            // --------------
+            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
+                // entry 0 should remain the same object all the time
+
+                m_Stack_u[0].Clear();
+                m_Stack_u[0].Acc(1.0, m_Stack_u[1]);
+
+                if(m_Stack_u.Length > 1) {
+                    var Cvtmp = m_Stack_u[1];
+                    for(int i = 1; i <= m_Stack_u.Length - 2; i++) {
+                        m_Stack_u[i] = m_Stack_u[i + 1];
+                    }
+                    m_Stack_u[m_Stack_u.Length - 1] = Cvtmp;
+                }
+            }
+
+            // mass-matrix stack
+            // -----------------
+
+
+            if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsNonIdentity) {
+                for (int i = 0; i <= m_Stack_MassMatrix.Length - 2; i++) {
+                    m_Stack_MassMatrix[i] = m_Stack_MassMatrix[i + 1];
+                }
+                m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
+                m_PrecondMassMatrix = null;
+            } else {
+                // should already be initialized - see 'InitTimestepping'
+                Debug.Assert(m_Stack_MassMatrix.Length == 1);
+                Debug.Assert(m_Stack_MassMatrix[0] != null);
+                Debug.Assert(m_PrecondMassMatrix != null);
+            }
+        }
+
+
+
+        /*
         /// <summary>
         /// saves the first necessary timesteps at the actual time level for a incremental initialization for higher BDF schemes 
         /// </summary>
@@ -424,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //    m_Stack_CutCellMetrics_incHist[incrementHist] = m_Stack_CutCellMetrics[1];
 
         }
-
+        */
 
         int m_IterationCounter = 0;
 
@@ -442,12 +504,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             using (new FuncTrace()) {
                 InitTimestepping(true);
 
+                /*
                 if (Timestepper_Init == TimeStepperInit.IncrementInit) {
                     if (incrementTimesteps <= 1)
                         throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
                     InitIncrementStack();
                 }
+                */
+
                 initialized = true;
             }
         }
@@ -492,7 +557,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     InitTimestepping(iStage == (S - 1));
 
                     if (iStage < (S - 1)) // push, but not the last time in the loop
-                        PushStack(TimestepNo);
+                        PushStack();
                 }
 
                 initialized = true;
@@ -844,13 +909,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 SingleInit();
             }
 
+            /*
             // no increment solve for SinlgeInit and MultiInit!!!
             if (Timestepper_Init != TimeStepperInit.IncrementInit)
                 incrementTimesteps = 1;
+            */
 
         }
 
 
+        /*
         public int incrementTimesteps = 1;
 
         int incrementHist = 0;
@@ -860,7 +928,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         BlockMsrMatrix[] m_Stack_MassMatrix_incHist;
 
         CoordinateVector[] m_Stack_u_incHist;
+        */
 
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -906,7 +976,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
         }
-
+        */
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
@@ -1309,17 +1379,20 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_CurrentDt_Timestep = dt;
 
             bool success = true;
-            for (int i = 1; i <= incrementTimesteps; i++) {
+            //for (int i = 1; i <= incrementTimesteps; i++) {
+            { 
                 // push levelsets for every incremental timestep
-                if (i > 1)
-                    PushLevelSet();
+                //if (i > 1)
+                //    PushLevelSet();
 
-                // solve timestep with incremental timestep size
-                double incTimestepSize = dt / (double)incrementTimesteps;
+                //// solve timestep with incremental timestep size
+                //double incTimestepSize = dt / (double)incrementTimesteps;
 
-                success = success && Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+                //success = success && Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+                success = success && Solve_Increment(phystime, dt, ComputeOnlyResidual);
 
-                phystime += incTimestepSize;
+                //phystime += incTimestepSize;
+                phystime += dt;
             }
 
             return success;
@@ -1388,7 +1461,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        bool Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
+        bool Solve_Increment(double phystime, double dt, bool ComputeOnlyResidual = false) {
             if (dt <= 0)
                 throw new ArgumentOutOfRangeException();
             //if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
@@ -1399,12 +1472,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_IterationCounter = 0;
             m_CoupledIterations = 0;
             m_InnerCoupledIterations = 0;
-            PushStack(increment);
+            PushStack();
             fsiOldPhystime = phystime;
-            if (incrementTimesteps == 1)
-                dt = m_CurrentDt;
-            else
-                Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
+            //if (incrementTimesteps == 1)
+            //    dt = m_CurrentDt;
+            //else
+            //    Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
+            dt = m_CurrentDt;
 
 
             // ===========================================

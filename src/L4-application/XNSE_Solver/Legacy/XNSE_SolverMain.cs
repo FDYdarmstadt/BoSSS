@@ -941,7 +941,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                 m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                 m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                 m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-                m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
+                //m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
                 m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                 m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
 

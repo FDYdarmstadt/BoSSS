@@ -394,10 +394,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-        /// <summary>
-        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
-        /// </summary>
-        public int incrementTimesteps = 1;
+        ///// <summary>
+        ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
+        ///// </summary>
+        //public int incrementTimesteps = 1;
 
        
         /// <summary>

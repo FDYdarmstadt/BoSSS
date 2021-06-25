@@ -842,9 +842,9 @@ namespace BoSSS.Foundation.XDG {
         /// - 1st index: index of level-set
         /// - 2nd index: index into stack
         /// </summary>
-        public IList<HistoryStack<ILevelSet>> LevelSetHistories {
+        public IReadOnlyList<HistoryStack<ILevelSet>> LevelSetHistories {
             get {
-                return m_LevelSetHistories.ToList();
+                return m_LevelSetHistories;
             }
         }
 
@@ -897,6 +897,57 @@ namespace BoSSS.Foundation.XDG {
             }
 #endif
         }
+
+        public void PopStacks() {
+            int NoOfLs = LevelSets.Count;
+            int PHL = PopulatedHistoryLength;
+            int HL = this.HistoryLength;
+
+
+            Debug.Assert(NoOfLs == m_LevelSets.Count);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                LevelSetHistories[iLs].Pop((ls1, ls0) => {
+                    ls1.CopyFrom(ls0);
+                    return ls1;
+                });//.Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
+            }
+
+            Debug.Assert(NoOfLs == m_DataHistories.Count);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                DataHistories[iLs].Pop((data1, data0) => data0);//.Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
+
+                // fix the history index...
+                for(int iStack = 1; iStack > -m_DataHistories[iLs].GetPopulatedLength(); iStack--) {
+                    m_DataHistories[iLs][iStack].m_HistoryIndex = iStack;
+                }
+            }
+
+            m_RegionsHistory.Pop((r1, r0) => r0); // .Push((r1) => r1.CloneAs(), (r1, r0) => r1);
+
+            m_QuadFactoryHelpersHistory.Pop((r1, r0) => r0);
+
+            m_XDGSpaceMetricsHistory.Pop((r1, r0) => r0);
+
+#if DEBUG
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                Debug.Assert(object.ReferenceEquals(LevelSets[iLs], LevelSetHistories[iLs].Current));
+            }
+            PHL = PopulatedHistoryLength;
+            for(int iH = 1; iH > -PHL + 1; iH--) {
+                for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                    Debug.Assert(!object.ReferenceEquals(LevelSetHistories[iLs][iH], LevelSetHistories[iLs][iH - 1]));
+                }
+                Debug.Assert(!object.ReferenceEquals(RegionsHistory[iH], RegionsHistory[iH - 1]));
+            }
+
+            for(int iH = 1; iH > -PHL; iH--) {
+                for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                    Debug.Assert(DataHistories[iLs][iH].HistoryIndex == iH);
+                }
+            }
+#endif
+        }
+
 
         /// <summary>
         /// Number of used level-sets fields, between 1 and 4.

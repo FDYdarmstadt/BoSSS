@@ -51,19 +51,19 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            InitMPI();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.2);
+            //InitMPI();
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.2);
             //DeleteOldPlotFiles();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(TimeSteppingScheme.BDF2, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
             //throw new ApplicationException("deactivate me");
-            return;
+            //return;
 
-            //BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
-            //    return new XdgTimesteppingMain();
-            //});
+            BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
+                return new XdgTimesteppingMain();
+            });
         }
 #pragma warning disable 649
 
@@ -393,7 +393,17 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotSupportedException();
             }
 
+            int oldPush = LsTrk.PushCount;
+
             base.Timestepping.Solve(phystime, dt);
+
+            //LsTrk.PushStacks();
+            base.Timestepping.UndoLastTs();
+            dt = 0.0; 
+
+            int newPush = LsTrk.PushCount;
+            Console.WriteLine($"Old Push cnt {oldPush} -- New push cnt {newPush}");
+
 
             // return
             // ------
