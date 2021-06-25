@@ -522,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
