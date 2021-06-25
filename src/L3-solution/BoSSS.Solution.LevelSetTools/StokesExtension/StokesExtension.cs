@@ -277,7 +277,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                     string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
                     Directory.CreateDirectory(failVault);
                     foreach(var plt in System.IO.Directory.GetFiles(curDir, "*.plt")) {
-                        System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(failVault)));
+                        System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(plt)));
                     }
 
                     OpMtx.SaveToTextFileSparse(Path.Combine(failVault, "StokesExtMtx.txt"));
