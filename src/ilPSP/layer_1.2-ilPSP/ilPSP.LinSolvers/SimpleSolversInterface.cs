@@ -125,7 +125,8 @@ namespace ilPSP.LinSolvers {
                 }
             }
 
-            throw new ArithmeticException(LastError);
+            if(LastError != null)
+                throw new ArithmeticException(LastError);
             
         }
 
