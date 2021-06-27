@@ -599,6 +599,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
             };
 
+            C.GridPartType = GridPartType.clusterHilbert;
+
+            C.DynamicLoadBalancing_On = loadbalancing;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = XNSECellCostEstimator.Factory().ToList();
+
+
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
@@ -643,10 +651,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                    //                        Math.Abs(X[2] - pos[2])))
+                    //                        + particleRad;
 
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                     //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
@@ -663,7 +671,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     //- Math.Abs(X[2] - pos[2])
                     //+ Math.Abs(particleRad);
 
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    // sphere
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
