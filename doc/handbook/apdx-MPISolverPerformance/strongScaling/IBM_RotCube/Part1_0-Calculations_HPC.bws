@@ -1,12 +1,14 @@
 restart
 **************
-
   BoSSSpad C# interpreter
   _______________________
 
+ArgumentException caught while opening database #2 at 'H:\weber': Database Error: field state directory (H:\weber\timesteps) does not exist.
 Databases loaded:
-List of 1 instances of IDatabaseInfo {
+List of 3 instances of IDatabaseInfo {
   0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 2; Grid Count = 4; Path = D:\IBM }
+  2: { Session Count = 8; Grid Count = 9; Path = H:\weber\DB_QuadBug }
 }
 
  Console ready for input. Type 'help' for help.
@@ -18,47 +20,109 @@ using BoSSS.Application.XdgPoisson3;
 ExecutionQueues;
 **************
 List of 4 instances of BatchProcessorClient {
-  0: MiniBatchProcessor client @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
-  1: MS HPC client DC2, @\\hpccluster\hpccluster-scratch\weber\dply
+  0: MiniBatchProcessor client  LocalPC @C:\Users\weber\AppData\Local\BoSSS-LocalJobs
+  1: MS HPC client  FDY-cluster @DC2, @\\hpccluster\hpccluster-scratch\weber\dply
   2: SlurmClient: jw52xeqa@lcluster5.hrz.tu-darmstadt.de, Slurm account: project01217
-  3: SlurmClient: jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
+  3: SlurmClient HHLR : jw52xeqa@lcluster14.hrz.tu-darmstadt.de, Slurm account: special00006
 }
 ==============
 // ==================================
 // setup Client & Workflow & Database
 // ==================================
 var myBatch = (MsHPC2012Client)ExecutionQueues[1];
-//var myBatch = (SlurmClient)ExecutionQueues[1];
-ExecutionQueues[1].AllowedDatabases;
-**************
-List of 0 instances of IDatabaseInfo {
-}
-==============
-//myBatch.MonoDebug = true;
+//var myBatch = (SlurmClient)ExecutionQueues[3];
+//myBatch.AdditionalBatchCommands = new string[]{"#SLURM -p test24","#SLURM -C avx512"}; //new string[]{"#SLURM -p test24", "#SLURM -C avx512","#SLURM -N 3"}; 
 **************
 ==============
-string WFlowName = "IBM_RotCube_test";
+string WFlowName = "IBM_RotSphere_3D";
 WorkflowMgm.Init(WFlowName);
 WorkflowMgm.SetNameBasedSessionJobControlCorrelation();
 WorkflowMgm.AllJobs;
 **************
-Project name is set to 'IBM_RotCube_test'.
-List of 0 instances of KeyValuePair{String,Job} {
+Project name is set to 'IBM_RotSphere_3D'.
+ ------------ MSHPC FailedOrCanceled; original Canceled
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [rotting_cube_8679429717, rotting_cube_8679429717: FailedOrCanceled (MS HPC client  FDY-cluster @DC2, @\\hpccluster\hpccluster-scratch\weber\dply)]
 }
 ==============
 // providing corresponding paths on both platforms:
-string DBname    = "DB_trash";
-var tempDB       = OpenOrCreateDatabase(@"\\hpccluster\hpccluster-scratch\weber\"+DBname);
-string DBpathHPC = tempDB.Path;
+string dirname = "DB_IBM_test";
+string winpath = @"H:\weber\"+dirname;
+//string linpath = @"/work/scratch/jw52xeqa/"+dirname;
+//string winpath = @"W:\work\scratch\jw52xeqa\"+dirname;
 **************
-Opening existing database '\\hpccluster\hpccluster-scratch\weber\DB_trash'.
-
 ==============
+var tempDB = OpenOrCreateDatabase(winpath);
 **************
 ==============
 tempDB.Sessions
 **************
-List of 0 instances of ISessionInfo {
+List of 65 instances of ISessionInfo {
+  0: IBM_RotCube_3D	XNSE_rotsphere*	06/22/2021 16:49:32	56792f96...
+  1: IBM_RotSphere_3D	XNSE_rotsphere*	06/22/2021 12:37:18	1613b8c1...
+  2: IBM_RotSphere_3D	XNSE_rotsphere*	06/22/2021 07:59:08	3d9876ab...
+  3: IBM_RotSphere_3D	XNSE_rotsphere*	06/21/2021 06:39:05	b6f12831...
+  4: IBM_RotSphere_3D	XNSE_rotsphere*	06/19/2021 07:41:33	f672bc27...
+  5: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 21:32:02	fd9aeecd...
+  6: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 21:13:07	012dda76...
+  7: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 21:11:57	d0c5f1a3...
+  8: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 19:11:02	6f2b8dcf...
+  9: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 18:05:15	af060c56...
+  10: IBM_RotSphere_3D	XNSE_rotsphere*	06/18/2021 18:04:48	ab30500c...
+  11: IBM_3D_sphere	XNSE_rotsphere*	06/18/2021 16:52:33	87e356ce...
+  12: IBM_RotCube_2D	XNSE_rotsphere*	06/18/2021 16:42:48	46f7e74d...
+  13: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 22:58:41	92f55771...
+  14: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 21:57:04	f4e8baa4...
+  15: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 20:38:07	60d40e88...
+  16: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 17:16:34	b290afba...
+  17: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 17:08:16	c4054bd7...
+  18: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 16:43:58	6c4b0a65...
+  19: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 14:28:15	90eb0373...
+  20: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 11:15:15	28d0f45a...
+  21: IBM_RotCube_testSaye	XNSE_rotsphere*	06/14/2021 00:00:23	eeff97e8...
+  22: IBM_RotCube_testSaye	XNSE_rotsphere*	06/13/2021 23:54:53	d31f4cbe...
+  23: IBM_RotCube_testSaye	XNSE_rotsphere*	06/13/2021 23:47:21	71afe96a...
+  24: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/11/2021 12:23:20	34ecaf4b...
+  25: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/10/2021 19:40:27	b248fb2b...
+  26: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/10/2021 17:31:15	e1fa3c5f...
+  27: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/10/2021 17:20:26	b19ae156...
+  28: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/09/2021 23:27:08	93acfe13...
+  29: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/09/2021 18:36:32	851c1cda...
+  30: IBM_RotCube_testOneStepGauss	XNSE_rotsphere*	06/08/2021 13:30:46	8ff7c54d...
+  31: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/31/2021 22:43:40	4f2d9761...
+  32: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/31/2021 21:33:26	65434e86...
+  33: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/31/2021 21:12:47	44ee9800...
+  34: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/31/2021 12:34:36	ed35252c...
+  35: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/31/2021 12:34:30	77e6f8f1...
+  36: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 23:07:53	a70360bc...
+  37: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 17:58:05	de6a6d4c...
+  38: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 17:54:28	fd6e2597...
+  39: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 16:57:22	11d4a6f3...
+  40: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 13:16:29	63090ff6...
+  41: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 12:59:42	08fcfcda...
+  42: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 12:54:18	23f98af5...
+  43: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/28/2021 11:40:57	87376fc8...
+  44: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/27/2021 14:38:00	bdc0f561...
+  45: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/27/2021 14:07:27	cd52daa8...
+  46: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/27/2021 14:06:13	4a5ad976...
+  47: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/27/2021 11:50:49	0a538c28...
+  48: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/27/2021 11:27:59	201c1c4b...
+  49: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/26/2021 22:48:59	7278f8ff...
+  50: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/26/2021 15:14:33	1e5bcae0...
+  51: IBM_RotCube_debugGridCommons	XNSE_rotsphere	05/25/2021 19:57:41	5371ef1a...
+  52: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 17:45:07	2cca6d34...
+  53: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 16:16:08	22455dd7...
+  54: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 16:08:44	cba69b75...
+  55: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 15:49:33	32cb3b01...
+  56: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 15:24:58	4c0c38c4...
+  57: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 15:20:16	b5f6eb11...
+  58: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 14:41:28	1ac8b698...
+  59: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 14:33:31	07af0aaa...
+  60: XNSE/IBM_benchmark	XNSE_rotsphere*	05/25/2021 12:01:39	fd84e96a...
+  61: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 11:49:55	78903108...
+  62: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 11:49:58	8dc4f978...
+  63: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 11:20:39	f0aaf29e...
+  64: IBM_RotCube_debugGridCommons	XNSE_rotsphere*	05/25/2021 11:20:43	24c53c2d...
 }
 ==============
 // ===================
@@ -75,66 +139,12 @@ static class Utils {
     public static int Np(int p) {
         return (p*p*p + 6*p*p + 11*p + 6)/6;
     }    
-    
-    //Non-equidistant nodes
-    public static double[] SinLinSpacing(double l, double r, double a, int n) {
-        double[] linnodes = GenericBlas.Linspace(-Math.PI * 0.5, Math.PI * 0.5, n);
-        double[] linnodes2 = GenericBlas.Linspace(-1, 1, n);
-        double[] nodes = new double[n];
-
-        for (int i = 0; i < n; i++)
-            //nodes[i] = linnodes2[i] * (1 - a) + (1.0 - Math.Sin(linnodes[i])) * a;
-            nodes[i] = linnodes2[i] * (1 - a) + Math.Sin(linnodes[i])*a;
-
-        for (int i = 0; i < n; i++)
-            nodes[i] = nodes[i] * (r - l)*0.5 + l;
-        return nodes;
-    }
-    public static Func<double[],int> GetPartFunc(int cores){
-        Func<double[], int> MakeMyPartioning = delegate (double[] X) {
-        double x  = X[0];
-        double y  = X[1];
-        double z  = X[2];
-
-        int sx = 1;
-        int sy = 1;
-        int sz = 1;
-        for (int i = 0; i < Math.Log(cores, 2); i++) {
-            if (i % 3 == 0)
-                sx*= 2;
-            else if(i % 3 == 1)
-                sy*=2;
-            else
-                sz*=2;
-        }
-
-
-        double xspan = (xMax - xMin) / sx;
-        double yspan = (yMax - yMin) / sy;
-        double zspan = (zMax - zMin) / sz;
-        int rank     = int.MaxValue;
-        int icore    = 0;
-        for (int i = 0; i < sx; i++) {
-            for (int j = 0; j < sy; j++) {
-                for(int k=0;k<sz;k++){
-                    bool xtrue = x <= xspan * (i + 1) + xMin;
-                    bool ytrue = y <= yspan * (j + 1) + yMin;
-                    bool ztrue = z <= zspan * (k + 1) + zMin;
-                    if (xtrue && ytrue && ztrue) {
-                        rank = icore;
-                        return rank;
-                    }
-                    icore++;
-                }
-            }
-        }
-
-        return rank;
-        };
-    return MakeMyPartioning;
-}
 }
 **************
+==============
+Utils.Np(0);
+**************
+1
 ==============
 // ===============================
 // Init grids and save to database
@@ -142,254 +152,31 @@ static class Utils {
 **************
 ==============
 // set parameterz
-int[] core_sweep = {4};
-int p             = 4;
-int Problemsize   = 1000000;
-int MemoryPerCore = 2500;
+int[] core_sweep = {8};
+int p             = 2;
+int Problemsize   = 250000;
+int MemoryPerCore = 2000;
 **************
-==============
-Func<int, int> Nodes4WeakScale = delegate(int NoOfCores){
-int MemPerNode = 64*1024;
-return (int)((double)MemoryPerCore / (double)MemPerNode * NoOfCores)+1;
-};
-Func<int, int> Nodes4StrongScale = delegate(int NoOfCores){
-int corespernode = 24;
-return (int)((double)NoOfCores / (double)corespernode) +1;
-};
-**************
-==============
-Nodes4StrongScale(128);
-**************
-6
 ==============
 // calculate grid size
-double Res    = Math.Pow(Problemsize/Utils.Np(p),0.333333333);
+double Res    = Math.Pow(Problemsize/(Utils.Np(p)*3+Utils.Np(p-1)),0.333333333);
 int ResRndup  = (int)Math.Ceiling(Res);
 int NoOfCells = ResRndup*ResRndup*ResRndup;
-double test   = NoOfCells*Utils.Np(p);
-test;
+double test   = NoOfCells*(Utils.Np(p)*3+Utils.Np(p-1));
+ResRndup;
 **************
-1042685
-==============
-tempDB.Grids;
-**************
-List of 1 instances of IGridInfo {
-  0: { Guid = 6e0f94a3-fdbd-4525-8fe3-52d220c3e27f; Name = IBM_RotCube_test_J29791; Cell Count = 29791; Dim = 3 }
-}
+20
 ==============
 ResRndup
 **************
-31
-==============
-**************
-==============
-// resolution per dimension of space
-// corresponds to the predef partioning
-int sx = 1;
-int sy = 1;
-int sz = 1;
-for (int i = 0; i < Math.Log(64, 2); i++) {
-    if (i % 3 == 0)
-        sx*= 2;
-    else if(i % 3 == 1)
-        sy*=2;
-    else
-        sz*=2;
-}
-Console.WriteLine("sx:{0},sy:{1},sz:{2}",sx,sy,sz);
-**************
-sx:4,sy:4,sz:4
-
-==============
-**************
-==============
-int[] Resolutions_3D = new int[] { ResRndup };
-IGridInfo[] grids = new IGridInfo[Resolutions_3D.Length];
-for(int cnt = 0; cnt < Resolutions_3D.Length; cnt++) {
-    int Res = Resolutions_3D[cnt];    
-    
-    double[] xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
-    double[] yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
-    double[] zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
-    int J = (xNodes.Length - 1)*(yNodes.Length - 1)*(zNodes.Length - 1);
-    
-    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
-    
-    grids[cnt]=null;
-    foreach(IGridInfo grd in tempDB.Grids){
-        bool check = grd.Name.Contains(string.Format("_J"+ J));
-        if(check){
-          //grids[cnt]=grd;
-        }
-    }
-    
-    //grids[cnt] = tempDB.Grids.SingleOrDefault(grd => grd.Name == GridName);
-    
-    if(grids[cnt] == null){
-        Console.WriteLine("Creating grid with " + J + " cells.");
-        
-        GridCommons g;
-        g = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-        foreach(int cores in core_sweep){
-        g.AddPredefinedPartitioning("predef"+cores, Utils.GetPartFunc(cores));
-        }
-        g.Name = GridName;
-        g.EdgeTagNames.Add(1, "Wall");   
-        g.DefineEdgeTags(delegate (double[] X) {
-            //byte ret;
-            return 1;
-        });
-      
-        tempDB.SaveGrid(ref g,true);  
-        grids[cnt] = g;
-    } else {
-        Console.WriteLine("Found Grid: " + grids[cnt]);
-        if(grids[cnt].NumberOfCells != J)
-            throw new Exception("J mismatch");
-        
-        if(grids[cnt].SpatialDimension != 3)
-            throw new Exception("D mismatch");
-    }
-}
-**************
-Creating grid with 29791 cells.
-Grid Edge Tags changed.
-
-==============
-((GridCommons)grids.Pick(0)).PredefinedGridPartitioning
-**************
-List of 1 instances of KeyValuePair{String,GridPartitioningVector} {
-  0: [predef4, BoSSS.Foundation.Grid.Classic.GridCommons+GridPartitioningVector]
-}
-==============
-**************
-==============
-// Overwrite Selection
-//var ListOfgrids = new List<IGridInfo>();
-//ListOfgrids.AddRange(tempDB.Grids.Pick(0));
-//IGridInfo[] grids = ListOfgrids.ToArray();
-IGridInfo[] grids = new IGridInfo[]{tempDB.Grids.Pick(0)};
-**************
-==============
-grids;
-**************
-List of 1 instances of IGridInfo {
-  0: { Guid = 1283ac21-c051-48e6-9fbc-d44e8e3161e8; Name = IBM_RotCube_test_J29791; Cell Count = 29791; Dim = 3 }
-}
-==============
-using BoSSS.Application.XNSE_Solver;
-using BoSSS.Solution.XNSECommon;
-using BoSSS.Solution.XdgTimestepping;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.AdvancedSolvers;
-using BoSSS.Solution.NSECommon;
-**************
-==============
-Func<LinearSolverCode, int, IGridInfo, int ,XNSE_Control> GenerateCObj = delegate (LinearSolverCode solver, int k, IGridInfo grid, int DOF){
-    XNSE_Control C = new XNSE_Control();
-            // basic database options
-            // ======================
-            C.GridGuid           = grid.ID;
-            int SpaceDim         = grid.SpatialDimension;
-            int J                = grid.NumberOfCells;
-            C.savetodb           = true;
-            C.ProjectName        = "XNSE/RotCube";
-            C.ProjectDescription = "rotating cube";
-            C.Tags.Add("rotating");
-
-            // DG degrees
-            // ==========
-
-            C.SetFieldOptions(k, 2);
-            //C.GridPartType = GridPartType.METIS;
-            C.GridPartType    = GridPartType.Predefined;
-            C.GridPartOptions = "predef4";
-            
-            C.SessionName  = "XNSE_rotcube";
-            C.saveperiod   = 1;
-
-            // Physical Parameters
-            // ===================
-            const double rhoA = 1;
-            const double muA = 1;
-
-            C.PhysicalParameters.IncludeConvection = false;
-            C.PhysicalParameters.Material = true;
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.mu_A = muA;
-            double anglev = 0.1;
-            double[] pos = new double[SpaceDim];
-            double particleRad = 0.13;
-            
-            double[] angVelo = new double[] {0,0, anglev };
-
-            C.InitialValues_Evaluators.Add("Phi", X => -1);
-            C.UseImmersedBoundary = true;
-            if (C.UseImmersedBoundary) { 
-                C.InitialValues_Evaluators_TimeDep.Add("Phi2", (X,t) =>
-                    - Math.Pow((X[0] - pos[0]) * Math.Cos(-(anglev * t) % (2 * Math.PI)) - (X[1] - pos[1]) * Math.Sin(-(anglev * t) % (2 * Math.PI)), power)
-                    - Math.Pow((X[0] - pos[0]) * Math.Sin(-(anglev * t) % (2 * Math.PI)) + (X[1] - pos[1]) * Math.Cos(-(anglev * t) % (2 * Math.PI)), power)
-                    - Math.Pow(X[2] - pos[2], power)
-                    + Math.Pow(particleRad, power););
-                C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", (X,t) => angVelo[1]*(X[2] - pos[2])-angVelo[2]*(X[1] - pos[1]));
-                C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", (X,t) => angVelo[2]*(X[0] - pos[0])-angVelo[0]*(X[2] - pos[2]));
-                if (SpaceDim == 3)
-                    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", (X,t) => angVelo[0]*(X[1] - pos[1])-angVelo[1]*(X[0] - pos[0]));
-            }
-            C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.AddBoundaryValue("Wall");
-
-            // misc. solver options
-            // ====================
-            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-
-            C.UseSchurBlockPrec                                        = true;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode              = ViscosityMode.Standard;
-            C.Option_LevelSetEvolution                                 = LevelSetEvolution.Prescribed;
-            C.Timestepper_LevelSetHandling                             = LevelSetHandling.Coupled_Once;
-            C.LinearSolver.TargetBlockSize                             = Math.Min(J*DOF/2,10000);
-            C.LinearSolver.MaxSolverIterations                         = 100;
-            C.LinearSolver.MaxKrylovDim                                = 30;
-            C.LinearSolver.verbose                                     = true;
-            C.LinearSolver.SolverCode                                  = solver;
-            C.LinearSolver.pMaxOfCoarseSolver                          = k;
-            C.NonLinearSolver.SolverCode                               = NonLinearSolverCode.Picard;
-            C.NonLinearSolver.MaxSolverIterations                      = 50;
-            C.NonLinearSolver.verbose                                  = true;
-            C.VelocityBlockPrecondMode                                 = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdaptiveMeshRefinement                                   = false;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.CurvatureRefined;
-            //C.RefinementLevel = 2;
-
-            // Timestepping
-            // ============
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-
-            // haben fertig...
-            // ===============
-
-            return C;
-    
-    
-    
-    
-}
-**************
-==============
-**************
-==============
-**************
-==============
-**************
+20
 ==============
 // - - - - - - - - - - - - -
 // setup of parameter study
 // - - - - - - - - - - - - -
 **************
 ==============
-List<XNSE_Control> controls = new List<XNSE_Control>();
+List<string> controls = new List<string>();
 **************
 ==============
 // polynomial degrees to test
@@ -411,32 +198,26 @@ LinearSolverCode[] solver_nameS = new LinearSolverCode[] {
 int MaxDof = int.MaxValue;
 **************
 ==============
-**************
-==============
 // --------------------
 // setup control object
 // --------------------
-controls.Clear();
-foreach(LinearSolverCode solver_name in solver_nameS) {
-foreach(int k in PolyDegS) {
-foreach(IGridInfo grd in grids) {
 
-    int Np_V = Utils.Np(k);
-    int Np_p = Utils.Np(k-1);
-    int J    = grd.NumberOfCells;
-    int DOF  = Np_V*3+Np_p;
-    if(J*DOF > MaxDof)
-        continue;
-    
-    var Ctrl = GenerateCObj(solver_name,k,grd,DOF);
-
-    controls.Add(Ctrl);
-}
-}
-}
+//foreach(LinearSolverCode solver_name in solver_nameS) {
+foreach(int k in PolyDegS) { 
+    //Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 1,bool writeToDB = false, bool tracing = false, bool loadbalancing = false)   
+    string jobstr = String.Format(@"cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube({0}, {1}, {2},false,{3},true,true,false)",k,ResRndup,3,100);
+    controls.Add(jobstr);
+    Console.WriteLine(jobstr);
+    }
 **************
+cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(2, 20, 3,false,100,true,true,false)
+
 ==============
+controls
 **************
+List of 1 instances of String {
+  0: cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(2, 20, 3,false,100,true,true,false)
+}
 ==============
 //var solver = new XdgPoisson3Main();
 //solver.Init(c+ontrols[0]);
@@ -449,135 +230,222 @@ foreach(IGridInfo grd in grids) {
 // ==========
 **************
 ==============
+using BoSSS.Application.XNSE_Solver;
 **************
+(1,2): warning CS0105: The using directive for `BoSSS.Application.XNSE_Solver' appeared previously in this namespace
+No. of errors|warnings: 0|1.
+
 ==============
-foreach(var ctrl in controls){
-    int ncores = Convert.ToInt32(ctrl.GridPartOptions.Substring(6));
-    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
-    var aJob = new Job(ctrl.SessionName, typeof(XNSE));
-    aJob.SetControlObject(ctrl);
-    aJob.NumberOfMPIProcs         = ncores;
-    aJob.ExecutionTime            = "02:00:00";
+foreach(var cores in core_sweep){
+foreach(var ctrlstr in controls){
+    int rndnum = new Random().Next();
+    var aJob   = new Job("rotting_cube_"+cores+rndnum,typeof(XNSE));
+    aJob.SetControlStatement(ctrlstr);
+    aJob.NumberOfMPIProcs         = cores;
+    aJob.ExecutionTime            = "4:00:00";
     aJob.MemPerCPU                = "2000";
     aJob.UseComputeNodesExclusive = true;
-    aJob.NumberOfNodes            = Nodes4StrongScale(ncores);
     aJob.Activate(myBatch);
 }
-**************
- Submitting: XNSE_rotcube
-System.ArgumentException: Unable to serialize/deserialize initial values correctly.. Type 'LastError' for details.
-
-==============
-LastError
-**************
-System.ArgumentException: Unable to serialize/deserialize initial values correctly.
-   at BoSSS.Application.BoSSSpad.AppControlExtensions.VerifyEx(AppControl ctrl) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\AppControlExtensions.cs:line 265
-   at BoSSS.Application.BoSSSpad.Job.SetControlObject(AppControl ctrl) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\Job.cs:line 455
-   at <InteractiveExpressionClass>.Host(Object& $retval)
-   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
-   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in B:\BoSSS-gitlab\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 359
-==============
-// ================
-// optional stuff
-// ===============
-var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(s=>Console.WriteLine(s.Value.Name +"Status: "+s.Value.Status));
-//somelist.ForEach(s=>Console.WriteLine(s.Value.Name));
-**************
-C# evaluator not initialized: use 'restart'.
-
-==============
-WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed)).Where(s=>s.Value.Name.Contains("Kcycle_schwarz"))
-**************
-List of 0 instances of KeyValuePair{String,Job} {
-}
-==============
-using System.IO
-**************
-==============
-// write out stdout of all jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-//var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.FinishedSuccess));
-var somelist = WorkflowMgm.AllJobs;
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stderr.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stderr_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
 }
 **************
-writing XdgPoissonVelocity_J8_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J262144_k2_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k3_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J64_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J512_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J4096_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J32768_k5_classic_pardiso ...done.
-writing XdgPoissonVelocity_J8_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J64_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J512_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_gmres_levelpmg ...done.
-writing XdgPoissonVelocity_J8_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J262144_k2_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k3_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J8_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J64_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J512_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J4096_k5_exp_Kcycle_schwarz ...done.
-writing XdgPoissonVelocity_J32768_k5_exp_Kcycle_schwarz ...done.
+Deploying job rotting_cube_81517325803 ... 
+Deploying executables and additional files ...
+Skipping: System.Threading.Tasks.Extensions
+Skipping: System.Text.Encoding.CodePages
+Skipping: System.Runtime.Loader
+Deployment directory: \\hpccluster\hpccluster-scratch\weber\dply\IBM_RotSphere_3D-XNSE_Solver2021Jun22_165013
+copied 42 files.
+   copied 'amd64' runtime.
+deployment finished.
+
 
 ==============
-WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed))
 **************
-List of 0 instances of KeyValuePair{String,Job} {
-}
 ==============
-// write out stdout of Failed Jobs
-Dictionary<string, string> Stoutlist = new Dictionary<string, string>();
-var somelist = WorkflowMgm.AllJobs.Where(s=>s.Value.Status.Equals(JobStatus.Failed));
-somelist.ForEach(j=>Stoutlist.Add(j.Value.Name ,j.Value.Stdout.ToString()));
-foreach(KeyValuePair<string,string> stout in Stoutlist){
-    using(StreamWriter sw = new StreamWriter("G:\\Stout_"+stout.Key+".txt")){
-    Console.Write("writing {0} ...",stout.Key);
-    sw.WriteLine(stout.Value);
-    Console.WriteLine("done.");
-    }
-}
 **************
-Renci.SshNet.Common.SshConnectionException occurred: Client not connected.. Type 'LastError' for details.
-
-
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
 ==============
 **************
 ==============

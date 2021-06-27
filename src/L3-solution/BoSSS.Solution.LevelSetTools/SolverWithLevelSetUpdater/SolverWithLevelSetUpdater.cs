@@ -396,7 +396,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             throw new NotImplementedException();
         }
 
-
         /// <summary>
         /// The base implementation <see cref="Solution.Application{T}.SetInitial"/>
         /// must be overridden, since it does not preform the continuity projection, see <see cref="DualLevelSet"/>,
@@ -408,8 +407,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             base.SetInitial(t); // base implementation does not considers the DG/CG pair.
             this.InitializeLevelSets(LsUpdater, t);
         }
-
-
 
         /// <summary>
         /// - Matches <see cref="DelUpdateLevelset"/>, used by the <see cref="ApplicationWithSolver{T}.Timestepping"/> to advance the interfaces
@@ -431,6 +428,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             Console.WriteLine("Residual of level-set update: " + residual);
             return 0.0;
         }
+
+        private SinglePhaseField MPIrankField;
+        private SinglePhaseField CostClusterField;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
@@ -468,7 +468,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
             }
+#if TEST
+            MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            MPIrankField.AccConstant(this.MPIRank);
+            base.RegisterField(MPIrankField, IOListOption.Always);
 
+            CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
+            CostClusterField.AccNoOfSpecies(1.0, LsTrk, 2);
+            base.RegisterField(CostClusterField, IOListOption.Always);
+#endif
         }
 
 

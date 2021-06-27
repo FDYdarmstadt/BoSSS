@@ -1040,7 +1040,7 @@ namespace ilPSP.Utils {
         _DGEMV  dgemv;
         _DAXPY  daxpy;
         _DSCAL  dscal;
-#pragma warning restore       649
+#pragma warning restore 649
 
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe _DDOT DDOT {
@@ -1337,5 +1337,7 @@ namespace ilPSP.Utils {
                 }
             }
         }
+
+        
     }
 }

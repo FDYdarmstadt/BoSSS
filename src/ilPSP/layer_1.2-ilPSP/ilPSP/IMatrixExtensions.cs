@@ -2461,7 +2461,7 @@ namespace ilPSP {
 
                     LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
                     if(INFO != 0)
-                        throw new ArithmeticException("LAPACK DGECON info is " + INFO);
+                        throw new ArithmeticException("LAPACK DGETRF info is " + INFO);
                     
                     LAPACK.F77_LAPACK.DGECON_(ref NORM, ref N, A, ref LDA, ref ANORM, ref RCOND, work, Iwork, ref INFO);
                     if(INFO != 0)
@@ -3064,7 +3064,7 @@ namespace ilPSP {
 
 
         
-   
+
         /*
         /// <summary>
         /// extracts the <paramref name="RowNo"/>-th row from
@@ -3087,27 +3087,27 @@ namespace ilPSP {
         }
         */
 
-            /*
-        /// <summary>
-        /// extracts the <paramref name="ColNo"/>-th column from
-        /// <paramref name="inp"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// input matrix
-        /// </param>
-        /// <param name="ColNo">
-        /// column index which should be extracted
-        /// </param>
-        /// <returns>
-        /// an array with length equal to 1st length of <paramref name="inp"/>, containing the
-        /// <paramref name="ColNo"/>-th column of <paramref name="inp"/>
-        /// </returns>
-        public static double[] GetColumn(this IMatrix inp, int ColNo) {
-            double[] ret = new double[inp.NoOfRows];
-            GetColumn(inp, ColNo, ret);
-            return ret;
-        }
-        */
+        /*
+    /// <summary>
+    /// extracts the <paramref name="ColNo"/>-th column from
+    /// <paramref name="inp"/>.
+    /// </summary>
+    /// <param name="inp">
+    /// input matrix
+    /// </param>
+    /// <param name="ColNo">
+    /// column index which should be extracted
+    /// </param>
+    /// <returns>
+    /// an array with length equal to 1st length of <paramref name="inp"/>, containing the
+    /// <paramref name="ColNo"/>-th column of <paramref name="inp"/>
+    /// </returns>
+    public static double[] GetColumn(this IMatrix inp, int ColNo) {
+        double[] ret = new double[inp.NoOfRows];
+        GetColumn(inp, ColNo, ret);
+        return ret;
+    }
+    */
 
     }
 }
