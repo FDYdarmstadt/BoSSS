@@ -2,7 +2,6 @@ rmdir .\Output /S /Q
 rmdir .\bin /S /Q
 rmdir .\doc /S /Q
 dotnet publish ..\src\L4-application\PublicTestRunner\PublicTestRunner.csproj --configuration=Release --output .\bin\Release\net5.0
-dotnet publish ..\src\L4-application\PublicTestRunner\PublicTestRunner.csproj --configuration=Release --output .\bin\Release\net5.0
 mkdir bin\native
 xcopy "%BOSSS_INSTALL%\bin\native" .\bin\native /E /Y
 IF EXIST "installer-tmp_win-amd64" (

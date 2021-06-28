@@ -778,7 +778,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy.LegacyTests {
             // ========================================
 
             C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = AgglomerationTreshold;
+            C.AgglomerationThreshold = AgglomerationTreshold;
             if(D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
                 C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;

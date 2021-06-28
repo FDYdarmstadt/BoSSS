@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
     /// <summary>
-    /// refinemetn on cells which are inside the narrow band 
+    /// refinement on cells which are inside the narrow band 
     /// (cut-cells and neighboring cells sharing at least one point)
     /// </summary>
     [Serializable]

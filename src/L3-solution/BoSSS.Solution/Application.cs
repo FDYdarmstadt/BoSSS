@@ -1605,12 +1605,21 @@ namespace BoSSS.Solution {
         /// <summary>
         /// all DG fields that were decorated by an <see cref="InstantiateFromControlFileAttribute"/>.
         /// </summary>
-        protected ICollection<DGField> m_RegisteredFields = new List<DGField>();
+        protected List<DGField> m_RegisteredFields = new List<DGField>();
+
+        /// <summary>
+        /// List of DG Fields which were somehow made known to the app
+        /// </summary>
+        public ICollection<DGField> RegisteredFields {
+            get {
+                return m_RegisteredFields.AsReadOnly();
+            }
+        }
 
         /// <summary>
         /// see <see cref="IOFields"/>
         /// </summary>        
-        protected ICollection<DGField> m_IOFields = new List<DGField>();
+        protected List<DGField> m_IOFields = new List<DGField>();
 
         /// <summary>
         /// All fields, for which IO should be performed by
@@ -1864,7 +1873,7 @@ namespace BoSSS.Solution {
 
                 if(LsTrk != null) {
                     LsTrk.UpdateTracker(time);
-                    LsTrk.UpdateTracker(time); // doppeltes Update hält besser; 
+                    LsTrk.UpdateTracker(time); // doppeltes Update hï¿½lt besser; 
                 }
 
                 // pass 2: XDG fields (after tracker update)

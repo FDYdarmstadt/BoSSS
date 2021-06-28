@@ -5,6 +5,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using Microsoft.DotNet.Interactive.Formatting;
 using System;
@@ -70,6 +71,7 @@ namespace BoSSS.Application.BoSSSpad {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();
+            CallRandomStuff();
             try {
 
 
@@ -92,17 +94,45 @@ namespace BoSSS.Application.BoSSSpad {
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
+            AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
             AddObjectFormatter<IGridData>();
 
             AddObjectFormatter<ISessionInfo>();
             AddObjectFormatter<IDatabaseInfo>();
 
-            AddListFormatter<IGridInfo>();
-            AddListFormatter<IDatabaseInfo>();
-            AddListFormatter<ISessionInfo>();
+            AddEnumFormatter<IGridInfo>();
+            AddEnumFormatter<IDatabaseInfo>();
+            AddEnumFormatter<ISessionInfo>();
 
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
+            AddObjectFormatter<Job>();
+            AddEnumFormatter<Job>();
+        }
+
+        /// <summary>
+        /// calls random functions from BoSSS libraries to enforce loading of assemblies;
+        /// seems to be required for JSON serialization in order to resolve classes/assemblies
+        /// </summary>
+        static void CallRandomStuff() {
+            new BatchProcessorConfig();
+            
+            new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
+
+            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
+            var u = new SinglePhaseField(new Basis(g, 1), "u");
+
+            var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
+            mtx.AccEyeSp(2.0);
+            int L = mtx.RowPartitioning.LocalLength;
+            mtx.Solve_Direct(new double[L], new double[L]);
+            mtx.Solve_CG(new double[L], new double[L]);
+
+            using(var gp = new Gnuplot()) {
+
+            }
+
+            var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
 
 
             AddObjectFormatter<ITimestepInfo>();
@@ -111,7 +141,12 @@ namespace BoSSS.Application.BoSSSpad {
             AddListFormatter<DGField>();
         }
 
-        static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
+
+
+        /// <summary>
+        /// Sets Text Formatter for objects of specific type
+        /// </summary>
+        public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
             Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
             Formatter.Register(
                 type: typeof(T),
@@ -129,9 +164,9 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Text Formatter for <see cref="IDictionary{TKey, TValue}"/> 
+        /// Sets Text Formatter for Dictionaries of specific type: <see cref="IDictionary{TKey, TValue}"/> 
         /// </summary>
-        static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
+        public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
             var t = typeof(IDictionary<KeyType, ValType>);
 
             Formatter.SetPreferredMimeTypeFor(t, "text/plain");
@@ -163,9 +198,9 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Text Formatter for <see cref="IEnumerable{t}"/> 
+        /// Sets Text Formatter for enumerations/lists of specific type: <see cref="IEnumerable{ValType}"/> 
         /// </summary>
-        static void AddListFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
+        public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
             Formatter.SetPreferredMimeTypeFor(t, "text/plain");
@@ -243,6 +278,15 @@ namespace BoSSS.Application.BoSSSpad {
                 if (m_WorkflowMgm == null)
                     m_WorkflowMgm = new WorkflowMgm();
                 return m_WorkflowMgm;
+            }
+        }
+
+        /// <summary>
+        /// Alias for <see cref="WorkflowMgm"/>
+        /// </summary>
+        public static WorkflowMgm wmg {
+            get {
+                return WorkflowMgm;
             }
         }
 
@@ -428,6 +472,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+           
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
@@ -777,7 +822,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-
+            //Debugger.Launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();

@@ -1186,7 +1186,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
@@ -1579,7 +1579,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 4e5;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;

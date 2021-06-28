@@ -146,7 +146,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Empty Constructor for de-serialization
         /// </summary>
-        private MsHPC2012Client() {
+        private MsHPC2012Client() : base() {
             //Console.WriteLine("MsHPC2012Client: empty ctor");
 
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
@@ -174,7 +174,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="DeployRuntime">
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
-        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) {
+        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
@@ -356,32 +356,26 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        static (JobState s, int? exitCode) GetStatus(int id)
-        {
+        (JobState s, int? exitCode) GetStatus(int id) {
             // Get job status
             // ==============
             JobState state = JobState.All;
             {
                 var args = $"view {id}";
                 var Res = ExecuteProcess("job.exe", args, 60000);
-                
+
 
 
                 bool bfound = false;
-                using (var StandardOutput = new StringReader(Res.stdOut))
-                {
-                    for (string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine())
-                    {
-                        if (line.StartsWith("state", StringComparison.InvariantCultureIgnoreCase))
-                        {
+                using(var StandardOutput = new StringReader(Res.stdOut)) {
+                    for(string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine()) {
+                        if(line.StartsWith("state", StringComparison.InvariantCultureIgnoreCase)) {
                             int iRes = line.IndexOf(':');
                             string RestLine = line.Substring(iRes + 1);
                             state = Enum.Parse<JobState>(RestLine);
                             bfound = true;
                             break;
-                        }
-                        else
-                        {
+                        } else {
                             continue;
                         }
 
@@ -401,8 +395,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                if (!bfound)
-                {
+                if(!bfound) {
                     throw new IOException("Unable to evalueate status of job " + id + System.Environment.NewLine + Res.stdOut + System.Environment.NewLine + Res.stdErr);
                 }
             }
@@ -413,25 +406,19 @@ namespace BoSSS.Application.BoSSSpad {
             // Note: in our simoplified interface, we only have one task per job
 
             int? exitcode = null;
-            if (state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished)
-            {
+            if(state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished) {
                 var args2 = $"listtasks {id}";
                 var Res2 = ExecuteProcess("job.exe", args2, 60000);
-                
 
-                using (var StandardOutput = new StringReader(Res2.stdOut))
-                {
-                    for (string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine())
-                    {
-                        if (line.StartsWith("exit code", StringComparison.InvariantCultureIgnoreCase))
-                        {
+
+                using(var StandardOutput = new StringReader(Res2.stdOut)) {
+                    for(string line = StandardOutput.ReadLine(); line != null; line = StandardOutput.ReadLine()) {
+                        if(line.StartsWith("exit code", StringComparison.InvariantCultureIgnoreCase)) {
                             int iRes = line.IndexOf(':');
                             string RestLine = line.Substring(iRes + 1);
                             exitcode = int.Parse(RestLine);
                             break;
-                        }
-                        else
-                        {
+                        } else {
                             continue;
                         }
 
@@ -764,10 +751,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Synchonous wrapper around process execution, 
+        /// Synchronous wrapper around process execution, 
         /// see https://stackoverflow.com/questions/139593/processstartinfo-hanging-on-waitforexit-why
         /// </summary>
-        static (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout)
+        (int exitcode, string stdOut, string stdErr) ExecuteProcess(string filename, string arguments, int timeout)
         {
             using (Process process = new Process())
             {
@@ -817,7 +804,9 @@ namespace BoSSS.Application.BoSSSpad {
                     {
                         if (process.ExitCode != 0)
                         {
-                            throw new IOException(filename + " " + arguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
+                            string modArguments = arguments;
+                            modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                            throw new IOException(filename + " " + modArguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
                         }
 
 
@@ -827,7 +816,9 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                     {
                         // Timed out.
-                        throw new IOException("timeout waiting for " + filename + " " + arguments);
+                        string modArguments = arguments;
+                        modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                        throw new IOException("timeout waiting for " + filename + " " + modArguments);
                     }
                 }
 
