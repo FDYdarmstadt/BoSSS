@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// See <see cref="LevelSetTracker.SpeciesTable"/>
             /// </summary>
-            [NonSerialized]
+            [DataMember]
             internal Array SpeciesTable;
 
             /// <summary>
