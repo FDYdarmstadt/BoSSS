@@ -1559,7 +1559,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// sharing of edges between processors
             /// </summary>
             internal void NegogiateNeighbourship() {
-                using (new FuncTrace()) {
+                using (var tr = new FuncTrace()) {
                     int Size = m_owner.MpiSize;
                     int myRank = m_owner.MpiRank;
                     int E = m_EdgesTmp.Count;
@@ -1571,20 +1571,29 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var CellPart = m_owner.CellPartitioning;
                     int D = m_owner.SpatialDimension;
 
+                    tr.Info("No of locally updated cells: " + Jupdt);
+
+                    void Debug_Assert(bool MustBeTrue, string message) {
+                        if(!MustBeTrue)
+                            throw new ApplicationException(message);
+                    }
+
+
+
                     // put boundary edges to the beginning
                     // ===================================
-                    {
+                    using(var bt0 = new BlockTrace("SortOutBndyEdges", tr)) {
                         int Ebnd = this.NoOfBoundaryEdges;
                         int Eint = E - Ebnd;
 
-#if DEBUG
+//#if DEBUG
                         for (int e = 0; e < E; e++) {
                             if (e < Eint)
-                                Debug.Assert(m_EdgesTmp[e].Cell2 >= 0);
+                                Debug_Assert(m_EdgesTmp[e].Cell2 >= 0, $"Second (out) cell out of range for internal cell; Eint = {Eint}, m_EdgesTmp[e].Cell2 = {m_EdgesTmp[e].Cell2}");
                             else
-                                Debug.Assert(m_EdgesTmp[e].Cell2 < 0);
+                                Debug_Assert(m_EdgesTmp[e].Cell2 < 0, $"Second (out) cell out of range for boundary cell; Eint = {Eint}, m_EdgesTmp[e].Cell2 = {m_EdgesTmp[e].Cell2}");
                         }
-#endif
+//#endif
 
                         var BndEdges = m_EdgesTmp.GetSubVector(Eint, Ebnd);
                         m_EdgesTmp.RemoveRange(Eint, Ebnd);
@@ -1601,11 +1610,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (iEdge >= Eint) {
                                     // correct re-ordering of boundary-edges
                                     iEdge -= Eint;
-                                    Debug.Assert(iEdge >= 0 && iEdge < Ebnd);
+                                    Debug_Assert(iEdge >= 0 && iEdge < Ebnd, "boundary edge out of range");
                                 } else {
                                     // correct re-ordering of internal-edges
                                     iEdge += Ebnd;
-                                    Debug.Assert(iEdge >= Ebnd && iEdge < E);
+                                    Debug_Assert(iEdge >= Ebnd && iEdge < E, "internal edge out of range");
                                 }
 
                                 C2E_j[k] = iEdge;
@@ -1623,7 +1632,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // Item1: process rank R
                     // Item2: index of edge on rank R
                     Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
-                    {
+                    using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
                         for (int e = 0; e < E; e++) {
                             EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
                         }
@@ -1635,6 +1644,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                         var Data = new List<Tuple<int, long, long, AffineTrafo, AffineTrafo>>();
                         var C2E = this.m_CellsToEdgesTmp;
                         var EdgesTmp = this.m_EdgesTmp;
+                        bt1.Info("Length of `C2E`: " + C2E.Length);
+                        bt1.Info("Count of `EdgesTmp`: " + EdgesTmp.Count);
 
                         double[,] OriginAndNframe = new double[Math.Max(D, 1), Math.Max(D - 1, 1)];
                         for (int d = 0; d < (D - 1); d++) {
@@ -1652,13 +1663,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                             foreach (int jCell in SndList) {
                                 var C2E_j = C2E[jCell];
                                 foreach (int iEdge in C2E_j) {
+                                    if(iEdge >= EdgesTmp.Count)
+                                        throw new ApplicationException($"inconsistent data: iEdge = {iEdge}, m_EdgesTmp.Count = {EdgesTmp.Count}.");
                                     var Edge = EdgesTmp[iEdge];
 
                                     if (Edge.Cell1 >= Jupdt || Edge.Cell2 >= Jupdt) {
                                         // found some edge 
 
-                                        Debug.Assert(Edge.Cell1 < Jupdt || Edge.Cell2 < Jupdt);
-                                        Debug.Assert(Edge.Cell1 == jCell || Edge.Cell2 == jCell);
+                                        Debug_Assert(Edge.Cell1 < Jupdt || Edge.Cell2 < Jupdt, "One cell index of some edge must be a local edge");
+                                        Debug_Assert(Edge.Cell1 == jCell || Edge.Cell2 == jCell, "Inconsistency in m_EdgesTmp");
 
 
                                         long GIdx1, GIdx2;
@@ -1666,13 +1679,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         if (Edge.Cell1 >= Jupdt) {
                                             // Cell1 is external
                                             // +++++++++++++++++
-                                            Debug.Assert(Edge.Cell2 < Jupdt);
+                                            Debug_Assert(Edge.Cell2 < Jupdt, "Inconsistency in m_EdgesTmp (1)");
 
                                             GIdx1 = GidxExt[Edge.Cell1 - Jupdt];
                                             GIdx2 = CellPart.i0 + Edge.Cell2;
                                             targRankE = CellPart.FindProcess(GIdx1);
-                                            Debug.Assert(targRankE != myRank);
-                                            Debug.Assert(CellPart.FindProcess(GIdx2) == myRank);
+                                            Debug_Assert(targRankE != myRank, "Inconsistency in m_EdgesTmp (2)");
+                                            Debug_Assert(CellPart.FindProcess(GIdx2) == myRank, "Inconsistency in m_EdgesTmp (3)");
                                         } else {
                                             // Cell2 is external
                                             // +++++++++++++++++
@@ -1681,8 +1694,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             GIdx1 = CellPart.i0 + Edge.Cell1;
                                             GIdx2 = GidxExt[Edge.Cell2 - Jupdt];
                                             targRankE = CellPart.FindProcess(GIdx2);
-                                            Debug.Assert(targRankE != myRank);
-                                            Debug.Assert(CellPart.FindProcess(GIdx1) == myRank);
+                                            Debug_Assert(targRankE != myRank, "Inconsistency in m_EdgesTmp (4)");
+                                            Debug_Assert(CellPart.FindProcess(GIdx1) == myRank, "Inconsistency in m_EdgesTmp (5)");
                                         }
 
                                         if (targRankE != targRank)
@@ -1719,11 +1732,11 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 int jCell_loc;
                                 if (CellPart.IsInLocalRange(Gidx1)) {
-                                    Debug.Assert(CellPart.FindProcess(Gidx2) == originRank);
+                                    Debug_Assert(CellPart.FindProcess(Gidx2) == originRank, "Global index (second cell) on wrong processor");
                                     jCell_loc = CellPart.TransformIndexToLocal((int)Gidx1);
                                 } else {
-                                    Debug.Assert(CellPart.IsInLocalRange(Gidx2));
-                                    Debug.Assert(CellPart.FindProcess(Gidx1) == originRank);
+                                    Debug_Assert(CellPart.IsInLocalRange(Gidx2), "Global index (second cell) on wrong processor (2)");
+                                    Debug_Assert(CellPart.FindProcess(Gidx1) == originRank, "Global index (first cell) on wrong processor");
                                     jCell_loc = CellPart.TransformIndexToLocal((int)Gidx2);
                                 }
 
@@ -1732,6 +1745,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 int matchCount = 0;
                                 int iEdge_local = int.MinValue;
                                 foreach (int iEdge in C2E_jCell_loc) {
+                                    if(iEdge >= EdgesTmp.Count)
+                                        throw new ApplicationException($"inconsistent data: iEdge = {iEdge}, EdgesTmp.Count = {EdgesTmp.Count}.");
                                     var Edge = EdgesTmp[iEdge];
                                     bool bEdgeChanged = false;
                                     long _Gidx1 = Edge.Cell1 < Jupdt ? Edge.Cell1 + CellPart.i0 : GidxExt[Edge.Cell1 - Jupdt];
@@ -1859,7 +1874,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // apply permutation
                     // ======================================================================
-                    {
+                    using(new BlockTrace("ApplyPermutation", tr)) {
                         int[] invEdgePermuation = new int[E];
                         for (int e = 0; e < E; e++) {
                             invEdgePermuation[EdgePermuation[e]] = e;
@@ -1868,6 +1883,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // permute edges
                         var newEdgesTmp = new List<ComputeEdgesHelper>(E);
                         for (int e = 0; e < E; e++) {
+                            Debug_Assert(EdgePermuation[e] < this.m_EdgesTmp.Count, "another out-of-range");
                             newEdgesTmp.Add(this.m_EdgesTmp[EdgePermuation[e]]);
                         }
                         this.m_EdgesTmp = newEdgesTmp;

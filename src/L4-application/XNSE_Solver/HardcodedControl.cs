@@ -522,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100, bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -530,21 +530,22 @@ namespace BoSSS.Application.XNSE_Solver {
             if (writeToDB) {
                 var thisOS = System.Environment.OSVersion.Platform;
                 var MachineName = System.Environment.MachineName;
-                switch (thisOS) {
+                switch(thisOS) {
                     case PlatformID.Unix:
-                        C.AlternateDbPaths = new[] {
+                    C.AlternateDbPaths = new[] {
                         (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
                         (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-                        break;
+                    break;
                     case PlatformID.Win32NT:
-                        if (MachineName == "PCMIT32")
+                    if(MachineName == "PCMIT32")
                         C.DbPath = @"D:\trash_db";
-                        else
+                    else
                         C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                        break;
+                    break;
                     default:
-                        throw new Exception("No Db-path specified. You stupid?");
+                    throw new Exception("No Db-path specified. You stupid?");
                 }               
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
@@ -632,7 +633,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories=Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -684,10 +685,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     case 3:
                     // Inf-Norm cube
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                    //                        Math.Abs(X[2] - pos[2])))
+                    //                        + particleRad;
 
                     // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
@@ -702,7 +703,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //+ Math.Abs(particleRad);
 
                     // sphere
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
                     default:
                     throw new NotImplementedException();
                 }
