@@ -17,6 +17,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -82,7 +83,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             _Main(args, false, delegate () {
                 var p = new XNSE();
-
+                Debugger.Launch();
                 void KatastrophenPlot(DGField[] dGFields) {
 
                     List<DGField> allfields = new();
