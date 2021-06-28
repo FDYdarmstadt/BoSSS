@@ -17,9 +17,9 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// </summary>
         /// <param name="selectedCellType">
         /// See <see cref="IBMCellClassifier"/>:
-        /// 0: Void (Solid)
-        /// 1: Fluid
-        /// 2: CutCells
+        /// - 0: Void (Solid)
+        /// - 1: Fluid
+        /// - 2: cut cells
         /// </param>
         public XNSECellCostEstimator(int selectedCellType) {
             this.selectedCellType = selectedCellType;
