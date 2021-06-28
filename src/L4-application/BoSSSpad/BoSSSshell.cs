@@ -104,6 +104,11 @@ namespace BoSSS.Application.BoSSSpad {
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
 
+
+            AddObjectFormatter<ITimestepInfo>();
+            AddListFormatter<ITimestepInfo>();
+
+            AddListFormatter<DGField>();
         }
 
         static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
@@ -152,6 +157,7 @@ namespace BoSSS.Application.BoSSSpad {
                             keyString = kv.Key != null ? optKeyFormatter(kv.Value) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + kv.Value + "\t" + kv.Value.ToString());
+                        i++;
                     }
                 });
         }
@@ -178,6 +184,7 @@ namespace BoSSS.Application.BoSSSpad {
                             valString = v != null ? optValFormatter(v) : "NULL";
 
                         writer.WriteLine("#" + i + ": " + v.ToString());
+                        i++;
                     }
                 });
         }

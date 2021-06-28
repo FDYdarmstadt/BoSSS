@@ -515,6 +515,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
+            //Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
         }
     }
 }
