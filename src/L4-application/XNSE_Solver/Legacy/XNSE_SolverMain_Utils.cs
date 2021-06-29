@@ -751,6 +751,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         public void SpatialOperatorMatrixAnalysis(bool CheckAssertions, int AnalysisLevel) {
             using (new FuncTrace()) {
                 int D = this.Grid.SpatialDimension;
+                throw new Exception("hähä");
 
                 if (AnalysisLevel < 0 || AnalysisLevel > 2)
                     throw new ArgumentException();

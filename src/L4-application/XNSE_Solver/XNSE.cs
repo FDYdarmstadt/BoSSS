@@ -94,6 +94,16 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
+        public XNSE() {
+            Console.WriteLine("XNSE ctor,");
+            try {
+                throw new Exception();
+            } catch (Exception e) {
+                Console.WriteLine(e.StackTrace);
+            }
+        }
+
+
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
@@ -122,11 +132,23 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 //See remarks
-                quadOrder *= 2;
-                quadOrder += 1;
+                //quadOrder *= 2;
+                //quadOrder += 1;
             }
+
+            if(!reminder) {
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("deact debug code!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                reminder = true;
+            }
+
             return quadOrder;
         }
+
+        bool reminder = false;
 
         /// <summary>
         /// Current velocity

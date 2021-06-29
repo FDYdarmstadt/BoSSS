@@ -45,6 +45,18 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         public GridCommons Adapt(IEnumerable<int> cellsToRefine, IEnumerable<int[]> cellsToCoarse, out GridCorrelation Old2New) {
             using (new FuncTrace()) {
+                void Debug_Assert(bool mustbeTrue) {
+                    Debug.Assert(mustbeTrue);
+                    //if(!mustbeTrue)
+                    //    throw new ApplicationException("Internal error in mesh adaptation");
+                }
+                void Debug_Assert_(bool mustbeTrue, string msg) {
+                    Debug.Assert(mustbeTrue, msg);
+                    //if(!mustbeTrue)
+                    //    throw new ApplicationException("Internal error in mesh adaptation: " + msg);
+                }
+
+
                 // Check for refinement/coarsening on all processes.
                 bool anyRefinement = !cellsToRefine.IsNullOrEmpty().MPIAnd();
                 bool anyCoarsening = !cellsToCoarse.IsNullOrEmpty().MPIAnd(); 
@@ -142,28 +154,28 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // Handle unchanged cells
                 // ========================= 
                 for (int j = 0; j < J; j++) {
-                    Debug.Assert(Old2New.OldGlobalId[j] == this.Cells.GetCell(j).GlobalID);
-                    Debug.Assert(Old2New.OldGlobalId[j] == oldGrid.Cells[j].GlobalID);
-                    Debug.Assert(object.ReferenceEquals(this.Cells.GetCell(j), oldGrid.Cells[j]));
-                    Debug.Assert((cellsToRefineBitmask[j] && cellsToCoarseBitmask[j]) == false, "Cannot refine and coarsen the same cell.");
+                    Debug_Assert(Old2New.OldGlobalId[j] == this.Cells.GetCell(j).GlobalID);
+                    Debug_Assert(Old2New.OldGlobalId[j] == oldGrid.Cells[j].GlobalID);
+                    Debug_Assert(object.ReferenceEquals(this.Cells.GetCell(j), oldGrid.Cells[j]));
+                    Debug_Assert_((cellsToRefineBitmask[j] && cellsToCoarseBitmask[j]) == false, "Cannot refine and coarsen the same cell.");
 
-                    if ((cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]) == false) {
-                        if (AdaptNeighborsBitmask[j]) {
+                    if((cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]) == false) {
+                        if(AdaptNeighborsBitmask[j]) {
                             // neighbor information needs to be updated
                             Cell oldCell = oldGrid.Cells[j];
                             Cell newCell = oldCell.CloneAs(); // data 
 
                             // remove out-dated neighborship info
-                            if (newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
+                            if(newCell.CellFaceTags != null && newCell.CellFaceTags.Length > 0) {
                                 int[] oldNeighs = GetNeighboursViaEdgesAndVertices(j);
-                                foreach (int jNeigh in oldNeighs) {
-                                    if (cellsToRefineBitmask[jNeigh] || cellsToCoarseBitmask[jNeigh]) {
+                                foreach(int jNeigh in oldNeighs) {
+                                    if(cellsToRefineBitmask[jNeigh] || cellsToCoarseBitmask[jNeigh]) {
                                         // one of the neighbors has changed, so _potentially_ the cell face tags have to be updated
                                         long gId_Neigh = this.Cells.GetGlobalID(jNeigh);
 
-                                        for (int i = 0; i < newCell.CellFaceTags.Length; i++) {
-                                            if (newCell.CellFaceTags[i].NeighCell_GlobalID == gId_Neigh) {
-                                                Debug.Assert(newCell.CellFaceTags[i].EdgeTag == 0 || newCell.CellFaceTags[i].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG);
+                                        for(int i = 0; i < newCell.CellFaceTags.Length; i++) {
+                                            if(newCell.CellFaceTags[i].NeighCell_GlobalID == gId_Neigh) {
+                                                Debug_Assert_(newCell.CellFaceTags[i].EdgeTag == 0 || newCell.CellFaceTags[i].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG, "Illegal face tag");
                                                 ArrayTools.RemoveAt(ref newCell.CellFaceTags, i);
                                                 i--;
                                             }
@@ -173,8 +185,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                             cellsInNewGrid.Add(newCell);
                             adaptedCells[j] = new Cell[] { newCell };
-                        }
-                        else {
+                        } else {
                             // cell and neighbors remain unchanged
                             var oldCell = oldGrid.Cells[j];
                             var newCell = oldCell.CloneAs(); // data 
@@ -184,14 +195,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                             adaptedCells[j] = new Cell[] { newCell };
                         }
 
-                        Debug.Assert(Old2New.MappingIndex[j] == null);
-                        Debug.Assert(Old2New.DestGlobalId[j] == null);
+                        Debug_Assert(Old2New.MappingIndex[j] == null);
+                        Debug_Assert(Old2New.DestGlobalId[j] == null);
                         Old2New.MappingIndex[j] = null;
                         Old2New.DestGlobalId[j] = new long[] { cellsInNewGrid[cellsInNewGrid.Count - 1].GlobalID };
 
-                    }
-                    else {
-                        Debug.Assert(cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]);
+                    } else {
+                        Debug_Assert(cellsToRefineBitmask[j] || cellsToCoarseBitmask[j]);
                     }
                 }
 
@@ -274,8 +284,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     RefElement Kref1 = Cells.GetRefElement(localCellIndex1);
                     RefElement Kref2 = Cells.GetRefElement(localCellIndex2);
 
-                    Debug.Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
-                    Debug.Assert((cellsToRefineBitmask[localCellIndex2] && cellsToCoarseBitmask[localCellIndex2]) == false);
+                    Debug_Assert((cellsToRefineBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex1]) == false);
+                    Debug_Assert((cellsToRefineBitmask[localCellIndex2] && cellsToCoarseBitmask[localCellIndex2]) == false);
 
                     bool cell1Changed = cellsToRefineBitmask[localCellIndex1] || cellsToCoarseBitmask[localCellIndex1];
                     bool cell2Changed = cellsToRefineBitmask[localCellIndex2] || cellsToCoarseBitmask[localCellIndex2];
@@ -321,8 +331,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     CheckIfCellIsMissing(localCellIndex2, adaptedCells2, i0);
 
                     if (cellsToCoarseBitmask[localCellIndex1] && cellsToCoarseBitmask[localCellIndex2]) {
-                        Debug.Assert(adaptedCells1.Length == 1);
-                        Debug.Assert(adaptedCells2.Length == 1);
+                        Debug_Assert(adaptedCells1.Length == 1);
+                        Debug_Assert(adaptedCells2.Length == 1);
                         if (adaptedCells1[0] == null)
                             throw new Exception("Cell is missing! Cell with global index " + (i0 + localCellIndex1));
                         if (adaptedCells2[0] == null)
@@ -342,7 +352,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         idx1 = KrefS_Faces2Subdiv[iKref1][iFace1];
                     }
                     else {
-                        Debug.Assert(adaptedCells1.Length == 1);
+                        Debug_Assert(adaptedCells1.Length == 1);
                         idx1 = ONE_NULL;
                     }
 
@@ -350,7 +360,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         idx2 = KrefS_Faces2Subdiv[iKref2][iFace2];
                     }
                     else {
-                        Debug.Assert(adaptedCells2.Length == 1);
+                        Debug_Assert(adaptedCells2.Length == 1);
                         idx2 = ONE_NULL;
                     }
 
@@ -367,7 +377,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         foreach (int i2 in idx2) {
 
                             Cell Cl2 = adaptedCells2[i2];
-                            Debug.Assert(Cl1.GlobalID != Cl2.GlobalID);
+                            Debug_Assert(Cl1.GlobalID != Cl2.GlobalID);
 
                             int conCount1;
                             if (Cl1.CellFaceTags == null) {
@@ -376,7 +386,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             else {
                                 conCount1 = Cl1.CellFaceTags.Where(cfTag => cfTag.NeighCell_GlobalID == Cl2.GlobalID).Count();
                             }
-                            Debug.Assert(conCount1 <= 1);
+                            Debug_Assert(conCount1 <= 1);
 #if DEBUG
                             int conCount2;
                             if (Cl2.CellFaceTags == null) {
@@ -390,7 +400,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (conCount1 != conCount2) {
                                 //int D = Cl2.TransformationParams.;
                                 int D = this.SpatialDimension;
-                                var centercoordinates = new double[D];
+                                Vector centercoordinates = new Vector(D);
                                 int NoOfNodes = Cl2.TransformationParams.NoOfRows;
                                 //Compute Barycenter of rectangular cells
                                 for (int d = 0; d < D; d++) {
@@ -401,11 +411,11 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                     centercoordinates[d] = center / ((double)NoOfNodes);
                                 }
-                                Console.WriteLine("proc{2} reporting: coord of {0}:{1}", Cl2.GlobalID, String.Join(",",centercoordinates),ilPSP.Environment.MPIEnv.MPI_Rank);
+                                Console.Error.WriteLine($"proc{ilPSP.Environment.MPIEnv.MPI_Rank} reporting: coord of {Cl2.GlobalID}: {centercoordinates}");
                             }
                             ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
-                            Debug.Assert(conCount1 == conCount2);
+                            Debug_Assert(conCount1 == conCount2);
 #endif                          
                             
                             if (conCount1 > 0)
