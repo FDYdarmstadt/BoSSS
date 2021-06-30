@@ -94,16 +94,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
-        public XNSE() {
-            Console.WriteLine("XNSE ctor,");
-            try {
-                throw new Exception();
-            } catch (Exception e) {
-                Console.WriteLine(e.StackTrace);
-            }
-        }
-
-
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
