@@ -1236,18 +1236,14 @@ namespace BoSSS.Foundation.XDG {
                         return NN;
                     }
 
-                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    Console.WriteLine("Dont forget to reset the quad rules!");
-                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+     
 
                     // various sets on faces
-                    //QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2); // brute-force rule on face
-                    QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(2, 1); // brute-force rule on face
+                    QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2); // brute-force rule on face
+                    //QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(2, 1); // brute-force rule on face
                     NodeSet corners = Kref.FaceRefElement.Vertices;
-                    //QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
-                    QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree);
+                    QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
+                    //QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree);
                     TestNodes_QuadWeights[iKref] = GaussRule.Weights;
 
                     // allocate memory form test node set 
