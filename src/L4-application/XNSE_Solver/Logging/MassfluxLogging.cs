@@ -164,7 +164,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             get {
                 if (this.SolverMain is XNSE_SolverMain oldSolver) {
                     throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE newSolver) {
+                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
                     int D = this.SolverMain.GridData.SpatialDimension;
                     IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
 
@@ -191,7 +191,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             get {
                 if (this.SolverMain is XNSE_SolverMain oldSolver) {
                     throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE newSolver) {
+                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
                     int D = this.SolverMain.GridData.SpatialDimension;
                     IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
 

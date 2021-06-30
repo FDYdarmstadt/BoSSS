@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.CurrentVel;
-                } else if(this.SolverMain is XNSFE newSolver) {
+                } else if(this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
                     int D = this.SolverMain.GridData.SpatialDimension;
 
                     var ret = newSolver.CurrentState.Fields.Take(D).Select(f => (XDGField)f).ToArray();
@@ -61,7 +61,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.Pressure;
-                } else if(this.SolverMain is XNSFE newSolver) {
+                } else if(this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
                     int D = this.SolverMain.GridData.SpatialDimension;
 
                     var ret = newSolver.CurrentState.Fields.ElementAt(D) as XDGField;
@@ -84,7 +84,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.m_HMForder;
-                } else if(this.SolverMain is XNSFE newSolver) {
+                } else if(this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
 
                     return newSolver.QuadOrder();
                     
@@ -103,7 +103,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.KineticEnergy;
-                } else if(this.SolverMain is XNSFE newSolver) {
+                } else if(this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
 
                     var a =  newSolver.Timestepping.Parameters.First(t => t.Identification == BoSSS.Solution.NSECommon.VariableNames.KineticEnergy);
                     return (XDGField) a;
@@ -120,7 +120,7 @@ namespace BoSSS.Application.XNSE_Solver {
             get { 
                 if(base.SolverMain is XNSE_SolverMain oldSolver) {
                     return oldSolver.Fourier_LevSet;
-                } else if(base.SolverMain is XNSFE newSolver) {
+                } else if(base.SolverMain is XNSFE<XNSFE_Control> newSolver) {
                     if(newSolver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet is FourierLevelSet fls) {
                         return fls.Fourier_LevSet;
                     } else {
