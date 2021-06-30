@@ -83,7 +83,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             _Main(args, false, delegate () {
                 var p = new XNSE();
-                Debugger.Launch();
+                //Debugger.Launch();
                 void KatastrophenPlot(DGField[] dGFields) {
 
                     List<DGField> allfields = new();

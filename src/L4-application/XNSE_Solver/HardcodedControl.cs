@@ -545,7 +545,8 @@ namespace BoSSS.Application.XNSE_Solver {
                         break;
                     default:
                         throw new Exception("No Db-path specified. You stupid?");
-                }               
+                }
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
@@ -556,7 +557,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6,k*2));
+            C.SetFieldOptions(k, Math.Max(6, k * 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             if (tracing) C.TracingNamespaces = "*";
@@ -781,7 +782,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxSolverIterations = 4;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;

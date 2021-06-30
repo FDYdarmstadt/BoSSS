@@ -1559,7 +1559,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// sharing of edges between processors
             /// </summary>
             internal void NegogiateNeighbourship() {
-                using (new FuncTrace()) {
+                using (var tr = new FuncTrace()) {
                     int Size = m_owner.MpiSize;
                     int myRank = m_owner.MpiRank;
                     int E = m_EdgesTmp.Count;
@@ -1571,9 +1571,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var CellPart = m_owner.CellPartitioning;
                     int D = m_owner.SpatialDimension;
 
+                    tr.Info("No of locally updated cells: " + Jupdt);
+
+
                     // put boundary edges to the beginning
                     // ===================================
-                    {
+                    using(var bt0 = new BlockTrace("SortOutBndyEdges", tr)) {
                         int Ebnd = this.NoOfBoundaryEdges;
                         int Eint = E - Ebnd;
 
@@ -1591,14 +1594,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                         m_EdgesTmp.InsertRange(0, BndEdges);
 
                         var C2E = this.m_CellsToEdgesTmp;
-                        for (int j = 0; j < C2E.Length; j++) {
+                        for(int j = 0; j < C2E.Length; j++) {
                             var C2E_j = C2E[j];
                             int K = C2E_j.Count;
-                            for (int k = 0; k < K; k++) {
+                            for(int k = 0; k < K; k++) {
                                 int iEdge = C2E_j[k];
                                 Debug.Assert(iEdge >= 0 && iEdge < E);
 
-                                if (iEdge >= Eint) {
+                                if(iEdge >= Eint) {
                                     // correct re-ordering of boundary-edges
                                     iEdge -= Eint;
                                     Debug.Assert(iEdge >= 0 && iEdge < Ebnd);
@@ -1623,7 +1626,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // Item1: process rank R
                     // Item2: index of edge on rank R
                     Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
-                    {
+                    using(new BlockTrace("LocalIndicesForeign", tr)) {
                         for (int e = 0; e < E; e++) {
                             EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
                         }
@@ -1859,7 +1862,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // apply permutation
                     // ======================================================================
-                    {
+                    using(new BlockTrace("ApplyPermutation", tr)) {
                         int[] invEdgePermuation = new int[E];
                         for (int e = 0; e < E; e++) {
                             invEdgePermuation[EdgePermuation[e]] = e;
