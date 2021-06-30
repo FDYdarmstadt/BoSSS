@@ -21,13 +21,13 @@ using System.Linq;
 using System.Reflection;
 
 namespace BoSSS.Application.XNSE_Solver {
-
+   
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
     /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
-    public class XNSFE : XNSE<XNSFE_Control> {
+    public class XNSFE<T> : XNSE<T> where T : XNSFE_Control, new() {
        
         private void AddXHeatMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel) {
             int D = this.GridData.SpatialDimension;
@@ -272,7 +272,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             DefineSystem(D, opFactory, levelSetUpdater);
 
-            //Get Spatial Operator
+            //Get Spatial Operator            
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
