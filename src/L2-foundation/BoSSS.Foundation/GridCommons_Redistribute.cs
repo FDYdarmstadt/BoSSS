@@ -953,7 +953,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 for (int r = 0; r < CellsPerRank.Length; r++) {
                     CellsPerRank[r] = this.CellPartitioning.GetLocalLength(r);
                 }
-                
                 long[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
                 ulong[] HilbertIndex = local_HilbertIndex.MPIGatherv(CellsPerRank);
                 List<int[]> cellCosts = new List<int[]>();
@@ -964,7 +963,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     cellCosts.RemoveAt(0);
                 }
-
                 int[] RankIndex = new int[numberofcells];
 
                 //Sequential Part

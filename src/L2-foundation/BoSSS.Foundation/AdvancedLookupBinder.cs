@@ -8,13 +8,13 @@ using System.Text;
 
 namespace BoSSS.Foundation.IO {
     /// <summary>
-    /// Helps within Jupyter notebook, where <see cref="jsonFormatter"/>
+    /// Helps within Jupyter notebook, where the JSON formatter 
     /// sometimes is not able to resolve all types and assemblies automatically.
     /// </summary>
     class AdvancedLookupBinder : DefaultSerializationBinder {
 
         internal AdvancedLookupBinder() {
-
+            
             //this.defBinder = new DefaultSerializationBinder();
 
             var allAssis = System.AppDomain.CurrentDomain.GetAssemblies();

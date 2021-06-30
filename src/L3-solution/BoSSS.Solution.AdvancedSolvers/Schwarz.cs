@@ -374,16 +374,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultigridOperator m_MgOp;
 
+        // Hack the hack, if pressure is equal order ...
+        // Only viable, if p-two-grid used
         public bool EqualOrder = false;
 
         /// <summary>
-        /// turn P-multigrid for block solvers on/off
+        /// turn P-multigrid for block solvers on/off.
+        /// Not recommended: This may cause bad convergence in the presence of pressure.
         /// </summary>
-        public bool UsePMGinBlocks {
-            get;
-            set;
-        }
-
+        public bool UsePMGinBlocks = false;
+        
         private bool AnyHighOrderTerms {
             get {
                 Debug.Assert(m_MgOp != null, "there is no matrix given yet!");
@@ -402,15 +402,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Determines, if cutcells are fully assigned (<see cref="CoarseLowOrder"/>=p) to the coarse solver
+        /// Determines, if cutcells are fully assigned (<see cref="CoarseLowOrder"/>=p) to the coarse solver; only applicable, if p-two-grid is used as block solver
         /// </summary>
-        public bool CoarseSolveOfCutcells {
-            get;
-            set;
-        }
+        public bool CoarseSolveOfCutcells = true;
 
         /// <summary>
-        /// DG degree at low order sub-blocks; If p-multi-grid is used (<see cref="UsePMGinBlocks"/>), 
+        /// DG degree at low order sub-blocks; If p-two-grid is used (<see cref="UsePMGinBlocks"/>), 
         /// this degree is the boundary which divides into low order and high order blocks.
         /// </summary>
         private int pLow = 1;
@@ -590,12 +587,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullSel.CellSelector(bc.ToList(), false);
                         fullMask = new BlockMask(fullSel, ExtRows);
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
-                        
+
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,
                             Parallelism = Parallelism.SEQ
                         };
+
+                        // ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO
+                        //blockSolvers[iPart] = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                        //    Level = 4,
+                        //    Comm = csMPI.Raw._COMM.SELF
+                        //};
+
                         blockSolvers[iPart].DefineMatrix(fullBlock);
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
 

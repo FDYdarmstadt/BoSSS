@@ -77,7 +77,7 @@ namespace ilPSP.Utils {
         /// second column of <paramref name="inp"/>, and so on (1st index rotationg fastest,
         /// FORTRAN order, ...));
         /// </param>
-        public static void Resize<T>(this T[] inp, T[,] outp, bool ColumnByColumn) {
+        public static void Reshape<T>(this T[] inp, T[,] outp, bool ColumnByColumn) {
 
 
             int cnt = 0;
@@ -127,9 +127,9 @@ namespace ilPSP.Utils {
         /// second column of <paramref name="inp"/>, and so on (1st index rotationg fastest,
         /// FORTRAN order, ...));
         /// </param>
-        public static T[,] Resize<T>(this T[] inp, bool ColumnByColumn, int RetNoOfRows, int RetNoOfColumns) {
+        public static T[,] Reshape<T>(this T[] inp, bool ColumnByColumn, int RetNoOfRows, int RetNoOfColumns) {
             T[,] ret = new T[RetNoOfRows, RetNoOfColumns];
-            Resize(inp, ret, ColumnByColumn);
+            Reshape(inp, ret, ColumnByColumn);
             return ret;
         }
 
@@ -152,7 +152,7 @@ namespace ilPSP.Utils {
         /// second column of <paramref name="inp"/>, and so on (1st index rotationg fastest,
         /// FORTRAN order, ...));
         /// </param>
-        public static void Resize<T>(this T[,] inp, T[] output, bool ColumnByColumn) {
+        public static void Reshape<T>(this T[,] inp, T[] output, bool ColumnByColumn) {
 
             int I1 = inp.GetLength(0);
             int I2 = inp.GetLength(1);
@@ -195,9 +195,9 @@ namespace ilPSP.Utils {
         /// <returns>
         /// an array of equal total number of elements like <paramref name="inp"/>
         /// </returns>
-        public static T[] Resize<T>(this T[,] inp, bool ColumnByColumn) {
+        public static T[] Reshape<T>(this T[,] inp, bool ColumnByColumn) {
             T[] ret = new T[inp.GetLength(0) * inp.GetLength(1)];
-            Resize(inp, ret, ColumnByColumn);
+            Reshape(inp, ret, ColumnByColumn);
             return ret;
         }
 
