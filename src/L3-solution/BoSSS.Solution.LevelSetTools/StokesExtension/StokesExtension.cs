@@ -5,8 +5,10 @@ using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -244,7 +246,52 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
             // should be replaced by something more sophisticated
+            var Residual = RHS.CloneAs();
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
+
+            /*
+            {
+                double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                double MatrixInfNorm = OpMtx.InfNorm();
+                OpMtx.SpMV(-1.0, ExtenstionSolVec, 1.0, Residual);
+
+                double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+                double SolutionNorm = ExtenstionSolVec.L2NormPow2().MPISum().Sqrt();
+                double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+                double RelResidualNorm = ResidualNorm / Denom;
+
+                //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
+
+                if(RelResidualNorm > 1.0e-10) {
+                    string ErrMsg;
+                    using(var stw = new System.IO.StringWriter()) {
+                        stw.WriteLine("Stokes Extension: High residual from direct solver.");
+                        stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                        stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                        stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                        stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                        stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+
+                        ErrMsg = stw.ToString();
+                    }
+                    Console.Error.WriteLine(ErrMsg);
+
+                    string curDir = System.IO.Directory.GetCurrentDirectory();
+                    string failVault = System.IO.Path.Combine(curDir, "failVault_" + (DateTime.Now.Ticks));
+                    Directory.CreateDirectory(failVault);
+                    foreach(var plt in System.IO.Directory.GetFiles(curDir, "*.plt")) {
+                        System.IO.File.Copy(plt, Path.Combine(failVault, Path.GetFileName(plt)));
+                    }
+
+                    OpMtx.SaveToTextFileSparse(Path.Combine(failVault, "StokesExtMtx.txt"));
+                    RHS.SaveToTextFile(Path.Combine(failVault, "StokesExtRHS.txt"));
+                    ExtenstionSolVec.SaveToTextFile(Path.Combine(failVault, "StokesExtSOL.txt"));
+
+                    throw new ArithmeticException(ErrMsg);
+
+                }
+            }*/
+
 
             // plotting for debug reasons
             //Tecplot.Tecplot.PlotFields(ExtenstionSolVec.Fields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
