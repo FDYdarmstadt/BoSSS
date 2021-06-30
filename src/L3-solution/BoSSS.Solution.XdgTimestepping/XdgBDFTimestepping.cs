@@ -1919,6 +1919,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             mgOperator.UseSolver(linearSolver, StartSolution, RHS);
         }
 
+        /// <summary>
+        /// If an iterative linear solver is used:
+        /// performs a waterfall analysis, <see cref="ConvergenceObserver.WaterfallAnalysis"/>,
+        /// i.e. visualizes the decay of DG modes on different grid levels
+        /// over the solver iterations
+        /// </summary>
+        /// <param name="OutputDir"></param>
         public void ExecuteWaterfallAnalysis(string OutputDir) {
             BlockMsrMatrix System, MaMa;
             double[] RHS;
@@ -1943,6 +1950,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Executes the linear solver with a random right-hand-side (RHS)
+        /// </summary>
+        /// <param name="Iter">on exit, the number of solver iterations used</param>
         public void ExecuteRandom(out int Iter) {
             // Get the configured solvers
             XdgSolverFactory.GetLinearConfig.MaxSolverIterations = int.MaxValue;
@@ -1980,7 +1991,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         public event Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
-
 
         protected override string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             string description = base.GetSolver(out nonlinSolver, out linearSolver);

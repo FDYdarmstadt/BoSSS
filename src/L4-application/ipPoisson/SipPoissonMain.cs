@@ -157,12 +157,13 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
-            //Assert.AreEqual(1, 2, "Remove Me!!");
+            Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             //System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "/home/flori/bosss_install/bin/native/linux/amd64-openmpi", EnvironmentVariableTarget.User);
 
@@ -357,12 +358,7 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
-                //// Update matrices
-                //// ---------------
-
-                //UpdateMatrices();
-
-
+  
                 // call solver
                 // -----------
                 //double mintime, maxtime;

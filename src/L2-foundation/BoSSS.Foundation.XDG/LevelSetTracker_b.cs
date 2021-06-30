@@ -85,7 +85,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);

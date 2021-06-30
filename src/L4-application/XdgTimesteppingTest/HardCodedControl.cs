@@ -617,7 +617,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // anderes zeugs
             // =============
 
-            R.TimeSteppingScheme = TimeSteppingScheme.BDF4;
+            R.TimeSteppingScheme = TimeSteppingScheme.CrankNicolson;
             R.InterfaceMode = tsm;
 
             //R.Endtime = 0.05;

@@ -1458,7 +1458,8 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
         /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
         /// <remarks>
-        /// Used e.g. for mesh adaptation.
+        /// Used for **mesh adaptation**,
+        /// i.e. when the mesh changes and region codes must be re-computed.
         /// </remarks>
         public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, int VersionCounter, double time) {
             if(LevSet.Length != this.NoOfLevelSets)

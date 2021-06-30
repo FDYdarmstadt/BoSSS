@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         ImplicitEuler = 1,
 
         /// <summary>
-        /// (Implicit) Crank-Nicholson using the BDF-implementation (<see cref="XdgBDFTimestepping"/>), <see cref="BDFSchemeCoeffs.CrankNicolson"/>
+        /// (Implicit) Crank-Nicholson using the BDF-implementation (<see cref="XdgBDFTimestepping"/>), <see cref="BDFSchemeCoeffs.CrankNicolson"/>, <see cref="BDFSchemeCoeffs.theta0"/>
         /// </summary>
         CrankNicolson = 2000,
 

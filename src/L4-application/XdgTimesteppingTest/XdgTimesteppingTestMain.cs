@@ -396,10 +396,19 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             int oldPush = LsTrk.PushCount;
 
             base.Timestepping.Solve(phystime, dt);
-
-            //LsTrk.PushStacks();
+            var u1 = this.CurrentStateVector.ToArray();
+                       
+            
             base.Timestepping.UndoLastTs();
-            dt = 0.0; 
+            base.Timestepping.Solve(phystime, dt*0.5);
+            base.Timestepping.Solve(phystime, dt*0.5);
+            var u11 = this.CurrentStateVector.ToArray();
+
+
+            Console.WriteLine("difference: " + GenericBlas.L2Dist(u1, u11));
+
+
+            //dt = 0.0; 
 
             int newPush = LsTrk.PushCount;
             Console.WriteLine($"Old Push cnt {oldPush} -- New push cnt {newPush}");
