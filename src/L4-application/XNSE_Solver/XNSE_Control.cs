@@ -38,6 +38,7 @@ using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -711,6 +712,8 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
 
+        [DataMember]
+        public ClassifierType CType = ClassifierType.Species;
 
         /// <summary>
         /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>

@@ -1263,7 +1263,7 @@ namespace BoSSS.Foundation.XDG {
             var Krefs = m_gDat.Grid.RefElements;
             int MaxLsDegree = this.LevelSets.Select(LevSet => (LevSet is DGField dgLS ? dgLS.Basis.Degree : 2)).Max();
 
-            if(TestNodes == null) { // only the first time in app lifetime ...
+            if(TestNodes == null) { // only the first time in object lifetime ...
                 TestNodes = new NodeSet[Krefs.Length];
                 TestNodesPerFace = new int[Krefs.Length][];
                 TestNodes_QuadWeights = new MultidimensionalArray[Krefs.Length];
@@ -1287,10 +1287,14 @@ namespace BoSSS.Foundation.XDG {
                         return NN;
                     }
 
+     
+
                     // various sets on faces
                     QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(4, 2); // brute-force rule on face
+                    //QuadRule BruteRule = Kref.FaceRefElement.GetBruteForceQuadRule(2, 1); // brute-force rule on face
                     NodeSet corners = Kref.FaceRefElement.Vertices;
                     QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree * 2); // Gauss rule on face
+                    //QuadRule GaussRule = Kref.FaceRefElement.GetQuadratureRule(MaxLsDegree);
                     TestNodes_QuadWeights[iKref] = GaussRule.Weights;
 
                     // allocate memory form test node set 

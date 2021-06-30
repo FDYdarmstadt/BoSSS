@@ -35,6 +35,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver.Loadbalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -522,17 +523,32 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100, bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
-            //C.AlternateDbPaths = new[] {
-            //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
-            //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-            ////C.savetodb = C.DbPath != null;
-            C.savetodb = false;
+            if (writeToDB) {
+                var thisOS = System.Environment.OSVersion.Platform;
+                var MachineName = System.Environment.MachineName;
+                switch(thisOS) {
+                    case PlatformID.Unix:
+                    C.AlternateDbPaths = new[] {
+                        (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                        (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                    break;
+                    case PlatformID.Win32NT:
+                    if(MachineName == "PCMIT32")
+                        C.DbPath = @"D:\trash_db";
+                    else
+                        C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                    break;
+                    default:
+                    throw new Exception("No Db-path specified. You stupid?");
+                }               
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+            }
+            C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
@@ -541,23 +557,35 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6,k*2));
-            C.GridPartType = GridPartType.Hilbert;
+            C.SetFieldOptions(k, Math.Max(6, k * 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
-            //C.TracingNamespaces = "*";
-
+            if (tracing) 
+                C.TracingNamespaces = "*";
+            //IBMCestimator = new 
+            //C.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
 
             // grid and boundary conditions
             // ============================
 
             //// Create Grid
             Console.WriteLine("...generating grid");
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 1, yMax = 1, zMax = 1;
+
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+
+                double range = xMax - xMin;
+                double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
+
+                return (int)((x - xMin) / interval);
+            };
+
             C.GridFunc = delegate {
 
                 // x-direction
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
+                
                 var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                 // y-direction
@@ -580,6 +608,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentOutOfRangeException();
                 }
 
+                //grd.AddPredefinedPartitioning("debug", MakeDebugPart);
+
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -598,6 +628,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 return grd;
 
             };
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "debug";
+            C.GridPartType = GridPartType.clusterHilbert;
+
+            C.DynamicLoadBalancing_On = loadbalancing;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -619,7 +658,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
+            double particleRad = 0.261;
 
 
 
@@ -629,41 +668,46 @@ namespace BoSSS.Application.XNSE_Solver {
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (SpaceDim) {
                     case 2:
-                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
-                    //+ particleRad; // 1e6
-
+                    // Inf-Norm square
                     return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
                         Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
                         + particleRad;
 
+                    // p-Norm square
+                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
+                    //+ particleRad; // 1e6
+
+                    // 0-Norm square
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //+ Math.Abs(particleRad);
+
+                    // circle
                     //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
 
                     case 3:
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                    // Inf-Norm cube
+                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                    //                        Math.Abs(X[2] - pos[2])))
+                    //                        + particleRad;
 
+                    // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
                     //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
                     //+ Math.Pow(X[2] - pos[2], power),1.0/power)
                     //+ particleRad;
 
-                    //return -Math.Max(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power))
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power), 1.0 / power)
-                    //+ particleRad;
-
+                    // 0-Norm cube
                     //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
                     //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
                     //- Math.Abs(X[2] - pos[2])
                     //+ Math.Abs(particleRad);
 
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    // sphere
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+
                     default:
                     throw new NotImplementedException();
                 }
@@ -743,7 +787,7 @@ namespace BoSSS.Application.XNSE_Solver {
             
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
-                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
                 C.AMR_startUpSweeps = 1;
             }
 
@@ -753,15 +797,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.001;
+            double dt = 0.01;
             //C.dtMax = dt;
             //C.dtMin = dt*1E-2;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 1;
+            C.NoOfTimesteps = NoOfTimesteps;
 
             // haben fertig...
             // ===============
 
+            C.SkipSolveAndEvaluateResidual = true;
             return C;
 
         }

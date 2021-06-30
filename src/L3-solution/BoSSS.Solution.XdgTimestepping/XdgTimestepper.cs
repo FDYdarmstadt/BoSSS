@@ -774,7 +774,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
             } else if(m_RK_Timestepper != null) {
                 throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
             } else {

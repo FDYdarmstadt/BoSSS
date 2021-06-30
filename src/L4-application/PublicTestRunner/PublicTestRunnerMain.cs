@@ -149,6 +149,7 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
                         (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
                         (typeof(ALTSTests.Program), 4),

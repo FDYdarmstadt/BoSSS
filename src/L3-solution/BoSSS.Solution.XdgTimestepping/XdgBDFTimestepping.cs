@@ -704,9 +704,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
-                    throw new NotSupportedException();
-
-
+                    throw new NotSupportedException("Method has already been called without matching call to `DataRestoreAfterBalancing`");
+                
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
 
@@ -782,6 +781,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
+            IEnumerable<DGField> Parameters,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
@@ -808,6 +808,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     m_Stack_u[s] = new CoordinateVector(Fields.Select(dgf => dgf.CloneAs()).ToArray());
                 }
 
+                base.CurrentParameters = Parameters != null ? Parameters.ToArray() : new DGField[0];
                 base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
                 for (int i = 0; i < m_Stack_u.Length; i++) {

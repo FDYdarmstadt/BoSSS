@@ -25,6 +25,7 @@ using ilPSP;
 using BoSSS.Foundation.Comm;
 using System.Collections.Generic;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -92,7 +93,10 @@ namespace BoSSS.Foundation.XDG {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
-
+#if TEST
+            MPICollectiveWatchDog.WatchAtRelease();
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+#endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
             //throw new NotImplementedException("todo");

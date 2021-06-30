@@ -543,13 +543,15 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     }
                 }
 
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, resi, 
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, flds, XNSFE_Operator.Xop.InvokeParameterFactory(flds), resi, 
                     this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
 
 
                 if (this.Control.solveKineticEnergyEquation) {
                     KineticEnergyTimestepper.DataRestoreAfterBalancing(L, 
-                        this.KineticEnergy.ToEnumerable(), this.ResidualKineticEnergy.ToEnumerable(), 
+                        this.KineticEnergy.ToEnumerable(), 
+                        KineticEnergyOperator.InvokeParameterFactory(this.KineticEnergy.Mapping.Fields), 
+                        this.ResidualKineticEnergy.ToEnumerable(), 
                         this.LsTrk, this.MultigridSequence, this.XNSFE_Operator.Xop);
                 }
 

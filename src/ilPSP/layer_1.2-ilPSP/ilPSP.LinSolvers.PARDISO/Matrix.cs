@@ -24,7 +24,7 @@ using ilPSP.Tracing;
 using System.Runtime.InteropServices;
 
 namespace ilPSP.LinSolvers.PARDISO {
-    class Matrix {
+    public class Matrix {
 
         /// <summary>
         /// row partiton of the matrix;
@@ -67,6 +67,17 @@ namespace ilPSP.LinSolvers.PARDISO {
         public bool Symmetric = false;
 
         MPI_Comm m_comm;
+
+        /// <summary>
+        /// empty constructor. You have to set everything manually!
+        /// </summary>
+        public Matrix(IntPtr aPtr, int[] ia, int[] ja, int n) {
+            this.aPtr = aPtr;
+            this.ia = ia;
+            this.ja = ja;
+            this.n = n;
+            this.UseDoublePrecision = true;
+        }
 
         /// <summary>
         /// initializes this matrix as a copy of the matrix <paramref name="M"/>.

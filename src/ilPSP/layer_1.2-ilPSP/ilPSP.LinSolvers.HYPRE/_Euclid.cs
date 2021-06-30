@@ -54,7 +54,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// creates solver for MPI_COMM_WORLD communicator
         /// </summary>
         protected override void CreateSolver() {
-            HypreException.Check(Wrappers.Euclid.Create(csMPI.Raw._COMM.WORLD, out base.m_Solver));
+            HypreException.Check(Wrappers.Euclid.Create(m_comm, out base.m_Solver));
         }
 
 
@@ -66,6 +66,13 @@ namespace ilPSP.LinSolvers.HYPRE {
             set {
                 HypreException.Check(Wrappers.Euclid.HYPRE_EuclidSetILUT(m_Solver, value));
             }
+        }
+
+        MPI_Comm m_comm = csMPI.Raw._COMM.WORLD;
+
+        public MPI_Comm Comm {
+            get { return m_comm; }
+            set { m_comm = value; }
         }
 
         bool m_BJ = false;
@@ -180,8 +187,9 @@ namespace ilPSP.LinSolvers.HYPRE {
                 return m_Level;
             }
             set {
-                if (value < 1)
-                    throw new ArgumentOutOfRangeException("must be greater or equal to 1.");
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("must be greater or equal to 0.");
+                // default is 1. But, of course ILU(0) can also be selected
                 m_Level = value;
                 HypreException.Check(Wrappers.Euclid.HYPRE_EuclidSetLevel(m_Solver, m_Level));
             }
