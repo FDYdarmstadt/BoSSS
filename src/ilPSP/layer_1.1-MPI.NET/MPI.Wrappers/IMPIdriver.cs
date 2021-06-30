@@ -77,6 +77,12 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
+        /// Sends data from one process to all other processes in a communicator 
+        /// </summary>
+        void Scatter(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
+
+
+        /// <summary>
         /// MPI_ALLGATHERV can be thought of as MPI_GATHERV, but where all
         /// processes receive the result, instead of just the root. The block of
         /// data sent from the j-th process is received by every process and

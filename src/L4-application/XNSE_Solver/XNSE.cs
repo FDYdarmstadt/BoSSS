@@ -136,11 +136,23 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 3 : 2);
             if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 //See remarks
-                quadOrder *= 2;
-                quadOrder += 1;
+                //quadOrder *= 2;
+                //quadOrder += 1;
             }
+
+            if(!reminder) {
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("deact debug code!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                reminder = true;
+            }
+
             return quadOrder;
         }
+
+        bool reminder = false;
 
         /// <summary>
         /// Current velocity

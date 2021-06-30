@@ -257,7 +257,10 @@ namespace BoSSS.Foundation.Quadrature {
                 tr.Info("Checkpoint CC.1");
                 tr.Info("This is: " + ruleFactory.GetType());
 #endif
-                var ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
+                IEnumerable<IChunkRulePair<TQuadRule>> ruleSet;
+                using(new BlockTrace("Rule_Compilation_" + ruleFactory.GetType().Name, tr)) {
+                    ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
+                }
 
                 var nodes = new List<NodeSet>();
                 var nodesMap = new Dictionary<MultidimensionalArray, int>();

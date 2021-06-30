@@ -523,7 +523,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100, bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -531,21 +531,21 @@ namespace BoSSS.Application.XNSE_Solver {
             if (writeToDB) {
                 var thisOS = System.Environment.OSVersion.Platform;
                 var MachineName = System.Environment.MachineName;
-                switch (thisOS) {
+                switch(thisOS) {
                     case PlatformID.Unix:
-                        C.AlternateDbPaths = new[] {
+                    C.AlternateDbPaths = new[] {
                         (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
                         (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-                        break;
+                    break;
                     case PlatformID.Win32NT:
-                        if (MachineName == "PCMIT32")
+                    if(MachineName == "PCMIT32")
                         C.DbPath = @"D:\trash_db";
-                        else
+                    else
                         C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                        break;
+                    break;
                     default:
-                        throw new Exception("No Db-path specified. You stupid?");
-                }
+                    throw new Exception("No Db-path specified. You stupid?");
+                }               
                 (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
             C.savetodb = writeToDB;
@@ -560,7 +560,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.SetFieldOptions(k, Math.Max(6, k * 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
-            if (tracing) C.TracingNamespaces = "*";
+            if (tracing) 
+                C.TracingNamespaces = "*";
             //IBMCestimator = new 
             //C.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
 
@@ -634,11 +635,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories=Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
-
-
-
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -778,7 +776,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 4;
+            C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
@@ -808,6 +806,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // haben fertig...
             // ===============
 
+            C.SkipSolveAndEvaluateResidual = true;
             return C;
 
         }
