@@ -267,6 +267,15 @@ namespace BoSSS.Foundation.Grid.Classic {
             this.m_Parallel = null;
             this.m_VerticeData = null;
             this.m_Edges = null;
+
+            this.m_BoundaryCells = null;
+            this.m_BoundaryEdges = null;
+            this.m_GlobalBoundingBox = null;
+            this.m_AffineLinearCells = null;
+            this.m_LocalBoundingBox = null;
+            this.m_NoOCellsPerRefElement_External = null;
+            this.m_NoOfCellsPerRefElement_Local = null;
+            this.m_Subgrid4RefElement = null;
         }
 
 

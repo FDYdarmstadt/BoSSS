@@ -2356,11 +2356,11 @@ namespace BoSSS.Solution {
                 int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
 
-                if (NoOfRedistCells <= 0) {
+                if(NoOfRedistCells <= 0) {
                     return false;
                 } else {
 #if DEBUG
-                            Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
+                    Console.WriteLine("Re-distribution of " + NoOfRedistCells + " cells.");
 #endif
                 }
 
@@ -2369,9 +2369,10 @@ namespace BoSSS.Solution {
                 GridData oldGridData = ((GridData)(this.GridData));
                 Permutation tau;
                 GridUpdateDataVault_LoadBal loadbal = new GridUpdateDataVault_LoadBal(oldGridData, this.LsTrk);
-                
-                if (IsInit)
+
+                if(IsInit)
                     BackupDataOnInit(oldGridData, this.LsTrk, loadbal, out tau);
+                    //BackupData(oldGridData, this.LsTrk, loadbal, out tau);
                 else
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau);
 
@@ -2490,6 +2491,9 @@ namespace BoSSS.Solution {
                 if (newGrid == null)
                     return false;
 
+                if(this.Control.RestartInfo != null)
+                    IsInit = false; 
+
                 using (new BlockTrace("process mesh Adaption", tr)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // mesh adaptation
@@ -2509,6 +2513,7 @@ namespace BoSSS.Solution {
                     
                     if(IsInit)
                         BackupDataOnInit(oldGridData, this.LsTrk, remshDat, out tau);
+                        //BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                     else
                         BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                     
@@ -2616,16 +2621,12 @@ namespace BoSSS.Solution {
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {
-
-            //trackerVersion = -1;
-            //oldTrackerData = null;
-
-            //loadbal = new LoadBalancingData(oldGridData, oldLsTrk);
-
-
+            if(oldLsTrk != null && !object.ReferenceEquals(oldGridData, oldLsTrk.GridDat))
+                throw new ApplicationException();
+          
             // id's of the fields which we are going to rescue
             string[] FieldIds = m_RegisteredFields.Select(f => f.Identification).ToArray();
-
+            
             // tau   is the GlobalID-permutation of the **old** grid
             tau = oldGridData.CurrentGlobalIdPermutation.CloneAs();
 
@@ -2635,12 +2636,16 @@ namespace BoSSS.Solution {
             }
 
             // backup DG Fields
-            foreach (var f in this.m_RegisteredFields) {
-                if (f is XDGField) {
+            foreach(var f in this.m_RegisteredFields) {
+                if(f is XDGField) {
                     XDGBasis xb = ((XDGField)f).Basis;
-                    if (!object.ReferenceEquals(xb.Tracker, oldLsTrk))
+                    if(!object.ReferenceEquals(xb.Tracker, oldLsTrk))
                         throw new ApplicationException();
                 }
+                if(!object.ReferenceEquals(f.Basis.GridDat, oldGridData))
+                    throw new ApplicationException();
+
+
                 loadbal.BackupField(f);
             }
 
