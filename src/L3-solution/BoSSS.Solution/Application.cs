@@ -2344,19 +2344,13 @@ namespace BoSSS.Solution {
             return true;
         }
 
-        private bool DoLoadbalancing(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null, bool IsInit = false) {
+        private bool DoLoadbalancing(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null, bool IsInit=false) {
             // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             // no mesh adaptation, but (maybe) grid redistribution (load balancing)
             // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-            using(new FuncTrace()) {
-                if(this.Control.RestartInfo != null)
-                    // on restart, we have already initialized the solvers,
-                    // so probably we should do the "full" adaptation
-                    IsInit = false; 
-
-
+            using (new FuncTrace()) {
                 int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
-                if(NewPartition == null)
+                if (NewPartition == null)
                     return false; // immidiate quit, because there is nothing to do
 
                 int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
@@ -2378,7 +2372,7 @@ namespace BoSSS.Solution {
 
                 if(IsInit)
                     BackupDataOnInit(oldGridData, this.LsTrk, loadbal, out tau);
-                //BackupData(oldGridData, this.LsTrk, loadbal, out tau);
+                    //BackupData(oldGridData, this.LsTrk, loadbal, out tau);
                 else
                     BackupData(oldGridData, this.LsTrk, loadbal, out tau);
 
@@ -2391,11 +2385,11 @@ namespace BoSSS.Solution {
                     this.Grid.RedistributeGrid(NewPartition);
                     newGridData = (GridData)this.Grid.iGridData;
                     oldGridData.Invalidate();
-                    if(this.LsTrk != null) {
+                    if (this.LsTrk != null) {
                         this.LsTrk.Invalidate();
                     }
 
-                    if(this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
                         this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
                     else
                         this.MultigridSequence = new AggregationGridData[0];
@@ -2444,7 +2438,7 @@ namespace BoSSS.Solution {
                 this.LsTrk = null;
 
                 // re-create fields
-                if(this.Control != null) {
+                if (this.Control != null) {
                     InitFromAttributes.CreateFieldsAuto(
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
@@ -2465,15 +2459,15 @@ namespace BoSSS.Solution {
                 //}
 
                 //// skip this for init
-                if(IsInit) {
-                    if(this.Control.RestartInfo == null)
+                if (IsInit) {
+                    if (this.Control.RestartInfo == null)
                         SetInitial(physTime);
                 } else {
                     // set dg coordinates
-                    foreach(var f in m_RegisteredFields) {
-                        if(f is XDGField) {
+                    foreach (var f in m_RegisteredFields) {
+                        if (f is XDGField) {
                             XDGBasis xb = ((XDGField)f).Basis;
-                            if(!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
                                 throw new ApplicationException();
                         }
                         loadbal.RestoreDGField(f);
@@ -2498,8 +2492,6 @@ namespace BoSSS.Solution {
                     return false;
 
                 if(this.Control.RestartInfo != null)
-                    // on restart, we have already initialized the solvers,
-                    // so probably we should do the "full" adaptation
                     IsInit = false; 
 
                 using (new BlockTrace("process mesh Adaption", tr)) {
