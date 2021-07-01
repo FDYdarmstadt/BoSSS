@@ -53,6 +53,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
+            Assert.IsTrue(false, "this should fail!");
         }
 
 
