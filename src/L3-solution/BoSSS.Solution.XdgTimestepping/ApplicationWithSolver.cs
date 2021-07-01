@@ -466,7 +466,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {

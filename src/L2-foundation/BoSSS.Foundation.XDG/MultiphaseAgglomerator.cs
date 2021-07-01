@@ -1230,9 +1230,10 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
+                        DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
 
                         if (Katastrophenplot != null)
-                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
+                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, LevelSets));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)
