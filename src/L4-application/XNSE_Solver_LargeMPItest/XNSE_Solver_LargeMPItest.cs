@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [Test]
         static public void ParallelRotatingSphere() {
-            var C = RotatingSphere();
+            var C = RotatingSphere(k:1, Res:20, SpaceDim:3, useAMR:true, loadbalancing:true);
             //C.TracingNamespaces = "*";
 
             using (var solver = new XNSE()) {
@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         
-        public static XNSE_Control RotatingSphere(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, bool loadbalancing = true) {
+        public static XNSE_Control RotatingSphere(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSE_Solver {
             
             C.savetodb = false;
             C.ProjectName = "XNSE/IBM_benchmark";
-            C.ProjectDescription = "rotating cube";
+            C.ProjectDescription = "rotating sphere";
             C.Tags.Add("rotating");
             C.Tags.Add("tracing");
 
