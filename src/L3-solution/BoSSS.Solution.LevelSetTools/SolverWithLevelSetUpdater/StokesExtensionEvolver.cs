@@ -41,7 +41,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
-            timeStepOrder = 3;
+            timeStepOrder = 2;
         }
 
         IGridData m_grd;
@@ -148,8 +148,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
             if(timeStepper == null) {
-                //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
-                timeStepper = InitializeRungeKutta(levelSet.DGLevelSet, extensionVelocity);
+                timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
+                //timeStepper = InitializeRungeKutta(levelSet.DGLevelSet, extensionVelocity);
             }
             if(!ReferenceEquals(timeStepper.Mapping.Fields[0], levelSet.DGLevelSet)){
                 throw new Exception("Something went wrong with the internal pointer magic of the levelSetTracker. Definitely a weakness of ObjectOrientation.");
