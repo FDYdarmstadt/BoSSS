@@ -612,7 +612,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             base.Timestepping = solver;
-
+            Timestepping.RegisterResidualLogger(this.ResLogger);
             if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
                 throw new ApplicationException();
 
@@ -733,7 +733,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
-
+            Timestepping.RegisterResidualLogger(this.ResLogger);
             base.Timestepping = solver;
         }
 

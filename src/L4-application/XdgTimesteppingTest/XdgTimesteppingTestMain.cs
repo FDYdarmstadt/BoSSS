@@ -312,6 +312,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+                Operator.IsLinear = true;
                 Operator.Commit();
 
                 return Operator;
@@ -395,17 +396,67 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             int oldPush = LsTrk.PushCount;
 
-            base.Timestepping.Solve(phystime, dt);
-            var u1 = this.CurrentStateVector.ToArray();
-                       
             
-            base.Timestepping.UndoLastTs();
-            base.Timestepping.Solve(phystime, dt*0.5);
-            base.Timestepping.Solve(phystime, dt*0.5);
-            var u11 = this.CurrentStateVector.ToArray();
+            var InitialVal = this.LsTrk.BackupTimeLevel(0);
+            double[] u0 = CurrentStateVector.ToArray();
+            Debug.Assert(InitialVal.time == phystime);
+
+            List<double[]> u1s = new();
+            List<(int Nsub, double delta1, double delta2, double L2Err)> deltas = new();
+            int iSubDiv = 2;
+            int cnt = 1;
+            while(cnt <= 2) {
+
+                Console.WriteLine();
+                Console.WriteLine("######################################");
+                Console.WriteLine("Doing " + iSubDiv + " timestep(s)...");
 
 
-            Console.WriteLine("difference: " + GenericBlas.L2Dist(u1, u11));
+                double dtSub = dt / iSubDiv;
+
+                if(cnt > 1) {
+                    base.Timestepping = null;
+                    base.InitSolver();
+                    Debug.Assert(ArrayTools.ListEquals(CurrentStateVector.Fields, base.Timestepping.CurrentState.Fields, (a, b) => object.ReferenceEquals(a, b)));
+                    LsTrk.ReplaceCurrentTimeLevel(InitialVal.CloneAs());
+                    CurrentStateVector.SetV(u0);
+                    //LsTrk.PopStacks();
+                }
+
+                for(int nSub = 0; nSub < iSubDiv; nSub++) {
+                    base.Timestepping.Solve(phystime + dtSub*nSub, dtSub);
+                    this.PlotCurrentState(phystime + dtSub*(nSub + 1), new TimestepNumber(2 + cnt, nSub + 1), 3);
+                }
+                var errS = ComputeL2Error(dt + phystime, true);
+
+                var u1 = this.CurrentStateVector.ToArray();
+                u1s.Add(u1);
+                
+                if(u1s.Count >= 3) {
+                    int L = u1s.Count - 1;
+                    Console.WriteLine("**********************");
+                    double delta1 = GenericBlas.L2Dist(u1s[L], u1s[L - 1]);
+                    double delta2 = GenericBlas.L2Dist(u1s[L], u1s[L - 2]);
+                    Console.WriteLine("time refinement difference: " + delta1 + " --- " + delta2);
+                    
+                    deltas.Add((iSubDiv, delta1, delta2, errS.totErr));
+                }
+
+                Console.WriteLine("======================================");
+                Console.WriteLine();
+
+                using(var stw = new StreamWriter("delta.txt")) {
+                    foreach(var delta in deltas) {
+                        stw.WriteLine($"   {delta.Nsub},  {delta.delta1}, {delta.delta2},  {delta.L2Err};");
+                    }
+                }
+
+                //iSubDiv *= 2;
+                cnt++;
+            }
+
+            throw new Exception("remove me");
+            base.Timestepping.Solve(phystime, dt);
 
 
             //dt = 0.0; 
@@ -413,6 +464,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             int newPush = LsTrk.PushCount;
             Console.WriteLine($"Old Push cnt {oldPush} -- New push cnt {newPush}");
 
+           
+            //throw new Exception("remove me");
 
             // return
             // ------
@@ -447,7 +500,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        void ComputeL2Error(double PhysTime) {
+        (double totErr, double phaseAerr, double phaseBerr, double JmpL2Err) ComputeL2Error(double PhysTime, bool OverWriteIfExistent = false) {
             Console.WriteLine("Phystime = " + PhysTime);
 
             if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
@@ -473,12 +526,13 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             uNumJump.Acc(+1.0, uNum_A, CC);
             uNumJump.Acc(-1.0, uNum_B, CC);
             double JmpL2Err = uNumJump.L2Error(uJmp_Ex.Vectorize(PhysTime), order, schH.GetLevelSetquadScheme(0, CC));
+            double totErr = Math.Sqrt(uA_Err.Pow2() + uB_Err.Pow2());
 
-            base.QueryHandler.ValueQuery("uA_Err", uA_Err);
-            base.QueryHandler.ValueQuery("uB_Err", uB_Err);
-            base.QueryHandler.ValueQuery("uJmp_Err", JmpL2Err);
+            base.QueryHandler.ValueQuery("uA_Err", uA_Err, OverWriteIfExistent);
+            base.QueryHandler.ValueQuery("uB_Err", uB_Err, OverWriteIfExistent);
+            base.QueryHandler.ValueQuery("uJmp_Err", JmpL2Err, OverWriteIfExistent);
 
-            Console.WriteLine("L2-err at t = {0}, bulk:      {1}", PhysTime, Math.Sqrt(uA_Err.Pow2() + uB_Err.Pow2()));
+            Console.WriteLine("L2-err at t = {0}, bulk:      {1}", PhysTime, totErr);
             Console.WriteLine("L2-err at t = {0}, species A: {1}", PhysTime, uA_Err);
             Console.WriteLine("L2-err at t = {0}, species B: {1}", PhysTime, uB_Err);
             Console.WriteLine("L2-err at t = {0}, Jump:      {1}", PhysTime, JmpL2Err);
@@ -487,11 +541,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             uNum_A.GetExtremalValues(out uA_min, out uA_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("A"));
             uNum_B.GetExtremalValues(out uB_min, out uB_max, out _, out _, this.LsTrk.Regions.GetSpeciesMask("B"));
 
-            base.QueryHandler.ValueQuery("uA_Min", uA_min);
-            base.QueryHandler.ValueQuery("uA_Max", uA_max);
-            base.QueryHandler.ValueQuery("uB_Min", uB_min);
-            base.QueryHandler.ValueQuery("uB_Max", uB_max);
+            base.QueryHandler.ValueQuery("uA_Min", uA_min, OverWriteIfExistent);
+            base.QueryHandler.ValueQuery("uA_Max", uA_max, OverWriteIfExistent);
+            base.QueryHandler.ValueQuery("uB_Min", uB_min, OverWriteIfExistent);
+            base.QueryHandler.ValueQuery("uB_Max", uB_max, OverWriteIfExistent);
 
+            return (totErr, uA_Err, uB_Err, JmpL2Err);
         }
 
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int susamp) {

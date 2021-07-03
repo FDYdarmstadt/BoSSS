@@ -105,6 +105,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
     }
 
+    /*
     
     /// <summary>
     /// Numerical core of the XDG BDF method, not for direct user interaction
@@ -115,7 +116,19 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         int m_IterationCounter = 0;
 
+        int m_CoupledIterations = 0;
+
+        double m_CurrentDt;
+
+
         BlockMsrMatrix m_PrecondMassMatrix;
+
+
+        
+        /// <summary>
+        /// stack of mass matrices (matrices _without_ agglomeration)
+        /// </summary>
+        BlockMsrMatrix[] m_Stack_MassMatrix;
 
 
         /// <summary>
@@ -204,16 +217,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     } else {
                         // Agglomeration update in the case of a moving interface - consider previous time-steps
-                        double[] oldAggTrsh;
-                        if (m_PopulatedStackDepth > 0) {
-                            oldAggTrsh = new double[m_PopulatedStackDepth];
-                            ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
-                        } else {
-                            oldAggTrsh = null;
-                        }
-                        if (this.Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative) {
-                            Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == m_PopulatedStackDepth);
-                        }
+                        double[] oldAggTrsh = new double[Tsc.S];
+                        ArrayTools.SetAll(oldAggTrsh, this.Config_AgglomerationThreshold);
+                        Debug.Assert(m_Stack_MassMatrix.Where(mm => mm != null).Count() == Tsc.S);
+
 
                         m_CurrentAgglomeration = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
                             __AgglomerationTreshold: base.Config_AgglomerationThreshold,
@@ -419,8 +426,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
-
-
-
     }
+
+    */
 }

@@ -743,10 +743,14 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         
         public void UndoLastTs() {
-
-            LsTrk.PopStacks();
-            m_BDF_Timestepper.PopStack();
-
+            if(m_BDF_Timestepper != null) {
+                LsTrk.PopStacks();
+                m_BDF_Timestepper.PopStack();
+            } else if(m_RK_Timestepper != null) {
+                throw new NotImplementedException();
+            } else {
+                throw new NotImplementedException();
+            }
 
 
         }
