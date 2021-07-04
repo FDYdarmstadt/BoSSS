@@ -1017,8 +1017,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
-                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDa-{TempCounter}.txt");
-
+                
                 // update of level-set
                 // ----------------------
 
@@ -1050,7 +1049,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
 
-                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDb-{TempCounter}.txt");
 
                 // update agglomeration
                 // --------------------
@@ -1091,7 +1089,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 }
 
-                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDc-{TempCounter}.txt");
 
                 // mass matrix update
                 // ------------------
@@ -1160,7 +1157,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
-                OpAffine.SaveToTextFile($"Affine-q-{TempCounter}.txt");
 
                 // assemble system
                 // ---------------
@@ -1245,9 +1241,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 Affine = RHS;
                 Affine.ScaleV(-1.0);
-                Affine.SaveToTextFile($"Affine-a-{TempCounter}.txt");
-
-                (new CoordinateVector(CurrentStateMapping)).SaveToTextFile($"u0-{TempCounter}.txt");
 
                 // left-hand-side
                 if(Linearization) {
@@ -1264,7 +1257,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
 
-                    CurrentMassMatrix.SaveToTextFileSparse($"Mama-{TempCounter}.txt");
                 } else {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                     if(Linearization) {
@@ -1273,7 +1265,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
                     }
                 }
-                Affine.SaveToTextFile($"Affine-b-{TempCounter}.txt");
 
                 // perform agglomeration
                 // ---------------------
@@ -1289,7 +1280,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // increase iteration counter         
                 // --------------------------
-                //OpMatrix.SaveToTextFileSparse("OpMatrix49e.txt");
                 abstractOperator = AbstractOperator;
                 m_IterationCounter++;
             }
@@ -1453,7 +1443,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         double fsiOldPhystime = 0;
 
-        static int TempCounter = 0;
+
 
 
         /// <summary>
@@ -1588,14 +1578,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
                     BlockMsrMatrix System, MaMa;
                     double[] RHS;
-                    (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outD-{TempCounter}.txt");
                     this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
-                    (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outE-{TempCounter}.txt");
                     RHS.ScaleV(-1);
 
-                    System.SaveToTextFileSparse($"Mtx-{TempCounter}.txt");
-                    RHS.SaveToTextFile($"RHS-{TempCounter}.txt");
-                    TempCounter++;
+
 
                     // update the multigrid operator
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1649,37 +1635,24 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 success = true;
 
-                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! testcode im teimschtepper");
-                //string suffix = "_correcto.txt";
-                //string suffix = "_falscho.txt";
-                //base.Residuals.SaveToTextFile("ResEval" + suffix);
-                //m_Stack_u[0].SaveToTextFile("Sol" + suffix);
 #if DEBUG
                 {
 
                     this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
-                    //checkAffine.SaveToTextFile("ChkAff" + suffix);
-                    //checkSystem.SaveToTextFileSparse("Matrix" + suffix);
 
                     double[] checkResidual = new double[checkAffine.Length];
                     checkResidual.SetV(checkAffine, -1.0);
                     checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
-
-                    //checkResidual.SaveToTextFile("ResLinz" + suffix);
 
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
                     if(distL2 >= refL2 * 1.0e-5) {
                         double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
-
-                        //base.Residuals.AccV(-1.0, checkResidual);
-                        //Tecplot.Tecplot.PlotFields(Residuals.Fields, "ResidualDiff", 0.0, 4);
                     }
 
                     Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
-                    //Debug.Assert(distL2 < refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
-
+                    
                 }
 #endif
 
@@ -2039,8 +2012,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         public bool coupledOperator = false;
 
 
-        public static Action<CoordinateMapping> beforeTrackerUpdate;
-        public static Action<CoordinateMapping> afterTrackerUpdate;
 
         /// <summary>
         /// Performs:
@@ -2073,13 +2044,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             int oldVersion = m_LsTrk.VersionCnt;
             int oldPushCount = m_LsTrk.PushCount;
 
-            if(beforeTrackerUpdate != null)
-                beforeTrackerUpdate(this.CurrentStateMapping);
 
             m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
-
-            if(afterTrackerUpdate != null)
-                afterTrackerUpdate(this.CurrentStateMapping);
 
 
             int newVersion = m_LsTrk.VersionCnt;

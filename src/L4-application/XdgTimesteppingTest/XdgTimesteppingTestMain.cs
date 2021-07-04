@@ -371,71 +371,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return 0.0;
         }
 
-        //protected override IDictionary<SpeciesId, IEnumerable<double>> MassScale {
-        //    get {
-        //        var Ret = new Dictionary<SpeciesId, IEnumerable<double>>();
-        //        foreach (var s in this.LsTrk.SpeciesIdS)
-        //            Ret.Add(s, new double[] { 1.0 });
-        //        return Ret;
-        //    }
-        //}
+    
 
-        /*
-        int m_BeforeTracker = 0;
-        double[] m_BeforeTracker_vec;
-
-        void BeforeTracker(CoordinateMapping state) {
-            double[] _state = (new CoordinateVector(state)).ToArray();
-            
-            if(m_BeforeTracker == 0) {
-                m_BeforeTracker_vec = _state;
-            } else {
-                double delta = GenericBlas.L2Dist(_state, m_BeforeTracker_vec);
-                Console.WriteLine("Before Tracker: " + delta);
-            }
-            m_BeforeTracker++;
-        }*/
-
-        class Monitor {
-            public Monitor(string _text, XdgTimesteppingMain _owna) {
-                m_text = _text;
-                m_owna = _owna;
-            }
-
-            string m_text;
-            XdgTimesteppingMain m_owna;
-
-
-            int m_counter = 0;
-            double[] m_vec;
-
-
-            public void Callback1(CoordinateMapping state) {
-                double[] _state = (new CoordinateVector(state)).ToArray();
-
-                if(m_counter == 0) {
-                    m_vec = _state;
-                } else {
-                    double delta = GenericBlas.L2Dist(_state, m_vec);
-                    Console.WriteLine(m_text + ": " + delta);
-                }
-                m_counter++;
-            }
-
-            public void Callback() {
-                if(m_text.Contains("before observer"))
-                    Console.Write("");
-
-                Callback1(m_owna.CurrentState);
-            }
-        }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
-            XdgBDFTimestepping.beforeTrackerUpdate = (new Monitor("before update", this)).Callback1;
-            XdgBDFTimestepping.afterTrackerUpdate = (new Monitor("after update", this)).Callback1;
-            this.LsTrk.beforeObsUpdate = (new Monitor("before observer", this)).Callback;
-            this.LsTrk.afterObsUpdate = (new Monitor("after observer", this)).Callback;
 
 
             // get dt and check timestepping configuation

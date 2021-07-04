@@ -2116,11 +2116,7 @@ namespace BoSSS.Foundation.XDG {
                 // update memory of XDG fields, etc.
                 // =================================
                 using (new BlockTrace("ObserverUpdate", tr)) {
-                    if(beforeObsUpdate != null)
-                        beforeObsUpdate();
                     ObserverUpdate();
-                    if(afterObsUpdate != null)
-                        afterObsUpdate();
                 }
 
                 // throw exception, if levelset CFL violated
@@ -2154,12 +2150,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        public Action beforeObsUpdate;
-        public Action afterObsUpdate;
-
-
-
-
+      
         /// <summary>
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
