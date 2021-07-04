@@ -51,14 +51,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            //InitMPI();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.2);
+            InitMPI();
+            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestTimestepperReset();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(TimeSteppingScheme.BDF2, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
             //FinalizeMPI();
-            //throw new ApplicationException("deactivate me");
+            throw new ApplicationException("deactivate me");
             //return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
@@ -371,8 +371,37 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return 0.0;
         }
 
-    
 
+        public class Backup {
+
+            public double[] u0;
+            public LevelSetTracker.TrackerBackup trkBkup;
+
+
+            public static Backup Obtain(XdgTimesteppingMain mainObj) {
+                return new Backup() {
+                    u0 = mainObj.CurrentStateVector.ToArray(),
+                    trkBkup = mainObj.LsTrk.BackupTimeLevel(0)
+                };
+            }
+
+
+            public void Apply(XdgTimesteppingMain mainObj) {
+                mainObj.Timestepping = null;
+                mainObj.InitSolver();
+                mainObj.LsTrk.PopStacks();
+                mainObj.LsTrk.ReplaceCurrentTimeLevel(trkBkup.CloneAs());
+                //mainObj.LsTrk.UpdateTracker();
+                mainObj.LsTrk.ObserverHack();
+
+                mainObj.CurrentStateVector.SetV(u0);
+
+            }
+
+        }
+
+
+        public Backup myBackup;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
@@ -388,83 +417,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotSupportedException();
             }
 
-            int oldPush = LsTrk.PushCount;
-
-            
-            var InitialVal = this.LsTrk.BackupTimeLevel(0);
-            double[] u0 = CurrentStateVector.ToArray();
-            Debug.Assert(InitialVal.time == phystime);
-
-            List<double[]> u1s = new();
-            List<(int Nsub, double delta1, double delta2, double L2Err)> deltas = new();
-            int iSubDiv = 2;
-            int cnt = 1;
-            while(cnt <= 2) {
-
-                Console.WriteLine();
-                Console.WriteLine("######################################");
-                Console.WriteLine("Doing " + iSubDiv + " timestep(s)...");
-
-
-                double dtSub = dt / iSubDiv;
-
-                if(cnt > 1) {
-                    base.Timestepping = null;
-                    base.InitSolver();
-                    LsTrk.PopStacks();
-                    LsTrk.ReplaceCurrentTimeLevel(InitialVal.CloneAs());
-                    LsTrk.UpdateTracker(phystime);
-
-                    CurrentStateVector.SetV(u0);
-                    
-                    Debug.Assert(ArrayTools.ListEquals(CurrentStateVector.Fields, base.Timestepping.CurrentState.Fields, (a, b) => object.ReferenceEquals(a, b)));
-                    Debug.Assert(GenericBlas.L2Dist(u0, new CoordinateVector(base.Timestepping.CurrentState)) == 0);
-                }
-
-
-                int nSub = 0;
-                for(; nSub < iSubDiv; nSub++) {
-                    CurrentStateVector.SaveToTextFile($"u0out-{cnt - 1}.txt");
-                    base.Timestepping.Solve(phystime + dtSub*nSub, dtSub);
-                    this.PlotCurrentState(phystime + dtSub*(nSub + 1), new TimestepNumber(2 + cnt, nSub + 1), 3);
-                    break;
-                }
-                var errS = ComputeL2Error(phystime + dtSub*(nSub + 1), true);
-
-                var u1 = this.CurrentStateVector.ToArray();
-                u1s.Add(u1);
-                
-                if(u1s.Count >= 3) {
-                    int L = u1s.Count - 1;
-                    Console.WriteLine("**********************");
-                    double delta1 = GenericBlas.L2Dist(u1s[L], u1s[L - 1]);
-                    double delta2 = GenericBlas.L2Dist(u1s[L], u1s[L - 2]);
-                    Console.WriteLine("time refinement difference: " + delta1 + " --- " + delta2);
-                    
-                    deltas.Add((iSubDiv, delta1, delta2, errS.totErr));
-                }
-
-                Console.WriteLine("======================================");
-                Console.WriteLine();
-
-                using(var stw = new StreamWriter("delta.txt")) {
-                    foreach(var delta in deltas) {
-                        stw.WriteLine($"   {delta.Nsub},  {delta.delta1}, {delta.delta2},  {delta.L2Err};");
-                    }
-                }
-
-                //iSubDiv *= 2;
-                cnt++;
+            if(TimestepNo == 1) {
+                myBackup = Backup.Obtain(this);
             }
 
-            throw new Exception("remove me");
+           
+          
+           
             base.Timestepping.Solve(phystime, dt);
 
-
-            //dt = 0.0; 
-
-            int newPush = LsTrk.PushCount;
-            Console.WriteLine($"Old Push cnt {oldPush} -- New push cnt {newPush}");
 
            
             //throw new Exception("remove me");
@@ -478,9 +439,39 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             Console.WriteLine();
 
+            u1_bkup = this.CurrentStateVector.ToArray();
             return dt;
 
         }
+
+        double[] u1_bkup;
+
+        public void RunFromReset(double Tend, double NoOfTimesteps) {
+            double phystime = 0.0;
+
+            Console.WriteLine("Testing the Timestepper Reset: Doing " + NoOfTimesteps + " timestep(s)...");
+
+
+            double dtSub = Tend / NoOfTimesteps;
+
+            this.myBackup.Apply(this);
+
+
+            int nSub = 0;
+            for(; nSub < NoOfTimesteps; nSub++) {
+                base.Timestepping.Solve(phystime + dtSub * nSub, dtSub);
+                //this.PlotCurrentState(phystime + dtSub * (nSub + 1), new TimestepNumber(2 + cnt, nSub + 1), 3);
+                //break;
+            }
+
+
+            double dist = GenericBlas.L2Dist(CurrentStateVector, u1_bkup);
+            Console.WriteLine("Delta to first solver run: " + dist);
+            Assert.LessOrEqual(dist, 1e-10, "Delta of reseted run to large.");
+        }
+
+
+
 
         private void LevsetEvo(double phystime, double dt, double[][] AdditionalVectors) {
             if (this.Control.InterfaceMode == InterfaceMode.MovingInterface
