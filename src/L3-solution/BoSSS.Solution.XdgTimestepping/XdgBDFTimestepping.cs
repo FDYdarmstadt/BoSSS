@@ -1017,6 +1017,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
+                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDa-{TempCounter}.txt");
 
                 // update of level-set
                 // ----------------------
@@ -1049,6 +1050,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
 
+                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDb-{TempCounter}.txt");
 
                 // update agglomeration
                 // --------------------
@@ -1088,6 +1090,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(object.ReferenceEquals(base.MultigridBasis[0][0].DGBasis.GridDat, m_CurrentAgglomeration.Tracker.GridDat));
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 }
+
+                (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outDc-{TempCounter}.txt");
 
                 // mass matrix update
                 // ------------------
@@ -1156,7 +1160,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
-
+                OpAffine.SaveToTextFile($"Affine-q-{TempCounter}.txt");
 
                 // assemble system
                 // ---------------
@@ -1241,6 +1245,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 Affine = RHS;
                 Affine.ScaleV(-1.0);
+                Affine.SaveToTextFile($"Affine-a-{TempCounter}.txt");
+
+                (new CoordinateVector(CurrentStateMapping)).SaveToTextFile($"u0-{TempCounter}.txt");
 
                 // left-hand-side
                 if(Linearization) {
@@ -1256,6 +1263,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
+
+                    CurrentMassMatrix.SaveToTextFileSparse($"Mama-{TempCounter}.txt");
                 } else {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                     if(Linearization) {
@@ -1264,6 +1273,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Affine.AccV(1.0 / dt, new CoordinateVector(CurrentStateMapping));
                     }
                 }
+                Affine.SaveToTextFile($"Affine-b-{TempCounter}.txt");
 
                 // perform agglomeration
                 // ---------------------
@@ -1443,6 +1453,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         double fsiOldPhystime = 0;
 
+        static int TempCounter = 0;
+
+
         /// <summary>
         /// Solver;
         /// </summary>
@@ -1575,8 +1588,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
                     BlockMsrMatrix System, MaMa;
                     double[] RHS;
+                    (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outD-{TempCounter}.txt");
                     this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
+                    (new CoordinateVector(CurrentStateMapping.Fields)).SaveToTextFile($"u0outE-{TempCounter}.txt");
                     RHS.ScaleV(-1);
+
+                    System.SaveToTextFileSparse($"Mtx-{TempCounter}.txt");
+                    RHS.SaveToTextFile($"RHS-{TempCounter}.txt");
+                    TempCounter++;
 
                     // update the multigrid operator
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1598,6 +1617,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         // try to solve the saddle-point system.
                         using (new BlockTrace("Slv Iter", tr)) {
+
+
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
 
@@ -2017,6 +2038,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public bool coupledOperator = false;
 
+
+        public static Action<CoordinateMapping> beforeTrackerUpdate;
+        public static Action<CoordinateMapping> afterTrackerUpdate;
+
         /// <summary>
         /// Performs:
         ///  - level-set evolution
@@ -2048,7 +2073,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             int oldVersion = m_LsTrk.VersionCnt;
             int oldPushCount = m_LsTrk.PushCount;
 
+            if(beforeTrackerUpdate != null)
+                beforeTrackerUpdate(this.CurrentStateMapping);
+
             m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+
+            if(afterTrackerUpdate != null)
+                afterTrackerUpdate(this.CurrentStateMapping);
+
 
             int newVersion = m_LsTrk.VersionCnt;
             int newPushCount = m_LsTrk.PushCount;
