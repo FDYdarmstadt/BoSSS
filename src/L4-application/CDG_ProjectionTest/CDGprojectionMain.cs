@@ -37,7 +37,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         internal int dimension = 2;
         internal int degree = 2;
-        internal int gridResolution = 12;
+        internal int gridResolution = 8;
 
         internal bool periodicX = false;
         internal bool periodicY = false;
@@ -78,19 +78,22 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             double[] nodes = GenericBlas.Linspace(0, 1, (2 * gridResolution) + 1);
             double[] node2pi = GenericBlas.Linspace(0, 2 * Math.PI, (2 * gridResolution) + 1);
-            double[] node2 = GenericBlas.Linspace(0, (1.0 / (2.0 * gridResolution)), 3);
+            double[] node2 = GenericBlas.Linspace(0, (1.0 / gridResolution), 3);
             double[] node3 = GenericBlas.Linspace(0, 1, (3 * gridResolution) + 1);
 
             double[] droplet_xy = GenericBlas.Linspace(0, 3, (2 * gridResolution) + 1);
             double[] droplet_z = GenericBlas.Linspace(-3, 3, (4 * gridResolution) + 1);
 
+            double[] cube = GenericBlas.Linspace(-1.0, 1.0, (1 * gridResolution) + 1);
+
             GridCommons grid;
             if (dimension == 2)
-                //grid = Grid2D.Cartesian2DGrid(nodes, nodes, periodicX: periodicX, periodicY: periodicY);
+                //grid = Grid2D.Cartesian2DGrid(nodes, node2, periodicX: periodicX, periodicY: periodicY);
                 grid = Grid2D.Cartesian2DGrid(droplet_z, droplet_z, periodicX: periodicX, periodicY: periodicY);
             else if (dimension == 3)
                 //grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
-                grid = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+                //grid = Grid3D.Cartesian3DGrid(droplet_xy, droplet_xy, droplet_z, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
+                grid = Grid3D.Cartesian3DGrid(cube, cube, cube, periodicX: periodicX, periodicY: periodicY, periodicZ: periodicZ);
             else
                 throw new NotSupportedException("Not supported spatial dimension");
 
@@ -201,19 +204,35 @@ namespace BoSSS.Application.CDG_ProjectionTest {
                 //passed &= ProjectFieldAndEvaluate(NonVectorizedScalarFunction.Vectorize(projFunc), null, name_disc);
 
 
-                Console.WriteLine("Test 3D projection function: Legendre Polynomial");
-                double r_0 = 1;
-                double a_P = 0.5;  
-                double a_0 = 0.94754;   
+                //Console.WriteLine("Test 3D projection function: Legendre Polynomial");
+                //double r_0 = 1;
+                //double a_P = 0.5;
+                //double a_0 = 0.94754;
+                //Func<double[], double> projFunc = delegate (double[] X) {
+                //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+                //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+                //    double theta = Math.Atan2(r_xy, -X[2]);
+                //    double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));
+                //    double phi = r - f;
+                //    return phi;
+                //};
+                ////Console.WriteLine("project on full mask");
+
+
+                Console.WriteLine("Test 3D projection function: Cube");
                 Func<double[], double> projFunc = delegate (double[] X) {
-                    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
-                    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
-                    double theta = Math.Atan2(r_xy, -X[2]);
-                    double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));   
-                    double phi = r - f;
-                    return phi;
+                    double[] pos = new double[3];
+                    double anglev = 10;
+                    double t = 0;
+                    double angle = -(anglev * t) % (2 * Math.PI);
+                    double particleRad = 0.261;
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
                 };
                 //Console.WriteLine("project on full mask");
+
 
                 SinglePhaseField phiField = new SinglePhaseField(new Basis(this.GridData, degree));
                 phiField.ProjectField(projFunc);
@@ -266,7 +285,8 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             // project and check cdgField0
             var returnFields = cdgField0.ProjectDGField(origin, domain);
-            //Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
+            if (!returnFields.IsNullOrEmpty())
+                Tecplot.PlotFields(returnFields, "CDGproj_patchField0", 0.0, 3);
             cdgField0.AccToDGField(1.0, result0, domain);
 
             var errField = origin.CloneAs();
@@ -288,7 +308,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Console.WriteLine("L2 jump result0 field = {0}; L2 error norm = {1}", L2jump, L2err0);
 
             // project and check cdgField1
-            cdgField1.ProjectDGField(origin, domain);
+            returnFields = cdgField1.ProjectDGField(origin, domain);
+            if (!returnFields.IsNullOrEmpty())
+                Tecplot.PlotFields(returnFields, "CDGproj_patchField1", 0.0, 3);
             cdgField1.AccToDGField(1.0, result1, domain);
 
             errField = origin.CloneAs();
