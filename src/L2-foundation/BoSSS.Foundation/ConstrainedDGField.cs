@@ -649,23 +649,6 @@ namespace BoSSS.Foundation {
 
         bool diagOutputMatlab = false;
 
-        private void PrintOutPatches(IEnumerable<List<int>> blocking) {
-            var basis = new Basis(m_grd, 0);
-            int blockL = blocking.Count();
-            var dummyPart = new Partitioning(blockL);
-            var field = new SinglePhaseField(basis, "patches");
-            int iPatch = (int)dummyPart.i0;
-            int L = (int)m_grd.CellPartitioning.LocalLength;
-            foreach (List<int> block in blocking) {
-                var barray = new BitArray(L);
-                foreach(int idx in block)
-                    barray.Set(idx, true);
-                var CM = new CellMask(m_grd, barray, MaskType.Logical);
-                field.AccConstant(iPatch, CM);
-                iPatch++;
-            }
-        }
-
         public DGField[] ProjectDGField_patchwise(ConventionalDGField DGField, CellMask mask = null, int NoOfPatchesPerProcess = 0) {
 
             int J = m_grd.CellPartitioning.LocalLength;

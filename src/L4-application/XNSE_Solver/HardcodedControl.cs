@@ -522,7 +522,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -639,7 +639,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //if (SpaceDim == 3)
             //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-
 
             // Phi (X,t): p-norm cube with forced rotation
 
@@ -783,7 +782,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
-                C.AMR_startUpSweeps = 1;
+                C.AMR_startUpSweeps = 0;
             }
 
             // Timestepping

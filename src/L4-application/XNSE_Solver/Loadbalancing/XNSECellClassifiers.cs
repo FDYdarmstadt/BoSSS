@@ -28,6 +28,7 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
         public static (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IApplication<XNSE_Control> program, ClassifierType CType) {
             if (program.LsTrk == null)
                 throw new ArgumentNullException("LsTrk not initialized! Not good, I need it!");
+
             switch (CType) {
                 case ClassifierType.Species:
                     return SpeciesClassification(program);
@@ -39,7 +40,6 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
         }
 
         private static (int noOfClasses, int[] cellToPerformanceClassMap) SpeciesClassification(IApplication<XNSE_Control> program) {
-            XNSE_Control XNSECtrl = program.Control as XNSE_Control;
             var LsTrk = program.LsTrk;
             if (LsTrk == null)
                 throw new NotSupportedException("Needs Information of Levelset tracker");
@@ -55,7 +55,6 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
         }
 
         private static (int noOfClasses, int[] cellToPerformanceClassMap) CutCellClassification(IApplication<XNSE_Control> program) {
-            XNSE_Control XNSECtrl = program.Control as XNSE_Control;
             var LsTrk = program.LsTrk;
             if (LsTrk == null)
                 throw new NotSupportedException("Needs a Information of Levelset tracker");
