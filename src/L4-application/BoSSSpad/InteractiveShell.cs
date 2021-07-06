@@ -370,6 +370,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         static internal Document CurrentDoc = null;
 
+        /*
         /// <summary>
         /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
         /// </summary>
@@ -389,6 +390,7 @@ namespace BoSSS.Application.BoSSSpad {
         static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double, double> f) {
             return GetFormulaObject(f, true);
         }
+        */
 
         private static Solution.Control.Formula GetFormulaObject(System.Delegate f, bool timedep) {
             if (CurrentDoc == null) {

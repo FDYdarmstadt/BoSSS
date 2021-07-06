@@ -306,8 +306,8 @@ namespace BoSSS.Foundation {
 
             int[] Lengths = L.MPIGather(0);
             if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                for(int i=0;i<Lengths.Length;i++)
-                    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
+                //for(int i = 0; i < Lengths.Length; i++)
+                //    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
             }
             // compute P0, R0
             // ==============

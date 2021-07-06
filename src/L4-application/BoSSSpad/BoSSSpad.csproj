@@ -1,17 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E1351588-3BC0-418A-BFA2-7CE3391AA167}</ProjectGuid>
+    <TargetFramework>net5.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>BoSSS.Application.BoSSSpad</RootNamespace>
-    <AssemblyName>BoSSSpad</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -27,62 +18,40 @@
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <ErrorReport>prompt</ErrorReport>
-    <Prefer32Bit>false</Prefer32Bit>
-    <WarningLevel>4</WarningLevel>
-    <Optimize>false</Optimize>
-    <DocumentationFile>
-    </DocumentationFile>
+    <DocumentationFile></DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>false</Prefer32Bit>
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
-    <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>1701;1702; CA1065</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FastColoredTextBox">
-      <HintPath>..\..\..\libs\FCTB.2.16.11.0\lib\FastColoredTextBox.dll</HintPath>
-    </Reference>
+    <Compile Remove="autonomuousPlotter.cs" />
+    <Compile Remove="ResidualForm.cs" />
+    <Compile Remove="ResidualForm.Designer.cs" />
+    <Compile Remove="ResidualFormLive.cs" />
+    <Compile Remove="ResidualFormLive.Designer.cs" />
+    <Compile Remove="Worksheet.cs" />
+    <Compile Remove="WorksheetEntry.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\..\libs\MathNet.Numerics.4.9.1\lib\net461\MathNet.Numerics.dll</HintPath>
+      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Hpc.Azure.FileStaging.Client, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Azure.FileStaging.Client.dll</HintPath>
+    <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
+      <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.dll</HintPath>
+    <Reference Include="Microsoft.DotNet.Interactive">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.NodeManagement, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.NodeManagement.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.Properties, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Properties.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Hpc.Scheduler.Store, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Microsoft HPC Pack 2012 SDK\Bin\Microsoft.Hpc.Scheduler.Store.dll</HintPath>
+    <Reference Include="Microsoft.DotNet.Interactive.Formatting">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
@@ -93,251 +62,52 @@
     </Reference>
     <Reference Include="nunit.framework">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\NUnit.Framework-3.12.0\bin\net45\nunit.framework.dll</HintPath>
+      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
     <Reference Include="log4net">
-      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AppControlExtensions.cs" />
-    <Compile Include="BatchProcessorConfig.cs" />
-    <Compile Include="BoSSSpadGnuplotExtensions.cs" />
-    <Compile Include="BoSSSshell.cs" />
-    <Compile Include="TemporalConvergence.cs" />
-    <Compile Include="SshClient.cs" />
-    <Compile Include="ResolvableAssembly.cs" />
-    <Compile Include="autonomuousPlotter.cs" />
-    <Compile Include="BoSSSpadMain.cs" />
-    <Compile Include="BatchProcessorClient.cs" />
-    <Compile Include="DGFieldExtensions.cs" />
-    <Compile Include="Document.cs" />
-    <Compile Include="ElectronWorksheet.cs" />
-    <Compile Include="ExportInstruction.cs" />
-    <Compile Include="CommandLineReader.cs" />
-    <Compile Include="GridExportInstruction.cs" />
-    <Compile Include="IEnumerableExtensions.cs" />
-    <Compile Include="IDatabaseInfoExtensions.cs" />
-    <Compile Include="IDatabaseEntityInfoExtensions.cs" />
-    <Compile Include="IGridInfoExtensions.cs" />
-    <Compile Include="ISessionInfoExtensions.cs" />
-    <Compile Include="ITimestepInfoExtensions.cs" />
-    <Compile Include="Job.cs" />
-    <Compile Include="JobStatus.cs" />
-    <Compile Include="LatexIO.cs" />
-    <Compile Include="MiniBatchProcessorClient.cs" />
-    <Compile Include="MsHPC2012Client.cs" />
-    <Compile Include="ObjectExtensions.cs" />
-    <Compile Include="InstallationChecker.cs" />
-    <Compile Include="ReadEvalPrintLoop.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResidualForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ResidualForm.Designer.cs" />
-    <Compile Include="ResidualFormLive.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="ResidualFormLive.Designer.cs" />
-    <Compile Include="ResidualLog.cs" />
-    <Compile Include="InteractiveShell.cs" />
-    <Compile Include="SafeEvaluator.cs" />
-    <Compile Include="SessionExportInstruction.cs" />
-    <Compile Include="SlurmClient.cs" />
-    <Compile Include="SpatialConvergence.cs" />
-    <Compile Include="TableExtensions.cs" />
-    <Compile Include="TypeExtensions.cs" />
-    <Compile Include="WorkflowMgm.cs" />
-    <Compile Include="Worksheet.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="WorksheetEntry.cs" />
-    <Compile Include="XmlDocumentationExtensions.cs" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
+    <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
+    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
+    <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
+    <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />
+    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
+    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
+    <ProjectReference Include="..\..\Utils\MiniBatchProcessor\MiniBatchProcessor.csproj" />
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
+    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\CNS\CNS.csproj" />
+    <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
+    <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
+    <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
+    <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
+    <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj">
-      <Project>{757e59f0-53bf-4c0d-87b3-3329161cb148}</Project>
-      <Name>ilPSP.LinSolvers.MUMPS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj">
-      <Project>{9d01688e-9372-4185-adcf-d64d47f3a44a}</Project>
-      <Name>BoSSS.Foundation.SpecFEM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj">
-      <Project>{efe8c307-09bc-4f58-b991-6ef8fd6d5eff}</Project>
-      <Name>BoSSS.Solution.AdvancedSolvers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj">
-      <Project>{c0c92515-fc32-49b7-b128-29cc7bfa7b6c}</Project>
-      <Name>BoSSS.Solution.CompressibleFlowCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj">
-      <Project>{7c92a61e-a113-4093-9e37-2786ac737f36}</Project>
-      <Name>BoSSS.Solution.EnergyCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj">
-      <Project>{556af24d-182b-4b77-a727-7e18b6488f78}</Project>
-      <Name>BoSSS.Solution.XheatCommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Utils\btail\btail.csproj">
-      <Project>{dfafe1d1-0235-4125-9364-e8de47546cc6}</Project>
-      <Name>btail</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj">
-      <Project>{9ee2fcad-e8a4-4f14-b932-d1a4904d715d}</Project>
-      <Name>BoSSS.Solution.LevelSetTools</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj">
-      <Project>{0d8f577e-316d-4362-816b-9f610c5eb4a5}</Project>
-      <Name>BoSSS.Solution.XNSECommon</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj">
-      <Project>{5c52e2f7-a6dd-4e3e-a31e-1b0ff34c0cc2}</Project>
-      <Name>FSI_Solver</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj">
-      <Project>{cd6004b7-f359-4ee4-af0d-123a0c2b5bdd}</Project>
-      <Name>SIMPLE</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\RheologySolver2\Rheology2.csproj">
-      <Project>{985a90c0-4e63-4b8d-bc9b-946af1ad3132}</Project>
-      <Name>Rheology2</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj">
-      <Project>{efbeff7a-e40d-4808-be79-536040c0fadc}</Project>
-      <Name>XdgPoisson3</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
-      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
-      <Name>MPI.Wrappers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
-      <Project>{6886ABB3-CE89-4537-9F2A-25F926D1840B}</Project>
-      <Name>ilPSP.Connectors.Matlab</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj">
-      <Project>{B18AEDC3-C7A5-4DA6-ABD3-E981B002ADDE}</Project>
-      <Name>ilPSP.LinSolvers.monkey</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.PARDISO\ilPSP.LinSolvers.PARDISO.csproj">
-      <Project>{DB9CA35D-9980-462A-85CC-CB33DCFD5A28}</Project>
-      <Name>ilPSP.LinSolvers.PARDISO</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers\ilPSP.LinSolvers.csproj">
-      <Project>{45eff2bd-0bcc-4aea-9e87-7d86d6423b0c}</Project>
-      <Name>ilPSP.LinSolvers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8E6D8F23-623F-4204-B4AB-A088C0CD83AA}</Project>
-      <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj">
-      <Project>{13585226-5046-494d-947c-b97479566081}</Project>
-      <Name>BoSSS.Foundation.Grid</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj">
-      <Project>{9a8cdc1f-64f7-441e-849d-66f2c56600f2}</Project>
-      <Name>BoSSS.Foundation.XDG</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.ASCIIExport\BoSSS.Solution.ASCIIExport.csproj">
-      <Project>{ed2e6c6e-1517-4aad-b3c6-1b56c5cd9828}</Project>
-      <Name>BoSSS.Solution.ASCIIExport</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj">
-      <Project>{d8a961c8-75a9-4ecd-8627-c598697e7318}</Project>
-      <Name>BoSSS.Solution.XdgTimestepping</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Utils\MiniBatchProcessor\MiniBatchProcessor.csproj">
-      <Project>{db8a3a70-dbf2-48e7-824c-0829db2f8e1b}</Project>
-      <Name>MiniBatchProcessor</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
-      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
-      <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj">
-      <Project>{D4FADB7C-0B11-4F41-A97A-146DC1F7034E}</Project>
-      <Name>BoSSS.Solution.Gnuplot</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.GridImport\BoSSS.Solution.GridImport.csproj">
-      <Project>{28E4A331-ECA2-43A6-A11F-6D6A5E410434}</Project>
-      <Name>BoSSS.Solution.GridImport</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Statistic\BoSSS.Solution.Statistic.csproj">
-      <Project>{45BCA5F9-27E7-43C0-B021-4312BF442C7D}</Project>
-      <Name>BoSSS.Solution.Statistic</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj">
-      <Project>{D0546422-EC92-4964-82E9-8EE819A2F786}</Project>
-      <Name>BoSSS.Solution.Tecplot</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj">
-      <Project>{DF7F5ABD-E606-41CD-BEEF-31A95D136DEA}</Project>
-      <Name>BoSSS.Solution</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CNS\CNS.csproj">
-      <Project>{8bd7843e-8191-40b3-b208-75ec766a99fd}</Project>
-      <Name>CNS</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj">
-      <Project>{12970f63-547f-4be6-9af9-2f3eeb00a877}</Project>
-      <Name>IBM_Solver</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ipPoisson\ipPoisson.csproj">
-      <Project>{09cce864-9bae-4660-aff9-f3f3414b6173}</Project>
-      <Name>ipPoisson</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj">
-      <Project>{383DE201-6871-437E-93C6-DDD41694BBAF}</Project>
-      <Name>BoSSS.PlotGenerator</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj">
-      <Project>{08b50efe-e463-4bae-8d29-bc109b86290e}</Project>
-      <Name>XNSERO_Solver</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj">
-      <Project>{3d867374-bf9a-475e-8f5c-e1c067605b9c}</Project>
-      <Name>XNSE_Solver</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include=".NETFramework,Version=v4.5">
-      <Visible>False</Visible>
-      <ProductName>Microsoft .NET Framework 4.5 %28x86 and x64%29</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <WCFMetadata Include="Connected Services\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PreBuildEvent>git describe --long &gt; "$(ProjectDir)\version.txt"
 git rev-parse HEAD &gt;&gt; "$(ProjectDir)\version.txt"</PreBuildEvent>
   </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

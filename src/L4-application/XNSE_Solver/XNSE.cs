@@ -17,6 +17,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -68,6 +69,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
             //Tests.ASUnitTest.CurvedElementsTest(3);
             //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
@@ -75,15 +77,28 @@ namespace BoSSS.Application.XNSE_Solver {
             //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
             //throw new Exception("Remove me");
 
-            void KatastrophenPlot(DGField[] dGFields) {
-                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-            }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            
 
             _Main(args, false, delegate () {
                 var p = new XNSE();
+                //Debugger.Launch();
+                void KatastrophenPlot(DGField[] dGFields) {
+
+                    List<DGField> allfields = new();
+                    allfields.AddRange(dGFields);
+                    
+                    foreach(var f in p.RegisteredFields) {
+                        if(!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
+                            allfields.Add(f);
+                    }
+
+                    Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+                }
+                MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+
                 return p;
             });
         }
@@ -125,8 +140,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
+
             return quadOrder;
         }
+
 
         /// <summary>
         /// Current velocity

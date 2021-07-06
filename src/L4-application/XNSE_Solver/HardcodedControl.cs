@@ -35,6 +35,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver.Loadbalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -311,7 +312,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("velocity_inlet", "VelocityY#B", (X, t) => X[1]);
 
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+            C.AgglomerationThreshold = 0.0;
 
             C.PhysicalParameters.useArtificialSurfaceForce = true;
             C.PhysicalParameters.rho_A = RHO_A;
@@ -501,7 +502,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
@@ -530,21 +531,22 @@ namespace BoSSS.Application.XNSE_Solver {
             if (writeToDB) {
                 var thisOS = System.Environment.OSVersion.Platform;
                 var MachineName = System.Environment.MachineName;
-                switch (thisOS) {
+                switch(thisOS) {
                     case PlatformID.Unix:
-                        C.AlternateDbPaths = new[] {
+                    C.AlternateDbPaths = new[] {
                         (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
                         (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-                        break;
+                    break;
                     case PlatformID.Win32NT:
-                        if (MachineName == "PCMIT32")
+                    if(MachineName == "PCMIT32")
                         C.DbPath = @"D:\trash_db";
-                        else
+                    else
                         C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                        break;
+                    break;
                     default:
-                        throw new Exception("No Db-path specified. You stupid?");
+                    throw new Exception("No Db-path specified. You stupid?");
                 }               
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
@@ -555,10 +557,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6,k*2));
+            C.SetFieldOptions(k, Math.Max(6, k * 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
-            if (tracing) C.TracingNamespaces = "*";
+            if (tracing) 
+                C.TracingNamespaces = "*";
             //IBMCestimator = new 
             //C.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
 
@@ -632,7 +635,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories=Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -683,10 +687,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     case 3:
                     // Inf-Norm cube
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                    //                        Math.Abs(X[2] - pos[2])))
+                    //                        + particleRad;
 
                     // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
@@ -701,7 +705,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     //+ Math.Abs(particleRad);
 
                     // sphere
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+
                     default:
                     throw new NotImplementedException();
                 }
@@ -763,7 +768,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -800,6 +805,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // haben fertig...
             // ===============
 
+            C.SkipSolveAndEvaluateResidual = true;
             return C;
 
         }
@@ -1425,7 +1431,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1851,7 +1857,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -2050,7 +2056,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -3740,7 +3746,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4402,7 +4408,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -4605,7 +4611,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -4786,7 +4792,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.LinearSolver.MaxSolverIterations = 50;

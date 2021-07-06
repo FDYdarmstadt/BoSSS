@@ -28,9 +28,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using ilPSP.LinSolvers;
-
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -74,7 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             cmpCont = new CompilerContext(
                 Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
+            Evaluator eval = new(cmpCont);
             eval.InteractiveBaseClass = typeof(InteractiveShell);
 
             return eval;

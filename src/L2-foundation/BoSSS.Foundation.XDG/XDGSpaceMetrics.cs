@@ -171,7 +171,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        SpeciesId[] m_TotalSpeciesList;
+        //SpeciesId[] m_TotalSpeciesList;
 
         /// <summary>
         /// All species <see cref="LevelSetTracker.SpeciesIdS"/>.

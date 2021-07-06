@@ -241,7 +241,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// loads the grid identified by <paramref name="uid"/> from the
+        /// loads the grid identified by <paramref name="gridId"/> from the
         /// given <paramref name="database"/>
         /// </summary>
         /// <param name="gridId">The unique identifier of the grid.</param>

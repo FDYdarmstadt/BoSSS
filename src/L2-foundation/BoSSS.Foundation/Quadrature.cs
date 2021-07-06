@@ -218,26 +218,33 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="NoOfItems">number of edges or cells to integrate</param>
         /// <param name="ruleNodes">quadrature rule nodes</param>
         protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes) {
-            Debug.Assert(ruleNodes.Dimension == 2);
-            if(this.m_ExEvaluate == null) {
-                if(m_EvalResults == null)
-                    m_EvalResults = new MultidimensionalArray(2 + m_IntegralsComponent.Length);
-                m_EvalResults.Allocate(((new int[] { NoOfItems, ruleNodes.GetLength(0) }).Concat(m_IntegralsComponent)).ToArray());
-            }
+            try {
+                Debug.Assert(ruleNodes.Dimension == 2);
+                if(this.m_ExEvaluate == null) {
+                    if(m_EvalResults == null)
+                        m_EvalResults = new MultidimensionalArray(2 + m_IntegralsComponent.Length);
+                    m_EvalResults.Allocate(((new int[] { NoOfItems, ruleNodes.GetLength(0) }).Concat(m_IntegralsComponent)).ToArray());
+                }
 
-            if(m_QuadResults == null)
-                m_QuadResults = new MultidimensionalArray(1 + m_IntegralsComponent.Length);
-            m_QuadResults.Allocate(((new int[] { NoOfItems }).Concat(m_IntegralsComponent)).ToArray());
+                if(m_QuadResults == null)
+                    m_QuadResults = new MultidimensionalArray(1 + m_IntegralsComponent.Length);
+                m_QuadResults.Allocate(((new int[] { NoOfItems }).Concat(m_IntegralsComponent)).ToArray());
 
-            if(this.m_ExEvaluate == null) {
-                m_EvalResultsCollapsed = m_EvalResults.ResizeShallow(
-                    (m_EvalResults.Lengths.Take(2).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
-                m_QuadResultsCollapsed = m_QuadResults.ResizeShallow(
-                    (m_QuadResults.Lengths.Take(1).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                if(this.m_ExEvaluate == null) {
+                    m_EvalResultsCollapsed = m_EvalResults.ResizeShallow(
+                        (m_EvalResults.Lengths.Take(2).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                    m_QuadResultsCollapsed = m_QuadResults.ResizeShallow(
+                        (m_QuadResults.Lengths.Take(1).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                }
+
+                if(m_AllocateBuffers != null)
+                    m_AllocateBuffers(NoOfItems, ruleNodes);
+            } catch (OutOfMemoryException oome) {
+                Console.Error.WriteLine($"Quadrature, {oome}: Number of nodes: " + ruleNodes.NoOfNodes);
+                Console.Error.WriteLine($"Quadrature, {oome}: Number items: " + NoOfItems);
+
+                throw oome;
             }
-            
-            if(m_AllocateBuffers != null)
-                m_AllocateBuffers(NoOfItems, ruleNodes);
         }
 
 

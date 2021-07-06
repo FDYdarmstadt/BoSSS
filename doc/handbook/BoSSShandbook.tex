@@ -388,7 +388,7 @@ using a third-party tool, e.g. {\tt gmsh};
 This data is imported into \BoSSS{} 
 (via the function \code{GridImporter.Import})
 and saved in the \BoSSS{} database (using \code{IDatabaseDriver.SaveGridIfUnique}).
-The workflow management tools (see chapter \ref{sec:WorkflowMgm}) of \BoSSSpad 
+The workflow management tools (see chapter \ref{sec:BoSSSshell.WorkflowMgm}) of \BoSSSpad 
 can then be used to launch one of the provided solvers, which also save their results to the database.
 Finally, \BoSSSpad{} ~can also be used to launch post-processing or data export tools.
 The solver as well as the database can optionally be located/run on some other 
@@ -693,7 +693,7 @@ When Mono is used, the equivalent to {\tt msbuild} is {\tt xbuild}. Both tools h
 
 % ################################################################################
 \chapter{Workflow management and meta job scheduler}
-\label{sec:WorkflowMgm}
+\label{sec:BoSSSshell.WorkflowMgm}
 % ################################################################################
 \import{./MetaJobManager/}{MetaJobManager.tex}
 

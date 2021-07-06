@@ -36,16 +36,16 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null)
+        public static SpatialOperator Operator(this IEquationComponent c, int DegreeOfNonlinearity = 1, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true)
         {
-            return Operator(c, QuadOrderFunc.NonLinear(DegreeOfNonlinearity), edgeSchemeProvider, cellSchemeProvider);
+            return Operator(c, QuadOrderFunc.NonLinear(DegreeOfNonlinearity), edgeSchemeProvider, cellSchemeProvider, doCommit : doCommit);
         }
 
 
         /// <summary>
         /// creates the spatial operator that consists only of component <paramref name="c"/>
         /// </summary>
-        public static SpatialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null) {
+        public static SpatialOperator Operator(this IEquationComponent c, Func<int[], int[], int[], int> quadOrderFunc, Func<IGridData,EdgeQuadratureScheme> edgeSchemeProvider = null,  Func<IGridData,CellQuadratureScheme> cellSchemeProvider = null, bool doCommit = true) {
 
             string[] Codomain = new string[] { "v1" };
             string[] Domain = c.ArgumentOrdering.ToArray();
@@ -58,7 +58,8 @@ namespace BoSSS.Foundation {
                 ret.VolumeQuadraturSchemeProvider = cellSchemeProvider;
 
             ret.EquationComponents[Codomain[0]].Add(c);
-            ret.Commit();
+            if(doCommit)
+                ret.Commit();
 
             return ret;
         }

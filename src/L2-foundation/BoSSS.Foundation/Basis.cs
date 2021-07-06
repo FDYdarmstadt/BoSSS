@@ -65,6 +65,15 @@ namespace BoSSS.Foundation {
             protected set;
         }
 
+        /// <summary>
+        /// creates a new basis
+        /// </summary>
+        /// <param name="grd">the <see cref="GridData"/> that stores grid information</param>
+        /// <param name="degree">highest polynomial degree of basis polynomials</param>
+        public Basis(IGrid grd, int degree) : this(grd.iGridData, degree) {
+
+        }
+
 
         /// <summary>
         /// creates a new basis
