@@ -687,10 +687,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     case 3:
                     // Inf-Norm cube
-                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                    //                        Math.Abs(X[2] - pos[2])))
-                    //                        + particleRad;
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
 
                     // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
@@ -705,7 +705,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //+ Math.Abs(particleRad);
 
                     // sphere
-                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
 
                     default:
                     throw new NotImplementedException();
