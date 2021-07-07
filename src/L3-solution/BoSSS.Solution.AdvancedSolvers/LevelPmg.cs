@@ -262,6 +262,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         double[] Res_f;
         double[] Cor_c;
 
+        public bool SkipLowOrderSolve = false;
+
         /// <summary>
         /// ~
         /// </summary>
@@ -282,22 +284,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Cor_f.SetV(X);
             var Mtx = m_op.OperatorMatrix;
 
-            // compute fine residual
-            Res_f.SetV(B);
-            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                // compute fine residual
+                Res_f.SetV(B);
+                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
 
-            // project to low-p/coarse
-            double[] Res_c = lMask.GetSubVec(Res_f);
+            if (SkipLowOrderSolve == false) {
+                // project to low-p/coarse
+                double[] Res_c = lMask.GetSubVec(Res_f);
 
-            // low-p solve
-            lowSolver.Solve(Cor_c, Res_c);
+                // low-p solve
+                lowSolver.Solve(Cor_c, Res_c);
 
-            // accumulate low-p correction
-            lMask.AccSubVec(Cor_c, Cor_f);
+                // accumulate low-p correction
+                lMask.AccSubVec(Cor_c, Cor_f);
 
-            // compute residual of low-order solution
-            Res_f.SetV(B);
-            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                // compute residual of low-order solution
+                Res_f.SetV(B);
+                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+            }
 
             if (UseHiOrderSmoothing && AnyHighOrderTerms) {
                 // solver high-order 

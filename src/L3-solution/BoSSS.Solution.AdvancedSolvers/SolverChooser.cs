@@ -415,20 +415,21 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_AS:
                 case LinearSolverCode.exp_AS_MG:
                 case LinearSolverCode.automatic:
-                    precond[0] = null;
-                    break;
-               
-                case LinearSolverCode.exp_gmres_AS_MG:
-                    precond[0] = new Schwarz() {
-                        m_BlockingStrategy = new Schwarz.MultigridBlocks() {
-                            Depth = lc.NoOfMultigridLevels-1,
-                        },
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS,    //PARDISO
-                        },
+                precond[0] = null;
+                break;
 
-                        Overlap = 1
-                    };
+                case LinearSolverCode.exp_gmres_AS_MG:
+                var dirSolver = new DirectSolver() {
+                    WhichSolver = DirectSolver._whichSolver.PARDISO,
+                };
+                var Smoother = new Schwarz() {
+                    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
+                    },
+                    CoarseSolver = null,
+                    Overlap = 1
+                };
+                precond[0] = BareMGSquence(lc.NoOfMultigridLevels, dirSolver, Smoother);
                     break;
 
                 /*
@@ -1490,24 +1491,37 @@ namespace BoSSS.Solution {
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
-                        CoarseSolveOfCutcells = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver,
                     };
 
                     //var solve1 = new LevelPmg() {
-                    //    CoarseLowOrder = 1,
+                    //    OrderOfCoarseSystem = 1,
+                    //    UseHiOrderSmoothing = true,
+                    //    FullSolveOfCutcells = true,
+                    //    SkipLowOrderSolve = true,
+                    //};
+
+                    //var solve2 = new LevelPmg() {
+                    //    OrderOfCoarseSystem = 1,
                     //    UseHiOrderSmoothing = false,
-                    //    AssignXdGCellsToLowBlocks = true
+                    //    FullSolveOfCutcells = true,
+                    //    SkipLowOrderSolve = false,
+                    //};
+
+                    //var smoother1 = new LevelPmg() {
+                    //    OrderOfCoarseSystem = 1,
+                    //    UseHiOrderSmoothing = true,
+                    //    FullSolveOfCutcells = false,
+                    //    UseDiagonalPmg = false,
+                    //    SkipLowOrderSolve = true
                     //};
 
                     //var solve2 = new BlockJacobi() { omega = 0.3 };
 
-                    //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve1, solve2 } };
+                    //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve2, solve1 } };
 
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
-                    if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
+                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
@@ -1607,8 +1621,8 @@ namespace BoSSS.Solution {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
-                            NoOfPartsOnCurrentProcess = 4
+                            NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks
+                            //NoOfPartsOnCurrentProcess = 4
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
@@ -1617,11 +1631,7 @@ namespace BoSSS.Solution {
                         CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                     };
 
-                    //var solve1 = new LevelPmg() {
-                    //    CoarseLowOrder = 1,
-                    //    UseHiOrderSmoothing = false,
-                    //    AssignXdGCellsToLowBlocks = true
-                    //};
+                    
 
                     //var solve2 = new BlockJacobi() { omega = 0.5 };
 
@@ -1869,7 +1879,7 @@ namespace BoSSS.Solution {
                     LevelPmg TGP = null;
                     try {
                         TGP = (LevelPmg)((SoftGMRES)solver).Precond;
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         throw new ApplicationException("levelpmg setting is messed up");
                     }
 
@@ -1881,7 +1891,7 @@ namespace BoSSS.Solution {
                     DirectSolver sparsesolver = null;
                     try {
                         sparsesolver = (DirectSolver)solver;
-                    } catch (Exception e) {
+                    } catch (Exception) {
                         throw new ApplicationException("someone messed up classic pardiso settings");
                     }
 

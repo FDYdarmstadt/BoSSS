@@ -751,6 +751,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         public void SpatialOperatorMatrixAnalysis(bool CheckAssertions, int AnalysisLevel) {
             using (new FuncTrace()) {
                 int D = this.Grid.SpatialDimension;
+                throw new Exception("hähä");
 
                 if (AnalysisLevel < 0 || AnalysisLevel > 2)
                     throw new ArgumentException();
@@ -765,7 +766,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                 //        AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
                 var CurrentAgglomeration = this.LsTrk.GetAgglomerator(
                     this.LsTrk.SpeciesIdS.ToArray(), m_HMForder,
-                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    this.Control.AgglomerationThreshold,
                     AgglomerateNewborn: false, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true);
 
                 BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.SaddlePointProblemMapping);

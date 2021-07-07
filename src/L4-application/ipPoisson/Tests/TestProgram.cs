@@ -40,7 +40,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         [Test]
         public static void TestCartesian() {
-
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian
             using(SipPoisson.SipPoissonMain p = new SipPoissonMain()) {
                 var ctrl = SipHardcodedControl.TestCartesian1();
                 p.Init(ctrl);

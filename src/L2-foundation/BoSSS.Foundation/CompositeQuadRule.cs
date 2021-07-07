@@ -24,6 +24,7 @@ using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using ilPSP;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -244,54 +245,71 @@ namespace BoSSS.Foundation.Quadrature {
         public static CompositeQuadRule<TQuadRule> Create<TDomain>(
             IQuadRuleFactory<TQuadRule> ruleFactory, int order, TDomain domain)
             where TDomain : ExecutionMask {
-
-            CompositeQuadRule<TQuadRule> compositeRule = new CompositeQuadRule<TQuadRule>();
-            // BEWARE: This check may cause nasty trouble in parallel runs
-            // where a domain is only present on some domains and has thus been
-            // removed by Björn
-            //if (domain.NoOfItemsLocally == 0) {
-            //    return compositeRule;
-            //}
-            var ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
-
-            var nodes = new List<NodeSet>();
-            var nodesMap = new Dictionary<MultidimensionalArray, int>();
-
-            var weights = new List<MultidimensionalArray>();
-            var weightsMap = new Dictionary<MultidimensionalArray, int>();
-
-            foreach (var chunkRulePair in ruleSet) {
-                Chunk chunk = chunkRulePair.Chunk;
-                TQuadRule rule = chunkRulePair.Rule;
-
-                Debug.Assert(rule.Nodes.IsLocked, "Error in quadrature rule creation: factory delivered some rule non-locked node set.");
-
-                int iNode;
-                if (!nodesMap.TryGetValue(rule.Nodes, out iNode)) {
-                    // nodes must be added
-                    nodes.Add(rule.Nodes);
-                    iNode = nodes.Count - 1;
-                    nodesMap.Add(rule.Nodes, iNode);
+            using (var tr = new FuncTrace()) {
+                CompositeQuadRule<TQuadRule> compositeRule = new CompositeQuadRule<TQuadRule>();
+                // BEWARE: This check may cause nasty trouble in parallel runs
+                // where a domain is only present on some domains and has thus been
+                // removed by Björn
+                //if (domain.NoOfItemsLocally == 0) {
+                //    return compositeRule;
+                //}
+#if TEST
+                tr.Info("Checkpoint CC.1");
+                tr.Info("This is: " + ruleFactory.GetType());
+#endif
+                IEnumerable<IChunkRulePair<TQuadRule>> ruleSet;
+                using(new BlockTrace("Rule_Compilation_" + ruleFactory.GetType().Name, tr)) {
+                    ruleSet = ruleFactory.GetQuadRuleSet(domain, order);
                 }
 
-                int iWeight;
-                if (!weightsMap.TryGetValue(rule.Weights, out iWeight)) {
-                    // weights must be added
-                    weights.Add(rule.Weights);
-                    iWeight = weights.Count - 1;
-                    weightsMap.Add(rule.Weights, iWeight);
+                var nodes = new List<NodeSet>();
+                var nodesMap = new Dictionary<MultidimensionalArray, int>();
+
+                var weights = new List<MultidimensionalArray>();
+                var weightsMap = new Dictionary<MultidimensionalArray, int>();
+#if TEST
+                tr.Info("Checkpoint CC.2");
+#endif
+
+                foreach (var chunkRulePair in ruleSet) {
+                    Chunk chunk = chunkRulePair.Chunk;
+                    TQuadRule rule = chunkRulePair.Rule;
+
+                    Debug.Assert(rule.Nodes.IsLocked, "Error in quadrature rule creation: factory delivered some rule non-locked node set.");
+
+                    int iNode;
+                    if (!nodesMap.TryGetValue(rule.Nodes, out iNode)) {
+                        // nodes must be added
+                        nodes.Add(rule.Nodes);
+                        iNode = nodes.Count - 1;
+                        nodesMap.Add(rule.Nodes, iNode);
+                    }
+#if TEST
+                    tr.Info("Checkpoint CC.3");
+#endif
+                    int iWeight;
+                    if (!weightsMap.TryGetValue(rule.Weights, out iWeight)) {
+                        // weights must be added
+                        weights.Add(rule.Weights);
+                        iWeight = weights.Count - 1;
+                        weightsMap.Add(rule.Weights, iWeight);
+                    }
+#if TEST
+                    tr.Info("Checkpoint CC.4");
+#endif
+                    // Make sure arrays are not only equal but identical (i.e.,
+                    // reference equals)
+                    rule.Nodes = nodes[iNode];
+                    rule.Weights = weights[iWeight];
+#if TEST
+                    tr.Info("Checkpoint CC.5");
+#endif
+                    compositeRule.chunkRulePairs.Add(
+                        new ChunkRulePair<TQuadRule>(chunk, rule));
                 }
 
-                // Make sure arrays are not only equal but identical (i.e.,
-                // reference equals)
-                rule.Nodes = nodes[iNode];
-                rule.Weights = weights[iWeight];
-
-                compositeRule.chunkRulePairs.Add(
-                    new ChunkRulePair<TQuadRule>(chunk, rule));
+                return compositeRule;
             }
-
-            return compositeRule;
         }
 
         /// <summary>

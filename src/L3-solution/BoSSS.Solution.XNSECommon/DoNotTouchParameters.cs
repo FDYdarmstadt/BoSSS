@@ -277,11 +277,13 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public double PenaltySafety = 4;
         
+        /*
         /// <summary>
         /// 
         /// </summary>
         [DataMember]
         public double CellAgglomerationThreshold = 0.1;
+        */
 
         /// <summary>
         /// Model for the surface stress tensor

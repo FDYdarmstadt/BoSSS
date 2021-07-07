@@ -47,6 +47,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
+
 #pragma warning disable 649
         /// <summary>
         /// dependent variable
@@ -156,11 +158,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
-            //Assert.AreEqual(1, 2, "Remove Me!!");
+            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             //System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "/home/flori/bosss_install/bin/native/linux/amd64-openmpi", EnvironmentVariableTarget.User);
 
@@ -355,11 +355,6 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
-                //// Update matrices
-                //// ---------------
-
-                //UpdateMatrices();
-
 
                 // call solver
                 // -----------
@@ -369,7 +364,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 
-                this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -472,6 +467,8 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, Path.Combine(AnalyseOutputpath, "poisson_MG_coloring" + timestepNo + caseStr), phystime, superSampling);
         }
 
+
+       
     }
 
     /// <summary>

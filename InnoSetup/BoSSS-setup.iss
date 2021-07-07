@@ -16,7 +16,7 @@
 AppId={{4155DC6D-D5E2-43D8-A458-8ACAD4F931BC}}
 AppName={#MyAppName}
 ; BUILD_NUMBER is a jenkins enviroment variable
-AppVersion={#GetEnv("BUILD_NUMBER")} ({#MyAppVersion})
+AppVersion={#MyDateTimeString} ({#MyAppVersion})
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -25,7 +25,7 @@ DefaultDirName={code:DefDirRoot}\FDY\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 LicenseFile=.\license.txt
-OutputBaseFilename=BoSSS-setup-{#GetEnv("BUILD_NUMBER")}
+OutputBaseFilename=BoSSS-setup-{#MyDateTimeString}
 ;OutputBaseFilename={%BUILD_NUMBER%|0}
 Compression=lzma
 SolidCompression=yes
@@ -41,20 +41,20 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: ".\bin\*"; Excludes: "old" ;DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
 ;Source: ".\doc\APIreference\*"; DestDir: "{app}\doc\APIreference"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\BoSSSPad_Command_Overview.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ".\doc\BoSSShandbook.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: ".\doc\ControlExamples\IBM\*"; DestDir: "{app}\doc\ControlExamples\IBM"; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: ".\doc\BoSSShandbook.pdf"; DestDir: "{app}\doc"; Flags: ignoreversion recursesubdirs createallsubdirs
+;Source: ".\doc\ControlExamples\IBM\*"; DestDir: "{app}\doc\ControlExamples\IBM"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"         
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
-Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
-Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
-Name: "{group}\BoSSSpad (electron)"; Filename: "{app}\bin\BoSSSpad-win32-x64\BoSSSpad.exe"         
-Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
-Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
+;Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
+;Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
+;Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
+;Name: "{group}\BoSSSpad (electron)"; Filename: "{app}\bin\BoSSSpad-win32-x64\BoSSSpad.exe"         
+;Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
+;Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
 
 [InstallDelete]
 ; BLACKLIST: these .dll are obsolete or replaced by newer versions, 
@@ -84,7 +84,7 @@ Root: HKLM; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release')) and ( not IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( not IsRegularUser() )
 ; as regular user (non-admin): set BOSSS_INSTALL only local
 Root: HKCU; \
    Subkey: "Environment"; \
@@ -98,7 +98,7 @@ Root: HKCU; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release')) and ( IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( IsRegularUser() )
 
 ;[Run]
 ; Filename: bcl.exe; \
@@ -114,9 +114,9 @@ Filename: {app}\bin\native\win\redist\MSMpiSetup-9.0.1.exe; \
     Parameters: "-force"; \
     StatusMsg: "Installing Microsoft MPI..."; \
 	Flags: waituntilterminated skipifsilent postinstall;
-Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
-    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
-	Flags: waituntilterminated skipifsilent postinstall;
+;Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
+;    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
+;	Flags: waituntilterminated skipifsilent postinstall;
 	
  
 [Code]
@@ -139,7 +139,7 @@ end;
 // checks is the user is Admin or Regular (non-elevated)
 function IsRegularUser(): Boolean;
  begin
- Result := not (IsAdminLoggedOn or IsPowerUserLoggedOn);
+ Result := not (IsAdminInstallMode or IsPowerUserLoggedOn);
  end;
 
 // the program files dir. for admins,

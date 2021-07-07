@@ -117,5 +117,16 @@ namespace BoSSS.Application.SipPoisson {
         //[DataMember]
         //public string WriteMeSomeAnalyse = null;
 
+
+        ///// <summary>
+        ///// public member to 
+        ///// ensures binding of respective assembly,
+        ///// makes de-serialization more robust.
+        ///// </summary>
+        ///// <returns></returns>
+        //static public BoSSS.Solution.Statistic.CellLocalization BinderDummy() {
+        //    return new Solution.Statistic.CellLocalization(null);
+        //}
+
     }
 }

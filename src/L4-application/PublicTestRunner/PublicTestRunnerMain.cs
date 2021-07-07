@@ -104,7 +104,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        //typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program),
                         typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
@@ -116,7 +116,7 @@ namespace PublicTestRunner {
                 return new Type[] {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
@@ -125,9 +125,8 @@ namespace PublicTestRunner {
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain),
+                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain), // solver s deprecated
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
-                        //typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
@@ -150,6 +149,7 @@ namespace PublicTestRunner {
                         (typeof(MPITest.Program), 4),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
                         (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
                         (typeof(ALTSTests.Program), 4),
@@ -164,7 +164,7 @@ namespace PublicTestRunner {
             DirectoryInfo repoRoot;
             try {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
-                repoRoot = dir.Parent.Parent.Parent.Parent.Parent;
+                repoRoot = dir.Parent.Parent.Parent.Parent.Parent.Parent;
 
                 var src = repoRoot.GetDirectories("src").SingleOrDefault();
                 var libs = repoRoot.GetDirectories("libs").SingleOrDefault();
@@ -403,7 +403,7 @@ namespace PublicTestRunner {
                 return true;
             string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var filter in sFilters) {
-                if (filter.WildcardMatch(Path.GetFileName(a.Location)))
+                if (filter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)))
                     return true;
             }
             return false;
@@ -1041,7 +1041,7 @@ namespace PublicTestRunner {
                 j.SessionReqForSuccess = false;
                 j.RetryCount = 1;
                 string resultFile = $"result-{dor}-{cnt}.xml";
-                j.MySetCommandLineArguments("nunit3", Path.GetFileName(a.Location), $"--test={TestName}", $"--result={resultFile}");
+                j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
@@ -1259,9 +1259,8 @@ namespace PublicTestRunner {
 
             args = BoSSS.Solution.Application.ArgsFromEnvironmentVars(args);
 
-            var ll = System.Diagnostics.Debug.Listeners;
-            ll.Clear();
-            ll.Add(new MyListener());
+            System.Diagnostics.Trace.Listeners.Clear();
+            System.Diagnostics.Trace.Listeners.Add(new MyListener());
 
 
             if(args.Length < 1) {
