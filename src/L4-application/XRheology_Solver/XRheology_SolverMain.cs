@@ -557,7 +557,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         (this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
                         this.MultigridOperatorConfig, base.MultigridSequence,
                         this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder,
-                        this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                        this.Control.AgglomerationThreshold,
                         true,
                         this.Control.NonLinearSolver,
                         this.Control.LinearSolver
@@ -628,6 +628,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L,
                     ArrayTools.Cat<DGField>(this.XDGvelocity.Velocity.ToArray(), this.Pressure, this.StressXX, this.StressXY, this.StressYY),
+                    this.XRheology_Operator.Xop.InvokeParameterFactory(this.CurrentSolution.Mapping.Fields),
                     ArrayTools.Cat<DGField>(this.XDGvelocity.ResidualMomentum.ToArray(), this.ResidualContinuity, this.ResidualStressXX, ResidualStressXY, this.ResidualStressYY),
                     this.LsTrk, this.MultigridSequence, this.XRheology_Operator.Xop);
 
@@ -1269,7 +1270,7 @@ namespace BoSSS.Application.XRheology_Solver {
                                     BlockMsrMatrix SaddlePointMatrix = new BlockMsrMatrix(this.CurrentSolution.Mapping);
                                     double[] AffineDummy = new double[this.CurrentSolution.Mapping.LocalLength];
 
-                                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold);
+                                    var agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), m_HMForder, this.Control.AgglomerationThreshold);
 
                                     DelComputeOperatorMatrix(SaddlePointMatrix, AffineDummy, this.CurrentSolution.Mapping,
                                     this.CurrentSolution.Mapping.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);

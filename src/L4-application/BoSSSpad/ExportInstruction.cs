@@ -111,27 +111,46 @@ namespace BoSSS.Application.BoSSSpad {
             string plotConfigPath = Path.Combine(outputPath, "plotConfig.xml");
             FieldStateConfiguration.Serialize(plotConfigPath, config);
 
-            // we are expecting 'BoSSS.PlotGen.exe' to be in the same dir as DBE.exe
-            Assembly a = System.Reflection.Assembly.GetEntryAssembly();
+            //Debugger.Launch();
+
+            // we are expecting 'BoSSS.PlotGen.dll' to be in the same dir as BoSSSpad binary
+            Assembly a = typeof(BoSSSpadMain).Assembly;
             string plotGenPath = Path.Combine(
                 System.IO.Path.GetDirectoryName(a.Location),
-                "BoSSS.PlotGenerator.exe");
+                "BoSSS.PlotGenerator.dll");
 
             if (!File.Exists(plotGenPath)) {
                 throw new Exception(plotGenPath + " could not be found.");
             }
 
+            string EscapeKack(string p) {
+                if(plotGenPath.Contains(' ')) {
+                    // i hate escaping
+                    if(System.IO.Path.DirectorySeparatorChar == '\\') {
+                        // probably windows --> use quotes
+                        p = "\"" + p + "\"";
+                    } else {
+                        // Linux etc.
+                        p = p.Replace(" ", "\\ ");
+                    }
+
+                }
+                return p;
+            }
+
+
             Process plotProcess = new Process();
             plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
             plotProcess.StartInfo.WorkingDirectory = outputPath; // quick fix: Tecplot creates temp files, working dir needs to be writeable
             if (config.NumberOfProcesses == 1) {
-                plotProcess.StartInfo.FileName = plotGenPath;
+                plotProcess.StartInfo.FileName = "dotnet";
+                plotProcess.StartInfo.Arguments = EscapeKack(plotGenPath) + " ";
             } else {
                 plotProcess.StartInfo.FileName = MPI_EXECUTABLE;
-                plotProcess.StartInfo.Arguments = string.Format(
-                    " -n {0} {1} ", config.NumberOfProcesses, plotGenPath);
+                plotProcess.StartInfo.Arguments = 
+                    $" -n {config.NumberOfProcesses} dotnet {EscapeKack(plotGenPath)} ";
             }
-            plotProcess.StartInfo.Arguments += "\"" + plotConfigPath + "\"";
+            plotProcess.StartInfo.Arguments += "\"" + EscapeKack(plotConfigPath) + "\"";
 
             return plotProcess;
         }

@@ -15,10 +15,9 @@ limitations under the License.
 */
 
 using System;
-using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
-
+    /*
     /// <summary>
     /// Creates a WindowsForm to plot data. Should be started as a new Thread. 
     /// </summary>
@@ -38,4 +37,5 @@ namespace BoSSS.Application.BoSSSpad {
         }  
 
     }
+    */
 }

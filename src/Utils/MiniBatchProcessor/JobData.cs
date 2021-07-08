@@ -96,36 +96,36 @@ namespace MiniBatchProcessor {
                 try {
                     int id = int.Parse(Path.GetFileNameWithoutExtension(f));
 
-                    using(var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None))) {
-                        JobData J = new JobData();
+                    using var fStr = new StreamReader(new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.None)); 
+                    
+                    JobData J = new JobData();
 
-                        J.m_ID = id;
+                    J.m_ID = id;
 
-                        J.Name = fStr.ReadLine();
-                        J.ExeDir = fStr.ReadLine();
-                        if(string.IsNullOrWhiteSpace(J.ExeDir)) {
-                            J.ExeDir = null;
-                        }
-                        J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
-                        J.UseComputeNodesExclusive = Convert.ToBoolean(fStr.ReadLine());
-                        J.exefile = fStr.ReadLine();
-
-                        int NoOfArgs = int.Parse(fStr.ReadLine());
-                        J.Arguments = new string[NoOfArgs];
-                        for(int j = 0; j < NoOfArgs; j++) {
-                            J.Arguments[j] = fStr.ReadLine();
-                        }
-
-                        int NoOfEnvVars = int.Parse(fStr.ReadLine());
-                        J.EnvVars = new Tuple<string, string>[NoOfEnvVars];
-                        for(int j = 0; j < NoOfEnvVars; j++) {
-                            J.EnvVars[j] = new Tuple<string, string>(fStr.ReadLine(), fStr.ReadLine());
-                        }
-
-                        J.SubmitTime = File.GetCreationTime(f);
-
-                        return J;
+                    J.Name = fStr.ReadLine();
+                    J.ExeDir = fStr.ReadLine();
+                    if(string.IsNullOrWhiteSpace(J.ExeDir)) {
+                        J.ExeDir = null;
                     }
+                    J.NoOfProcs = Convert.ToInt32(fStr.ReadLine());
+                    J.UseComputeNodesExclusive = Convert.ToBoolean(fStr.ReadLine());
+                    J.exefile = fStr.ReadLine();
+
+                    int NoOfArgs = int.Parse(fStr.ReadLine());
+                    J.Arguments = new string[NoOfArgs];
+                    for(int j = 0; j < NoOfArgs; j++) {
+                        J.Arguments[j] = fStr.ReadLine();
+                    }
+
+                    int NoOfEnvVars = int.Parse(fStr.ReadLine());
+                    J.EnvVars = new Tuple<string, string>[NoOfEnvVars];
+                    for(int j = 0; j < NoOfEnvVars; j++) {
+                        J.EnvVars[j] = new Tuple<string, string>(fStr.ReadLine(), fStr.ReadLine());
+                    }
+
+                    J.SubmitTime = File.GetCreationTime(f);
+
+                    return J;
                 } catch(Exception E) {
                     if(ReTryCount < ClientAndServer.IO_OPS_MAX_RETRY_COUNT) {
                         ReTryCount++;
@@ -143,7 +143,7 @@ namespace MiniBatchProcessor {
         /// </summary>
         internal void Write(TextWriter fStr) {
             fStr.WriteLine(Name);
-            fStr.WriteLine(ExeDir != null ? ExeDir : "");
+            fStr.WriteLine(ExeDir ?? "");
             fStr.WriteLine(NoOfProcs);
             fStr.WriteLine(UseComputeNodesExclusive);
             fStr.WriteLine(exefile);

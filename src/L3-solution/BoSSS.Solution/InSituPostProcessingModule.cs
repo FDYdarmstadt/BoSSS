@@ -180,6 +180,7 @@ namespace BoSSS.Solution {
                 AppendToLog(d);
         }
 
+        /*
         /// <summary>
         /// writes an entire collection of values to the log
         /// </summary>
@@ -195,7 +196,7 @@ namespace BoSSS.Solution {
                 }
             }
         }
-
+        */
 
         /// <summary>
         /// Logfile 

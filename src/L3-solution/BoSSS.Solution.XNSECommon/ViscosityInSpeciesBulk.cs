@@ -14,18 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using BoSSS.Solution.NSECommon;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform;
-using System.Collections;
+using BoSSS.Solution.NSECommon;
 using ilPSP;
-using System.Diagnostics;
-using BoSSS.Foundation;
 using ilPSP.Utils;
+using System;
 
 namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
@@ -34,7 +27,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         public ViscosityInSpeciesBulk_GradUTerm(double penalty_safety, double sw, IncompressibleMultiphaseBoundaryCondMap bcMap, string spcName, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
             : base(penalty_safety, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
-
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
@@ -55,23 +47,19 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             m_beta = _betaS;
         }
 
-
         public string ValidSpecies {
             get;
             private set;
         }
 
-        double currentMu;
-        double complementMu;
+        private double currentMu;
+        private double complementMu;
 
-        IncompressibleBoundaryCondMap m_bcMap;
-
+        private IncompressibleBoundaryCondMap m_bcMap;
 
         protected override double Viscosity(double[] Parameters, double[] Velocity, double[,] VelocityGrad) {
             return currentMu;
         }
-
-
     }
 
     public class ViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.SipViscosity_GradUtransp, ISpeciesFilter {
@@ -79,7 +67,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         public ViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleBoundaryCondMap bcMap, string spcName, int _d, int _D,
             double _muA, double _muB, double _betaS = 0.0)
             : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosity, constantViscosityValue: double.NegativeInfinity) {
-
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
@@ -105,16 +92,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             private set;
         }
 
-        double currentMu;
-        double complementMu;
+        private double currentMu;
+        private double complementMu;
 
-        IncompressibleBoundaryCondMap m_bcMap;
-
+        private IncompressibleBoundaryCondMap m_bcMap;
 
         protected override double Viscosity(double[] Parameters, double[] Velocity, double[,] VelocityGrad) {
             return currentMu;
         }
-
     }
 
     public class DimensionlessViscosityInSpeciesBulk_GradUTerm : BoSSS.Solution.NSECommon.SipViscosity_GradU, ISpeciesFilter {
@@ -122,7 +107,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         public DimensionlessViscosityInSpeciesBulk_GradUTerm(double penalty, double sw, IncompressibleBoundaryCondMap bcMap, string spcName, int _d, int _D,
             double _reynoldsA, double _reynoldsB)
             : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosityDimensionless, reynolds: 0.0) {
-
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
@@ -137,14 +121,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
         }
 
-
         public string ValidSpecies {
             get;
             private set;
         }
 
-        IncompressibleBoundaryCondMap m_bcMap;
-
+        private IncompressibleBoundaryCondMap m_bcMap;
     }
 
     public class DimensionlessViscosityInSpeciesBulk_GradUtranspTerm : BoSSS.Solution.NSECommon.SipViscosity_GradUtransp, ISpeciesFilter {
@@ -152,7 +134,6 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         public DimensionlessViscosityInSpeciesBulk_GradUtranspTerm(double penalty, double sw, IncompressibleBoundaryCondMap bcMap, string spcName, int _d, int _D,
             double _reynoldsA, double _reynoldsB)
             : base(penalty, _d, _D, bcMap, NSECommon.ViscosityOption.ConstantViscosityDimensionless, reynolds: 0.0) {
-
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
@@ -172,14 +153,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             private set;
         }
 
-        IncompressibleBoundaryCondMap m_bcMap;
-
+        private IncompressibleBoundaryCondMap m_bcMap;
     }
 
-
-
     public class LowMachSpeciesBalanceDiffusionBulk : SIPDiffusionMassFractions, ISpeciesFilter {
-
 
         public LowMachSpeciesBalanceDiffusionBulk(string spcName, double PenaltyBase,
                                      IncompressibleBoundaryCondMap BcMap,
@@ -196,20 +173,21 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get;
             private set;
         }
-
-
     }
 
     /// <summary>
-    /// Heat conduction term of the energy equation for LowMach solver. 
+    /// Heat conduction term of the energy equation for LowMach solver.
+    /// \/ *(k \/ T)
     /// </summary>
     public class LowMachEnergyConductionBulk : SIPDiffusionTemperature, ISpeciesFilter {
+
         public LowMachEnergyConductionBulk(string spcName, double PenaltyBase,
                                      IncompressibleBoundaryCondMap BcMap,
                                      MaterialLaw EoS,
                                      double Reynolds,
                                      double Prandtl,
-                                     bool prmsOK) : base(PenaltyBase, BcMap, EoS, Reynolds, Prandtl, prmsOK) {
+                                     bool prmsOK,
+                                     ThermalWallType thermalwalltype) : base(PenaltyBase, BcMap, EoS, Reynolds, Prandtl, prmsOK, thermalwalltype ) {
             ValidSpecies = spcName;
         }
 
@@ -217,14 +195,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get;
             private set;
         }
-
     }
 
-
     public class LowMachViscosityInSpeciesBulk_AllTerms : sipViscosity_Variable, ISpeciesFilter {
+
         public LowMachViscosityInSpeciesBulk_AllTerms(string spcName, double _penalty, int iComp, int D, IncompressibleBoundaryCondMap bcmap, ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) : base(_penalty, iComp, D, (ViscosityTermsSwitch.grad_u | ViscosityTermsSwitch.grad_uT | ViscosityTermsSwitch.divU), bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {
-
-
             ValidSpecies = spcName;
         }
 
@@ -232,6 +207,5 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             get;
             private set;
         }
-
     }
 }

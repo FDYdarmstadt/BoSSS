@@ -242,6 +242,7 @@ namespace BoSSS.Foundation {
 
             for (int iIter = 0; iIter < 5; iIter++) {
                 if (L > 0) ql.SetV(bl);
+
                 m_Matrix.SpMV(-1.0, xl, 1.0, ql);
                 //double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
 
@@ -255,23 +256,25 @@ namespace BoSSS.Foundation {
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
 
-        //private void HYPRE_ILU_Init() {
-        //    dirsolver = new ilPSP.LinSolvers.HYPRE.Euclid() {
-        //        Level = 0,
-        //        Comm = csMPI.Raw._COMM.SELF
-        //    };
-        //    if (ILU_M != null && ILU_M.RowPartitioning.LocalLength > 0) dirsolver.DefineMatrix(ILU_M);
-        //}
+
+        private void HYPRE_ILU_Init() {
+            dirsolver = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                Level = 0,
+                Comm = csMPI.Raw._COMM.SELF
+            };
+            if (ILU_M != null && ILU_M.RowPartitioning.LocalLength>0) dirsolver.DefineMatrix(ILU_M);
+        }
+
 
         private void PrecondInit() {
             //BlockJacInit();
             GetLocalMatrix();
             //MKL_ILU_Init();
             //DirectInit();
-            ILUDecomposition();
+            //ILUDecomposition();
             //ICholDecomposition();
             //MKL_ILU_Init();
-            //HYPRE_ILU_Init();
+            HYPRE_ILU_Init();
         }
 
         private void PrecondSolve<U, V>(U xl, V bl) where U : IList<double>
@@ -300,20 +303,23 @@ namespace BoSSS.Foundation {
 
             int L = x.Length;
 
+
             double[] P = new double[L];
             double[] V = new double[L];
             double[] Z = new double[L];
 
             int[] Lengths = L.MPIGather(0);
             if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                for (int i = 0; i < Lengths.Length; i++)
-                    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
+                //for (int i = 0; i < Lengths.Length; i++)
+                //    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
             }
             // compute P0, R0
             // ==============
             if (x.Length != 0)
                 GenericBlas.dswap(L, x, 1, P, 1);
+
             m_Matrix.SpMV(-1.0, P, 1.0, R);
+
             if (x.Length != 0)
                 GenericBlas.dswap(L, x, 1, P, 1);
 
@@ -340,6 +346,7 @@ namespace BoSSS.Foundation {
             for (int n = 1; true; n++) {
 
                 if (n % 1 == 0) {
+
                     var theResidual = new double[R.Length];
                     if (x.Length != 0) {
                         theResidual.SetV(ResReal);
@@ -379,7 +386,7 @@ namespace BoSSS.Foundation {
                 //if (x.Length != 0) Z.SetV(R);
                 if (x.Length != 0) Z.Clear();
                 PrecondSolve(Z, R);
-
+                
 
                 double alpha_neu_loc = x.Length != 0 ? R.InnerProd(Z) : 0;
                 double alpha_neu = alpha_neu_loc.MPISum();
@@ -393,12 +400,14 @@ namespace BoSSS.Foundation {
 
                     alpha = alpha_neu;
                 }
+
             }
 
             if (!object.ReferenceEquals(_x, x))
                 _x.SetV(x);
             if (!object.ReferenceEquals(_R, R))
                 _R.SetV(R);
+
 
 
             return;
@@ -2559,6 +2568,7 @@ namespace BoSSS.Foundation {
                     }
 
 
+
                     // check for overdetermined edges (additional for 3D)
                     int numECond = 0;
                     int[] edgeOrientation = new int[2];
@@ -2743,8 +2753,6 @@ namespace BoSSS.Foundation {
             //        }
             //        nodeCount += qNodes.NoOfNodes;
             //    }
-
-
             //}
 
 

@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -16,6 +17,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -67,6 +69,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
             //Tests.ASUnitTest.CurvedElementsTest(3);
             //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
@@ -74,15 +77,28 @@ namespace BoSSS.Application.XNSE_Solver {
             //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
             //throw new Exception("Remove me");
 
-            void KatastrophenPlot(DGField[] dGFields) {
-                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-            }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            
 
             _Main(args, false, delegate () {
                 var p = new XNSE();
+                //Debugger.Launch();
+                void KatastrophenPlot(DGField[] dGFields) {
+
+                    List<DGField> allfields = new();
+                    allfields.AddRange(dGFields);
+                    
+                    foreach(var f in p.RegisteredFields) {
+                        if(!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
+                            allfields.Add(f);
+                    }
+
+                    Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+                }
+                MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+
                 return p;
             });
         }
@@ -92,8 +108,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Generic versions which should be used for derivatives 
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
-
-
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -110,13 +124,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-                //throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-                //    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
-                //    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
-                //    $"If you do not know how to remove this exception, you should better return now!");
-            }
+            //if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+            //   && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+            //    throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+            //        $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+            //        $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+            //        $"If you do not know how to remove this exception, you should better return now!");
+            //}
 
             //QuadOrder
             int degU = VelocityDegree();
@@ -126,8 +140,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
+
             return quadOrder;
         }
+
 
         /// <summary>
         /// Current velocity
@@ -251,6 +267,12 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// Cell-performance classes:
+        /// cell performance class equals number of species present in that cell
+        /// </summary>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
+            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.CType);
+        }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int pVel = VelocityDegree();

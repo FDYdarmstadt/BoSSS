@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -89,7 +90,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
 
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
             LevelSetTest(Tst, C);
+
+            Solution.Application.DeleteOldPlotFiles(); // delete plot files if we don't throw an exception!
 
         }
 
@@ -209,6 +215,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //Console.WriteLine("Warning! - enabled immediate plotting");
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
+
+                MultiphaseCellAgglomerator.Katastrophenplot = delegate (DGField[] plotFields) {
+
+                    List<DGField> allfields = new();
+                    allfields.AddRange(plotFields);
+                    
+                    foreach(var f in solver.RegisteredFields) {
+                        if(!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
+                            allfields.Add(f);
+                    }
+
+                    Tecplot.PlotFields(allfields, "AgglomFail", 0.0, 4);
+                };
 
                 solver.Init(C);
                 solver.RunSolverMode();

@@ -242,7 +242,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             } catch (OutOfMemoryException oome) {
                 Console.Error.WriteLine($"{oome}: Number of nodes: " + ruleNodes.NoOfNodes);
-                Console.Error.WriteLine($"{oome}: Number items: " + NoOfItems);
+                Console.Error.WriteLine($"{oome}: Number of items: " + NoOfItems);
 
                 throw oome;
             }

@@ -140,7 +140,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void CreateFields() {
             base.CreateFields();
 
-            //CreateTracker();
+            if(this.LsTrk==null) CreateTracker();
 
             // solution:
             var solFields = InstantiateSolutionFields();
@@ -280,8 +280,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// 
         /// </summary>
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
-           
-            if(L == null) {
+
+            if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -296,7 +296,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                 // currently, only supported for the BDF timestepper.
-
+                
                 Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
 
                 if (!object.ReferenceEquals(this.Operator, Timestepping.Operator))

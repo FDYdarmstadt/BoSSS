@@ -26,66 +26,90 @@ using System.Linq;
 namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
+    /// Default output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/> (and variants)
+    /// </summary>
+    public enum PlotNowMode {
+        
+        /// <summary>
+        /// (Default)
+        /// <see cref="GnuplotExtensions.PlotGIF(Gnuplot, int, int)"/>,
+        /// main option for old BoSSSpad GUI
+        /// </summary>
+        GIF = 0,
+
+        /// <summary>
+        /// <see cref="GnuplotExtensions.PlotCairolatex(Gnuplot, string, double, double)"/>,
+        /// used for LaTeX output
+        /// </summary>
+        CairoLatex = 1,
+
+        /// <summary>
+        /// <see cref="GnuplotExtensions.PlotSVG"/>,
+        /// main option for Jupyter notebooks
+        /// </summary>
+        SVG = 2
+    }
+
+
+    /// <summary>
     /// Spice up Gnuplot.
     /// </summary>
     public static class BoSSSpadGnuplotExtensions {
-        
+
+
+
 
         /// <summary>
         /// Hack for <see cref="PlotNow(Gnuplot)"/>
         /// </summary>
-        public static bool UseCairoLatex = false;
+        public static PlotNowMode PlotMode = PlotNowMode.GIF;
 
         /// <summary>
         /// Gnuplot plotting, automatic choice of gnuplot driver depending on
-        /// the current value of <see cref="UseCairoLatex"/>.
+        /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Gnuplot gp) {
 
-            if (UseCairoLatex) {
+            if (PlotMode == PlotNowMode.CairoLatex) {
                 return gp.PlotCairolatex();
-            } else {
+            } else if(PlotMode == PlotNowMode.GIF) {
                 return gp.PlotGIF();
+            } else if(PlotMode == PlotNowMode.SVG) {
+                return gp.PlotSVG();
+            } else {
+                throw new NotImplementedException("Unknown option: " + PlotMode);
             }
         }
 
         /// <summary>
         /// Gnuplot plotting (single plot), automatic choice of gnuplot driver depending on
-        /// the current value of <see cref="UseCairoLatex"/>.
+        /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Plot2Ddata _2DData) {
             using (Gnuplot gp = _2DData.ToGnuplot()) {
 
-                if (UseCairoLatex) {
-                    return gp.PlotCairolatex();
-                } else {
-                    return gp.PlotGIF();
-                }
+                return PlotNow(gp);
             }
         }
 
         /// <summary>
         /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
-        /// the current value of <see cref="UseCairoLatex"/>.
+        /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Plot2Ddata[,] _2DData) {
             using (Gnuplot gp = _2DData.ToGnuplot()) {
 
-                if (UseCairoLatex) {
-                    return gp.PlotCairolatex();
-                } else {
-                    return gp.PlotGIF();
-                }
+                return PlotNow(gp);
             }
         }
 
         /// <summary>
         /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
-        /// the current value of <see cref="UseCairoLatex"/>.
+        /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this CairolatexContainer cl) {
 
-            if (UseCairoLatex) {
+            if (PlotMode == PlotNowMode.CairoLatex) {
                 return cl;
             } else {
                 return cl.Preview();

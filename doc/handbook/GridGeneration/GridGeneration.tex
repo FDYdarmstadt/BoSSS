@@ -23,7 +23,7 @@ int Res = 10;\newline
 double[] xNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
 double[] yNodes = GenericBlas.Linspace(0, 1, Res + 1);\newline 
 int J           = (xNodes.Length - 1)*(yNodes.Length - 1);\newline 
-string GridName = string.Format(WorkflowMgm.CurrentProject + "\_J" +J);\newline 
+string GridName = string.Format(BoSSSshell.WorkflowMgm.CurrentProject + "\_J" +J);\newline 
  \newline 
 Console.WriteLine("Creating grid with " + J + " cells. ");\newline 
  \newline 

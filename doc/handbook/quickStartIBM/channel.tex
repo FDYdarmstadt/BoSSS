@@ -154,7 +154,10 @@ grid.DefineEdgeTags(delegate (double[] X) \{\newline
 \BoSSSexe
 \BoSSScmd{
 /// Save the grid in the database so that the simulation can use it
-grid;\newline 
+grid
+ }
+\BoSSSexe
+\BoSSScmd{
 myDb.SaveGrid(ref grid);\newline 
 c.SetGrid(grid);
  }
@@ -206,10 +209,6 @@ c.TimesteppingMode = AppControl.\_TimesteppingMode.Steady;
 /// executing the \code{Run} method on the control objece \code{c}.
 /// An inline run will block \BoSSSpad until the solver exits.
 c.Run();
- }
-\BoSSSexe
-\BoSSScmd{
-LastError
  }
 \BoSSSexe
 \BoSSScmd{

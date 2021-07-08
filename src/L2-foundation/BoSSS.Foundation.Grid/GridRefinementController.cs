@@ -430,7 +430,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Gets all cells to be coarsend. This is not mpi-parallel, because coarsening is not allowed over process boundaries.
+        /// Gets all cells to be coarsend. This operates process local, no coarsening allowed over process boundaries.
         /// </summary>
         /// <param name="oK2CoarsenGlobal">
         /// A BitArray of all cells which should be coarsend.
@@ -438,7 +438,7 @@ namespace BoSSS.Foundation.Grid {
         private int[][] FindCoarseningClusters(BitArray oK2CoarsenGlobal) {
             int JE = CurrentGrid.Cells.Count;
             BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
-            for(long j = myI0; j < myI0 + LocalNumberOfCells; j++) {
+            for (long j = myI0; j < myI0 + LocalNumberOfCells; j++) {
                 oK2Coarsen[checked((int)(j - myI0))] = oK2CoarsenGlobal[checked((int)j)];
             }
             //int[][] cellNeighbours = currentGrid.Cells.CellNeighbours;
@@ -545,20 +545,32 @@ namespace BoSSS.Foundation.Grid {
 
             foreach (int neighbourCellIndex in CellNeighbours) {
 
-                if (marker[neighbourCellIndex] == true)
-                    continue;
-
-                if (coarseningCluster.Contains(neighbourCellIndex))
-                    continue;
-
                 Cell neighbourCell = GetCell(neighbourCellIndex);
-                if (neighbourCell.RefinementLevel != currentRefinementLevel)
-                    continue;
 
-                if (neighbourCell.CoarseningClusterID != searchClusterID)
-                    continue;
+                bool ContinueCrit = (marker[neighbourCellIndex] == true)
+                    || coarseningCluster.Contains(neighbourCellIndex)
+                    || neighbourCell.RefinementLevel != currentRefinementLevel
+                    || neighbourCell.CoarseningClusterID != searchClusterID
+                    || neighbourCellIndex >= LocalNumberOfCells;
 
-                coarseningCluster.Add(neighbourCellIndex);
+                if (ContinueCrit) continue;
+
+                //if (marker[neighbourCellIndex] == true)
+                //    continue;
+
+                    //if (coarseningCluster.Contains(neighbourCellIndex))
+                    //    continue;
+
+                    //if (neighbourCell.RefinementLevel != currentRefinementLevel)
+                    //    continue;
+
+                    //if (neighbourCell.CoarseningClusterID != searchClusterID)
+                    //    continue;
+
+                    //if (neighbourCellIndex > LocalNumberOfCells)
+                    //    continue;
+
+                    coarseningCluster.Add(neighbourCellIndex);
 
                 if (coarseningCluster.Count == clusterSize) {
                     complete = true;

@@ -5621,7 +5621,7 @@ namespace ilPSP.LinSolvers {
                     secondWave_ReceiveBuffer = new IntPtr[NoOfRecv];
 #if DEBUG
                     bool[] checker = new bool[NoOfRecv + NoOfSend];
-                    SizesCheck = SendSizes.MPIAllGather(comm).Resize(false, MPIsize, MPIsize);
+                    SizesCheck = SendSizes.MPIAllGather(comm).Reshape(false, MPIsize, MPIsize);
 #endif
                     for(int i = 0; i < NoOfRecv + NoOfSend; i++) {
                         MPI_Status Stat;

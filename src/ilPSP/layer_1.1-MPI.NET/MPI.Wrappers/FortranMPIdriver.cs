@@ -569,6 +569,25 @@ namespace MPI.Wrappers {
             }
         }
 
+#pragma warning disable 649
+        delegate void _MPI_SCATTER(IntPtr sendbuf, ref int sendcount, ref MPI_Datatype sendtype,
+                                     IntPtr recvbuf, ref int recvcount, ref MPI_Datatype recvtype, 
+                                     ref int root, ref MPI_Comm comm, out int ierr);
+        _MPI_SCATTER MPI_SCATTER;
+#pragma warning restore 649
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Scatter(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm) {
+            int ierr;
+            using (new MPITracer()) {
+                MPI_SCATTER(sendbuf, ref sendcount, ref sendtype, recvbuf, ref recvcount, ref recvtype, ref root, ref comm, out ierr);
+                MPIException.CheckReturnCode(ierr);
+            }
+        }
+
+
 
 
 #pragma warning disable 649

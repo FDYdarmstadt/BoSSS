@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 
 namespace ilPSP.Connectors.Matlab {
     
@@ -89,9 +90,9 @@ namespace ilPSP.Connectors.Matlab {
         public static double condest(this IMutableMatrixEx M, string __WorkingPath = null) {
             if (M == null)
                 throw new ArgumentNullException();
-            using (var connector = new BatchmodeConnector(WorkingPath:__WorkingPath)) {
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
-                MultidimensionalArray output = MultidimensionalArray.Create(1, 1); 
+                MultidimensionalArray output = MultidimensionalArray.Create(1, 1);
                 connector.PutSparseMatrix(M, "Matrix");
                 connector.Cmd("cond = condest(Matrix)");
                 connector.GetMatrix(output, "cond");
@@ -102,7 +103,52 @@ namespace ilPSP.Connectors.Matlab {
             }
         }
 
+        /// <summary>
+        /// Assumes that there are Matrices on Each process with Self_Communicator (alias local matrices).
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="__WorkingPath"></param>
+        /// <param name="printout">switch on printing of results</param>
+        /// <returns>condition number for each local matrix</returns>
+        public static double[] Multicondest(this IMutableMatrixEx M, string __WorkingPath = null, bool printout = false) {
+            int MPISize = -1;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Size(comm, out MPISize);
 
+            if (M.RowPartitioning.MpiSize != 1)
+                throw new NotSupportedException("input is no local matrix!");
+            if (M == null)
+                throw new ArgumentNullException();
+            double[] retcondest = new double[MPISize];
+
+            using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
+
+                MultidimensionalArray output = MultidimensionalArray.Create(MPISize, 1);
+                connector.PutSparseMatrixRankExclusive(M, "Matrix");
+                connector.CreateOutputBuffer(MPISize,"cond");
+                for (int iRank=0; iRank < MPISize; iRank++) {
+                    string cmdline = String.Format("cond({0}) = condest(Matrix_{1});",iRank+1,iRank);
+                    connector.Cmd(cmdline);
+                }
+                connector.GetMatrix(output, "cond");
+                connector.Execute(false);
+                retcondest=MPISize.ForLoop(iRank => output[iRank, 0]);
+            }
+            if (printout) {
+                for(int iRank=0; iRank<MPISize;iRank++)
+                    Console.WriteLine("condest on rank {0}: {1}", iRank, retcondest[iRank]);
+            }
+            return retcondest;
+        }
+
+        private static void CreateOutputBuffer(this BatchmodeConnector bmc, int Length, string name) {
+            string cmdline = name+"=[0";
+            for(int i=0; i < Length-1; i++) {
+                cmdline += ";0";
+            }
+            cmdline += "];";
+            bmc.Cmd(cmdline);
+        }
 
         /// <summary>
         /// Tests, via a Cholesky factorization, if a symmetric matrix is positive definite.

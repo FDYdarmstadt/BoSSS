@@ -307,7 +307,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     SpatialOperatorType.LinearTimeDependent, //(this.Control.PhysicalParameters.IncludeConvection) ? SpatialOperatorType.Nonlinear : SpatialOperatorType.LinearTimeDependent,
                     this.MultigridOperatorConfig_kinE, base.MultigridSequence,
                     this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder_kinE,
-                    this.Control.AdvancedDiscretizationOptions.CellAgglomerationThreshold,
+                    this.Control.AgglomerationThreshold,
                     true,
                     this.Control.NonLinearSolver,
                     this.Control.LinearSolver
