@@ -828,16 +828,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Movement induced by surface terms.
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 9) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 5, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
 
             //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             bool quarterDomain = true;
 
@@ -924,7 +924,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.PhysicalParameters.mu_B = 0.714 * ratio;
             C.PhysicalParameters.Sigma = 7e-3;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -1156,7 +1156,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitSignedDistance = true;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = useAMR;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
@@ -1179,7 +1179,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 1000;
-                C.NoOfTimesteps = 1000;
+                C.NoOfTimesteps = 2; // 1000;
                 C.saveperiod = 4;
             }
 

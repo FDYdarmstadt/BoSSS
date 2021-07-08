@@ -135,7 +135,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
 
-            Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
+            //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
 
             MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
 
