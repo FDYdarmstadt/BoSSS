@@ -99,10 +99,12 @@ namespace BoSSS.Application.BoSSSpad {
 
             AddObjectFormatter<ISessionInfo>();
             AddObjectFormatter<IDatabaseInfo>();
+            AddObjectFormatter<ITimestepInfo>();
 
             AddEnumFormatter<IGridInfo>();
             AddEnumFormatter<IDatabaseInfo>();
             AddEnumFormatter<ISessionInfo>();
+            AddEnumFormatter<ITimestepInfo>();
 
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));

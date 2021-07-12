@@ -639,9 +639,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
-                    throw new NotSupportedException();
-
-
+                    throw new NotSupportedException("Method has already been called without matching call to `DataRestoreAfterBalancing`");
+                
                 m_PrivateBalancingInfo = new PrivateBalancingInfo();
                 m_PrivateBalancingInfo.NoOfFields = m_Stack_u[0].Mapping.Fields.Count;
 

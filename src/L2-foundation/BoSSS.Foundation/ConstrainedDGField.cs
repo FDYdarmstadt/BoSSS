@@ -37,12 +37,6 @@ namespace BoSSS.Foundation {
     public class myCG : IDisposable {
         public void Init(BlockMsrMatrix M) {
             m_Matrix = M;
-//#if TEST
-//            var tmp=M.ToFullMatrixOnProc0();
-            M.SaveToTextFileSparse("M");
-//            if(M.RowPartitioning.MpiRank==0)
-//                tmp.SaveToTextFile("fullM");
-//#endif
             //var M_test = M.CloneAs();
             //M_test.Acc(-1.0, M.Transpose());
             //Console.WriteLine("Symm-test: " + M_test.InfNorm());
@@ -51,7 +45,7 @@ namespace BoSSS.Foundation {
             PrecondInit();
         }
 
-        private BlockMsrMatrix ILU_M;
+        private MsrMatrix ILU_M;
         public void GetLocalMatrix() {
             int rank;
             MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
@@ -73,7 +67,10 @@ namespace BoSSS.Foundation {
             BlockMsrMatrix localMatrix = new BlockMsrMatrix(part);
 
             m_Matrix.WriteSubMatrixTo(localMatrix, RowISrc, default(long[]), RowISrc, default(long[]));
-            ILU_M = localMatrix;
+            ILU_M = localMatrix.ToMsrMatrix();
+
+            //ILU_M.Multicondest(printout:true);
+            //Console.WriteLine("cond num:"+m_Matrix.condest());
         }
 
         ISparseSolver dirsolver;
@@ -89,6 +86,8 @@ namespace BoSSS.Foundation {
         private void DirectSolve<P, Q>(P X, Q B)
             where P : IList<double>
             where Q : IList<double> {
+            if (ILU_M.RowPartitioning.LocalLength == 0 && ILU_M.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF)
+                return; // there is nothing to do and we can safely skip the solve step
             dirsolver.Solve(X,B);
         }
 
@@ -140,7 +139,6 @@ namespace BoSSS.Foundation {
         }
 
         private void ICholDecomposition() {
-            var part = ILU_M._RowPartitioning;
 
             if (this.ILU_M.RowPartitioning.MpiSize != 1)
                 throw new NotSupportedException();
@@ -204,7 +202,7 @@ namespace BoSSS.Foundation {
             for (long i = n - 1; i >= 0; i--) {
                 buffer = 0;
                 for (long k = i + 1; k < n; k++)
-                    buffer += ILU_M[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
+                    buffer += ILU_M[i, k] * X[(int)k];
                 X[(int)i] = (1 / ILU_M[i, i]) * (y[i] - buffer);
             }
         }
@@ -241,16 +239,10 @@ namespace BoSSS.Foundation {
             int L = xl.Count;
             double[] ql = new double[L];
 
-            double iter0_ResNorm = 0;
-
-            for (int iIter = 0; iIter<10; iIter++) {
-                ql.SetV(bl);
+            for (int iIter = 0; iIter<5; iIter++) {
+                if(L>0) ql.SetV(bl);
                 m_Matrix.SpMV(-1.0, xl, 1.0, ql);
-                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
-
-                if (iIter == 0) {
-                    iter0_ResNorm = ResNorm;
-                }
+                //double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
 
                 Diag.SpMV(1.0, xl, 1.0, ql);
                 invDiag.SpMV(omega, ql, 1.0 - omega, xl);
@@ -262,19 +254,30 @@ namespace BoSSS.Foundation {
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
 
+        private void HYPRE_ILU_Init() {
+            dirsolver = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                Level = 0,
+                Comm = csMPI.Raw._COMM.SELF
+            };
+            if (ILU_M != null && ILU_M.RowPartitioning.LocalLength>0) dirsolver.DefineMatrix(ILU_M);
+        }
+
         private void PrecondInit() {
             //BlockJacInit();
             GetLocalMatrix();
+            //MKL_ILU_Init();
             //DirectInit();
-            ILUDecomposition();
+            //ILUDecomposition();
             //ICholDecomposition();
+            //MKL_ILU_Init();
+            HYPRE_ILU_Init();
         }
 
         private void PrecondSolve<U, V>(U xl, V bl) where U : IList<double>
             where V : IList<double> {
             //BlockJacSolve(xl,bl);
-            DecompSolve(xl, bl);
-            //DirectSolve(xl,bl);
+            //DecompSolve(xl, bl);
+            DirectSolve(xl,bl);
         }
 
         public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
@@ -300,20 +303,25 @@ namespace BoSSS.Foundation {
                 double[] V = new double[L];
                 double[] Z = new double[L];
 
-            R.SaveToTextFile("R");
-
+            int[] Lengths = L.MPIGather(0);
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                //for(int i = 0; i < Lengths.Length; i++)
+                //    Console.WriteLine("L from proc " + i + " : " + Lengths[i]);
+            }
             // compute P0, R0
             // ==============
-            GenericBlas.dswap(L, x, 1, P, 1);
+            if (x.Length != 0)
+                GenericBlas.dswap(L, x, 1, P, 1);
                 m_Matrix.SpMV(-1.0, P, 1.0, R);
-
+            if (x.Length != 0)
                 GenericBlas.dswap(L, x, 1, P, 1);
 
-            //P.SetV(R);
+            //if (x.Length != 0) P.SetV(R);
             PrecondSolve(Z, R);
-            P.SetV(Z);
+            if (x.Length != 0) P.SetV(Z);
 
-            double alpha = R.InnerProd(P).MPISum();
+            double alpha_loc = x.Length != 0? R.InnerProd(P):0;
+            double alpha = alpha_loc.MPISum();
             double alpha_0 = alpha;
             Console.WriteLine(alpha);
             double ResNorm;
@@ -330,54 +338,60 @@ namespace BoSSS.Foundation {
                 // =======
                 for (int n = 1; true; n++) {
 
-                if (n % 1 == 0) {
-
-                    Xdummy.SetV(x);
+                if (n % 1 == 0 ) {
                     var theResidual = new double[R.Length];
-                    theResidual.SetV(ResReal);
+                    if (x.Length != 0) {
+                        theResidual.SetV(ResReal);
+                        Xdummy.SetV(x);
+                    }
                     m_Matrix.SpMV(-1.0, Xdummy, 1.0, theResidual);
-                    Console.WriteLine("Res real at n"+n+":"+ theResidual.MPI_L2Norm());
+                    double bla = (x.Length != 0 ? theResidual.L2NormPow2() : 0).MPISum().Sqrt();
+                    Console.WriteLine("Res real at n"+n+":"+ bla);
                 }
 
                 Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
-                    if (ResNorm / ResNorm0 + ResNorm < 1E-8 || ResNorm < 1E-8 || n > 100) {
-                        if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not converged.");    
-                        break;
-                    }
+                if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n >= 100) {
+                    if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
+                    break;
+                }
 
-                    if (Math.Abs(alpha) <= double.Epsilon) {
-                        // numerical breakdown
-                        break;
-                    }
+                if (Math.Abs(alpha) <= double.Epsilon) {
+                    // numerical breakdown
+                    break;
+                }
 
 
-                    m_Matrix.SpMV(1.0, P, 0, V);
-                    double VxP = V.InnerProd(P).MPISum();
-                    if (double.IsNaN(VxP) || double.IsInfinity(VxP))
-                        throw new ArithmeticException();
-                    double lambda = alpha / VxP;
-                Console.WriteLine(lambda);
+                m_Matrix.SpMV(1.0, P, 0, V);
+                double VxP_loc = x.Length != 0 ? V.InnerProd(P):0;
+                double VxP = VxP_loc.MPISum();
+                if (double.IsNaN(VxP) || double.IsInfinity(VxP))
+                    throw new ArithmeticException();
+                double lambda = alpha / VxP;
                 if (double.IsNaN(lambda) || double.IsInfinity(lambda))
-                        throw new ArithmeticException();
+                    throw new ArithmeticException();
 
-
+                if (x.Length != 0) {
                     x.AccV(lambda, P);
-
                     R.AccV(-lambda, V);
+                }
 
-                //Z.SetV(R);
-                Z.Clear();
+                //if (x.Length != 0) Z.SetV(R);
+                if (x.Length != 0) Z.Clear();
                 PrecondSolve(Z, R);
+                
 
-                double alpha_neu = R.InnerProd(Z).MPISum();
-                Console.WriteLine(alpha_neu);
-                    // compute residual norm
-                    ResNorm = R.MPI_L2Norm();
+                double alpha_neu_loc = x.Length != 0 ? R.InnerProd(Z) : 0;
+                double alpha_neu = alpha_neu_loc.MPISum();
 
+                // compute residual norm
+                ResNorm = (x.Length != 0? R.L2NormPow2():0).MPISum().Sqrt();
+
+                if (x.Length != 0) {
                     P.ScaleV(alpha_neu / alpha);
                     P.AccV(1.0, Z);
 
                     alpha = alpha_neu;
+                }
                 }
 
                 if (!object.ReferenceEquals(_x, x))
@@ -1355,7 +1369,8 @@ namespace BoSSS.Foundation {
 
 
                     // 
-                    int maxCondAtVert = (D == 2) ? 4 : 12;
+                    //int maxCondAtVert = (D == 2) ? 4 : 12;
+
                     //int OverdeterminedCondAtVertice = 0;
                     //for (int i = 0; i < vertAtCell1.Length; i++) {
                     //    int vert = vertAtCell1[i];
@@ -1372,7 +1387,6 @@ namespace BoSSS.Foundation {
                     //}
                     ////Debug.Assert(geomVertAtEdge.Count() == (D - 1) * 2);
 
-                    // 
                     //int OverdeterminedCondAtGeomEdge = 0;
                     //int[] OverdeterminedEdgeDirection = new int[m_Basis.Degree + 1];
                     //if (D == 3) {
@@ -1403,6 +1417,7 @@ namespace BoSSS.Foundation {
                     {
                         //AcceptedEdges.Add(j);
                         //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, OverdeterminedCondAtGeomEdge, OverdeterminedEdgeDirection);
+                        //NodeSet qNds = getEdgeInterpolationNodes(OverdeterminedCondAtVertice, 0);
                         NodeSet qNds = getEdgeInterpolationNodes(0, 0);
                         AcceptedNodes.Add(qNds);
 
@@ -1548,43 +1563,63 @@ namespace BoSSS.Foundation {
             double[] v = new double[rowBlockPart.LocalLength];
             double[] x = new double[m_Coordinates.Length];
 
-            //var StopInit = new Stopwatch();
-            //var StopSolve = new Stopwatch();
+            var StopInit = new Stopwatch();
+            var StopSolve = new Stopwatch();
 
-            //Process myself = Process.GetCurrentProcess();
-            //long memstart = myself.PrivateMemorySize64 / (1024 * 1024);
+            var expSolver = new myCG();
+            StopInit.Start();
+            expSolver.Init(AAT);
+            StopInit.Stop();
+            StopSolve.Start();
+            expSolver.Solve(v, RHS);
+            StopSolve.Stop();
+            //long memend = myself.PrivateMemorySize64 / (1024 * 1024);
+            expSolver.Dispose();
 
-            //var expSolver = new myCG();
+            //var solver = new ilPSP.LinSolvers.HYPRE.GMRES();
+            //var precond = new ilPSP.LinSolvers.HYPRE.BoomerAMG() {
+            //    CoarseType = ilPSP.LinSolvers.HYPRE.CoarseTypes.cljp,
+            //    CycleType = ilPSP.LinSolvers.HYPRE.CycleType.V_Cycle,
+            //    RelaxType = ilPSP.LinSolvers.HYPRE.RelaxType.GaussSeidel,
+            //    MaxLevels = 3,
+            //};
+
+            //var solver = new ilPSP.LinSolvers.HYPRE.PCG() {
+            //    PrintLevel = 2,
+            //    MaxIterations = 1000,
+            //    Tolerance = 1E-6,
+            //};
+            ////var precond = new ilPSP.LinSolvers.HYPRE.Euclid() {
+            ////    Level = 1,
+            ////};
+            ////solver.NestedPrecond = precond;
             //StopInit.Start();
-            //expSolver.Init(AAT);
+            //solver.DefineMatrix(AAT);
             //StopInit.Stop();
             //StopSolve.Start();
-            //expSolver.Solve(v, RHS);
+            //solver.Solve(v, RHS);
             //StopSolve.Stop();
-            //long memend = myself.PrivateMemorySize64 / (1024 * 1024);
-            //expSolver.Dispose();
+            //solver.Dispose();
 
-            ////var solver = new ilPSP.LinSolvers.HYPRE.GMRES();
-            ////var precond = new ilPSP.LinSolvers.HYPRE.ParaSails();
-            ////solver.NestedPrecond = precond;
-            ////solver.DefineMatrix(AT);
-            ////solver.Solve(v,RHS);
-            ////solver.Dispose();
+            //StopInit.Start();
+            //OpSolver.DefineMatrix(AAT);
+            //StopInit.Stop();
+            ////Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
+            //StopSolve.Start();
+            //OpSolver.Solve(v, RHS);
+            //StopSolve.Stop();
+            ////Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
+            //OpSolver.Dispose();
 
-            //Console.WriteLine("Init time: " + StopInit.Elapsed.TotalSeconds);
-            //Console.WriteLine("Solve time: " + StopSolve.Elapsed.TotalSeconds);
+            Console.WriteLine("Init time: " + StopInit.Elapsed.TotalSeconds);
+            Console.WriteLine("Solve time: " + StopSolve.Elapsed.TotalSeconds);
             ////Console.WriteLine("Memory: " + (memend - memstart));
-
-            OpSolver.DefineMatrix(AAT);
-            //Console.WriteLine("rank {0}: solve constraint variables", this.m_grd.MpiRank);
-            OpSolver.Solve(v, RHS);
-            //Console.WriteLine("rank {0}: done", this.m_grd.MpiRank);
-            OpSolver.Dispose();
 
 #if DEBUG
             var Rdummy = RHS.CloneAs(); 
             AAT.SpMV(-1.0, v.CloneAs(),1.0, Rdummy);
-            Console.WriteLine("ResNorm of Solution ... "+Rdummy.MPI_L2Norm());
+            double tmp = (Rdummy.Length != 0 ? Rdummy.L2NormPow2() : 0).MPISum().Sqrt();
+            Console.WriteLine("ResNorm of Solution ... "+ tmp);
 #endif
 
             // x = RHS - ATv
@@ -2209,46 +2244,27 @@ namespace BoSSS.Foundation {
                 }
                 case 3: {
 
-                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
-                    NodeSet qNodes = quad1D.Nodes;
-                    int Nnds = ((degree + 1) * (degree + 2) / 2); 
-
-                    int degreeR = degree - numEcond; 
-                    int NoNdsR = ((degreeR + 1) * (degreeR + 2) / 2);
-                    if (NoNdsR <= 0) {
+                    int degreeR = degree - numEcond;
+                    int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
+                    if (NoNdsR <= 0)
                         return null;
 
-                    } else {
-                        if (edgeOrientation == null && numEcond > 0)
-                            throw new ArgumentException();
-                        if (edgeOrientation == null && numEcond < 1)
-                            edgeOrientation = new int[degree + 1];
+                    QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degreeR * 2);
+                    NodeSet qNodes = quad1D.Nodes;
 
-                        MultidimensionalArray nds = MultidimensionalArray.Create(Nnds, 2);
-                        int node = 0;
-                        int[] dirCount = new int[2];
-                        for (int dirIdx = 0; dirIdx < edgeOrientation.Length; dirIdx++) {
-                            int dir = edgeOrientation[dirIdx];
-                            int m = dirCount[dir];
-                            int n0 = dirCount[(dir == 0) ? 1 : 0];
-                            int nL = quad1D.NoOfNodes - dirIdx;
-                            for (int n = n0; n < n0 + nL; n++) {
-                                if (dir == 0) {
-                                    nds[node, 0] = qNodes[n, 0];
-                                    nds[node, 1] = qNodes[m, 0];
-                                }
-                                if (dir == 1) {
-                                    nds[node, 0] = qNodes[m, 0];
-                                    nds[node, 1] = qNodes[n, 0];
-                                }
-                                node++;
-                            }
-                            dirCount[dir]++;
+                    MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
+                    int node = 0;
+                    for (int n1 = 0; n1 <= degreeR; n1++) {
+                        for (int n2 = 0; n2 <= degreeR - n1; n2++) {
+                            nds[node, 0] = qNodes[n1, 0];
+                            nds[node, 1] = qNodes[n2, 0];
+                            node++;
                         }
-                        MultidimensionalArray ndsR = nds.ExtractSubArrayShallow(new int[] {Nnds - NoNdsR, 0 }, new int[] { Nnds - 1, 1 });
-                        //Console.WriteLine("No ndsR = {0}", ndsR.Lengths[0]);
-                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], ndsR);
                     }
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+
+                    return ndsR;
+
                 }
                 default:
                     throw new NotSupportedException("spatial dimension not supported");
