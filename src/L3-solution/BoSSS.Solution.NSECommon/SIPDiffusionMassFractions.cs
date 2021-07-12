@@ -111,7 +111,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
             //double rhoDAd = ((MaterialLawLowMach)EoS).GetDiffusivity(U[0]);
-            double rhoDAd = ((MaterialLawMultiSpecies)EoS).GetDiffusivity(U[0]);
+            double rhoDAd = ((MaterialLaw_MultipleSpecies)EoS).GetDiffusivity(U[0]);
 
             int massfractionIndex = this.i - 1;
             double Lewis = m_lewis[massfractionIndex];

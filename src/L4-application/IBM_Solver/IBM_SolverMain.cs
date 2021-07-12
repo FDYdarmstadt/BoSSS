@@ -333,7 +333,7 @@ namespace BoSSS.Application.IBM_Solver {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Unknowns, Residual, this.LsTrk, base.MultigridSequence, IBM_Op);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Unknowns, null, Residual, this.LsTrk, base.MultigridSequence, IBM_Op);
             }
             Debug.Assert(m_BDF_Timestepper != null);
         }

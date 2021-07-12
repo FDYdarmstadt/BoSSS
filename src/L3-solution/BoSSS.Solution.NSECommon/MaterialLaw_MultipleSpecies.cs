@@ -29,7 +29,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Material law for MultiSpecies low Mach number flows
     /// </summary>
-    public class MaterialLawMultiSpecies : MaterialLaw {
+    public class MaterialLaw_MultipleSpecies : MaterialLaw {
         [DataMember] private MaterialParamsMode MatParamsMode;
         [DataMember] public double R;
         [DataMember] private double[] MolarMasses;
@@ -41,10 +41,13 @@ namespace BoSSS.Solution.NSECommon {
         [DataMember]
         protected bool cpOne;
 
+        [DataMember]
+        public OneStepChemicalModel m_ChemModel;
+
         /// <summary>
         /// Ctor.
         /// </summary>
-        public MaterialLawMultiSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, bool _cpOne, double gasConstant, double T_ref) {
+        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, bool _cpOne, double gasConstant, double T_ref,OneStepChemicalModel chemModel) {
             this.MatParamsMode = MatParamsMode;
             this.R = gasConstant;
             this.thermoProperties = new ThermodynamicalProperties();
@@ -52,6 +55,7 @@ namespace BoSSS.Solution.NSECommon {
             this.T_ref = T_ref;
             this.rhoOne = _rhoOne;
             this.cpOne = _cpOne;
+            m_ChemModel = chemModel;
         }
 
         public ThermodynamicalProperties thermoProperties;
@@ -172,15 +176,14 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public double ConstantDensityValue { get; set; } = 1.0;
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public double ConstantViscosityValue { get; set; } = 1.0;
-
-
 
         /// <summary>
         /// Dimensionless Sutherland's law.
@@ -194,22 +197,22 @@ namespace BoSSS.Solution.NSECommon {
             double visc = 0; // nondimensional viscosity
             switch (this.MatParamsMode) {
                 case MaterialParamsMode.Constant: {
-                    visc = ConstantViscosityValue;
-                    break;
-                }
+                        visc = ConstantViscosityValue;
+                        break;
+                    }
                 case MaterialParamsMode.Sutherland: {
-                    double S = 110.56;
-                    visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
-                    break;
-                }
+                        double S = 110.56;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        break;
+                    }
                 case MaterialParamsMode.PowerLaw: {
-                    //double exponent = 0.7;
-                    double exponent = 2.0 / 3.0;//
-                    visc = Math.Pow(phi, exponent);
-                    break;
-                }
+                        //double exponent = 0.7;
+                        double exponent = 2.0 / 3.0;//
+                        visc = Math.Pow(phi, exponent);
+                        break;
+                    }
                 default:
-                throw new NotImplementedException();
+                    throw new NotImplementedException();
             }
             if (double.IsNaN(visc) || double.IsInfinity(visc) || visc < 0)
                 throw new ArithmeticException("Invalid value for viscosity: " + visc);
@@ -373,5 +376,115 @@ namespace BoSSS.Solution.NSECommon {
         //}
 
         #endregion Combustion related utils
+    }
+
+    public class OneStepChemicalModel {
+
+        private OneStepChemicalModel() {
+        }
+
+        private bool m_variableParameters;
+        private double s;
+        private double YO0;
+        private double YF0;
+
+        public OneStepChemicalModel(bool variableParameters, double _YO0, double _YF0) {
+            m_variableParameters = variableParameters;
+            s = 4.0;
+            YO0 = _YO0;
+            YF0 = _YF0;
+        }
+
+        /// <summary>
+        /// Calculates local mixture fraction
+        /// </summary>
+        /// <returns></returns>
+        virtual public double getMixtureFraction(double YF, double YO) {
+            double Z = (s * YF - YO + YO0) / (s * YF0 + YO0);
+            return Z;
+        }
+
+        /// <summary>
+        /// Calculates the global equivalence ratio
+        /// </summary>
+        /// <returns></returns>
+        virtual public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
+            Debug.Assert(!(Yf0 < 0));
+            Debug.Assert(!(Yox0 < 0));
+            double phi = s * Yf0 / Yox0;
+            return phi;
+        }
+
+        /// <summary>
+        /// Calculates the global equivalence ratio
+        /// </summary>
+        /// <returns></returns>
+        virtual public double getLocalEquivalenceRatio(double Yf, double Yox) {
+            Debug.Assert(!(Yf < -1e3));
+            Debug.Assert(!(Yox < -1e3));
+            double Z = getMixtureFraction(Yf, Yox);
+            double phi = s * (YF0 / YO0) * (Z / (1.0 - Z));
+            //Debug.Assert( phi >= -1e-1);
+            if (phi.IsNaNorInf()) {
+                phi = double.MaxValue;
+            }
+            return phi;
+        }
+
+        /// <summary>
+        /// Calculates local activation energy based on the one-Step model from Fernandez Tarrazo, E, A Sanchez, A Linan, and F Williams. “A Simple One-Step Chemistry Model for
+        /// Partially Premixed Hydrocarbon Combustion.” Combustion and Flame 147, no. 1–2 (October 2006): 32–38. https://doi.org/10.1016/j.combustflame.2006.08.001.
+        /// </summary>
+        /// <param name="Yf"></param>
+        /// <param name="Yox"></param>
+        /// <returns></returns>
+        public double getTa(double Yf, double Yox) {
+            double Ta;
+            double Ta0 = 15900;
+            if (m_variableParameters) {
+                double phi = getLocalEquivalenceRatio(Yf, Yox);
+
+                if (phi <= 0.64) {
+                    phi = phi < 0 ? 0.0 : phi;
+                    Ta = 1.0 + 8.250 * (phi - 0.64) * (phi - 0.64);
+                } else if (phi > 1.07) {
+                    //phi = phi < 0 ? 0.0 : phi;
+                    Ta = 1.0 + 1.443 * (phi - 1.07) * (phi - 1.07);
+                } else {
+                    Ta = 1.0;
+                }
+
+                Ta *= Ta0;
+            } else {
+                Ta = Ta0;
+            }
+            return Ta;
+        }
+
+        /// <summary>
+        /// Calculates local heat release based on the one-Step model from Fernandez Tarrazo, E, A Sanchez, A Linan, and F Williams. “A Simple One-Step Chemistry Model for
+        /// Partially Premixed Hydrocarbon Combustion.” Combustion and Flame 147, no. 1–2 (October 2006): 32–38. https://doi.org/10.1016/j.combustflame.2006.08.001.
+        /// </summary>
+        /// <param name="Yf"></param>
+        /// <param name="Yox"></param>
+        /// <returns></returns>
+        public double getHeatRelease(double Yf, double Yox) {
+            double q;
+            double q0 = 50100; // Heat release per KG fuel, [kJ/kg]
+            if (m_variableParameters) {
+                double phi = getLocalEquivalenceRatio(Yf, Yox);
+
+                if (phi <= 1.0) {
+                    q = 1.0;
+                } else {
+                    q = 1.0 - 0.21 * (phi - 1);
+                }
+                q *= q0;
+            } else {
+                q = q0;
+            }
+            //   q = q < 0 ? 0.0 : q;// Accept only positive or zero value for q.
+            return q;
+        }
     }
 }

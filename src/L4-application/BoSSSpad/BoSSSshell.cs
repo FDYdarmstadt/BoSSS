@@ -136,9 +136,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             AddObjectFormatter<ITimestepInfo>();
-            AddListFormatter<ITimestepInfo>();
+            AddEnumFormatter<ITimestepInfo>();
 
-            AddListFormatter<DGField>();
+            AddEnumFormatter<DGField>();
         }
 
 

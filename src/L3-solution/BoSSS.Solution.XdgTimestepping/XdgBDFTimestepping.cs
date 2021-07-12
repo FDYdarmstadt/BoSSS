@@ -717,6 +717,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
+            IEnumerable<DGField> Parameters,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
@@ -742,6 +743,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 for (int s = 1; s < m_Stack_u.Length; s++) {
                     m_Stack_u[s] = new CoordinateVector(Fields.Select(dgf => dgf.CloneAs()).ToArray());
                 }
+
+                base.CurrentParameters = Parameters != null ? Parameters.ToArray() : new DGField[0];
 
                 base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
