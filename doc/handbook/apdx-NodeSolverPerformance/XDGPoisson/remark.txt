@@ -1,3 +1,0 @@
-this stuff is consisten with what is written in handbook
-folder XdgPoisson_SFB contains new stuff: gmres_pMG und OrthoMG_Schwarz_pMG
-handbook has to be adjusted, before this can be overtaken and thus these two folders can be merged

@@ -1017,6 +1017,54 @@ namespace MPI.Wrappers {
             return result;
         }
 
+        /// <summary>
+        /// Scatters form <paramref name="root"/> rank to all other ranks
+        /// </summary>
+        static public int[] MPIScatter(this int[] L, int recvCount, int root) {
+            return L.MPIScatter(root, recvCount, csMPI.Raw._COMM.WORLD);
+        }
+        
+        /// <summary>
+        /// Scatters form <paramref name="root"/> rank to all other ranks
+        /// </summary>
+        static public int[] MPIScatter(this int[] L, int recvCount, int root, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            csMPI.Raw.Comm_Rank(comm, out int rank);
+
+            if(recvCount <= 0)
+                throw new ArgumentOutOfRangeException("Receive size must be greater than 0.");
+
+            int SndCount;
+            if(rank == root) {
+                SndCount = L.Length;
+                if(L.Length != recvCount * size)
+                    throw new ArgumentOutOfRangeException("Send buffer length must be == receive count * number of processors.");
+            } else {
+                SndCount = 0;
+            }
+
+            int[] result = new int[recvCount];
+            
+
+            unsafe {
+                fixed(int* pL = L, pResult = result) {
+                    csMPI.Raw.Scatter(
+                        (IntPtr)(pL),
+                        SndCount,
+                        csMPI.Raw._DATATYPE.INT,
+                        (IntPtr)pResult,
+                        recvCount,
+                        csMPI.Raw._DATATYPE.INT,
+                        root,
+                        comm);
+
+                }
+            }
+
+            return result;
+        }
+
+
 
         /// <summary>
         /// Gathers boolean arrays form each MPI rank in an array

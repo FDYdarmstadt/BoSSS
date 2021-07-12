@@ -32,6 +32,16 @@ namespace ilPSP {
     public static class MPICollectiveWatchDog {
 
         /// <summary>
+        /// Use this for debugging only! This will impact the performance.
+        /// For large parallel runs and if you are only interested to watch for specific methods.
+        /// Will be fired at DEBUG and RELEASE alike.
+        /// </summary>
+        public static void WatchAtRelease() {
+            Watch(csMPI.Raw._COMM.WORLD);
+        }
+
+
+        /// <summary>
         /// This is a debug/testing method: it
         /// terminates the application if the method is not called by all MPI processes in 
         /// the MPI world communicator.
