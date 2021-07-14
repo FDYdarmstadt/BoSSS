@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public LinearNavierCauchy(string speciesName, Solid material, int d, int D) {
+        public LinearNavierCauchy(string speciesName, Solid material, int d, int D, double artificialViscosity) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
@@ -40,6 +40,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
+
+            var artificialViscosityForm = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
+            AddComponent(artificialViscosityForm);
         }
 
         public override string SpeciesName => speciesName;

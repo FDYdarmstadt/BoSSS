@@ -39,7 +39,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            return (_uIN[0] + _uOUT[0])/2 * inp.Normal[d] * (_vIN - _vOUT);
+            return (_uIN[0] + _uOUT[0]) * 0.5 * inp.Normal[d] * (_vIN - _vOUT);
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {

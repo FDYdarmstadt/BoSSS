@@ -101,7 +101,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             acc1 *= -1;
 
-            double pnlty = 4 * Penalty(inp.jCellIn, inp.jCellOut);
+            double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
             acc1 += (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * pnlty;
             return viscosity* acc1;
         }
@@ -215,7 +215,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             acc1 *= -1;
 
-            double pnlty = 4 * Penalty(inp.jCellIn, inp.jCellOut);
+            double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
             acc1 += (_uIN[1] - _uOUT[1]) * (_vIN - _vOUT) * pnlty;
             return acc1 * viscosity;
         }

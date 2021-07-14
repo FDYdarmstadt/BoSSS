@@ -1224,7 +1224,7 @@ namespace ZwoLevelSetSolver {
             double v0 = 0.1;
             C.InitialValues_Evaluators.Add("VelocityX#A", X => v0);
             C.InitialValues_Evaluators.Add("VelocityX#B", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0.08);
+            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0.102);
             #endregion
 
 
@@ -1284,7 +1284,7 @@ namespace ZwoLevelSetSolver {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 2e-3;

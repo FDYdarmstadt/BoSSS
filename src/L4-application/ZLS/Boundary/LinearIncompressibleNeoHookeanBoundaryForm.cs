@@ -132,11 +132,11 @@ namespace ZwoLevelSetSolver.Boundary {
             double solidStress = 0.0;
             solidStress += 0.5 * lame2 * (( _Grad_uOUT[D + 1, 0]) * inp.Normal[0] - ( _Grad_uOUT[D + 0, 0]) * inp.Normal[1]);
             solidStress += 0.5 * lame2 * (_Grad_uOUT[D + 0, 1] * inp.Normal[0] - _Grad_uOUT[D + 0, 0] * inp.Normal[1]);
-            
+
             solidStress *= -1;
-            
+
             //Tension, symmetry
-            
+
             /*
             for(int i = 0; i < D; i++) {
                 acc2 -= 0.5 * viscosity * (_Grad_vOUT[i]) * inp.Normal[i];

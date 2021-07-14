@@ -94,7 +94,7 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Test functions and penalty
             //tension /= 2.0;
-            tension *= 1 * (-_vIN);
+            tension *= 1 * (_vIN);
 
 
 

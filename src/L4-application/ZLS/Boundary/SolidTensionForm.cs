@@ -17,18 +17,14 @@ namespace ZwoLevelSetSolver.Boundary {
         string[] variableNames;
         int d;
         double viscosity;
-        double lame2;
 
-        public SolidTensionForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double viscosity, double lame2) {
+        public SolidTensionForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double viscosity) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             this.d = d;
             this.viscosity = viscosity;
-            this.lame2 = lame2;
             variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
-            variableNames = variableNames.Cat(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            variableNames = variableNames.Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure);
         }
 
         public int LevelSetIndex => levelSetIndex;
@@ -85,16 +81,9 @@ namespace ZwoLevelSetSolver.Boundary {
             // ((fluidTension + solidTension) * n 
             for(int i = 0; i < D; i++) {
                 // = consistency terms
-                tension -= 0.5 * lame2 * (_Grad_uOUT[D + d, i]) * inp.Normal[i];
-                tension -= 0.5 * viscosity * (_Grad_uIN[d, i]) * inp.Normal[i];
+                tension -= viscosity * (_Grad_uIN[d, i]) * inp.Normal[i];
             }
-            //pressure
-            tension += 0.5 * ( _uOUT[2 * D]) * inp.Normal[d];
-            tension += 0.5 * (_uIN[2 * D]) * inp.Normal[d];
-
-            //Test functions and penalty
-            //tension /= 2.0;
-            tension *= 1 * (_vOUT);
+            tension *= 1 * (-_vOUT);
             return tension;
         }
     }

@@ -52,7 +52,7 @@ namespace ZwoLevelSetSolver {
             
             for(int d = 0; d < D; ++d) {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D));
+                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D, 0.00));
                     opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D));
                 }else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
@@ -79,13 +79,13 @@ namespace ZwoLevelSetSolver {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "A", "C", d, D));
                     opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "B", "C", d, D));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_B));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, 0.00));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, 0.00));
                 } else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D));
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D));
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
-                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_B));
+                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                 } else {
                     throw new NotSupportedException();
                 }
@@ -101,8 +101,8 @@ namespace ZwoLevelSetSolver {
             }
 
             //*
-            opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-            opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+            //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             //*/
 
             /*
