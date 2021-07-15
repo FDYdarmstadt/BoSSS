@@ -137,7 +137,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
-        static readonly double sqrt_3 = Math.Sqrt(3.0);
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -157,7 +156,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
 
             grad.ApplyAll(x => Math.Abs(x));
-            double delta = grad.InnerProduct(diameters) * sqrt_3;
+            double delta = grad.InnerProduct(diameters);
 
             return delta;
         }
@@ -202,8 +201,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray hessian = MultidimensionalArray.Create(1, 1, 3, 3);
             levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
             hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
-
-            hessian = jacobian * hessian;
+            
             hessian.ApplyAll(x => Math.Abs(x));
 
             //abs(Hessian) * 0,5 * diameters.^2 = delta ,( square each entry of diameters) , 
@@ -212,7 +210,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1], arg.Diameters[2] };
             psi.SetInactiveDimsToZero(arr);
             MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1 );
-            MultidimensionalArray delta = hessian * diameters;
+            MultidimensionalArray delta = hessian * jacobian * diameters;
 
             delta = delta.ExtractSubArrayShallow( -1, 0 );
 
@@ -220,7 +218,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //-----------------------------------------------------------------------------------------------------------------
 
             //|gk| > δk
-            //Gradient should be able to turn arround
+            //Gradient should not be able to change sign
             if (Math.Abs(gradient[heightDirection]) > delta[heightDirection])
             {
                 bool suitable = true;
@@ -252,7 +250,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override bool SubdivideSuitable(int numOfSubdivions)
         {
-            if (numOfSubdivions > 10)
+            if (numOfSubdivions > 5)
                 return false;
             return true;
         }
@@ -270,6 +268,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+            jacobian.TransposeInPlace();
 
             double[] tmp_grad = gradient.Storage;
             jacobian.MatVecMulInplace(1, tmp_grad, true);
@@ -290,6 +289,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(LinearSayeSpace<Cube> arg)
         {
+            Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
+                $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}, {lsData.GridDat.Cells.CellCenter[cell, 2]}");
             throw new NotImplementedException();
         }
 
