@@ -36,6 +36,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -523,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = true, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -533,18 +534,20 @@ namespace BoSSS.Application.XNSE_Solver {
                 var MachineName = System.Environment.MachineName;
                 switch(thisOS) {
                     case PlatformID.Unix:
-                    C.AlternateDbPaths = new[] {
-                        (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
-                        (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-                    break;
+                        C.AlternateDbPaths = new[] {
+                            (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                        break;
                     case PlatformID.Win32NT:
-                    if(MachineName == "PCMIT32")
-                        C.DbPath = @"D:\trash_db";
-                    else
-                        C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                    break;
+                        if (MachineName == "PCMIT32") {
+                            C.DbPath = @"D:\trash_db";
+                            //C.DbPath = @"D:\2D_Partitioning_samples";
+                        } else {
+                            C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                        }
+                        break;
                     default:
-                    throw new Exception("No Db-path specified. You stupid?");
+                        throw new Exception("No Db-path specified. You stupid?");
                 }               
                 (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
@@ -552,12 +555,13 @@ namespace BoSSS.Application.XNSE_Solver {
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
-            C.Tags.Add("tracing");
+            C.Tags.Add("3_cluster");
 
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
+            //C.SetFieldOptions(k, Math.Max(6, k * 2));
+            C.SetFieldOptions(k, Math.Max(k, 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             if (tracing) 
@@ -575,10 +579,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Func<double[], int> MakeDebugPart = delegate (double[] X) {
                 double x = X[0];
-
                 double range = xMax - xMin;
                 double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
-
                 return (int)((x - xMin) / interval);
             };
 
@@ -631,7 +633,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "debug";
             C.GridPartType = GridPartType.clusterHilbert;
+            C.Tags.Add(C.GridPartType.ToString());
 
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -764,15 +768,16 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.EqualOrder = false;
             //C.PressureStabilizationFactor = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -787,7 +792,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
-                C.AMR_startUpSweeps = 0;
+                C.AMR_startUpSweeps = 1;
             }
 
             // Timestepping
@@ -811,7 +816,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        public static XNSE_Control Rotating_Cube2(int dim = 3, int p = 2, int kelem = 10, bool useAMR = true) {
+        public static XNSE_Control Rotating_Cube2(int dim = 3, int p = 2, int kelem = 20, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
 

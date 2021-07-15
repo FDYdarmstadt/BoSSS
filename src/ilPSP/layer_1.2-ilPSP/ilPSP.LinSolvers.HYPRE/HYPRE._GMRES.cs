@@ -215,12 +215,12 @@ namespace ilPSP.LinSolvers.HYPRE
             }
         }
 
-        IImplicitPrecond m_NestedPrecond;
+        ISparseSolver m_NestedPrecond;
 
         /// <summary>
         /// <see cref="IImplicitPrecondSupport.SupportedPrecond"/>;
         /// </summary>
-        public IImplicitPrecond NestedPrecond {
+        public ISparseSolver NestedPrecond {
             get {
                 return m_NestedPrecond;
             }

@@ -790,9 +790,11 @@ namespace HilbertTest {
             // Arrange -- Grid
             int xMin = -1;
             int xMax = 1;
-            int numOfCells = 10;
+            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
+            int numOfCells = 4 * NoOfCores;
             double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
             var grid = Grid2D.Cartesian2DGrid(xNodes, xNodes);
+
             // Arrange -- CostCluster
             Func<double[], bool> Cond1 = (double[] X) => Math.Abs(X[0] - xMin) + Math.Abs(X[1] - xMin) < 2;
             Func<double[], bool> Cond2 = (double[] X) => !Cond1(X);
@@ -803,50 +805,12 @@ namespace HilbertTest {
             CostCluster.Add(Cluster2);
 
             // Act
-            var costmap = grid.ComputePartitionHilbert(CostCluster,Functype:0);
-            PlotThisShit(costmap,CostCluster,grid);
+            var rankmap = grid.ComputePartitionHilbert(CostCluster,Functype:0);
+            //PlotThisShit(costmap,CostCluster,grid);
 
             // Assert
-            var DOutput = grid.DiagnosticOutput;
-            Assert.IsTrue(DOutput[0] == 1);
-        }
-
-        private static void PlotThisShit(int[] map, List<int[]> costlist, GridCommons grid) {
-            long L = grid.CellPartitioning.LocalLength;
-            var basis = new Basis(grid.GridData, 0);
-            var MPIranks = new SinglePhaseField(basis, "MPIrank");
-            var CostCluster = new SinglePhaseField(basis, "CostCluster");
-            var BorderCells = new SinglePhaseField(basis, "BorderCells");
-            int[] FlatCostCluster = new int[L];
-            var barray = new BitArray((int)L);
-            var theDictonary = grid.GetGlobalId2CellIndexMap();
-
-            for (int iCluster = 0; iCluster < costlist.Count(); iCluster++) {
-                for (int iCell = 0; iCell < L; iCell++) {
-                    if (costlist[iCluster][iCell] == 10)
-                        FlatCostCluster[iCell] = iCluster;
-                }
-            }
-            foreach (long iGlobCell in grid.GetZellsOfChangingProc) {
-                int iCell = -1;
-                if (iGlobCell > grid.CellPartitioning.iE || iGlobCell < grid.CellPartitioning.i0)
-                    continue;
-                theDictonary.TryGetValue(iGlobCell, out iCell);
-                barray[iCell] = true;
-            }
-            for (int iCell = 0; iCell < L; iCell++) {
-                MPIranks.SetMeanValue(iCell, map[iCell]);
-                CostCluster.SetMeanValue(iCell, FlatCostCluster[iCell]);
-                if (barray[iCell]) {
-                    BorderCells.SetMeanValue(iCell, 1.0);
-                }
-            }
-
-            var list = new List<SinglePhaseField>();
-            list.Add(MPIranks);
-            list.Add(CostCluster);
-            list.Add(BorderCells);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 1);
+            int locNoCells = numOfCells * numOfCells / NoOfCores;
+            Assert.IsTrue((rankmap.Length == locNoCells).MPIEquals());
         }
 
         private static int[] CreateCostMap(GridCommons grid, Func<double[], bool> identifier) {
@@ -875,6 +839,50 @@ namespace HilbertTest {
                 }
             }
             return costmap;
+        }
+
+        private static void PlotThisShit(int[] map, List<int[]> costlist, GridCommons grid) {
+            long L = grid.CellPartitioning.LocalLength;
+            var basis = new Basis(grid.GridData, 0);
+            var MPIranks = new SinglePhaseField(basis, "MPIrank");
+            var CostCluster = new SinglePhaseField(basis, "CostCluster");
+            var BorderCells = new SinglePhaseField(basis, "BorderCells");
+            var HilbertIdx = new SinglePhaseField(basis, "HilbertIdx");
+            int[] FlatCostCluster = new int[L];
+            var barray = new BitArray((int)L);
+            //var theDictonary = grid.GetGlobalId2CellIndexMap();
+           
+            var LocHilbertIdx = grid.GetLocHilbertIdcs;
+
+            for (int iCluster = 0; iCluster < costlist.Count(); iCluster++) {
+                for (int iCell = 0; iCell < L; iCell++) {
+                    if (costlist[iCluster][iCell] == 10)
+                        FlatCostCluster[iCell] = iCluster;
+                }
+            }
+            foreach (long iGlobCell in grid.GetZellsOfChangingProc) {
+                int iCell = -1;
+                if (iGlobCell > grid.CellPartitioning.iE || iGlobCell < grid.CellPartitioning.i0)
+                    continue;
+                //theDictonary.TryGetValue(iGlobCell, out iCell);
+                iCell = grid.CellPartitioning.TransformIndexToLocal(iGlobCell);
+                barray[iCell] = true;
+            }
+            for (int iCell = 0; iCell < L; iCell++) {
+                MPIranks.SetMeanValue(iCell, map[iCell]);
+                CostCluster.SetMeanValue(iCell, FlatCostCluster[iCell]);
+                if (barray[iCell]) {
+                    BorderCells.SetMeanValue(iCell, 1.0);
+                }
+                HilbertIdx.SetMeanValue(iCell, LocHilbertIdx[iCell]);
+            }
+            
+            var list = new List<SinglePhaseField>();
+            list.Add(MPIranks);
+            list.Add(CostCluster);
+            list.Add(BorderCells);
+            list.Add(HilbertIdx);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
         }
     }
 }

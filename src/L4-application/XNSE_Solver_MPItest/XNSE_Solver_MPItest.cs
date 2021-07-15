@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -277,7 +278,20 @@ Index was outside the bounds of the array.
 
         public static void RotatingSphereWithAMR() {
             // 8 cores
-            var C = Rotating_Sphere(2,20,30,true,false);
+            var C = Rotating_Sphere(2,20,3,true,false);
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        public static void SayeBug() {
+            // 4 cores
+            var C = Rotating_Cube(1, 20, 3, true, false);
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
         }
 
         /// <summary>
@@ -310,9 +324,10 @@ Index was outside the bounds of the array.
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            RotCube_OrderNotSupportedInHMF();
+            //RotCube_OrderNotSupportedInHMF();
             //RotCube_CG_ProjectionOutOfMemoryException();
             //Rotating_Cube_compare4to1();
+            SayeBug();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

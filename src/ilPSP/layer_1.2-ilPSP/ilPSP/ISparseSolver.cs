@@ -147,7 +147,7 @@ namespace ilPSP.LinSolvers {
         /// Sets the preconditioner; The type of the value (for setting)
         /// must be contained in the <see cref="SupportedPrecond"/>-collection;
         /// </summary>
-        IImplicitPrecond NestedPrecond { get; set; }
+        ISparseSolver NestedPrecond { get; set; }
     }
 
     

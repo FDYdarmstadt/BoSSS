@@ -35,14 +35,16 @@ using ilPSP.Kraypis;
 
 namespace BoSSS.Foundation {
 
-    public class myCG : IDisposable {
-        public void Init(BlockMsrMatrix M) {
-            m_Matrix = M;
-            //var M_test = M.CloneAs();
-            //M_test.Acc(-1.0, M.Transpose());
-            //Console.WriteLine("Symm-test: " + M_test.InfNorm());
-            //Console.WriteLine("Inf-Norm: " + M.InfNorm());
-            //m_Matrix.SaveToTextFileSparse("M");
+    public class myCG : IDisposable, ISparseSolver {
+        public void DefineMatrix(IMutableMatrixEx M) {
+            BlockMsrMatrix bmsrM;
+            try {
+                bmsrM = (BlockMsrMatrix)M;
+            } catch (InvalidCastException ex) {
+                throw new NotSupportedException("this solver only supports block msr matrix as input!");
+            }
+
+            m_Matrix = bmsrM;
             PrecondInit();
         }
 
@@ -281,7 +283,7 @@ namespace BoSSS.Foundation {
             DirectSolve(xl,bl);
         }
 
-        public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
+        public SolverResult Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
             where Vec1 : IList<double>
             where Vec2 : IList<double> //
         {
@@ -331,78 +333,78 @@ namespace BoSSS.Foundation {
             var Xdummy = new double[R.Length];
 
             ResNorm = Math.Sqrt(alpha);
-                double ResNorm0 = ResNorm;
+            double ResNorm0 = ResNorm;
 
-            
+            // iterate
+            // =======
+            for (int n = 1; true; n++) {
 
-                // iterate
-                // =======
-                for (int n = 1; true; n++) {
-
-                if (n % 1 == 0 ) {
-                    var theResidual = new double[R.Length];
-                    if (x.Length != 0) {
-                        theResidual.SetV(ResReal);
-                        Xdummy.SetV(x);
-                    }
-                    m_Matrix.SpMV(-1.0, Xdummy, 1.0, theResidual);
-                    double bla = (x.Length != 0 ? theResidual.L2NormPow2() : 0).MPISum().Sqrt();
-                    Console.WriteLine("Res real at n"+n+":"+ bla);
-                }
-
-                Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
-                if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n >= 100) {
-                    if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
-                    break;
-                }
-
-                if (Math.Abs(alpha) <= double.Epsilon) {
-                    // numerical breakdown
-                    break;
-                }
-
-
-                m_Matrix.SpMV(1.0, P, 0, V);
-                double VxP_loc = x.Length != 0 ? V.InnerProd(P):0;
-                double VxP = VxP_loc.MPISum();
-                if (double.IsNaN(VxP) || double.IsInfinity(VxP))
-                    throw new ArithmeticException();
-                double lambda = alpha / VxP;
-                if (double.IsNaN(lambda) || double.IsInfinity(lambda))
-                    throw new ArithmeticException();
-
+            if (n % 1 == 0 ) {
+                var theResidual = new double[R.Length];
                 if (x.Length != 0) {
-                    x.AccV(lambda, P);
-                    R.AccV(-lambda, V);
+                    theResidual.SetV(ResReal);
+                    Xdummy.SetV(x);
                 }
+                m_Matrix.SpMV(-1.0, Xdummy, 1.0, theResidual);
+                double bla = (x.Length != 0 ? theResidual.L2NormPow2() : 0).MPISum().Sqrt();
+                Console.WriteLine("Res real at n"+n+":"+ bla);
+            }
 
-                //if (x.Length != 0) Z.SetV(R);
-                if (x.Length != 0) Z.Clear();
-                PrecondSolve(Z, R);
+            Console.WriteLine("ResNorm at n"+n+":"+ResNorm);
+            if (ResNorm / ResNorm0 + ResNorm < 1E-6 || ResNorm < 1E-6 || n >= 100) {
+                if (n > 1000) Console.WriteLine("maximum number of iterations reached. Solution maybe not been converged.");    
+                break;
+            }
+
+            if (Math.Abs(alpha) <= double.Epsilon) {
+                // numerical breakdown
+                break;
+            }
+
+
+            m_Matrix.SpMV(1.0, P, 0, V);
+            double VxP_loc = x.Length != 0 ? V.InnerProd(P):0;
+            double VxP = VxP_loc.MPISum();
+            if (double.IsNaN(VxP) || double.IsInfinity(VxP))
+                throw new ArithmeticException();
+            double lambda = alpha / VxP;
+            if (double.IsNaN(lambda) || double.IsInfinity(lambda))
+                throw new ArithmeticException();
+
+            if (x.Length != 0) {
+                x.AccV(lambda, P);
+                R.AccV(-lambda, V);
+            }
+
+            //if (x.Length != 0) Z.SetV(R);
+            if (x.Length != 0) Z.Clear();
+            PrecondSolve(Z, R);
                 
 
-                double alpha_neu_loc = x.Length != 0 ? R.InnerProd(Z) : 0;
-                double alpha_neu = alpha_neu_loc.MPISum();
+            double alpha_neu_loc = x.Length != 0 ? R.InnerProd(Z) : 0;
+            double alpha_neu = alpha_neu_loc.MPISum();
 
-                // compute residual norm
-                ResNorm = (x.Length != 0? R.L2NormPow2():0).MPISum().Sqrt();
+            // compute residual norm
+            ResNorm = (x.Length != 0? R.L2NormPow2():0).MPISum().Sqrt();
 
-                if (x.Length != 0) {
-                    P.ScaleV(alpha_neu / alpha);
-                    P.AccV(1.0, Z);
+            if (x.Length != 0) {
+                P.ScaleV(alpha_neu / alpha);
+                P.AccV(1.0, Z);
 
-                    alpha = alpha_neu;
-                }
-                }
+                alpha = alpha_neu;
+            }
+            }
 
-                if (!object.ReferenceEquals(_x, x))
-                    _x.SetV(x);
-                if (!object.ReferenceEquals(_R, R))
-                    _R.SetV(R);
-
-
-                return;
-            
+            if (!object.ReferenceEquals(_x, x))
+                _x.SetV(x);
+            if (!object.ReferenceEquals(_R, R))
+                _R.SetV(R);
+            var StartTime = DateTime.Now;
+            return new SolverResult() {
+                Converged = true,
+                NoOfIterations = 1,
+                RunTime = DateTime.Now - StartTime
+            };
         }
 
         public void Dispose() {
@@ -548,6 +550,88 @@ namespace BoSSS.Foundation {
         }
     }
 
+    class myCG2 : ISparseSolver{
+
+        public void DefineMatrix(IMutableMatrixEx matrix) {
+            BlockMsrMatrix bmsrM;
+            try {
+                bmsrM = (BlockMsrMatrix)matrix;
+            } catch (InvalidCastException ex) {
+                throw new NotSupportedException("this solver only supports block msr matrix as input!");
+            }
+            m_matrix = bmsrM;
+
+            m_localMsrMatrix = GetLocalMatrix(bmsrM);
+
+            m_ILU = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                Level = 0,
+                Comm = csMPI.Raw._COMM.SELF
+            };
+            if (m_localMsrMatrix != null && m_localMsrMatrix.RowPartitioning.LocalLength > 0) m_ILU.DefineMatrix(m_localMsrMatrix);
+
+            m_PCG = new ilPSP.LinSolvers.HYPRE.PCG() {
+                NestedPrecond = m_ILU,
+                PrintLevel = 2,
+                ConvergenceType = ConvergenceTypes.Relative,
+                MaxIterations = 100,
+                Tolerance = 1E-6,
+            };
+            m_PCG.DefineMatrix(m_matrix);
+        }
+
+        BlockMsrMatrix m_matrix;
+        ISparseSolver m_PCG;
+        ISparseSolver m_ILU;
+        MsrMatrix m_localMsrMatrix;
+
+        /// <summary>
+        /// convert global BlockMsrMatrix to local Msr matrix
+        /// </summary>
+        /// <param name="Matrix"></param>
+        /// <returns></returns>
+        public static MsrMatrix GetLocalMatrix(BlockMsrMatrix Matrix) {
+            int rank;
+            MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
+
+            // extraction of local Matrix block, ILU will be executed process local
+            var LocBlocki0s = new List<long>();
+            var LocBlockLen = new List<int>();
+            long IdxOffset = Matrix._RowPartitioning.i0;
+            for (int i = 0; i < Matrix._RowPartitioning.LocalNoOfBlocks; i++) {
+                long iBlock = i + Matrix._RowPartitioning.FirstBlock;
+                long i0 = Matrix._RowPartitioning.GetBlockI0(iBlock) - IdxOffset;
+                int Len = Matrix._RowPartitioning.GetBlockLen(iBlock);
+                LocBlocki0s.Add(i0);
+                LocBlockLen.Add(Len);
+            }
+            long[] RowISrc = Matrix._RowPartitioning.LocalLength.ForLoop(i => i + IdxOffset);
+
+            var part = new BlockPartitioning(Matrix._RowPartitioning.LocalLength, LocBlocki0s, LocBlockLen, csMPI.Raw._COMM.SELF);
+            BlockMsrMatrix localMatrix = new BlockMsrMatrix(part);
+
+            Matrix.WriteSubMatrixTo(localMatrix, RowISrc, default(long[]), RowISrc, default(long[]));
+            return localMatrix.ToMsrMatrix();
+        }
+
+
+
+        public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
+            where Tunknowns : IList<double>
+            where Trhs : IList<double> {
+            var StartTime = DateTime.Now;
+            m_PCG.Solve(x, rhs);
+            return new SolverResult() {
+                Converged = true,
+                NoOfIterations = 1,
+                RunTime = DateTime.Now - StartTime
+            };
+        }
+        public void Dispose() {
+            m_PCG.Dispose();
+            m_ILU.Dispose();
+            m_localMsrMatrix = null;
+        }
+    }
 
     /// <summary>
     /// continuous DG field via L2-projection with continuity constraints
@@ -587,10 +671,11 @@ namespace BoSSS.Foundation {
         }
 
         ISparseSolver m_OpSolver;
+        ISparseSolver m_PatchSolver;
 
 
         //int NoOfPatchesPerProcess = 0;  // if < 1 the number of patches is determined by 
-        int maxNoOfCoordinates = 10000; 
+        int maxNoOfCoordinates = 10000;
 
 
         /// <summary>
@@ -599,15 +684,8 @@ namespace BoSSS.Foundation {
         public ilPSP.LinSolvers.ISparseSolver OpSolver {
             get {
                 if (m_OpSolver == null) {
-                    //var solver = new ilPSP.LinSolvers.monkey.PCG();
-                    //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
-                    //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
-                    //solver.Tolerance = 1.0e-12;
-                    //var solver = new ilPSP.LinSolvers.HYPRE.PCG();
-                    //var precond = new ilPSP.LinSolvers.HYPRE.Euclid();
-                    //solver.NestedPrecond = precond;
-                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                    //var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
+                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    var solver = new myCG2();
                     m_OpSolver = solver;
                 }
 
@@ -615,6 +693,18 @@ namespace BoSSS.Foundation {
             }
         }
 
+        private ilPSP.LinSolvers.ISparseSolver PatchSolver {
+            get {
+                if (m_PatchSolver == null) {
+                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                        Parallelism = Parallelism.SEQ,
+                    };
+                    m_PatchSolver = solver;
+                }
+
+                return m_PatchSolver;
+            }
+        }
 
         /// <summary>
         /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
@@ -629,37 +719,56 @@ namespace BoSSS.Foundation {
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
             this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
 
+
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
             }
             if (mask.NoOfItemsLocally.MPISum() <= 0) {
                 throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
+            SetDGCoordinatesOnce(mask, DGField);
 
+            if (diagOutput0) {
+                Console.WriteLine("======================");
+                Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
+            }
+            //ProjectDGField_patchwise(DGField, mask, 1);
 
-            //if (diagOutput0) {
-            //    Console.WriteLine("======================");
-            //    Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
-            //}
+            var stwGlobalProjection = new Stopwatch();
+            stwGlobalProjection.Start();
             this.ProjectDGFieldOnPatch(DGField, mask);
+            stwGlobalProjection.Stop();
+            Console.WriteLine("time global projection: " + stwGlobalProjection.Elapsed.TotalSeconds);
+
             double jumpNorm = CheckLocalProjection(mask, true);
-            if (diagOutput0) 
+            if (diagOutput0)
                 Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
 
+            DGField[] alwaysgivesomethingback = null;
             if (jumpNorm > 1e-12) {
 
                 int NoOfFixedPatches = 1;
 
-                return ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
-
-            } else {
-
-                return null;
+                alwaysgivesomethingback = ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
             }
 
-
+            return alwaysgivesomethingback;
         }
 
+        // Sets DG coordinates, if flag m_DGFieldSetted true, then setted coordinates are used.
+        protected void SetDGCoordinatesOnce(CellMask mask, DGField dGField) {
+
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+                    int N = dGField.Basis.GetLength(j);
+                    for (int n = 0; n < N; n++) {
+                        m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = dGField.Coordinates[j, n];
+                    }
+                }
+            }
+        }
 
         bool diagOutput0 = true;
         bool diagOutput1 = false;
@@ -668,6 +777,9 @@ namespace BoSSS.Foundation {
         bool diagOutputMatlab = false;
 
         public DGField[] ProjectDGField_patchwise(ConventionalDGField DGField, CellMask mask = null, int NoOfPatchesPerProcess = 0) {
+
+            var stw = new Stopwatch();
+            stw.Start();
 
             Console.WriteLine("starting patch-wise correction");
 
@@ -696,6 +808,9 @@ namespace BoSSS.Foundation {
             //blocking.ElementAt(0)[5] = 6;
             //blocking.ElementAt(1)[0] = 5;
 
+            double timePart = stw.Elapsed.TotalSeconds;
+            stw.Reset();
+            stw.Start();
 
             // constrained projection on all patches
             List<CellMask> patches = new List<CellMask>();
@@ -713,13 +828,17 @@ namespace BoSSS.Foundation {
                     Console.WriteLine("======================");
                     Console.WriteLine("project patch {0}: No of cells {1}", pC, patch.NoOfItemsLocally);
                 }
-                this.ProjectDGFieldOnPatch(DGField, patch, null, true);
+                this.ProjectDGFieldOnPatch(DGField, patch, true, null);
                 if (diagOutput0) {
                     double jumpNorm = CheckLocalProjection(patch);
                     Console.WriteLine("L2 jump norm = {0}", jumpNorm);
                 }
                 pC++;
             }
+
+            double timeProjection = stw.Elapsed.TotalSeconds;
+            stw.Reset();
+            stw.Start();
 
             MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
@@ -784,7 +903,7 @@ namespace BoSSS.Foundation {
                 //    double jumpNorm = CheckLocalProjection(mergePatchCM);
                 //    Console.WriteLine("merge patch: L2 jump norm = {0}", jumpNorm);
                 //}
-                this.ProjectDGFieldOnPatch(DGField, mergePatchCM, mergeBoundary, true);
+                this.ProjectDGFieldOnPatch(DGField, mergePatchCM, true, mergeBoundary);
                 if (diagOutput0) {
                     double jumpNorm = CheckLocalProjection(mergePatchCM);
                     Console.WriteLine("merge patch: L2 jump norm = {0}", jumpNorm);
@@ -796,21 +915,23 @@ namespace BoSSS.Foundation {
                     }
                 }
 
-                // plot patches for debugging
-                SinglePhaseField patchField = new SinglePhaseField(m_Basis, "Patches");
-                int pColor = 1;
-                foreach (CellMask patch in patches) {
-                    patchField.AccConstant(pColor, patch);
-                    pColor++;
-                }
 
-                SinglePhaseField mergePatchField = new SinglePhaseField(m_Basis, "Merging-Patch");
-                mergePatchField.AccConstant(1.0, mergePatchCM);
 
-                //List<DGField> returnFields = new List<DGField>();
-                returnFields.Add(patchField);
-                returnFields.Add(mergePatchField);
-                returnFields.Add(localProj);
+                //// plot patches for debugging
+                //SinglePhaseField patchField = new SinglePhaseField(m_Basis, "Patches");
+                //int pColor = 1;
+                //foreach (CellMask patch in patches) {
+                //    patchField.AccConstant(pColor, patch);
+                //    pColor++;
+                //}
+
+                //SinglePhaseField mergePatchField = new SinglePhaseField(m_Basis, "Merging-Patch");
+                //mergePatchField.AccConstant(1.0, mergePatchCM);
+
+                ////List<DGField> returnFields = new List<DGField>();
+                //returnFields.Add(patchField);
+                //returnFields.Add(mergePatchField);
+                //returnFields.Add(localProj);
 
 
 
@@ -882,7 +1003,9 @@ namespace BoSSS.Foundation {
                 //return returnFields.ToArray();
             }
 
-            MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            double timeMergeProjection = stw.Elapsed.TotalSeconds;
+            stw.Reset();
+            stw.Start();
 
             //// projection of local projection on separate patches
             //DGField exchangeProj = new SinglePhaseField(m_Basis, "exchangeProjection");
@@ -891,7 +1014,26 @@ namespace BoSSS.Foundation {
             //m_Coordinates = exchangeProj.CoordinateVector.ToArray();
 
             // continuity projection between processes
+            //InterProcessProjectionBranch(mask,DGField);
+
+            double timeOverProcessProjection = stw.Elapsed.TotalSeconds;
+            stw.Reset();
+
+            Console.WriteLine("time partitioning: " + timePart);
+            Console.WriteLine("time projection local: " + timeProjection);
+            Console.WriteLine("time projection merge: " + timeMergeProjection);
+            Console.WriteLine("time projection mpi: " + timeOverProcessProjection);
+            double timetot = timePart + timeProjection + timeMergeProjection + timeOverProcessProjection;
+            Console.WriteLine("time total: " + timetot);
+
+            return returnFields.ToArray();
+        }
+
+
+        protected void InterProcessProjectionBranch(CellMask mask, ConventionalDGField DGField){
             if (m_grd.MpiSize > 1) {
+
+                int J = m_grd.CellPartitioning.LocalLength;
 
                 int mpiRank = this.m_grd.MpiRank;
 
@@ -910,7 +1052,7 @@ namespace BoSSS.Foundation {
                 }
 
                 int[,] cellInd = this.m_grd.Edges.CellIndices;
-                BitArray localInterProcBA = new BitArray(J); 
+                BitArray localInterProcBA = new BitArray(J);
                 foreach (int edge in interProcEdges) {
                     int cell1 = cellInd[edge, 0];
                     int cell2 = cellInd[edge, 1];
@@ -944,264 +1086,19 @@ namespace BoSSS.Foundation {
 
                 //MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
-                //if (diagOutput0) {
-                //    Console.WriteLine("======================");
-                //    Console.WriteLine("project on merging patch: No of local/wExternal cells {0}/{1}", localInterProcPatch.NoOfItemsLocally, localInterProcPatch.NoOfItemsLocally_WithExternal);
-                //}
-                //this.ProjectDGFieldOnInterProcPatch(DGField, localInterProcPatch, lipPatchInnerEM, fixedBoundaryMask);
-                //if (diagOutput0) {
-                //    double jumpNorm = CheckLocalProjection(localInterProcPatch);
-                //    Console.WriteLine("L2 jump norm = {0}", jumpNorm);
-                //}
-
-
+                if (diagOutput0) {
+                    Console.WriteLine("======================");
+                    Console.WriteLine("project on merging patch: No of local/wExternal cells {0}/{1}", localInterProcPatch.NoOfItemsLocally, localInterProcPatch.NoOfItemsLocally_WithExternal);
+                }
+                this.ProjectDGFieldOnInterProcPatch(DGField, localInterProcPatch, lipPatchInnerEM, fixedBoundaryMask);
+                if (diagOutput0) {
+                    double jumpNorm = CheckLocalProjection(localInterProcPatch);
+                    Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+                }
             }
-
-            return returnFields.ToArray();
         }
 
-
-        double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
-
-            if (mask == null) {
-                mask = CellMask.GetFullMask(m_grd);
-            }
-            SubGrid maskSG = new SubGrid(mask);
-            EdgeMask innerEM = maskSG.InnerEdgesMask;
-
-
-            DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
-            int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
-            localProj._Acc(1.0, m_Coordinates, 0, stride, true);
-            localProj.MPIExchange();
-
-            double Unorm = 0;
-
-            EdgeQuadrature.GetQuadrature(
-                new int[] { 1 }, m_grd,
-                (new EdgeQuadratureScheme(true, innerEM)).Compile(m_grd, localProj.Basis.Degree * 2),
-                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
-                    NodeSet NS = QR.Nodes;
-                    EvalResult.Clear();
-                    int NoOfNodes = NS.NoOfNodes;
-                    for (int j = 0; j < Length; j++) {
-                        int iEdge = j + i0;
-
-                        var edgeInfo = m_grd.Edges.Info[iEdge];
-                        if (!onInterProc && edgeInfo.HasFlag(EdgeInfo.Interprocess))
-                            continue;
-
-                        int jCell_IN = m_grd.Edges.CellIndices[iEdge, 0];
-                        int jCell_OT = m_grd.Edges.CellIndices[iEdge, 1];
-                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
-
-                        if (jCell_OT >= 0) {
-
-                            int iTrafo_IN = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
-                            int iTrafo_OT = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
-
-                            MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
-                            MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
-
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
-
-                            localProj.Evaluate(jCell_IN, 1, NS_IN, uIN);
-                            localProj.Evaluate(jCell_OT, 1, NS_OT, uOT);
-
-                            uDiff.Acc(+1.0, uIN);
-                            uDiff.Acc(-1.0, uOT);
-
-                            //if (uDiff.L2Norm() > 1e-10)
-                            //    Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
-                        } else {
-                            uDiff.Clear();
-                        }
-                    }
-
-                    EvalResult.ApplyAll(x => x * x);
-                },
-                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
-                    Unorm += ResultsOfIntegration.Sum();
-                }).Execute();
-
-            Unorm = Unorm.MPISum();
-
-            return Unorm.Sqrt();
-
-        }
-
-
-
-        public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask, 
-            EdgeMask fixedBoundaryMask = null, bool onInternalValues = false) {
-
-
-            int D = this.Basis.GridDat.SpatialDimension;
-
-            // list of masked vertices inside domain mask
-            List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
-            List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
-            List<GeometricCellForProjection> maskedCells = new List<GeometricCellForProjection>();
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-
-                    GeometricCellForProjection gCell = new GeometricCellForProjection(j);
-                    maskedCells.Add(gCell);
-
-                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
-                    foreach (int vert in vertAtCell) {
-                        GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
-                        if (!maskedVert.Contains(gVert)) {
-                            maskedVert.Add(gVert);
-                        }
-                    }
-                    List<GeometricEdgeForProjection> edgesAtCell = GetGeometricEdgesForCell(vertAtCell);
-                    foreach (var gEdge in edgesAtCell) {
-                        if (!maskedEdges.Contains(gEdge)) {
-                            maskedEdges.Add(gEdge);
-                        }
-                    }
-                }
-            }
-            //if (fixedBoundaryMask != null) {
-            //    Console.WriteLine("Number of masked vertices: {0}", maskedVert.Count);
-            //    Console.WriteLine("Number of masked edges: {0}", maskedEdges.Count);
-            //}
-
-
-            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
-            if (!onInternalValues) {
-                foreach (var chunk in mask) {
-                    int j0 = chunk.i0;
-                    int jE = chunk.JE;
-                    for (int j = j0; j < jE; j++) {
-                        int N = DGField.Basis.GetLength(j);
-                        for (int n = 0; n < N; n++) {
-                            m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = DGField.Coordinates[j, n];
-                        }
-                    }
-                }
-            }
-
-
-            // construction of constraints matrix A
-            // ====================================
-
-            SubGrid maskSG = new SubGrid(mask);
-            EdgeMask innerEM = maskSG.InnerEdgesMask;
-
-            //Console.WriteLine("innerEM local items: {0}", innerEM.NoOfItemsLocally);
-
-            //if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
-            //    Console.WriteLine("no inner edges: return without changes");
-            //    return;
-            //}
-
-            //List<int> AcceptedEdges = new List<int>();
-            List<NodeSet> AcceptedNodes = new List<NodeSet>();
-
-
-            if (fixedBoundaryMask != null) {
-                // in case of fixed boundary projection (higher priority regarding constrains)
-                determineConstrainsNodes(fixedBoundaryMask, maskedVert, maskedEdges, AcceptedNodes, true, maskedCells);
-                //determineInterProcConstrainsNodes(fixedBoundaryMask, AcceptedNodes, true, maskedCells);
-
-                // inner edges on merge domain
-                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes, false, maskedCells);
-                //determineInterProcConstrainsNodes(innerEM, AcceptedNodes, false, maskedCells);
-
-            } else {
-
-                // local inner edges per process
-                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes);  // check if switch for 2D/3D is possible (overdetermined vertices in 3D?)
-
-            }
-            //Console.WriteLine("No of processed edges: {0}", AcceptedNodes.Count);
-
-
-            List<long> BlockI0 = new List<long>();
-            List<int> BlockLen = new List<int>();
-            long i0 = 0;
-            int nodeCount = 0;
-            foreach (NodeSet ns in AcceptedNodes) {
-                if (ns != null) {
-                    BlockI0.Add(i0);
-                    BlockLen.Add(ns.Lengths[0]);
-                    i0 += ns.Lengths[0];
-                    nodeCount += ns.NoOfNodes;
-                }
-            }
-
-            BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
-            BlockMsrMatrix A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
-
-            int count = 0;
-            long _nodeCount = A.RowPartitioning.i0; // start at global index
-            double[] RHS_non0c = new double[rowBlockPart.LocalLength];   // non-zero equality constrains
-
-            if (fixedBoundaryMask != null) {
-
-                DGField internalProj = new SinglePhaseField(m_Basis);
-                int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
-                internalProj._Acc(1.0, m_Coordinates, 0, stride, true);
-
-                var retCount = assembleConstrainsMatrix_nonZeroConstrains(A, fixedBoundaryMask, AcceptedNodes, mask, internalProj, RHS_non0c, count, _nodeCount);
-                count = retCount.Item1;
-                _nodeCount = retCount.Item2;
-
-            }
-
-            assembleConstrainsMatrix(A, innerEM, AcceptedNodes, count, _nodeCount);
-
-
-            // test with matlab
-            if (diagOutputMatlab) {
-                MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-                Console.WriteLine("Calling MATLAB/Octave...");
-                using (BatchmodeConnector bmc = new BatchmodeConnector()) {
-                    bmc.PutSparseMatrix(A, "A");
-                    bmc.Cmd("rank_A = rank(full(A))");
-                    bmc.Cmd("rank_AT = rank(full(A'))");
-                    bmc.GetMatrix(output, "[rank_A, rank_AT]");
-
-                    bmc.Execute(false);
-                }
-
-                Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
-                Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
-            }
-
-
-            // solve system
-            // ============
-
-            BlockMsrMatrix AT = A.Transpose();
-
-            BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
-            BlockMsrMatrix.Multiply(AAT, A, AT);
-
-            double[] RHS = new double[rowBlockPart.LocalLength];           
-            A.SpMV(1.0, m_Coordinates, 0.0, RHS);
-            RHS.AccV(-1.0, RHS_non0c);
-
-            double[] v = new double[rowBlockPart.LocalLength];
-            double[] x = new double[m_Coordinates.Length];          
-
-            OpSolver.DefineMatrix(AAT);
-            OpSolver.Solve(v, RHS);
-            OpSolver.Dispose();
-
-            // x = RHS - ATv
-            AT.SpMV(-1.0, v, 0.0, x);
-            m_Coordinates.AccV(1.0, x);          
-
-        }
-
-
-        public void ProjectDGFieldOnInterProcPatch(ConventionalDGField DGField, CellMask mask, EdgeMask innerEdgeMask, EdgeMask fixedBoundaryMask) {
+        protected void ProjectDGFieldOnInterProcPatch(ConventionalDGField DGField, CellMask mask, EdgeMask innerEdgeMask, EdgeMask fixedBoundaryMask) {
 
 
             int D = this.Basis.GridDat.SpatialDimension;
@@ -1322,9 +1219,9 @@ namespace BoSSS.Foundation {
             double[] v = new double[rowBlockPart.LocalLength];
             double[] x = new double[m_Coordinates.Length];
 
-            OpSolver.DefineMatrix(AAT);
-            OpSolver.Solve(v, RHS);
-            OpSolver.Dispose();
+            PatchSolver.DefineMatrix(AAT);
+            PatchSolver.Solve(v, RHS);
+            PatchSolver.Dispose();
 
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
@@ -1333,6 +1230,255 @@ namespace BoSSS.Foundation {
         }
 
 
+
+        protected double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
+
+            if (mask == null) {
+                mask = CellMask.GetFullMask(m_grd);
+            }
+            SubGrid maskSG = new SubGrid(mask);
+            EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+
+            DGField localProj = new SinglePhaseField(m_Basis, "localProjection");
+            int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
+            localProj._Acc(1.0, m_Coordinates, 0, stride, true);
+            localProj.MPIExchange();
+
+            double Unorm = 0;
+
+            EdgeQuadrature.GetQuadrature(
+                new int[] { 1 }, m_grd,
+                (new EdgeQuadratureScheme(true, innerEM)).Compile(m_grd, localProj.Basis.Degree * 2),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    NodeSet NS = QR.Nodes;
+                    EvalResult.Clear();
+                    int NoOfNodes = NS.NoOfNodes;
+                    for (int j = 0; j < Length; j++) {
+                        int iEdge = j + i0;
+
+                        var edgeInfo = m_grd.Edges.Info[iEdge];
+                        if (!onInterProc && edgeInfo.HasFlag(EdgeInfo.Interprocess))
+                            continue;
+
+                        int jCell_IN = m_grd.Edges.CellIndices[iEdge, 0];
+                        int jCell_OT = m_grd.Edges.CellIndices[iEdge, 1];
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+
+                        if (jCell_OT >= 0) {
+
+                            int iTrafo_IN = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
+                            int iTrafo_OT = m_grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
+
+                            MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
+                            MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
+
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+
+                            localProj.Evaluate(jCell_IN, 1, NS_IN, uIN);
+                            localProj.Evaluate(jCell_OT, 1, NS_OT, uOT);
+
+                            uDiff.Acc(+1.0, uIN);
+                            uDiff.Acc(-1.0, uOT);
+
+                            //if (uDiff.L2Norm() > 1e-10)
+                            //    Console.WriteLine("uDiff at edge {0} between cell {1} and cell {2}: {3}", iEdge, jCell_IN, jCell_OT, uDiff.L2Norm());
+                        } else {
+                            uDiff.Clear();
+                        }
+                    }
+
+                    EvalResult.ApplyAll(x => x * x);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    Unorm += ResultsOfIntegration.Sum();
+                }).Execute();
+
+            Unorm = Unorm.MPISum();
+
+            return Unorm.Sqrt();
+
+        }
+
+        
+
+        public void ProjectDGFieldOnPatch(ConventionalDGField DGField, CellMask mask, bool IsLocal = false,
+            EdgeMask fixedBoundaryMask = null) {
+
+
+            int D = this.Basis.GridDat.SpatialDimension;
+
+            // list of masked vertices inside domain mask
+            List<GeometricVerticeForProjection> maskedVert = new List<GeometricVerticeForProjection>();
+            List<GeometricEdgeForProjection> maskedEdges = new List<GeometricEdgeForProjection>();
+            List<GeometricCellForProjection> maskedCells = new List<GeometricCellForProjection>();
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+
+                    GeometricCellForProjection gCell = new GeometricCellForProjection(j);
+                    maskedCells.Add(gCell);
+
+                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
+                    foreach (int vert in vertAtCell) {
+                        GeometricVerticeForProjection gVert = new GeometricVerticeForProjection(vert);
+                        if (!maskedVert.Contains(gVert)) {
+                            maskedVert.Add(gVert);
+                        }
+                    }
+                    List<GeometricEdgeForProjection> edgesAtCell = GetGeometricEdgesForCell(vertAtCell);
+                    foreach (var gEdge in edgesAtCell) {
+                        if (!maskedEdges.Contains(gEdge)) {
+                            maskedEdges.Add(gEdge);
+                        }
+                    }
+                }
+            }
+            //if (fixedBoundaryMask != null) {
+            //    Console.WriteLine("Number of masked vertices: {0}", maskedVert.Count);
+            //    Console.WriteLine("Number of masked edges: {0}", maskedEdges.Count);
+            //}
+
+            // construction of constraints matrix A
+            // ====================================
+
+            SubGrid maskSG = new SubGrid(mask);
+            EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            //Console.WriteLine("innerEM local items: {0}", innerEM.NoOfItemsLocally);
+
+            //if (innerEM.NoOfItemsLocally.MPISum() <= 0) {
+            //    Console.WriteLine("no inner edges: return without changes");
+            //    return;
+            //}
+
+            //List<int> AcceptedEdges = new List<int>();
+            List<NodeSet> AcceptedNodes = new List<NodeSet>();
+
+
+            if (fixedBoundaryMask != null) {
+                // in case of fixed boundary projection (higher priority regarding constrains)
+                determineConstrainsNodes(fixedBoundaryMask, maskedVert, maskedEdges, AcceptedNodes, true, maskedCells);
+                //determineInterProcConstrainsNodes(fixedBoundaryMask, AcceptedNodes, true, maskedCells);
+
+                // inner edges on merge domain
+                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes, false, maskedCells);
+                //determineInterProcConstrainsNodes(innerEM, AcceptedNodes, false, maskedCells);
+
+            } else {
+
+                // local inner edges per process
+                determineConstrainsNodes(innerEM, maskedVert, maskedEdges, AcceptedNodes);  // check if switch for 2D/3D is possible (overdetermined vertices in 3D?)
+
+            }
+            //Console.WriteLine("No of processed edges: {0}", AcceptedNodes.Count);
+
+
+            List<long> BlockI0 = new List<long>();
+            List<int> BlockLen = new List<int>();
+            long i0 = 0;
+            int nodeCount = 0;
+            foreach (NodeSet ns in AcceptedNodes) {
+                if (ns != null) {
+                    BlockI0.Add(i0);
+                    BlockLen.Add(ns.Lengths[0]);
+                    i0 += ns.Lengths[0];
+                    nodeCount += ns.NoOfNodes;
+                }
+            }
+
+            // Partitioning of A considering local or global partitioning
+            //MPI_Comm comm = IsLocal ? csMPI.Raw._COMM.SELF : m_Mapping.MPI_Comm;
+            //List<long> ColBlockIOs = new List<long>();
+            //List<int> ColBlockL = new List<int>();
+            //long FirstBlock = m_Mapping.FirstBlock;
+            //int LocalBlocks = m_Mapping.LocalNoOfBlocks;
+            //long Offset = m_Mapping.i0;
+            //int LocalDOF = m_Mapping.LocalLength;
+            //for (long iBlock = 0; iBlock < LocalBlocks; iBlock++) {
+            //    long GlobBlockIdx = iBlock + FirstBlock;
+            //    ColBlockIOs.Add(m_Mapping.GetBlockI0(GlobBlockIdx) - Offset);
+            //    ColBlockL.Add(m_Mapping.GetBlockLen(GlobBlockIdx));
+            //}
+            BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
+            BlockMsrMatrix A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
+
+            int count = 0;
+            long _nodeCount = A.RowPartitioning.i0; // start at global index
+            double[] RHS_non0c = new double[rowBlockPart.LocalLength];   // non-zero equality constrains
+
+            if (fixedBoundaryMask != null) {
+
+                DGField internalProj = new SinglePhaseField(m_Basis);
+                int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
+                internalProj._Acc(1.0, m_Coordinates, 0, stride, true);
+
+                var retCount = assembleConstrainsMatrix_nonZeroConstrains(A, fixedBoundaryMask, AcceptedNodes, mask, internalProj, RHS_non0c, count, _nodeCount);
+                count = retCount.Item1;
+                _nodeCount = retCount.Item2;
+
+            }
+
+            assembleConstrainsMatrix(A, innerEM, AcceptedNodes, count, _nodeCount);
+
+
+            // test with matlab
+            if (diagOutputMatlab) {
+                MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
+                Console.WriteLine("Calling MATLAB/Octave...");
+                using (BatchmodeConnector bmc = new BatchmodeConnector()) {
+                    bmc.PutSparseMatrix(A, "A");
+                    bmc.Cmd("rank_A = rank(full(A))");
+                    bmc.Cmd("rank_AT = rank(full(A'))");
+                    bmc.GetMatrix(output, "[rank_A, rank_AT]");
+
+                    bmc.Execute(false);
+                }
+
+                Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
+                Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+            }
+
+
+            // solve system
+            // ============
+
+            BlockMsrMatrix AT = A.Transpose();
+
+            BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
+            BlockMsrMatrix.Multiply(AAT, A, AT);
+
+            double[] RHS = new double[rowBlockPart.LocalLength];           
+            A.SpMV(1.0, m_Coordinates, 0.0, RHS);
+            RHS.AccV(-1.0, RHS_non0c);
+
+            double[] v = new double[rowBlockPart.LocalLength];
+            double[] x = new double[m_Coordinates.Length];
+
+            var solver = InitializeSolver(IsLocal, AAT);
+            solver.Solve(v, RHS);
+            solver.Dispose();
+
+            // x = RHS - ATv
+            AT.SpMV(-1.0, v, 0.0, x);
+            m_Coordinates.AccV(1.0, x);          
+
+        }
+
+        private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
+            ISparseSolver solver; 
+            if (IsLocal) {
+                solver = PatchSolver;
+                var crunchedmatrix = myCG2.GetLocalMatrix(matrix);
+                solver.DefineMatrix(crunchedmatrix);
+            } else {
+                solver = OpSolver;
+                solver.DefineMatrix(matrix);
+            }
+            return solver;
+        }
 
         void determineConstrainsNodes(EdgeMask constrainsEdges, List<GeometricVerticeForProjection> maskedVert,
             List<GeometricEdgeForProjection> maskedEdges, List<NodeSet> AcceptedNodes, 
@@ -1720,6 +1866,7 @@ namespace BoSSS.Foundation {
                         break;
 
                     var results = m_Basis.EdgeEval(qNodes, j, 1);
+
 
                     for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
                         // Cell1   
