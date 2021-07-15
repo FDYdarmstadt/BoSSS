@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ZwoLevelSetSolver</RootNamespace>
+    <AssemblyName>ZwoLevelSetSolver</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="nunit.framework, Version=3.12.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\public\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation.Grid\BoSSS.Foundation.Grid.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\..\..\..\public\src\L4-application\XNSE_Solver\XNSE_Solver.csproj" />
+  </ItemGroup>
+</Project>
