@@ -268,7 +268,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             double[] tmp_grad = gradient.Storage;
