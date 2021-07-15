@@ -554,6 +554,55 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
+    abstract class SingleCubeCubeTestCase : SingleCubeTestCase {
+        public SingleCubeCubeTestCase(GridSizes gridSize, GridTypes gridType)
+            : base(gridSize, gridType) {
+        }
+
+        public override int LevelSetDegree {
+            get {
+                return 2;
+            }
+        }
+
+        public override void LevelSetInitialValue(MultidimensionalArray input, MultidimensionalArray output) {
+            for (int i = 0; i < output.GetLength(0); i++) {
+                double x = input[i, 0];
+                double y = input[i, 1];
+                double z = input[i, 2];
+
+                double[] pos =  new double[3] { 0.2625, 0.0125, 0.0125 };
+                double scaleup = 80;
+                pos.ScaleV(-scaleup);
+                double particleRad = 0.261 * scaleup;
+                double angle = 0.01*10;
+
+                output[i] = -Math.Max(Math.Abs((x - pos[0]) * Math.Cos(angle) - (y - pos[1]) * Math.Sin(angle)),
+                                        Math.Max(Math.Abs((x - pos[0]) * Math.Sin(angle) + (y - pos[1]) * Math.Cos(angle)),
+                                        Math.Abs(z - pos[2])))
+                                        + particleRad;
+            }
+        }
+
+        public override IGrid GetGrid(IDatabaseInfo db) {
+            return Grid3D.Cartesian3DGrid(
+                        GenericBlas.Linspace(-1.0, 1.0, 2),
+                        GenericBlas.Linspace(-1.0, 1.0, 2),
+                        GenericBlas.Linspace(-1.0, 1.0, 2));
+        }
+    }
+
+    class SingleCubeCubeVolumeTestCase : SingleCubeCubeTestCase, IVolumeTestCase {
+        public SingleCubeCubeVolumeTestCase(GridSizes gridSize, GridTypes gridType)
+            : base(gridSize, gridType) {
+        }
+
+        public override double Solution {
+            get {
+                return 0;
+            }
+        }
+    }
 
     class SingleCubeParaboloidVolumeTestCase : SingleCubeParaboloidTestCase, IVolumeTestCase {
 

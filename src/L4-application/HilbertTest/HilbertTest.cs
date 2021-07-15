@@ -34,6 +34,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -50,7 +51,7 @@ namespace HilbertTest {
 
 
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
-        [Test]       
+        [Test]
         public static void Test() {
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             //Testing coordinate samples
@@ -79,7 +80,7 @@ namespace HilbertTest {
             Assert.IsTrue(gridevendynamic, "Dynamic Distribution along HilbertCurve is corrupted");
 
             //Comparing simulations with&without Repartitioning while LTS-Reclustering on
-            bool RepNoEffectonResult=TestingReclusteringIndependency();
+            bool RepNoEffectonResult = TestingReclusteringIndependency();
             Assert.IsTrue(RepNoEffectonResult, "Repartitioning effects result!");
         }
 
@@ -88,7 +89,7 @@ namespace HilbertTest {
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
 
-            
+
             using (var solver = new HilbertTest()) {
 
                 solver.Init(control);
@@ -102,17 +103,17 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
-                            break;
+                        result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
+                        break;
                         case 1:
-                            result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
-                            break;
+                        result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
+                        break;
                         case 2:
-                            result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
-                            break;
+                        result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
+                        break;
                         case 3:
-                            result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
-                            break;
+                        result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
+                        break;
                     }
                 }
                 Console.WriteLine("Test Grid Distribution even");
@@ -139,17 +140,17 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
-                            break;
+                        result &= (xC > 0) && (xC < 0.5) && (yC > 0) && (yC < 0.5);
+                        break;
                         case 1:
-                            result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
-                            break;
+                        result &= (xC > 0.5) && (xC < 1) && (yC > 0) && (yC < 0.5);
+                        break;
                         case 2:
-                            result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
-                            break;
+                        result &= (xC > 0.5) && (xC < 1) && (yC > 0.5) && (yC < 1);
+                        break;
                         case 3:
-                            result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
-                            break;
+                        result &= (xC > 0) && (xC < 0.5) && (yC > 0.5) && (yC < 1);
+                        break;
                     }
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution even");
@@ -174,18 +175,18 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
-                            ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
-                            break;
+                        result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
+                        ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
+                        break;
                         case 1:
-                            result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
-                            break;
+                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        break;
                         case 2:
-                            result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
-                            break;
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        break;
                         case 3:
-                            result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
-                            break;
+                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        break;
                     }
                 }
                 Console.WriteLine("Test Grid Distribution uneven");
@@ -210,18 +211,18 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                            result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
-                            (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
-                            break;
+                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
+                        (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
+                        break;
                         case 1:
-                            result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
-                            break;
+                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        break;
                         case 2:
-                            result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
-                            break;
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        break;
                         case 3:
-                            result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
-                            break;
+                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        break;
                     }
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution uneven");
@@ -233,7 +234,7 @@ namespace HilbertTest {
         static private bool TestingGridDistributionDynamic() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             //TestCase: 5x4 grid, Timesteps, LTS-Cluster, PartOn,recInt,AV=false, dgdegree=0, Timestepping=LTS
-            CNSControl control = ShockTube_PartTest_Dynamic(5,4,1,2,true,1);
+            CNSControl control = ShockTube_PartTest_Dynamic(5, 4, 1, 2, true, 1);
             using (var solver = new HilbertTest()) {
                 solver.Init(control);
                 solver.RunSolverMode();
@@ -488,7 +489,7 @@ namespace HilbertTest {
             c.AddVariable(CNSVariables.Entropy, dgDegree);
             c.AddVariable(CNSVariables.LocalMachNumber, dgDegree);
             c.AddVariable(CNSVariables.Rank, 0);
-            
+
             c.AddVariable(CNSVariables.CFL, 0);
             c.AddVariable(CNSVariables.CFLConvective, 0);
             if (AV) {
@@ -613,7 +614,7 @@ namespace HilbertTest {
 
         }
 
-        private static CNSControl ShockTube_PartTest_Dynamic(int numOfCellsX, int numOfCellsY, int NoOfTimesteps ,int NumberOfSubGrids, bool Repart, int RecInt) {
+        private static CNSControl ShockTube_PartTest_Dynamic(int numOfCellsX, int numOfCellsY, int NoOfTimesteps, int NumberOfSubGrids, bool Repart, int RecInt) {
             CNSControl c = new CNSControl();
 
             int dgDegree = 0;
@@ -650,7 +651,7 @@ namespace HilbertTest {
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
             }
-            
+
             c.GridFunc = delegate {
                 double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCellsX + 1);
 
@@ -784,5 +785,104 @@ namespace HilbertTest {
 
         }
 
+        [Test]
+        static public void ClusterHilbertTest(){
+            // Arrange -- Grid
+            int xMin = -1;
+            int xMax = 1;
+            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
+            int numOfCells = 4 * NoOfCores;
+            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
+            var grid = Grid2D.Cartesian2DGrid(xNodes, xNodes);
+
+            // Arrange -- CostCluster
+            Func<double[], bool> Cond1 = (double[] X) => Math.Abs(X[0] - xMin) + Math.Abs(X[1] - xMin) < 2;
+            Func<double[], bool> Cond2 = (double[] X) => !Cond1(X);
+            var CostCluster = new List<int[]>();
+            var Cluster1 = CreateCostMap(grid, Cond1);
+            CostCluster.Add(Cluster1);
+            var Cluster2 = CreateCostMap(grid, Cond2);
+            CostCluster.Add(Cluster2);
+
+            // Act
+            var rankmap = grid.ComputePartitionHilbert(CostCluster,Functype:0);
+            //PlotThisShit(costmap,CostCluster,grid);
+
+            // Assert
+            int locNoCells = numOfCells * numOfCells / NoOfCores;
+            Assert.IsTrue((rankmap.Length == locNoCells).MPIEquals());
+        }
+
+        private static int[] CreateCostMap(GridCommons grid, Func<double[], bool> identifier) {
+            long TotL = grid.CellPartitioning.TotalLength;
+            long LocL = grid.CellPartitioning.LocalLength;
+            int[] costmap = new int[LocL];
+            costmap.SetAll(1);
+            var theDictonary = grid.GetGlobalId2CellIndexMap();
+            int D = grid.SpatialDimension;
+            var cells = grid.Cells;
+            foreach (var Cell in cells) {
+                var centercoordinates = new double[D];
+                int NoOfNodes = Cell.TransformationParams.NoOfRows;
+                //Compute Barycenter of rectangular cells
+                for (int d = 0; d < D; d++) {
+                    double center = 0;
+                    for (int k = 0; k < NoOfNodes; k++) {
+                        center += Cell.TransformationParams[k, d];
+                    }
+                    centercoordinates[d] = center / ((double)NoOfNodes);
+                }
+                if (identifier(centercoordinates)) {
+                    int LocalID = -1;
+                    theDictonary.TryGetValue(Cell.GlobalID, out LocalID);
+                    costmap[LocalID] = 10;
+                }
+            }
+            return costmap;
+        }
+
+        private static void PlotThisShit(int[] map, List<int[]> costlist, GridCommons grid) {
+            long L = grid.CellPartitioning.LocalLength;
+            var basis = new Basis(grid.GridData, 0);
+            var MPIranks = new SinglePhaseField(basis, "MPIrank");
+            var CostCluster = new SinglePhaseField(basis, "CostCluster");
+            var BorderCells = new SinglePhaseField(basis, "BorderCells");
+            var HilbertIdx = new SinglePhaseField(basis, "HilbertIdx");
+            int[] FlatCostCluster = new int[L];
+            var barray = new BitArray((int)L);
+            //var theDictonary = grid.GetGlobalId2CellIndexMap();
+           
+            var LocHilbertIdx = grid.GetLocHilbertIdcs;
+
+            for (int iCluster = 0; iCluster < costlist.Count(); iCluster++) {
+                for (int iCell = 0; iCell < L; iCell++) {
+                    if (costlist[iCluster][iCell] == 10)
+                        FlatCostCluster[iCell] = iCluster;
+                }
+            }
+            foreach (long iGlobCell in grid.GetZellsOfChangingProc) {
+                int iCell = -1;
+                if (iGlobCell > grid.CellPartitioning.iE || iGlobCell < grid.CellPartitioning.i0)
+                    continue;
+                //theDictonary.TryGetValue(iGlobCell, out iCell);
+                iCell = grid.CellPartitioning.TransformIndexToLocal(iGlobCell);
+                barray[iCell] = true;
+            }
+            for (int iCell = 0; iCell < L; iCell++) {
+                MPIranks.SetMeanValue(iCell, map[iCell]);
+                CostCluster.SetMeanValue(iCell, FlatCostCluster[iCell]);
+                if (barray[iCell]) {
+                    BorderCells.SetMeanValue(iCell, 1.0);
+                }
+                HilbertIdx.SetMeanValue(iCell, LocHilbertIdx[iCell]);
+            }
+            
+            var list = new List<SinglePhaseField>();
+            list.Add(MPIranks);
+            list.Add(CostCluster);
+            list.Add(BorderCells);
+            list.Add(HilbertIdx);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
+        }
     }
 }
