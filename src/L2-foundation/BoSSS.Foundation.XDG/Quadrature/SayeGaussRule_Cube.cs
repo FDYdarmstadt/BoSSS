@@ -238,7 +238,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                 return suitable;
             }
-            return false;
+            return true;
         }
 
         protected override LinearSayeSpace<Cube> Subdivide(LinearSayeSpace<Cube> Arg)
@@ -250,7 +250,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override bool SubdivideSuitable(int numOfSubdivions)
         {
-            if (numOfSubdivions > 5)
+            if (numOfSubdivions > 10)
                 return false;
             return true;
         }

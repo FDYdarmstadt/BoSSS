@@ -571,8 +571,8 @@ namespace CutCellQuadrature.TestCases {
                 double y = input[i, 1];
                 double z = input[i, 2];
 
-                double[] pos =  new double[3] { 0.2625, 0.0125, 0.0125 };
-                double scaleup = 80;
+                double[] pos =  new double[3] { -0.275, -0.275, -0.275 };
+                double scaleup = 15;
                 pos.ScaleV(-scaleup);
                 double particleRad = 0.261 * scaleup;
                 double angle = 0.01*10;
