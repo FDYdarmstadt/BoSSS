@@ -744,6 +744,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 base.CurrentParameters = Parameters != null ? Parameters.ToArray() : new DGField[0];
+
                 base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
                 for (int i = 0; i < m_Stack_u.Length; i++) {

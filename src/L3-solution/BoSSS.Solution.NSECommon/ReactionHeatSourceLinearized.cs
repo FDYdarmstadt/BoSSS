@@ -109,7 +109,7 @@ namespace BoSSS.Solution.NSECommon {
         double[] ReactionRateConstants;
         double[] molarMasses;
 
-        MaterialLaw EoS;
+        MaterialLaw_MultipleSpecies EoS;
         double rho;
         double m_Da;
         double TRef;
@@ -122,7 +122,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="ReactionRateConstants">0. PreExpFactor/Damköhler number, 1. ActivationTemperature, 2. MassFraction0Exponent, 3. MassFraction1Exponent</param>  
         /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
         /// <param name="EoS">MaterialLawCombustion</param>  
-        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
+        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
             m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
             m_ParameterOrdering = new string[] { "kReact" };
             this.HeatReleaseFactor = HeatReleaseFactor;
@@ -180,19 +180,15 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsInfinity(rho));
 
             double Ta = ReactionRateConstants[1];
-
-            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
-            //double YF = U[1] > 0.0 ? U[1] : 0.0;
-            //double YO = U[2] > 0.0 ? U[2] : 0.0;
-
+ 
             double Temperature = U[0];
             double YF = U[1];
             double YO = U[2];
 
 
-            //===================================================
-            // Limiting the value of variables using known bounds
-            //====================================================
+            ////===================================================
+            //// Limiting the value of variables using known bounds
+            ////====================================================
             //double T_ad = 10;//  TODO include the right adiabatic temperature
             //if (Temperature > T_ad) { // Limit the value of the temperature
             //    //Console.WriteLine("Warning: Value of temperature too high (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
@@ -204,6 +200,12 @@ namespace BoSSS.Solution.NSECommon {
             //    //Console.WriteLine("Warning: Value of temperature too low (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
             //    Temperature = lowBoundTemperature;
             //}
+
+            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
+                Ta = EoS.m_ChemModel.getTa(YF, YO) / TRef;
+                HeatReleaseFactor = EoS.m_ChemModel.getHeatRelease(YF, YO) / (cpRef * TRef);
+            }
+
 
 
             double PM_CH4 = molarMasses[0];
@@ -225,12 +227,6 @@ namespace BoSSS.Solution.NSECommon {
                 Console.WriteLine("ExponentialTerm:{0}", Math.Exp(-Ta / Temperature));
             }
 
-
-            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
-                Ta = ((MaterialLawCombustion)EoS).getTa(YF, YO) / TRef;
-                HeatReleaseFactor = ((MaterialLawCombustion)EoS).getHeatRelease(YF, YO) / (cpRef * TRef);
-            }
-    
 
         
 

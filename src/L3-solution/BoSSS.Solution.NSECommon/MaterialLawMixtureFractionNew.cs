@@ -23,7 +23,7 @@ namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    public class MaterialLawMixtureFractionNew : MaterialLawMultiSpecies {
+    public class MaterialLawMixtureFractionNew : MaterialLaw_MultipleSpecies {
 
         [DataMember] public ChemicalConstants CC;
 
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         ///
         /// <param name="Prandtl"></param>
-        public MaterialLawMixtureFractionNew(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl) : base(MolarMasses, MatParamsMode, rhoOne, true, gasConstant, T_ref) {
+        public MaterialLawMixtureFractionNew(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl, OneStepChemicalModel chemModel) : base(MolarMasses, MatParamsMode, rhoOne, true, gasConstant, T_ref, chemModel) {
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
