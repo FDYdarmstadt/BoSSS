@@ -157,6 +157,16 @@ namespace BoSSS.Solution.NSECommon {
                 cp = 1.0;
             }
 
+
+
+
+
+
+
+
+
+
+
             return cp;
         }
 

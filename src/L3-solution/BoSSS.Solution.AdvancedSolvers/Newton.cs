@@ -94,7 +94,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Options for (approximate) solution to the linearizes system
+        /// Options for (approximate) solution to the linearized system
         /// </summary>
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.ExternalSolver;
 
