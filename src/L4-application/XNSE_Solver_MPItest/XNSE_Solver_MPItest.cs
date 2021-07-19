@@ -673,8 +673,8 @@ Index was outside the bounds of the array.
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
-            C.GridPartType = GridPartType.Hilbert;
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            C.GridPartType = GridPartType.clusterHilbert;
             C.SessionName = "XNSE_rotcube_test";
             C.saveperiod = 1;
 
@@ -723,7 +723,7 @@ Index was outside the bounds of the array.
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
+            double particleRad = 0.261;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double angle = -(anglev * t) % (2 * Math.PI);

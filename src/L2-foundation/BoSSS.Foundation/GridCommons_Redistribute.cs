@@ -1104,28 +1104,36 @@ namespace BoSSS.Foundation.Grid.Classic {
                         break;
                     case 1:
                         //direct cost mapping
-                        if (cellCosts.Count > 1)
-                            throw new ArgumentOutOfRangeException("Only one CellCost map allowed for Hilbert! Select clusterHilbert if you want to use Clusters!");
                         CostClustermap = cellCosts[0];
+                        if (cellCosts.Count > 1) {
+                            Console.WriteLine("More than one cell cost cluster chosen. You can use cluster Hilbert instead. Proceeding with equal cell costs ...");
+                            var tmp = new int[cellCosts[0].Length];
+                            tmp.SetAll(1);
+                            CostClustermap = tmp;
+                        }
+
                         Array.Sort(HilbertIndex_tmp, CostClustermap);
                         int CellCostSum = 0;
                         for (int cell = 0; cell < CostClustermap.Length; cell++)
                             CellCostSum += CostClustermap[cell];
-                        int MPIrank = 0;
-                        //int CostCount = 0;
+                       
+                        int MPIrank = -1;
+                        int CostofProc = 0;
+                        int DistributedCost = 0;
                         int TestSumC = 0;
-                        for (int cell = 0; cell < numberofcells; cell++) {
-                            int CellsPerProcess = numberofcells * (MPIrank + 1) / numproc - numberofcells * MPIrank / numproc;
-                            if (cell >= CellsPerProcess) {
-                                TestSumC += CellsPerProcess;
+                        for (int iCell = 0; iCell < numberofcells; iCell++) {
+                            if (DistributedCost >= CostofProc) {
                                 MPIrank++;
+                                CostofProc = CellCostSum * (MPIrank + 1) / numproc - CellCostSum * MPIrank / numproc;
+                                TestSumC += CostofProc;
+                                DistributedCost = 0;
                             }
+                            RankIndex[iCell] = MPIrank;
+                            DistributedCost += CostClustermap[iCell];
                         }
-                        TestSumC += numberofcells * (numproc + 1) / numproc - numberofcells * numproc / numproc; // do not forget cells of last process
-                        Debug.Assert(TestSumC == numberofcells);
 
-                        //Debug.Assert(RestSum == 0);
-                        Debug.Assert(MPIrank <= numproc - 1);
+                        Debug.Assert(TestSumC == CellCostSum);
+                        Debug.Assert(MPIrank == this.Size-1);
                         break;
                     default:
                         throw new NotImplementedException();
