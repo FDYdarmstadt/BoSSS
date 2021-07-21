@@ -417,7 +417,9 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.automatic:
                 precond[0] = null;
                 break;
-
+                case LinearSolverCode.exp_gmres_ILU:
+                precond[0] = new ILU();
+                break;
                 case LinearSolverCode.exp_gmres_AS_MG:
                 var dirSolver = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.PARDISO,
@@ -676,7 +678,14 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
-
+                case LinearSolverCode.exp_gmres_ILU:
+                templinearSolve = new SoftGMRES() {
+                    //m_Tolerance = lc.ConvergenceCriterion,
+                    //m_MaxIterations = lc.MaxSolverIterations,
+                    MaxKrylovDim = lc.MaxKrylovDim,
+                    Precond = precond[0]
+                };
+                break;
                 case LinearSolverCode.exp_Kcycle_schwarz:
                 Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
                 templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
@@ -759,7 +768,6 @@ namespace BoSSS.Solution {
             }
 
             Check_linsolver(templinearSolve,LocalDOF);
-
             return templinearSolve;
         }
         #endregion
@@ -794,8 +802,13 @@ namespace BoSSS.Solution {
             return MGChangeOfBasis[tLevel][tVar].DegreeS[0];
         }
 
-        
-        private int[] GetLocalDOF(int p=-1) {
+        /// <summary>
+        /// Returns DOF per multi grid level on this process.
+        /// If you are interested in the DOF of a subsystem, up to a polynomial degree of <paramref name="pOfLowOrderSystem"/>. Set a value for <paramref name="pOfLowOrderSystem"/>.
+        /// </summary>
+        /// <param name="pOfLowOrderSystem"></param>
+        /// <returns></returns>
+        private int[] GetLocalDOF(int pOfLowOrderSystem = -1) {
             var MGChangeOfBasis = m_MGchangeofBasis;
             var MultigridBasis = m_MGBasis;
             var MGBasis = MultigridBasis.ToArray();
@@ -803,41 +816,80 @@ namespace BoSSS.Solution {
             int[] LocalDOF = new int[MGDepth];
             int D = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.ParentGrid.SpatialDimension;
 
-            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
+            bool IsSinglePhase = MGBasis[0][0] is AggregationGridBasis || ((XdgAggregationBasis)MGBasis[0][0]).UsedSpecies.Length == 1;
+            bool IsXdg = MGBasis[0][0] is XdgAggregationBasis;
 
-            /*
+            if (IsSinglePhase) {
+                LocalDOF = GetLocalDOF_DG(MultigridBasis, MGChangeOfBasis, pOfLowOrderSystem);
+            } else if(IsXdg) {
+                // Don't you dare to comment this out!!!
+                LocalDOF = GetLocalDOF_XDG(MultigridBasis, pOfLowOrderSystem);
+            } else {
+                throw new NotSupportedException("the type of "+ MGBasis[0][0].GetType()+" is not supported");
+            }
+            return LocalDOF;
+        }
 
-                for(int iCell = 0; iCell < NoOfCells; iCell++) {
-                    for(int iVar = 0; iVar < MGBasis[iLevel].Length; iVar++) {
-                        int pmax = -1;
-                        if(p <= -1) {
-                            pmax = getMaxDG(iLevel, iVar);
-                        } else {
-                            pmax = iVar == D? p-1 : p;
-                        }
-                        try {
-                            LocalDOF[iLevel] += MGBasis[iLevel][iVar].GetLength(iCell, pmax);
-                        } catch(Exception) {
-                            Console.WriteLine("WARNING: internal error occurred during DOF calculation. Using estimate instead, which might not be accurate in case of XDG");
-                            return SimpleGetLocalDOF(MultigridBasis, MGChangeOfBasis);
-                        }
+        /// <summary>
+        /// Gets the DOF of system with multiple species.
+        /// If you are interested in the DOF of a subsystem, up to a polynomial degree of <paramref name="pOfLowOrderSystem"/>. Set a value for <paramref name="pOfLowOrderSystem"/>.
+        /// </summary>
+        /// <param name="MGBasisEnum"></param>
+        /// <param name="pOfLowOrderSystem"></param>
+        /// <returns></returns>
+        private int[] GetLocalDOF_XDG(IEnumerable<AggregationGridBasis[]> MGBasisEnum, int pOfLowOrderSystem) {
+            var MGBasis = MGBasisEnum.ToArray();
+            int MGDepth = MGBasis.Length;
+            var AggBasis = (XdgAggregationBasis[][])MGBasis;
+            int D = AggBasis[0][0].AggGrid.SpatialDimension;
+            int[] LocalDOF = new int[MGDepth];
+
+            int NoOfFakeCells = 0;//number of single species cells that would have same localDOF
+
+            for (int iLevel = 0; iLevel < MGDepth; iLevel++) {
+                for (int iCell = 0; iCell < AggBasis[iLevel][0].AggCellsSpecies.Length; iCell++) {
+                    for (int iVar = 0; iVar < AggBasis[iLevel].Length; iVar++) {
+                        NoOfFakeCells += AggBasis[iLevel][iVar].AggCellsSpecies[iCell].Length;
                     }
                 }
             }
-            return LocalDOF;
-            */
-        }
-        
-        
 
-        private int[] SimpleGetLocalDOF(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis) {
+            // This loop can be merged with GetLocalDOF_DG in further refactoring
+            for (int iLevel = 0; iLevel < MGDepth; iLevel++) {
+                for (int iVar = 0; iVar < AggBasis[iLevel].Length; iVar++) {
+                    int p = -1;
+                    if (pOfLowOrderSystem <= -1) {
+                        p = getMaxDG(iLevel, iVar);
+                    } else {
+                        p = iVar == D ? pOfLowOrderSystem - 1 : pOfLowOrderSystem;
+                    }
+                    LocalDOF[iLevel] += DOFofDegree(p, D)* NoOfFakeCells;
+                }
+            }
+
+
+            return LocalDOF;
+        }
+
+
+
+        /// <summary>
+        /// extra DOF in cells with multiple species are not considered by this method.
+        /// One can expect only reliable results for single phase problems.
+        /// If you are only interested in the DOF of a subsystem, up to a polynomial degree of <paramref name="pOfLowOrderSystem"/>. Set a value for <paramref name="pOfLowOrderSystem"/>.
+        /// </summary>
+        /// <param name="MultigridBasis"></param>
+        /// <param name="MGChangeOfBasis"></param>
+        /// <param name="pOfLowOrderSystem">maximal order of the low order system</param>
+        /// <returns></returns>
+        private int[] GetLocalDOF_DG(IEnumerable<AggregationGridBasis[]> MultigridBasis, ChangeOfBasisConfig[][] MGChangeOfBasis, int pOfLowOrderSystem) {
             int NoOfLevels = MultigridBasis.Count();
             int[] DOFperCell = new int[NoOfLevels];
             int[] LocalDOF = new int[NoOfLevels];
             var MGBasisAtLevel = MultigridBasis.ToArray();
             int[] NoOFCellsAtLEvel = MGBasisAtLevel.Length.ForLoop(b=> MGBasisAtLevel[b].First().AggGrid.iLogicalCells.NoOfLocalUpdatedCells);
             int counter = 0;
-
+            int D = ((AggregationGridBasis)MultigridBasis.First()[0]).AggGrid.ParentGrid.SpatialDimension;
 
             for (int iLevel = 0; iLevel < DOFperCell.Length; iLevel++) {
                 counter = iLevel;
@@ -845,26 +897,35 @@ namespace BoSSS.Solution {
                     counter = MGChangeOfBasis.Length - 1;
                 foreach (var cob in MGChangeOfBasis[counter]) {
                     for (int iVar = 0; iVar < cob.VarIndex.Length; iVar++) {
-                        int d = ((AggregationGridBasis)MultigridBasis.First()[iVar]).AggGrid.ParentGrid.SpatialDimension;
-                        int p = cob.DegreeS[iVar];
-                        switch (d) {
-                            case 1:
-                                DOFperCell[iLevel] += p + 1 + p + 1;
-                                break;
-                            case 2:
-                                DOFperCell[iLevel] += (p * p + 3 * p + 2) / 2;
-                                break;
-                            case 3:
-                                DOFperCell[iLevel] += (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                                break;
-                            default:
-                                throw new Exception("wtf?Spacialdim=1,2,3 expected");
-                        }
+                        int p = -1;
+                        if (pOfLowOrderSystem <= -1)
+                            p = cob.DegreeS[iVar];
+                        else
+                            p = iVar == D ? pOfLowOrderSystem - 1 : pOfLowOrderSystem;
+                        DOFperCell[iLevel]+=DOFofDegree(p,D);
                     }
                 }
                 LocalDOF[iLevel] = NoOFCellsAtLEvel[iLevel] * DOFperCell[iLevel];
             }
             return LocalDOF;
+        }
+
+        private static int DOFofDegree(int p, int D) {
+            int toacc = 0;
+            switch (D) {
+                case 1:
+                    toacc = p + 1 + p + 1;
+                    break;
+                case 2:
+                    toacc = (p * p + 3 * p + 2) / 2;
+                    break;
+                case 3:
+                    toacc = (p * p * p + 6 * p * p + 11 * p + 6) / 6;
+                    break;
+                default:
+                    throw new Exception("wtf?Spacialdim=1,2,3 expected");
+            }
+            return toacc;
         }
 
         private int GetMaxMGLevel(int DirectKickIn, int MSLength, int[] LocalDOF) {
@@ -1452,8 +1513,7 @@ namespace BoSSS.Solution {
                 MaxMGLevel = iLevel;
                 double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
                 int SysSize = _LocalDOF[iLevel].MPISum();
-                Console.WriteLine(SysSize);
-
+                Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
                 if (SizeFraction < 1 && iLevel == 0) {
                     Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize(iLevel)}) exceeds local system size ({_LocalDOF[iLevel]});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");

@@ -43,7 +43,7 @@ namespace ilPSP.LinSolvers.monkey {
     /// <summary>
     /// a preconditioned conjugated gradient solver
     /// </summary>
-    public class PCG : Solver {
+    public class PCG : Solver, IImplicitPrecondSupport {
         
         IterationCallback m_IterationCallback = null;
         
@@ -217,9 +217,9 @@ namespace ilPSP.LinSolvers.monkey {
         /// <summary>
         /// see <see cref="IImplicitPrecondSupport.NestedPrecond"/>
         /// </summary>
-        public IMonkeyImplicitPrecond NestedPrecond {
+        public IImplicitPrecond NestedPrecond {
             get {
-                return m_NestedPrecond;
+                return (IImplicitPrecond)m_NestedPrecond;
             }
             set {
                 m_NestedPrecond = (IMonkeyImplicitPrecond)value;

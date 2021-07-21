@@ -524,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = true, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -780,8 +780,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
@@ -810,7 +810,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // haben fertig...
             // ===============
 
-            C.SkipSolveAndEvaluateResidual = true;
+            C.SkipSolveAndEvaluateResidual = false;
             return C;
 
         }

@@ -207,7 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // =======
                 if (this.MinimalLength != this.MaximalLength) {
                     int JAGGloc = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    int JAGGtot = this.AggGrid.iLogicalCells.Count;
+                    int JAGGtot = this.AggGrid.iLogicalCells.Count;                
                     long[] __i0Tmp = new long[JAGGtot];
 
                     HashSet<int> BlockLen = new HashSet<int>();
@@ -268,9 +268,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Debug.Assert(Partitioning.IsInLocalRange(m_i0_ExtGlob[jag - JAGGloc]) == false);
                     }
 #endif
-
-
-
 
                 } else {
                     m_Subblk_i0 = new int[][] { new int[] { 0 } };
