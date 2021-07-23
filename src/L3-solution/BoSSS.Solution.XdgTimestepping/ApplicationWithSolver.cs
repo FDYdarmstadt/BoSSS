@@ -311,7 +311,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// status after the grid has been re-distributed.
         /// </summary>
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
-            Timestepping.DataBackupBeforeBalancing(L);
+            if (Timestepping != null)   // in case of startUp backup
+                Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
             CurrentResidualVector = null;
             ClearOperator();

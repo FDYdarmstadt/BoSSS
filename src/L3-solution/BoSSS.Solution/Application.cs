@@ -2663,6 +2663,8 @@ namespace BoSSS.Solution {
                 loadbal.BackupTracker();
             }
 
+            // backup user data
+            this.DataBackupBeforeBalancing(loadbal);
         }
 
 

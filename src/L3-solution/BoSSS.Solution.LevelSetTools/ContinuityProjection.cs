@@ -31,6 +31,7 @@ using BoSSS.Solution.NSECommon;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.ConstrainedDGprojection;
 
 namespace BoSSS.Solution.LevelSetTools {
 

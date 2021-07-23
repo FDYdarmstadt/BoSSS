@@ -476,7 +476,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             bool incremental) {
             var InnerParameterFields = Combine(ParameterVarFields, this.lsParameterFields);
             double residual = 0;
-
+            
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
 
             foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {

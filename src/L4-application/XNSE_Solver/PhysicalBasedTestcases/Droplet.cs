@@ -828,7 +828,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Movement induced by surface terms.
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 5, bool useAMR = true) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 7, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
             //C.ImmediatePlotPeriod = 1;
@@ -920,8 +920,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Tags.Add("Ohnesorge Zahl = 0.76");
             C.PhysicalParameters.rho_A = 1260;
             C.PhysicalParameters.rho_B = 1260 * ratio;
-            C.PhysicalParameters.mu_A = 0.714;
-            C.PhysicalParameters.mu_B = 0.714 * ratio;
+            C.PhysicalParameters.mu_A = 0.0714;
+            C.PhysicalParameters.mu_B = 0.0714 * ratio;
             C.PhysicalParameters.Sigma = 7e-3;
 
             C.PhysicalParameters.IncludeConvection = true;
@@ -1179,7 +1179,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 1000;
-                C.NoOfTimesteps = 2; // 1000;
+                C.NoOfTimesteps = 1; // 1000;
                 C.saveperiod = 4;
             }
 
