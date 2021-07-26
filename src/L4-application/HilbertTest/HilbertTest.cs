@@ -49,6 +49,23 @@ namespace HilbertTest {
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
+        public HilbertTest(){
+            AssertWatch = new Stopwatch();
+            AssertWatch.Start();
+        }
+
+        public override void Dispose() {
+            CheckAssertWatch();
+            AssertWatch = null;
+        }
+
+        private Stopwatch AssertWatch;
+
+        private void CheckAssertWatch() {
+            AssertWatch.Stop();
+            double time = AssertWatch.Elapsed.TotalSeconds;
+            Assert.IsTrue(time < 60,"time limit of 60 seconds exceeded. There is something rotten, plz check ...");
+        }
 
         public static void Test() {
             TestingCoordinateSamples();                 
@@ -63,7 +80,8 @@ namespace HilbertTest {
 
 
         /// <summary>
-        /// Testing partitioning with clusters, even distribution of cells among processes
+        /// Testing partitioning with 1 cluster, even distribution of cells among processes
+        /// To ensure the result is the same as with direct Hilbert and equal costs everywhere
         /// </summary>
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
         [Test]
@@ -100,7 +118,7 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Grid Distribution even");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                Assert.IsTrue(result, "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
+                Assert.IsTrue(result.MPIAnd(), "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
             }
         }
 
@@ -142,12 +160,13 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution even");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                Assert.IsTrue(result, "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
+                Assert.IsTrue(result.MPIAnd(), "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
             }
         }
 
         /// <summary>
         /// Testing partitioning with clusters, uneven distribution of cells among processes
+        /// To ensure the result is the same as with direct Hilbert and equal costs everywhere
         /// </summary>
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
         [Test]
@@ -167,23 +186,22 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                        result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
-                        ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
+                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
                         break;
                         case 1:
-                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
                         break;
                         case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
                         break;
                         case 3:
-                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
                         break;
                     }
                 }
                 Console.WriteLine("Test Grid Distribution uneven");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                Assert.IsTrue(result, "Distribution pattern along HilbertCurve is corrupted");
+                Assert.IsTrue(result.MPIAnd(), "Distribution pattern along HilbertCurve is corrupted");
             }
         }
 
@@ -208,23 +226,22 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
-                        (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
+                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
                         break;
                         case 1:
-                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
                         break;
                         case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
                         break;
                         case 3:
-                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
                         break;
                     }
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution uneven");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                Assert.IsTrue(result, "Distribution pattern along HilbertCurve is corrupted");
+                Assert.IsTrue(result.MPIAnd(), "Distribution pattern along HilbertCurve is corrupted");
             }
         }
 
@@ -317,7 +334,7 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Grid Distribution Dynamic LTS");
                 Console.WriteLine("Testresult: {0}", result);
-                Assert.IsTrue(result, "Dynamic Distribution along HilbertCurve is corrupted");
+                Assert.IsTrue(result.MPIAnd(), "Dynamic Distribution along HilbertCurve is corrupted");
             }
         }
 
@@ -353,7 +370,7 @@ namespace HilbertTest {
                     result &= normequal;
                     Console.WriteLine("{0}-L2Norm equal: {1}", varname[i], normequal);
                 }
-                Assert.IsTrue(result, "Repartitioning effects result!");
+                Assert.IsTrue(result.MPIAnd(), "Repartitioning effects result!");
             }
 
         }
@@ -822,7 +839,7 @@ namespace HilbertTest {
 
             // Assert
             int locNoCells = numOfCells * numOfCells / NoOfCores;
-            Assert.IsTrue((rankmap.Length == locNoCells).MPIEquals());
+            Assert.IsTrue((rankmap.Length == locNoCells).MPIAnd());
         }
 
         private static int[] CreateCostMap(GridCommons grid, Func<double[], bool> identifier) {
