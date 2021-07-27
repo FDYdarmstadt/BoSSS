@@ -635,7 +635,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.GridPartType = GridPartType.clusterHilbert;
             C.Tags.Add(C.GridPartType.ToString());
 
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -777,7 +777,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 1000;
@@ -809,8 +809,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // haben fertig...
             // ===============
-
-            C.SkipSolveAndEvaluateResidual = false;
             return C;
 
         }

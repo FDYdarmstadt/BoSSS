@@ -823,6 +823,7 @@ namespace BoSSS.Solution {
                 LocalDOF = GetLocalDOF_DG(MultigridBasis, MGChangeOfBasis, pOfLowOrderSystem);
             } else if(IsXdg) {
                 // Don't you dare to comment this out!!!
+                Console.WriteLine("XDG measure usedl. nice. delete this comment plz.");
                 LocalDOF = GetLocalDOF_XDG(MultigridBasis, pOfLowOrderSystem);
             } else {
                 throw new NotSupportedException("the type of "+ MGBasis[0][0].GetType()+" is not supported");

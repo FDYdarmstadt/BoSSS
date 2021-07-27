@@ -734,21 +734,19 @@ namespace BoSSS.Foundation {
             //ProjectDGField_patchwise(DGField, mask, 1);
 
             var stwGlobalProjection = new Stopwatch();
-            using (new RuntimeTracker("global_projection",diagOutput0)) {
-                this.ProjectDGFieldOnPatch(DGField, mask);
-            }
+            //using (new RuntimeTracker("global_projection",diagOutput0)) {
+            //    this.ProjectDGFieldOnPatch(DGField, mask);
+            //}
 
             double jumpNorm = CheckLocalProjection(mask, true);
             if (diagOutput0)
                 Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
 
             DGField[] alwaysgivesomethingback = null;
-            if (jumpNorm > 1e-12) {
-
+            //if (jumpNorm > 1e-12) {
                 int NoOfFixedPatches = 1;
-
                 alwaysgivesomethingback = ProjectDGField_patchwise(DGField, mask, NoOfFixedPatches);
-            }
+            //}
 
             PrintRuntimes();
 
