@@ -842,18 +842,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    using (new BlockTrace("block_solve_level" + this.m_MgOp.LevelIndex, tr)) {
+                    using (new BlockTrace("block_solve_level", tr)) {
 
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
-                            var bi=BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
+                            var bi = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                             double[] xi = new double[bi.Length];
                             if (UsePMGinBlocks && AnyHighOrderTerms) {
                                 // +++++++++++++++++++++++++++++++++
                                 // P-multigrid in each Schwarz block
                                 // +++++++++++++++++++++++++++++++++
 
-                                Levelpmgsolvers[iPart].Solve(xi,bi);
+                                Levelpmgsolvers[iPart].Solve(xi, bi);
 
                             } else {
                                 // ++++++++++++++++++++++++++++++
@@ -867,25 +867,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //xi.SaveToTextFileDebug(String.Format("x{0}",iPart));
 
                             // accumulate block solution 'xi' to global solution 'X'
-                            BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext,X);
+                            BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
                     }
 
+                    using (new BlockTrace("overlap_scaling", tr)) {
+                        if (Overlap > 0 && EnableOverlapScaling) {
+                            // block solutions stored on *external* indices will be accumulated on other processors.
+                            XExchange.TransceiveStartImReturn();
+                            XExchange.TransceiveFinish(1.0);
 
-                    if (Overlap > 0 && EnableOverlapScaling) {
-                        // block solutions stored on *external* indices will be accumulated on other processors.
-                        XExchange.TransceiveStartImReturn();
-                        XExchange.TransceiveFinish(1.0);
+                            if (iIter < FixedNoOfIterations - 1)
+                                XExchange.Vector_Ext.ClearEntries();
 
-                        if (iIter < FixedNoOfIterations - 1)
-                            XExchange.Vector_Ext.ClearEntries();
-
-                        var SolScale = this.SolutionScaling;
-                        for (int l = 0; l < LocLength; l++) {
-                            X[l] *= SolScale[l];
+                            var SolScale = this.SolutionScaling;
+                            for (int l = 0; l < LocLength; l++) {
+                                X[l] *= SolScale[l];
+                            }
                         }
                     }
-
                 } // end loop Schwarz iterations
 
             } // end FuncTrace

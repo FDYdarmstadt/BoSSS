@@ -49,46 +49,46 @@ namespace HilbertTest {
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
-
-        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
-        [Test]
-        public static void Test() {
-            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
-            //Testing coordinate samples
-            bool coordresult = TestingCoordinateSamples();
-            Assert.IsTrue(coordresult, "Code of HilbertCurve is corrupted");
-
-            //Testing partitioning with clusters, even distribution of cells among processes
-            bool gridevenresult = TestingGridDistributionEven();
-            Assert.IsTrue(gridevenresult, "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
-
-            //Testing partitioning with clusters, uneven distribution of cells among processes
-            bool gridunevenresult = TestingGridDistributionUneven();
-            Assert.IsTrue(gridunevenresult, "Distribution pattern along HilbertCurve is corrupted");
-
-            //Testing bare Hilbert partitioning, even distribution of cells among processes
-            bool directHilbert_E = TestingdirectHilbertEven();
-            Assert.IsTrue(directHilbert_E, "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
-
-            //Testing bare Hilbert partitioning, uneven distribution of cells among processes
-            bool directHilbert_UE = TestingdirectHilbertUneven();
-            Assert.IsTrue(directHilbert_UE, "Distribution pattern along HilbertCurve is corrupted");
-
-            //Testing Partition with Constraints (LTS), even distribution among processes
-            //The testresult is also valid for other Constrainttypes, e.g. AV, but harder to test
-            bool gridevendynamic = TestingGridDistributionDynamic();
-            Assert.IsTrue(gridevendynamic, "Dynamic Distribution along HilbertCurve is corrupted");
-
-            //Comparing simulations with&without Repartitioning while LTS-Reclustering on
-            bool RepNoEffectonResult = TestingReclusteringIndependency();
-            Assert.IsTrue(RepNoEffectonResult, "Repartitioning effects result!");
+        public HilbertTest(){
+            AssertWatch = new Stopwatch();
+            AssertWatch.Start();
         }
 
-        static private bool TestingGridDistributionEven() {
+        public override void Dispose() {
+            CheckAssertWatch();
+            AssertWatch = null;
+        }
+
+        private Stopwatch AssertWatch;
+
+        private void CheckAssertWatch() {
+            AssertWatch.Stop();
+            double time = AssertWatch.Elapsed.TotalSeconds;
+            Assert.IsTrue(time < 60,"time limit of 60 seconds exceeded. There is something rotten, plz check ...");
+        }
+
+        public static void Test() {
+            TestingCoordinateSamples();                 
+            TestingGridDistributionEven();           
+            TestingGridDistributionUneven();           
+            TestingdirectHilbertEven();
+            TestingdirectHilbertUneven();
+            TestingGridDistributionDynamic();
+            TestingReclusteringIndependency();
+            ClusterHilbertTest();
+        }
+
+
+        /// <summary>
+        /// Testing partitioning with 1 cluster, even distribution of cells among processes
+        /// To ensure the result is the same as with direct Hilbert and equal costs everywhere
+        /// </summary>
+        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
+        [Test]
+        static public void TestingGridDistributionEven() {
             string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "7ac582f5-8913-439b-9f2b-9fbf96141d76", "b7793aee-44b6-44c7-91e7-5debd7f44c3b", 4, 4);
-
 
             using (var solver = new HilbertTest()) {
 
@@ -118,11 +118,16 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Grid Distribution even");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "HilbertCurve or mapping (rank->Hilbertcurve) is corrupted");
             }
         }
 
-        static private bool TestingdirectHilbertEven() {
+        /// <summary>
+        /// Testing bare Hilbert partitioning, even distribution of cells among processes
+        /// </summary>
+        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
+        [Test]
+        static public void TestingdirectHilbertEven() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1
@@ -155,11 +160,17 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution even");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "HilbertCurve or mapping of Hilbert (rank->Hilbertcurve) is corrupted");
             }
         }
 
-        static private bool TestingGridDistributionUneven() {
+        /// <summary>
+        /// Testing partitioning with clusters, uneven distribution of cells among processes
+        /// To ensure the result is the same as with direct Hilbert and equal costs everywhere
+        /// </summary>
+        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
+        [Test]
+        static public void TestingGridDistributionUneven() {
             string dbPath = @"Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_PartTest(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
@@ -175,27 +186,31 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                        result &= ((xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.33)) ||
-                        ((xC > 0) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67));
+                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
                         break;
                         case 1:
-                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
                         break;
                         case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
                         break;
                         case 3:
-                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
                         break;
                     }
                 }
                 Console.WriteLine("Test Grid Distribution uneven");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "Distribution pattern along HilbertCurve is corrupted");
             }
         }
 
-        static private bool TestingdirectHilbertUneven() {
+        /// <summary>
+        /// Testing bare Hilbert partitioning, uneven distribution of cells among processes
+        /// </summary>
+        [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
+        [Test]
+        static public void TestingdirectHilbertUneven() {
             string dbPath = @"Tests.zip";
             //TestCase: 3x3 grid, AV=false, dgdegree=0, Timestepping=RK1
             CNSControl control = ShockTube_directHilbert(dbPath, "ccb23f25-04e9-467a-b667-bb3d642b6447", "9b24a2e6-2ce5-4de2-bd08-37a930f0df06", 3, 3);
@@ -211,27 +226,31 @@ namespace HilbertTest {
                     double yC = XC[1];
                     switch (solver.MPIRank) {
                         case 0:
-                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67) ||
-                        (xC > 0.33) && (xC < 0.67) && (yC > 0.33) && (yC < 0.67);
+                        result &= (xC > 0) && (xC < 0.33) && (yC > 0) && (yC < 0.67);
                         break;
                         case 1:
-                        result &= (xC > 0.33) && (xC < 1) && (yC > 0) && (yC < 0.33);
+                        result &= (xC > 0.33) && (xC < 0.67) && (yC > 0) && (yC < 0.67);
                         break;
                         case 2:
-                        result &= (xC > 0.67) && (xC < 1) && (yC > 0.33) && (yC < 1);
+                        result &= (xC > 0.67) && (xC < 1) && (yC > 0) && (yC < 0.67);
                         break;
                         case 3:
-                        result &= (xC > 0) && (xC < 0.67) && (yC > 0.67) && (yC < 1);
+                        result &= (xC > 0) && (xC < 1) && (yC > 0.67) && (yC < 1);
                         break;
                     }
                 }
                 Console.WriteLine("Test Hilbert: Grid Distribution uneven");
                 Console.WriteLine("Process{0}: {1}", solver.MPIRank, result);
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "Distribution pattern along HilbertCurve is corrupted");
             }
         }
 
-        static private bool TestingGridDistributionDynamic() {
+        /// <summary>
+        /// Testing Partition with Constraints (LTS), even distribution among processes.
+        /// The testresult is also valid for other Constrainttypes, e.g. AV, but harder to test
+        /// </summary>
+        [Test]
+        static public void TestingGridDistributionDynamic() {
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             //TestCase: 5x4 grid, Timesteps, LTS-Cluster, PartOn,recInt,AV=false, dgdegree=0, Timestepping=LTS
             CNSControl control = ShockTube_PartTest_Dynamic(5, 4, 1, 2, true, 1);
@@ -315,11 +334,15 @@ namespace HilbertTest {
                 }
                 Console.WriteLine("Test Grid Distribution Dynamic LTS");
                 Console.WriteLine("Testresult: {0}", result);
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "Dynamic Distribution along HilbertCurve is corrupted");
             }
         }
 
-        static private bool TestingReclusteringIndependency() {
+        /// <summary>
+        /// Comparing simulations with&without Repartitioning while LTS-Reclustering on
+        /// </summary>
+        [Test]
+        static public void TestingReclusteringIndependency() {
 
             //TestCase: 5x4 grid, AV=false, dgdegree=0, Timestepping=LTS&RK
             CNSControl ctrRepON = ShockTube_PartTest_Dynamic(5, 4, int.MaxValue, 2, true, 5);
@@ -347,7 +370,7 @@ namespace HilbertTest {
                     result &= normequal;
                     Console.WriteLine("{0}-L2Norm equal: {1}", varname[i], normequal);
                 }
-                return result;
+                Assert.IsTrue(result.MPIAnd(), "Repartitioning effects result!");
             }
 
         }
@@ -388,8 +411,11 @@ namespace HilbertTest {
             return test;
         }
 
-        static private bool TestingCoordinateSamples() {
-            //Validation of H-Curve-Code, Coordsamples taken from "Convergence with clusterHilbert's Space Filling Curve" by ARTHUR R. BUTZ, p.133
+        /// <summary>
+        /// Testing coordiante samples. Verification of H-Curve-Code, Coordsamples taken from "Convergence with clusterHilbert's Space Filling Curve" by ARTHUR R. BUTZ, p.133
+        /// </summary>
+        [Test]
+        static public void TestingCoordinateSamples() {
             bool[] testresult = new bool[3];
             bool result = true;
             testresult[0] = test_both(4, 654508, new ulong[] { 4, 12, 6, 12, 12 });
@@ -399,7 +425,7 @@ namespace HilbertTest {
                 Console.WriteLine("Test_i2c of Coord {0}:{1}", i, testresult[i]);
                 result |= result;
             }
-            return result;
+            Assert.IsTrue(result, "Code of HilbertCurve is corrupted");
         }
 
         static private bool test_both(int nBits, ulong index, ulong[] coord) {
@@ -785,6 +811,9 @@ namespace HilbertTest {
 
         }
 
+        /// <summary>
+        /// two cost cluster, dividing the domain diagonally. Using 4 processes should yield an equal partitioning.
+        /// </summary>
         [Test]
         static public void ClusterHilbertTest(){
             // Arrange -- Grid
@@ -810,7 +839,7 @@ namespace HilbertTest {
 
             // Assert
             int locNoCells = numOfCells * numOfCells / NoOfCores;
-            Assert.IsTrue((rankmap.Length == locNoCells).MPIEquals());
+            Assert.IsTrue((rankmap.Length == locNoCells).MPIAnd());
         }
 
         private static int[] CreateCostMap(GridCommons grid, Func<double[], bool> identifier) {
@@ -841,6 +870,12 @@ namespace HilbertTest {
             return costmap;
         }
 
+        /// <summary>
+        /// Use this for debugging ...
+        /// </summary>
+        /// <param name="map"></param>
+        /// <param name="costlist"></param>
+        /// <param name="grid"></param>
         private static void PlotThisShit(int[] map, List<int[]> costlist, GridCommons grid) {
             long L = grid.CellPartitioning.LocalLength;
             var basis = new Basis(grid.GridData, 0);

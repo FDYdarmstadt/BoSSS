@@ -125,7 +125,7 @@ namespace ilPSP.LinSolvers {
     /// A solver that wants to use such an object must implement the 
     /// <see cref="IImplicitPrecondSupport"/>-interface;
     /// </summary>
-    public interface IImplicitPrecond {
+    public interface IImplicitPrecond : IDisposable {
 
     }
 
@@ -147,7 +147,7 @@ namespace ilPSP.LinSolvers {
         /// Sets the preconditioner; The type of the value (for setting)
         /// must be contained in the <see cref="SupportedPrecond"/>-collection;
         /// </summary>
-        ISparseSolver NestedPrecond { get; set; }
+        IImplicitPrecond NestedPrecond { get; set; }
     }
 
     

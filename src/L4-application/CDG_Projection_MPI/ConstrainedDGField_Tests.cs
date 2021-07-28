@@ -33,27 +33,38 @@ namespace CDG_Projection_MPI {
             // Arrange -- target field
             var Basis = new Basis(grid, 2);
             var CDGTestField = new ConstrainedDGField_Tests(Basis);
-            CellMask mask = null; // CellMask.GetFullMask(grid.GridData);
+            var mask = CellMask.GetFullMask(grid.GridData);
 
             // Arrange -- source field
             var field = new SinglePhaseField(Basis);
             var idontcarefield = new SinglePhaseField(Basis,"bla");
             var quadrature = new CellQuadratureScheme(true, mask);
-            double particleRad = 0.2;
-
-            Func<double[], double> projFunc = (double[] X) => -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+            double particleRad = 0.261;
+            double angle = 0;
+            Func<double[], double> projFunc = (double[] X) =>
+                -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
+                Math.Max(Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle)),
+                Math.Abs(X[2]))) + particleRad;
             var ProjF = NonVectorizedScalarFunction.Vectorize(projFunc);
             field.ProjectField(ProjF);
 
             // Act -- Do the CG-projection
             CDGTestField.SetDGCoordinatesOnce(mask, field);
-            CDGTestField.ProjectDGField_patchwise(field,mask,1);
-            double jumpNorm_before = CDGTestField.CheckLocalProjection(mask,false);
+            double jumpNorm = CDGTestField.CheckLocalProjection(mask, false);
+            Console.WriteLine("jump norm of initial: "+jumpNorm);
+            
+            CDGTestField.ProjectDGField_patchwise(field, mask, 1);
+            double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
+            
+            //CDGTestField.ProjectDGFieldOnPatch(field, mask);
+            //double jumpNorm_total = CDGTestField.CheckLocalProjection(mask, false);
+            //Console.WriteLine("jump Norm after total projection: "+ jumpNorm_total);
+
             CDGTestField.InterProcessProjectionBranch(mask, field);
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, true);
 
             // Assert -- effective inter process projection
-            Assert.IsTrue(jumpNorm_after < jumpNorm_before * 0.01);
+            Assert.IsTrue(jumpNorm_after < jumpNorm_before);
         }
     }
 }

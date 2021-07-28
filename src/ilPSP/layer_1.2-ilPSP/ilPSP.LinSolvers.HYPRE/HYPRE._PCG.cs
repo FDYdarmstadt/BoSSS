@@ -215,14 +215,14 @@ namespace ilPSP.LinSolvers.HYPRE {
             }
         }
 
-        ISparseSolver m_NestedPrecond;
+        IImplicitPrecond m_NestedPrecond;
         
         /// <summary>
         /// <see cref="IImplicitPrecondSupport.SupportedPrecond"/>;
         /// </summary>
-        public ISparseSolver NestedPrecond {
+        public IImplicitPrecond NestedPrecond {
             get {
-                return (ISparseSolver)m_NestedPrecond;
+                return m_NestedPrecond;
             }
             set {
                 ICollection<Type> Supp = this.SupportedPrecond;
@@ -243,7 +243,7 @@ namespace ilPSP.LinSolvers.HYPRE {
                 } else {
                     throw new ArgumentException("type '" + value.GetType().Name + "' is not supported as preconditioner for Hyper PCG solver.");
                 }
-                m_NestedPrecond = (ISparseSolver)value;
+                m_NestedPrecond = (IImplicitPrecond)value;
             }
         }
 
