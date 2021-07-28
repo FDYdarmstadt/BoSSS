@@ -23,11 +23,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
         QuadRule GetQuadRule();
     }
 
-    interface IPsi
-    {
-       
-    }
-
     interface ISortedBoundedList<T>
         : IEnumerable<T>
         where T : IComparable<T>
@@ -41,7 +36,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
 
     abstract class SayeArgument<S>
-        where S : IPsi
     {
         public enum Mode
         {
@@ -82,7 +76,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
 
     abstract class SayeIntegrand<S, T>
-        where S : IPsi
         where T : SayeArgument<S>
     {
         protected int cell;
