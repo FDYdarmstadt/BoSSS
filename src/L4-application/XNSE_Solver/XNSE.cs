@@ -70,17 +70,17 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
-            ////BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
-            ////Tests.ASUnitTest.CurvedElementsTest(3);
-            ////Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
-            ////Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
-            ////Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
+            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
+            //Tests.ASUnitTest.CurvedElementsTest(3);
+            //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
+            //Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
+            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
             //throw new Exception("Remove me");
 
-
+            
 
             _Main(args, false, delegate () {
                 var p = new XNSE();
@@ -124,13 +124,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            //if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-            //   && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-            //    throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-            //        $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
-            //        $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
-            //        $"If you do not know how to remove this exception, you should better return now!");
-            //}
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
 
             //QuadOrder
             int degU = VelocityDegree();
@@ -271,7 +271,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.CType);
+            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.DynamicLoadbalancing_ClassifierType);
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {

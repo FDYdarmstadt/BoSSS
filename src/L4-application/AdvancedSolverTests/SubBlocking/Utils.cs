@@ -5,6 +5,7 @@ using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -40,6 +41,8 @@ namespace AdvancedSolverTests.SubBlocking
             this.Solver = solver;
             MGSeq = solver.MgSeq;
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+            AssertWatch = new Stopwatch();
+            AssertWatch.Start();
         }
 
         public MultigridOperator MGOp {
@@ -64,6 +67,16 @@ namespace AdvancedSolverTests.SubBlocking
 
         public void Dispose() {
             Solver.Dispose();
+            CheckAssertWatch();
+        }
+
+        private Stopwatch AssertWatch;
+
+        private void CheckAssertWatch() {
+            AssertWatch.Stop();
+            double time = AssertWatch.Elapsed.TotalSeconds;
+            double timelimit = 240; //sec
+            Assert.IsTrue(time < timelimit, "time limit of "+timelimit+" seconds exceeded. There is something rotten, plz check ...");
         }
     }
 

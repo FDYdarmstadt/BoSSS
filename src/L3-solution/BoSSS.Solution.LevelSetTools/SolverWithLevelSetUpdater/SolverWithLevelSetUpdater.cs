@@ -11,7 +11,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     
@@ -474,7 +474,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             base.RegisterField(MPIrankField, IOListOption.Always);
 
             CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
+            var MaskSpcA = LsTrk.Regions.GetSpeciesMask("A");
+            var VoidMask = CellMask.Complement(MaskSpcA);
+
             CostClusterField.AccNoOfSpecies(1.0, LsTrk, 2);
+            CostClusterField.AccConstant(2, VoidMask);
             base.RegisterField(CostClusterField, IOListOption.Always);
 #endif
         }

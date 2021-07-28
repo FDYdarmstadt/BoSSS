@@ -55,7 +55,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// ctor
         /// </summary>
         /// <param name="b"></param>
-        public ConstrainedDGField(Basis b, ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly) {
+        public ConstrainedDGField(Basis b, ProjectionStrategy projectStrategy = ProjectionStrategy.patchwiseOnly) {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
             m_Mapping = new UnsetteledCoordinateMapping(b);
@@ -85,38 +85,36 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         DGField internalProjection;
 
-        ISparseSolver m_OpSolver;
+        ISparseSolver m_GlobalSolver;
+        ISparseSolver m_PatchSolver;
 
         /// <summary>
         /// linear solver for the quadratic optimization problem, matrix A has to be defined! 
         /// </summary>
         public ilPSP.LinSolvers.ISparseSolver OpSolver {
             get {
-                if (m_OpSolver == null) {
-                    //var solver = new ilPSP.LinSolvers.monkey.PCG();
-                    //solver.MatrixType = ilPSP.LinSolvers.monkey.MatrixType.Auto;
-                    //solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.CPU;
-                    //solver.Tolerance = 1.0e-12;
-                    //var solver = new ilPSP.LinSolvers.HYPRE.PCG();
-                    //var precond = new ilPSP.LinSolvers.HYPRE.Euclid();
-                    //solver.NestedPrecond = precond;
-                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                    //var solver = new ilPSP.LinSolvers.MUMPS.MUMPSSolver();
-                    m_OpSolver = solver;
+                if (m_GlobalSolver == null) {
+                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+                    var solver = new myCG();
+                    m_GlobalSolver = solver;
                 }
 
-                return m_OpSolver;
+                return m_GlobalSolver;
             }
-            //set {
-            //    m_OpSolver = value;
-            //}
         }
 
-        void ClearOpSolver() {
-            m_OpSolver = null;
-        }
+        private ilPSP.LinSolvers.ISparseSolver PatchSolver {
+            get {
+                if (m_PatchSolver == null) {
+                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                        Parallelism = Parallelism.SEQ,
+                    };
+                    m_PatchSolver = solver;
+                }
 
-        bool useOpSolver = true;
+                return m_PatchSolver;
+            }
+        }
 
         ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
 
@@ -126,7 +124,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         int maxNoOfCoordinates = 10000;
 
 
-        bool diagOutput = false;
+        bool diagOutput = true;
         bool diagOutputMatlab = false;
 
 
@@ -164,15 +162,18 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
             }
 
+            DGField[] returnvalue = null;
+
             switch (projectStrategy) {
                 case ProjectionStrategy.globalOnly: {
                     if (diagOutput) {
                         Console.WriteLine("======================");
                         Console.WriteLine("project global mask: No of cells {0}", mask.NoOfItemsLocally);
                     }
-                    this.ProjectDGFieldOnPatch(mask);
-                    return null;
+                    this.ProjectDGFieldGlobal(mask);
+                    returnvalue = null;
                 }
+                break;
                 case ProjectionStrategy.globalWithPatchwisePrecond: {
                     var retFields = ProjectDGField_patchwise(mask, NoOfFixedPatches);
                     double jumpNorm = CheckLocalProjection(mask, true);
@@ -183,15 +184,17 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             Console.WriteLine("======================");
                             Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
                         }
-                        this.ProjectDGFieldOnPatch(mask);
+                        this.ProjectDGFieldGlobal(mask);
                     }
-                    return retFields;
+                    returnvalue = retFields;
                 }
+                break;
                 case ProjectionStrategy.patchwiseOnly: {
-                   return ProjectDGField_patchwise(mask, NoOfFixedPatches);
+                    returnvalue = ProjectDGField_patchwise(mask, NoOfFixedPatches);
                 }
+                break;
                 case ProjectionStrategy.patchwiseWithGlobalPrecond: {
-                    this.ProjectDGFieldOnPatch(mask);
+                    this.ProjectDGFieldGlobal(mask);
                     double jumpNorm = CheckLocalProjection(mask, true);
                     if (diagOutput)
                         Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
@@ -202,12 +205,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
                         return ProjectDGField_patchwise(mask, NoOfFixedPatches);
                     }
-                    return null;
+                    returnvalue = null;
                 }
+                break;
                 default:
                     throw new ArgumentException("Projection strategy not supported");
             }
-
+            PrintRuntimes();
+            return returnvalue;
         }
 
 
@@ -563,18 +568,36 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     m_Coordinates = originCoordinates;
                 }
             }
-
-
         }
 
+        /// <summary>
+        /// Uses global solver which means solver runs on MPI_comm.WORLD
+        /// </summary>
+        /// <param name="mask"></param>
+        /// <param name="fixedBoundaryMask"></param>
+        void ProjectDGFieldGlobal(CellMask mask, EdgeMask fixedBoundaryMask = null) {
+            using (new RuntimeTracker("time global projection",diagOutput)) {
+                ProjectDGFieldBase(mask, fixedBoundaryMask, false);
+            }
+        }
 
+        /// <summary>
+        /// Uses local solver which means solver runs on MPI_comm.SELF
+        /// </summary>
+        /// <param name="mask"></param>
+        /// <param name="fixedBoundaryMask"></param>
+        void ProjectDGFieldOnPatch(CellMask mask, EdgeMask fixedBoundaryMask = null) {
+            using (new RuntimeTracker("time patchwise projection", diagOutput)) {
+                ProjectDGFieldBase(mask, fixedBoundaryMask, true);
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="mask"></param>
         /// <param name="fixedBoundaryMask"></param>
-        void ProjectDGFieldOnPatch(CellMask mask, EdgeMask fixedBoundaryMask = null) {
+        void ProjectDGFieldBase(CellMask mask, EdgeMask fixedBoundaryMask = null, bool IsLocal = false) {
 
             // ...
             InitProjectionPatch(mask);
@@ -661,17 +684,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             double[] v = new double[rowBlockPart.LocalLength];
             double[] x = new double[m_Coordinates.Length];
 
-            if (useOpSolver) {
-                OpSolver.DefineMatrix(AAT);
-                OpSolver.Solve(v, RHS);
-                OpSolver.Dispose();
-                ClearOpSolver();
-            } else {
-                var solver = new myCG();
-                solver.Init(AAT);
-                solver.Solve(v, RHS);
-                solver.Dispose();
-            }
+            var solver = InitializeSolver(IsLocal, AAT);
+            solver.Solve(v, RHS);
+            solver.Dispose();
 
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
@@ -679,6 +694,64 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
+        private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
+            ISparseSolver solver;
+            if (IsLocal) {
+                solver = PatchSolver;
+                var crunchedmatrix = SolverUtils.GetLocalMatrix(matrix);
+                solver.DefineMatrix(crunchedmatrix);
+            } else {
+                solver = OpSolver;
+                solver.DefineMatrix(matrix);
+            }
+            return solver;
+        }
+
+        private class RuntimeTracker : IDisposable {
+            public RuntimeTracker(string recordname, bool activate) {
+                m_activate = activate;
+                m_RuntimeSTW = new Stopwatch();
+                m_record = RuntimeRecord;
+                m_name = recordname;
+                if (m_activate) m_RuntimeSTW.Start();
+            }
+
+            private Stopwatch m_RuntimeSTW;
+            private bool m_activate;
+            private Dictionary<string, double> m_record;
+            private string m_name;
+
+            private double GetTime() {
+                double thisreturn = 0;
+                m_RuntimeSTW.Stop();
+                thisreturn = m_RuntimeSTW.Elapsed.TotalSeconds;
+                return thisreturn;
+            }
+
+            private bool AddRecordIfNew() {
+                double time = GetTime();
+                bool IsNew = m_record.ContainsKey(m_name) == false;
+                if (IsNew)
+                    m_record.Add(m_name, time);
+                else {
+                    m_record[m_name] += time;
+                }
+                return IsNew;
+            }
+
+            public void Dispose() {
+                if (m_activate) AddRecordIfNew();
+                m_RuntimeSTW = null;
+            }
+        }
+
+        static private Dictionary<string, double> RuntimeRecord = new Dictionary<string, double>();
+
+        public void PrintRuntimes() {
+            foreach (var kv in RuntimeRecord) {
+                Console.WriteLine(kv.Key + " : " + kv.Value);
+            }
+        }
 
 
         //List<GeometricCellForProjection> maskedCells;
@@ -1929,7 +2002,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 ClearOpSolver();
             } else {
                 var solver = new myCG();
-                solver.Init(AAT);
+                solver.DefineMatrix(AAT);
                 solver.Solve(v, RHS);
                 solver.Dispose();
             }
@@ -2068,7 +2141,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 ClearOpSolver();
             } else {
                 var solver = new myCG();
-                solver.Init(AAT);
+                solver.DefineMatrix(AAT);
                 solver.Solve(v, RHS);
                 solver.Dispose();
             }

@@ -64,6 +64,8 @@ namespace BoSSS.Solution.Control {
         exp_gmres_AS = 27,
         exp_gmres_AS_MG = 30,
 
+        exp_gmres_ILU = 31,
+
         //CG versions
 
         /// <summary>
@@ -142,10 +144,17 @@ namespace BoSSS.Solution.Control {
     [Serializable]
     public class LinearSolverConfig : ICloneable, IEquatable<LinearSolverConfig> {
 
+        private bool m_verbose = false;
+
         /// <summary>
         /// This will print out more information about iterations.
         /// </summary>
-        public bool verbose = false;
+        public bool verbose {
+            get { return m_verbose; }
+            set {
+                m_verbose = value;
+            }
+        }
 
         /// <summary>
         /// If iterative saddle-point solvers like GMRES or Orthonormalization are used, the maximum number of basis vectors
@@ -173,11 +182,18 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public double ConvergenceCriterion = 1e-10;
 
+        private LinearSolverCode m_SolverCode= LinearSolverCode.classic_pardiso;
+
         /// <summary>
         /// Sets the algorithm to use for linear solving, e.g. MUMPS or GMRES.
         /// </summary>
         [DataMember]
-        public LinearSolverCode SolverCode = LinearSolverCode.classic_pardiso;
+        public LinearSolverCode SolverCode {
+            get { return m_SolverCode; }
+            set {
+                m_SolverCode = value;  
+            }
+        }
 
         /// <summary>
         /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.

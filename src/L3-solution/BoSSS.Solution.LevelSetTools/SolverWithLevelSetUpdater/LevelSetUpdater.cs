@@ -478,7 +478,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             double residual = 0;
             
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
-
+            //Tecplot.Tecplot.PlotFields( new DGField[] {lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetBeforeUpdate", time, 3);
             foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
                 residual += updater.UpdateLevelSet(
                     DomainVarFields,
@@ -488,6 +488,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     underRelax,
                     incremental);
             }
+            //Tecplot.Tecplot.PlotFields( new DGField[] { lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetAfterUpdate", time, 3);
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
             UpdateParameters(DomainVarFields, InnerParameterFields, time + dt); // update parameters after change of level-set.
 
