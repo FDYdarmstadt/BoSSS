@@ -15,12 +15,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public Continuity(string spcName, int D) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
-                //string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
                 string variableName = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
                 AddVariableNames(variableName);
                 var divergence = new Divergence(spcName, variableName, i);
                 AddComponent(divergence);
             }
+
+            string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
+            AddVariableNames(pressure);
+            var pressurePenalty = new PressurePenaltyForm(spcName, pressure);
+            //AddComponent(pressurePenalty);
         }
 
         public override string SpeciesName => spcName;

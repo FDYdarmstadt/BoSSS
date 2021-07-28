@@ -101,7 +101,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal);
             double Lambda = Math.Max(LambdaIn, LambdaOut);
             double uJump = _uIN[d] - _uOUT[d];
-            //r += Lambda * uJump;
+            r += Lambda * uJump;
 
             r *= rho;
             r *= 0.5;

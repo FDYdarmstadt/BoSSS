@@ -23,7 +23,7 @@ namespace ZwoLevelSetSolver.Tests {
             [Values(1, 2, 3, 4)] int degree,
             [Values(0.0, 0.1)] double agglomerationTreshold
             ) {
-            ZLS_Control control = ZwoLevelSetSolver.HardCodedControl.QuasiStationaryDroplet(degree, agglomerationTreshold);
+            ZLS_Control control = ZwoLevelSetSolver.ControlFiles.HardCodedControl.QuasiStationaryDroplet(degree, agglomerationTreshold);
             
             Test<ZLS_Control> levelSetEvolverTest = new Test<ZLS_Control>(control);
             levelSetEvolverTest.AddSolutionTestField(

@@ -25,16 +25,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             
             var convection = new NonLinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), D, material.Density);
             AddComponent(convection);
-            
-            if(d == 0) {
+
+            //var elasticTension = new IncompressibleNeoHookean(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),d, material.Lame2);
+            //*
+            if (d == 0) {
                 var elasticTension = new LinearIncompressibleNeoHookeanX(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), material.Lame2);
                 AddComponent(elasticTension);
-            }else if(d == 1) {
+            } else if (d == 1) {
                 var elasticTension = new LinearIncompressibleNeoHookeanY(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), material.Lame2);
                 AddComponent(elasticTension);
             } else {
                 throw new Exception("Spatial Dimension not supported.");
             }
+            //*/
 
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);

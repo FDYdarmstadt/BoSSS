@@ -28,6 +28,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
             AddComponent(convection);
 
+            //*
             if(d == 0) {
                 var elasticTension = new LinearIncompressibleNeoHookeanX(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), material.Lame2);
                 AddComponent(elasticTension);
@@ -37,6 +38,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             } else {
                 throw new Exception("Spatial Dimension not supported.");
             }
+            //*/
 
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);

@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Utils;
 
-namespace ZwoLevelSetSolver {
+namespace ZwoLevelSetSolver.ControlFiles {
 
     public static class HardCodedControl {
 
@@ -42,15 +42,6 @@ namespace ZwoLevelSetSolver {
 
             C.ContinueOnIoError = false;
             #endregion
-
-
-            // DG degrees
-            // ==========
-            #region degrees
-            C.SetDGdegree(p);
-
-            #endregion
-
 
             // Physical Parameters
             // ===================
@@ -239,15 +230,6 @@ namespace ZwoLevelSetSolver {
             //C.PostprocessingModules.Add(new MovingContactLineLogging());
 
             #endregion
-
-
-            // DG degrees
-            // ==========
-            #region degrees
-            C.SetDGdegree(p);
-
-            #endregion
-
 
             // Physical Parameters
             // ===================
@@ -454,15 +436,6 @@ namespace ZwoLevelSetSolver {
 
             #endregion
 
-
-            // DG degrees
-            // ==========
-            #region degrees
-            C.SetDGdegree(p);
-
-            #endregion
-
-
             // Physical Parameters
             // ===================
             #region physics
@@ -666,16 +639,6 @@ namespace ZwoLevelSetSolver {
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
 
             #endregion
-
-
-            // DG degrees
-            // ==========
-            #region degrees
-
-            C.SetDGdegree(p);
-
-            #endregion
-
 
             // Physical Parameters
             // ===================
@@ -933,15 +896,6 @@ namespace ZwoLevelSetSolver {
 
             #endregion
 
-
-            // DG degrees
-            // ==========
-            #region degrees
-            C.SetDGdegree(p);
-
-            #endregion
-
-
             // Physical Parameters
             // ===================
             #region physics
@@ -1137,15 +1091,6 @@ namespace ZwoLevelSetSolver {
 
             #endregion
 
-
-            // DG degrees
-            // ==========
-            #region degrees
-            C.SetDGdegree(p);
-
-            #endregion
-
-
             // Physical Parameters
             // ===================
             #region physics
@@ -1158,7 +1103,7 @@ namespace ZwoLevelSetSolver {
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
-            C.Material = new Beam();
+            C.Material = new HardSiliconeRubber();
 
             #endregion
 
@@ -1223,20 +1168,33 @@ namespace ZwoLevelSetSolver {
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
             double v0 = 0.1;
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0.102);
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
             #endregion
 
 
             // boundary conditions
             // ===================
             #region BC
+            double R(double t) {
+                if (t < 1) {
+                    return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
+                } else {
+                    return 1;
+                }
+            }
+
+            double vmax = 0.01;
+            double inflow(double[] x, double t) {
+                    return vmax * R(t);
+            }
+
 
             C.AddBoundaryValue("freeslip_lower");
             C.AddBoundaryValue("freeslip_upper");
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", X => v0);
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", X => v0);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", inflow);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflow);
             C.AddBoundaryValue("pressure_outlet_right");
 
             #endregion
@@ -1285,10 +1243,10 @@ namespace ZwoLevelSetSolver {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.TimesteppingMode = compMode;
-            double dt = 2e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
@@ -1299,7 +1257,5 @@ namespace ZwoLevelSetSolver {
 
             return C;
         }
-
-       
     }
 }

@@ -12,12 +12,17 @@ namespace ZwoLevelSetSolver {
 
         public Solid Material = new HardSiliconeRubber();
 
+        public int Degree { get; private set; }
+
         public ZLS_Control() : base() { }
 
         public ZLS_Control(int p) {
             UseImmersedBoundary = true;
             Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
+            
+            Degree = p;
+            SetDGdegree(p);
 
             FieldOptions.Add(VariableNames.DisplacementX, new FieldOpts() {
                 Degree = p,

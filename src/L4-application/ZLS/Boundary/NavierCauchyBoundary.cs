@@ -24,15 +24,18 @@ namespace ZwoLevelSetSolver.Boundary {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
             //Stress equality
-            if(d == 0) {
+            //AddComponent(new IncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, 1, d, viscosity, material.Lame2));
+            if (d == 0) {
                 AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
                 AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-            }else if( d== 1) {
+            } else if (d == 1) {
                 AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
                 AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
             } else {
                 throw new Exception("Spatial Dimension not supported.");
             }
+            
+
             //Penalty coupling
             AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
 
