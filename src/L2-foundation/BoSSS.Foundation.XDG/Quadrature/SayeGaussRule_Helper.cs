@@ -12,7 +12,6 @@ using BoSSS.Foundation.Quadrature;
 namespace BoSSS.Foundation.XDG.Quadrature
 {
     class LinearPSI<S>
-        : IPsi
         where S : RefElement
 
     {
