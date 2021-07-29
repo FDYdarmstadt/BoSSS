@@ -643,6 +643,10 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string Mu = "Viscosity";
 
+        /// <summary>
+        /// variable name for the mixture heat capacity
+        /// </summary>
+        public const string cp = "MixtureHeatCapacity";
 
         /// <summary>
         /// variable name for temperature

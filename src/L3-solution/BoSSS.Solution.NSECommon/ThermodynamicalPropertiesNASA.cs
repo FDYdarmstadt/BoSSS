@@ -295,8 +295,7 @@ namespace BoSSS.Solution.NSECommon {
                 double cp_i = getCp(Names[i], Temperature);
                 cpMixture = cpMixture + cp_i * MassFractions[i];
             }
-            double cpRef = 1.4;
-            return cpMixture / cpRef;
+            return cpMixture ;
         }
 
 

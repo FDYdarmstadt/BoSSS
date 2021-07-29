@@ -163,7 +163,7 @@ namespace BoSSS.Solution.NSECommon {
                 this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
                 break;
                 case PhysicsMode.Combustion:
-                this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu };// null;
+                this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu ,VariableNames.cp};// null;
                 string[] MFs = VariableNames.MassFractions(noOfChemComponents);
                 this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs);
                 break;

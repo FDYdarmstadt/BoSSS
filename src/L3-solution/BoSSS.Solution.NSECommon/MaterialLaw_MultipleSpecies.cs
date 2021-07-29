@@ -42,12 +42,15 @@ namespace BoSSS.Solution.NSECommon {
         protected bool cpOne;
 
         [DataMember]
+        double cpRef;
+
+        [DataMember]
         public OneStepChemicalModel m_ChemModel;
 
         /// <summary>
         /// Ctor.
         /// </summary>
-        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, bool _cpOne, double gasConstant, double T_ref,OneStepChemicalModel chemModel) {
+        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, bool _cpOne, double gasConstant, double T_ref, OneStepChemicalModel chemModel, double _cpRef) {
             this.MatParamsMode = MatParamsMode;
             this.R = gasConstant;
             this.thermoProperties = new ThermodynamicalProperties();
@@ -55,6 +58,7 @@ namespace BoSSS.Solution.NSECommon {
             this.T_ref = T_ref;
             this.rhoOne = _rhoOne;
             this.cpOne = _cpOne;
+            this.cpRef = _cpRef;
             m_ChemModel = chemModel;
         }
 
@@ -142,31 +146,23 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetMixtureHeatCapacity(double[] arguments) {
             double cp;
             if (!cpOne) {
-                double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
-                for (int n = 1; n < arguments.Length; n++) {
-                    lastMassFract -= arguments[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
-                }
-
-                arguments = ArrayTools.Cat(arguments, lastMassFract);
                 double TRef = 300;
                 double DimensionalTemperature = arguments[0] * TRef;
-                double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
-                string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
-                cp = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature);
+                //cp = thermoProperties.getCp("N2", DimensionalTemperature) / this.cpRef; // Using correlation for N2...
+                double cphack = (-6e-8 * DimensionalTemperature * DimensionalTemperature + 0.0003 * DimensionalTemperature + 0.9334); // this is a not so exact correlation obtained after "combining" the two correlations of he nasa polinomials for nitrogen
+                cp = cphack / cpRef;
+                //double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+                //for (int n = 1; n < arguments.Length; n++) {
+                //    lastMassFract -= arguments[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                //}
+                //arguments = ArrayTools.Cat(arguments, lastMassFract);
+                //double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
+                //string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
+                // cp = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature)/cpRef;
+
             } else {
                 cp = 1.0;
             }
-
-
-
-
-
-
-
-
-
-
-
             return cp;
         }
 

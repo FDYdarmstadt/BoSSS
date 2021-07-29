@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         ///
         /// <param name="Prandtl"></param>
-        public MaterialLawMixtureFractionNew(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl, OneStepChemicalModel chemModel) : base(MolarMasses, MatParamsMode, rhoOne, true, gasConstant, T_ref, chemModel) {
+        public MaterialLawMixtureFractionNew(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl, OneStepChemicalModel chemModel) : base(MolarMasses, MatParamsMode, rhoOne, true, gasConstant, T_ref, chemModel, _cpRef: 1.0) {
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
