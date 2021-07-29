@@ -7,6 +7,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
 using BoSSS.Solution.Utils;
+using BoSSS.Foundation.ConstrainedDGprojection;
 
 namespace CDG_Projection_MPI {
 
@@ -50,18 +51,15 @@ namespace CDG_Projection_MPI {
 
             // Act -- Do the CG-projection
             CDGTestField.SetDGCoordinatesOnce(mask, field);
-            double jumpNorm = CDGTestField.CheckLocalProjection(mask, false);
-            Console.WriteLine("jump norm of initial: "+jumpNorm);
-            
-            CDGTestField.ProjectDGField_patchwise(field, mask, 1);
             double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
+            Console.WriteLine("jump norm of initial: "+ jumpNorm_before);
+            
+            CDGTestField.ProjectDGField_patchwise(mask, 1);
+            double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             
             //CDGTestField.ProjectDGFieldOnPatch(field, mask);
             //double jumpNorm_total = CDGTestField.CheckLocalProjection(mask, false);
             //Console.WriteLine("jump Norm after total projection: "+ jumpNorm_total);
-
-            CDGTestField.InterProcessProjectionBranch(mask, field);
-            double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, true);
 
             // Assert -- effective inter process projection
             Assert.IsTrue(jumpNorm_after < jumpNorm_before);

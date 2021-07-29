@@ -150,17 +150,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 throw new ArgumentOutOfRangeException("Domain mask cannot be empty.");
             }
 
-            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
-            foreach (var chunk in mask) {
-                int j0 = chunk.i0;
-                int jE = chunk.JE;
-                for (int j = j0; j < jE; j++) {
-                    int N = orgDGField.Basis.GetLength(j);
-                    for (int n = 0; n < N; n++) {
-                        m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = orgDGField.Coordinates[j, n];
-                    }
-                }
-            }
+            SetDGCoordinatesOnce(mask, orgDGField);
 
             DGField[] returnvalue = null;
 
@@ -215,6 +205,19 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             return returnvalue;
         }
 
+        protected void SetDGCoordinatesOnce(CellMask mask, DGField orgDGField) {
+            // get DG-coordinates (change of basis for projection on a higher polynomial degree)
+            foreach (var chunk in mask) {
+                int j0 = chunk.i0;
+                int jE = chunk.JE;
+                for (int j = j0; j < jE; j++) {
+                    int N = orgDGField.Basis.GetLength(j);
+                    for (int n = 0; n < N; n++) {
+                        m_Coordinates[m_Mapping.LocalUniqueCoordinateIndex(0, j, n)] = orgDGField.Coordinates[j, n];
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// 
@@ -1128,7 +1131,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <param name="mask"></param>
         /// <param name="onInterProc"></param>
         /// <returns></returns>
-        double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
+        protected double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
