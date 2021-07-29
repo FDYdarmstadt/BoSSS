@@ -85,42 +85,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         DGField internalProjection;
 
-        ISparseSolver m_GlobalSolver;
-        ISparseSolver m_PatchSolver;
-
-        /// <summary>
-        /// linear solver for the quadratic optimization problem, matrix A has to be defined! 
-        /// </summary>
-        public ilPSP.LinSolvers.ISparseSolver OpSolver {
-            get {
-                if (m_GlobalSolver == null) {
-                    //var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-                    var solver = new myCG();
-                    m_GlobalSolver = solver;
-                }
-
-                return m_GlobalSolver;
-            }
-        }
-
-        private ilPSP.LinSolvers.ISparseSolver PatchSolver {
-            get {
-                if (m_PatchSolver == null) {
-                    var solver = new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                        Parallelism = Parallelism.SEQ,
-                    };
-                    m_PatchSolver = solver;
-                }
-
-                return m_PatchSolver;
-            }
-        }
-
         ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
 
         bool reduceLinearDependence = false;
 
-        int NoOfFixedPatches = 0;  // if < 1 the number of patches is determined by maxNoOfCoordinates
+        int NoOfFixedPatches = 1;  // if < 1 the number of patches is determined by maxNoOfCoordinates
         int maxNoOfCoordinates = 10000;
 
 
@@ -283,7 +252,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 innerEM = innerEM.Except(fixedInterProcBoundary);
 
                 // add neighbours
-                int NoLocalNeigh = 2;
+                int NoLocalNeigh = 2; // Gets the neighbor and the neighbor's neighbor
                 CellMask localInterProcNeigh = localInterProcPatch;
                 BitArray localInterProcNeighBA = new BitArray(J);
                 for (int n = 0; n < NoLocalNeigh; n++) {
@@ -326,7 +295,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     Console.WriteLine("======================");
                     Console.WriteLine("project on interProc patch: No of local/wExternal cells {0}/{1}", localInterProcNeigh.NoOfItemsLocally, localInterProcNeigh.NoOfItemsLocally_WithExternal);
                 }
-                this.ProjectDGFieldOnPatch(localInterProcNeigh);
+                this.ProjectDGFieldGlobal(localInterProcNeigh);
                 if (diagOutput) {
                     double jumpNorm = CheckLocalProjection(localInterProcNeigh, true);
                     Console.WriteLine("L2 jump norm = {0}", jumpNorm);
@@ -700,11 +669,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
             ISparseSolver solver;
             if (IsLocal) {
-                solver = PatchSolver;
+                solver = SolverUtils.PatchSolverFactory();
                 var crunchedmatrix = SolverUtils.GetLocalMatrix(matrix);
                 solver.DefineMatrix(crunchedmatrix);
             } else {
-                solver = OpSolver;
+                solver = SolverUtils.GlobalSolverFactory(matrix.NoOfRows);
                 solver.DefineMatrix(matrix);
             }
             return solver;

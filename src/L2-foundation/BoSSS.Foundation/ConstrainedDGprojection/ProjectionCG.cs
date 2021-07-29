@@ -63,9 +63,34 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             Matrix.WriteSubMatrixTo(localMatrix, RowISrc, default(long[]), RowISrc, default(long[]));
             return localMatrix.ToMsrMatrix();
         }
+
+        /// <summary>
+        /// constructs solver depending on size of matrix (DOF). Acts on MPI_Comm.WORLD
+        /// </summary>
+        /// <param name="DOF"></param>
+        /// <returns></returns>
+        public static ISparseSolver GlobalSolverFactory(long DOF) {
+            bool UseDirect = DOF < 1E6;
+            if (UseDirect)
+                return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                    Parallelism = Parallelism.OMP
+                };
+            else
+                return new myCG();
+        }
+
+        /// <summary>
+        /// constructs solver which acts on MPI_Comm.SELF
+        /// </summary>
+        /// <returns></returns>
+        public static ISparseSolver PatchSolverFactory() {
+            return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                Parallelism = Parallelism.SEQ,
+            };
+        }
     }
 
-    public class myCG : ISparseSolver, IDisposable {
+    public class myCG : ISparseSolver {
 
         public void DefineMatrix(IMutableMatrixEx matrix) {
             BlockMsrMatrix bmsrM;
