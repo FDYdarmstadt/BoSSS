@@ -10,7 +10,7 @@ using ZwoLevelSetSolver.SolidPhase;
 namespace ZwoLevelSetSolver {
     public class ZLS_Control : XNSE_Control {
 
-        public Solid Material = new HardSiliconeRubber();
+        public Solid Material = new ConvergenceTest();
 
         public ZLS_Control() : base() { }
 

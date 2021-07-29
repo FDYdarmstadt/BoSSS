@@ -65,7 +65,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Ball() {
             PoissonsRatio = 0.5;
-            ModulusOfElasticity = 1;
+            ModulusOfElasticity = 0.01;
             Density = 1;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
@@ -93,13 +93,4 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
     }
 
-    class ConvergenceTest : Solid {
-        public ConvergenceTest() {
-            PoissonsRatio = 0.5;
-            ModulusOfElasticity = 3;
-            Density = 1;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
-            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-        }
-    }
 }

@@ -66,16 +66,16 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double xSize = 2;
             double ySize = 2;
 
-            C.GridFunc = delegate () {
+            //C.GridFunc = delegate () {
 
-                double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
+            //    double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
+            //    double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
 
-                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
+            //    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
-                return grd;
+            //    return grd;
 
-            };
+            //};
 
 
             #endregion
@@ -93,55 +93,57 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region init
 
-            Func<double[], double> PhiFunc = (X => -1);
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //Func<double[], double> PhiFunc = (X => -1);
+            ////C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            Func<double[], double> Phi1Func = delegate (double[] X) {
-                // only solid
-                return 1;
-            };
+            //Func<double[], double> Phi1Func = delegate (double[] X) {
+            //    // only solid
+            //    return 1;
+            //};
 
-            Func<Vector, double, double> Vvorx = delegate (Vector X, double lamda) {
-                return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
-            };
+            //Func<Vector, double, double> Vvorx = delegate (Vector X, double lamda) {
+            //    return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            //};
 
-            Func<Vector, double, double> Vvory = delegate (Vector X, double lamda) {
-                return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
-            };
+            //Func<Vector, double, double> Vvory = delegate (Vector X, double lamda) {
+            //    return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            //};
 
-            int K = 0;
+            //int K = 0;
 
-            Func<double[], double> Vx = delegate (double[] X) {
-                double sum = 0;
-                for (int k = 0; k <= K; k++) {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
-                }
-                return sum;
-            };
+            //Func<double[], double> Vx = delegate (double[] X) {
+            //    double sum = 0;
+            //    for (int k = 0; k <= K; k++) {
+            //        Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+            //        sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+            //    }
+            //    return sum;
+            //};
 
-            Func<double[], double> Vy = delegate (double[] X) {
-                double sum = 0;
-                for (int k = 0; k <= K; k++) {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
-                }
-                return sum;
-            };
+            //Func<double[], double> Vy = delegate (double[] X) {
+            //    double sum = 0;
+            //    for (int k = 0; k <= K; k++) {
+            //        Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+            //        sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+            //    }
+            //    return sum;
+            //};
 
 
 
             //C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+            //C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
+
+
+            int K = 0;
+            C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
-
-
             C.AddInitialValue("VelocityX#A", new VelocityX(K));
             C.AddInitialValue("VelocityX#B", new VelocityX(K));
             C.AddInitialValue("VelocityX#C", new VelocityX(K));
-
-            C.InitialValues_Evaluators.Add("VelocityY#A", Vy);
-            C.InitialValues_Evaluators.Add("VelocityY#B", Vy);
-            C.InitialValues_Evaluators.Add("VelocityY#C", Vy);
+            C.AddInitialValue("VelocityY#A", new VelocityY(K));
+            C.AddInitialValue("VelocityY#B", new VelocityY(K));
+            C.AddInitialValue("VelocityY#C", new VelocityY(K));
             #endregion
 
             // boundary conditions
@@ -196,7 +198,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
     } 
 
-    class VelocityX : IBoundaryAndInitialData {
+    public class VelocityX : IBoundaryAndInitialData {
         int K;
 
         public VelocityX(int K) {
@@ -207,7 +209,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double sum = 0;
             for (int k = 0; k <= K; k++) {
                 Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+                sum = sum + (Math.Pow(-1, k) * this.Vvorx(x, 2 * (k + 1)));
             }
             return sum;
         }
@@ -219,5 +221,39 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
             NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
         }
+    }
+
+    public class VelocityY : IBoundaryAndInitialData
+    {
+        int K;
+
+        public VelocityY(int K)
+        {
+            this.K = K;
+        }
+
+        public double Evaluate(double[] X, double t)
+        {
+            double sum = 0;
+
+            for (int k = 0; k <= K; k++)
+            {
+                Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+            }
+            return sum;
+
+        }
+
+        double Vvory(double[] X, double lamda)
+        {
+            return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+        }
+
+        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output)
+        {
+            NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
+        }
+
     }
 }
