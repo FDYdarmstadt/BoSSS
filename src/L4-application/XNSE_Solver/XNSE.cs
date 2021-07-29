@@ -124,13 +124,13 @@ namespace BoSSS.Application.XNSE_Solver {
         /// When evaluating a constant function, $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.        
         /// </remarks>
         override public int QuadOrder() {
-            //if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
-            //   && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
-            //    throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
-            //        $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
-            //        $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
-            //        $"If you do not know how to remove this exception, you should better return now!");
-            //}
+            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+               && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
+                throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
+                    $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
+                    $"you have set {Control.CutCellQuadratureType}, so you are notified that you reach into unknown territory; " +
+                    $"If you do not know how to remove this exception, you should better return now!");
+            }
 
             //QuadOrder
             int degU = VelocityDegree();
@@ -271,7 +271,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.CType);
+            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.DynamicLoadbalancing_ClassifierType);
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
@@ -498,7 +498,17 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //Update Calls
+            //// check some properties (only for debugging)
+            //double r0 = 1;
+            //double volumeRef = (1.0 / 3.0) * Math.PI * Math.Pow(r0, 3); // quarter domain
+            ////double rCalc = 0.9074;
+            ////double volumeCalc = (1.0 / 3.0) * Math.PI * Math.Pow(rCalc, 3); // quarter domain
+            //int quadOrder = QuadOrder();
+            //Console.WriteLine("quadOrder = {0}", quadOrder);
+            //double volume = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"), quadOrder);
+            //Console.WriteLine("droplet volume: volume_A = {0} (ref volume = {1}; {2})", volume, volumeRef, 100*(volume - volumeRef)/volumeRef);
+            ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
+            // Update Calls
             dt = GetFixedTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
