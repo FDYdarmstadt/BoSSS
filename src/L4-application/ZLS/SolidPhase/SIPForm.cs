@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    class SIPForm : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient {
+    public class SIPForm : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient {
         double viscosity;
         string species;
         int d;
@@ -23,7 +23,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public TermActivationFlags VolTerms {
-            get { return TermActivationFlags.GradUxGradV; }
+            get { return TermActivationFlags.AllOn; }
         }
 
         public IList<string> ArgumentOrdering => variableNames;
@@ -31,11 +31,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public IList<string> ParameterOrdering => new string[] { };
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV );}
+            get { return (TermActivationFlags.UxV | TermActivationFlags.GradUxV| TermActivationFlags.UxGradV| TermActivationFlags.V |TermActivationFlags.GradV);}
         }
 
         public TermActivationFlags InnerEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV); }
         }
 
         public string ValidSpecies => species;
@@ -44,11 +44,17 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double acc1 = 0.0;
             double pnlty = 2 * Penalty(inp.jCellIn, -1);
 
-            for(int i = 0; i < D; i++) {
-                acc1 -= viscosity * _Grad_uIN[d, i] * _vIN  * inp.Normal[i];  // consistency term  
-                acc1 -= viscosity * _Grad_vIN[i] * _uIN[d] * inp.Normal[i];  // symmetry term
+            Vector dirichlet = new Vector(D);
+
+            if (inp.EdgeTag == 2) {
+                dirichlet[0] = 1;
             }
-            acc1 += _uIN[d] * _vIN  * pnlty * viscosity;
+
+            for (int i = 0; i < D; i++) {
+                acc1 -= viscosity * _Grad_uIN[d, i] * _vIN  * inp.Normal[i];  // consistency term  
+                acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+            }
+            acc1 += (_uIN[d] - dirichlet[d]) * _vIN  * pnlty * viscosity;
             return acc1;
         }
 

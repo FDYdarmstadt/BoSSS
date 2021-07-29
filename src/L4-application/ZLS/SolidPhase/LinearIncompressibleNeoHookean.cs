@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    class LinearIncompressibleNeoHookeanX : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class LinearIncompressibleNeoHookeanX : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
         double viscosity;
         string species;
         int D = 2;
@@ -30,7 +30,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public IList<string> ParameterOrdering => new string[] { };
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.GradV | TermActivationFlags.V); }
         }
 
         public TermActivationFlags InnerEdgeTerms {
@@ -41,16 +41,21 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
+            
+            double dirichletX = 0;
+            double dirichletY = 0;
+
             acc1 -= (-(_Grad_uIN[1, 1]) * inp.Normal[0] + (_Grad_uIN[1, 0]) * inp.Normal[1]) * _vIN;
-            acc1 -= (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0]);
-            acc1 += (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1]);
+            acc1 -= (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0] - dirichletX);
+            acc1 += (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1] - dirichletY);
 
             acc1 -=  (-(_Grad_uIN[1, 1] ) * inp.Normal[0] + (_Grad_uIN[1, 0]) * inp.Normal[1]) * (_vIN);
-            acc1 -=  ((_Grad_vIN[1]) * inp.Normal[0] - (_Grad_vIN[0]) * inp.Normal[1]) * (_uIN[1]);
+            acc1 -=  ((_Grad_vIN[1]) * inp.Normal[0] - (_Grad_vIN[0]) * inp.Normal[1]) * (_uIN[1] - dirichletY);
 
             acc1 *= -1;
             double pnlty = Penalty(inp.jCellIn, -1);
-            acc1 += (_uIN[0]) * (_vIN) * pnlty;
+
+            acc1 += (_uIN[0] - dirichletX) * (_vIN) * pnlty;
             return viscosity * acc1;
 
         }
@@ -123,7 +128,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
     }
 
-    class LinearIncompressibleNeoHookeanY : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class LinearIncompressibleNeoHookeanY : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
         double viscosity;
         string species;
         int D = 2;
@@ -144,7 +149,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public IList<string> ParameterOrdering => new string[] { };
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.GradV | TermActivationFlags.V); }
         }
 
         public TermActivationFlags InnerEdgeTerms {
@@ -155,16 +160,20 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
+
+            double dirichletX = 0;
+            double dirichletY = 0;
+
             acc1 -= ((_Grad_uIN[1, 0] ) * inp.Normal[0] - (_Grad_uIN[0, 0]) * inp.Normal[1]) * (_vIN);
-            acc1 += (_Grad_vIN[1] ) * inp.Normal[0] * (_uIN[0]);
-            acc1 -= (_Grad_vIN[0] ) * inp.Normal[0] * (_uIN[1]);
+            acc1 += (_Grad_vIN[1] ) * inp.Normal[0] * (_uIN[0] - dirichletX);
+            acc1 -= (_Grad_vIN[0] ) * inp.Normal[0] * (_uIN[1] - dirichletY);
 
             acc1 -= ((_Grad_uIN[0, 1] ) * inp.Normal[0] - (_Grad_uIN[0, 0] ) * inp.Normal[1]) * (_vIN );
-            acc1 -= (-(_Grad_vIN[1] ) * inp.Normal[0] + (_Grad_vIN[0] ) * inp.Normal[1]) * (_uIN[0]);
+            acc1 -= (-(_Grad_vIN[1] ) * inp.Normal[0] + (_Grad_vIN[0] ) * inp.Normal[1]) * (_uIN[0] - dirichletX);
             acc1 *= -1;
 
             double pnlty = Penalty(inp.jCellIn, -1);
-            acc1 += (_uIN[1]) * (_vIN) *  pnlty ;
+            acc1 += (_uIN[1] - dirichletY) * (_vIN) *  pnlty ;
             return acc1 * viscosity;
 
         }

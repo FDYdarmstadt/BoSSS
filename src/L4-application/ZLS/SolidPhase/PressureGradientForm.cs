@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    class PressureGradientForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent {
+    public class PressureGradientForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent {
         string species;
         int d;
 
