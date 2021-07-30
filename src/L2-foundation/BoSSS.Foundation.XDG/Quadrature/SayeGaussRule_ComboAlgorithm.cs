@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //----------------------------------------------------------------------
             arg.Surface = false;
             cell = Cell;
-            TreeNode<T> recursionTree = new TreeNode<T>();
+            TreeNode<T> recursionTree = new TreeNode<T>(arg);
             TreeNode<T> fullSpace = recursionTree.AddChild(arg);
 
             //Build Integrand
@@ -39,13 +39,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //----------------------------------------------------------------------
             //Fill nodesAndWeights
 
-            SurfRule = GetEmptySurfaceRule();
+            SurfRule = GetEmptyQuadratureRule();
             recursionTree.UnrollFunc(ComboIntegrandEvaluation);
-            
+
             //Convert data to QuadRule. The volume rule is saved in SayeArgument as in the single algorithm. 
             //The surface rule is saved SurfRule.
+            ISayeQuadRule ruleZ = GetEmptyQuadratureRule();
+            foreach (TreeNode<T> childNode in recursionTree.Children) {
+                foreach (SayeQuadRule rule in childNode.Value.NodesAndWeights.GetRules()) {
+                    ruleZ.AddRule(rule, false);
+                }
+            }
+
+
             QuadRule[] rulezOfKrom = new QuadRule[2];
-            rulezOfKrom[0] = fullSpace.Value.NodesAndWeights.GetQuadRule(); //Volume rule
+            rulezOfKrom[0] = ruleZ.GetQuadRule(); //Volume rule
             rulezOfKrom[1] = SurfRule.GetQuadRule();    //Surface rule
             
             //Handle empty QuadRule
@@ -63,8 +71,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             return rulezOfKrom;
         }
-
-        protected abstract ISayeQuadRule GetEmptySurfaceRule();
         
         private void ComboIntegrandEvaluation(TreeNode<T> node)
         {

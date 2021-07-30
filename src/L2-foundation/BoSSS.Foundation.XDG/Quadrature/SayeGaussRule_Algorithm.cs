@@ -19,6 +19,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             get;
         }
         void AddRule(SayeQuadRule rule, bool deriveFromExistingNode);
+
+        IEnumerable<SayeQuadRule> GetRules();
         void RemoveActiveNode();
         QuadRule GetQuadRule();
     }
@@ -99,8 +101,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //----------------------------------------------------------------------
             //Fill nodesAndWeights
             recursionTree.UnrollFunc(IntegrandEvaluation);
+
+            ISayeQuadRule ruleZ = GetEmptyQuadratureRule();
+            foreach (TreeNode<T> childNode in recursionTree.Children) {
+                foreach (SayeQuadRule rule in childNode.Value.NodesAndWeights.GetRules()) {
+                    ruleZ.AddRule(rule, false);
+                }
+            }
+
             //ConvertToQuadRule
-            QuadRule toRuleThemAll = fullSpace.Value.NodesAndWeights.GetQuadRule();
+            QuadRule toRuleThemAll = ruleZ.GetQuadRule();
 
             //Handle empty QuadRule
             if (toRuleThemAll.NoOfNodes == 0)
@@ -121,7 +131,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             T nodeArg = node.Value;
 
             //Check a bunch of stuff
-            if (nodeArg == null)
+            if (node.level == 0)
             {
                 return;
             }
@@ -430,6 +440,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
         #endregion
 
         #region BuildIntegrand: Abstract Functions
+
+        protected abstract ISayeQuadRule GetEmptyQuadratureRule();
 
         protected abstract MultidimensionalArray Gradient(S psi, NodeSet Node, int Cell);
 

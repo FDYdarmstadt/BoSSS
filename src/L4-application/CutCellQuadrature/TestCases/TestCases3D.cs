@@ -29,7 +29,7 @@ namespace CutCellQuadrature.TestCases {
 
     abstract class Generic3DTestCase : TestCase<Shift3D> {
 
-        private IEnumerable<Shift3D> shifts = null;
+        private IEnumerable<Shift3D> shifts = null; // new[] { new Shift3D() };
 
         public Generic3DTestCase(GridSizes gridSize, GridTypes gridType)
             : base(gridSize, gridType) {
@@ -40,14 +40,14 @@ namespace CutCellQuadrature.TestCases {
                 if (shifts == null) {
                     List<Shift3D> myShifts = new List<Shift3D>();
                     Random rng = new Random(1);
-                    //for (int i = 1; i < 11; i++) {
+                    for (int i = 1; i < 11; i++) {
                     //for (int i = 1; i < 21; i++) {
                     //for (int i = 1; i < 26; i++) {
                     //for (int i = 1; i < 51; i++) {
-                    for (int i = 1; i < 101; i++) {
-                        double x = rng.NextDouble();
-                        double y = rng.NextDouble();
-                        double z = rng.NextDouble();
+                    //for (int i = 1; i < 101; i++) {
+                        double x =  rng.NextDouble();
+                        double y =  rng.NextDouble();
+                        double z =  rng.NextDouble();
 
                         myShifts.Add(new Shift3D() {
                             OffsetX = x,
@@ -91,7 +91,9 @@ namespace CutCellQuadrature.TestCases {
                         default:
                             throw new Exception();
                     }
-                    double[] nodes = GenericBlas.Linspace(-2.0, 2.0, noOfCellsPerDirection + 1);
+                    double[] nodes = GenericBlas.Linspace(-2, 2, noOfCellsPerDirection + 1);
+                    //double[] nodes1 = GenericBlas.Linspace(0.8, 1.1, noOfCellsPerDirection + 2);
+                    //nodes1[1] = 0.95;
                     grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
                     break;
 
@@ -594,6 +596,18 @@ namespace CutCellQuadrature.TestCases {
 
     class SingleCubeCubeVolumeTestCase : SingleCubeCubeTestCase, IVolumeTestCase {
         public SingleCubeCubeVolumeTestCase(GridSizes gridSize, GridTypes gridType)
+            : base(gridSize, gridType) {
+        }
+
+        public override double Solution {
+            get {
+                return 0;
+            }
+        }
+    }
+
+    class SingleCubeCubeSurfaceTestCase : SingleCubeCubeTestCase, ISurfaceTestCase {
+        public SingleCubeCubeSurfaceTestCase(GridSizes gridSize, GridTypes gridType)
             : base(gridSize, gridType) {
         }
 

@@ -63,7 +63,8 @@ namespace CutCellQuadrature {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
-            new SingleCubeCubeVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
+            new SingleCubeCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),

@@ -87,10 +87,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region SayeComboIntegrand
 
-        protected override ISayeQuadRule GetEmptySurfaceRule()
+        protected override ISayeQuadRule GetEmptyQuadratureRule()
         {
-            var emptyRule = new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
-            emptyRule.Reset();
+            ISayeQuadRule emptyRule = new NodesAndWeights( RefElement);
             return emptyRule;
         }
 
@@ -249,11 +248,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+            jacobian.TransposeInPlace();
 
             double[] tmp_grad = gradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad);
+            jacobian.MatVecMulInplace(1, tmp_grad, false);
 
             return gradient;
         }
@@ -300,7 +300,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //Set return data
             //------------------------------------------------------------------------------------------------------------
-            SayeQuadRule transformed_GaussRule_2D = new SayeQuadRule(nodes_GaussRule_2D, weights_GaussRule_2D);
+            SayeQuadRule transformed_GaussRule_2D = new SayeQuadRule(nodes_GaussRule_2D, weights_GaussRule_2D, RefElement);
             return transformed_GaussRule_2D;
         }
 
@@ -352,7 +352,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             MultidimensionalArray nodes = new MultidimensionalArray(2);
             nodes.InitializeFrom(nodesArr);
-            SayeQuadRule transformed_GaussRule_1D = new SayeQuadRule(nodes, weights);
+            SayeQuadRule transformed_GaussRule_1D = new SayeQuadRule(nodes, weights, RefElement);
             
             return transformed_GaussRule_1D;
         }
@@ -392,7 +392,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
             weightArr[0] = scale * X_weight;
-            return new SayeQuadRule(node, weightArr);
+            return new SayeQuadRule(node, weightArr, RefElement);
         }
 
         bool IsScalingMatrix(MultidimensionalArray matrix) {
@@ -529,16 +529,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region ISayeArgument
 
-        NodesAndWeightsLinkedList data = new NodesAndWeightsLinkedList(refElement.SpatialDimension, refElement);
+        NodesAndWeights nodesAndWeights = new NodesAndWeights( refElement);
 
         public void Reset()
         {
-            data.Reset();
+            //data.Reset();
         }
 
         public override ISayeQuadRule NodesAndWeights 
         {
-            get => data;
+            get => nodesAndWeights;
         }
 
         int heightDirection;
