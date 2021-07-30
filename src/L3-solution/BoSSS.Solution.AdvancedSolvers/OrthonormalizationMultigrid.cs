@@ -310,10 +310,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] Mxx = new double[L];
                 OpMatrix.SpMV(1.0, X, 0.0, Mxx);
-
+                double NormMxx = Mxx.MPI_L2Norm();
                 //double NormInitial = Mxx.MPI_L2Norm();
 
-                for(int jj = 0; jj < 2; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
+                for (int jj = 0; jj < 2; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
                     for(int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
                         double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
@@ -329,6 +329,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
                     BLAS.dscal(L, gamma, Mxx, 1);
                     BLAS.dscal(L, gamma, X, 1);
+
+                    if (Mxx.MPI_L2Norm() / NormMxx > 1E-8) {
+                        break;
+                    } else {
+                        Console.WriteLine("severe cancellation may have occurred. Doing Re-orthonormalization");
+                    }
                 }
 
 

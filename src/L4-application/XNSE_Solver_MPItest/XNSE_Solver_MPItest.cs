@@ -294,6 +294,15 @@ Index was outside the bounds of the array.
             }
         }
 
+        public static void PardisoFailsInProjection() {
+            // 4 cores
+            var C = Rotating_Cube(1, 10, 3, false, false, false);
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -327,7 +336,7 @@ Index was outside the bounds of the array.
             //RotCube_OrderNotSupportedInHMF();
             //RotCube_CG_ProjectionOutOfMemoryException();
             //Rotating_Cube_compare4to1();
-            SayeBug();
+            PardisoFailsInProjection();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -645,12 +654,12 @@ Index was outside the bounds of the array.
 
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
-            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube);
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube, UsePredefPartitioning);
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
-            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere);
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere, UsePredefPartitioning);
         }
 
         enum Geometry {
@@ -658,36 +667,21 @@ Index was outside the bounds of the array.
             Sphere = 1,
         }
 
-        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape) {
-            XNSE_Control C = new XNSE_Control();
-            // basic database options
-            // ======================
+        public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 1, yMax = 1, zMax = 1;
 
-            C.savetodb = false;
-            C.ProjectName = "XNSE/IBM_test";
-            C.ProjectDescription = "rotating cube";
-            C.Tags.Add("rotating");
-            C.Tags.Add("level set");
-            C.Tags.Add(String.Format("{0}D",SpaceDim));
+            // Predefined Partitioning
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+                double range = xMax - xMin;
+                double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
+                return (int)((x - xMin) / interval);
+            };
 
-            // DG degrees
-            // ==========
-
-            C.SetFieldOptions(k, Math.Max(2, k * 2));
-            C.GridPartType = GridPartType.clusterHilbert;
-            C.SessionName = "XNSE_rotcube_test";
-            C.saveperiod = 1;
-
-
-            // grid and boundary conditions
-            // ============================
-
-            //// Create Grid
-            Console.WriteLine("...generating grid");
-            C.GridFunc = delegate {
-
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
+            // The Grid Function
+            return delegate {
+                
                 var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 var _yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
                 var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
@@ -703,14 +697,47 @@ Index was outside the bounds of the array.
                     default:
                     throw new ArgumentOutOfRangeException();
                 }
-
+                if(UsePredefPartitioning) grd.AddPredefinedPartitioning("testgrid", MakeDebugPart);
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     return 2;
                 });
                 return grd;
-
             };
+        }
+
+        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning) {
+            XNSE_Control C = new XNSE_Control();
+            // basic database options
+            // ======================
+
+            C.savetodb = false;
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating cube";
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D",SpaceDim));
+
+            // DG degrees
+            // ==========
+
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            if (UsePredefPartitioning) {
+                C.GridPartType = GridPartType.Predefined;
+                C.GridPartOptions = "testgrid";
+            } else 
+                C.GridPartType = GridPartType.clusterHilbert;
+
+            C.SessionName = "XNSE_rotcube_test";
+            C.saveperiod = 1;
+
+
+            // grid and boundary conditions
+            // ============================
+
+            //// Create Grid
+            Console.WriteLine("...generating grid");
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
 
             // Physical Parameters
             // ===================

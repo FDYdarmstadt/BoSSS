@@ -72,8 +72,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         public static ISparseSolver GlobalSolverFactory(long DOF) {
             bool UseDirect = DOF < 1E6;
             if (UseDirect)
-                return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                    Parallelism = Parallelism.OMP
+                return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
+                    Parallelism = Parallelism.MPI
                 };
             else
                 return new myCG();
@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             m_PCG = new ilPSP.LinSolvers.HYPRE.PCG() {
                 NestedPrecond = m_ILU,
-                PrintLevel = 2,
+                PrintLevel = DiagnosticLevel,
                 ConvergenceType = ConvergenceTypes.Relative,
                 MaxIterations = 100,
                 Tolerance = 1E-6,
@@ -116,6 +116,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             m_PCG.DefineMatrix(m_matrix);
         }
 
+        public int DiagnosticLevel = 0;
         BlockMsrMatrix m_matrix;
         ISparseSolver m_PCG;
         IImplicitPrecond m_ILU;

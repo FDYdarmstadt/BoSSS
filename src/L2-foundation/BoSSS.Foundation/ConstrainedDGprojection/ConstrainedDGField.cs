@@ -622,7 +622,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             assembleConstrainsMatrix(A, innerEM, count, _nodeCountA, fixedConstrains);
 
-
             // test with matlab
             if (diagOutputMatlab) {
                 MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
@@ -657,13 +656,17 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             double[] x = new double[m_Coordinates.Length];
 
             var solver = InitializeSolver(IsLocal, AAT);
-            solver.Solve(v, RHS);
-            solver.Dispose();
+            try {
+                solver.Solve(v, RHS);
+                solver.Dispose();
+            } catch (Exception ex) {
+
+                throw ex;
+            }
 
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
             m_Coordinates.AccV(1.0, x);
-
         }
 
         private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
