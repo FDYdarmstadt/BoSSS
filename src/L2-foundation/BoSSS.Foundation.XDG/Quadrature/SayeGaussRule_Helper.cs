@@ -189,9 +189,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double[][] newBoundary = boundaries.Copy();
 
             //Figure out new Boundaries
-            double max = diameters[0];
+            double max = double.MinValue;
             int k_MaxDiameter = 0; 
-            for(int i = 1; i < refElement.SpatialDimension; ++i)
+            for(int i = 0; i < refElement.SpatialDimension; ++i)
             {
                 //Only consider active Dimensions 
                 if (diameters[i] > max  && !removedDims[i])

@@ -29,7 +29,7 @@ namespace CutCellQuadrature.TestCases {
 
     abstract class Generic3DTestCase : TestCase<Shift3D> {
 
-        private IEnumerable<Shift3D> shifts = null; // new[] { new Shift3D() };
+        private IEnumerable<Shift3D> shifts = null;
 
         public Generic3DTestCase(GridSizes gridSize, GridTypes gridType)
             : base(gridSize, gridType) {
@@ -39,6 +39,7 @@ namespace CutCellQuadrature.TestCases {
             get {
                 if (shifts == null) {
                     List<Shift3D> myShifts = new List<Shift3D>();
+                    myShifts.Add(new Shift3D());
                     Random rng = new Random(1);
                     for (int i = 1; i < 11; i++) {
                     //for (int i = 1; i < 21; i++) {
@@ -626,7 +627,7 @@ namespace CutCellQuadrature.TestCases {
 
         public override double Solution {
             get {
-                return 4.0 * 4.0 / 3.0 + 1.0;
+                return 3.0 + 4.0;
             }
         }
     }

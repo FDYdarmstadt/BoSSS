@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //----------------------------------------------------------------------
             arg.Surface = false;
             cell = Cell;
-            TreeNode<T> recursionTree = new TreeNode<T>(arg);
+            TreeNode<T> recursionTree = new TreeNode<T>();
             TreeNode<T> fullSpace = recursionTree.AddChild(arg);
 
             //Build Integrand
@@ -141,7 +141,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 //Define L and x_c(line 5)
                 double L = roots[j + 1] - roots[j];
-                NodeSet x_c = NodeOnRay(X, heightDirection, roots[j] - roots[0] + L / 2.0);
+                NodeSet x_c = NodeOnRay(X, heightDirection, roots[j] - bounds[0] + L / 2.0);
 
                 //If s_i * psi_i >= 0 for all i (line 6)
                 bool updateIntegrand = true;

@@ -195,8 +195,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             return heightDirection;
         }
-
-       
+               
         double GlobalSurfaceCurvature(MultidimensionalArray gradient, MultidimensionalArray Hessian) {
             double curvature = 0;
             double norm = gradient.L2Norm();
@@ -306,7 +305,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected MultidimensionalArray ReferenceGradient(NodeSet Node, int Cell)
         {
-            
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
@@ -373,7 +371,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         }
                         else
                         {
-                            nodes_GaussRule_3D[i, j] = centerArr[j];
+                            nodes_GaussRule_3D[i, j] = 0;
                         }
                     }
                 }
@@ -406,10 +404,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Scale Nodes
             for (int i = 0; i < 3; ++i)
             {
-                nodes_GaussRule_3D.ColScale(i, diameters[i]);
+                if (arg.DimActive(i)) {
+                    nodes_GaussRule_3D.ColScale(i, diameters[i]);
+                }
             }
-            //Scale Weights
-            weights_GaussRule_3D.Scale(jacobianDet);
             //Move Nodes
             int[] index = new int[] { 0, -1 };
             for (int i = 0; i < nodes_GaussRule_3D.Lengths[0]; ++i)
@@ -417,6 +415,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 index[0] = i;
                 nodes_GaussRule_3D.AccSubArray(1, centerArr, index);
             }
+
+            //Scale Weights
+            weights_GaussRule_3D.Scale(jacobianDet);
 
             //Set return data
             //------------------------------------------------------------------------------------------------------------
