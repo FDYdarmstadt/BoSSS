@@ -901,7 +901,6 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
-
     class SquareVolumeTestCase : Generic2DTestCase, IVolumeTestCase {
 
         public SquareVolumeTestCase(GridSizes gridSize, GridTypes gridType)
@@ -936,7 +935,6 @@ namespace CutCellQuadrature.TestCases {
             analyticeLevelSet.SetOffset(CurrentShift.OffsetX, CurrentShift.OffsetY);
         }
     }
-
 
     class SquareArcLengthTestCase : Generic2DTestCase, ISurfaceTestCase {
 
@@ -1051,7 +1049,6 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
-
     class SingleSquareParabolaVolumeTestCase : ParabolaSingleCell2DTestCase, IVolumeTestCase {
 
         public SingleSquareParabolaVolumeTestCase(GridSizes gridSize, GridTypes gridType)
@@ -1079,8 +1076,75 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
+    abstract class TwoCirclesSingleCell2DTestCase : Generic2DTestCase {
+        public TwoCirclesSingleCell2DTestCase()
+            : base(GridSizes.Tiny, GridTypes.Structured) {
+        }
+
+        protected override IEnumerable<Shift2D> AllShifts {
+            get {
+                yield return new Shift2D();
+            }
+        }
+
+        public override int LevelSetDegree {
+            get {
+                return 4;
+            }
+        }
+
+        public override void LevelSetInitialValue(MultidimensionalArray input, MultidimensionalArray output) {
+            for (int i = 0; i < output.GetLength(0); i++) {
+                double x = input[i, 0];
+                double y = input[i, 1];
+
+                double radius = 4;
+                Vector center = new Vector(0, -radius - 0.5);
+
+                double phi = +Math.Pow(x - center[0], 2) + Math.Pow(y - center[1], 2) - radius * radius;
+
+                double radius1 = 5;
+                Vector center1 = new Vector(radius1 + 0.5, 0);
+                double phi1 = +Math.Pow(x - center1[0], 2) +Math.Pow(y - center1[1], 2) - radius1 * radius1;
 
 
+                output[i] = -Math.Min(phi, phi1);
+            }
+        }
+
+        public override IGrid GetGrid(IDatabaseInfo db) {
+            switch (GridType) {
+                case GridTypes.Structured:
+                return Grid2D.Cartesian2DGrid(
+                    GenericBlas.Linspace(-1.0, 1.0, 2),
+                    GenericBlas.Linspace(-1.0, 1.0, 2));
+
+                case GridTypes.Unstructured:
+                throw new NotImplementedException();
+
+                default:
+                throw new Exception();
+            }
+        }
+    }
+
+    class TwoCirclesSingleCell2DVolume : TwoCirclesSingleCell2DTestCase, IVolumeTestCase {
+
+        public TwoCirclesSingleCell2DVolume() {
+
+        }
+
+        public override double Solution => 99;
+    }
+
+    class TwoCirclesSingleCell2DSurface : TwoCirclesSingleCell2DTestCase, ISurfaceTestCase {
+
+        public TwoCirclesSingleCell2DSurface() {
+
+        }
+
+        public override double Solution => 99;
+    }
 
     class FlorianSurface : Generic2DTestCase, ISurfaceTestCase {
 
@@ -1281,7 +1345,6 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
-
     abstract class TestEgger : Generic2DTestCase {
 
         public readonly double Offset = 0.0;
@@ -1381,9 +1444,7 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
-
     abstract class KarakusCircle : Generic2DTestCase {
-
 
         public KarakusCircle(GridSizes gridSize, GridTypes gridTypes)
             : base(gridSize, gridTypes) {
@@ -1404,7 +1465,7 @@ namespace CutCellQuadrature.TestCases {
             }
         }
     }
-
+    
     class KarakusCircleVolume : KarakusCircle, IVolumeTestCase {
         public KarakusCircleVolume(GridSizes gridSize, GridTypes gridType)
             : base(gridSize, gridType) {
@@ -1810,10 +1871,6 @@ namespace CutCellQuadrature.TestCases {
             return grid;
         }
     }
-
-
-
-
 
     class ProductOfLinears : Generic2DTestCase, ISurfaceTestCase {
 

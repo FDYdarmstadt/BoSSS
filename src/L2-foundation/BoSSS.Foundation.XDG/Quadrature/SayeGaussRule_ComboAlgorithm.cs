@@ -47,10 +47,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             ISayeQuadRule ruleZ = GetEmptyQuadratureRule();
             foreach (TreeNode<T> childNode in recursionTree.Children) {
                 foreach (SayeQuadRule rule in childNode.Value.NodesAndWeights.GetRules()) {
-                    ruleZ.AddRule(rule, false);
+                    ruleZ.AddRule(rule);
                 }
             }
-
 
             QuadRule[] rulezOfKrom = new QuadRule[2];
             rulezOfKrom[0] = ruleZ.GetQuadRule(); //Volume rule
@@ -86,7 +85,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     case SayeArgument<S>.Mode.GaussQuadrature:
                         //No need for surface quadNodes
                         SayeQuadRule newRule = SetGaussQuadratureNodes(nodeArg);
-                        nodeArg.NodesAndWeights.AddRule(newRule, false);
+                        nodeArg.NodesAndWeights.AddRule(newRule);
                         break;
                     case SayeArgument<S>.Mode.LowOrderQuadrature:
                         throw new NotImplementedException();
@@ -138,7 +137,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Volume evaluation
             //-----------------------------------------------------------------------------------
             //For j = 1 to l - 1 do (line 4)
-            bool xIsUnchanged = true;
             for (int j = 0; j < roots.Count() - 1; ++j)
             {
                 //Define L and x_c(line 5)
@@ -158,23 +156,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 {
                     //Update 
                     SayeQuadRule newRule = BuildQuadRule(x_c, X_weight, heightDirection, L);
-                    arg.NodesAndWeights.AddRule(newRule, true);
-                    xIsUnchanged = false;
+                    arg.NodesAndWeights.AddRule(newRule);
                 }
             }
             //Surface evaluation
             //-----------------------------------------------------------------------------------
-            Debug.Assert(roots.Count() <= 3);
-            if (roots.Count() > 2)
+            for (int i = 1; i < roots.Count() - 1; ++i) 
             {
-                X[0, heightDirection] = roots[1];
+                X[0, heightDirection] = roots[i];
                 SayeQuadRule surfaceQuadNode = BuildSurfaceQuadRule(X, X_weight, heightDirection, this.cell);
-                SurfRule.AddRule(surfaceQuadNode, false);
-            }
-
-            if (xIsUnchanged)
-            {
-                arg.NodesAndWeights.RemoveActiveNode();
+                SurfRule.AddRule(surfaceQuadNode);
             }
         }
     }

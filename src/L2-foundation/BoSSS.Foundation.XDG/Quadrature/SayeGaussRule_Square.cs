@@ -138,8 +138,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
-        static readonly double sqrt_2 = Math.Sqrt(2.0);
-        
+        readonly double boundSafety = 1.1;
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -150,19 +149,33 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         protected override double EvaluateBounds(SayeSquare Arg, LinearPSI<Square> psi, NodeSet x_center, int cell)
         {
-            double[] arr = new double[Arg.Dimension];
+            double[] arr = new double[RefElement.SpatialDimension];
             Arg.Diameters.CopyTo(arr, 0);
             psi.SetInactiveDimsToZero(arr);
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] { 2});
+            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 2, 1);
 
             NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
-
-
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
-            
-            grad.ApplyAll(x => Math.Abs(x));     
-            double delta = grad.InnerProduct(diameters) * sqrt_2;
-            //sqrt_2 is safety
+
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(nodeOnPsi, cell, 1);
+            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+
+            LevelSet levelSet = lsData.LevelSet as LevelSet;
+            MultidimensionalArray hessian = MultidimensionalArray.Create(1, 1, 2, 2);
+            levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
+            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
+            hessian.ApplyAll(x => Math.Abs(x));
+
+            MultidimensionalArray delta1 = diameters.TransposeTo() * jacobian.TransposeTo() * hessian * jacobian * diameters;
+
+
+            grad.ApplyAll(x => Math.Abs(x));
+            double delta = delta1[0, 0];
+            for (int i = 0; i < 2; ++i) {
+                delta += grad[i] * diameters[i, 0];
+            }
+            delta *= boundSafety;
 
             return delta;
         }
@@ -175,50 +188,49 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return 1;
         }
 
-        protected override bool HeightDirectionIsSuitable(SayeSquare arg, LinearPSI<Square> psi, NodeSet x_center, 
-            int heightDirection, MultidimensionalArray gradient, int cell)
-        {
+        double GlobalSurfaceMeanCurvature(MultidimensionalArray gradient, MultidimensionalArray Hessian) {
+            double norm = gradient.L2Norm();
+            Vector curvature = new Vector(2);
+            for (int i = 0; i < 2; ++i) {
+                curvature[i] += Hessian[i, i] * norm;
+                curvature[i] -= gradient[i] / norm * (gradient[0] * Hessian[i, 0] + gradient[1] * Hessian[i, 1]);
+            }
+            curvature /= (norm * norm);
+            curvature *= 0.5;
+            return curvature[0] + curvature[1];
+        }
+
+        readonly double safety = 2;
+
+        protected override bool HeightDirectionIsSuitable(SayeSquare arg, LinearPSI<Square> psi, NodeSet x_center,
+            int heightDirection, MultidimensionalArray gradient, int cell) {
             //Determine bounds
             //-----------------------------------------------------------------------------------------------------------------
+            NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(nodeOnPsi, cell, 1);
+            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+
+            LevelSet levelSet = lsData.LevelSet as LevelSet;
+            MultidimensionalArray hessian = MultidimensionalArray.Create(1, 1, 2, 2);
+            levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
+            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
+
+            MultidimensionalArray gradient1 = lsData.GetLevelSetGradients(nodeOnPsi, cell, 1);
+            gradient1 = gradient1.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
+
+            double curvature = GlobalSurfaceMeanCurvature(gradient1, hessian);
+
             double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1]};
             psi.SetInactiveDimsToZero(arr);
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] {2, 1 });
+            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 2, 1);
+            MultidimensionalArray globalDiameters = jacobian * diameters;
 
-            NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
-            MultidimensionalArray hessian = lsData.GetLevelSetReferenceHessian(nodeOnPsi, cell, 1);
-            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1});
-
-            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(nodeOnPsi, cell, 1);
-            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
-            hessian = jacobian * hessian; 
-
-            hessian.ApplyAll(x => Math.Abs(x));
-
-            //abs(Hessian) * diameters = delta 
-            MultidimensionalArray delta = hessian * diameters;
-            delta = delta.ExtractSubArrayShallow(new int[] { -1, 0 });
-            
-            //Check if suitable
-            //-----------------------------------------------------------------------------------------------------------------
-
-            //|gk| > δk
-            if( Math.Abs(gradient[heightDirection]) > delta[heightDirection])
-            {
-                bool suitable = true;
-                // Sum_j( g_j + delta_j)^2 / (g_k - delta_k)^2 < 20
-                double sum = 0;
-
-                for (int j = 0; j < delta.Length; ++j)
-                {
-                    sum += Math.Pow(gradient[j] + delta[j], 2);
-                }
-                sum /= Math.Pow(gradient[heightDirection] - delta[heightDirection], 2);
-
-                suitable &= sum < 20;
-
-                return suitable;
+            bool suitable = true;
+            for (int i = 0; i < 2; ++i) {
+                suitable &= Math.Abs(1 / curvature) > safety * globalDiameters[i, 0];
             }
-            return false;
+            return suitable;
         }
 
         protected override SayeSquare Subdivide(SayeSquare Arg)

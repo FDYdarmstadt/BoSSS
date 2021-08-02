@@ -18,10 +18,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             get;
         }
-        void AddRule(SayeQuadRule rule, bool deriveFromExistingNode);
+        void AddRule(SayeQuadRule rule);
 
         IEnumerable<SayeQuadRule> GetRules();
-        void RemoveActiveNode();
+
         QuadRule GetQuadRule();
     }
 
@@ -105,7 +105,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             ISayeQuadRule ruleZ = GetEmptyQuadratureRule();
             foreach (TreeNode<T> childNode in recursionTree.Children) {
                 foreach (SayeQuadRule rule in childNode.Value.NodesAndWeights.GetRules()) {
-                    ruleZ.AddRule(rule, false);
+                    ruleZ.AddRule(rule);
                 }
             }
 
@@ -143,11 +143,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     break;
                 case SayeArgument<S>.Mode.GaussQuadrature:
                     newRule = SetGaussQuadratureNodes(nodeArg);
-                    nodeArg.NodesAndWeights.AddRule(newRule, false);
+                    nodeArg.NodesAndWeights.AddRule(newRule);
                     break;
                 case SayeArgument<S>.Mode.LowOrderQuadrature:
                     newRule = SetLowOrderQuadratureNodes(nodeArg);
-                    nodeArg.NodesAndWeights.AddRule(newRule, false);
+                    nodeArg.NodesAndWeights.AddRule(newRule);
                     break;
                 case SayeArgument<S>.Mode.DomainIsEmpty:
                     break;
@@ -208,7 +208,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             
             //For j = 1 to l - 1 do (line 4)
-            bool xIsUnchanged = true;
             for (int j = 0; j < roots.Count() - 1; ++j)
             {
                 //Define L and x_c(line 5)
@@ -227,14 +226,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 if (updateIntegrand)
                 {
                     SayeQuadRule newRule = BuildQuadRule(x_c, X_weight, heightDirection, L);
-                    bool deriveFromExistingNode = !isNew && xIsUnchanged;
-                    arg.NodesAndWeights.AddRule(newRule, deriveFromExistingNode);
-                    xIsUnchanged = false;
+                    arg.NodesAndWeights.AddRule(newRule);
                 }    
-            }
-            if (xIsUnchanged && !isNew)
-            {
-                arg.NodesAndWeights.RemoveActiveNode();
             }
         }
 
@@ -253,17 +246,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             roots.Add(newRoots);
 
             //if there is a root, insert node 
-            Debug.Assert(roots.Count() <= 3);
-            if (roots.Count() > 2)
-            {
-                X[0, heightDirection] = roots[1];
+            for (int i = 1; i < roots.Count() - 1; ++i) {
+                X[0, heightDirection] = roots[i];
                 SayeQuadRule surfaceQuadNode = BuildSurfaceQuadRule(X, X_weight, heightDirection, this.cell);
-                arg.NodesAndWeights.AddRule(surfaceQuadNode, true);
-            }
-            //else remove node
-            else
-            {
-                arg.NodesAndWeights.RemoveActiveNode();
+                arg.NodesAndWeights.AddRule(surfaceQuadNode);
             }
         }
 
@@ -432,6 +418,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             return Gradient(psi, Node, this.cell);
         }
+
         double EvaluateBounds(T arg, S psi, NodeSet x_center)
         {
             return EvaluateBounds(arg, psi, x_center, this.cell);

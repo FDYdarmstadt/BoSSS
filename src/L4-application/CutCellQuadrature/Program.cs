@@ -63,7 +63,7 @@ namespace CutCellQuadrature {
 
         private static ITestCase[] testCases = new ITestCase[] {
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
-            new SingleCubeCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
+            //new SingleCubeCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Normal, GridTypes.Structured),
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
@@ -73,6 +73,8 @@ namespace CutCellQuadrature {
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
+            new TwoCirclesSingleCell2DVolume(),
+            //new TwoCirclesSingleCell2DSurface(),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Large, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Huge, GridTypes.Structured)

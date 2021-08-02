@@ -196,84 +196,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return heightDirection;
         }
 
-        protected bool HeightDirectionIsSuitableSaye(
-            LinearSayeSpace<Cube> arg, 
-            LinearPSI<Cube> psi, 
-            NodeSet x_center,
-            int heightDirection, 
-            MultidimensionalArray gradient, 
-            int cell)
-        {
-            //Determine bounds
-            //-----------------------------------------------------------------------------------------------------------------
-            NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
-
-            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(nodeOnPsi, cell, 1);
-            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
-
-            LevelSet levelSet = lsData.LevelSet as LevelSet;
-            MultidimensionalArray hessian = MultidimensionalArray.Create(1, 1, 3, 3);
-            levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
-            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
-            
-            
-
-            //abs(Hessian) * 0,5 * diameters.^2 = delta ,( square each entry of diameters) , 
-            //this bounds the second error term from taylor series
-            //+ + + + 
-            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1], arg.Diameters[2] };
-            psi.SetInactiveDimsToZero(arr);
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1 );
-            
-            double min = double.MaxValue;
-            double max = double.MinValue;
-            for(int i = 0; i < 2; ++i) {
-                diameters[0, 0] *= -1;
-                for (int j = 0; j < 2; ++j) {
-                    diameters[1, 0] *= -1;
-                    for (int k = 0; k < 2; ++k) {
-                        diameters[2, 0] *= -1;
-
-                        MultidimensionalArray delta1 = hessian * jacobian * diameters;
-                        min = delta1[heightDirection, 0] < min ? delta1[heightDirection, 0] : min;
-                        max = delta1[heightDirection, 0] > max ? delta1[heightDirection, 0] : max;
-                    }
-                }
-            }
-
-            double change1 = gradient[heightDirection] + min; 
-            double change2 = gradient[heightDirection] + max;
-            
-            hessian.ApplyAll(x => Math.Abs(x));
-            MultidimensionalArray delta = hessian * jacobian * diameters;
-            delta = delta.ExtractSubArrayShallow(-1, 0);
-            //Check if suitable
-            //-----------------------------------------------------------------------------------------------------------------
-
-            //|gk| > δk
-            //Gradient should not be able to change sign
-            if (Math.Abs(gradient[heightDirection]) > delta[heightDirection])
-            {
-                bool suitable = true;
-                // ||Grad + maxChange|| should be smaller than 20 * 
-                // Sum_j( g_j + delta_j)^2 / (g_k - delta_k)^2 < 20
-                double sum = 0;
-
-                for (int j = 0; j < delta.Length; ++j)
-                {
-                    if (!psi.DirectionIsFixed(j)) {
-                        sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
-                    }
-                }
-                sum /= Math.Pow(Math.Abs(gradient[heightDirection]) - delta[heightDirection], 2);
-
-                suitable &= sum < 20;
-
-                return true;
-            }
-            return false;
-        }
-
+       
         double GlobalSurfaceCurvature(MultidimensionalArray gradient, MultidimensionalArray Hessian) {
             double curvature = 0;
             double norm = gradient.L2Norm();
@@ -588,7 +511,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 return true;
             else return false;
         }
-
 
         public override double[] GetBoundaries(LinearSayeSpace<Cube> arg, int heightDirection)
         {

@@ -478,10 +478,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
 
-        public void AddRule(SayeQuadRule rule, bool deriveFromExistingNode) {
-            if(nodes.Count == 0) {
-                refElement = rule.RefElement;
-            }
+        public void AddRule(SayeQuadRule rule) {
             if(rule.RefElement != refElement) {
                 throw new Exception("Wrong ref element");
             }
@@ -514,9 +511,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return nodes;
         }
 
-        public void RemoveActiveNode() {
-            Console.WriteLine("I won't do shit!");
-        }
     }
 
     class SayeSortedList
