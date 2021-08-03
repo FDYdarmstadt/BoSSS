@@ -238,13 +238,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
         double safety = 2;
 
         protected override bool HeightDirectionIsSuitable(
-            LinearSayeSpace<Cube> arg, 
-            LinearPSI<Cube> psi, 
+            LinearSayeSpace<Cube> arg,
+            LinearPSI<Cube> psi,
             NodeSet x_center,
-            int heightDirection, 
-            MultidimensionalArray gradient, 
-            int cell)
-        {
+            int heightDirection,
+            MultidimensionalArray gradient,
+            int cell) {
+
+            //throw new NotImplementedException();
+
             //Determine bounds
             //-----------------------------------------------------------------------------------------------------------------
             NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
@@ -257,33 +259,41 @@ namespace BoSSS.Foundation.XDG.Quadrature
             levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
             hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
 
-            MultidimensionalArray gradient1 = lsData.GetLevelSetGradients(nodeOnPsi, cell, 1);
-            gradient1 = gradient1.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
-            double curvature; 
-            if(arg.Dimension == 3) {
-                curvature = GlobalSurfaceCurvature(gradient1, hessian);
-            } else {
-                int inactiveDim;
-                for(inactiveDim = 0; inactiveDim < 4; ++inactiveDim) {
-                    if (! arg.DimActive(inactiveDim)) {
-                        break;
-                    }
-                }
-                curvature = GlobalLineCurvature(gradient1, hessian, inactiveDim);
-            }
+            hessian.ApplyAll(x => Math.Abs(x));
 
+            //abs(Hessian) * 0,5 * diameters.^2 = delta ,( square each entry of diameters) , 
+            //this bounds the second error term from taylor series
+            //+ + + + 
             double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1], arg.Diameters[2] };
             psi.SetInactiveDimsToZero(arr);
-            arr[heightDirection] = 0;
+            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1);
+            MultidimensionalArray delta = hessian * jacobian * diameters;
 
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 3, 1 );
-            MultidimensionalArray globalDiameters = jacobian * diameters;
+            delta = delta.ExtractSubArrayShallow(-1, 0);
 
-            bool suitable = true;
-            for(int i = 0; i < 3; ++i) {
-                suitable &= Math.Abs(1 / curvature) > safety * globalDiameters[i,0];
+            //Check if suitable
+            //-----------------------------------------------------------------------------------------------------------------
+
+            //|gk| > δk
+            //Gradient should not be able to change sign
+            if (Math.Abs(gradient[heightDirection]) > delta[heightDirection]) {
+                bool suitable = true;
+                // ||Grad + maxChange|| should be smaller than 20 * 
+                // Sum_j( g_j + delta_j)^2 / (g_k - delta_k)^2 < 20
+                double sum = 0;
+
+                for (int j = 0; j < delta.Length; ++j) {
+                    if (!psi.DirectionIsFixed(j)) {
+                        sum += Math.Pow(Math.Abs(gradient[j]) + delta[j], 2);
+                    }
+                }
+                sum /= Math.Pow(Math.Abs(gradient[heightDirection]) - delta[heightDirection], 2);
+
+                suitable &= sum < 20;
+
+                return suitable;
             }
-            return suitable;
+            return true;
         }
 
         protected override LinearSayeSpace<Cube> Subdivide(LinearSayeSpace<Cube> Arg)

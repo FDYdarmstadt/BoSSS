@@ -539,11 +539,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
            foreach (double entry in arr)
             {
-                if(Math.Abs(entry - min) < tolerance || Math.Abs(entry - max) < tolerance)
-                {
-                    continue;
-                } 
-                else if (entry > min && entry < max )
+                if (entry > min && entry < max )
                 {
                     for (int i = 1; i < list.Count ; ++i)
                     {
