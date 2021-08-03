@@ -245,7 +245,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public double GetMassDeterminedThermodynamicPressure(double InitialMass, XDGField Temperature) {
             var TemperatureA = Temperature.GetSpeciesShadowField("A");
-            var basis = new Basis(TemperatureA.GridDat, TemperatureA.Basis.Degree * 2); // Degree
+            var basis = new Basis(TemperatureA.GridDat, TemperatureA.Basis.Degree * 8); // Degree
             var omega = new SinglePhaseField(TemperatureA.Basis); // 1 / T
             //var omega = new XDGField(Temperature.Basis); // 1 / T
             omega.ProjectField(1.0,

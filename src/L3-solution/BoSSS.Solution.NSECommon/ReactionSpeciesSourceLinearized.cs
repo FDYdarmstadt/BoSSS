@@ -157,6 +157,8 @@ namespace BoSSS.Solution.NSECommon {
             this.TRef = TRef;
             this.cpRef = cpRef;
             this.VariableOneStepParameters = VariableOneStepParameters;
+            if (VariableOneStepParameters == true)
+                Console.WriteLine("Using variable one step parameters!");
         }
 
         /// <summary>
@@ -209,22 +211,28 @@ namespace BoSSS.Solution.NSECommon {
             double MM_F = MolarMasses[0];
             double MM_O = MolarMasses[1];
 
+
+            //////===================================================
+            ////// Limit value of variables using known bounds
+            //////====================================================
+
+            //Temperature = Temperature > 10 ? 10 : Temperature;
+            //Temperature = Temperature < 0.7 ? 0.7 : Temperature;
+
+            //YF = YF > 1.0 ? 1.0 : YF;
+            //YF = YF < 0.0 ? 0.0 : YF;
+
+            //YO = YO > 1.0 ? 1.0 : YO;
+            //YO = YO < 0.0 ? 0.0 : YO;
+
+
             if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.m_ChemModel.getTa(YF, YO)/TRef;
             }
 
             rho = EoS.GetDensity(U);
 
-            //double T_ad = 10;//  TODO include the right adiabatic temperature
-            //if (Temperature > T_ad) { // Limit the value of the temperature
-            //    //Console.WriteLine("Warning: Value of temperature too high (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
-            //    Temperature = T_ad;
-            //}
-
-            //if (Temperature < 1.0) { // Limit the value of the temperature
-            //    //Console.WriteLine("Warning: Value of temperature too low (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
-            //    Temperature = 1.0;
-            //}
+ 
 
             double ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / MM_F) * (rho * YO / MM_O);
 

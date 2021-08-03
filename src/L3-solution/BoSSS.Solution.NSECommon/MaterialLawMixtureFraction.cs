@@ -14,24 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.Serialization;
-using System.Text;
-using BoSSS.Foundation;
-using ilPSP;
-using NUnit.Framework;
 
 namespace BoSSS.Solution.NSECommon {
 
     [DataContract]
     [Serializable]
-    
     public class MaterialLawMixtureFraction : MaterialLawCombustion {
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="T_ref"> Reference temperature of Sutherland Law </param>
         /// <param name="MolarMasses">Array of molar masses </param>
@@ -45,9 +41,9 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="YF0">Fuel mass fraction of fuel inlet </param>
         /// <param name="zst">Stoichiometric mixture fraction </param>
         /// <param name="CC"></param>
-        /// 
-        /// 
-        public MaterialLawMixtureFraction(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC) : base(T_ref, MolarMasses, MatParamsMode, rhoOne, false, 1.0,TO0, TF0, YO0, YF0, zst, CC) { 
+        ///
+        ///
+        public MaterialLawMixtureFraction(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC) : base(T_ref, MolarMasses, MatParamsMode, rhoOne, false, 1.0, TO0, TF0, YO0, YF0, zst, CC) {
             this.Q = Q;
             this.TO0 = TO0;
             this.TF0 = TF0;
@@ -56,15 +52,15 @@ namespace BoSSS.Solution.NSECommon {
             this.zst = zst;
             this.cp = 1.0;
             this.CC = CC;
-    
+
             this.MatParamsMode = MatParamsMode;
             this.rhoOne = rhoOne;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
         }
 
-        [DataMember] MaterialParamsMode MatParamsMode;
+        [DataMember] private MaterialParamsMode MatParamsMode;
         [DataMember] public bool rhoOne;
-        
+
         //[DataMember] public double Q;
         //[DataMember] public double TO0;
         //[DataMember] public double TF0;
@@ -72,6 +68,7 @@ namespace BoSSS.Solution.NSECommon {
         //[DataMember] public double YO0;
         //[DataMember] public double zst;
         [DataMember] public double cp;
+
         //[DataMember] public ChemicalConstants CC;
         //[DataMember] public double s;
 
@@ -83,9 +80,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double getDensityFromZ(double Z) {
             double res;
             //  Z = repairMixtureFractionValue(Z);
-            //if (Q > 0) { // The reactive case is being calculated 
+            //if (Q > 0) { // The reactive case is being calculated
             //    if (!rhoOne) {
-
             //        double T, Y0, Y1, Y2, Y3, Y4;
 
             //        T = getVariableFromZ(Z, VariableNames.Temperature);
@@ -124,7 +120,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Forces the mixture fraction value to be between 0 and 1. 
+        /// Forces the mixture fraction value to be between 0 and 1.
         /// </summary>
         /// <returns></returns>
         public double repairMixtureFractionValue(double phi) {
@@ -148,8 +144,8 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetHeatConductivity(double phi) {
             double Temperature = this.getVariableFromZ(phi, VariableNames.Temperature);
             return base.GetViscosity(Temperature);
-
         }
+
         /// <summary>
         ///  The diffusivity  D. Possibly dependent on the variable <see cref="phi"/> representing the temperature
         ///  Used for the mixture fraction equations
@@ -159,7 +155,6 @@ namespace BoSSS.Solution.NSECommon {
         public override double GetDiffusivity(double phi) {
             double Temperature = this.getVariableFromZ(phi, VariableNames.Temperature);
             return base.GetViscosity(Temperature);
-
         }
 
         /// <summary>
@@ -170,16 +165,13 @@ namespace BoSSS.Solution.NSECommon {
         /// Dynamic viscosity
         /// </returns>
         public override double GetViscosity(double phi) {
-             double Temperature = getVariableFromZ(phi, VariableNames.Temperature); 
+            double Temperature = getVariableFromZ(phi, VariableNames.Temperature);
             return base.GetViscosity(Temperature);
         }
 
-
-
-
         /// <summary>
-        /// Calculates the global equivalence ratio 
-        /// </summary>     
+        /// Calculates the global equivalence ratio
+        /// </summary>
         /// <returns></returns>
         override public double getLocalEquivalenceRatio(double Yf, double Yox) {
             Debug.Assert(!(Yf < 0));
@@ -191,13 +183,11 @@ namespace BoSSS.Solution.NSECommon {
                 phi = double.MaxValue;
             }
             return phi;
-            
         }
-
 
         /// <summary>
         /// Calculates local mixture fraction
-        /// </summary>     
+        /// </summary>
         /// <returns></returns>
         override public double getMixtureFraction(double YF, double YO) {
             double Z = (s * YF - YO + YO0) / (s * YF0 + YO0);
@@ -205,8 +195,8 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// Calculates the global equivalence ratio 
-        /// </summary>     
+        /// Calculates the global equivalence ratio
+        /// </summary>
         /// <returns></returns>
         override public double getGlobalEquivalenceRatio(double Yf0, double Yox0) {
             Debug.Assert(!(Yf0 < 0));
@@ -216,73 +206,119 @@ namespace BoSSS.Solution.NSECommon {
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="Z"></param>
-        /// <param name="id"></param>
-        /// <returns></returns>
         public override double getVariableFromZ(double Z, string id) {
             double res;
             Z = repairMixtureFractionValue(Z);
             ////////////////////////////////////////////////////////////
             /////////// Irreversible fast chemistry (with chemical reaction)
             ////////////////////////////////////////////////////////////
-
+            double delta_zst = 0.02;
+            double K = 10;
             if (Q > 0) {
-                if (Z >= zst) { // Fuel side
+                if (Z >= zst + delta_zst) { // Fuel side
                     switch (id) {
                         case VariableNames.Temperature:
-                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
-                        break;
-                        case VariableNames.MassFraction0:
-                        res = YF0 * (Z - zst) / (1 - zst);
-                        break;
-                        case VariableNames.MassFraction1:
-                        res = 0;
-                        break;
-                        case VariableNames.MassFraction2:
-                        res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             
-                        break;
-                        case VariableNames.MassFraction3:
-                        res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
-                        break;
-                        case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YO0;
-                        double YNFuel0 = 1.0 - YF0;
-                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
-                        break;
-                        default:
-                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
-                    }
+                            res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                            break;
 
-                } else if (Z < zst) { // Oxydizer side
+                        case VariableNames.MassFraction0:
+                            res = YF0 * (Z - zst) / (1 - zst);
+                            break;
+
+                        case VariableNames.MassFraction1:
+                            res = 0;
+                            break;
+
+                        case VariableNames.MassFraction2:
+                            res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                            break;
+
+                        case VariableNames.MassFraction3:
+                            res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                            break;
+
+                        case VariableNames.MassFraction4:
+                            double YNOxi0 = 1.0 - YO0;
+                            double YNFuel0 = 1.0 - YF0;
+                            res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                            break;
+
+                        default:
+                            throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                    }
+                } else if (Z < zst - delta_zst) { // Oxydizer side
                     switch (id) {
                         case VariableNames.Temperature:
-                        res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
-                        break;
+                            res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                            break;
+
                         case VariableNames.MassFraction0:
-                        res = 0;
-                        break;
+                            res = 0;
+                            break;
+
                         case VariableNames.MassFraction1:
-                        res = YO0 * (1 - Z / zst);
-                        break;
+                            res = YO0 * (1 - Z / zst);
+                            break;
+
                         case VariableNames.MassFraction2:
-                        res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        break;
+                            res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+                            break;
+
                         case VariableNames.MassFraction3:
-                        res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
-                        break;
+                            res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+                            break;
+
                         case VariableNames.MassFraction4:
-                        double YNOxi0 = 1.0 - YO0;
-                        double YNFuel0 = 1.0 - YF0;
-                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
-                        break;
+                            double YNOxi0 = 1.0 - YO0;
+                            double YNFuel0 = 1.0 - YF0;
+                            res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                            break;
+
                         default:
-                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                            throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
                     }
                 } else {
-                    throw new Exception("out of bounds");
+                    double greater;
+                    double smaller;
+                    switch (id) {
+                        case VariableNames.Temperature:
+                            greater = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                            smaller = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                            break;
+
+                        case VariableNames.MassFraction0:
+                            greater = YF0 * (Z - zst) / (1 - zst);
+                            smaller = 0;
+                            break;
+
+                        case VariableNames.MassFraction1:
+                            greater = 0;
+                            smaller = YO0 * (1 - Z / zst);
+                            break;
+
+                        case VariableNames.MassFraction2:
+                            greater = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                            smaller = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+                            break;
+
+                        case VariableNames.MassFraction3:
+                            greater = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+                            smaller = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+
+                            break;
+
+                        case VariableNames.MassFraction4:
+                            double YNOxi0 = 1.0 - YO0;
+                            double YNFuel0 = 1.0 - YF0;
+                            greater = YNOxi0 * (1 - Z) + YNFuel0 * Z; 
+                            smaller = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                            break;
+                        default:
+                            throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                    }
+
+                    double bla = Math.Tanh(K * (Z - zst));
+                    res = smaller + (1 + bla) / 2 * (greater - smaller);
                 }
             } else {
                 ////////////////////////////////////////////////////////////
@@ -290,32 +326,171 @@ namespace BoSSS.Solution.NSECommon {
                 ////////////////////////////////////////////////////////////
                 switch (id) {
                     case VariableNames.Temperature:
-                    res = Z * TF0 + (1 - Z) * TO0;
-                    break;
+                        res = Z * TF0 + (1 - Z) * TO0;
+                        break;
+
                     case VariableNames.MassFraction0:
-                    res = YF0 * Z;
-                    break;
+                        res = YF0 * Z;
+                        break;
+
                     case VariableNames.MassFraction1:
-                    res = YO0 * (1 - Z);
-                    break;
+                        res = YO0 * (1 - Z);
+                        break;
+
                     case VariableNames.MassFraction2:
-                    res = 0;
-                    break;
+                        res = 0;
+                        break;
+
                     case VariableNames.MassFraction3:
-                    res = 0;
-                    break;
+                        res = 0;
+                        break;
+
                     case VariableNames.MassFraction4:
-                    double YNOxi0 = 1.0 - YO0;
-                    double YNFuel0 = 1.0 - YF0;
-                    res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
-                    break;
+                        double YNOxi0 = 1.0 - YO0;
+                        double YNFuel0 = 1.0 - YF0;
+                        res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+                        break;
+
                     default:
-                    throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+                        throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
                 }
             }
             return res;
-
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="Z"></param>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        //public override double getVariableFromZ(double Z, string id) {
+        //    double res;
+        //    Z = repairMixtureFractionValue(Z);
+        //    ////////////////////////////////////////////////////////////
+        //    /////////// Irreversible fast chemistry (with chemical reaction)
+        //    ////////////////////////////////////////////////////////////
+
+        //    if (Q > 0) {
+        //        if (Z >= zst) { // Fuel side
+        //            switch (id) {
+        //                case VariableNames.Temperature:
+        //                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+        //                    break;
+
+        //                case VariableNames.MassFraction0:
+        //                    res = YF0 * (Z - zst) / (1 - zst);
+        //                    break;
+
+        //                case VariableNames.MassFraction1:
+        //                    res = 0;
+        //                    break;
+
+        //                case VariableNames.MassFraction2:
+        //                    res = -YO0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+        //                    break;
+
+        //                case VariableNames.MassFraction3:
+        //                    res = -YO0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_O2 * CC.MW_O2) * (1 - Z);
+        //                    break;
+
+        //                case VariableNames.MassFraction4:
+        //                    double YNOxi0 = 1.0 - YO0;
+        //                    double YNFuel0 = 1.0 - YF0;
+        //                    res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+        //                    break;
+
+        //                default:
+        //                    throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+        //            }
+        //        } else if (Z < zst) { // Oxydizer side
+        //            switch (id) {
+        //                case VariableNames.Temperature:
+        //                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+        //                    break;
+
+        //                case VariableNames.MassFraction0:
+        //                    res = 0;
+        //                    break;
+
+        //                case VariableNames.MassFraction1:
+        //                    res = YO0 * (1 - Z / zst);
+        //                    break;
+
+        //                case VariableNames.MassFraction2:
+        //                    res = -YF0 * (CC.nu_CO2 * CC.MW_CO2) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+        //                    break;
+
+        //                case VariableNames.MassFraction3:
+        //                    res = -YF0 * (CC.nu_H2O * CC.MW_H2O) / (CC.nu_CH4 * CC.MW_CH4) * Z;
+        //                    break;
+
+        //                case VariableNames.MassFraction4:
+        //                    double YNOxi0 = 1.0 - YO0;
+        //                    double YNFuel0 = 1.0 - YF0;
+        //                    res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+        //                    break;
+
+        //                default:
+        //                    throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+        //            }
+        //        } else {
+        //            throw new Exception("out of bounds");
+        //        }
+        //    } else {
+        //        ////////////////////////////////////////////////////////////
+        //        /////////// Frozen limit calculation (no chemical reaction)
+        //        ////////////////////////////////////////////////////////////
+        //        switch (id) {
+        //            case VariableNames.Temperature:
+        //                res = Z * TF0 + (1 - Z) * TO0;
+        //                break;
+
+        //            case VariableNames.MassFraction0:
+        //                res = YF0 * Z;
+        //                break;
+
+        //            case VariableNames.MassFraction1:
+        //                res = YO0 * (1 - Z);
+        //                break;
+
+        //            case VariableNames.MassFraction2:
+        //                res = 0;
+        //                break;
+
+        //            case VariableNames.MassFraction3:
+        //                res = 0;
+        //                break;
+
+        //            case VariableNames.MassFraction4:
+        //                double YNOxi0 = 1.0 - YO0;
+        //                double YNFuel0 = 1.0 - YF0;
+        //                res = YNOxi0 * (1 - Z) + YNFuel0 * Z;
+        //                break;
+
+        //            default:
+        //                throw new NotImplementedException("Variable " + id + " cannot be derived from mixture Fraction");
+        //        }
+        //    }
+        //    return res;
+        //}
 
         public override IList<string> ParameterOrdering {
             get {
@@ -324,7 +499,7 @@ namespace BoSSS.Solution.NSECommon {
                     VariableNames.MassFraction0_0,
                     VariableNames.MassFraction1_0,
                     VariableNames.MassFraction2_0,
-                    VariableNames.MassFraction3_0                     
+                    VariableNames.MassFraction3_0
                     //,VariableNames.MassFraction4_0
                 };
             }
@@ -332,5 +507,4 @@ namespace BoSSS.Solution.NSECommon {
 
         //public double Prandtl { get; }
     }
- 
 }
