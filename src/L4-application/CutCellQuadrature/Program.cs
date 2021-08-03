@@ -76,12 +76,12 @@ namespace CutCellQuadrature {
             //new TwoCirclesSingleCell2DVolume(),
             //new TwoCirclesSingleCell2DSurface(),
             
-            new SphereVolume3DTestCase(GridSizes.Normal, GridTypes.Structured),
+            //new SphereVolume3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Normal, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Large, GridTypes.Structured),
             //new SphereVolume3DTestCase_NoShifts(GridSizes.Huge, GridTypes.Structured)
 
-            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Large, GridTypes.Structured),
+            new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Small, GridTypes.Structured),
             //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Normal, GridTypes.Structured),
             

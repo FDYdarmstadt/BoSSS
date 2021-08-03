@@ -223,6 +223,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1]};
             psi.SetInactiveDimsToZero(arr);
+            arr[heightDirection] = 0;
+
             MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 2, 1);
             MultidimensionalArray globalDiameters = jacobian * diameters;
 
