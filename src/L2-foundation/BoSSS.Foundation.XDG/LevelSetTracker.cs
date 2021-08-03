@@ -1244,7 +1244,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allocate memory form test node set 
                     int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
-                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes * Kref.NoOfFaces, D);
+                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D);
                     int offset = 0;
 
 
