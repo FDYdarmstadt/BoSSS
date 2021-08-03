@@ -261,6 +261,70 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
+    /// <summary>
+    /// Implementation of <see cref="CurvatureBasedSurfaceTension"/> for use in <see cref="XSpatialOperatorMk2.SurfaceElementOperator_Ls0"/>
+    /// </summary>
+    public class CurvatureBasedSurfaceTension_SurfaceOperator : IVolumeForm, ISupportsJacobianComponent {
+
+        public static double hmin = double.NaN;        
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="_sigma">surface-tension constant</param>
+        public CurvatureBasedSurfaceTension_SurfaceOperator(int _d, int _D, double _sigma) {
+            //m_LsTrk = LsTrk;
+            if (_d >= _D)
+                throw new ArgumentOutOfRangeException();
+            this.m_D = _D;
+            this.m_d = _d;
+            this.sigma = _sigma;
+        }
+
+        int m_D;
+        int m_d;
+        double sigma;        
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { VariableNames.Curvature }.Cat(VariableNames.NormalVector(m_D));
+            }
+        }
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            // only parameter dependent, leave this empty
+            return new IEquationComponent[] { };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double curvature = cpv.Parameters[0];
+            Debug.Assert(!double.IsNaN(curvature) || !double.IsInfinity(curvature));
+
+            Vector Normal = Vector.Empty(m_D);
+            for (int d = 0; d < m_D; d++) {
+                Normal[d] = cpv.Parameters[1+d];
+            }
+            Normal.NormalizeInPlace();
+
+            double presJump = (-curvature * sigma) * Normal[m_d];
+
+            double Flx = -0.5 * presJump;
+
+            return Flx * V;
+        }
+    }
+
 
     /// <summary>
     /// Represents the artificial surface force (usually only used in manufactured solutions).
@@ -747,7 +811,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
             Vector Tangente_OUT = Tangent(SurfaceNormal_OUT, EdgeNormal);
-            
+
             //double m_sigmaMax = Math.Max(m_sigma[inp.jCellIn], m_sigma[inp.jCellOut]);
             double m_sigmaIn = inp.Parameters_IN[inp.D];
             double m_sigmaOt = inp.Parameters_OUT[inp.D];
@@ -880,6 +944,174 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
             tau.NormalizeInPlace();
             return tau;
+        }
+    }
+
+    public abstract class IBM_ContactLine {
+        protected Vector FluidSurfaceNormal(ref CommonParamsVol cpv) {
+            return SurfaceNormal(cpv.Parameters, cpv.D, 0);
+        }
+
+        protected Vector SolidSurfaceNormal(ref CommonParamsVol cpv) {
+            return SurfaceNormal(cpv.Parameters, cpv.D, cpv.D);
+        }
+
+        protected static double Sigma(ref CommonParamsVol cpv) {
+            return cpv.Parameters[cpv.Parameters.Length - 1];
+        }
+
+        static Vector SurfaceNormal(double[] parameters, int D, int offSet) {
+
+            Vector N = new Vector(D);
+
+            for (int d = 0; d < D; d++) {
+                N[d] = parameters[d + offSet];
+            }
+            N = N.Normalize();
+            return N;
+        }
+
+        protected static Vector Tangent(Vector Nsurf, Vector Nedge) {
+            Debug.Assert(Nsurf.Dim == Nedge.Dim);
+
+            int D = Nsurf.Dim;
+
+            Vector tau = new Vector(D);
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    double nn = Nsurf[d1] * Nsurf[d2];
+                    if (d1 == d2) {
+                        tau[d1] += (1 - nn) * Nedge[d2];
+                    } else {
+                        tau[d1] += -nn * Nedge[d2];
+                    }
+                }
+            }
+
+            tau = tau.Normalize();
+            return tau;
+        }
+
+        protected static Vector ContactLineNormal(Vector Nsurf, Vector Nedge) {
+            Debug.Assert(Nsurf.Dim == Nedge.Dim);
+
+            int D = Nsurf.Dim;
+
+            Vector tau = new Vector(D);
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    double nn = Nedge[d1] * Nedge[d2];
+                    if (d1 == d2) {
+                        tau[d1] += (1 - nn) * Nsurf[d2];
+                    } else {
+                        tau[d1] += -nn * Nsurf[d2];
+                    }
+                }
+            }
+
+            tau = tau.Normalize();
+            return tau;
+        }
+    }
+
+    /// <summary>
+    /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
+    /// </summary>
+    public class SurfaceTension_LaplaceBeltrami_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent  {
+        int d;
+        int D;
+        int iLevSet;
+
+        public SurfaceTension_LaplaceBeltrami_Contactline(int d, int D, int iLevSet) {
+            this.d = d;
+            this.D = D;
+            this.iLevSet = iLevSet;
+        }
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public virtual IList<string> ParameterOrdering {
+            get {
+                string[] parameters = VariableNames.NormalVector(D);
+                parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
+                parameters = parameters.Cat(VariableNames.MaxSigma);
+                return parameters;
+            }
+        }
+
+        public IList<string> ArgumentOrdering => new string[0];
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
+            Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
+
+            Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+
+            double Flx_InCell = 0;
+            double m_sigma = Sigma(ref cpv);
+
+            // isotropic surface tension terms
+            Flx_InCell -= m_sigma * Tangente_IN[d];
+            return Flx_InCell * V;
+        }        
+
+        // only parameter dependent, leave empty
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { };
+        }
+    }
+
+    /// <summary>
+    /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
+    /// </summary>
+    public class SurfaceTension_GNBC_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent {
+        int comp;
+        int D;
+        int iLevSet;
+        double sigma;
+        double theta_e;
+
+        public SurfaceTension_GNBC_Contactline(int d, int D, double theta_e, double sigma, int iLevSet) {
+            this.comp = d;
+            this.D = D;
+            this.iLevSet = iLevSet;
+            this.theta_e = theta_e;
+            this.sigma = sigma;
+        }
+
+        public TermActivationFlags VolTerms => TermActivationFlags.V;
+
+        public virtual IList<string> ParameterOrdering {
+            get {
+                string[] parameters = VariableNames.NormalVector(D);
+                parameters = parameters.Cat(VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), VariableNames.NormalVector(D)));
+                return parameters;
+            }
+        }
+
+        public IList<string> ArgumentOrdering => new string[0];
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
+            Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
+
+            Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+            Vector ContactLineNormal_IN = ContactLineNormal(SurfaceNormal_IN, EdgeNormal); // normal to contact line, tangential to solid
+
+            double Flx_InCell = 0;
+            double CosTheta = 0.0;
+            for(int d = 0; d < D; d++){
+                CosTheta += Tangente_IN[d] * ContactLineNormal_IN[d];
+            }
+
+            // isotropic surface tension terms
+            Flx_InCell += 0.5 * sigma * (CosTheta - Math.Cos(theta_e)) * ContactLineNormal_IN[comp];
+            return Flx_InCell * V;
+        }
+
+        // only parameter dependent, leave empty
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { };
         }
     }
 

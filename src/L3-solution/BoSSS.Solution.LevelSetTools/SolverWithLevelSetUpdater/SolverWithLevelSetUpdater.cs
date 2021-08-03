@@ -515,7 +515,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public override void Init(AppControl control) {
 
             void KatastrophenPlot(DGField[] dGFields) {
-                Tecplot.Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+
+                List<DGField> allfields = new();
+                allfields.AddRange(dGFields);
+
+                foreach (var f in this.RegisteredFields) {
+                    if (!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
+                        allfields.Add(f);
+                }
+
+                Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe", 0.0, 3);
             }
             MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
 
