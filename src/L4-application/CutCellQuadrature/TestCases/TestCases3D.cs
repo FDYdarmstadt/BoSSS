@@ -39,13 +39,12 @@ namespace CutCellQuadrature.TestCases {
             get {
                 if (shifts == null) {
                     List<Shift3D> myShifts = new List<Shift3D>();
-                    myShifts.Add(new Shift3D());
                     Random rng = new Random(1);
-                    for (int i = 1; i < 11; i++) {
+                    //for (int i = 1; i < 11; i++) {
                     //for (int i = 1; i < 21; i++) {
                     //for (int i = 1; i < 26; i++) {
                     //for (int i = 1; i < 51; i++) {
-                    //for (int i = 1; i < 101; i++) {
+                    for (int i = 1; i < 101; i++) {
                         double x =  rng.NextDouble();
                         double y =  rng.NextDouble();
                         double z =  rng.NextDouble();

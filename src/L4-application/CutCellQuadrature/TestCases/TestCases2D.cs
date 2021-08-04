@@ -58,7 +58,6 @@ namespace CutCellQuadrature.TestCases {
             get {
                 if (shifts == null) {
                     List<Shift2D> myShifts = new List<Shift2D>();
-                    myShifts.Add(new Shift2D());
                     Random rng = new Random(1);
                     for (int i = 1; i < 101; i++) {
                         double x = rng.NextDouble();

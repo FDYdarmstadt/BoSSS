@@ -62,10 +62,12 @@ namespace CutCellQuadrature {
     public partial class Program : Application {
 
         private static ITestCase[] testCases = new ITestCase[] {
+            //new Smereka2EllipseArcLength(GridSizes.Tiny, GridTypes.Structured),
+
             //new SingleCubeParaboloidVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleCubeCubeSurfaceTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleCubeCubeVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
-            new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Small, GridTypes.Structured),
+            //new ConstantIntgreandSphereSurfaceIntegral3DTestCase(GridSizes.Small, GridTypes.Structured),
             //new SingleSquareStraightLineLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareStraightLineVolumeTestCase(GridSizes.Tiny, GridTypes.Structured),
             //new SingleSquareParabolaLengthTestCase(GridSizes.Tiny, GridTypes.Structured),
@@ -267,7 +269,7 @@ namespace CutCellQuadrature {
             // Quadrature variant
 
             Modes mode = Modes.SayeGaussRules;
-            int[] orders = new int[] { 3};
+            int[] orders = new int[] { 7};
 
             //Modes mode = Modes.HMFClassic;
             //int[] orders = new int[] { 3, 4, 5, 6, 7, 8 };
