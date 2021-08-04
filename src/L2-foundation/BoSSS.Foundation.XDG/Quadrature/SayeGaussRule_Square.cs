@@ -228,8 +228,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return newArg;
         }
 
-        protected override bool SubdivideSuitable(SayeSquare arg)
+        protected override bool SubdivideSuitable(int numOfSubdivions)
         {
+            if (numOfSubdivions > 10)
+                return false;
             return true;
         }
 

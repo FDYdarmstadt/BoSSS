@@ -526,9 +526,11 @@ namespace BoSSS.Solution.XNSECommon {
                         IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
                         AddSurfaceComponent(H);
                     } else {
-                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                        //IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
+                        //AddSurfaceComponent(isoSurfT);
+                        //AddParameter(BoSSS.Solution.NSECommon.VariableNames.MaxSigma);
+                        IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
                         AddSurfaceComponent(isoSurfT);
-                        AddParameter(BoSSS.Solution.NSECommon.VariableNames.MaxSigma);
                     }
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
                 } else if (dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected

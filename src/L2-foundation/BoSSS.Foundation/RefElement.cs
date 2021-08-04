@@ -1412,7 +1412,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /// - item 2: face index of the neighbor 
             /// Negative return values indicate that there is no neighbor at <paramref name="iFace"/>.
             /// </returns>
-            public Tuple<int,int> GetNeighbor(int iFace) {
+            public (int,int) GetNeighbor(int iFace) {
                 // Check Args
                 // ==========
                 var Kref = this.m_RefElement;
@@ -1495,7 +1495,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                 // return
                 // ======
-                return (new Tuple<int, int>(m_NeighborIndex[iFace], m_NeighborFace[iFace]));
+                return (m_NeighborIndex[iFace], m_NeighborFace[iFace]);
             }
 
 

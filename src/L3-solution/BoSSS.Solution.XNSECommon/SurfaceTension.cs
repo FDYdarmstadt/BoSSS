@@ -1115,7 +1115,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
-    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm, BoSSS.Foundation.IEquationComponentCoefficient {
+    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm {
 
         int m_comp;
 
@@ -1124,8 +1124,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// <summary>
         /// surface tension coefficient
         /// </summary>
-        //double m_sigma;
-        MultidimensionalArray m_sigma;
+        double m_sigma;
 
         /// <summary>
         /// static contact angle (for navier-slip B.C.)
@@ -1151,11 +1150,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         protected Func<double[], double, double>[] velFunction;
 
 
-        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, 
+        public IsotropicSurfaceTension_LaplaceBeltrami(int d, int D, double sigma, IncompressibleBcType[] edgeTag2Type, IncompressibleBoundaryCondMap bcmap, 
             double theta_e, double beta_L) {
             m_comp = d;
             m_D = D;
-            //m_sigma = sigma;
+            m_sigma = sigma;
             m_theta = theta_e;
             m_beta = beta_L;
             m_edgeTag2Type = edgeTag2Type;
@@ -1163,10 +1162,10 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //m_staticInt = _staticInt;
         }
 
-        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+        //public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
 
-            m_sigma = (MultidimensionalArray)cs.UserDefinedValues["sigmaMaxValue"];
-        }
+        //    m_sigma = (MultidimensionalArray)cs.UserDefinedValues["sigmaMaxValue"];
+        //}
 
 
         public virtual IList<string> ParameterOrdering {
@@ -1217,7 +1216,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //}
 
             for (int d = 0; d < cpv.D; d++)
-                acc += - m_sigma[cpv.jCell] * Psurf[m_comp, d] * GradV[d];
+                acc += - m_sigma * Psurf[m_comp, d] * GradV[d];
 
             // stabilization
             //for(int d = 0; d < cpv.D; d++) {
@@ -1242,7 +1241,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             //Console.WriteLine("Tangente_OUT = ({0}, {1})", Tangente_OUT[0], Tangente_OUT[1]);
 
             //double m_sigmaMax = Math.Max(m_sigma[inp.jCellIn], m_sigma[inp.jCellOut]);
-            double acc = 0.5 * (m_sigma[inp.jCellIn] * Tangente_IN[m_comp] + m_sigma[inp.jCellOut] * Tangente_OUT[m_comp]) * (_vA - _vB);
+            double acc = 0.5 * m_sigma* (Tangente_IN[m_comp] + Tangente_OUT[m_comp]) * (_vA - _vB);
 
             //double surfTdiff = (Tangente_IN[m_comp] - Tangente_OUT[m_comp]);
             //if (inp.iEdge == 14 && m_comp == 0) {
@@ -1281,7 +1280,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                         double[] SurfaceNormal_IN = SurfaceNormal(inp.Parameters_IN);
                         double[] Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
 
-                        Flx_InCell = -m_sigma[inp.jCellIn] * Tangente_IN[m_comp];
+                        Flx_InCell = -m_sigma * Tangente_IN[m_comp];
                         //for (int d = 0; d < inp.D; d++) {
                         //    Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         //}
@@ -1316,14 +1315,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                         // isotropic surface tension terms
                         for (int d = 0; d < D; d++) {
-                            Flx_InCell -= m_sigma[inp.jCellIn] * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
+                            Flx_InCell -= m_sigma * (EdgeNormal[d] * Tangente_IN[d]) * EdgeNormal[m_comp];
                         }
 
 
                         if (edgType == IncompressibleBcType.NavierSlip_Linear) {
 
                             // Young's relation (static contact angle)
-                            Flx_InCell -= m_sigma[inp.jCellIn] * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
+                            Flx_InCell -= m_sigma * Math.Cos(m_theta) * PSnINormal_IN[m_comp];
 
                             // dissipative contact line force
                             // beta*(u*nL)
