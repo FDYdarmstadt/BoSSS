@@ -669,5 +669,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// The time associated with the current solution (<see cref="CurrentState"/>)
         /// </summary>
         public abstract double GetSimulationTime();
+
+
+
+        /// <summary>
+        /// Perform temporal integration
+        /// </summary>
+        /// <param name="phystime">
+        /// Physical time for the initial value.
+        /// </param>
+        /// <param name="dt">
+        /// Time-step size, must be the same value for each call in the lifetime of this object.
+        /// </param>
+        /// <param name="ComputeOnlyResidual">
+        /// If true, no solution is performed; only the residual of the actual solution is computed.
+        /// </param>
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        abstract public bool Solve(double phystime, double dt);
     }
 }

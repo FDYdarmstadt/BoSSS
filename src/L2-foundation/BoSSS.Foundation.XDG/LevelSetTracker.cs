@@ -218,6 +218,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// indexes of all available times, i.e. all valid indexes to access any <see cref="HistoryStack{T}"/>
+        /// </summary>
+        public int[] PopulatedHistoryIndices {
+            get {
+                int L = HistoryLength;
+                return RegionsHistory.PopulatedIndices;
+            }
+        }
+
+        /// <summary>
         /// Number of times <see cref="PushStacks"/> was called;
         /// </summary>
         public int PushCount {
@@ -2116,7 +2126,7 @@ namespace BoSSS.Foundation.XDG {
                 // update memory of XDG fields, etc.
                 // =================================
                 using (new BlockTrace("ObserverUpdate", tr)) {
-                    ObserverUpdate();
+                    ObserverUpdate(null);
                 }
 
                 // throw exception, if levelset CFL violated
@@ -2179,7 +2189,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
         /// </summary>
-        private void ObserverUpdate() {
+        private void ObserverUpdate(BehaveUnder_LevSetMoovement? updateBehaveOverride) {
             int rnk = ilPSP.Environment.MPIEnv.MPI_Rank;
             int sz = this.GridDat.MpiSize;
 
@@ -2231,7 +2241,19 @@ namespace BoSSS.Foundation.XDG {
 
             // call the update method of all active fields
             foreach (var t in ObserversRefs) {
+
+                BehaveUnder_LevSetMoovement bkup = BehaveUnder_LevSetMoovement.JustReallocate;
+                XDGField xDG = t as XDGField;
+                if(xDG != null && updateBehaveOverride != null) {
+                    bkup = xDG.UpdateBehaviour;
+                    xDG.UpdateBehaviour = updateBehaveOverride.Value;
+                }
+
                 t.OnNext(Regions);
+
+                if(xDG != null && updateBehaveOverride != null) {
+                    xDG.UpdateBehaviour = bkup;
+                }
             }
             
             
@@ -2243,7 +2265,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {
-                this.ObserverUpdate();
+                this.ObserverUpdate(BehaveUnder_LevSetMoovement.JustReallocate);
             }
         }
 

@@ -353,6 +353,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MultigridOperatorConfig,
                 AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray()); 
 
+            
+
             OpAffineRaw = OpAffineRaw.CloneAs();
             if (this.RHSRaw != null)
                 OpAffineRaw.AccV(-1.0, this.RHSRaw);

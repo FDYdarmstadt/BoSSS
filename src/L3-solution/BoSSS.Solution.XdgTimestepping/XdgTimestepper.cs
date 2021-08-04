@@ -104,7 +104,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Implicit, <see cref="RungeKuttaScheme.IMEX3"/>
         /// </summary>
-        RK_IMEX3 = 203
+        RK_IMEX3 = 203,
+
+
+        /// <summary>
+        /// Adaptive timestep 
+        /// </summary>
+        Adaptive_3 = 10003
     }
 
 
@@ -118,6 +124,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
 
+
+        /// <summary>
+        /// spatial operator in the case of XDG, i.e. can be null if DG is used;
+        /// </summary>
         public XSpatialOperatorMk2 XdgOperator {
             get;
             private set;
@@ -133,6 +143,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         
+        /// <summary>
+        /// spatial operator in the case of DG, i.e. can be null if XDG is used; 
+        /// </summary>
         public SpatialOperator DgOperator {
             get;
             private set;
@@ -148,7 +161,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
+        /// <summary>
+        /// spatial operator which is integrated over time (<see cref="XdgOperator"/>, <see cref="DgOperator"/>)
+        /// </summary>
         public ISpatialOperator Operator {
             get {
                 
@@ -222,7 +237,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Constructor for an XDG operator
+        /// Constructor for an XDG operator (see <see cref="XdgOperator"/>)
         /// </summary>
         public XdgTimestepping(
             XSpatialOperatorMk2 op,
@@ -381,6 +396,27 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        internal void ResetTimestepper() {
+            
+
+            var Fields = this.CurrentState.Fields.ToArray();
+            var IterationResiduals = this.IterationResiduals.Fields.ToArray();
+
+            bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
+
+
+            ConstructorCommon(this.Operator,
+                UseX,
+                Fields, this.Parameters, IterationResiduals,
+                this.UsedSpecies,
+                this.TimesteppingBase.UpdateLevelset, this.TimesteppingBase.Config_LevelSetHandling,
+                this.TimesteppingBase.Config_MultigridOperator, this.TimesteppingBase.MultigridSequence,
+                this.TimesteppingBase.Config_AgglomerationThreshold,
+                TimesteppingBase.XdgSolverFactory.GetLinearConfig, TimesteppingBase.XdgSolverFactory.GetNonLinearConfig);
+        }
+
+
+
         /// <summary>
         /// translates a time-stepping scheme code
         /// </summary>
@@ -412,7 +448,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 rksch = RungeKuttaScheme.ImplicitEuler;
             else if(Scheme == TimeSteppingScheme.RK_CrankNic)
                 rksch = RungeKuttaScheme.CrankNicolson;
-            else if(Scheme == TimeSteppingScheme.RK_IMEX3)
+            else if(Scheme == TimeSteppingScheme.RK_IMEX3 || Scheme == TimeSteppingScheme.Adaptive_3)
                 rksch = RungeKuttaScheme.IMEX3;
             else
                 throw new NotImplementedException();
@@ -724,13 +760,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Assert.IsTrue((AvailTimesBefore[0] - phystime).Abs() < dt*1e-7, "Error in Level-Set tracker time");
             }
 
-            if(m_BDF_Timestepper != null) {
-                success = m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
-            } else {
-                if (SkipSolveAndEvaluateResidual == true)
-                    throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
+            if(UseAdaptiveTimestepping()) {
 
-                success = m_RK_Timestepper.Solve(phystime, dt);
+                TimeLevel TL = new TimeLevel(this, dt, StateAtTime.Obtain(this, phystime));
+                TL.Compute();
+                success = true;
+
+            } else {
+
+                if(m_BDF_Timestepper != null) {
+                    success = m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
+                } else {
+                    if(SkipSolveAndEvaluateResidual == true)
+                        throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
+
+                    success = m_RK_Timestepper.Solve(phystime, dt);
+                }
             }
 
             double[] AvailTimesAfter;
@@ -742,6 +787,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             JacobiParameterVars = null;
             return success;
         }
+
+        bool UseAdaptiveTimestepping() {
+            if(this.Scheme == TimeSteppingScheme.Adaptive_3)
+                return true;
+
+            return false;
+        }
+
+
 
         
         public void UndoLastTs() {

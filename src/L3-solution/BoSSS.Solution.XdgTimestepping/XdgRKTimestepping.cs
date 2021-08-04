@@ -357,7 +357,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        public bool Solve(double phystime, double dt) {
+        override public bool Solve(double phystime, double dt) {
 
             Debug.Assert(m_RKscheme.c.Length == m_RKscheme.a.GetLength(0));
             Debug.Assert(m_RKscheme.b.Length == m_RKscheme.a.GetLength(1));

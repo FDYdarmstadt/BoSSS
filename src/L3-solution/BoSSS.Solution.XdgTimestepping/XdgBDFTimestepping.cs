@@ -229,7 +229,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Switch for using XDG-Fields
         /// </summary>
-        bool useX;
+        internal bool useX;
 
         //
         // stack of mass matrices (matrices _without_ agglomeration)
@@ -1346,6 +1346,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         public DelPushLevelSetRelatedStuff PushLevelSet {
             get;
             set;
+        }
+
+        /// <summary>
+        /// Perform temporal integration
+        /// </summary>
+        public override bool Solve(double phystime, double dt) {
+            return Solve(phystime, dt, ComputeOnlyResidual: false);
         }
 
 

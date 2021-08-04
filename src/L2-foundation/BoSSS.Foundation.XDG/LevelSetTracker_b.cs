@@ -244,6 +244,20 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// indexes of all available times, i.e. all valid indexes to access <see cref="this[int]"/>
+            /// </summary>
+            public int[] PopulatedIndices {
+                get {
+                    int[] ret = new int[GetPopulatedLength() + 1];
+                    for(int i = 0; i < ret.Length; i++)
+                        ret[i] = 1 - i;
+                    return ret;
+                }
+            }
+
+
+
+            /// <summary>
             /// Sontainer for previous states.
             /// </summary>
             List<T> History = new List<T>();

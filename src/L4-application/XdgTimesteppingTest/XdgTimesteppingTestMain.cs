@@ -51,14 +51,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         /// Les main routine.
         /// </summary>
         static void Main(string[] args) {
-            InitMPI();
-            BoSSS.Application.XdgTimesteppingTest.TestProgram.TestTimestepperReset();
+            //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt023(TimeSteppingScheme.BDF2, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_SingleInitLowOrder_BDF_dt02(TimeSteppingScheme.ExplicitEuler, 8);
-            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestConvection_MovingInterface_MultiinitHighOrder(1, 0.23);
+            //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestTimestepperReset();
             //FinalizeMPI();
-            throw new ApplicationException("deactivate me");
+            //throw new ApplicationException("deactivate me");
             //return;
 
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
@@ -108,7 +105,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         protected override void CreateAdditionalFields() {
             base.LsTrk = MyLsTrk;
-            
+
             if(Control.CutCellQuadratureType != base.LsTrk.CutCellQuadratureType)
                 throw new ApplicationException();
 
@@ -126,14 +123,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             CutMarker.Clear();
             NearMarker.Clear();
             DOFMarker.Clear();
-            foreach (int j in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
+            foreach(int j in this.LsTrk.Regions.GetCutCellMask4LevSet(0).ItemEnum) {
                 CutMarker.SetMeanValue(j, 1);
             }
-            foreach (int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
+            foreach(int j in this.LsTrk.Regions.GetNearFieldMask(1).ItemEnum) {
                 NearMarker.SetMeanValue(j, 1);
             }
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int j = 0; j < J; j++) {
+            for(int j = 0; j < J; j++) {
                 DOFMarker.SetMeanValue(j, this.u.Basis.GetLength(j));
             }
 
@@ -172,57 +169,66 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
         protected override void SetInitial(double t) {
             base.SetInitial(t);
-            
+
             this.CreateEquationsAndSolvers(null);
 
-            if (this.Control.MultiStepInit == true) {
+            if(this.Control.MultiStepInit == true) {
                 int CallCount = 0;
 
-                
 
-                if (base.Timestepping.m_RK_Timestepper != null)
-                    throw new NotSupportedException();
-                
-                base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
-                    delegate (int TimestepIndex, double Time, DGField[] St) {
 
-                        Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+                if(base.Timestepping.m_RK_Timestepper != null) {
+                    this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
+                    this.LsTrk.UpdateTracker(0.0);
+                    u.Clear();
+                    u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
+                    u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
 
-                        // level-set
-                        // ---------
+                }
 
-                        this.Phi.ProjectField(X => this.Control.Phi(X, Time));
+                if(base.Timestepping.m_BDF_Timestepper != null) {
 
-                        // HMF hacks
-                        if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
-                            throw new ApplicationException("Illegal HMF configuration.");
-                        if (this.Control.CircleRadius != null) {
-                            ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
-                        }
+                    base.Timestepping.m_BDF_Timestepper.MultiInit(t, 0, this.Control.GetFixedTimestep(),
+                        delegate (int TimestepIndex, double Time, DGField[] St) {
 
-                        if (CallCount == 0) {
-                            this.LsTrk.UpdateTracker(Time);
-                        } else {
-                            this.LsTrk.UpdateTracker(Time, incremental: true);
-                        }
+                            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
 
-                        CallCount++;
+                            // level-set
+                            // ---------
 
-                        // solution
-                        // --------
+                            this.Phi.ProjectField(X => this.Control.Phi(X, Time));
 
-                        XDGField _u = (XDGField)St[0];
-                        _u.Clear();
-                        _u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, Time)));
-                        _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, Time)));
+                            // HMF hacks
+                            if((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                                throw new ApplicationException("Illegal HMF configuration.");
+                            if(this.Control.CircleRadius != null) {
+                                ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(Time) };
+                            }
 
-                    });
+                            if(CallCount == 0) {
+                                this.LsTrk.UpdateTracker(Time);
+                            } else {
+                                this.LsTrk.UpdateTracker(Time, incremental: true);
+                            }
+
+                            CallCount++;
+
+                            // solution
+                            // --------
+
+                            XDGField _u = (XDGField)St[0];
+                            _u.Clear();
+                            _u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, Time)));
+                            _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, Time)));
+
+                        });
+                }
             } else {
-                this.Phi.ProjectField(X => this.Control.Phi(X, 0.0));
-                this.LsTrk.UpdateTracker(0.0);
+                this.Phi.ProjectField(X => this.Control.Phi(X, t));
+                this.LsTrk.UpdateTracker(t);
                 u.Clear();
-                u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, 0.0)));
-                u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, 0.0)));
+                u.GetSpeciesShadowField("A").ProjectField((X => this.Control.uA_Ex(X, t)));
+                u.GetSpeciesShadowField("B").ProjectField((X => this.Control.uB_Ex(X, t)));
 
                 if(base.Timestepping.m_BDF_Timestepper != null)
                     base.Timestepping.m_BDF_Timestepper.SingleInit();
@@ -230,7 +236,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
-       
+
         int LinearQuadratureDegree {
             get {
                 return Math.Max(2, 2 * this.u.Basis.Degree + V[0].Basis.Degree);
@@ -269,7 +275,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // ---------------
 
             Func<double[], double, double> S;
-            switch (this.Control.InterfaceMode) {
+            switch(this.Control.InterfaceMode) {
                 case InterfaceMode.MovingInterface:
                 S = this.Control.S;
                 break;
@@ -283,19 +289,19 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
 
 
-             if (this.Control.Eq == Equation.ScalarTransport) {
-                
+            if(this.Control.Eq == Equation.ScalarTransport) {
+
                 Func<double[], double, double>[] uBnd = new Func<double[], double, double>[this.Grid.EdgeTagNames.Keys.Max() + 1];
-                for (int iEdgeTag = 1; iEdgeTag < uBnd.Length; iEdgeTag++) {
+                for(int iEdgeTag = 1; iEdgeTag < uBnd.Length; iEdgeTag++) {
                     string nameEdgeTag;
-                    if (this.Grid.EdgeTagNames.TryGetValue((byte)iEdgeTag, out nameEdgeTag)) {
-                        if (!this.Control.BoundaryValues[nameEdgeTag].Evaluators.TryGetValue("u", out uBnd[iEdgeTag])) {
+                    if(this.Grid.EdgeTagNames.TryGetValue((byte)iEdgeTag, out nameEdgeTag)) {
+                        if(!this.Control.BoundaryValues[nameEdgeTag].Evaluators.TryGetValue("u", out uBnd[iEdgeTag])) {
                             uBnd[iEdgeTag] = (X, t) => 0.0;
                         }
                     }
                 }
 
-                var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames , "u", "Vx", "Vy", "Cod1");
+                var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(S));
 
@@ -309,15 +315,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 // no update of the parameter is required since it stays constant.
 
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
-                
+
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.IsLinear = true;
                 Operator.Commit();
 
                 return Operator;
-            } else if (this.Control.Eq == Equation.HeatEq) {
-                
+            } else if(this.Control.Eq == Equation.HeatEq) {
+
                 var Operator = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
@@ -327,15 +333,15 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 Operator.EquationComponents["Cod1"].Add(intfFlx);
 
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);
-                
+
                 Operator.LinearizationHint = LinearizationHint.AdHoc;
                 Operator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
                 Operator.Commit();
 
                 return Operator;
 
-            } else if (this.Control.Eq == Equation.Burgers) {
-                
+            } else if(this.Control.Eq == Equation.Burgers) {
+
                 var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(S, this.Control.BurgersDirection));
@@ -351,18 +357,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-        /*
-        protected override IEnumerable<DGField> InstantiateParameterFields() {
-            if (this.Control.Eq == Equation.ScalarTransport)
-                return this.V.ToArray();
-            else if (this.Control.Eq == Equation.HeatEq)
-                return null;
-            else if (this.Control.Eq == Equation.Burgers)
-                return CurrentState;
-            else
-                throw new NotImplementedException();
-        }
-        */
+
 
 
         public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
@@ -372,36 +367,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
-        public class Backup {
-
-            public double[] u0;
-            public LevelSetTracker.TrackerBackup trkBkup;
-
-
-            public static Backup Obtain(XdgTimesteppingMain mainObj) {
-                return new Backup() {
-                    u0 = mainObj.CurrentStateVector.ToArray(),
-                    trkBkup = mainObj.LsTrk.BackupTimeLevel(0)
-                };
-            }
-
-
-            public void Apply(XdgTimesteppingMain mainObj) {
-                mainObj.Timestepping = null;
-                mainObj.InitSolver();
-                mainObj.LsTrk.PopStacks();
-                mainObj.LsTrk.ReplaceCurrentTimeLevel(trkBkup.CloneAs());
-                //mainObj.LsTrk.UpdateTracker();
-                mainObj.LsTrk.ObserverHack();
-
-                mainObj.CurrentStateVector.SetV(u0);
-
-            }
-
-        }
-
-
-        public Backup myBackup;
+        /// <summary>
+        /// Only relevant for <see cref="TestProgram.TestTimestepperReset/>;
+        /// <see cref="RunFromReset"/> applies this backup and checks if it is capable of
+        /// reproducing the computation form it.
+        /// </summary>
+        public BoSSS.Solution.XdgTimestepping.StateAtTime myBackup;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
 
@@ -410,7 +381,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // get dt and check timestepping configuation
             // ------------------------------------------
 
-            if (base.Control.TimesteppingMode == Solution.Control.AppControl._TimesteppingMode.Transient) {
+            if(base.Control.TimesteppingMode == Solution.Control.AppControl._TimesteppingMode.Transient) {
                 dt = base.GetFixedTimestep();
                 Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
             } else {
@@ -418,22 +389,23 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
 
             if(TimestepNo == 1) {
-                myBackup = Backup.Obtain(this);
+                myBackup = StateAtTime.Obtain(this.Timestepping, phystime);
             }
 
-           
-          
-           
-            base.Timestepping.Solve(phystime, dt);
+            base.Timestepping.Solve(phystime, dt); // org. code.
 
-
-           
-            //throw new Exception("remove me");
+            //TimeLevel TL = new TimeLevel(this, dt, Backup.Obtain(this, phystime));
+            //TL.Compute();
+                     
+            //if(TimestepNo == 1) {
+            //    RefineShit(phystime, dt);
+            //}
+            
 
             // return
             // ------
 
-            if (TimestepNo == this.Control.NoOfTimesteps) {
+            if(TimestepNo == this.Control.NoOfTimesteps) {
                 this.ComputeL2Error(phystime + dt);
             }
 
@@ -441,8 +413,105 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             u1_bkup = this.CurrentStateVector.ToArray();
             return dt;
-
         }
+
+
+        /*
+        public void SucczessiveRefinement(int RefineLevel, double physTime, double dt, double[] CoarseSol) {
+            myBackup.Apply(this);
+
+            int NoOfTs = 2;
+            RefineLevel *= NoOfTs;
+            //Console.WriteLine("Refinement level: " + RefineLevel);
+            double dtsub = dt / NoOfTs;
+
+            double[][] uS = new double[NoOfTs][];
+            for(int nSub = 0; nSub < NoOfTs; nSub++) {
+                base.Solve(physTime + nSub * dtsub, dtsub);
+                uS[nSub] = this.CurrentStateVector.ToArray();
+            }
+
+            double delta0 = uS[NoOfTs - 1].L2Dist(CoarseSol) / dtsub;
+            Console.WriteLine($"Refinement Delta at level {RefineLevel} :\t{delta0}");
+
+
+            SucczessiveRefinement(RefineLevel, physTime, dtsub, uS[0]);
+        }
+        */
+
+      
+
+        /*
+        public void RefineShit(double physTime, double dt) {
+
+            Console.WriteLine("=============================================================");
+            Console.WriteLine("======= Time refinement =====================================");
+
+            List<double[]> u1S = new();
+
+            MultidimensionalArray Output = null;
+            MultidimensionalArray Row = MultidimensionalArray.Create(1, 6);
+
+            for(int cnt = 1; cnt <= 16; cnt++) {
+                int NoOfTs = (int)Math.Round(Math.Pow(2, cnt - 1));
+                double dtsub = dt / NoOfTs;
+
+                myBackup.Apply(this);
+
+                Console.WriteLine($"Doing {NoOfTs} timesteps...");
+                for(int nSub = 0; nSub < NoOfTs; nSub++) {
+                    base.Solve(physTime + nSub * dtsub, dtsub);
+                }
+
+                //PlotCurrentState(physTime + dt, new TimestepNumber(3, cnt), 3);
+                var ERRs = this.ComputeL2Error(physTime + dt, true);
+
+                u1S.Add(this.CurrentStateVector.ToArray());
+                //u1S.Last().SaveToTextFile("u-" + NoOfTs + ".txt");
+
+                int L = u1S.Count - 1;
+                if(L >= 2) {
+                    var u1_fine = u1S[L];
+                    var u1_crse = u1S[L - 1];
+                    var u1_0000 = u1S[L - 2];
+
+                    double delta1 = u1_fine.L2Dist(u1_crse);
+                    double delta0 = u1_fine.L2Dist(u1_0000);
+                    Console.WriteLine($"Refinement Delta: since last: {delta1}   \tsince o: {delta0}");
+
+
+
+
+                    Row[0, 0] = NoOfTs;
+                    Row[0, 1] = ERRs.totErr;
+                    Row[0, 2] = delta1;
+                    Row[0, 3] = delta0;
+                    Row[0, 4] = ERRs.JmpL2Err;
+
+                    if(Output == null)
+                        Output = Row.CloneAs();
+                    else
+                        Output = Output.CatVert(Row);
+
+
+                    for(int l = 2; l < u1S.Count - 1; l++) {
+                        Output[l - 2, 5] = u1S[l].L2Dist(u1_fine);
+                    }
+
+
+                    Output.SaveToTextFile("Errors.txt");
+                }
+
+                Console.WriteLine();
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("      =========================================================*");
+            Console.WriteLine("      0000000000000000");
+        }
+        */
+
+
 
         double[] u1_bkup;
 
@@ -454,7 +523,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             double dtSub = Tend / NoOfTimesteps;
 
-            this.myBackup.Apply(this);
+            this.myBackup.Apply(this.Timestepping);
 
 
             int nSub = 0;
@@ -464,7 +533,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 //break;
             }
 
-
+            // compare solution from backup-restart to original solution
             double dist = GenericBlas.L2Dist(CurrentStateVector, u1_bkup);
             Console.WriteLine("Delta to first solver run: " + dist);
             Assert.LessOrEqual(dist, 1e-10, "Delta of reseted run to large.");
@@ -493,6 +562,33 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
+        internal double ComputeL2Dist(double[] a, double[] b) {
+            var u1 = this.u.CloneAs();
+
+            u1.Clear();
+            u1.CoordinateVector.Acc(+1.0, a);
+            u1.CoordinateVector.Acc(-1.0, b);
+
+            int order = Math.Max(this.u.Basis.Degree * 3, 3);
+            XQuadSchemeHelper schH = LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), order).XQuadSchemeHelper;
+
+            var u1_A = u1.GetSpeciesShadowField("A");
+            var u1_B = u1.GetSpeciesShadowField("B");
+
+            void ScalarFunction(MultidimensionalArray input, MultidimensionalArray output) {
+                output.Clear();
+            }
+
+            double uA_Err = u1_A.L2Error(ScalarFunction, order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A")));
+            double uB_Err = u1_B.L2Error(ScalarFunction, order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")));
+
+
+            return Math.Sqrt(uA_Err.Pow2() + uB_Err.Pow2());
+        }
+
+
+        //int cnt = 0;
+
         (double totErr, double phaseAerr, double phaseBerr, double JmpL2Err) ComputeL2Error(double PhysTime, bool OverWriteIfExistent = false) {
             Console.WriteLine("Phystime = " + PhysTime);
 
@@ -510,6 +606,25 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             double uA_Err = uNum_A.L2Error(this.Control.uA_Ex.Vectorize(PhysTime), order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A")));
             double uB_Err = uNum_B.L2Error(this.Control.uB_Ex.Vectorize(PhysTime), order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")));
+
+            {
+                var uEx = this.u.CloneAs();
+                uEx.Identification = "u_exact";
+                uEx.Clear();
+                //uEx.GetSpeciesShadowField("A").ProjectField(1.0, this.Control.uA_Ex.Vectorize(PhysTime));
+                //uEx.GetSpeciesShadowField("B").ProjectField(1.0, this.Control.uB_Ex.Vectorize(PhysTime));
+
+                VectorIO.LoadFromTextFile(uEx.CoordinateVector, "u-256.txt");
+
+                var Err = uEx.CloneAs();
+                Err.Identification = "Err";
+                Err.Acc(-1.0, u);
+
+                //var Fields = new DGField[] { this.Phi, this.u, uEx, Err };
+                //Tecplot.PlotFields(Fields, "Errors-" + cnt, PhysTime, 4);
+                //cnt++;
+            }
+
 
             
             Func<double[], double, double> uJmp_Ex = ((X, t) => this.Control.uA_Ex(X, t) - this.Control.uB_Ex(X, t));
