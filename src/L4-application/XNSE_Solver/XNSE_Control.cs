@@ -713,7 +713,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool NonlinearCouplingSolidFluid = false;
 
         [DataMember]
-        public ClassifierType CType = ClassifierType.Species;
+        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
 
         /// <summary>
         /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>

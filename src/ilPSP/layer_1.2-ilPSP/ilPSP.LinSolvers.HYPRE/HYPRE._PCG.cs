@@ -222,7 +222,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// </summary>
         public IImplicitPrecond NestedPrecond {
             get {
-                return (IImplicitPrecond)m_NestedPrecond;
+                return m_NestedPrecond;
             }
             set {
                 ICollection<Type> Supp = this.SupportedPrecond;
