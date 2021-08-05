@@ -1717,8 +1717,7 @@ namespace BoSSS.Foundation.XDG {
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
                             // Use the accelerated bernstein cut cell finding technique for dg levelsets
-                            bool useBernstein = true;
-                            if (this.LevelSets[levSetind] is LevelSet ls &&  useBernstein) {  
+                            if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {  
                                 // loop over all cells in this chunk
                                 for (int jj = j; jj < j + VecLen; jj++) {
                                     double[] modalVals = ls.Coordinates.GetRow(jj);
@@ -1756,15 +1755,7 @@ namespace BoSSS.Foundation.XDG {
                                                 _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
                                             (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
                                         }
-                                    } // end of edges loop
-                                    
-                                    // either clear sign change or all zeros
-                                    if (Pos && Neg || (!Pos && !Neg)) {
-                                        // cell jj is cut by level set
-                                        // code cell:
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
-                                        TempCutCellsBitmask[jj] = true;
-                                    }
+                                    } // end of edges loop 
 
                                     // check also with slight offset and inside the cell
                                     var Transformer = this.TestTransformer[levSetind];
@@ -1774,15 +1765,20 @@ namespace BoSSS.Foundation.XDG {
                                     double Min = bernsteinVals.Min();
                                     double Max = bernsteinVals.Max();
 
-                                    // detect possible roots in cells
-                                    if (Min.Sign() != Max.Sign() || (Min.Sign() == 0 & Max.Sign() == 0)) {
+                                    Pos |= Max > 0;
+                                    Neg |= Min < 0;
+
+                                    // either clear sign change or all zeros
+                                    if (Pos && Neg || (!Pos && !Neg)) {
+                                        // cell jj is cut by level set
+                                        // code cell:
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
 
                                     // detect purely negative cells
-                                    if (Min < 0.0 && Max < 0.0) {
-                                        LevSetNeg[levSetind][jj] = true;
+                                    if (Max < 0.0) {
+                                            LevSetNeg[levSetind][jj] = true;
                                     } else {
                                         LevSetNeg[levSetind][jj] = false;
                                     }

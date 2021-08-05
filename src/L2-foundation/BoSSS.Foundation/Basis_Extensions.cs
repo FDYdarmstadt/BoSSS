@@ -106,7 +106,9 @@ namespace BoSSS.Foundation {
 
             ConstructTransform();
             ConstructInverseTransform();
+#if DEBUG
             TestTransformQuality();
+#endif
         }
 
         /// <summary>
@@ -194,7 +196,7 @@ namespace BoSSS.Foundation {
                 M[iKref] = MultidimensionalArray.Create(J, J);
                 Dest2Origin[iKref] = MultidimensionalArray.Create(J, I);
 
-                // not well suited for 3D and higher Polynomialdegrees!!!!
+                // not well suited for 3D and higher Polynomialdegrees!!!!, condition number of mass matrix becomes very high
                 var B = m_dest.Evaluate(rule.Nodes);
                 var P = m_origin.Evaluate(rule.Nodes);
 
