@@ -70,11 +70,6 @@ namespace ilPSP.LinSolvers.HYPRE {
 
         MPI_Comm m_comm = csMPI.Raw._COMM.WORLD;
 
-        public MPI_Comm Comm {
-            get { return m_comm; }
-            set { m_comm = value; }
-        }
-
         bool m_BJ = false;
 
         /// <summary>

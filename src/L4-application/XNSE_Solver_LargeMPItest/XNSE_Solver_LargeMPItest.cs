@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -74,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             //C.TracingNamespaces = "*";
@@ -146,6 +147,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.GridPartOptions = "debug";
             C.GridPartType = GridPartType.clusterHilbert;
 
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -182,46 +184,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (SpaceDim) {
                     case 2:
-                    // Inf-Norm square
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-
-                    // p-Norm square
-                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
-                    //+ particleRad; // 1e6
-
-                    // 0-Norm square
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //+ Math.Abs(particleRad);
-
                     // circle
-                    //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-
+                    return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
                     case 3:
-                    // Inf-Norm cube
-                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                    //                        Math.Abs(X[2] - pos[2])))
-                    //                        + particleRad;
-
-                    // p-Norm cube
-                    //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power),1.0/power)
-                    //+ particleRad;
-
-                    // 0-Norm cube
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //- Math.Abs(X[2] - pos[2])
-                    //+ Math.Abs(particleRad);
-
                     // sphere
                     return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-
                     default:
                     throw new NotImplementedException();
                 }
@@ -287,7 +254,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;

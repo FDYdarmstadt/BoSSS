@@ -288,7 +288,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Res_f.SetV(B);
                 Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
 
-            if (SkipLowOrderSolve == false) {
+            if (!SkipLowOrderSolve) {
                 // project to low-p/coarse
                 double[] Res_c = lMask.GetSubVec(Res_f);
 

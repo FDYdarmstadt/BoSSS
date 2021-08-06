@@ -125,7 +125,7 @@ namespace ilPSP.LinSolvers {
     /// A solver that wants to use such an object must implement the 
     /// <see cref="IImplicitPrecondSupport"/>-interface;
     /// </summary>
-    public interface IImplicitPrecond {
+    public interface IImplicitPrecond : IDisposable {
 
     }
 

@@ -288,6 +288,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
+                if (Timestepping.m_BDF_Timestepper != null)
+                    Timestepping.m_BDF_Timestepper.SingleInit();
 
 
             } else {

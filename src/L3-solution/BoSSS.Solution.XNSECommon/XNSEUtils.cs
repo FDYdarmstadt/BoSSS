@@ -1182,19 +1182,13 @@ namespace BoSSS.Solution.XNSECommon {
 
         #region interface related properties (area, length, material points, velocities)
 
-        public static double GetSpeciesArea(LevelSetTracker LsTrk, SpeciesId spcId) {
+        public static double GetSpeciesArea(LevelSetTracker LsTrk, SpeciesId spcId, int quadRuleOrder = -1) {
 
             double spcArea = 0.0;
 
-            int order = 0;
-            if (LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-
-            //XQuadSchemeHelper SchemeHelper = new XQuadSchemeHelper(LsTrk, momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+            int order = (quadRuleOrder < 0) ? 1 : quadRuleOrder;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
+
             CellQuadratureScheme vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),
@@ -1211,17 +1205,11 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-        public static double GetInterfaceLength(LevelSetTracker LsTrk) {
+        public static double GetInterfaceLength(LevelSetTracker LsTrk, int quadRuleOrder = -1) {
 
             double interLength = 0.0;
 
-            int order = 0;
-            if (LsTrk.GetCachedOrders().Count > 0) {
-                order = LsTrk.GetCachedOrders().Max();
-            } else {
-                order = 1;
-            }
-
+            int order  = (quadRuleOrder < 0) ? 1 : quadRuleOrder;
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
             CellQuadratureScheme cqs = SchemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask());

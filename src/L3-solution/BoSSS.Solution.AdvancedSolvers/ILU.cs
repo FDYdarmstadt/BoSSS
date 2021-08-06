@@ -28,9 +28,9 @@ using BoSSS.Platform.Utils;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
-    /// Algorithm based on "Numerik linearer Gleichungssysteme, 2. Auflage, Vieweg, Andreas Meister"
+    /// Parallel ILU from HYPRE library
     /// </summary>
-    public class ILU : ISolverSmootherTemplate, ISolverWithCallback {
+    public class ILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }
@@ -44,114 +44,75 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get { return this.m_Converged; }
         }
 
+        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+            get { return m_IterationCallback; }
+            set { m_IterationCallback = value; }
+        }
+
         public void ResetStat() {
             m_Converged = false;
             m_ThisLevelIterations = 0;
         }
 
+        Action<int, double[], double[], MultigridOperator> m_IterationCallback;
         bool m_Converged = false;
         int m_ThisLevelIterations = 0;
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        private int FillInLevel {
             get {
-                throw new NotImplementedException();
-            }
-            set {
-                throw new NotImplementedException();
+                int D = m_mgop.Mapping.AggGrid.SpatialDimension;
+                switch (D) {
+                    case 1:
+                    case 2:
+                        return 2;
+                    case 3:
+                        return 1;
+                    default:
+                        throw new NotSupportedException("spatial Dimension ("+D+") not supported.");
+                }
             }
         }
 
-        MultigridOperator m_mgop;
-
         public void Init(MultigridOperator op) {
-            var M = op.OperatorMatrix;
+            var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
             this.m_mgop = op;
 
-            if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
+            
+            m_ILUmatrix = Mtx.CloneAs();
+            m_HYPRE_ILU = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                Level = FillInLevel, // This corresponds to ILU(0), with zero fill in, there are other versions available like ILUT, etc.
+            };
 
-            Mtx = M;
-            int L = M.RowPartitioning.LocalLength;
-
-            diag = new double[L];
+            // Zeros on diagonal elements because of saddle point structure
+            long i0 = m_ILUmatrix._RowPartitioning.i0;
+            long iE = m_ILUmatrix._RowPartitioning.iE;
+            for (long bla = i0; bla < iE; bla++) {
+                if (m_ILUmatrix.GetDiagonalElement(bla) == 0) {
+                    m_ILUmatrix.SetDiagonalElement(bla, 1);
+                }
+            }
+            if (m_ILUmatrix != null && m_ILUmatrix.RowPartitioning.LocalLength > 0) m_HYPRE_ILU.DefineMatrix(m_ILUmatrix);
         }
 
-        BlockMsrMatrix Mtx;
-        double[] diag;
+        ilPSP.LinSolvers.HYPRE.Solver m_HYPRE_ILU;
+        BlockMsrMatrix m_ILUmatrix;
+        MultigridOperator m_mgop;
 
         public void Solve<P, Q>(P X, Q B)
             where P : IList<double>
             where Q : IList<double> {
+            var SolverResult = m_HYPRE_ILU.Solve(X,B);
+        }
 
-            long n = Mtx.NoOfCols;
-            double sum = 0;
-
-            var tempMtx = Mtx;
-
-            // Zeros on diagonal elements because of saddle point structure
-            for (int bla = 0; bla < n; bla++) {
-                if (Mtx.GetDiagonalElement(bla) == 0)
-                    throw new Exception("One or more diagonal elements are zero, ILU cannot work");
-                Mtx.SetDiagonalElement(bla, 1);
-            }
-
-            // ILU decomposition of matrix
-            for (long k = 0; k < n - 1; k++) {
-                for (long i = k; i < n; i++) {
-                    if (tempMtx[i, k] == 0) { i = n; }
-                    else {
-                        Mtx[i, k] = Mtx[i, k] / Mtx[k, k];
-                        for (long j = k + 1; j < n; j++) {
-                            if (tempMtx[i, j] == 0) {
-                                j = n;
-                            }
-                            else {
-                                Mtx[i, j] = Mtx[i, j] - Mtx[i, k] * Mtx[k, j];
-                            }
-                        }
-                    }
-                }
-            }
-
-
-            // LU decomposition of matrix        
-            //for (int i = 0; i < n; i++) {
-            //    for (int j = i; j < n; j++) {
-            //        sum = 0;
-            //        for (int k = 0; k < i; k++)
-            //            sum += Mtx[i, k] * Mtx[k, j];
-            //        Mtx[i, j] = tempMtx[i, j] - sum;
-            //    }
-            //    for (int j = i + 1; j < n; j++) {
-            //        sum = 0;
-            //        for (int k = 0; k < i; k++)
-            //            sum += Mtx[j, k] * Mtx[k, i];
-            //        Mtx[j, i] = (1 / Mtx[i, i]) * (tempMtx[j, i] - sum);
-            //    }
-            //}
-
-            if(this.Mtx.RowPartitioning.MpiSize != 1)
-                throw new NotSupportedException();
-
-            // find solution of Ly = b
-            double[] y = new double[n];
-            for (int i = 0; i < n; i++) {
-                sum = 0;
-                for (int k = 0; k < i; k++)
-                    sum += Mtx[i, k] * y[k];
-                y[i] = B[i] - sum;
-            }
-            // find solution of Ux = y
-            for (long i = n - 1; i >= 0; i--) {
-                sum = 0;
-                for (long k = i + 1; k < n; k++)
-                    sum += Mtx[i, k] * X[(int)k]; // index into Mtx and X must be different for more than 1 MPI process.
-                X[(int)i] = (1 / Mtx[i, i]) * (y[i] - sum);
-            }
-
+        public void Dispose() {
+            m_HYPRE_ILU.Dispose();
+            m_ILUmatrix = null;
+            m_mgop = null;
         }
 
         public object Clone() {

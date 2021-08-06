@@ -76,6 +76,9 @@ namespace ilPSP.LinSolvers.monkey {
         /// </summary>
         abstract public void DoPrecond();
 
+        virtual public void Dispose() {
+            throw new NotImplementedException();
+        }
         #endregion
     }
 }

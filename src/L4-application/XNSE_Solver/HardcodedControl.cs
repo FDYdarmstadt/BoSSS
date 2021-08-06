@@ -36,6 +36,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -523,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 100, bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -533,18 +534,20 @@ namespace BoSSS.Application.XNSE_Solver {
                 var MachineName = System.Environment.MachineName;
                 switch(thisOS) {
                     case PlatformID.Unix:
-                    C.AlternateDbPaths = new[] {
-                        (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
-                        (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-                    break;
+                        C.AlternateDbPaths = new[] {
+                            (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                        break;
                     case PlatformID.Win32NT:
-                    if(MachineName == "PCMIT32")
-                        C.DbPath = @"D:\trash_db";
-                    else
-                        C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
-                    break;
+                        if (MachineName == "PCMIT32") {
+                            C.DbPath = @"D:\trash_db";
+                            //C.DbPath = @"D:\2D_Partitioning_samples";
+                        } else {
+                            C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                        }
+                        break;
                     default:
-                    throw new Exception("No Db-path specified. You stupid?");
+                        throw new Exception("No Db-path specified. You stupid?");
                 }               
                 (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
             }
@@ -552,12 +555,13 @@ namespace BoSSS.Application.XNSE_Solver {
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
-            C.Tags.Add("tracing");
+            C.Tags.Add("3_cluster");
 
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
+            //C.SetFieldOptions(k, Math.Max(6, k * 2));
+            C.SetFieldOptions(k, Math.Max(k, 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
             if (tracing) 
@@ -575,10 +579,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             Func<double[], int> MakeDebugPart = delegate (double[] X) {
                 double x = X[0];
-
                 double range = xMax - xMin;
                 double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
-
                 return (int)((x - xMin) / interval);
             };
 
@@ -631,7 +633,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "debug";
             C.GridPartType = GridPartType.clusterHilbert;
+            C.Tags.Add(C.GridPartType.ToString());
 
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -643,7 +647,6 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.InitialValues_Evaluators.Add("VelocityY", X => 0);
             //if (SpaceDim == 3)
             //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
-
 
             // Phi (X,t): p-norm cube with forced rotation
 
@@ -688,10 +691,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     case 3:
                     // Inf-Norm cube
-                    //return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                    //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                    //                        Math.Abs(X[2] - pos[2])))
-                    //                        + particleRad;
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
 
                     // p-Norm cube
                     //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
@@ -706,7 +709,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     //+ Math.Abs(particleRad);
 
                     // sphere
-                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
 
                     default:
                     throw new NotImplementedException();
@@ -747,8 +750,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
             C.UseImmersedBoundary = true;
             if (C.UseImmersedBoundary) {
-                //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
-                C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+                //C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
                 if (SpaceDim == 3)
@@ -765,19 +768,20 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.EqualOrder = false;
             //C.PressureStabilizationFactor = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.UseSchurBlockPrec = true;
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
             C.LinearSolver.NoOfMultigridLevels = 5;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.MaxSolverIterations = 1000;
+            C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
@@ -805,12 +809,257 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // haben fertig...
             // ===============
-
-            C.SkipSolveAndEvaluateResidual = true;
             return C;
 
         }
 
+
+        public static XNSE_Control Rotating_Cube2(int dim = 3, int p = 2, int kelem = 20, bool useAMR = true) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            bool useIB = true;
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            string _DbPath = null;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "RotatingCube3D";
+            C.SessionName = "SetupTest";
+
+            C.ContinueOnIoError = false;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            if (dim == 3) {
+                C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                    Degree = p,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = Math.Max(p, 2),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            if (useIB) {
+                C.FieldOptions.Add("PhiDG2", new FieldOpts() {
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+                C.FieldOptions.Add("Phi2", new FieldOpts() {
+                    Degree = Math.Max(p, 2),
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 0;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            C.GridFunc = delegate () {
+                double[] cube = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
+                GridCommons grd; 
+                if (dim == 3) 
+                    grd = Grid3D.Cartesian3DGrid(cube, cube, cube);
+                else
+                    grd = Grid2D.Cartesian2DGrid(cube, cube);
+
+                grd.EdgeTagNames.Add(1, "wall");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] - (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (dim == 3) {
+                        if (Math.Abs(X[2] + (1.0)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (1.0)) <= 1.0e-8)
+                            et = 1;
+                    }
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] pos = new double[3];
+                double anglev = 10;
+                //double t = 0;
+                double angle = -(anglev * t) % (2 * Math.PI);
+                double particleRad = 0.261;
+
+                if (dim == 3) {
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
+                } else {
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                        + particleRad;
+                }
+             
+            };
+
+          
+            if (useIB) {
+                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+                C.UseImmersedBoundary = true;
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+            } else {
+                C.InitialValues_Evaluators_TimeDep.Add("Phi", PhiFunc);
+            }
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall");
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.solveKineticEnergyEquation = false;
+            //C.ComputeEnergyProperties = true;
+
+            C.CheckJumpConditions = false;
+            C.CheckInterfaceProps = false;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            //C.Solver_MaxIterations = 80;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+
+            #endregion
+
+
+            // level set options
+            // ====================
+            #region solver
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            if (useIB)
+                C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            //C.InitSignedDistance = true;
+
+
+            C.AdaptiveMeshRefinement = useAMR;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
+            C.TimesteppingMode = compMode;
+
+            if (compMode == AppControl._TimesteppingMode.Transient) {
+                double dt = 1;
+                C.dtMax = dt;
+                C.dtMin = dt;
+                C.Endtime = 1000;
+                C.NoOfTimesteps = 2;
+            }
+
+            #endregion
+
+            return C;
+        }
 
 
         public static XNSE_Control CouettePoiseuille(string _DbPath = null, int p = 2) {

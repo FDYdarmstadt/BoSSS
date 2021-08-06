@@ -84,6 +84,9 @@ namespace ilPSP.Tracing {
                 TotalTime.Stop();
                 _Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
                 TotalTime.Start();
+#if TEST
+                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
+#endif
                 return _Root;
             }
         }
@@ -108,15 +111,17 @@ namespace ilPSP.Tracing {
         static private long GetMemory() {
             long mem = 0;
             Process myself = Process.GetCurrentProcess();
-            //{
-            //    try {
-            //        //mem = myself.WorkingSet64 / (1024 * 1024);
-            //        mem = myself.PrivateMemorySize64 / (1024 * 1024);
-            //        //mem = GC.GetTotalMemory(false) / (1024 * 1024);
-            //    } catch (Exception e) {
-            //        mem = 0;
-            //    }
-            //}
+#if TEST
+            {
+                try {
+                    //mem = myself.WorkingSet64 / (1024 * 1024);
+                    mem = myself.PrivateMemorySize64 / (1024 * 1024);
+                    //mem = GC.GetTotalMemory(false) / (1024 * 1024);
+                } catch (Exception e) {
+                    mem = 0;
+                }
+            }
+#endif
             return mem;
         }
 
@@ -227,7 +232,7 @@ namespace ilPSP.Tracing {
         }
 
 
-        #region IDisposable Members
+#region IDisposable Members
 
         /// <summary>
         /// time elapsed after stopping.
@@ -246,7 +251,7 @@ namespace ilPSP.Tracing {
             this.Duration = Watch.Elapsed;
         }
 
-        #endregion
+#endregion
     }
 
     /// <summary>

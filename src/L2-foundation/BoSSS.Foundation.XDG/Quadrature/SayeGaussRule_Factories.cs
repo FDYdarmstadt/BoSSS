@@ -209,7 +209,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
                         result.Add(sayePair);
                     } catch (Exception e) {
-                        var vector = mask.GridData.iGeomCells.GetCenter(cell);                        
+                        var vector = mask.GridData.iGeomCells.GetCenter(cell);
+                        double volume = mask.GridData.iGeomCells.GetCellVolume(cell);
+                        double edge = Math.Pow(volume,1/3);
+                        Console.WriteLine("volume of cell: " + volume);
+                        Console.WriteLine("edge of cell: "+edge);
                         Console.WriteLine("proc{2} reporting: coord of {0}:{1}", cell, String.Join(",", vector), ilPSP.Environment.MPIEnv.MPI_Rank);
                         Console.WriteLine("MaskType: " + mask.MaskType.ToString());
                         Console.WriteLine("MaskLength: " + mask.Count());
