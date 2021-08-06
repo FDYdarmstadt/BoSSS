@@ -46,10 +46,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             Vector dirichlet = new Vector(D);
 
-            if (inp.EdgeTag == 2) {
-                dirichlet[0] = 1;
-            }
-
             for (int i = 0; i < D; i++) {
                 acc1 -= viscosity * _Grad_uIN[d, i] * _vIN  * inp.Normal[i];  // consistency term  
                 acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
