@@ -60,6 +60,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public IList<string> VariableNames => null;
 
+        // nothing to do
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+
 
         /// <summary>
         /// Provides access to the internally constructed extension velocity.

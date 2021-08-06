@@ -112,7 +112,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int FindPhaseDGCoordinate(UnsetteledCoordinateMapping map, int iVar, int jCell, AggregationGridBasis[] bases) {
             LevelSetTracker lsTrk = GetTracker(map);
             var basis = bases[iVar];
-            if(lsTrk != null) {
+            if(lsTrk != null) {                
                 int N = basis.GetLength(jCell, map.BasisS[iVar].Degree);
                 return basis.N_Murks(jCell, 0, N);
             } else {
@@ -197,6 +197,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int iVar = 0; iVar < L; iVar++) {
                     if(FreeMeanValue[iVar]) {
                         int kCoord = FindPhaseDGCoordinate(map, iVar, jRefLoc, bases);
+#if Debug
+                        {
+                            var lsTrk = GetTracker(map);
+                            string spc = "0";
+                            if (lsTrk != null) {
+                                foreach (var s in lsTrk.SpeciesIdS) {
+                                    spc = lsTrk.GetSpeciesName(s);
+                                    if (lsTrk.Regions.IsSpeciesPresentInCell(s, jRefLoc))
+                                        break;
+                                }
+                            }                            
+                            Console.WriteLine("Setting reference point for variable#{0}, to phase {1} in cell {2}", iVar, spc, m_ReferenceCell);
+                        }
+#endif
+                        
                         m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, kCoord);
                     } else {
                         m_ReferenceIndices[iVar] = int.MinValue;

@@ -272,7 +272,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         if(TemporalOperator is ConstantXTemporalOperator cxt) {
                             cxt.SetTrackerHack(this.m_LsTrk);
                         }
-
+                        
                         var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
                         builder.time = time;
 
@@ -500,9 +500,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     */
                     
                     for (int i = 0; i < NF; i++) {
-                        double L2Res = R.Mapping.Fields[i].L2Norm();
-                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-                        totResi += L2Res.Pow2();
+                        var field = R.Mapping.Fields[i];
+                        if(field is XDGField) {
+                            foreach(var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
+                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                                m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
+                                totResi += L2Res.Pow2();
+                            }
+                        } else {
+                            double L2Res = field.L2Norm();
+                            m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                            totResi += L2Res.Pow2();
+                        }
                     }
                 } else {
 
@@ -526,6 +535,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 totResi = totResi.Sqrt();
                 m_ResLogger.CustomValue(totResi, "Total");
+
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
