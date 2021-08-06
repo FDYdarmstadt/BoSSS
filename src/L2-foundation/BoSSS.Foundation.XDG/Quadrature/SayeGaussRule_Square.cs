@@ -87,10 +87,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region SayeComboIntegrand
 
-        protected override ISayeQuadRule GetEmptySurfaceRule()
+        protected override ISayeQuadRule GetEmptyQuadratureRule()
         {
-            var emptyRule = new NodesAndWeightsSurface(RefElement.SpatialDimension, RefElement);
-            emptyRule.Reset();
+            ISayeQuadRule emptyRule = new NodesAndWeights( RefElement);
             return emptyRule;
         }
 
@@ -139,8 +138,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return value;
         }
 
-        static readonly double sqrt_2 = Math.Sqrt(2.0);
-        
+        readonly double boundSafety = 1.1;
         /// <summary>
         /// First order approximation of  delta >= sup_x|psi(x) - psi(x_center)|  
         /// </summary>
@@ -151,19 +149,33 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <returns></returns>
         protected override double EvaluateBounds(SayeSquare Arg, LinearPSI<Square> psi, NodeSet x_center, int cell)
         {
-            double[] arr = new double[Arg.Dimension];
+            double[] arr = new double[RefElement.SpatialDimension];
             Arg.Diameters.CopyTo(arr, 0);
             psi.SetInactiveDimsToZero(arr);
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] { 2});
+            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, 2, 1);
 
             NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
-
-
             MultidimensionalArray grad = ReferenceGradient(nodeOnPsi, cell);
-            
-            grad.ApplyAll(x => Math.Abs(x));     
-            double delta = grad.InnerProduct(diameters) * sqrt_2;
-            //sqrt_2 is safety
+
+
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(nodeOnPsi, cell, 1);
+            jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+
+            LevelSet levelSet = lsData.LevelSet as LevelSet;
+            MultidimensionalArray hessian = MultidimensionalArray.Create(1, 1, 2, 2);
+            levelSet.EvaluateHessian(cell, 1, nodeOnPsi, hessian);
+            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 }).CloneAs();
+            hessian.ApplyAll(x => Math.Abs(x));
+
+            MultidimensionalArray delta1 = diameters.TransposeTo() * jacobian.TransposeTo() * hessian * jacobian * diameters;
+
+
+            grad.ApplyAll(x => Math.Abs(x));
+            double delta = delta1[0, 0];
+            for (int i = 0; i < 2; ++i) {
+                delta += grad[i] * diameters[i, 0];
+            }
+            delta *= boundSafety;
 
             return delta;
         }
@@ -176,41 +188,37 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return 1;
         }
 
-        protected override bool HeightDirectionIsSuitable(SayeSquare arg, LinearPSI<Square> psi, NodeSet x_center, 
-            int heightDirection, MultidimensionalArray gradient, int cell)
-        {
+        protected override bool HeightDirectionIsSuitable(SayeSquare arg, LinearPSI<Square> psi, NodeSet x_center,
+            int heightDirection, MultidimensionalArray gradient, int cell) {
             //Determine bounds
             //-----------------------------------------------------------------------------------------------------------------
-            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1]};
+            double[] arr = new double[] { arg.Diameters[0], arg.Diameters[1] };
             psi.SetInactiveDimsToZero(arr);
-            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] {2, 1 });
+            MultidimensionalArray diameters = MultidimensionalArray.CreateWrapper(arr, new int[] { 2, 1 });
 
             NodeSet nodeOnPsi = psi.ProjectOnto(x_center);
             MultidimensionalArray hessian = lsData.GetLevelSetReferenceHessian(nodeOnPsi, cell, 1);
-            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1});
+            hessian = hessian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
 
             MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(nodeOnPsi, cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
-            hessian = jacobian * hessian; 
 
             hessian.ApplyAll(x => Math.Abs(x));
 
             //abs(Hessian) * diameters = delta 
-            MultidimensionalArray delta = hessian * diameters;
+            MultidimensionalArray delta = hessian * jacobian * diameters;
             delta = delta.ExtractSubArrayShallow(new int[] { -1, 0 });
-            
+
             //Check if suitable
             //-----------------------------------------------------------------------------------------------------------------
 
             //|gk| > δk
-            if( Math.Abs(gradient[heightDirection]) > delta[heightDirection])
-            {
+            if (Math.Abs(gradient[heightDirection]) > delta[heightDirection]) {
                 bool suitable = true;
                 // Sum_j( g_j + delta_j)^2 / (g_k - delta_k)^2 < 20
                 double sum = 0;
 
-                for (int j = 0; j < delta.Length; ++j)
-                {
+                for (int j = 0; j < delta.Length; ++j) {
                     sum += Math.Pow(gradient[j] + delta[j], 2);
                 }
                 sum /= Math.Pow(gradient[heightDirection] - delta[heightDirection], 2);
@@ -228,8 +236,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return newArg;
         }
 
-        protected override bool SubdivideSuitable(int numberOfSubdivisions)
+        protected override bool SubdivideSuitable(int numOfSubdivions)
         {
+            if (numOfSubdivions > 10)
+                return false;
             return true;
         }
 
@@ -247,11 +257,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray gradient = lsData.GetLevelSetGradients(Node, Cell, 1);
             gradient = gradient.ExtractSubArrayShallow(new int[] { 0, 0, -1 }).CloneAs();
 
-            MultidimensionalArray jacobian = grid.InverseJacobian.GetValue_Cell(Node, Cell, 1);
+            MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(Node, Cell, 1);
             jacobian = jacobian.ExtractSubArrayShallow(new int[] { 0, 0, -1, -1 });
+            jacobian.TransposeInPlace();
 
             double[] tmp_grad = gradient.Storage;
-            jacobian.MatVecMulInplace(1, tmp_grad);
+            jacobian.MatVecMulInplace(1, tmp_grad, false);
 
             return gradient;
         }
@@ -298,7 +309,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //Set return data
             //------------------------------------------------------------------------------------------------------------
-            SayeQuadRule transformed_GaussRule_2D = new SayeQuadRule(nodes_GaussRule_2D, weights_GaussRule_2D);
+            SayeQuadRule transformed_GaussRule_2D = new SayeQuadRule(nodes_GaussRule_2D, weights_GaussRule_2D, RefElement);
             return transformed_GaussRule_2D;
         }
 
@@ -350,7 +361,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             MultidimensionalArray nodes = new MultidimensionalArray(2);
             nodes.InitializeFrom(nodesArr);
-            SayeQuadRule transformed_GaussRule_1D = new SayeQuadRule(nodes, weights);
+            SayeQuadRule transformed_GaussRule_1D = new SayeQuadRule(nodes, weights, RefElement);
             
             return transformed_GaussRule_1D;
         }
@@ -390,7 +401,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
             weightArr[0] = scale * X_weight;
-            return new SayeQuadRule(node, weightArr);
+            return new SayeQuadRule(node, weightArr, RefElement);
         }
 
         bool IsScalingMatrix(MultidimensionalArray matrix) {
@@ -527,16 +538,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region ISayeArgument
 
-        NodesAndWeightsLinkedList data = new NodesAndWeightsLinkedList(refElement.SpatialDimension, refElement);
+        NodesAndWeights nodesAndWeights = new NodesAndWeights( refElement);
 
         public void Reset()
         {
-            data.Reset();
+            //data.Reset();
         }
 
         public override ISayeQuadRule NodesAndWeights 
         {
-            get => data;
+            get => nodesAndWeights;
         }
 
         int heightDirection;

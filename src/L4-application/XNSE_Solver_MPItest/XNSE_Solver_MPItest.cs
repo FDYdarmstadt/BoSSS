@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -277,7 +278,20 @@ Index was outside the bounds of the array.
 
         public static void RotatingSphereWithAMR() {
             // 8 cores
-            var C = Rotating_Sphere(2,20,30,true,false);
+            var C = Rotating_Sphere(2,20,3,true,false);
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        public static void SayeBug() {
+            // 4 cores
+            var C = Rotating_Cube(1, 20, 3, true, false);
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
         }
 
         /// <summary>
@@ -310,9 +324,10 @@ Index was outside the bounds of the array.
 
             BoSSS.Solution.Application.InitMPI();
             //ParallelRisingDroplet();
-            RotCube_OrderNotSupportedInHMF();
+            //RotCube_OrderNotSupportedInHMF();
             //RotCube_CG_ProjectionOutOfMemoryException();
             //Rotating_Cube_compare4to1();
+            SayeBug();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -658,8 +673,8 @@ Index was outside the bounds of the array.
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
-            C.GridPartType = GridPartType.Hilbert;
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            C.GridPartType = GridPartType.clusterHilbert;
             C.SessionName = "XNSE_rotcube_test";
             C.saveperiod = 1;
 
@@ -708,7 +723,7 @@ Index was outside the bounds of the array.
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
+            double particleRad = 0.261;
 
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
                 double angle = -(anglev * t) % (2 * Math.PI);

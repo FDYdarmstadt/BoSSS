@@ -18,8 +18,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             get;
         }
-        void AddRule(SayeQuadRule rule, bool deriveFromExistingNode);
-        void RemoveActiveNode();
+        void AddRule(SayeQuadRule rule);
+
+        IEnumerable<SayeQuadRule> GetRules();
+
         QuadRule GetQuadRule();
     }
 
@@ -99,8 +101,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //----------------------------------------------------------------------
             //Fill nodesAndWeights
             recursionTree.UnrollFunc(IntegrandEvaluation);
+
+            ISayeQuadRule ruleZ = GetEmptyQuadratureRule();
+            foreach (TreeNode<T> childNode in recursionTree.Children) {
+                foreach (SayeQuadRule rule in childNode.Value.NodesAndWeights.GetRules()) {
+                    ruleZ.AddRule(rule);
+                }
+            }
+
             //ConvertToQuadRule
-            QuadRule toRuleThemAll = fullSpace.Value.NodesAndWeights.GetQuadRule();
+            QuadRule toRuleThemAll = ruleZ.GetQuadRule();
 
             //Handle empty QuadRule
             if (toRuleThemAll.NoOfNodes == 0)
@@ -121,7 +131,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             T nodeArg = node.Value;
 
             //Check a bunch of stuff
-            if (nodeArg == null)
+            if (node.level == 0)
             {
                 return;
             }
@@ -133,11 +143,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     break;
                 case SayeArgument<S>.Mode.GaussQuadrature:
                     newRule = SetGaussQuadratureNodes(nodeArg);
-                    nodeArg.NodesAndWeights.AddRule(newRule, false);
+                    nodeArg.NodesAndWeights.AddRule(newRule);
                     break;
                 case SayeArgument<S>.Mode.LowOrderQuadrature:
                     newRule = SetLowOrderQuadratureNodes(nodeArg);
-                    nodeArg.NodesAndWeights.AddRule(newRule, false);
+                    nodeArg.NodesAndWeights.AddRule(newRule);
                     break;
                 case SayeArgument<S>.Mode.DomainIsEmpty:
                     break;
@@ -198,7 +208,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             
             //For j = 1 to l - 1 do (line 4)
-            bool xIsUnchanged = true;
             for (int j = 0; j < roots.Count() - 1; ++j)
             {
                 //Define L and x_c(line 5)
@@ -217,14 +226,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 if (updateIntegrand)
                 {
                     SayeQuadRule newRule = BuildQuadRule(x_c, X_weight, heightDirection, L);
-                    bool deriveFromExistingNode = !isNew && xIsUnchanged;
-                    arg.NodesAndWeights.AddRule(newRule, deriveFromExistingNode);
-                    xIsUnchanged = false;
+                    arg.NodesAndWeights.AddRule(newRule);
                 }    
-            }
-            if (xIsUnchanged && !isNew)
-            {
-                arg.NodesAndWeights.RemoveActiveNode();
             }
         }
 
@@ -243,17 +246,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
             roots.Add(newRoots);
 
             //if there is a root, insert node 
-            Debug.Assert(roots.Count() <= 3);
-            if (roots.Count() > 2)
-            {
-                X[0, heightDirection] = roots[1];
+            for (int i = 1; i < roots.Count() - 1; ++i) {
+                X[0, heightDirection] = roots[i];
                 SayeQuadRule surfaceQuadNode = BuildSurfaceQuadRule(X, X_weight, heightDirection, this.cell);
-                arg.NodesAndWeights.AddRule(surfaceQuadNode, true);
-            }
-            //else remove node
-            else
-            {
-                arg.NodesAndWeights.RemoveActiveNode();
+                arg.NodesAndWeights.AddRule(surfaceQuadNode);
             }
         }
 
@@ -284,7 +280,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         //Algorithm 3
         //page: A1006
-        protected void SayeRecursion(TreeNode<T> treeNode, int subdivisionCount)
+        protected void SayeRecursion(TreeNode<T> treeNode, int subDivisionCount)
         {
             T arg = treeNode.Value;
 
@@ -374,14 +370,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 {
                     //The height function direction ek is not suitable for ψi. If already subdivided too
                     //many times, revert to a low - order method(see discussion).Otherwise split U (line 23)
-                    if (SubdivideSuitable(subdivisionCount))
+                    if (SubdivideSuitable(subDivisionCount))
                     {
                         //Subdivide
                         T siblingArg = Subdivide(arg);
                         TreeNode<T>sibling = treeNode.AddSibling(siblingArg);
                         //Recalculate
-                        SayeRecursion(treeNode, subdivisionCount++);
-                        SayeRecursion(sibling, subdivisionCount++);
+                        SayeRecursion(treeNode, subDivisionCount++);
+                        SayeRecursion(sibling, subDivisionCount++);
                     }
                     else
                     {
@@ -396,7 +392,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             subspaceArg.Surface = false;
             subspaceArg.RemoveDimension(k);
             TreeNode<T> subSpaceNode = treeNode.AddChild(subspaceArg);
-            SayeRecursion(subSpaceNode, subdivisionCount);
+            SayeRecursion(subSpaceNode, subDivisionCount);
         }
 
         #endregion
@@ -422,6 +418,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             return Gradient(psi, Node, this.cell);
         }
+
         double EvaluateBounds(T arg, S psi, NodeSet x_center)
         {
             return EvaluateBounds(arg, psi, x_center, this.cell);
@@ -431,6 +428,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         #region BuildIntegrand: Abstract Functions
 
+        protected abstract ISayeQuadRule GetEmptyQuadratureRule();
+
         protected abstract MultidimensionalArray Gradient(S psi, NodeSet Node, int Cell);
 
         protected abstract double EvaluateAt(S Psi, NodeSet Point, int cell);
@@ -439,7 +438,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected abstract S[] ExtractSubPsis(S psi_i, T arg, int heightDirection);
 
-        protected abstract bool SubdivideSuitable(int numberOfSubdivisions);
+        protected abstract bool SubdivideSuitable(int numSubdivisions);
 
         protected abstract T Subdivide(T arg);
 

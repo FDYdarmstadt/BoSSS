@@ -35,7 +35,7 @@ namespace ZwoLevelSetSolver.Boundary {
             }
 
             //Penalty coupling
-            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
+            AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
 
             AddComponent(new SolidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Density, D, 1, fluidSpecies, solidSpecies));
             AddComponent(new FluidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], rho_fluid, D, 1, fluidSpecies, solidSpecies));

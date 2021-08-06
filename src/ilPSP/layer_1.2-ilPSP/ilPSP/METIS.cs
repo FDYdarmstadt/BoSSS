@@ -77,8 +77,8 @@ namespace ilPSP.Kraypis {
 
         static public METIS.ReturnCodes PARTGRAPHKWAY(ref int nvtxs, ref int ncon, int[] xadj,
                                                 int[] adjncy, int[] vwgt, int[] vsize,
-                                                int[] adjwgt, ref int nparts, double[] tpwgts,
-                                                double[] ubvec, int[] options, ref int objval, int[] part)
+                                                int[] adjwgt, ref int nparts, float[] tpwgts,
+                                                float[] ubvec, int[] options, ref int objval, int[] part)
         {
             return (METIS.ReturnCodes) m_METIS.PartGraphKway(ref nvtxs, ref ncon, xadj,
                                                 adjncy, vwgt, vsize,
@@ -141,8 +141,8 @@ namespace ilPSP.Kraypis {
         /// </summary>
         public unsafe delegate int _PartGraphKway(ref int nvtxs, ref int ncon, int[] xadj,
                                                 int[] adjncy, int[] vwgt, int[] vsize,
-                                                int[] adjwgt, ref int nparts, double[] tpwgts,
-                                                double[] ubvec, int[] options, ref int objval, int[] part);
+                                                int[] adjwgt, ref int nparts, float[] tpwgts,
+                                                float[] ubvec, int[] options, ref int objval, int[] part);
 
         public unsafe _PartGraphKway PartGraphKway
         {
