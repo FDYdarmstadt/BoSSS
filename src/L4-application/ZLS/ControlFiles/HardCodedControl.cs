@@ -1516,7 +1516,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 18, int AMRlvl = 0)
+        public static ZLS_Control Test_Convergence_BoSSS(int p = 2, int kelem = 18, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
@@ -1659,12 +1659,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.InitialValues_Evaluators.Add("VelocityY#B", Vy);
             //C.InitialValues_Evaluators.Add("VelocityY#C", Vy);
 
-            int K = 0;
-            VelocityX Vx = new VelocityX();
-            VelocityY Vy = new VelocityY(K);
+            //int K = 0;
+            //VelocityX Vx = new VelocityX(K);
+            //VelocityY Vy = new VelocityY(K);
 
-            C.AddInitialValue("Phi", new Formula("X => -1"));
-            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => -1"));
+            //C.AddInitialValue("Phi", new Formula("X => -1"));
+            //C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => -1"));
             //C.AddInitialValue("VelocityX#A", Vx);
             //C.AddInitialValue("VelocityX#B", Vx);
             //C.AddInitialValue("VelocityX#C", Vx);
@@ -1739,14 +1739,237 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
+
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 8, int AMRlvl = 0)
+        {
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 4;
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+
+            int D = 2;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+            C.ProjectName = "ConvergenceTests";
+            //C.ProjectDescription = "Test for Convergence";
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+            C.SetDGdegree(p);
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 0.001;
+            C.PhysicalParameters.mu_B = 0.001;
+
+            double sigma = 1;
+            C.PhysicalParameters.Sigma = sigma;
+
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+
+            C.PhysicalParameters.betaL = 0.0;
+            C.PhysicalParameters.theta_e = Math.PI / 2.0;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            C.Material = new ConvergenceTest();
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+            double xSize = 2;
+            double ySize = 2;
+
+            C.GridFunc = delegate ()
+            {
+
+                double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
+
+                return grd;
+
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            //Func<double[], double> PhiFunc = (X => -1);
+
+            //Func<double[], double> Phi1Func = delegate (double[] X)
+            //{
+            //    // only solid
+            //    return 1;
+            //    // only fluid
+            //    //return -1;
+            //    // solid circle
+            //    //return -((X[0] + 0.1).Pow2() + (X[1]).Pow2()).Sqrt() + 0.6;
+
+            //};
+
+            //Func<double[], double, double> Vvorx = delegate (double[] X, double lamda)
+            //{
+            //    return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            //};
+
+            //Func<double[], double, double> Vvory = delegate (double[] X, double lamda)
+            //{
+            //    return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            //};
+
+            //Func<double[], double> Vx = delegate (double[] X)
+            //{
+            //    double sum = 0;
+            //    for (int k = 0; k <= 5; k++)
+            //    {
+            //        sum = sum + (Math.Pow(-1, k) * Vvorx(X, 2 * (k + 1)));
+            //    }
+            //    return sum;
+            //};
+
+            //Func<double[], double> Vy = delegate (double[] X)
+            //{
+            //    double sum = 0;
+            //    for (int k = 0; k <= 5; k++)
+            //    {
+            //        sum = sum + (Math.Pow(-1, k) * Vvory(X, 2 * (k + 1)));
+            //    }
+            //    return sum;
+            //};
+
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+            //C.InitialValues_Evaluators.Add("VelocityX#A", Vx);
+            //C.InitialValues_Evaluators.Add("VelocityX#B", Vx);
+            //C.InitialValues_Evaluators.Add("VelocityX#C", Vx);
+            //C.InitialValues_Evaluators.Add("VelocityY#A", Vy);
+            //C.InitialValues_Evaluators.Add("VelocityY#B", Vy);
+            //C.InitialValues_Evaluators.Add("VelocityY#C", Vy);
+
+            int K = 5;
+            VelocityX Vx = new VelocityX(K);
+            VelocityY Vy = new VelocityY(K);
+
+            C.AddInitialValue("Phi", new Formula("X => -1"));
+            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => -1"));
+            C.AddInitialValue("VelocityX#A", Vx);
+            C.AddInitialValue("VelocityX#B", Vx);
+            C.AddInitialValue("VelocityX#C", Vx);
+            C.AddInitialValue("VelocityY#A", Vy);
+            C.AddInitialValue("VelocityY#B", Vy);
+            C.AddInitialValue("VelocityY#C", Vy);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 80;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.LinearSolver.ConvergenceCriterion = 1e-10;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+
+
+
+            //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
+            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
+            //C.fullReInit = false; 
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
+            //C.AMR_startUpSweeps = 2;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = compMode;
+            double dt = 0.00001;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 0.5;
+            C.NoOfTimesteps = 30;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
         public class VelocityX : IBoundaryAndInitialData
         {
             int K;
 
-            //public VelocityX(int K)
-            //{
-            //    this.K = K;
-            //}
+            public VelocityX(int K)
+            {
+                this.K = K;
+            }
 
             public double Evaluate(double[] X, double t)
             {
@@ -1754,11 +1977,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++)
                 {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(X, 2 * (k + 1)));
                 }
                 return sum;
-                //return -Math.Sin(Math.PI * X[1]) * Math.Exp(-1 * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
 
             }
 
@@ -1788,8 +2010,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++)
                 {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvory(X, 2 * (k + 1)));
                 }
                 return sum;
 

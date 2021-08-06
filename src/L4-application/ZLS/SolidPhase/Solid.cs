@@ -93,4 +93,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
     }
 
+    public class ManufacturedSolution : Solid
+    {
+        public ManufacturedSolution()
+        {
+            PoissonsRatio = 0.5;
+            ModulusOfElasticity = 3;
+            Density = 1;
+            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
+            Lame2 = 1;
+        }
+    }
+
 }
