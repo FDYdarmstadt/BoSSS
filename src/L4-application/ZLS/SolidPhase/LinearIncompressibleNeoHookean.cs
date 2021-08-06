@@ -45,12 +45,12 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double dirichletX = 0;
             double dirichletY = 0;
 
-            acc1 -= (-(_Grad_uIN[1, 1]) * inp.Normal[0] + (_Grad_uIN[1, 0]) * inp.Normal[1]) * _vIN;
-            acc1 -= (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0] - dirichletX);
-            acc1 += (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1] - dirichletY);
+            acc1 += (-(_Grad_uIN[1, 1]) * inp.Normal[0] + (_Grad_uIN[0, 1]) * inp.Normal[1]) * _vIN;
+            acc1 += (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0] - dirichletX);
+            acc1 += -(_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1] - dirichletY);
 
-            acc1 -=  (-(_Grad_uIN[1, 1] ) * inp.Normal[0] + (_Grad_uIN[1, 0]) * inp.Normal[1]) * (_vIN);
-            acc1 -=  ((_Grad_vIN[1]) * inp.Normal[0] - (_Grad_vIN[0]) * inp.Normal[1]) * (_uIN[1] - dirichletY);
+            acc1 +=  (-(_Grad_uIN[1, 1] ) * inp.Normal[0] + (_Grad_uIN[1, 0]) * inp.Normal[1]) * (_vIN);
+            acc1 +=  ((_Grad_vIN[1]) * inp.Normal[0] - (_Grad_vIN[0]) * inp.Normal[1]) * (_uIN[1] - dirichletY);
 
             acc1 *= -1;
             double pnlty = Penalty(inp.jCellIn, -1);
@@ -164,18 +164,17 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double dirichletX = 0;
             double dirichletY = 0;
 
-            acc1 -= ((_Grad_uIN[1, 0] ) * inp.Normal[0] - (_Grad_uIN[0, 0]) * inp.Normal[1]) * (_vIN);
-            acc1 += (_Grad_vIN[1] ) * inp.Normal[0] * (_uIN[0] - dirichletX);
-            acc1 -= (_Grad_vIN[0] ) * inp.Normal[0] * (_uIN[1] - dirichletY);
+            acc1 += ((_Grad_uIN[1, 0] ) * inp.Normal[0] - (_Grad_uIN[0, 0]) * inp.Normal[1]) * (_vIN);
+            acc1 += -(_Grad_vIN[1] ) * inp.Normal[0] * (_uIN[0] - dirichletX);
+            acc1 += (_Grad_vIN[0] ) * inp.Normal[0] * (_uIN[1] - dirichletY);
 
-            acc1 -= ((_Grad_uIN[0, 1] ) * inp.Normal[0] - (_Grad_uIN[0, 0] ) * inp.Normal[1]) * (_vIN );
-            acc1 -= (-(_Grad_vIN[1] ) * inp.Normal[0] + (_Grad_vIN[0] ) * inp.Normal[1]) * (_uIN[0] - dirichletX);
+            acc1 += ((_Grad_uIN[0, 1] ) * inp.Normal[0] - (_Grad_uIN[0, 0] ) * inp.Normal[1]) * (_vIN );
+            acc1 += (-(_Grad_vIN[1] ) * inp.Normal[0] + (_Grad_vIN[0] ) * inp.Normal[1]) * (_uIN[0] - dirichletX);
             acc1 *= -1;
 
             double pnlty = Penalty(inp.jCellIn, -1);
             acc1 += (_uIN[1] - dirichletY) * (_vIN) *  pnlty ;
             return acc1 * viscosity;
-
         }
 
         MultidimensionalArray cj;
