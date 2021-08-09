@@ -1805,5 +1805,16 @@ namespace BoSSS.Foundation.Grid.Classic {
         public IntPtr _GetForeignPointer() {
             return m_ForeignPtr;
         }
+
+        /// <summary>
+        /// Makes a shallow copy of the GridData object, except for the Chefbasis! 
+        /// This allows to use the same GridData for different basis functions.
+        /// </summary>
+        /// <returns></returns>
+        public GridData CopyWithNewBasis() {
+            var GrdDatClone = (GridData)this.MemberwiseClone();
+            GrdDatClone.ChefBasis = new GridData._BasisData(GrdDatClone);
+            return GrdDatClone;
+        }
     }
 }

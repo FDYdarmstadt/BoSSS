@@ -470,15 +470,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                         Nx.NormalizeInPlace();
                         
                         var ty = y[1] - y[0];
-                        Ny = tx.Rotate2D(-Math.PI / 2);
-                        Nx.NormalizeInPlace();
+                        Ny = ty.Rotate2D(-Math.PI / 2);
+                        Ny.NormalizeInPlace();
 
                     } else {
                         Nx = N;
                         Ny = N;
                     }
 
-                    
+
                     grid.ConstructPeriodicEdgeTrafo(y, Ny, x, Nx, out perxTag);
                     grid.EdgeTagNames.Add(perxTag, "Periodic-X");
                 }

@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>
@@ -704,6 +704,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>

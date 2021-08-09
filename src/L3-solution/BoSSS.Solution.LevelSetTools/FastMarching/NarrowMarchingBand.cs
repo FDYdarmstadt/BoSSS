@@ -370,7 +370,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
 
                 if (GradNorm < 1.0e-12) { 
-                    //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) { 
+                    //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) {
 
                     // the level-set field is flat (+1 or -1) in cell j
                     // it must be initialized
@@ -1164,7 +1164,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
 
                 // integrate interface
-                // (Only the interface part contributes to the RHS; mutst be integrated fore EACH component.)
+                // (Only the interface part contributes to the RHS; must be integrated fore EACH component.)
                 DGField[] IfParams;
                 if (ComponentMode) {
                     IfParams = new DGField[] { Velocity[0] };
@@ -1190,7 +1190,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    whichSpc:Tracker.GetSpeciesId("A"));
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
-                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.0);
+                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1);
                     //mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 
@@ -1343,7 +1343,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     essExtVelMatrix.SpMVpara(-1.0, x, 1.0, Resi_d);
                     double NORM_Resi_d = Resi_d.L2NormPow2().MPISum().Sqrt();
                     double RelResiNorm = NORM_Resi_d/NORM_rhs;
-
+                    
                     if(RelResiNorm > 1.0e-8) {
                         Console.WriteLine("WARNING: high solver residual in extension velocity solver: relative residual norm: {0:E2}", RelResiNorm);
                     }

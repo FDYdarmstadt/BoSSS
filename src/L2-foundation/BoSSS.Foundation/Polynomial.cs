@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         /// <param name="MonomExp">Monomial exponents.</param>
         /// <param name="DerivExp">Derivative symbol exponents.</param>
-        static Tuple<int,int[]> DeriveMonomial(int[] MonomExp, int[] DerivExp) {
+        static Tuple<long,int[]> DeriveMonomial(int[] MonomExp, int[] DerivExp) {
             if(MonomExp.Length != DerivExp.Length)
                 throw new ArgumentException();
             int D = MonomExp.Length;
@@ -278,7 +278,7 @@ namespace BoSSS.Foundation.Grid {
                     throw new ArgumentException("All derivative exponents must be non-negative.");
             }
 
-            int ret = 1;
+            long ret = 1;
             int[] RetExp = DerivExp.CloneAs();
 
             for(int d = 0; d < D; d++) {
@@ -299,7 +299,7 @@ namespace BoSSS.Foundation.Grid {
 
             }
 
-            return new Tuple<int, int[]>(ret, RetExp);
+            return new Tuple<long, int[]>(ret, RetExp);
         }
 
 

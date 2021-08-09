@@ -169,6 +169,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         dt,
                         underRelax,
                         incremental);
+                    AfterMoveLevelSet(
+                        phaseInterface,
+                        DomainVarFields,
+                        ParameterVarFields,
+                        time,
+                        dt,
+                        underRelax,
+                        incremental);
                 }
                 //Make Continuous
                 EnforceContinuity();
@@ -214,6 +222,30 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     dgLs.Scale(underRelax);
                     dgLs.Acc((1.0 - underRelax), dglsBkUp);
                 }
+            }
+
+            /// <summary>
+            /// Additional routines, the Evolver might call after LS Movement
+            /// E.g. Reinitialization
+            /// </summary>
+            void AfterMoveLevelSet(
+                DualLevelSet phaseInterface,
+                IReadOnlyDictionary<string, DGField> DomainVarFields,
+                IReadOnlyDictionary<string, DGField> ParameterVarFields,
+                double time,
+                double dt,
+                double underRelax,
+                bool incremental) {
+
+                if(lsMover.AfterMovePhaseInterface != null)
+                    lsMover.AfterMovePhaseInterface.Invoke(
+                        phaseInterface,
+                        time,
+                        dt,
+                        incremental,
+                        DomainVarFields,
+                        ParameterVarFields);
+
             }
 
 
