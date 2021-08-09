@@ -358,10 +358,8 @@ namespace BoSSS.Application.BoSSSpad {
             // ==============
             JobState state = JobState.All;
             {
-                var args = $"view {id} {GetLoginArg()}";
+                var args = $"view {id}  /scheduler:{this.ServerName}";
                 var Res = ExecuteProcess("job.exe", args, 60000);
-
-
 
                 bool bfound = false;
                 using(var StandardOutput = new StringReader(Res.stdOut)) {
@@ -458,6 +456,12 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         string GetLoginArg() {
+            if (this.ServerName.IsEmptyOrWhite())
+                throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
+            if (this.Username.IsEmptyOrWhite())
+                throw new IOException("'Username' for MS HPC scheduler is empty or white");
+
+
             string pass = this.Password != null ? ("/password:" + this.Password) : "";
             var ret = $" /scheduler:{this.ServerName} /user:{this.Username} {pass}";
             return ret;
