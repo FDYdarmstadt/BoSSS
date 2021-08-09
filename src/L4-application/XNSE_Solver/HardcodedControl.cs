@@ -615,7 +615,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 switch(thisOS) {
                     case PlatformID.Unix:
                         C.AlternateDbPaths = new[] {
-                            (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
                             (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
                         break;
                     case PlatformID.Win32NT:

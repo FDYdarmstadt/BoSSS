@@ -89,6 +89,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         bool reduceLinearDependence = false;
 
+        protected List<DGField> ProjectionSnapshots = new List<DGField>();
+
         int NoOfFixedPatches = 1;  // if < 1 the number of patches is determined by maxNoOfCoordinates
         int maxNoOfCoordinates = 10000;
 
@@ -108,9 +110,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             if (orgDGField.Basis.Degree > this.m_Basis.Degree)
                 throw new ArgumentException("continuous projection on a lower degree basis is not recommended");
-            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
-
-            internalProjection = new SinglePhaseField(m_Basis, "internalProjection");
+            Setup();
+            
 
             if (mask == null) {
                 mask = CellMask.GetFullMask(m_grd);
@@ -174,6 +175,20 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             return returnvalue;
         }
 
+        private void SaveDGFieldForDebugging(DGField field) {
+            Console.WriteLine("Comment this method out plz");
+            if (field == null)
+                return;
+            var tmp = field.CloneAs();
+            tmp.Identification = "projection_"+ProjectionSnapshots.Count();
+            ProjectionSnapshots.Add(tmp);
+        }
+
+        protected void Setup() {
+            this.Coordinates.Clear(); // clear internal state, to get the same result for the same input every time
+            this.internalProjection = new SinglePhaseField(m_Basis, "internalProjection");
+        }
+
         protected void SetDGCoordinatesOnce(CellMask mask, DGField orgDGField) {
             // get DG-coordinates (change of basis for projection on a higher polynomial degree)
             foreach (var chunk in mask) {
@@ -206,8 +221,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             List<DGField> returnFields = new List<DGField>();
 
-            // continuity projection between processes
-            // =======================================
+            //// continuity projection between processes
+            //// =======================================
             EdgeMask fixedInterProcBoundary = null;
             if (m_grd.MpiSize > 1) {
 
@@ -276,7 +291,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 interProcField.AccConstant(1.0, localInterProcNeigh);
 
                 returnFields.Add(interProcField);
-                
+
                 //SubGrid localInterProcSbgrd = new SubGrid(localInterProcPatch);
                 //EdgeMask lipPatchInnerEM = localInterProcSbgrd.InnerEdgesMask;
                 //BitArray lipPatchInnerBA = new BitArray(lipPatchInnerEM.GetBitMask().Length);
@@ -546,10 +561,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// Uses global solver which means solver runs on MPI_comm.WORLD
         /// </summary>
         /// <param name="mask"></param>
-        /// <param name="fixedBoundaryMask"></param>
-        void ProjectDGFieldGlobal(CellMask mask, EdgeMask fixedBoundaryMask = null) {
+        protected void ProjectDGFieldGlobal(CellMask mask) {
             using (new RuntimeTracker("time global projection",diagOutput)) {
-                ProjectDGFieldBase(mask, fixedBoundaryMask, false);
+                ProjectDGFieldBase(mask, null, false);
             }
         }
 
@@ -588,7 +602,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
 
             setConstrainNodes(innerEM);
-
 
             // assemble matrix
             // =============== 
@@ -644,7 +657,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             // ============
 
             BlockMsrMatrix AT = A.Transpose();
-
             BlockMsrMatrix AAT = new BlockMsrMatrix(rowBlockPart, rowBlockPart);
             BlockMsrMatrix.Multiply(AAT, A, AT);
 
@@ -660,7 +672,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 solver.Solve(v, RHS);
                 solver.Dispose();
             } catch (Exception ex) {
-
                 throw ex;
             }
 
@@ -671,9 +682,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
             ISparseSolver solver;
+            //matrix.AssumeSymmetric = true;
             if (IsLocal) {
                 solver = SolverUtils.PatchSolverFactory();
                 var crunchedmatrix = SolverUtils.GetLocalMatrix(matrix);
+                //crunchedmatrix.SaveToTextFileSparseDebug("crunch");
                 solver.DefineMatrix(crunchedmatrix);
             } else {
                 solver = SolverUtils.GlobalSolverFactory(matrix.NoOfRows);
@@ -1095,6 +1108,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
             internalProjection._Acc(1.0, m_Coordinates, 0, stride, true);
             internalProjection.MPIExchange();
+            SaveDGFieldForDebugging(internalProjection);
         }
 
         /// <summary>
@@ -3235,7 +3249,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
             }
 
-            #region hanging nodes
+#region hanging nodes
 
             //BitArray ishangingNode = new BitArray(m_grd.Vertices.NoOfNodes4LocallyUpdatedCells);
 
@@ -3541,7 +3555,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             //    }
             //    edge++;
             //}
-            #endregion
+#endregion
 
             //int nodeCount_OnProc = nodeCount;
 

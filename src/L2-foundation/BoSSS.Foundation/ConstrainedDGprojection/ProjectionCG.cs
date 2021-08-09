@@ -64,6 +64,16 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             return localMatrix.ToMsrMatrix();
         }
 
+        public static void CheckAndRepairMatrix(BlockMsrMatrix M) {
+            int rows = M.RowPartitioning.LocalLength;
+            long i0 = M.RowPartitioning.i0;
+            long iE = M.RowPartitioning.iE;
+            for(long iRow = i0; iRow < iE; iRow++) {
+                if (M.GetDiagonalElement(iRow) == 0)
+                    M.SetDiagonalElement(iRow,1.0);
+            }
+        }
+
         /// <summary>
         /// constructs solver depending on size of matrix (DOF). Acts on MPI_Comm.WORLD
         /// </summary>
@@ -72,8 +82,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         public static ISparseSolver GlobalSolverFactory(long DOF) {
             bool UseDirect = DOF < 1E6;
             if (UseDirect)
-                return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
-                    Parallelism = Parallelism.MPI
+                //return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
+                //    Parallelism = Parallelism.MPI
+                //};
+                return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+                    Parallelism = Parallelism.OMP,
                 };
             else
                 return new myCG();
@@ -84,7 +97,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </summary>
         /// <returns></returns>
         public static ISparseSolver PatchSolverFactory() {
-            return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+            //return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
+            //    Parallelism = Parallelism.SEQ,
+            //};
+            return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
                 Parallelism = Parallelism.SEQ,
             };
         }
@@ -100,6 +116,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 throw new NotSupportedException("this solver only supports block msr matrix as input!");
             }
             m_matrix = bmsrM;
+
+            //SolverUtils.CheckAndRepairMatrix(m_matrix);
 
             m_ILU = new ilPSP.LinSolvers.HYPRE.Euclid() {
                 Level = 0,
