@@ -354,6 +354,10 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         (JobState s, int? exitCode) GetStatus(int id) {
+
+            if (this.ServerName.IsEmptyOrWhite())
+                throw new IOException("'ServerName' for MS HPC scheduler is empty or white");
+
             // Get job status
             // ==============
             JobState state = JobState.All;
@@ -402,7 +406,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             int? exitcode = null;
             if(state == JobState.Canceled || state == JobState.Failed || state == JobState.Finished) {
-                var args2 = $"listtasks {id} {GetLoginArg()}";
+                var args2 = $"listtasks {id} /scheduler:{this.ServerName}";
                 var Res2 = ExecuteProcess("job.exe", args2, 60000);
 
 
