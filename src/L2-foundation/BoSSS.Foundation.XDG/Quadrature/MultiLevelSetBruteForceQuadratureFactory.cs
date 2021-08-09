@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
 
-        double ToDouble(JumpTypes type)
+        public static double ToDouble(JumpTypes type)
         {
             if (type == JumpTypes.Heaviside)
             {
@@ -216,13 +216,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1) {
-            CombinedID id = new CombinedID {
-                LevSet0 = levSetIndex0,
-                Jmp0 = JumpTypes.Heaviside,
-                LevSet1 = levSetIndex1,
-                Jmp1 = jmp1
-            };
-            LevelSetCombination phi = FindPhi(id);
+
+            void Phi(int j0, NodeSet x, MultidimensionalArray resultIn, MultidimensionalArray resultOut) {
+                LevelSet levelSet0 = (LevelSet)levelSets[levSetIndex0].LevelSet;
+                levelSet0.EvaluateEdge(j0, 1, x, resultIn, resultOut);
+            }
+
+            void Phi2(int j0, NodeSet x, MultidimensionalArray resultIn, MultidimensionalArray resultOut) {
+                LevelSet levelSet1 = (LevelSet)levelSets[levSetIndex1].LevelSet;
+                levelSet1.EvaluateEdge(j0, 1, x, resultIn, resultOut);
+
+                for (int i = 0; i < resultIn.Length; ++i) {
+                    resultIn[0, i] = LevelSetCombination.ToDouble(jmp1) * resultIn[0, i];
+                    resultOut[0, i] = LevelSetCombination.ToDouble(jmp1) * resultOut[0, i];
+                }
+            }
 
             double SqrtGram(int edge) {
                 var g = grid.Edges.SqrtGramian[edge];
@@ -230,7 +238,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 return g;
             }
 
-            var edgeScheme = new BruteForceEdgePointScheme(phi.EvaluateEdge, SqrtGram);
+            var edgeScheme = new BruteForceEdgePointScheme(Phi, Phi2, SqrtGram);
             return new BruteForceQuadratureFactory(edgeScheme, 200);
         }
 
@@ -245,7 +253,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 levelSet1.Evaluate(cell, 1, nodes, result1);
                 
                 for(int i = 0; i < result.Length; ++i) {
-                    result[0, i] = Math.Abs(result[0, i]) + Math.Abs(result1[0, i]);
+                    result[0, i] = Math.Max(Math.Abs(result[0, i]), Math.Abs(result1[0, i]));
                 }
             }
 

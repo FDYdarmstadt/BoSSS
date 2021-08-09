@@ -128,6 +128,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public int LS_TrackerWidth = 1;
 
+        /// <summary>
+        /// Reinitilization period for Fastmarching
+        /// </summary>
+        [DataMember]
+        public int FastMarchingReInitPeriod = 0;
+
 
     }
 

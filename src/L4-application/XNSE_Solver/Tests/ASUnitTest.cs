@@ -1114,7 +1114,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
         private static void XNSFESolverTest(IXNSFETest Tst, XNSE_Control C) {
 
-            using (var solver = new XNSFE()) {
+            using (var solver = new XNSFE<XNSFE_Control>()) {
 
                 solver.Init(C);
                 solver.RunSolverMode();

@@ -1267,6 +1267,45 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         int[][] TestNodesPerFace;
 
+        BernsteinTransformator[] m_TestTransformer;
+
+        /// <summary>
+        /// Transformator for each level set to transform the legendre coefficients to bernstein coefficients
+        /// we then use there superior geometric properties to search for cut cells.
+        /// here the bernstein coefficients lie on a slight offset of the reference element
+        /// </summary>
+        BernsteinTransformator[] TestTransformer { 
+            get{
+                if (m_TestTransformer == null) {
+                    m_TestTransformer = new BernsteinTransformator[this.LevelSets.Count];
+                    for(int i = 0; i< this.LevelSets.Count; i++ ) {
+                        if (this.LevelSets[i] is LevelSet ls)
+                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005); 
+                    }
+                }
+                return m_TestTransformer;
+            } 
+        }
+
+        BernsteinTransformator[] m_TestTransformerEdges;
+
+        /// <summary>
+        /// Transformator for each level set to transform the legendre coefficients to bernstein coefficients
+        /// we then use there superior geometric properties to search for cut cells.
+        /// here the bernstein coefficients lie exactly on the edges of the reference element
+        /// </summary>
+        BernsteinTransformator[] TestTransformerEdges {
+            get {
+                if (m_TestTransformerEdges == null) {
+                    m_TestTransformerEdges = new BernsteinTransformator[this.LevelSets.Count];
+                    for (int i = 0; i < this.LevelSets.Count; i++) {
+                        if (this.LevelSets[i] is LevelSet ls)
+                            m_TestTransformerEdges[i] = new BernsteinTransformator(ls.Basis);
+                    }
+                }
+                return m_TestTransformerEdges;
+            }
+        }
 
         private void DefineTestNodes() {
             int D = this.GridDat.SpatialDimension;
@@ -1309,7 +1348,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allocate memory form test node set 
                     int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
-                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes * Kref.NoOfFaces, D);
+                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D);
                     int offset = 0;
 
 
@@ -1636,7 +1675,7 @@ namespace BoSSS.Foundation.XDG {
             MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
         }
-
+        
         /// <summary>
         /// Must be called after changing the level-set;
         /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
@@ -1811,76 +1850,146 @@ namespace BoSSS.Foundation.XDG {
 
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
-                            var data = this.m_DataHistories[levSetind].Current;
-                            MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
- 
-                            for (int jj = 0; jj < VecLen; jj++) {
-                                bool Pos = false;
-                                bool Neg = false;
+                            // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                            if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {  
+                                // loop over all cells in this chunk
+                                for (int jj = j; jj < j + VecLen; jj++) {
+                                    double[] modalVals = ls.Coordinates.GetRow(jj);
+                                    var TransformerEdges = this.TestTransformerEdges[levSetind];
+                                    bool Pos = false;
+                                    bool Neg = false;
 
-                                // loop over nodes on edges...
-                                int nodeIndex = 0;
-                                for (int e = 0; e < noOfFaces; e++) {
-                                    bool PosEdge = false;
-                                    bool NegEdge = false;
+                                    // loop over nodes on edges...
+                                    double[] bernsteinValsEdges = new double[TransformerEdges.Destination.Polynomials[iKref].Count];
+                                    TransformerEdges.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinValsEdges);
 
-                                    double quadResult = 0.0;
-                                    for (int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                        double v = levSetVal[jj, nodeIndex];
+                                    for (int e = 0; e < Kref.NoOfFaces; e++) {
+                                        bool PosEdge = false;
+                                        bool NegEdge = false;
 
-                                        if (v < 0) {
-                                            NegEdge = true;
-                                        } else if (v > 0) {
-                                            PosEdge = true;
+                                        double quadResult = 0.0;
+                                        foreach (int k in TransformerEdges.FaceCoefficients[iKref][e]) {
+                                            double v = bernsteinValsEdges[k];
+
+                                            if (v < 0) {
+                                                NegEdge = true;
+                                            } else if (v > 0) {
+                                                PosEdge = true;
+                                            }
+
+                                            quadResult += v * v; 
                                         }
 
-                                        quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
+                                        Pos |= PosEdge;
+                                        Neg |= NegEdge;
 
-                                        nodeIndex++;
+                                        // detect an edge which coincides with the zero-level-set
+                                        if (quadResult < eps) {
+                                            if (_LevSetCoincidingFaces == null)
+                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
+                                        }
+                                    } // end of edges loop 
+
+                                    // check also with slight offset and inside the cell
+                                    var Transformer = this.TestTransformer[levSetind];
+                                    double[] bernsteinVals = new double[Transformer.Destination.Polynomials[iKref].Count];
+                                    Transformer.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinVals);
+
+                                    double Min = bernsteinVals.Min();
+                                    double Max = bernsteinVals.Max();
+
+                                    Pos |= Max > 0;
+                                    Neg |= Min < 0;
+
+                                    // either clear sign change or all zeros
+                                    if (Pos && Neg || (!Pos && !Neg)) {
+                                        // cell jj is cut by level set
+                                        // code cell:
+                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
+                                        TempCutCellsBitmask[jj] = true;
                                     }
 
-                                    Pos |= PosEdge;
-                                    Neg |= NegEdge;
-
-                                    // detect an edge which coincides with the zero-level-set
-                                    if(quadResult < eps) {
-                                        if(_LevSetCoincidingFaces == null)
-                                            _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                        (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[j + jj]);
+                                    // detect purely negative cells
+                                    if (Max < 0.0) {
+                                            LevSetNeg[levSetind][jj] = true;
+                                    } else {
+                                        LevSetNeg[levSetind][jj] = false;
                                     }
-
-                                } // end of edges loop
-
-                                // loop over remaining Nodes...
-                                for(; nodeIndex < NoOfNodes; nodeIndex++) {
-                                    double v = levSetVal[jj, nodeIndex];
-
-                                    bool PosNode = false;
-                                    bool NegNode = false;
-                                    if(v < 0) {
-                                        NegNode = true;
-                                    } else if(v > 0) {
-                                        PosNode = true;
-                                    }
-
-                                    Pos |= PosNode;
-                                    Neg |= NegNode;
+                                    
                                 }
+                            } else { 
+                                var data = this.m_DataHistories[levSetind].Current;
+                                MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
+
+                                for (int jj = 0; jj < VecLen; jj++) {
+                                    bool Pos = false;
+                                    bool Neg = false;
+
+                                    // loop over nodes on edges...
+                                    int nodeIndex = 0;
+                                    for (int e = 0; e < noOfFaces; e++) {
+                                        bool PosEdge = false;
+                                        bool NegEdge = false;
+
+                                        double quadResult = 0.0;
+                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
+                                            double v = levSetVal[jj, nodeIndex];
+
+                                            if (v < 0) {
+                                                NegEdge = true;
+                                            } else if (v > 0) {
+                                                PosEdge = true;
+                                            }
+
+                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
+
+                                            nodeIndex++;
+                                        }
+
+                                        Pos |= PosEdge;
+                                        Neg |= NegEdge;
+
+                                        // detect an edge which coincides with the zero-level-set
+                                        if (quadResult < eps) {
+                                            if (_LevSetCoincidingFaces == null)
+                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[j + jj]);
+                                        }
+
+                                    } // end of edges loop
+
+                                    // loop over remaining Nodes...
+                                    for (; nodeIndex < NoOfNodes; nodeIndex++) {
+                                        double v = levSetVal[jj, nodeIndex];
+
+                                        bool PosNode = false;
+                                        bool NegNode = false;
+                                        if (v < 0) {
+                                            NegNode = true;
+                                        } else if (v > 0) {
+                                            PosNode = true;
+                                        }
+
+                                        Pos |= PosNode;
+                                        Neg |= NegNode;
+                                    }
 
 
-                                if ((Pos && Neg) || (!Pos && !Neg)) {
-                                    // cell j+jj is cut by level set
+                                    if ((Pos && Neg) || (!Pos && !Neg)) {
+                                        // cell j+jj is cut by level set
 
-                                    // code cell:
-                                    EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-                                    TempCutCellsBitmask[j + jj] = true;
-                                }
+                                        // code cell:
+                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
+                                        TempCutCellsBitmask[j + jj] = true;
+                                    }
 
-                                if (Neg == true && Pos == false) {
-                                    LevSetNeg[levSetind][j + jj] = true;
-                                } else {
-                                    LevSetNeg[levSetind][j + jj] = false;
+                                    if (Neg == true && Pos == false) {
+                                        LevSetNeg[levSetind][j + jj] = true;
+                                    } else {
+                                        LevSetNeg[levSetind][j + jj] = false;
+                                    }
                                 }
                             }
                         }

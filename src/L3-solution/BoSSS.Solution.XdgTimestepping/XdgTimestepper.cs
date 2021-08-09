@@ -830,7 +830,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException();
             if(LsTrk != null)
                 this.LsTrk = LsTrk;
-            
+
+            // Reset dependent spatial operator, otherwise AMR can lead e.g. to invalid LsTrks in some equation components
+            if (this.m_JacobiXdgOperator != null)
+                this.m_JacobiXdgOperator = null;
+
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {

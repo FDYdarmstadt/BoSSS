@@ -1132,8 +1132,8 @@ namespace BoSSS.Foundation.XDG {
                                 iEdge--;
 
                                 double EdgeArea_iEdge = edgeArea[iEdge];
-
-                                _AgglomCellsEdges[iEdge] = true;
+                                
+                                _AgglomCellsEdges[iEdge] = true;                                
 
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
@@ -1146,10 +1146,10 @@ namespace BoSSS.Foundation.XDG {
                                 }
                                 //passed1[e] = true;
                                 //isAggCandidate[e] = AggCandidates[jCellNeigh];
-                                if (!AggCandidates[jCellNeigh])
+                                if (jCellNeigh < 0 || !AggCandidates[jCellNeigh])
                                     // not suitable for agglomeration
                                     continue;
-
+                                
                                 // volume fraction of neighbour cell
                                 double spcVol_neigh = CellVolumes[jCellNeigh];
                                 //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
@@ -1227,9 +1227,10 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
+                        DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
 
                         if (Katastrophenplot != null)
-                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
+                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, LevelSets));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)
