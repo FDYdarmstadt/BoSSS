@@ -607,7 +607,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             double uA_Err = uNum_A.L2Error(this.Control.uA_Ex.Vectorize(PhysTime), order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("A")));
             double uB_Err = uNum_B.L2Error(this.Control.uB_Ex.Vectorize(PhysTime), order, schH.GetVolumeQuadScheme(this.LsTrk.GetSpeciesId("B")));
 
-            {
+            /*{
                 var uEx = this.u.CloneAs();
                 uEx.Identification = "u_exact";
                 uEx.Clear();
@@ -623,7 +623,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 //var Fields = new DGField[] { this.Phi, this.u, uEx, Err };
                 //Tecplot.PlotFields(Fields, "Errors-" + cnt, PhysTime, 4);
                 //cnt++;
-            }
+            }*/
 
 
             
