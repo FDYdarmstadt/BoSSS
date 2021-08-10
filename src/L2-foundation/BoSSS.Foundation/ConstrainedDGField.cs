@@ -40,7 +40,7 @@ namespace BoSSS.Foundation {
             BlockMsrMatrix bmsrM;
             try {
                 bmsrM = (BlockMsrMatrix)M;
-            } catch (InvalidCastException ex) {
+            } catch (InvalidCastException) {
                 throw new NotSupportedException("this solver only supports block msr matrix as input!");
             }
 
