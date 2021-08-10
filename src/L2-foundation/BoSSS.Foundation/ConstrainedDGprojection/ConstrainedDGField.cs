@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         protected List<DGField> ProjectionSnapshots = new List<DGField>();
 
-        int NoOfFixedPatches = 1;  // if < 1 the number of patches is determined by maxNoOfCoordinates
+        int NoOfFixedPatches = 0;  // if < 1 the number of patches is determined by maxNoOfCoordinates
         int maxNoOfCoordinates = 10000;
 
 
@@ -122,7 +122,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             SetDGCoordinatesOnce(mask, orgDGField);
 
-            DGField[] returnvalue = null;
+            var returnvalue = new List<DGField>();
+            var fullMask = new SinglePhaseField(m_Basis,"Full");
+            fullMask.AccConstant(1.0,mask);
+            returnvalue.Add(fullMask);
 
             switch (projectStrategy) {
                 case ProjectionStrategy.globalOnly: {
@@ -131,7 +134,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         Console.WriteLine("project global mask: No of cells {0}", mask.NoOfItemsLocally);
                     }
                     this.ProjectDGFieldGlobal(mask);
-                    returnvalue = null;
                 }
                 break;
                 case ProjectionStrategy.globalWithPatchwisePrecond: {
@@ -146,11 +148,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
                         this.ProjectDGFieldGlobal(mask);
                     }
-                    returnvalue = retFields;
+                    returnvalue.AddRange(retFields);
                 }
                 break;
                 case ProjectionStrategy.patchwiseOnly: {
-                    returnvalue = ProjectDGField_patchwise(mask, NoOfFixedPatches);
+                    returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
                 }
                 break;
                 case ProjectionStrategy.patchwiseWithGlobalPrecond: {
@@ -163,20 +165,18 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             Console.WriteLine("======================");
                             Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
                         }
-                        return ProjectDGField_patchwise(mask, NoOfFixedPatches);
+                        returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
                     }
-                    returnvalue = null;
                 }
                 break;
                 default:
                     throw new ArgumentException("Projection strategy not supported");
             }
             PrintRuntimes();
-            return returnvalue;
+            return returnvalue.ToArray();
         }
 
         private void SaveDGFieldForDebugging(DGField field) {
-            Console.WriteLine("Comment this method out plz");
             if (field == null)
                 return;
             var tmp = field.CloneAs();
@@ -209,7 +209,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <param name="mask"></param>
         /// <param name="NoOfPatchesPerProcess"></param>
         /// <returns></returns>
-        public DGField[] ProjectDGField_patchwise(CellMask mask = null, int NoOfPatchesPerProcess = 0) {
+        public List<DGField> ProjectDGField_patchwise(CellMask mask = null, int NoOfPatchesPerProcess = 0) {
 
             if (diagOutput)
                 Console.WriteLine("starting patch-wise procedure: No of (local) cells {0}", mask.NoOfItemsLocally);
@@ -220,6 +220,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             int J = m_grd.CellPartitioning.LocalLength;
 
             List<DGField> returnFields = new List<DGField>();
+
+            UpdateInternalProjection();
 
             //// continuity projection between processes
             //// =======================================
@@ -315,11 +317,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     double jumpNorm = CheckLocalProjection(localInterProcNeigh, true);
                     Console.WriteLine("L2 jump norm = {0}", jumpNorm);
                 }
-
             }
-
-            UpdateInternalProjection();
-
 
             // determine patches per process
             // =============================
@@ -407,9 +405,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             // plot patches for debugging
             SinglePhaseField interPatchField = new SinglePhaseField(m_Basis, "interPatch");
             interPatchField.AccConstant(1.0, interPatchNeigh);
-
             returnFields.Add(interPatchField);
-
 
             // continuity projection between patches within one process
             // ========================================================
@@ -494,7 +490,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
       
             returnFields.Add(patchField);
 
-            return returnFields.ToArray();
+            return returnFields;
         }
 
 
@@ -682,7 +678,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
             ISparseSolver solver;
-            //matrix.AssumeSymmetric = true;
+            matrix.AssumeSymmetric = true;
             if (IsLocal) {
                 solver = SolverUtils.PatchSolverFactory();
                 var crunchedmatrix = SolverUtils.GetLocalMatrix(matrix);
@@ -842,14 +838,15 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     processedCells.Add(jCell);
 
                     NodeSet qNdsE = getEdgeInterpolationNodes(0, 0, (m_grd.SpatialDimension == 2) ? 2 : 4);
-                    NodeSet qNdsV = qNdsE.GetVolumeNodeSet(m_grd, trafoIdx);
-                    AcceptedNodes.Add(qNdsV);
+                    if (qNdsE != null) {
+                        NodeSet qNdsV = qNdsE.GetVolumeNodeSet(m_grd, trafoIdx);
+                        AcceptedNodes.Add(qNdsV);
 
-                    MultidimensionalArray valuesEdge = MultidimensionalArray.Create(1, qNdsV.NoOfNodes);
-                    internalProjection.Evaluate(jCell, 1, qNdsV, valuesEdge);
+                        MultidimensionalArray valuesEdge = MultidimensionalArray.Create(1, qNdsV.NoOfNodes);
+                        internalProjection.Evaluate(jCell, 1, qNdsV, valuesEdge);
 
-                    fixedRHS.Add(valuesEdge.ExtractSubArrayShallow(0, -1).To1DArray());
-
+                        fixedRHS.Add(valuesEdge.ExtractSubArrayShallow(0, -1).To1DArray());
+                    }
                 }
             }
 
@@ -1108,7 +1105,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
             internalProjection._Acc(1.0, m_Coordinates, 0, stride, true);
             internalProjection.MPIExchange();
+#if TEST
             SaveDGFieldForDebugging(internalProjection);
+#endif
         }
 
         /// <summary>

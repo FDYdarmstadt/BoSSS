@@ -447,6 +447,24 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
+        /// Activates pivoting strategy for highly indefinite symmetric matrices.
+        /// Applies 1x1 and 2x2 Bunch-Kaufman pivoting during factorization.
+        /// </summary>
+        public bool SymmIndefPivot {
+            get {
+                return (m_PardInt.m_parm[20] == 3);
+            }
+            set {
+                if (value) {
+                    m_PardInt.m_parm[20] = 3; // pivoting for symm indefenite matrices}
+                    //m_PardInt.m_parm[9] = 8;
+                    m_PardInt.m_parm[10] = 1;
+                    m_PardInt.m_parm[12] = 1;
+                }
+            }
+        }
+
+        /// <summary>
         /// From PARDISO manual: Actual matrix for the solution phase. 
         /// With this scalar you can define the matrix that you would like to factorize. 
         /// The value must be: 1 &lt; <see cref="mnum"/> &lt; <see cref="maxfct"/>
@@ -736,7 +754,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* -------------------------------------------------------------------- */
                                     using (new BlockTrace("PARDISO_phase11", tr)) {
                                         phase = 11;
-                                        iparm[59] = 0; // in-core (1 == out-of-core)
+                                        iparm[59] = 0; // in-core (1 == out-of-core)                            
 
                                         //Console.Write("calling pardiso, phase 11... ");
                                         Phase_11.Start();
@@ -784,7 +802,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 /* -------------------------------------------------------------------- */
                                 phase = 33;
 
-                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
+                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == 2 steps */
 
                                 //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
                                 using (new BlockTrace("PARDISO_phase33", tr)) {

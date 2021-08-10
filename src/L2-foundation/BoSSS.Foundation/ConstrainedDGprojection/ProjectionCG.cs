@@ -87,6 +87,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 //};
                 return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                     Parallelism = Parallelism.OMP,
+                    SymmIndefPivot = true
                 };
             else
                 return new myCG();
@@ -99,6 +100,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         public static ISparseSolver PatchSolverFactory() {
             //return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
             //    Parallelism = Parallelism.SEQ,
+            //    PrintStats = true,
+            //    SymmIndefPivot = true
             //};
             return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
                 Parallelism = Parallelism.SEQ,

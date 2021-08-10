@@ -524,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
 
             double anglev = 10;
             double[] pos = new double[SpaceDim];
@@ -578,7 +578,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
-
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
@@ -601,7 +600,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
             };
 
-            return Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad, PhiFunc);
+            var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad, PhiFunc);
+            return C;
         }
 
         public static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, int NoOfTimesteps,bool writeToDB, bool tracing, bool loadbalancing, double[] pos, double anglev, double particleRad, Func<double[], double, double> PhiFunc ) {
@@ -771,7 +771,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
 
-            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1); 
             C.UseImmersedBoundary = true;
             if (C.UseImmersedBoundary) {
                 C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
@@ -808,7 +808,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;

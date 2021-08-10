@@ -157,7 +157,7 @@ System.ArgumentException: DG degree seems different
         [Test]
         public static void PardisoFailsInProjection() {
             // 4 cores
-            var C = Rotating_Sphere(1, 10, 3, false, false, true);
+            var C = Rotating_Sphere(1, 10, 3, false, false, false);
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
