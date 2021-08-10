@@ -1611,7 +1611,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // try to solve the saddle-point system.
                         using (new BlockTrace("Slv Iter", tr)) {
 
-
+                          
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
 
@@ -1741,7 +1741,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_CurrentPhystime = phystime + dt;
             return success;
         }
-
 
         /// <summary>
         /// Visualization of multigrid solver convergence. 

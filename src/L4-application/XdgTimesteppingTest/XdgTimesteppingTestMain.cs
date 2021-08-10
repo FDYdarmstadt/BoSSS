@@ -54,10 +54,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XdgTimesteppingTest.TestProgram.TestTimestepperReset();
-            //FinalizeMPI();
             //throw new ApplicationException("deactivate me");
-            //return;
-
+            
             BoSSS.Solution.Application<XdgTimesteppingTestControl>._Main(args, false, delegate () {
                 return new XdgTimesteppingMain();
             });
