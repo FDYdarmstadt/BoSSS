@@ -919,13 +919,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotImplementedException();
                 }
 
-                // Inverse mass matrix * k: Zum Vergleich mit CNS IBMSplitRungeKutta
-                // BlockSolve(System bzw. mass matrix, double[], k[0])
-
-                //Console.WriteLine(String.Format("\nk[0]: L2-Norm of change rate = {0}", k[0].L2Norm()));
-                //k[0].SaveToTextFile(String.Format("k_CHANGERATE_{0}.txt", count));
-
-            
+               
 
                 // solve system
                 if (System != null) {

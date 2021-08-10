@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.Control;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     
@@ -435,24 +436,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// - Uses the <see cref="LsUpdater"/>
         /// </summary>
         public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
-            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
-            for (int iVar = 0; iVar < domainFields.Length; iVar++) {
-                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-            }
+            using(var tr = new FuncTrace()) {
+                var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
+                for(int iVar = 0; iVar < domainFields.Length; iVar++) {
+                    DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
+                }
 
-            var parameterFields = Timestepping.Parameters;
+                var parameterFields = Timestepping.Parameters;
 
-            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
-                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+                var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
+                for(int iVar = 0; iVar < parameterFields.Count(); iVar++) {
+                    ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
+                }
+                double residual = LsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
+                tr.Info("Residual of level-set update: " + residual);
+                return 0.0;
             }
-            double residual = LsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
-            Console.WriteLine("Residual of level-set update: " + residual);
-            return 0.0;
         }
 
-        private SinglePhaseField MPIrankField;
-        private SinglePhaseField CostClusterField;
 
         protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
@@ -524,6 +525,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.LsUpdater.Tracker.PushStacks();
 
         }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="control"></param>
         public override void Init(AppControl control) {
 
             void KatastrophenPlot(DGField[] dGFields) {

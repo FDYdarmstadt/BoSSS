@@ -397,8 +397,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         internal void ResetTimestepper() {
-            
 
+
+            var resLoggerBkup = TimesteppingBase.m_ResLogger ?? null;
             var Fields = this.CurrentState.Fields.ToArray();
             var IterationResiduals = this.IterationResiduals.Fields.ToArray();
 
@@ -413,6 +414,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.TimesteppingBase.Config_MultigridOperator, this.TimesteppingBase.MultigridSequence,
                 this.TimesteppingBase.Config_AgglomerationThreshold,
                 TimesteppingBase.XdgSolverFactory.GetLinearConfig, TimesteppingBase.XdgSolverFactory.GetNonLinearConfig);
+
+            if(resLoggerBkup!=null) {
+                this.RegisterResidualLogger(resLoggerBkup);
+            }
         }
 
 
@@ -519,8 +524,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         
         /// <summary>
-        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>
-        /// </summary>
+        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
+        /// - either update operator linearization matrix 
+        /// - or evaluate the operator in the current linearization point
+        /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
+        /// /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             // compute operator
             Debug.Assert(OpAffine.L2Norm() == 0.0);

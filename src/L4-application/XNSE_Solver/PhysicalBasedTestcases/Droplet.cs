@@ -1572,10 +1572,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
-
-
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
-
 
             //C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0;
@@ -1596,8 +1593,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
-            //C.LSunderrelax = 0.5;
-            //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
 
             C.TimesteppingMode = compMode;
             

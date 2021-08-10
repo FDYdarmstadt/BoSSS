@@ -33,7 +33,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// Callback-template for level-set updates.
+    /// Callback-template for spatial operator linearization or evaluation.
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
@@ -45,7 +45,11 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
     /// </param>
-    /// <param name="CurrentState"></param>
+    /// <param name="CurrentState">
+    /// Current solution, resp. linearization point;
+    /// For linear problems the output matrix and vector must be (per definition) independent of the linearization point,
+    /// otherwise the problem is nonlinear (see also <see cref="ISpatialOperator.IsLinear"/>).
+    /// </param>
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
@@ -240,7 +244,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Callback routine to update the operator matrix.
+        /// Callback routine:
+        /// - either update operator linearization matrix 
+        /// - or evaluate the operator in the current linearization point
+        /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// </summary>
         public DelComputeOperatorMatrix ComputeOperatorMatrix {
             get;
