@@ -747,8 +747,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
-            Timestepping.RegisterResidualLogger(this.ResLogger);
             base.Timestepping = solver;
+            Timestepping.RegisterResidualLogger(this.ResLogger);
         }
 
     }
