@@ -908,6 +908,14 @@ namespace BoSSS.Foundation.XDG {
 #endif
         }
 
+        /// <summary>
+        /// throws away the top of the history, reverts to the latest pushed state (<see cref="PushStacks"/>,
+        /// see also <see cref="DataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// 
+        /// The top state of the stack can also be back-upped/resored by
+        /// - <see cref="BackupTimeLevel(int)"/>
+        /// - <see cref="ReplaceCurrentTimeLevel(TrackerBackup)"/>
+        /// </summary>
         public void PopStacks() {
             int NoOfLs = LevelSets.Count;
             int PHL = PopulatedHistoryLength;
