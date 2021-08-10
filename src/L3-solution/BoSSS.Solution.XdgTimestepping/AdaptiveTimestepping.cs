@@ -10,7 +10,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
     /// Core functionality of adaptive timestepping
-    /// This 
+    /// Calling <see cref="Compute"/> spans a tree of nested timesteps.
     /// </summary>
     public class TimeLevel {
 
@@ -144,6 +144,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
+        /// <summary>
+        /// Next range of timesteps to compute
+        /// </summary>
         void FindRange(out int i0, out int iE) {
             if(iLevel == 1) {
                 Assert.IsTrue(m_Parrent == null, "internal error, first level must have index 1.");
@@ -255,6 +258,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             return Math.Abs(a - b) <= tol;
         }
 
+
+        /// <summary>
+        /// Recursive solver call
+        /// </summary>
         public void Compute() {
 
 

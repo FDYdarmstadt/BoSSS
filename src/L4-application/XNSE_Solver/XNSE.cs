@@ -118,8 +118,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     return p;
                 });
             } else {
-                XNSE<XNSE_Control> ._Main(args, false, delegate () {
-                    var p = new XNSE<XNSE_Control>();
+                XNSE._Main(args, false, delegate () {
+                    var p = new XNSE();
                     return p;
                 });
             }

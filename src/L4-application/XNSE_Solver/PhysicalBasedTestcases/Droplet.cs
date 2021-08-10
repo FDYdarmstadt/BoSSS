@@ -1573,27 +1573,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SessionName = C.SessionName + "_AMR1";
 
 
-            //int numSp = 1440;
-            //double[] FourierP = new double[numSp];
-            //double[] samplP = new double[numSp];
-            //for (int sp = 0; sp < numSp; sp++) {
-            //    double angle = sp * (2 * Math.PI / (double)numSp);
-            //    FourierP[sp] = angle;
-            //    samplP[sp] = a * b / Math.Sqrt((a * Math.Cos(angle + Math.PI / 2)).Pow2() + (b * Math.Sin(angle + Math.PI / 2)).Pow2());
-            //}
-
-            //FourierLevSetControl FourierCntrl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (Math.Pow(2,C.BaseRefinementLevel)*(double)kelem)) {
-            //    center = new double[] { 0.0, 0.0 },
-            //    FourierEvolve = Fourier_Evolution.MaterialPoints,
-            //    centerMove = CenterMovement.Reconstructed,
-            //};
-
-
-            //C.SetLevelSetMethod(method, FourierCntrl);
-            //C.SessionName = "OscillatingDroplet_setup3_muScl"+mu_scl+"_methodStudy_k2_" + C.methodTagLS;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
-
 
 
             //C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
@@ -1611,7 +1592,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
             
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.Adaptive_3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
