@@ -1743,7 +1743,9 @@ namespace BoSSS.Foundation.XDG {
                                                 PosEdge = true;
                                             }
 
-                                            quadResult += v * v; 
+                                            // another option scale v by some appropriate scaling factor, the problem here can be,
+                                            // that for very small physical cells a coinciding edge is detected, even though this is not really the case.
+                                            quadResult += Math.Abs(v); // if all edge control points are zero that edge is necessarily zero as well  
                                         }
 
                                         Pos |= PosEdge;
