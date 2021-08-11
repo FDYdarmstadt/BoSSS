@@ -62,7 +62,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-   
+   /*
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -83,11 +83,13 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>, <see cref="XdgTimesteppingBase.Config_LevelSetConvergenceCriterion"/>)
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
+    
 
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
     /// </summary>
     public delegate void DelPushLevelSetRelatedStuff();
+    */
 
     /// <summary>
     /// Controls the updating of the mass-matrix, resp. the temporal operator.
@@ -295,7 +297,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Callback routine to update the level set.
         /// </summary>
-        public DelUpdateLevelset UpdateLevelset {
+        public ISlaveTimeIntegrator UpdateLevelset {
             get;
             protected set;
         }

@@ -790,7 +790,7 @@ namespace BoSSS.Application.IBM_Solver {
 
                 base.ResLogger.TimeStep = TimestepInt;
 
-                dt = base.GetFixedTimestep();
+                dt = base.GetTimestep();
 
                 Console.WriteLine("In-stationary solve, time-step #{0}, dt = {1} ...", TimestepNo, dt);
 

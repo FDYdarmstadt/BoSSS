@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,8 +25,9 @@ namespace BoSSS.Solution.Timestepping {
 
     /// <summary>
     /// Coefficients for Backward-Differentiation-Formulas (BDF) and Crank-Nicolson.
-    /// </summary>
-    public struct BDFSchemeCoeffs {
+    /// </summary>#
+    /// <seealso cref="RungeKuttaScheme"/>
+    public class BDFSchemeCoeffs : ICloneable {
                
         /// <summary>
         /// Returns a Backward-Differentiation-Formula of order <paramref name="i"/>.
@@ -113,6 +115,17 @@ namespace BoSSS.Solution.Timestepping {
                 throw new ApplicationException();
 
             return R;
+        }
+
+        /// <summary>
+        /// non-shallow copy
+        /// </summary>
+        public object Clone() {
+            return new BDFSchemeCoeffs() {
+                beta = this.beta.CloneAs(),
+                theta0 = this.theta0,
+                theta1 = this.theta1
+            };
         }
 
 

@@ -380,7 +380,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // ------------------------------------------
 
             if(base.Control.TimesteppingMode == Solution.Control.AppControl._TimesteppingMode.Transient) {
-                dt = base.GetFixedTimestep();
+                dt = base.GetTimestep();
                 Console.WriteLine("Timestep {0}, dt = {1} ...", TimestepNo, dt);
             } else {
                 throw new NotSupportedException();

@@ -78,7 +78,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             ISpatialOperator abstractOperator,
-            DelUpdateLevelset _UpdateLevelset,
+            ISlaveTimeIntegrator _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -177,7 +177,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // level-set evolution
             int oldPushCount = m_LsTrk.PushCount;
             int oldVersion = m_LsTrk.VersionCnt;
-            m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+            m_LastLevelSetResidual = this.UpdateLevelset.Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
             int newVersion = m_LsTrk.VersionCnt;
             int newPushCount = m_LsTrk.PushCount;
 

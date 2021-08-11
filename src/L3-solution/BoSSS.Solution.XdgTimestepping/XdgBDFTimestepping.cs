@@ -82,7 +82,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             ISpatialOperator abstractOperator,
-            DelUpdateLevelset _UpdateLevelset,
+            ISlaveTimeIntegrator _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -1342,11 +1342,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             return w;
         }
 
-
-        public DelPushLevelSetRelatedStuff PushLevelSet {
-            get;
-            set;
-        }
+        
+        //public DelPushLevelSetRelatedStuff PushLevelSet {
+        //    get;
+        //    set;
+        //}
+        
 
         /// <summary>
         /// Perform temporal integration
@@ -2051,7 +2052,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             int oldPushCount = m_LsTrk.PushCount;
 
 
-            m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+            m_LastLevelSetResidual = this.UpdateLevelset.Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
 
 
             int newVersion = m_LsTrk.VersionCnt;

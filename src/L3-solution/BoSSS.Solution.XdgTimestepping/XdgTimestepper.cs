@@ -244,7 +244,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            DelUpdateLevelset _UpdateLevelset = null,
+            ISlaveTimeIntegrator _UpdateLevelset = null,
             LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
@@ -298,7 +298,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
             SpeciesId[] spcToCompute,
-            DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
+            ISlaveTimeIntegrator _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
             LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
@@ -339,7 +339,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================
 
             if (_UpdateLevelset == null) {
-                _UpdateLevelset = this.UpdateLevelsetWithNothing;
+                _UpdateLevelset = new UpdateLevelsetWithNothing(this);
                 if (_LevelSetHandling != LevelSetHandling.None)
                     throw new ArgumentException($"If level-set handling is set to {_LevelSetHandling} (anything but {LevelSetHandling.None}) an updating routine must be specified.");
             }
@@ -486,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                UpdateLevelsetWithNothing,
+                new UpdateLevelsetWithNothing(this),
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
@@ -515,10 +515,33 @@ namespace BoSSS.Solution.XdgTimestepping {
             return spcA;
         }
 
-        double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
-            this.LsTrk.UpdateTracker(time + dt, incremental: true);
-            return 0.0;
+        class UpdateLevelsetWithNothing : ISlaveTimeIntegrator {
+
+            public UpdateLevelsetWithNothing(XdgTimestepping __owner) {
+                m_owner = __owner;
+            }
+
+            XdgTimestepping m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                throw new NotImplementedException();
+            }
+
+            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+                m_owner.LsTrk.UpdateTracker(time + dt, incremental: true);
+                return 0.0;
+            }
         }
+
+
+        //double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+        //    this.LsTrk.UpdateTracker(time + dt, incremental: true);
+        //    return 0.0;
+        //}
 
         DGField[] JacobiParameterVars = null;
 

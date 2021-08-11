@@ -549,7 +549,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //Console.WriteLine("droplet volume: volume_A = {0} (ref volume = {1}; {2})", volume, volumeRef, 100*(volume - volumeRef)/volumeRef);
             ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
             // Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"Done with time step {TimestepNo}.");

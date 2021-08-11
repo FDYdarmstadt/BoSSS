@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
+using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -97,7 +98,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// - handles the continuity projection
     /// - initializes a level-set-tracker, <see cref="Tracker"/>
     /// </summary>
-    public class LevelSetUpdater {
+    public class LevelSetUpdater : XdgTimestepping.ISlaveTimeIntegrator {
 
         /// <summary>
         /// internal implementation
@@ -310,19 +311,28 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         /// <summary>
-        /// initialized by the evolver
+        /// initialized by the constructor
         /// </summary>
-        public LevelSetTracker Tracker;
+        public LevelSetTracker Tracker {
+            get;
+            private set;
+        }
 
         Dictionary<string, SingleLevelSetUpdater> lsUpdaters;
 
         Dictionary<string, DGField> lsParameterFields;
 
+
+        Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields;
+
+
         /// <summary>
         /// constructor for one level-set, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[], ILevelSet)"/>
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[] _SpeciesTable, LevelSet dgLevelSet, string interfaceName) {
+            int __NearRegionWidth, string[] _SpeciesTable, 
+            Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
+            LevelSet dgLevelSet, string interfaceName) {
 
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
@@ -330,6 +340,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             cgLevelSet.Identification = interfaceName;
             //cgLevelSet.AccLaidBack(1.0, dgLevelSet);
 
+            this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSet);
 
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(1);
@@ -351,7 +362,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Constructor for two level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,], ILevelSet, ILevelSet)"/>
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[,] _SpeciesTable, LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1) {
+            int __NearRegionWidth, string[,] _SpeciesTable, 
+            Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1) {
 
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1 };
@@ -364,6 +377,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 cgLevelSets[i].Identification = interfaceNames[i];
                 //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
+            this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1]);
 
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
@@ -386,7 +400,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Constructor for three level-sets, <see cref="LevelSetTracker.LevelSetTracker(GridData, XQuadFactoryHelper.MomentFittingVariants, int, string[,,], ILevelSet, ILevelSet, ILevelSet)"/>
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
-            int __NearRegionWidth, string[,,] _SpeciesTable, LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2) {
+            int __NearRegionWidth, string[,,] _SpeciesTable, 
+            Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2) {
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
 
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2 };
@@ -398,6 +414,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 cgLevelSets[i].Identification = interfaceNames[i];
                 //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
+            this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2]);
 
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
@@ -412,8 +429,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
-
-            //Tracker.UpdateTracker(0.0);
         }
 
         /// <summary>
@@ -421,6 +436,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
+            Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
             LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3) {
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
 
@@ -433,6 +449,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 cgLevelSets[i].Identification = interfaceNames[i];
                 //cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
+            this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2], cgLevelSets[3]);
 
             lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
@@ -447,8 +464,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
-
-            //Tracker.UpdateTracker(0.0);
         }
 
         static SingleLevelSetUpdater CreateSingleLevelSetUpdater(DualLevelSet levelSet, GridData grid, ContinuityProjectionOption continuityMode) {
@@ -499,7 +514,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// Evolution of all level-sets, fits <see cref="XdgTimestepping.DelUpdateLevelset"/>.
         /// </summary>
-        public double UpdateLevelSets(
+        double UpdateLevelSets(
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields,
             double time,
@@ -512,13 +527,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             UpdateParameters(DomainVarFields, InnerParameterFields, time);
             //Tecplot.Tecplot.PlotFields( new DGField[] {lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetBeforeUpdate", time, 3);
             foreach(SingleLevelSetUpdater updater in lsUpdaters.Values) {
-                residual += updater.UpdateLevelSet(
+                var resi_x = updater.UpdateLevelSet(
                     DomainVarFields,
                     InnerParameterFields,
                     time,
                     dt,
                     underRelax,
                     incremental);
+
+                residual += resi_x.Abs();
             }
             //Tecplot.Tecplot.PlotFields( new DGField[] { lsUpdaters["Phi"].phaseInterface.DGLevelSet, lsUpdaters["Phi"].phaseInterface.CGLevelSet, }, "LevsetAfterUpdate", time, 3);
             Tracker.UpdateTracker(time + dt, -1, incremental: true);
@@ -607,6 +624,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 updater.UpdateParameters(DomainVarFields, ParameterVarFields, time);
                 cnt++;
             }
+        }
+
+        public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+
+            (IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields)  = GetNamedInputFields(CurrentState);
+
+
+            return this.UpdateLevelSets(DomainVarFields, ParameterVarFields, time, dt, UnderRelax, incremental);
+        }
+
+        public void Push() {
+            
+        }
+
+        public void Pop() {
+            
         }
     }
 }
