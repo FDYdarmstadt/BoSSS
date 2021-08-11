@@ -355,15 +355,12 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             }
         }
 
-
-
-
-        public override double UpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-            LevsetEvo(phystime, dt, null);
-
-            return 0.0;
+        /// <summary>
+        /// 
+        /// </summary>
+        public override ISlaveTimeIntegrator GetLevelSetUpdater() {
+            return new LevelSetTimeIntegrator(this);
         }
-
 
         /// <summary>
         /// Only relevant for <see cref="TestProgram.TestTimestepperReset/>;
@@ -538,27 +535,53 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
+        /// <summary>
+        /// wrapper introduced due to API change
+        /// </summary>
+        class LevelSetTimeIntegrator : ISlaveTimeIntegrator {
 
+            public LevelSetTimeIntegrator(XdgTimesteppingMain __owner) {
+                m_owner = __owner;
+            }
+            XdgTimesteppingMain m_owner;
 
-        private void LevsetEvo(double phystime, double dt, double[][] AdditionalVectors) {
-            if (this.Control.InterfaceMode == InterfaceMode.MovingInterface
-                || this.Control.InterfaceMode == InterfaceMode.Splitting) {
-
-                // project new level-set
-                this.Phi.ProjectField(X => this.Control.Phi(X, phystime + dt));
-                this.LsTrk.UpdateTracker(phystime + dt, incremental: true);
-                UpdateMarkerFields();
-
-                // HMF hacks
-                if ((this.Control.CircleRadius != null) != (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
-                    throw new ApplicationException("Illegal HMF configuration.");
-                if (this.Control.CircleRadius != null) {
-                    ExactCircleLevelSetIntegration.RADIUS = new double[] { this.Control.CircleRadius(phystime + dt) };
-                }
-            } else {
+            public void Pop() {
                 throw new NotImplementedException();
             }
+
+            public void Push() {
+                throw new NotImplementedException();
+            }
+
+            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+                LevsetEvo(phystime, dt, null);
+
+                return 0.0;
+            }
+
+            private void LevsetEvo(double phystime, double dt, double[][] AdditionalVectors) {
+                if(m_owner.Control.InterfaceMode == InterfaceMode.MovingInterface
+                    || m_owner.Control.InterfaceMode == InterfaceMode.Splitting) {
+
+                    // project new level-set
+                    m_owner.Phi.ProjectField(X => m_owner.Control.Phi(X, phystime + dt));
+                    m_owner.LsTrk.UpdateTracker(phystime + dt, incremental: true);
+                    m_owner.UpdateMarkerFields();
+
+                    // HMF hacks
+                    if((m_owner.Control.CircleRadius != null) != (m_owner.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.ExactCircle))
+                        throw new ApplicationException("Illegal HMF configuration.");
+                    if(m_owner.Control.CircleRadius != null) {
+                        ExactCircleLevelSetIntegration.RADIUS = new double[] { m_owner.Control.CircleRadius(phystime + dt) };
+                    }
+                } else {
+                    throw new NotImplementedException();
+                }
+            }
         }
+
+
+        
 
         internal double ComputeL2Dist(double[] a, double[] b) {
             var u1 = this.u.CloneAs();

@@ -550,7 +550,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.CurrentResidual.Mapping.Fields,
                         LsTrk,
                         true,
-                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, DelUpdateLevelSet,
+                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, new LevelSetTimeIntegratorWrapper(this),
                         (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,
@@ -566,8 +566,6 @@ namespace BoSSS.Application.XRheology_Solver {
                     m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                     m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                     m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-                    //m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
-                    m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                     m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
 
                     m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
@@ -2087,6 +2085,30 @@ namespace BoSSS.Application.XRheology_Solver {
             this.DGLevSet.IncreaseHistoryLength(1);
             this.DGLevSet.Push();
         }
+
+        /// <summary>
+        /// wrapper introduced due to API change
+        /// </summary>
+        class LevelSetTimeIntegratorWrapper : ISlaveTimeIntegrator {
+
+            public LevelSetTimeIntegratorWrapper(XRheology_SolverMain __owner) {
+                m_owner = __owner;
+            }
+            XRheology_SolverMain m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                m_owner.PushLevelSetAndRelatedStuff();
+            }
+
+            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+                return m_owner.DelUpdateLevelSet(CurrentState, time, dt, UnderRelax, incremental);
+            }
+        }
+
 
 
         private void EnforceVolumeConservation() {

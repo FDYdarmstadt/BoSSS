@@ -371,7 +371,7 @@ namespace BoSSS.Application.IBM_Solver {
                 true,
                 DelComputeOperatorMatrix,
                 this.IBM_Op,
-                DelUpdateLevelset,
+                new LevelSetTimestepping(this),
                 bdfOrder,
                 lsh,
                 MassMatrixShapeandDependence.IsTimeDependent,
@@ -722,23 +722,40 @@ namespace BoSSS.Application.IBM_Solver {
             */
         }
 
-        public virtual double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+        /// <summary>
+        /// wrapper introduced due to API change
+        /// </summary>
+        class LevelSetTimestepping : ISlaveTimeIntegrator {
 
-            //Console.WriteLine("I N F O: Updating the Levelset");
-            if (this.Control.ForcedPhi !=null) {
-                this.LevSet.ProjectField(X => this.Control.ForcedPhi(X, phystime + dt));
+            public LevelSetTimestepping(IBM_SolverMain __owner) {
+                m_owner = __owner;
             }
-            this.LsTrk.UpdateTracker(phystime + dt);
-            //LevsetEvo(phystime, dt, null);
+            IBM_SolverMain m_owner;
 
-            //SmoothLevelSet();
-            //LsTrk.UpdateTracker(0.0);
+            public void Pop() {
+                throw new NotImplementedException();
+            }
 
+            public void Push() {
+                throw new NotImplementedException();
+            }
 
+            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
 
-            return 0.0;
+                //Console.WriteLine("I N F O: Updating the Levelset");
+                if(m_owner.Control.ForcedPhi != null) {
+                    m_owner.LevSet.ProjectField(X => m_owner.Control.ForcedPhi(X, time + dt));
+                }
+                m_owner.LsTrk.UpdateTracker(time + dt);
+                //LevsetEvo(phystime, dt, null);
+
+                //SmoothLevelSet();
+                //LsTrk.UpdateTracker(0.0);
+                return 0.0;
+            }
         }
 
+        
         void SmoothLevelSet() {
             CellMask near = this.LevsetTracker.Regions.GetNearMask4LevSet(0, 1);
             ContinuityProjectionCDG projecter = new ContinuityProjectionCDG(this.LevSet.Basis);

@@ -41,8 +41,10 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat"></param>
         /// <param name="mask">
         /// a "true" entry for all cells in grid <paramref name="grddat"/> that
-        /// should be in the mask; The length of this array must not exceed
-        /// <see cref="GridData.CellData.NoOfLocalUpdatedCells"/>
+        /// should be in the mask; 
+        /// The length of this array must not exceed
+        /// - <see cref="GridData.CellData.NoOfLocalUpdatedCells"/>/<see cref="ILogicalCellData.NoOfLocalUpdatedCells"/> in the case of a logical mask, i.e. <paramref name="mt"/> is <see cref="MaskType.Logical"/>
+        /// - <see cref="IGeometricalCellsData.NoOfLocalUpdatedCells"/> in the case of a geometrical mask, i.e. <paramref name="mt"/> is <see cref="MaskType.Geometrical"/>
         /// </param>
         /// <param name="mt">
         /// <see cref="ExecutionMask.MaskType"/>
@@ -53,6 +55,36 @@ namespace BoSSS.Foundation.Grid {
             if (mask.Length != this.GetUpperIndexBound(grddat)) {
                 throw new ArgumentException("Mismatch in number of cells/length of input bitmask.");
             }
+        }
+
+        static BitArray ToMask(IGridData grddat, Func<int,bool> mask, MaskType mt = MaskType.Logical) {
+            int J;
+            switch(mt) {
+                case MaskType.Geometrical: J = grddat.iGeomCells.NoOfLocalUpdatedCells; break;
+                case MaskType.Logical: J = grddat.iLogicalCells.NoOfLocalUpdatedCells; break;
+                default: throw new NotImplementedException();
+            }
+
+            var R = new BitArray(J);
+            for(int j = 0; j < J; j++) {
+                R[j] = mask(j);
+            }
+            return R;
+        }
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="grddat"></param>
+        /// <param name="mask">
+        /// a "true" entry for all cells (local index) in grid <paramref name="grddat"/> that should be in the mask; 
+        /// </param>
+        /// <param name="mt">
+        /// <see cref="ExecutionMask.MaskType"/>
+        /// </param>
+        public CellMask(IGridData grddat, Func<int,bool> mask, MaskType mt = MaskType.Logical) :
+            base(grddat, ToMask(grddat, mask, mt), mt) //
+        {
         }
         
         /// <summary>
@@ -180,6 +212,23 @@ namespace BoSSS.Foundation.Grid {
             for(int i = 0; i < J; i++) {
                 ilPSP.Vector X = gridData.iLogicalCells.GetCenter(i);
                 CellArray[i] = SelectionFunction(X);
+            }
+            return new CellMask(gridData, CellArray, MaskType.Logical);
+        }
+
+        /// <summary>
+        /// Selects all cells according to their cell centers, where <paramref name="SelectionFunction"/> is true
+        /// </summary>
+        /// <param name="gridData"></param>
+        /// <param name="SelectionFunction"></param>
+        /// <returns></returns>
+        public static CellMask GetCellMask(IGridData gridData, Func<int, ilPSP.Vector, bool> SelectionFunction) {
+            int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
+
+            BitArray CellArray = new BitArray(J);
+            for(int i = 0; i < J; i++) {
+                ilPSP.Vector X = gridData.iLogicalCells.GetCenter(i);
+                CellArray[i] = SelectionFunction(i, X);
             }
             return new CellMask(gridData, CellArray, MaskType.Logical);
         }

@@ -467,9 +467,9 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
         /// <summary>
         /// wrapper introduced due to API change
         /// </summary>
-        class LevelSetImeIntegratorWrapper : ISlaveTimeIntegrator {
+        class LevelSetTimeIntegratorWrapper : ISlaveTimeIntegrator {
 
-            public LevelSetImeIntegratorWrapper(XNSE_SolverMain __owner) {
+            public LevelSetTimeIntegratorWrapper(XNSE_SolverMain __owner) {
                 m_owner = __owner;
             }
             XNSE_SolverMain m_owner;
