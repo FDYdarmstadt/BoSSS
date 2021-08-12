@@ -129,7 +129,9 @@ namespace BoSSS.Foundation {
             get;
         }
 
-        // To Basis T = <B_i,B_j>^-1 <B_j, P_k> = M^-1*S
+        /// <summary>
+        /// From origin basis to destination basis $` T = <B_i,B_j>^-1 <B_j, P_k> = M^-1*S `$
+        /// </summary>
         protected virtual void ConstructTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
             int N = Krefs.Length;
@@ -178,7 +180,9 @@ namespace BoSSS.Foundation {
             }
         }
 
-        // From Basis T = <P_i,P_j>^-1 <P_j, B_k>
+        /// <summary>
+        /// From destination basis to origin basis: $` T = <P_i,P_j>^-1 <P_j, B_k> `$
+        /// </summary>
         protected virtual void ConstructInverseTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
             int N = Krefs.Length;

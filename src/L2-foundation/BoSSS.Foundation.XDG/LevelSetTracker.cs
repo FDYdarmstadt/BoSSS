@@ -1717,7 +1717,11 @@ namespace BoSSS.Foundation.XDG {
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
                             // Use the accelerated bernstein cut cell finding technique for dg levelsets
-                            if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {  
+                            if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
+                                var data = this.m_DataHistories[levSetind].Current;
+                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1})); // only use edge nodes
+                                MultidimensionalArray levSetVal = data.GetLevSetValues(EdgeNodes, j, VecLen);
+
                                 // loop over all cells in this chunk
                                 for (int jj = j; jj < j + VecLen; jj++) {
                                     double[] modalVals = ls.Coordinates.GetRow(jj);
@@ -1725,6 +1729,42 @@ namespace BoSSS.Foundation.XDG {
                                     bool Pos = false;
                                     bool Neg = false;
 
+                                    #region edges  
+                                    // loop over nodes on edges...
+                                    int nodeIndex = 0;
+                                    for (int e = 0; e < noOfFaces; e++) {
+                                        bool PosEdge = false;
+                                        bool NegEdge = false;
+
+                                        double quadResult = 0.0;
+                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
+                                            double v = levSetVal[jj - j, nodeIndex];
+
+                                            if (v < 0) {
+                                                NegEdge = true;
+                                            } else if (v > 0) {
+                                                PosEdge = true;
+                                            }
+
+                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
+
+                                            nodeIndex++;
+                                        }
+
+                                        Pos |= PosEdge;
+                                        Neg |= NegEdge;
+
+                                        // detect an edge which coincides with the zero-level-set
+                                        if (quadResult < eps) {
+                                            if (_LevSetCoincidingFaces == null)
+                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
+                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
+                                        }
+
+                                    } // end of edges loop
+                                    #endregion
+
+                                    /* Seems to be not robust enough... using the "old" procedure for now
                                     // loop over nodes on edges...
                                     double[] bernsteinValsEdges = new double[TransformerEdges.Destination.Polynomials[iKref].Count];
                                     TransformerEdges.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinValsEdges);
@@ -1743,7 +1783,9 @@ namespace BoSSS.Foundation.XDG {
                                                 PosEdge = true;
                                             }
 
-                                            quadResult += v * v; 
+                                            // another option scale v by some appropriate scaling factor, the problem here can be,
+                                            // that for very small physical cells a coinciding edge is detected, even though this is not really the case.
+                                            quadResult += v * v; //Math.Abs(v); // if all edge control points are zero that edge is necessarily zero as well  
                                         }
 
                                         Pos |= PosEdge;
@@ -1756,6 +1798,7 @@ namespace BoSSS.Foundation.XDG {
                                             (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[jj]);
                                         }
                                     } // end of edges loop 
+                                    */
 
                                     // check also with slight offset and inside the cell
                                     var Transformer = this.TestTransformer[levSetind];
