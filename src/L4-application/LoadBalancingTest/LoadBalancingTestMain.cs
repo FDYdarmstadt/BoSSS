@@ -215,7 +215,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     Op,
                     new DGField[] { u }, new DGField[] { uResidual },
                     TimeSteppingScheme.BDF3,
-                    new LevelSetTimestepping(this), LevelSetHandling.LieSplitting,
+                    () => new LevelSetTimestepping(this), LevelSetHandling.LieSplitting,
                     MultigridOperatorConfig, MultigridSequence,
                     _AgglomerationThreshold: this.THRESHOLD,
                     LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);

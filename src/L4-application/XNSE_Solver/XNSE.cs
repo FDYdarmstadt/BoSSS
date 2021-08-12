@@ -70,6 +70,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(2, 1, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.1, ViscosityMode.FullySymmetric, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);

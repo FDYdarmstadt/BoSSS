@@ -244,7 +244,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            ISlaveTimeIntegrator _UpdateLevelset = null,
+            Func<ISlaveTimeIntegrator> _UpdateLevelset = null,
             LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
@@ -298,7 +298,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
             SpeciesId[] spcToCompute,
-            ISlaveTimeIntegrator _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
+            Func<ISlaveTimeIntegrator> _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
             LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
@@ -339,7 +339,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================
 
             if (_UpdateLevelset == null) {
-                _UpdateLevelset = new UpdateLevelsetWithNothing(this);
+                _UpdateLevelset = () => new UpdateLevelsetWithNothing(this);
                 if (_LevelSetHandling != LevelSetHandling.None)
                     throw new ArgumentException($"If level-set handling is set to {_LevelSetHandling} (anything but {LevelSetHandling.None}) an updating routine must be specified.");
             }
@@ -486,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                new UpdateLevelsetWithNothing(this),
+                () => new UpdateLevelsetWithNothing(this),
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,

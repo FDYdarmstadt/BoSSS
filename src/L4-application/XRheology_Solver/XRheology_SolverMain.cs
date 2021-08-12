@@ -550,7 +550,7 @@ namespace BoSSS.Application.XRheology_Solver {
                         this.CurrentResidual.Mapping.Fields,
                         LsTrk,
                         true,
-                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, new LevelSetTimeIntegratorWrapper(this),
+                        DelComputeOperatorMatrix, this.XRheology_Operator.Xop, () => new LevelSetTimeIntegratorWrapper(this),
                         (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                         this.Control.Timestepper_LevelSetHandling,
                         this.XOpConfig.mmsd,

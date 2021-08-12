@@ -297,7 +297,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Callback routine to update the level set.
         /// </summary>
-        public ISlaveTimeIntegrator UpdateLevelset {
+        public Func<ISlaveTimeIntegrator> UpdateLevelset {
             get;
             protected set;
         }

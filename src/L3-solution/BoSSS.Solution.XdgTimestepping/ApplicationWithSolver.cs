@@ -630,7 +630,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentState.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
-                this.GetLevelSetUpdater(),
+                this.GetLevelSetUpdater,
                 LevelSetHandling,
                 MultigridOperatorConfig,
                 MultigridSequence,

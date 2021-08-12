@@ -928,7 +928,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     this.CurrentResidual.Fields,
                     LsTrk,
                     true,
-                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, new XNSE_SolverMain.LevelSetTimeIntegratorWrapper(this),
+                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, () => new XNSE_SolverMain.LevelSetTimeIntegratorWrapper(this),
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,

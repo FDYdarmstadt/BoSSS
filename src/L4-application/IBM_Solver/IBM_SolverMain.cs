@@ -371,7 +371,7 @@ namespace BoSSS.Application.IBM_Solver {
                 true,
                 DelComputeOperatorMatrix,
                 this.IBM_Op,
-                new LevelSetTimestepping(this),
+                () => new LevelSetTimestepping(this),
                 bdfOrder,
                 lsh,
                 MassMatrixShapeandDependence.IsTimeDependent,

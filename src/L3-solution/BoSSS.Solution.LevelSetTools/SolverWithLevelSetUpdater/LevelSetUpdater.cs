@@ -268,6 +268,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 double time) {
                 int i = 0;
                 foreach(ILevelSetParameter parameter in lsParameters) {
+
+                    if(!phaseInterface.CGLevelSet.GridDat.IsAlive())
+                        throw new ApplicationException("CG level set on invalidated mesh -- something went wrong during mesh adaptation/load balancing.");
+                    if(!phaseInterface.DGLevelSet.GridDat.IsAlive())
+                        throw new ApplicationException("CG level set on invalidated mesh -- something went wrong during mesh adaptation/load balancing.");
+
                     parameter.LevelSetParameterUpdate(
                         phaseInterface,
                         time,
@@ -417,7 +423,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2]);
 
-            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(3);
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 DualLevelSet dualLevelSet = new DualLevelSet {
                     Identification = interfaceNames[i],
@@ -452,7 +458,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.GetNamedInputFields = __GetNamedInputFields;
             Tracker = new LevelSetTracker(backgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, cgLevelSets[0], cgLevelSets[1], cgLevelSets[2], cgLevelSets[3]);
 
-            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(2);
+            lsUpdaters = new Dictionary<string, SingleLevelSetUpdater>(4);
             for(int i = 0; i < dgLevelSets.Length; ++i) {
                 DualLevelSet dualLevelSet = new DualLevelSet {
                     Identification = interfaceNames[i],
@@ -483,6 +489,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             get { return lsParameterFields; }
         }
 
+
+        /// <summary>
+        /// All fluid interfaces handled by this updater
+        /// - key: the name of the interface
+        /// - value: A pair of a discontinuous (DG) and continuous (CD) field; the zero set of the latter describes the interface. the first one is used to compute the evolution.
+        /// </summary>
         public IReadOnlyDictionary<string, DualLevelSet> LevelSets {
             get {
                 var levelSets = new Dictionary<string, DualLevelSet>(lsUpdaters.Count);
@@ -626,10 +638,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+
+        /// <summary>
+        /// <see cref="XdgTimestepping.ISlaveTimeIntegrator.Update"/>
+        /// </summary>
         public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
 
             (IReadOnlyDictionary<string, DGField> DomainVarFields,
-            IReadOnlyDictionary<string, DGField> ParameterVarFields)  = GetNamedInputFields(CurrentState);
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) = GetNamedInputFields(CurrentState);
 
 
             return this.UpdateLevelSets(DomainVarFields, ParameterVarFields, time, dt, UnderRelax, incremental);

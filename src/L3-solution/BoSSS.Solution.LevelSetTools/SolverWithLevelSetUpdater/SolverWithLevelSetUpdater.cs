@@ -142,6 +142,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// initialize the level-set fields <see cref="InitializeLevelSets"/>
         /// </summary>
         protected virtual LevelSetUpdater InstantiateLevelSetUpdater() {
+            if(!this.GridData.IsAlive())
+                throw new ApplicationException("invalid grid -- most likely something went wrong during mesh adaptation/redistribution");
             int D = this.Grid.SpatialDimension;
             var lsNames = this.LevelSetNames;
             //ISpatialOperator test = this.Operator; hier ist noch kein OP
@@ -464,6 +466,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
             for(int iVar = 0; iVar < domainFields.Length; iVar++) {
+                if(!domainFields[iVar].GridDat.IsAlive())
+                    throw new ApplicationException("Trying to work on field with invalidated grid object.");
+                if(!object.ReferenceEquals(domainFields[iVar].GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch");
                 DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
             }
 
@@ -471,6 +477,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
             for(int iVar = 0; iVar < parameterFields.Count(); iVar++) {
+                if(!parameterFields[iVar].GridDat.IsAlive())
+                    throw new ApplicationException("Trying to work on field with invalidated grid object.");
+                if(!object.ReferenceEquals(parameterFields[iVar].GridDat, this.GridData))
+                    throw new ApplicationException("Grid data object mismatch");
+
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
             return (DomainVarsDict, ParameterVarsDict);
@@ -499,6 +510,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for (int iVar = 0; iVar < parameterFields.Count(); iVar++) {
                 ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
             }
+
+            // check if all objects have been updated correctly after mesh adaptation or redistribution
+            if(!this.GridData.IsAlive())
+                throw new ApplicationException("running on old grid.");
+            if(!object.ReferenceEquals(this.GridData, LsTrk.GridDat))
+                throw new ApplicationException("LevelSetTracker linked to old grid.");
+            if(!object.ReferenceEquals(this.LsTrk, LsUpdater.Tracker))
+                throw new ApplicationException("LevelSetUpdater linked to old LevelSetTracker.");
+            foreach(var kv in LsUpdater.LevelSets) {
+                if(!object.ReferenceEquals(this.GridData, kv.Value.CGLevelSet.GridDat)) {
+                    throw new ApplicationException($"CG Level set {kv.Key} linked to old GridData");
+                }
+                if(!object.ReferenceEquals(this.GridData, kv.Value.DGLevelSet.GridDat)) {
+                    throw new ApplicationException($"DG Level set {kv.Key} linked to old GridData");
+                }
+            }
+
+
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
 
             foreach (var f in LsUpdater.Parameters.Values) {

@@ -485,7 +485,7 @@ namespace BoSSS.Application.FSI_Solver {
                 DelayInit: true,
                 _ComputeOperatorMatrix: DelComputeOperatorMatrix,
                 abstractOperator: IBM_Op,
-                _UpdateLevelset: new ParticleTimestepping(this),
+                _UpdateLevelset: () => new ParticleTimestepping(this),
                 BDForder: bdfOrder,
                 _LevelSetHandling: ((FSI_Control)Control).Timestepper_LevelSetHandling,
                 _MassMatrixShapeandDependence: MassMatrixShape,
