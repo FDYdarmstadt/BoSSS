@@ -1589,7 +1589,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
 
-            C.TimeSteppingScheme = TimeSteppingScheme.RK_IMEX3;
+            C.TimeSteppingScheme = TimeSteppingScheme.Adaptive_3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
