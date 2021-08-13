@@ -31,13 +31,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     [Serializable]
     public class AMRonNarrowband : AMRLevelIndicatorWithLevelset {
 
-        public int levelSet = 0; // level set this Indicator should be active on
+        public int levelSet = -1; // level set this Indicator should be active on
         public override int[] DesiredCellChanges() {
 
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
 
-            CellMask band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, 1);
+            CellMask band;
+            if (levelSet == -1) {
+                band = this.LsTrk.Regions.GetNearFieldMask(1);
+            } else {
+                band = this.LsTrk.Regions.GetNearMask4LevSet(levelSet, 1);
+            }
 
             int cellsToRefine = 0;
             int cellsToCoarse = 0;
