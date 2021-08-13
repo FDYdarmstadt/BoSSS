@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    class IncompressibleNeoHookean : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
+    public class IncompressibleNeoHookean : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient, ISupportsJacobianComponent {
 
         double lame2;
         string species;
@@ -72,6 +72,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
 
             //Symmetry
+            /*
             Embedd(_Grad_vIN, gradVIn, d);
             deformation.Calculate(gradVIn, innerDeformation);
             cauchyStress.Calculate(innerDeformation, innerStress);
@@ -79,6 +80,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             for (int i = 0; i < D; i++) {
                 acc1 = - (innerStress[d, i]) * (_uIN[d]) * inp.Normal[i];
             }
+            */
             double pnlty = Penalty(inp.jCellIn, -1);
             acc1 += _uIN[d] * _vIN * pnlty * lame2;
             return acc1;
@@ -145,8 +147,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Embedd(_Grad_vOUT, gradVOut, d);
 
             
-            //deformation.Calculate(gradVIn, innerDeformation);
-            //deformation.Calculate(gradVOut, outerDeformation);
+            deformation.Calculate(gradVIn, innerDeformation);
+            deformation.Calculate(gradVOut, outerDeformation);
 
             cauchyStress.Calculate(innerDeformation, innerStress);
             cauchyStress.Calculate(outerDeformation, outerStress);
@@ -154,7 +156,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             for (int i = 0; i < D; ++i) {
                 acc1 = -0.5 * (innerStress[d, i] + outerStress[d, i]) * (_uIN[d] - _uOUT[d]) * inp.Normal[i];
             }
-            */
+            //*/
 
             double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
             acc1 += lame2 * (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * pnlty;
@@ -186,35 +188,42 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int D;
 
-        MultidimensionalArray buffer;
+        MultidimensionalArray adjungateTransposed;
 
 
         public LeftCauchyGreenDeformationTensor(int D) {
             this.D = D;
-            buffer = MultidimensionalArray.Create(D, D);
+            adjungateTransposed = MultidimensionalArray.Create(D, D);
         }
 
         public void Calculate(double[,] gradDisplacement, MultidimensionalArray result) {
-            // Tensor= (1 - gradU)^-1
-            DeformationGradient(gradDisplacement, D, result);
-            result.InvertInPlace();
-            
-            // buffer= (1 - gradU)^-T
-            buffer.CopyFrom(result);
-            buffer.TransposeInPlace();
+            Adjugate(gradDisplacement, D, result);
+            result.Scale(-1);
 
-            //Tensor = (1 - gradU)^-1 * (1 - gradU)^-T
-            result = result *  buffer;
+            adjungateTransposed.CopyFrom(result);
+            adjungateTransposed.TransposeInPlace();
+
+
+
+            //Tensor = adj(grad(U)) + adj(grad(U)) * adj((gradU)^T)
+            var mul = result.MatMatMul(adjungateTransposed);
+            result.Acc(1.0, mul);
+
+            //Tensor += adj((gradU)^T)
+            result.Acc(1.0, adjungateTransposed);
         }
 
-        static void DeformationGradient(double[,] gradDisplacement, int D, MultidimensionalArray result) {
+        static void Adjugate(double[,] gradDisplacement, int D, MultidimensionalArray result) {
             result.Clear();
-            for(int i = 0; i < D; ++i) {
-                result[i, i] = 1;
-                for (int j = 0; j < D; ++j) {
-                    result[i, j] -= gradDisplacement[i, j];
-                }
+            if(D == 2) {
+                result[0, 0] = gradDisplacement[1, 1];
+                result[0, 1] = -gradDisplacement[0, 1];
+                result[1, 0] = -gradDisplacement[1, 0];
+                result[1, 1] = gradDisplacement[0, 0];
+            } else {
+                throw new NotSupportedException("Lazy limitation to 2-D space");
             }
+            
         }
     }
 
@@ -231,7 +240,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public void Calculate(MultidimensionalArray leftCauchyGreenDeformationTensor, MultidimensionalArray result) {
             result.CopyFrom(leftCauchyGreenDeformationTensor);
-            result.Scale(2 * lame2);
+            result.Scale(1 * lame2);
         }
     }
 }

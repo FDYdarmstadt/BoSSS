@@ -71,4 +71,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
     }
+
+    public class AllOne : Solid {
+        public AllOne() {
+            PoissonsRatio = 1;
+            ModulusOfElasticity = 1;
+            Density = 1;
+            Lame1 = 1;
+            Lame2 = 1;
+        }
+    }
 }
