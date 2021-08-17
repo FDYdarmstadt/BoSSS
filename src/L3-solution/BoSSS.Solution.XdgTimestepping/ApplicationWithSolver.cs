@@ -471,17 +471,20 @@ namespace BoSSS.Solution.XdgTimestepping {
             Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TimestepNo"></param>
+        /// <param name="phystime"></param>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Timestepping.Solve(phystime, dt);
             return dt;
         }
 
-
-        //protected override void SetInitial() {
-        //    base.SetInitial();
-        //}
     }
 
     /// <summary>
@@ -511,29 +514,40 @@ namespace BoSSS.Solution.XdgTimestepping {
             return ret;
         }
 
-        /// <summary>
-        /// Callback-template for level-set updates.
-        /// </summary>
-        /// <param name="CurrentState"></param>
-        /// <param name="time">
-        /// Actual simulation time for the known value;
-        /// </param>
-        /// <param name="dt">
-        /// Timestep size.
-        /// </param>
-        /// <param name="UnderRelax">
-        /// </param>
-        /// <param name="incremental">
-        /// true for Splitting schemes with subdivided level-set evolution (e.g. Strang-Splitting)
-        /// </param>
-        /// <returns>
-        /// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
-        /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>)
-        /// </returns>
+        /*
+        ///// <summary>
+        ///// Callback-template for level-set updates.
+        ///// </summary>
+        ///// <param name = "CurrentState" ></ param >
+        ///// < param name= "time" >
+        ///// Actual simulation time for the known value;
+        ///// </param>
+        ///// <param name = "dt" >
+        ///// Timestep size.
+        ///// </param>
+        ///// <param name = "UnderRelax" >
+        ///// </ param >
+        ///// < param name="incremental">
+        ///// true for Splitting schemes with subdivided level-set evolution(e.g.Strang-Splitting)
+        ///// </param>
+        ///// <returns>
+        ///// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
+        ///// (see<see cref="LevelSetHandling.Coupled_Iterative"/>)
+        ///// </returns>
         virtual public double UpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
             LsTrk.UpdateTracker(time + dt);
             return 0.0;
         }
+        */
+
+        /// <summary>
+        /// timestepper to update the all involved level-sets (typically one);
+        /// can be null in case of a temporally constant level set.
+        /// </summary>
+        public virtual ISlaveTimeIntegrator GetLevelSetUpdater() {
+            return null;
+        }
+
 
 
         /// <summary>
@@ -616,7 +630,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentState.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
-                UpdateLevelset,
+                this.GetLevelSetUpdater,
                 LevelSetHandling,
                 MultigridOperatorConfig,
                 MultigridSequence,
@@ -626,7 +640,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             base.Timestepping = solver;
-
+            Timestepping.RegisterResidualLogger(this.ResLogger);
             if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
                 throw new ApplicationException();
 
@@ -747,8 +761,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
-
             base.Timestepping = solver;
+            Timestepping.RegisterResidualLogger(this.ResLogger);
         }
 
     }
