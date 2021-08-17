@@ -1729,6 +1729,7 @@ namespace BoSSS.Solution {
                 // obtain session timesteps:
                 var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+
                 var all_ts = session.Timesteps;
 
                 // find timestep to load
@@ -1737,6 +1738,12 @@ namespace BoSSS.Solution {
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
                 time = tsi_toLoad.PhysicalTime;
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
+                    if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
+                        Console.WriteLine("Restarting from steady-state, resetting time ...");
+                        time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                    }
+                }
 
                 if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
                     var tsiI = tp.GetInternal() as TimestepInfo;
@@ -2662,7 +2669,7 @@ namespace BoSSS.Solution {
             if (this.LsTrk != null) {
                 loadbal.BackupTracker();
             }
-
+            
         }
 
 
@@ -3338,11 +3345,11 @@ namespace BoSSS.Solution {
         /// <summary>
         /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        public double GetFixedTimestep() {
+        virtual public double GetTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
             } else {
-                throw new ApplicationException(
+                throw new NotSupportedException(
                     "Cannot get time-step from control object, since there is no control object specified.");
             }
         }

@@ -57,5 +57,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields);
+
+        /// <summary>
+        /// used to handle optional procedures after level set movement, e.g. reinitialization
+        /// same footprint as <see cref="MovePhaseInterface(DualLevelSet, double, double, bool, IReadOnlyDictionary{string, DGField}, IReadOnlyDictionary{string, DGField})">
+        /// </summary>
+        /// <param name="levelSet"></param>
+        /// <param name="time"></param>
+        /// <param name="dt"></param>
+        /// <param name="incremental"></param>
+        /// <param name="DomainVarFields">
+        /// sequence determined by <see cref="VariableNames"/> (maybe)
+        /// </param>
+        /// <param name="ParameterVarFields"></param>
+        Action<DualLevelSet,double,double,bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface{ get; }
+
     }
+
 }

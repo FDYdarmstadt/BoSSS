@@ -19,7 +19,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// which has proven to be very stable in DG.
     /// </summary>
     /// <remarks>
-    /// - implemented by Fk, jan21
+    /// - original implemented by Fk, jan21, <see cref="StokesExtensionEvolver"/>
+    /// - cloned and modified by Lauritz, april21
     /// </remarks>
     public class ImplicitStokesExtensionEvolver : ILevelSetEvolver {
 
@@ -59,6 +60,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// nix
         /// </summary>
         public IList<string> VariableNames => null;
+
+        
+        /// <summary>
+        /// Currently empty
+        /// </summary>
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
 
 
         /// <summary>
@@ -108,12 +115,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="levelSet"></param>
-        /// <param name="time"></param>
-        /// <param name="dt"></param>
-        /// <param name="incremental"></param>
-        /// <param name="DomainVarFields"></param>
-        /// <param name="ParameterVarFields"></param>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             int D = levelSet.Tracker.GridDat.SpatialDimension;
 

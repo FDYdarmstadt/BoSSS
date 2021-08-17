@@ -928,7 +928,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     this.CurrentResidual.Fields,
                     LsTrk,
                     true,
-                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, DelUpdateLevelSet,
+                    DelComputeOperatorMatrix, this.XNSFE_Operator.Xop, () => new XNSE_SolverMain.LevelSetTimeIntegratorWrapper(this),
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder : 1,
                     this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,
@@ -943,8 +943,8 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                 m_BDF_Timestepper.m_ResLogger = base.ResLogger;
                 m_BDF_Timestepper.m_ResidualNames = this.CurrentResidual.Mapping.Fields.Select(f => f.Identification).ToArray();
                 m_BDF_Timestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-                m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
-                m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
+                //m_BDF_Timestepper.incrementTimesteps = this.Control.incrementTimesteps;
+                //m_BDF_Timestepper.PushLevelSet = this.PushLevelSetAndRelatedStuff;
                 m_BDF_Timestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
 
                 m_BDF_Timestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;

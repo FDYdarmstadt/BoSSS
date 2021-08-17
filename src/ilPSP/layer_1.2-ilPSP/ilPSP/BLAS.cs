@@ -294,6 +294,15 @@ namespace ilPSP.Utils {
     /// </summary>
     public static class GenericBlas {
 
+        /// <summary>
+        /// <see cref="BLAS.MachineEps"/>
+        /// </summary>
+        static double MachineEps {
+            get {
+                return BLAS.MachineEps;
+            }    
+        }
+
         
         /// <summary>
         /// Creates linear interpolated nodes between two points.
@@ -1126,7 +1135,7 @@ namespace ilPSP.Utils {
     static public class BLAS {
 
         /// <summary>
-        /// the machine double accuracy;
+        /// the machine double accuracy: the smallest x, so that 1 + x > 1
         /// </summary>
         public static double MachineEps {
             get {

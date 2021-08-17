@@ -139,7 +139,7 @@ namespace ZwoLevelSetSolver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             Timestepping.Solve(phystime, dt, false);
             Console.WriteLine($"done with time step {TimestepNo}");

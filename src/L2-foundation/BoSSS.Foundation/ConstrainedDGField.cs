@@ -768,7 +768,7 @@ namespace BoSSS.Foundation {
             }
         }
 
-        bool diagOutput0 = true;
+        bool diagOutput0 = false;
         bool diagOutput1 = false;
         //bool diagOutput2 = true;
 
@@ -780,17 +780,17 @@ namespace BoSSS.Foundation {
             int NoPatches = 1;
             List<DGField> returnFields = new List<DGField>();
             int J = m_grd.CellPartitioning.LocalLength;
-            IEnumerable<List<int>> blocking=null;
+            IEnumerable<List<int>> blocking = null;
 
-            using (new RuntimeTracker("patch_partitioning", diagOutput0)) {
-                Console.WriteLine("starting patch-wise correction");
+            using(new RuntimeTracker("patch_partitioning", diagOutput0)) {
+                //Console.WriteLine("starting patch-wise correction");
 
                 // determine number of patches (per process)
-                if (NoOfPatchesPerProcess > 0) {
+                if(NoOfPatchesPerProcess > 0) {
                     NoPatches = NoOfPatchesPerProcess;
                 } else {
                     int NoOfCoordOnProc = mask.NoOfItemsLocally * m_Basis.Length;
-                    if (NoOfCoordOnProc > maxNoOfCoordinates) {
+                    if(NoOfCoordOnProc > maxNoOfCoordinates) {
                         NoPatches = (NoOfCoordOnProc / maxNoOfCoordinates) + 1;
                     }
                 }
@@ -810,23 +810,23 @@ namespace BoSSS.Foundation {
             //blocking.ElementAt(1)[0] = 5;
 
             // constrained projection on all patches
-            using (new RuntimeTracker("local_patch_projection",diagOutput0)) {
+            using(new RuntimeTracker("local_patch_projection", diagOutput0)) {
                 int pC = 0;
-                foreach (List<int> block in blocking) {
+                foreach(List<int> block in blocking) {
 
                     BitArray patchBA = new BitArray(J);
-                    foreach (int j in block) {
+                    foreach(int j in block) {
                         patchBA[j] = true;
                     }
                     CellMask patch = new CellMask(m_grd, patchBA);
                     patches.Add(patch);
 
-                    if (diagOutput0) {
+                    if(diagOutput0) {
                         Console.WriteLine("======================");
                         Console.WriteLine("project patch {0}: No of cells {1}", pC, patch.NoOfItemsLocally);
                     }
                     this.ProjectDGFieldOnPatch(DGField, patch, true, null);
-                    if (diagOutput0) {
+                    if(diagOutput0) {
                         double jumpNorm = CheckLocalProjection(patch);
                         Console.WriteLine("L2 jump norm = {0}", jumpNorm);
                     }
@@ -836,27 +836,27 @@ namespace BoSSS.Foundation {
 
             MPI.Wrappers.csMPI.Raw.Barrier(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
-            using (new RuntimeTracker("local_merge_projection",diagOutput0)) {
+            using(new RuntimeTracker("local_merge_projection", diagOutput0)) {
 
                 // continuity projection on patches within one process
-                if (NoPatches > 1) {
+                if(NoPatches > 1) {
 
                     // determine merging domain and 
                     // corresponding inner edges and on the boundary 
                     SubGrid maskSG = new SubGrid(mask);
                     EdgeMask innerEM = maskSG.InnerEdgesMask;
                     EdgeMask mergeEM = innerEM;
-                    foreach (CellMask patch in patches) {
+                    foreach(CellMask patch in patches) {
                         SubGrid maskPatch = new SubGrid(patch);
                         EdgeMask innerPatch = maskPatch.InnerEdgesMask;
                         mergeEM = mergeEM.Except(innerPatch);
                     }
 
                     BitArray mergePatchBA = new BitArray(J);
-                    foreach (var chunk in mergeEM) {
+                    foreach(var chunk in mergeEM) {
                         int j0 = chunk.i0;
                         int jE = chunk.JE;
-                        for (int j = j0; j < jE; j++) {
+                        for(int j = j0; j < jE; j++) {
                             int cell1 = m_grd.Edges.CellIndices[j, 0];
                             mergePatchBA[cell1] = true;
                             int cell2 = m_grd.Edges.CellIndices[j, 1];
@@ -866,13 +866,13 @@ namespace BoSSS.Foundation {
                     CellMask mergePatchCM = new CellMask(mask.GridData, mergePatchBA);
                     // add neighbours
                     BitArray mergePatchBA2 = new BitArray(J);
-                    foreach (var chunk in mergePatchCM) {
+                    foreach(var chunk in mergePatchCM) {
                         int j0 = chunk.i0;
                         int jE = chunk.JE;
-                        for (int j = j0; j < jE; j++) {
+                        for(int j = j0; j < jE; j++) {
                             mergePatchBA2[j] = true;
                             int[] neigh = m_grd.Cells.CellNeighbours[j];
-                            foreach (int jNeigh in neigh) {
+                            foreach(int jNeigh in neigh) {
                                 mergePatchBA2[jNeigh] = true;
                             }
                         }
@@ -888,7 +888,7 @@ namespace BoSSS.Foundation {
                     localProj._Acc(1.0, m_Coordinates, 0, stride, true);
 
 
-                    if (diagOutput0) {
+                    if(diagOutput0) {
                         Console.WriteLine("======================");
                         Console.WriteLine("project on merging patch: No of cells {0}; No of fixed edges {1}", mergePatchCM.NoOfItemsLocally, mergeBoundary.NoOfItemsLocally);
                     }
@@ -898,11 +898,11 @@ namespace BoSSS.Foundation {
                     //    Console.WriteLine("merge patch: L2 jump norm = {0}", jumpNorm);
                     //}
                     this.ProjectDGFieldOnPatch(DGField, mergePatchCM, true, mergeBoundary);
-                    if (diagOutput0) {
+                    if(diagOutput0) {
                         double jumpNorm = CheckLocalProjection(mergePatchCM);
                         Console.WriteLine("merge patch: L2 jump norm = {0}", jumpNorm);
                         int p = 0;
-                        foreach (CellMask patch in patches) {
+                        foreach(CellMask patch in patches) {
                             jumpNorm = CheckLocalProjection(patch);
                             Console.WriteLine("patch No {0}: L2 jump norm = {1}", p, jumpNorm);
                             p++;
@@ -999,7 +999,7 @@ namespace BoSSS.Foundation {
 
             }
 
-            using (new RuntimeTracker("interprocess_merge_projection",diagOutput0)) {
+            using(new RuntimeTracker("interprocess_merge_projection", diagOutput0)) {
                 //// projection of local projection on separate patches
                 //DGField exchangeProj = new SinglePhaseField(m_Basis, "exchangeProjection");
                 //exchangeProj._Acc(1.0, m_Coordinates, 0, m_Mapping.MaxTotalNoOfCoordinatesPerCell, true);
@@ -1466,12 +1466,12 @@ namespace BoSSS.Foundation {
         }
 
         private class RuntimeTracker : IDisposable {
-            public RuntimeTracker(string recordname,bool activate) {
+            public RuntimeTracker(string recordname, bool activate) {
                 m_activate = activate;
                 m_RuntimeSTW = new Stopwatch();
                 m_record = RuntimeRecord;
                 m_name = recordname;
-                if (m_activate) m_RuntimeSTW.Start();
+                if(m_activate) m_RuntimeSTW.Start();
             }
 
             private Stopwatch m_RuntimeSTW;
@@ -1482,14 +1482,14 @@ namespace BoSSS.Foundation {
             private double GetTime() {
                 double thisreturn = 0;
                 m_RuntimeSTW.Stop();
-                thisreturn=m_RuntimeSTW.Elapsed.TotalSeconds;
-                return thisreturn;      
+                thisreturn = m_RuntimeSTW.Elapsed.TotalSeconds;
+                return thisreturn;
             }
 
             private bool AddRecordIfNew() {
                 double time = GetTime();
-                bool IsNew = m_record.ContainsKey(m_name)==false;
-                if (IsNew)
+                bool IsNew = m_record.ContainsKey(m_name) == false;
+                if(IsNew)
                     m_record.Add(m_name, time);
                 else {
                     m_record[m_name] += time;
@@ -1498,7 +1498,8 @@ namespace BoSSS.Foundation {
             }
 
             public void Dispose() {
-                if (m_activate) AddRecordIfNew();
+                if(m_activate) 
+                    AddRecordIfNew();
                 m_RuntimeSTW = null;
             }
         }
