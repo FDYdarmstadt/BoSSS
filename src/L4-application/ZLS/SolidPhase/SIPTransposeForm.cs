@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    public class SIPTransposeForm : IVolumeForm, IEdgeForm, ISpeciesFilter, IEquationComponentCoefficient {
+    public class SIPTransposeForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
         double viscosity;
         string species;
         int d;
@@ -105,6 +105,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
             acc *= viscosity;
             return acc;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
     }
 }

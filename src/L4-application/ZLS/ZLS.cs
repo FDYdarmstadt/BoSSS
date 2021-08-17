@@ -48,15 +48,20 @@ namespace ZwoLevelSetSolver {
             DefineSolidPhase(D, opFactory, lsUpdater);
         }
 
+        //Artificial Viscosity Term in displacement transport equations
+        double displacementViscosity = 0.1;
+        //Viscosity Term in momentum balance equations
+        double momentumViscosity = 0.1;
+
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             
             for(int d = 0; d < D; ++d) {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D, 0.0));
-                    opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D));
+                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D, momentumViscosity));
+                    opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D, displacementViscosity));
                 }else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
-                    opFactory.AddEquation(new DisplacementEvolution("C", d, D));
+                    opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D, momentumViscosity));
+                    opFactory.AddEquation(new DisplacementEvolution("C", d, D, displacementViscosity));
                 } else {
                     throw new NotSupportedException();
                 }
@@ -78,15 +83,15 @@ namespace ZwoLevelSetSolver {
             //*
             for(int d = 0; d < D; ++d) {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "A", "C", d, D));
-                    opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "B", "C", d, D));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, 0.0));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, 0.0));
+                    opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "A", "C", d, D, displacementViscosity));
+                    opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "B", "C", d, D, displacementViscosity));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, momentumViscosity));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, momentumViscosity));
                 } else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D));
-                    opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
-                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, displacementViscosity));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, displacementViscosity));
+                    opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, momentumViscosity));
+                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, momentumViscosity));
                 } else {
                     throw new NotSupportedException();
                 }

@@ -28,23 +28,17 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
             AddComponent(convection);
 
-            //*
-            if(d == 0) {
-                var elasticTension = new LinearIncompressibleNeoHookeanX(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), material.Lame2);
-                AddComponent(elasticTension);
-            } else if(d == 1) {
-                var elasticTension = new LinearIncompressibleNeoHookeanY(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), material.Lame2);
-                AddComponent(elasticTension);
-            } else {
-                throw new Exception("Spatial Dimension not supported.");
-            }
-            //*/
-
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
 
-            var artificialViscosityForm = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
-            AddComponent(artificialViscosityForm);
+            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            AddComponent(eulerAlmansi0);
+
+            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            AddComponent(eulerAlmansi1);
+
+            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
+            AddComponent(viscosity);
         }
 
         public override string SpeciesName => speciesName;

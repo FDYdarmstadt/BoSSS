@@ -23,16 +23,7 @@ namespace ZwoLevelSetSolver.Boundary {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
-
-            if(d == 0) {
-                AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-                AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-            } else if(d == 1) {
-                AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-                AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-            } else {
-                throw new Exception("Spatial Dimension not supported.");
-            }
+            AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Lame2));
 
             //Penalty coupling
             AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
@@ -42,8 +33,7 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
-
-            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity));
+            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, 1, artificialViscosity));
         }
 
         public override string FirstSpeciesName => fluidSpecies;

@@ -85,7 +85,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penalty));
-
             double µ = penaltySizeFactor * penalty;
             if(µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");

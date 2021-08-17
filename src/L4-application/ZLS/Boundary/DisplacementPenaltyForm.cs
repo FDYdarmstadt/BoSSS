@@ -22,7 +22,7 @@ namespace ZwoLevelSetSolver.Boundary {
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             this.d = d;
-            variableNames = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
+            variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
         }
 
         public int LevelSetIndex => levelSetIndex;
@@ -74,7 +74,7 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            double flux = 1 * (_uIN[d] - _uOUT[d]) * (_vIN) * Penalty(inp.jCellIn, inp.jCellOut);
+            double flux = 1 * (_uIN[d] - _uOUT[d]) * (-_vOUT); // * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;
         }
     }

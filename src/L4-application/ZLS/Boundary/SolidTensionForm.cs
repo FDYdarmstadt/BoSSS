@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.Boundary {
-    class SolidTensionForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    class SolidTensionForm : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
         int levelSetIndex;
         string solidSpecies;
         string fluidSpecies;
@@ -18,13 +18,14 @@ namespace ZwoLevelSetSolver.Boundary {
         int d;
         double viscosity;
 
-        public SolidTensionForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double viscosity) {
+        public SolidTensionForm(string fluidSpecies, string solidSpecies, string[] variableNames, int d, int D, int levelSetIndex, double viscosity) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
+
             this.d = d;
             this.viscosity = viscosity;
-            variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
+            this.variableNames = variableNames;
         }
 
         public int LevelSetIndex => levelSetIndex;
@@ -81,10 +82,14 @@ namespace ZwoLevelSetSolver.Boundary {
             // ((fluidTension + solidTension) * n 
             for(int i = 0; i < D; i++) {
                 // = consistency terms
-                tension -= viscosity * (_Grad_uIN[d, i]) * inp.Normal[i];
+                tension -= 0.5 * viscosity * (_Grad_uIN[d, i] + _Grad_uOUT[d, i]) * inp.Normal[i];
             }
             tension *= 1 * (-_vOUT);
             return tension;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
     }
 }

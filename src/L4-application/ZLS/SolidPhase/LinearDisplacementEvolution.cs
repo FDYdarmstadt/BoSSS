@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public LinearDisplacementEvolution(string speciesName, int d, int D) {
+        public LinearDisplacementEvolution(string speciesName, int d, int D, double artificialViscosity) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -26,6 +26,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(convection);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+
+            AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);
