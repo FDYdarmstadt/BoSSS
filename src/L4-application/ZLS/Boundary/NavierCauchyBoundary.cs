@@ -14,7 +14,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string solidSpecies;
         string codomainName;
 
-        public NavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, Solid material, double rho_fluid, double viscosity) {
+        public NavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, Solid material, double rho_fluid, double viscosity, double artificialViscosity) {
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -25,22 +25,15 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Stress equality
             //AddComponent(new IncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, 1, d, viscosity, material.Lame2));
-            if (d == 0) {
-                AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-                AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormX(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-            } else if (d == 1) {
-                AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-                AddComponent(new FluidLinearIncompressibleNeoHookeanBoundaryFormY(fluidSpecies, solidSpecies, 1, viscosity, material.Lame2));
-            } else {
-                throw new Exception("Spatial Dimension not supported.");
-            }
-            
+            AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Lame2));
 
             //Penalty coupling
             AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
 
             AddComponent(new NonLinearSolidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), material.Density, D, 1, fluidSpecies, solidSpecies));
             AddComponent(new NonLinearFluidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), rho_fluid, D, 1, fluidSpecies, solidSpecies));
+            
+            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, 1, artificialViscosity));
         }
 
         public override string FirstSpeciesName => fluidSpecies;

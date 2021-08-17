@@ -1215,10 +1215,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
-            double v0 = 0.1;
+            double v0 = 0.00;
             C.InitialValues_Evaluators.Add("VelocityX#A", X => v0);
             C.InitialValues_Evaluators.Add("VelocityX#B", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0.102);
+            C.InitialValues_Evaluators.Add("VelocityX#C", X => v0);
             #endregion
 
 
@@ -1235,7 +1235,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double vmax = 0.01;
             double inflow(double[] x, double t) {
-                    return vmax * R(t);
+                    return v0 + R(t) * vmax;
             }
 
 
@@ -1291,7 +1291,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 1e-2;

@@ -12,7 +12,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string solidSpecies;
         string codomainName;
 
-        public LinearDisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D) {
+        public LinearDisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double artificialViscosity) {
             codomainName = ZwoLevelSetSolver.EquationNames.DisplacementEvolutionComponent(d);
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -22,6 +22,7 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
+            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
         }
 
         public override string FirstSpeciesName => fluidSpecies;
