@@ -58,16 +58,17 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double xSize = 2;
             double ySize = 2;
 
-            //C.GridFunc = delegate () {
+            C.GridFunc = delegate ()
+            {
 
-            //    double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
-            //    double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
 
-            //    var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
 
-            //    return grd;
+                return grd;
 
-            //};
+            };
 
 
             #endregion

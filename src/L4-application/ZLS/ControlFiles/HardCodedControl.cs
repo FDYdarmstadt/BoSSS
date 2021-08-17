@@ -1775,7 +1775,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // DG degrees
             // ==========
             #region degrees
-            C.SetDGdegree(p);
+            //C.SetDGdegree(p);
 
             #endregion
 
@@ -1955,7 +1955,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 0.5;
-            C.NoOfTimesteps = 30;
+            C.NoOfTimesteps = 1;
             C.saveperiod = 1;
 
             #endregion

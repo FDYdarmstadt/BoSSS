@@ -39,16 +39,17 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => species;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+        {
             double acc1 = 0.0;
-            
+
             double dirichletX = 0;
             double dirichletY = 0;
 
-            acc1 += -2 * _Grad_uIN[1, 1] * inp.Normal[0] * (_vIN);
-            acc1 +=  (_Grad_uIN[1, 0] + _Grad_uIN[0, 1]) * inp.Normal[1] * (_vIN);
+            acc1 += (1 - 2 * _Grad_uIN[1, 1] * inp.Normal[0]) * (_vIN);
+            acc1 += (_Grad_uIN[1, 0] + _Grad_uIN[0, 1]) * inp.Normal[1] * (_vIN);
 
-            acc1 += -2 *(_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1] - dirichletY);
+            acc1 += (1 - 2 * (_Grad_vIN[0])) * inp.Normal[1] * (_uIN[1] - dirichletY);
             acc1 += (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0] - dirichletX);
             acc1 += (_Grad_vIN[1]) * inp.Normal[0] * (_uIN[1] - dirichletY);
 
@@ -59,6 +60,27 @@ namespace ZwoLevelSetSolver.SolidPhase {
             return viscosity * acc1;
 
         }
+        //public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+        //{
+        //    double acc1 = 0.0;
+
+        //    double dirichletX = 0;
+        //    double dirichletY = 0;
+
+        //    acc1 += -2 * _Grad_uIN[1, 1] * inp.Normal[0] * (_vIN);
+        //    acc1 += (_Grad_uIN[1, 0] + _Grad_uIN[0, 1]) * inp.Normal[1] * (_vIN);
+
+        //    acc1 += -2 * (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[1] - dirichletY);
+        //    acc1 += (_Grad_vIN[1]) * inp.Normal[1] * (_uIN[0] - dirichletX);
+        //    acc1 += (_Grad_vIN[1]) * inp.Normal[0] * (_uIN[1] - dirichletY);
+
+        //    acc1 *= -1;
+        //    double pnlty = Penalty(inp.jCellIn, -1);
+
+        //    acc1 += (_uIN[0] - dirichletX) * (_vIN) * pnlty;
+        //    return viscosity * acc1;
+
+        //}
 
         MultidimensionalArray cj;
 
@@ -92,14 +114,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
             return µ;
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        {
             double acc1 = 0.0;
 
             //adj(grad U)
-            acc1 += -2 * 0.5 * (_Grad_uIN[1, 1] + _Grad_uOUT[1,1]) * inp.Normal[0] * (_vIN - _vOUT);
-            acc1 += 0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1,0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[1] * (_vIN - _vOUT);
+            acc1 += (1 - 2 * 0.5 * (_Grad_uIN[1, 1] + _Grad_uOUT[1, 1])) * inp.Normal[0] * (_vIN - _vOUT);
+            acc1 += 0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1, 0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[1] * (_vIN - _vOUT);
 
-            acc1 += -2 * 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[1] * (_uIN[1] - _uOUT[1]);
+            acc1 += (1 - 2 * 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0])) * inp.Normal[1] * (_uIN[1] - _uOUT[1]);
             acc1 += 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[1] * (_uIN[0] - _uOUT[0]);
             acc1 += 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[0] * (_uIN[1] - _uOUT[1]);
 
@@ -107,17 +130,47 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
             acc1 += (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * pnlty;
-            return viscosity* acc1;
+            return viscosity * acc1;
         }
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+        //public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        //{
+        //    double acc1 = 0.0;
+
+        //    //adj(grad U)
+        //    acc1 += -2 * 0.5 * (_Grad_uIN[1, 1] + _Grad_uOUT[1, 1]) * inp.Normal[0] * (_vIN - _vOUT);
+        //    acc1 += 0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1, 0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[1] * (_vIN - _vOUT);
+
+        //    acc1 += -2 * 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[1] * (_uIN[1] - _uOUT[1]);
+        //    acc1 += 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[1] * (_uIN[0] - _uOUT[0]);
+        //    acc1 += 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[0] * (_uIN[1] - _uOUT[1]);
+
+        //    acc1 *= -1;
+
+        //    double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
+        //    acc1 += (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * pnlty;
+        //    return viscosity * acc1;
+        //}
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
 
             //adj(grad U)
-            double acc = -2 * GradU[1, 1] * GradV[0] + (GradU[0, 1] + GradU[1,0]) * GradV[1];
+            double acc = (1 - 2 * GradU[1, 1]) * GradV[0] + (GradU[0, 1] + GradU[1, 0]) * GradV[1];
 
             acc *= viscosity;
             return acc;
         }
+
+        //public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        //{
+
+        //    //adj(grad U)
+        //    double acc = -2 * GradU[1, 1] * GradV[0] + (GradU[0, 1] + GradU[1, 0]) * GradV[1];
+
+        //    acc *= viscosity;
+        //    return acc;
+        //}
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
@@ -154,25 +207,46 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => species;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+        {
             double acc1 = 0.0;
 
             double dirichletX = 0;
             double dirichletY = 0;
 
-            acc1 += -2 * (_Grad_uIN[0, 0]) * inp.Normal[1] * (_vIN);
+            acc1 += (1 - 2 * (_Grad_uIN[0, 0])) * inp.Normal[1] * (_vIN);
             acc1 += (_Grad_uIN[1, 0] + _Grad_uIN[0, 1]) * inp.Normal[0] * (_vIN);
 
-            acc1 += -2 * (_Grad_vIN[1]) * inp.Normal[0] * (_uIN[0] - dirichletX);
-            acc1 +=(_Grad_vIN[0]) * inp.Normal[1] * (_uIN[0] - dirichletX);
+            acc1 += (1 - 2 * (_Grad_vIN[1])) * inp.Normal[0] * (_uIN[0] - dirichletX);
+            acc1 += (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[0] - dirichletX);
             acc1 += (_Grad_vIN[0]) * inp.Normal[0] * (_uIN[1] - dirichletY);
 
             acc1 *= -1;
 
             double pnlty = Penalty(inp.jCellIn, -1);
-            acc1 += (_uIN[1] - dirichletY) * (_vIN) *  pnlty ;
+            acc1 += (_uIN[1] - dirichletY) * (_vIN) * pnlty;
             return acc1 * viscosity;
         }
+        //public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+        //{
+        //    double acc1 = 0.0;
+
+        //    double dirichletX = 0;
+        //    double dirichletY = 0;
+
+        //    acc1 += -2 * (_Grad_uIN[0, 0]) * inp.Normal[1] * (_vIN);
+        //    acc1 += (_Grad_uIN[1, 0] + _Grad_uIN[0, 1]) * inp.Normal[0] * (_vIN);
+
+        //    acc1 += -2 * (_Grad_vIN[1]) * inp.Normal[0] * (_uIN[0] - dirichletX);
+        //    acc1 += (_Grad_vIN[0]) * inp.Normal[1] * (_uIN[0] - dirichletX);
+        //    acc1 += (_Grad_vIN[0]) * inp.Normal[0] * (_uIN[1] - dirichletY);
+
+        //    acc1 *= -1;
+
+        //    double pnlty = Penalty(inp.jCellIn, -1);
+        //    acc1 += (_uIN[1] - dirichletY) * (_vIN) * pnlty;
+        //    return acc1 * viscosity;
+        //}
 
         MultidimensionalArray cj;
 
@@ -206,14 +280,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
             return µ;
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        {
             double acc1 = 0.0;
 
             //adj(grad U)
-            acc1 +=  -2 * 0.5 * (_Grad_uIN[0, 0] + _Grad_uOUT[0, 0]) * inp.Normal[1] * (_vIN - _vOUT);
-            acc1 +=  0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1, 0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[0] * (_vIN - _vOUT);
+            acc1 += (1 - 2 * 0.5 * (_Grad_uIN[0, 0] + _Grad_uOUT[0, 0])) * inp.Normal[1] * (_vIN - _vOUT);
+            acc1 += 0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1, 0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[0] * (_vIN - _vOUT);
 
-            acc1 += -2 * 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[0] * (_uIN[0] - _uOUT[0]);
+            acc1 += (1 - 2 * 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1])) * inp.Normal[0] * (_uIN[0] - _uOUT[0]);
             acc1 += 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[1] * (_uIN[0] - _uOUT[0]);
             acc1 += 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[0] * (_uIN[1] - _uOUT[1]);
 
@@ -223,14 +298,42 @@ namespace ZwoLevelSetSolver.SolidPhase {
             acc1 += (_uIN[1] - _uOUT[1]) * (_vIN - _vOUT) * pnlty;
             return acc1 * viscosity;
         }
+        //public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+        //{
+        //    double acc1 = 0.0;
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+        //    //adj(grad U)
+        //    acc1 += - 2 * 0.5 * (_Grad_uIN[0, 0] + _Grad_uOUT[0, 0]) * inp.Normal[1] * (_vIN - _vOUT);
+        //    acc1 += 0.5 * (_Grad_uIN[1, 0] + _Grad_uOUT[1, 0] + _Grad_uIN[0, 1] + _Grad_uOUT[0, 1]) * inp.Normal[0] * (_vIN - _vOUT);
 
-            double acc = (GradU[1, 0] + GradU[0, 1] )* GradV[0] - 2 * GradU[0, 0] * GradV[1];
+        //    acc1 += -2 * 0.5 * (_Grad_vIN[1] + _Grad_vOUT[1]) * inp.Normal[0] * (_uIN[0] - _uOUT[0]);
+        //    acc1 += 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[1] * (_uIN[0] - _uOUT[0]);
+        //    acc1 += 0.5 * (_Grad_vIN[0] + _Grad_vOUT[0]) * inp.Normal[0] * (_uIN[1] - _uOUT[1]);
+
+        //    acc1 *= -1;
+
+        //    double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
+        //    acc1 += (_uIN[1] - _uOUT[1]) * (_vIN - _vOUT) * pnlty;
+        //    return acc1 * viscosity;
+        //}
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        {
+
+            double acc = (GradU[1, 0] + GradU[0, 1]) * GradV[0] + (1 - 2 * GradU[0, 0]) * GradV[1];
 
             acc *= viscosity;
             return acc;
         }
+
+        //public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+        //{
+
+        //    double acc = (GradU[1, 0] + GradU[0, 1]) * GradV[0] - 2 * GradU[0, 0] * GradV[1];
+
+        //    acc *= viscosity;
+        //    return acc;
+        //}
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };

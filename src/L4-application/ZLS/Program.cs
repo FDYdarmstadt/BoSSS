@@ -10,11 +10,15 @@ namespace ZwoLevelSetSolver {
 
         static void Main(string[] args) {
 
-            ZLS._Main(args, false, delegate () {
+            ZLS._Main(args, false, delegate ()
+            {
                 //Control file from runtime via args
                 var p = new ZLS();
                 return p;
             });
+            //ZLS.InitMPI();
+            //ConditionNumber.ConditionNumberScaling();
         }
+
     }
 }
