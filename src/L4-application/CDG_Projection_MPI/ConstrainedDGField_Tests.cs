@@ -22,13 +22,14 @@ namespace CDG_Projection_MPI {
     class ConstrainedDGField_Tests : ConstrainedDGField {
         static void Main(string[] args) {
             Application.InitMPI();
-            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 15, GeomShape.Cube);
-            //ProjectionPseudo1D(ProjectionStrategy.patchwiseOnly, 40);
+            //Application.DeleteOldPlotFiles();
+            //Projection(ProjectionStrategy.patchwiseOnly, 3, 12, GeomShape.Cube);
+            ProjectionPseudo1D(ProjectionStrategy.patchwiseOnly, 10);
             Application.FinalizeMPI();
         }
 
         private static void ZeroPivotWithPardiso() {
-            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 10, GeomShape.Sphere);
+            Projection(ProjectionStrategy.patchwiseOnly, 3, 10, GeomShape.Sphere);
         }
 
         public enum GeomShape {
@@ -37,6 +38,17 @@ namespace CDG_Projection_MPI {
         }
 
         private ConstrainedDGField_Tests(Basis b) : base(b) { }
+
+
+        private static GridCommons CreateGrid(int Res, int Dim) {
+            switch(Dim) {
+                case 1: return Create1DGrid(Res);
+                case 2: return Create2DGrid(Res);
+                case 3: return Create3Dgrid(Res);
+                default: throw new ArgumentOutOfRangeException("Un-supported spatial dimension: " + Dim);
+            }
+        }
+
 
         private static Grid3D Create3Dgrid(int Res) {
             int xMin = -1;
@@ -92,11 +104,12 @@ namespace CDG_Projection_MPI {
         private static Func<double[], double> GenCube(int Dim, double particleRad) {
             int power = 10;
             double angle = 0.7;
-            switch (Dim) {
+            switch(Dim) {
                 case 2:
-                    return (double[] X) =>
-                        -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle))) + particleRad;
+                return (double[] X) =>
+                    -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
+                    Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle))) + particleRad;
+                
                 case 3:
                 return (double[] X) =>
                 -Math.Pow(Math.Pow((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle), power)
@@ -110,7 +123,7 @@ namespace CDG_Projection_MPI {
                 default:
                 throw new NotSupportedException();
             }
-            
+
         }
 
         private static Func<double[], double> GenSphere(int Dim, double particleRad) {
@@ -135,9 +148,9 @@ namespace CDG_Projection_MPI {
             }
         }
 
-        static public void ProjectionIn3D(ProjectionStrategy PStrategy, int GridRes, GeomShape shape) {
+        static public void Projection(ProjectionStrategy PStrategy, int Dim, int GridRes, GeomShape shape) {
             // Arrange -- Grid
-            var grid = Create3Dgrid(GridRes);
+            var grid = CreateGrid(GridRes, Dim);
             // Arrange -- target field
             double particleRad = 0.625;
             var DGBasis = new Basis(grid, 2);
@@ -146,7 +159,7 @@ namespace CDG_Projection_MPI {
             //var mask = CellMask.GetFullMask(grid.GridData);
             var FGenerator = FuncGenerator(shape, grid.GridData.SpatialDimension);
             var mask = ComputeNarrowband(grid, particleRad, FGenerator);
-            Console.WriteLine("Cells in mask: "+mask.NoOfItemsLocally.MPISum());
+            Console.WriteLine("Cells in mask: " + mask.NoOfItemsLocally.MPISum());
             Console.WriteLine("edges in mask: " + mask.AllEdges().NoOfItemsLocally.MPISum());
 
             // Arrange -- source field
@@ -157,7 +170,7 @@ namespace CDG_Projection_MPI {
 
             // Act -- Do the CG-projection
             CDGTestField.Setup();
-            CDGTestField.SetDGCoordinatesOnce(mask, field);
+            CDGTestField.SetDGCoordinatesOnce(field, CellMask.GetFullMask(grid.GridData));
             double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump norm of initial: " + jumpNorm_before);
             switch (PStrategy) {
@@ -165,19 +178,21 @@ namespace CDG_Projection_MPI {
                     CDGTestField.ProjectDGFieldGlobal(mask);
                 break;
                 case ProjectionStrategy.patchwiseOnly:                  
-                    var PrjMasks = CDGTestField.ProjectDGField_patchwise(mask,2);
+                    var PrjMasks = CDGTestField.ProjectDGField_patchwise(mask, 2); 
                     //BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
                 break;
             }
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump Norm after total projection: "+ jumpNorm_after);
 
-            if (CDGTestField.ProjectionSnapshots != null) BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+            if (CDGTestField.ProjectionSnapshots != null) 
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+            
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
 
-
+        /*
         static public void ProjectionIn2D(ProjectionStrategy PStrategy, int GridRes, GeomShape shape) {
             // Arrange -- Grid
             var grid = Create2DGrid(GridRes);
@@ -224,6 +239,8 @@ namespace CDG_Projection_MPI {
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
+        */
+
 
         static public void ProjectionPseudo1D(ProjectionStrategy PStrategy, int GridRes) {
             // Arrange -- Grid
@@ -232,13 +249,13 @@ namespace CDG_Projection_MPI {
             int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
             int numOfCells = GridRes * NoOfCores;
             double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells);
-            var grid = Grid2D.Cartesian2DGrid(xNodes, xNodes);
+            var grid = Grid2D.Cartesian2DGrid(xNodes, new double[] { -1, 1 });
 
             // Arrange -- initial DG projection
             var BasisDG = new Basis(grid, 0);
             var BasisCDG = new Basis(grid, 2);
             var CDGTestField = new ConstrainedDGField_Tests(BasisCDG);
-            double slope = 0.6;
+            //double slope = 0.6;
             //Func<double[],double> ProjFunc = (double[] X) => X[0]* slope * (X[0]<=0.0?1:-1) + slope;
             Func<double[], double> ProjFunc = (double[] X) => X[0];
             var mask = CellMask.GetFullMask(grid.GridData);
@@ -248,7 +265,7 @@ namespace CDG_Projection_MPI {
 
             // Act -- Do the CG-projection
             CDGTestField.Setup();
-            CDGTestField.SetDGCoordinatesOnce(mask, field);
+            CDGTestField.SetDGCoordinatesOnce(field, mask);
             double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump norm of initial: " + jumpNorm_before);
 
@@ -257,7 +274,8 @@ namespace CDG_Projection_MPI {
                 CDGTestField.ProjectDGFieldGlobal(mask);
                 break;
                 case ProjectionStrategy.patchwiseOnly:
-                CDGTestField.ProjectDGField_patchwise(mask, 1);
+                var dbgFields = CDGTestField.ProjectDGField_patchwise(mask, 2);
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(dbgFields, "debug", 0.0, 1);
                 break;
             }
 
@@ -288,7 +306,7 @@ namespace CDG_Projection_MPI {
             interproc.SaveToTextFile("interproc");
             proclocal.SaveToTextFile("proclocal");
 
-            // BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+            BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }

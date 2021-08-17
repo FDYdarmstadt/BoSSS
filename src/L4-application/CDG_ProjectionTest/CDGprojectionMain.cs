@@ -34,7 +34,9 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.CDG_ProjectionTest {
 
-
+    /// <summary>
+    /// Tests for <see cref="BoSSS.Foundation.ConstrainedDGprojection.ConstrainedDGField"/>
+    /// </summary>
     public class CDGprojectionMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {

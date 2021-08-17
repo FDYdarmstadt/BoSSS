@@ -22,16 +22,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ilPSP;
-using ilPSP.Connectors.Matlab;
-using ilPSP.Utils;
 using ilPSP.LinSolvers;
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Quadrature;
-using System.Diagnostics;
 using MPI.Wrappers;
-using ilPSP.Kraypis;
 
 namespace BoSSS.Foundation.ConstrainedDGprojection {
     public static class SolverUtils {
