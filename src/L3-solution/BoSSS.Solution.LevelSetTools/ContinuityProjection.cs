@@ -74,7 +74,7 @@ namespace BoSSS.Solution.LevelSetTools {
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, DGBasis.Degree + 1);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((GridData)gridData, DGBasis.Degree + 1);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
@@ -241,9 +241,9 @@ namespace BoSSS.Solution.LevelSetTools {
 
     }
 
-
-
-
+    /// <summary>
+    /// Driver interface
+    /// </summary>
     interface IContinuityProjection {
         void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain);
     }

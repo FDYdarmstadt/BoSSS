@@ -440,9 +440,10 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField
-            var returnFields = cdgField.ProjectDGField(origin, domain);
-            if (!returnFields.IsNullOrEmpty())
-                Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
+            //var returnFields = cdgField.ProjectDGField(origin, domain);
+            cdgField.ProjectDGField(origin, domain);
+            //if (!returnFields.IsNullOrEmpty())
+            //    Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
             cdgField.AccToDGField(1.0, result, domain);
 
             var errField = origin.CloneAs();
