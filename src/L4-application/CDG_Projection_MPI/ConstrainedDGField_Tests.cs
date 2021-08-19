@@ -23,8 +23,8 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            Projection(ProjectionStrategy.globalOnly, 2, 10, GeomShape.Cube);
-            //ProjectionPseudo1D(ProjectionStrategy.patchwiseOnly, 10);
+            Projection(ProjectionStrategy.globalOnly, 3, 10, GeomShape.Cube);
+            //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
             Application.FinalizeMPI();
         }
 
@@ -170,10 +170,11 @@ namespace CDG_Projection_MPI {
             for(int i = 0; i < 5; i++) {
                 SinglePhaseField Rest;
                 if(BestApprox == null) {
-                    Rest = field;
-                } else {
                     Rest = field.CloneAs();
-                    Rest.AccLaidBack(-1.0, BestApprox);
+                } else {
+                    Rest = BestApprox.CloneAs();
+                    Rest.AccLaidBack(-1.0, field);
+                    Rest.Scale(-1.0);
                 }
 
 
@@ -194,12 +195,14 @@ namespace CDG_Projection_MPI {
                 CDGTestField.ProjectDGField(Rest);
                 
                 
-                double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
-                Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
+                //double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
+                //Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
 
                 if(BestApprox == null) {
                     BestApprox = new SinglePhaseField(CDGTestField.Basis, "C0approx");
                     CDGTestField.AccToDGField(1.0, BestApprox);
+                    double l2Correction = BestApprox.L2Norm();
+                    Console.WriteLine("===================== L2 norm correction " + i + ": " + l2Correction);
                 } else {
                     var next = new SinglePhaseField(CDGTestField.Basis, "C0approx");
                     CDGTestField.AccToDGField(1.0, next);
@@ -207,11 +210,12 @@ namespace CDG_Projection_MPI {
                     next.Acc(1.0, BestApprox);
                     BestApprox = next;
 
-                    Console.WriteLine("========= L2 norm correction: " + l2Correction);
+                    Console.WriteLine("===================== L2 norm correction " + i + ": " + l2Correction);
                 }
 
 
-                BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap-" + i, 0.0, 2);
+
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap-" + i, 0.0, 3);
             }
 
             // Assert -- effective inter process projection
@@ -240,61 +244,84 @@ namespace CDG_Projection_MPI {
             // Arrange -- initial DG projection
             var BasisDG = new Basis(grid, 0);
             var BasisCDG = new Basis(grid, 2);
-            var CDGTestField =  Factory(BasisCDG, mask, PStrategy); 
-            //double slope = 0.6;
-            //Func<double[],double> ProjFunc = (double[] X) => X[0]* slope * (X[0]<=0.0?1:-1) + slope;
+
+            
+            //var CDGTestField =  Factory(BasisCDG, mask, PStrategy); 
             Func<double[], double> ProjFunc = (double[] X) => X[0];
             var field = new SinglePhaseField(BasisDG, "DG");
             var ProjF = NonVectorizedScalarFunction.Vectorize(ProjFunc);
             field.ProjectField(ProjF);
 
             // Act -- Do the CG-projection
-            CDGTestField.SetDGCoordinatesOnce(field, mask);
-            double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
-            Console.WriteLine("jump norm of initial: " + jumpNorm_before);
+            //CDGTestField.SetDGCoordinatesOnce(field, mask);
+            //double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
+            //Console.WriteLine("jump norm of initial: " + jumpNorm_before);
 
-            //switch (PStrategy) {
-            //    case ProjectionStrategy.globalOnly:
-            //    CDGTestField.ProjectDGField_global(mask, mask);
-            //    break;
-            //    case ProjectionStrategy.patchwiseOnly:
-            //    CDGTestField.ProjectDGField_patchwise(mask, 2);
-            //    break;
-            //}
+            /*
             CDGTestField.ProjectDGField(field);
 
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
-
-            /*
-            //var Aux1DGrid = Create1DGrid(GridRes);
-            //var field1D = new SinglePhaseField(new Basis(Aux1DGrid, 2));
-            double[] XCoor = GenericBlas.Linspace(xMin+1E-4, xMax - 1E-4, GridRes * 10);
-            var inital = MultidimensionalArray.Create(XCoor.Length, 2);
-            var interproc = MultidimensionalArray.Create(XCoor.Length, 2);
-            var proclocal = MultidimensionalArray.Create(XCoor.Length, 2);
-            var FieldDingen = new FieldEvaluation(grid.GridData);
-            double LineplotAt = 0.0;
-            for (int i=0;i<XCoor.Length;i++) {
-                inital[i, 1] = XCoor[i];
-                interproc[i, 1] = XCoor[i];
-                proclocal[i, 1] = XCoor[i];
-                //Results[i, 0]=FieldDingen.Evaluate(new Vector(XCoor[i],0.0),field);
-                inital[i, 0] = field.ProbeAt(XCoor[i], LineplotAt);
-                interproc[i, 0] = CDGTestField.ProjectionSnapshots[2].ProbeAt(XCoor[i], LineplotAt);
-                proclocal[i, 0] = CDGTestField.ProjectionSnapshots.Last().ProbeAt(XCoor[i], LineplotAt);
-            }
-
-            //double alpha, IEnumerable< DGField > Flds, MultidimensionalArray Points, double beta, MultidimensionalArray Result, BitArray UnlocatedPoints = null, int[] LocalCellIndices = null
-
-            inital.SaveToTextFile("initial");
-            interproc.SaveToTextFile("interproc");
-            proclocal.SaveToTextFile("proclocal");
             */
 
-            var cgField = new SinglePhaseField(CDGTestField.Basis, "CG");
-            CDGTestField.AccToDGField(1.0, cgField);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { cgField, field }, "PrjSnap", 0.0, 2);
+            SinglePhaseField BestApprox = null;
+            for(int i = 0; i < 5; i++) {
+                SinglePhaseField Rest;
+                if(BestApprox == null) {
+                    Rest = field.CloneAs();
+                } else {
+                    Rest = BestApprox.CloneAs();
+                    Rest.AccLaidBack(-1.0, field);
+                    Rest.Scale(-1.0);
+                }
+
+
+                var CDGTestField = Factory(BasisCDG, mask, PStrategy); 
+                CDGTestField.SetDGCoordinatesOnce(Rest, CellMask.GetFullMask(grid.GridData));
+                double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
+                Console.WriteLine("jump norm of initial: " + jumpNorm_before);
+                
+                //switch(PStrategy) {
+                //    case ProjectionStrategy.globalOnly:
+                //    CDGTestField.ProjectDGField_global(mask, mask);
+                //    break;
+                //    case ProjectionStrategy.patchwiseOnly:
+                //    CDGTestField.ProjectDGField_patchwise(mask, 2);
+                //    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
+                //    break;
+                //}
+                CDGTestField.ProjectDGField(Rest);
+                
+                
+                //double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
+                //Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
+
+                if(BestApprox == null) {
+                    BestApprox = new SinglePhaseField(CDGTestField.Basis, "C0approx");
+                    CDGTestField.AccToDGField(1.0, BestApprox);
+                    double l2Correction = BestApprox.L2Norm();
+                    double dist = BestApprox.L2Distance(field);
+                    Console.WriteLine("===================== L2 norm correction " + i + ": " + l2Correction + "\t" + dist);
+                } else {
+                    var next = new SinglePhaseField(CDGTestField.Basis, "C0approx");
+                    CDGTestField.AccToDGField(1.0, next);
+                    double l2Correction = next.L2Norm();
+                    next.Acc(1.0, BestApprox);
+                    BestApprox = next;
+                    double dist = BestApprox.L2Distance(field);
+
+                    Console.WriteLine("===================== L2 norm correction " + i + ": " + l2Correction + "\t" + dist);
+                }
+
+
+
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap-" + i, 0.0, 2);
+            }
+            
+
+            //var cgField = new SinglePhaseField(CDGTestField.Basis, "CG");
+            //CDGTestField.AccToDGField(1.0, cgField);
+            //BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { cgField, field }, "PrjSnap", 0.0, 2);
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }

@@ -482,15 +482,13 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     AT.SpMV(-1.0, v, 0.0, x);
                     x.AccV(1.0, remainder);
 
-                    //{
-                    //    SinglePhaseField correction = new SinglePhaseField(this.m_Basis, "correction" + correctionCounter);
-                    //    //SinglePhaseField tmp = new SinglePhaseField(this.m_Basis, "tmp" + correctionCounter);
-                    //    //tmp.CoordinateVector.AccV(1.0, m_Coordinates);
-                    //    correctionCounter++;
-                    //    correction.CoordinateVector.Acc(1.0, x);
-                    //    //correction.Acc(1.0, tmp, mask);
-                    //    this.ProjectionSnapshots.Add(correction);
-                    //}
+                    // x must be orthogonal to (x-remainder)
+                    double[] R = remainder.CloneAs();
+                    R.AccV(-1.0, x);
+                    double tst = x.InnerProd(R);
+                    Console.WriteLine("--- scalar prod: " + tst);
+
+                    
 
                     foreach(int j in Patch.ItemEnum) {
                         int Np = m_Basis.GetLength(j);
@@ -500,8 +498,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
                     }
 
-                    //m_Coordinates.AccV(1.0, x);
-
+                 
 
                     double jumpNorm = owner.CheckLocalProjection(this.comm, this.Patch, true);
                     if(owner.diagnosticOutput)
