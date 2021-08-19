@@ -115,6 +115,31 @@ namespace BoSSS.Application.LoadBalancingTest {
         /// </summary>
         const double alpha_B = 3.5;
 
+
+        /// <summary>
+        /// update of level-set
+        /// </summary>
+        class LevelSetTimestepping : ISlaveTimeIntegrator {
+
+            public LevelSetTimestepping(LoadBalancingTestMain __owner) {
+                m_owner = __owner;
+            }
+            LoadBalancingTestMain m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                throw new NotImplementedException();
+            }
+
+            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+
+                return m_owner.DelUpdateLevelset(CurrentState, phystime, dt, UnderRelax, incremental);
+            }
+        }
+
         /// <summary>
         /// Sets level-set and solution at time (<paramref name="time"/> + <paramref name="dt"/>).
         /// </summary>
@@ -190,7 +215,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     Op,
                     new DGField[] { u }, new DGField[] { uResidual },
                     TimeSteppingScheme.BDF3,
-                    this.DelUpdateLevelset, LevelSetHandling.LieSplitting,
+                    () => new LevelSetTimestepping(this), LevelSetHandling.LieSplitting,
                     MultigridOperatorConfig, MultigridSequence,
                     _AgglomerationThreshold: this.THRESHOLD,
                     LinearSolver: this.Control.LinearSolver, NonLinearSolver: this.Control.NonLinearSolver);

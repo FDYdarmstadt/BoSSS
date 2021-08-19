@@ -3345,11 +3345,11 @@ namespace BoSSS.Solution {
         /// <summary>
         /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        public double GetFixedTimestep() {
+        virtual public double GetTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
             } else {
-                throw new ApplicationException(
+                throw new NotSupportedException(
                     "Cannot get time-step from control object, since there is no control object specified.");
             }
         }

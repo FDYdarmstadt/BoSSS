@@ -821,9 +821,6 @@ namespace BoSSS.Foundation.XDG {
 
                     // pass 1: determine agglomeration sources
                     // ---------------------------------------
-
-
-
                     List<int> AgglomCellsList = new List<int>();
                     {
                         // for the present timestep
