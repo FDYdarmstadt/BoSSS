@@ -188,15 +188,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </param>
         abstract public void ProjectDGField(ConventionalDGField orgDGField);
 
-        //private void SaveDGFieldForDebugging(DGField field) {
-        //    if(field == null)
-        //        return;
-        //    var tmp = field.CloneAs();
-        //    tmp.Identification = "projection_" + ProjectionSnapshots.Count();
-        //    ProjectionSnapshots.Add(tmp);
-        //}
-
-
         /// <summary>
         /// sets the internal DG coordinates from <paramref name="orgDGField"/>
         /// </summary>
@@ -1032,20 +1023,45 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
 
         bool diagOutput0 = true;
+=======
+        bool diagOutput0 = false;
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
         bool diagOutput1 = false;
         //bool diagOutput2 = true;
 
         bool diagOutputMatlab = false;
 
 
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
         public DGField[] ProjectDGField_patchwise(CellMask mask = null, int NoOfPatchesPerProcess = 0) {
 
             if (diagOutput0)
                 Console.WriteLine("starting patch-wise correction");
 
             int J = m_grd.CellPartitioning.LocalLength;
+=======
+            List<CellMask> patches = new List<CellMask>();
+            int NoPatches = 1;
+            List<DGField> returnFields = new List<DGField>();
+            int J = m_grd.CellPartitioning.LocalLength;
+            IEnumerable<List<int>> blocking = null;
+
+            using(new RuntimeTracker("patch_partitioning", diagOutput0)) {
+                //Console.WriteLine("starting patch-wise correction");
+
+                // determine number of patches (per process)
+                if(NoOfPatchesPerProcess > 0) {
+                    NoPatches = NoOfPatchesPerProcess;
+                } else {
+                    int NoOfCoordOnProc = mask.NoOfItemsLocally * m_Basis.Length;
+                    if(NoOfCoordOnProc > maxNoOfCoordinates) {
+                        NoPatches = (NoOfCoordOnProc / maxNoOfCoordinates) + 1;
+                    }
+                }
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
 
             // determine number of patches (per process)
             int NoPatches = 1;
@@ -1071,6 +1087,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             blocking.ElementAt(0).RemoveAt(0);
 
             // constrained projection on all patches
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
             List<CellMask> patches = new List<CellMask>();
             int pC = 0;
             foreach (List<int> block in blocking) {
@@ -1090,12 +1107,36 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 if (diagOutput0) {
                     double jumpNorm = CheckLocalProjection(patch);
                     Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+=======
+            using(new RuntimeTracker("local_patch_projection", diagOutput0)) {
+                int pC = 0;
+                foreach(List<int> block in blocking) {
+
+                    BitArray patchBA = new BitArray(J);
+                    foreach(int j in block) {
+                        patchBA[j] = true;
+                    }
+                    CellMask patch = new CellMask(m_grd, patchBA);
+                    patches.Add(patch);
+
+                    if(diagOutput0) {
+                        Console.WriteLine("======================");
+                        Console.WriteLine("project patch {0}: No of cells {1}", pC, patch.NoOfItemsLocally);
+                    }
+                    this.ProjectDGFieldOnPatch(DGField, patch, true, null);
+                    if(diagOutput0) {
+                        double jumpNorm = CheckLocalProjection(patch);
+                        Console.WriteLine("L2 jump norm = {0}", jumpNorm);
+                    }
+                    pC++;
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
                 }
                 pC++;
             }
 
             List<DGField> returnFields = new List<DGField>();
 
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
             // continuity projection on patches within one process
             if (NoPatches > 1) {
 
@@ -1244,6 +1285,47 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         int[] neigh = m_grd.Cells.CellNeighbours[j];
                         foreach (int jNeigh in neigh) {
                             mergePatchNeighBA[jNeigh] = true;
+=======
+            using(new RuntimeTracker("local_merge_projection", diagOutput0)) {
+
+                // continuity projection on patches within one process
+                if(NoPatches > 1) {
+
+                    // determine merging domain and 
+                    // corresponding inner edges and on the boundary 
+                    SubGrid maskSG = new SubGrid(mask);
+                    EdgeMask innerEM = maskSG.InnerEdgesMask;
+                    EdgeMask mergeEM = innerEM;
+                    foreach(CellMask patch in patches) {
+                        SubGrid maskPatch = new SubGrid(patch);
+                        EdgeMask innerPatch = maskPatch.InnerEdgesMask;
+                        mergeEM = mergeEM.Except(innerPatch);
+                    }
+
+                    BitArray mergePatchBA = new BitArray(J);
+                    foreach(var chunk in mergeEM) {
+                        int j0 = chunk.i0;
+                        int jE = chunk.JE;
+                        for(int j = j0; j < jE; j++) {
+                            int cell1 = m_grd.Edges.CellIndices[j, 0];
+                            mergePatchBA[cell1] = true;
+                            int cell2 = m_grd.Edges.CellIndices[j, 1];
+                            mergePatchBA[cell2] = true;
+                        }
+                    }
+                    CellMask mergePatchCM = new CellMask(mask.GridData, mergePatchBA);
+                    // add neighbours
+                    BitArray mergePatchBA2 = new BitArray(J);
+                    foreach(var chunk in mergePatchCM) {
+                        int j0 = chunk.i0;
+                        int jE = chunk.JE;
+                        for(int j = j0; j < jE; j++) {
+                            mergePatchBA2[j] = true;
+                            int[] neigh = m_grd.Cells.CellNeighbours[j];
+                            foreach(int jNeigh in neigh) {
+                                mergePatchBA2[jNeigh] = true;
+                            }
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
                         }
                     }
                 }
@@ -1313,16 +1395,26 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     EdgeMask mergeBoundary = mergePatch.BoundaryEdgesMask.Intersect(innerEM).Except(mergeEM);
                     //edgewiseMergeBoundary.Add(mergeBoundary);
 
-                    if (diagOutput0) {
+                    if(diagOutput0) {
                         Console.WriteLine("======================");
                         Console.WriteLine("project on edge patch between cell {0} and cell {1}", cell1, cell2);
                     }
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
                     this.ProjectDGFieldOnPatch(mergePatchCM, mergeBoundary);
                     if (diagOutput0) {
+=======
+                    //this.ProjectDGFieldOnPatch(DGField, mergePatchCM, null, true);
+                    //if (diagOutput0) {
+                    //    double jumpNorm = CheckLocalProjection(mergePatchCM);
+                    //    Console.WriteLine("merge patch: L2 jump norm = {0}", jumpNorm);
+                    //}
+                    this.ProjectDGFieldOnPatch(DGField, mergePatchCM, true, mergeBoundary);
+                    if(diagOutput0) {
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
                         double jumpNorm = CheckLocalProjection(mergePatchCM);
                         Console.WriteLine("edge patch: L2 jump norm = {0}", jumpNorm);
                         int p = 0;
-                        foreach (CellMask patch in patches) {
+                        foreach(CellMask patch in patches) {
                             jumpNorm = CheckLocalProjection(patch);
                             Console.WriteLine("patch No {0}: L2 jump norm = {1}", p, jumpNorm);
                             p++;
@@ -1427,9 +1519,18 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     for (int j = 0; j < Length; j++) {
                         int iEdge = j + i0;
 
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
                         var edgeInfo = m_grd.Edges.Info[iEdge];
                         if (!onInterProc && edgeInfo.HasFlag(EdgeInfo.Interprocess))
                             continue;
+=======
+            using(new RuntimeTracker("interprocess_merge_projection", diagOutput0)) {
+                //// projection of local projection on separate patches
+                //DGField exchangeProj = new SinglePhaseField(m_Basis, "exchangeProjection");
+                //exchangeProj._Acc(1.0, m_Coordinates, 0, m_Mapping.MaxTotalNoOfCoordinatesPerCell, true);
+                //exchangeProj.MPIExchange();
+                //m_Coordinates = exchangeProj.CoordinateVector.ToArray();
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
 
                         int jCell_IN = m_grd.Edges.CellIndices[iEdge, 0];
                         int jCell_OT = m_grd.Edges.CellIndices[iEdge, 1];
@@ -1799,6 +1900,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 OpSolver.Dispose();
                 ClearOpSolver();
             } else {
+<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
                 var solver = new myCG();
                 solver.DefineMatrix(AAT);
                 solver.Solve(v, RHS);
@@ -1809,6 +1911,51 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             AT.SpMV(-1.0, v, 0.0, x);
             m_Coordinates.AccV(1.0, x);
 
+=======
+                solver = OpSolver;
+                solver.DefineMatrix(matrix);
+            }
+            return solver;
+        }
+
+        private class RuntimeTracker : IDisposable {
+            public RuntimeTracker(string recordname, bool activate) {
+                m_activate = activate;
+                m_RuntimeSTW = new Stopwatch();
+                m_record = RuntimeRecord;
+                m_name = recordname;
+                if(m_activate) m_RuntimeSTW.Start();
+            }
+
+            private Stopwatch m_RuntimeSTW;
+            private bool m_activate;
+            private Dictionary<string, double> m_record;
+            private string m_name;
+
+            private double GetTime() {
+                double thisreturn = 0;
+                m_RuntimeSTW.Stop();
+                thisreturn = m_RuntimeSTW.Elapsed.TotalSeconds;
+                return thisreturn;
+            }
+
+            private bool AddRecordIfNew() {
+                double time = GetTime();
+                bool IsNew = m_record.ContainsKey(m_name) == false;
+                if(IsNew)
+                    m_record.Add(m_name, time);
+                else {
+                    m_record[m_name] += time;
+                }
+                return IsNew;
+            }
+
+            public void Dispose() {
+                if(m_activate) 
+                    AddRecordIfNew();
+                m_RuntimeSTW = null;
+            }
+>>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
         }
 
 

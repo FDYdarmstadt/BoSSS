@@ -92,20 +92,20 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
-                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(AdvancedSolverTests.AdvancedSolverMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
                         typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                        typeof(CDG_Projection_MPI.ConstrainedDGField_Tests),
                         typeof(BoSSS.Application.ElementTests.ElementTests),
+                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
                         typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
                         typeof(BoSSS.Application.XDGTest.UnitTest),
+                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(CutCellQuadrature.Program),
                         typeof(BoSSS.Application.SpecFEM.AllUpTest),
                         typeof(BoSSS.Application.ipViscosity.TestSolution),
-                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
-                        typeof(CDG_Projection_MPI.ConstrainedDGField_Tests),
                         //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
