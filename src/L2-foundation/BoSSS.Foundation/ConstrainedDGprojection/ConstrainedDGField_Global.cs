@@ -15,14 +15,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
     /// This results in the best continuous approximation in the L2-sense, but might be expensive to compute
     /// tan the patch-wise implementation <see cref="ConstrainedDgField_Patchwise"/>.
     /// </summary>
-    public class ConstrainedDGField_Global : ConstrainedDGField {
+    public class ConstrainedDGField_Global : ConstrainedDGFieldMk3 {
         
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="b"><see cref="ConstrainedDGField.Basis"/></param>
+        /// <param name="b"><see cref="ConstrainedDGFieldMk3.Basis"/></param>
         /// <param name="__domainLimit">
-        /// <see cref="ConstrainedDGField.domainLimit"/>
+        /// <see cref="ConstrainedDGFieldMk3.domainLimit"/>
         /// </param>
         public ConstrainedDGField_Global(Basis b, CellMask __domainLimit) : base(b, __domainLimit) {
             m_grd = (GridData) b.GridDat;
@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
         }
 
-        ConstrainedDGField.ConstrainedProjectionInternal mySolver;
+        ConstrainedDGFieldMk3.ConstrainedProjectionInternal mySolver;
 
 
         /// <summary>

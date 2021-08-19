@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
     /// <summary>
-    /// <see cref="ConstrainedDGField.Factory"/>
+    /// <see cref="ConstrainedDGFieldMk3.Factory"/>
     /// </summary>
     public enum ProjectionStrategy { 
     
@@ -71,18 +71,18 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
     /// <remarks>
     /// - Explained in PhD thesis of M. Smuda, see https://tuprints.ulb.tu-darmstadt.de/17376/
     /// </remarks>
-    abstract public class ConstrainedDGField : IDisposable {
+    abstract public class ConstrainedDGFieldMk3 : IDisposable {
 
         /// <summary>
         /// Factory to produce different variants.
         /// </summary>
-        /// <param name="b"><see cref="ConstrainedDGField.Basis"/></param>
-        /// <param name="__domainLimit"><see cref="ConstrainedDGField.domainLimit"/></param>
+        /// <param name="b"><see cref="ConstrainedDGFieldMk3.Basis"/></param>
+        /// <param name="__domainLimit"><see cref="ConstrainedDGFieldMk3.domainLimit"/></param>
         /// <param name="s"></param>
         /// <returns>
         /// 
         /// </returns>
-        static public ConstrainedDGField Factory(Basis b, CellMask __domainLimit, ProjectionStrategy s) {
+        static public ConstrainedDGFieldMk3 Factory(Basis b, CellMask __domainLimit, ProjectionStrategy s) {
             switch(s) {
                 case ProjectionStrategy.globalOnly: return new ConstrainedDGField_Global(b, __domainLimit);
                 case ProjectionStrategy.patchwiseOnly: return new ConstrainedDgField_Patchwise(b, __domainLimit);
@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// ctor
         /// </summary>
-        public ConstrainedDGField(Basis b, CellMask __domainLimit) {
+        public ConstrainedDGFieldMk3(Basis b, CellMask __domainLimit) {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
             m_Mapping = new UnsetteledCoordinateMapping(b);
@@ -168,14 +168,13 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
         }
 
-
         /// <summary>
-        /// hardcoded switch to turn some console output on/off (BAD PRACTICE)
+        /// hard-coded switch to turn some console output on/off (BAD PRACTICE)
         /// </summary>
         protected bool diagnosticOutput = false;
 
         /// <summary>
-        /// hardcoded switch to turn debugging output for MATLAB on/off
+        /// hard-coded switch to turn debugging output for MATLAB on/off
         /// </summary>
         protected bool diagOutputMatlab = false;
 
@@ -234,7 +233,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             /// <see cref="DomainLimit"/>
             /// </param>
             /// <param name="__owner"></param>
-            public ConstrainedProjectionInternal(ConstrainedDGField __owner, CellMask __domain, CellMask __patch, bool runOnlyLocal) {
+            public ConstrainedProjectionInternal(ConstrainedDGFieldMk3 __owner, CellMask __domain, CellMask __patch, bool runOnlyLocal) {
                 if(__domain != null) {
                     if(__domain.MaskType != MaskType.Logical)
                         throw new ArgumentException();
@@ -254,7 +253,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             }
 
-            ConstrainedDGField owner;
+            ConstrainedDGFieldMk3 owner;
 
             UnsetteledCoordinateMapping m_Mapping => owner.m_Mapping;
             GridData m_grd => owner.m_grd;
@@ -354,14 +353,13 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             void Initialize() {
 
 
-                if(m_grd.MpiSize > 1 && IsLocal)
-                    throw new ApplicationException("the following line might cause an MPI deadlock.");
-                SubGrid maskSG = new SubGrid(Patch);
-                EdgeMask innerEM = maskSG.InnerEdgesMask;
-
-                Console.WriteLine("--- remove testcode.");
-                EdgeMask fullEM = maskSG.AllEdgesMask;
-                //EdgeMask constraintsMask = innerEM;
+                EdgeMask fullEM;
+                if(IsLocal) {
+                    fullEM = Patch.GetAllLocalEdgesMask();
+                } else {
+                    SubGrid maskSG = new SubGrid(Patch);
+                    fullEM = maskSG.AllEdgesMask;
+                }
                 EdgeMask constraintsMask = fullEM;
 
                 if(this.IsLocal) {
@@ -392,8 +390,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     }
                 }
 
-                BlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, m_Mapping.MPI_Comm, true);
-                A = new BlockMsrMatrix(rowBlockPart, m_Mapping);
+                IBlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, this.comm, true);
+                IBlockPartitioning colBlockPart;
+                if(IsLocal) {
+                    colBlockPart = m_Mapping.GetLocalBlockPartitioning();
+                } else {
+                    colBlockPart = m_Mapping;
+                }
+                A = new BlockMsrMatrix(rowBlockPart, colBlockPart);
                 assembleConstrainsMatrix(A, constraintsMask);
                 
 
@@ -453,9 +457,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     double[] remainder = DgCoordinates0.CloneAs();
                     remainder.AccV(-1.0, DgCoordinates);
 
-                    //A.SpMV(1.0, m_Coordinates, 0.0, RHS);
                     A.SpMV(1.0, remainder, 0.0, RHS);
-                    //RHS.AccV(-1.0, RHS_non0c);
 
                     double[] v = new double[RHS.Length]; // Lagrange multiplyer
                     double[] x = new double[DgCoordinates.Length];
@@ -474,7 +476,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     R.AccV(-1.0, x);
                     double tst = x.InnerProd(R).MPISum(comm);
                     tr.Info("Inner Product Test (should be 0.0): " + tst);
-
 
 
                     double l2_change = 0.0;
@@ -1023,12 +1024,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
-<<<<<<< HEAD:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGprojection/ConstrainedDGField.cs
 
-        bool diagOutput0 = true;
-=======
         bool diagOutput0 = false;
->>>>>>> origin/master:public/src/L2-foundation/BoSSS.Foundation/ConstrainedDGField.cs
         bool diagOutput1 = false;
         //bool diagOutput2 = true;
 

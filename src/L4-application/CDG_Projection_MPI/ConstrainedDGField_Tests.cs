@@ -319,7 +319,7 @@ namespace CDG_Projection_MPI {
 
         static int NoOfPatches = -1;
 
-        static public ConstrainedDGField Factory(Basis b, CellMask __domainLimit, ProjectionStrategy s) {
+        static public ConstrainedDGFieldMk3 Factory(Basis b, CellMask __domainLimit, ProjectionStrategy s) {
             switch(s) {
                 case ProjectionStrategy.globalOnly: return new ConstrainedDGField_Global(b, __domainLimit);
                 case ProjectionStrategy.patchwiseOnly: return new ConstrainedDgField_Patchwise(b, __domainLimit, NoOfPatches);

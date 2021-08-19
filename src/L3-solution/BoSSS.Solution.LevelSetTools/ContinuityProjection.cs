@@ -271,7 +271,7 @@ namespace BoSSS.Solution.LevelSetTools {
     }
 
     /// <summary>
-    /// Smoothing based on <see cref="ConstrainedDGField"/> 
+    /// Smoothing based on <see cref="ConstrainedDGFieldMk3"/> 
     /// => Lagrange-Multiplier Approach
     /// </summary>
     /// <remarks>
@@ -286,9 +286,9 @@ namespace BoSSS.Solution.LevelSetTools {
         }
         Basis m_myBasis;
 
-        ConstrainedDGField m_projector;
+        ConstrainedDGFieldMk3 m_projector;
 
-        ConstrainedDGField Update(CellMask domain) {
+        ConstrainedDGFieldMk3 Update(CellMask domain) {
             if(m_projector == null || !m_projector.domainLimit.Equals(domain)) {
                 if(m_projector != null)
                     m_projector.Dispose();

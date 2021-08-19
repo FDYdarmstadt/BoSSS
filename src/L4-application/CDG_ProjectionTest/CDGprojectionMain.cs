@@ -35,7 +35,7 @@ using BoSSS.Foundation.XDG;
 namespace BoSSS.Application.CDG_ProjectionTest {
 
     /// <summary>
-    /// Tests for <see cref="BoSSS.Foundation.ConstrainedDGprojection.ConstrainedDGField"/>
+    /// Tests for <see cref="BoSSS.Foundation.ConstrainedDGprojection.ConstrainedDGFieldMk3"/>
     /// </summary>
     public class CDGprojectionMain : BoSSS.Solution.Application {
 
@@ -440,7 +440,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField
-            using(var cdgField = ConstrainedDGField.Factory(cdgBasis, domain, this.projectStrategy)) {
+            using(var cdgField = ConstrainedDGFieldMk3.Factory(cdgBasis, domain, this.projectStrategy)) {
                 //var returnFields = cdgField.ProjectDGField(origin, domain);
                 cdgField.ProjectDGField(origin);
                 //if (!returnFields.IsNullOrEmpty())

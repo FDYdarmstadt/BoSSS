@@ -18,14 +18,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
     /// This scales much better with larger grids, but is only an approximation to the L2-projection 
     /// and likely produce higher oscillations.
     /// </summary>
-    public class ConstrainedDgField_Patchwise : ConstrainedDGField {
+    public class ConstrainedDgField_Patchwise : ConstrainedDGFieldMk3 {
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="b"><see cref="ConstrainedDGField.Basis"/></param>
+        /// <param name="b"><see cref="ConstrainedDGFieldMk3.Basis"/></param>
         /// <param name="__domainLimit">
-        /// <see cref="ConstrainedDGField.domainLimit"/>
+        /// <see cref="ConstrainedDGFieldMk3.domainLimit"/>
         /// </param>
         /// <param name="NoOfPatchesPerProcess">
         /// Number of patches which should be used on the current MPI process.
