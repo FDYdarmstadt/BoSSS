@@ -23,9 +23,9 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            //Projection(ProjectionStrategy.patchwiseOnly, 3, 10, GeomShape.Cube);
+            Projection(ProjectionStrategy.patchwiseOnly, 3, 10, GeomShape.Cube);
             //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
-            Test4Idempotence(3, 10);
+            //Test4Idempotence(3, 10);
             Application.FinalizeMPI();
         }
 
@@ -169,7 +169,7 @@ namespace CDG_Projection_MPI {
             // Act -- Do the CG-projection
             SinglePhaseField BestApprox = null;
             using(var CDGTestField = Factory(CDGBasis, mask, PStrategy)) {
-                for(int i = 0; i < 5; i++) {
+                for(int i = 0; i < 1; i++) {
                     SinglePhaseField Rest;
                     if(BestApprox == null) {
                         Rest = field.CloneAs();

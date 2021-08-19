@@ -153,7 +153,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         double[] m_Coordinates0;
 
       
-        DGField internalProjection;
+        /// <summary>
+        /// DG representation of the current solution
+        /// </summary>
+        protected DGField internalProjection;
 
 
 
@@ -343,8 +346,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             void Initialize() {
 
-                // ...
-                //InitProjectionPatch(Patch);
 
                 if(m_grd.MpiSize > 1 && IsLocal)
                     throw new ApplicationException("the following line might cause an MPI deadlock.");
@@ -365,18 +366,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
 
 
-                //// set constrains
-                //// ==============
-
-                //List<int> processedInCellRef = new List<int>();
-                //List<double[]> fixedConstrains = new List<double[]>();
-                //if(fixedBoundaryMask != null) {
-                //    setFixedBoundary(fixedBoundaryMask, mask, processedInCellRef, fixedConstrains);
-                //}
-
-                ////setConstrainNodes(innerEM);
-                //setConstrainNodes(constraintsMask);
-
                 // assemble matrix
                 // =============== 
 
@@ -384,14 +373,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 List<int> BlockLen = new List<int>();
                 long i0 = 0;
                 int nodeCount = 0;
-                //foreach(NodeSet ns in AcceptedNodes) {
-                //    if(ns != null) {
-                //        BlockI0.Add(i0);
-                //        BlockLen.Add(ns.Lengths[0]);
-                //        i0 += ns.Lengths[0];
-                //        nodeCount += ns.NoOfNodes;
-                //    }
-                //}
                 foreach(int iEdg in constraintsMask.ItemEnum) {
                     if(ConsiderEdge(iEdg, out _, out _)) {
 
@@ -600,144 +581,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
             }
 
-            /*
-            //List<GeometricCellForProjection> maskedCells;
-            //List<GeometricEdgeForProjection> maskedEdges;
-            List<GeometricVerticeForProjection> maskedVert;
-
-            List<NodeSet> AcceptedNodes;
-
-            void InitProjectionPatch(CellMask mask) {
-
-                maskedVert = new List<GeometricVerticeForProjection>();
-                foreach(int j in mask.ItemEnum) {
-                    //GeometricCellForProjection gCell = new GeometricCellForProjection(j);
-                    //maskedCells.Add(gCell);
-
-                    int[] vertAtCell = m_grd.Cells.CellVertices[j];
-                    foreach(int vert in vertAtCell) {
-                        GeometricVerticeForProjection gVert = maskedVert.Find(gV => gV.Equals(vert));
-                        if(gVert == null) {
-                            gVert = new GeometricVerticeForProjection(vert);
-                            maskedVert.Add(gVert);
-                        }
-                        bool check = gVert.AddMaskedCell(j);
-                        Debug.Assert(check);
-                    }
-                }
-
-                AcceptedNodes = new List<NodeSet>();
-            }
-            */
-
-            /*
-            /// <summary>
-            /// Sets inhomogeneous constraints on a set of edges,
-            /// i.e. sets values at edges.
-            /// </summary>
-            /// <param name="fixedBoundaryMask">
-            /// mask on which the fixed values should be enforced.
-            /// </param>
-            /// <param name="mask"></param>
-            /// <param name="processedCells"></param>
-            /// <param name="fixedRHS"></param>
-            void setFixedBoundary(EdgeMask fixedBoundaryMask, CellMask mask, List<int> processedCells, List<double[]> fixedRHS) {
-
-                // set values at cells with fixed edges
-                foreach(int edg in fixedBoundaryMask.ItemEnum) {
-                    int cell1 = m_grd.Edges.CellIndices[edg, 0];
-                    int cell2 = m_grd.Edges.CellIndices[edg, 1];
-
-                    int jCell; int trafoIdx;
-                    if(mask.Contains(cell1)) { // this will scale quadratically!
-                        jCell = cell1;
-                        trafoIdx = m_grd.Edges.Edge2CellTrafoIndex[edg, 0];
-                    } else if(mask.Contains(cell2)) {
-                        jCell = cell2;
-                        trafoIdx = m_grd.Edges.Edge2CellTrafoIndex[edg, 1];
-                    } else {
-                        Console.WriteLine("==========================");
-                        Console.WriteLine("edge {0} between cell {1} and cell {2}", edg, cell1, cell2);
-                        var cell1c = m_grd.Cells.GetCenter(cell1);
-                        var cell2c = m_grd.Cells.GetCenter(cell2);
-                        var face12c = 0.5 * (cell1c + cell2c);
-                        if(m_grd.SpatialDimension == 2)
-                            Console.WriteLine("face center: ({0}, {1})", face12c[0], face12c[1]);
-                        if(m_grd.SpatialDimension == 3)
-                            Console.WriteLine("face center: ({0}, {1}, {2})", face12c[0], face12c[1], face12c[2]);
-                        throw new ArgumentException("fixed boundary not within mask for projection");
-                    }
-
-                    int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
-                    int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
-
-
-                    for(int i = 0; i < vertAtCell1.Length; i++) {
-                        int vert = vertAtCell1[i];
-                        if(vertAtCell2.Contains(vert)) {
-                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                            gVert.SetFixedVertice();
-
-                            bool processed = gVert.AddProcessedCell(jCell);
-                            if(processed) {
-
-                                processedCells.Add(jCell);
-
-                                // get ref NodeSet
-                                NodeSet refNds = GetVerticeRefNodeSet(vert, jCell);
-                                AcceptedNodes.Add(refNds);
-
-                                // get fixed coordinates
-                                //Debug.Assert(gVert.GetMaskedCells().Count < 4);
-
-                                MultidimensionalArray valueVertice = MultidimensionalArray.Create(1, 1);
-                                owner.internalProjection.Evaluate(jCell, 1, refNds, valueVertice);
-
-                                fixedRHS.Add(new double[] { valueVertice[0, 0] });
-
-                                // set fixed coordinates
-                                gVert.setFixedValue(valueVertice[0, 0]);
-                            }
-
-                        }
-                    }
-
-                    processedCells.Add(jCell);
-
-                    NodeSet qNdsE = getEdgeInterpolationNodes(0, 0, (m_grd.SpatialDimension == 2) ? 2 : 4);
-                    if(qNdsE != null) {
-                        NodeSet qNdsV = qNdsE.GetVolumeNodeSet(m_grd, trafoIdx);
-                        AcceptedNodes.Add(qNdsV);
-
-                        MultidimensionalArray valuesEdge = MultidimensionalArray.Create(1, qNdsV.NoOfNodes);
-                        owner.internalProjection.Evaluate(jCell, 1, qNdsV, valuesEdge);
-
-                        fixedRHS.Add(valuesEdge.ExtractSubArrayShallow(0, -1).To1DArray());
-                    }
-                }
-
-
-                // set values at cells with fixed vertices
-                foreach(var gVert in maskedVert) {
-                    if(gVert.isFixed()) {
-                        foreach(int mCell in gVert.GetMaskedCells()) {
-                            if(!gVert.isProcessed(mCell)) {
-
-                                processedCells.Add(mCell);
-
-                                // get ref NodeSet
-                                NodeSet refNds = GetVerticeRefNodeSet(gVert.GetIndex(), mCell);
-                                AcceptedNodes.Add(refNds);
-
-                                // get value from fixed boundary cells
-                                fixedRHS.Add(new double[] { gVert.getFixedValue() });
-                            }
-                        }
-                    }
-                }
-
-            }
-            */
 
             NodeSet GetVerticeRefNodeSet(int vertInd, int jCell) {
 
@@ -759,248 +602,12 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
              * Remark: non-zero boundary conditions will never work, i.e. produce a constraint system which has no solution;
              * E.g., consider a Square (0,1)^2 and b.c. at three edges: u = 0 @ x = 0, u = x @ y = 1, u = -x @ y = -1; there is no solution for the Ansatz u = a + x*b + y*c;
              * (Fk, 17aug21)
-
-
-            void setConstrainNodes(EdgeMask constrainsEdges) {
-
-                int D = m_grd.SpatialDimension;
-
-                int[][] edgeSendLists = this.m_grd.Edges.EdgeSendLists;
-                List<int> ownedInterProcEdges = new List<int>();
-                for(int proc = 0; proc < this.m_grd.MpiSize; proc++) {
-                    if(edgeSendLists[proc] != null) {
-                        ownedInterProcEdges.AddRange(edgeSendLists[proc]);
-                    }
-                }
-
-                foreach(int edg in constrainsEdges.ItemEnum) {
-                    var edgeInfo = m_grd.Edges.Info[edg];
-                    if(edgeInfo.HasFlag(EdgeInfo.Interprocess) && !ownedInterProcEdges.Contains(edg))
-                        continue;
-
-                    int cell1 = m_grd.Edges.CellIndices[edg, 0];
-                    int cell2 = m_grd.Edges.CellIndices[edg, 1];
-
-                    if(cell2 < 0)
-                        continue;
-
-                    int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
-                    int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
-
-                    //
-                    List<int> fixedRefVertice = new List<int>();
-                    int fixedConditionsAtVertices = 0;
-                    for(int i = 0; i < vertAtCell1.Length; i++) {
-                        int vert = vertAtCell1[i];
-                        if(vertAtCell2.Contains(vert)) {
-                            GeometricVerticeForProjection gVert = maskedVert.Find(vrt => vrt.Equals(vert));
-                            if(gVert.isFixed())
-                                fixedConditionsAtVertices++;
-                        }
-                    }
-
-                    NodeSet qNds = getEdgeInterpolationNodes(0, 0, fixedConditionsAtVertices);
-                    AcceptedNodes.Add(qNds);
-                }
-            }
-
-            */
-
-            /*
-            /// <summary>
-            /// 
-            /// </summary>
-            private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int NoOfFixedVertices = 0) {
-
-                int degree = m_Basis.Degree;
-
-                switch(m_grd.SpatialDimension) {
-                    case 2: {
-                        //int NDOFinCell = ((degree + 1) * (degree + 1) + (degree + 1)) / 2;
-                        //int NDOFonEdge = (degree + 1);
-                        //int freeNDOF = NDOFinCell - (NoOfFixedVertices * NDOFonEdge);
-                        //if ((freeNDOF - 1) < degree)
-                        //    degree = freeNDOF - 1;
-
-                        if((numVcond + NoOfFixedVertices) > degree) {
-                            return null;
-                        } else {
-                            QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule((degree - (numVcond + NoOfFixedVertices)) * 2);
-                            //if (minNoFixedEdges > 0)
-                            //    Console.WriteLine("No. of nodes at inner edge: {0}", quad.NoOfNodes);
-                            return quad.Nodes;
-                        }
-                    }
-                    case 3: {
-
-                        int degreeR = degree - numEcond;
-                        int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
-                        if(NoNdsR <= 0)
-                            return null;
-
-                        NoNdsR -= NoOfFixedVertices;
-                        degreeR = (int)Math.Ceiling((-3 + Math.Sqrt(9 + 8 * (NoNdsR - 1))) / 2.0);
-                        if(degreeR < 0)
-                            return null;
-
-                        QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degreeR * 2);
-                        NodeSet qNodes = quad1D.Nodes;
-                        //QuadRule quad2D = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule(degreeR);
-
-                        NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
-                        MultidimensionalArray nds = MultidimensionalArray.Create(NoNdsR, 2);
-                        int node = 0;
-                        for(int n1 = 0; n1 <= degreeR; n1++) {
-                            for(int n2 = 0; n2 <= degreeR - n1; n2++) {
-                                nds[node, 0] = qNodes[n1, 0];
-                                nds[node, 1] = qNodes[n2, 0];
-                                node++;
-                            }
-                        }
-                        NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
-
-                        return ndsR;
-
-                    }
-                    default:
-                    throw new NotSupportedException("spatial dimension not supported");
-                }
-
-            }
-            */
-
-
-            /*
-             * Remark: non-zero boundary conditions will never work, i.e. produce a constraint system which has no solution;
-             * E.g., consider a Square (0,1)^2 and b.c. at three edges: u = 0 @ x = 0, u = x @ y = 1, u = -x @ y = -1; there is no solution for the Ansatz u = a + x*b + y*c;
-             * (Fk, 17aug21)
-
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="A">
-            /// output;
-            /// - rows: continuity constraints
-            /// - columns: correlates to DG-coordinates
-            /// </param>
-            /// <param name="processedCells"></param>
-            /// <param name="fixedRHS"></param>
-            /// <param name="mask"></param>
-            /// <param name="RHS_non0c"></param>
-            /// <param name="countOffset"></param>
-            /// <param name="_nodeCountOffset"></param>
-            /// <returns>
-            /// - local row offset into <paramref name="RHS_non0c"/>
-            /// - global row offset into <paramref name="A"/>
-            /// </returns>
-            (int LocalRowOffset, long GlobalRowOffset) assembleConstrainsMatrix_nonZeroConstrains(BlockMsrMatrix A, List<int> processedCells, List<double[]> fixedRHS,
-               CellMask mask, double[] RHS_non0c, int countOffset = 0, long _nodeCountOffset = 0) {
-
-                int count = countOffset;
-                long _nodeCountA = _nodeCountOffset;
-                foreach (int j in processedCells) {
-
-                    //int cell1 = m_grd.Edges.CellIndices[j, 0];
-                    //int cell2 = m_grd.Edges.CellIndices[j, 1];
-
-                    //bool isCell1;
-                    //if (mask.Contains(cell1)) {
-                    //    isCell1 = true;
-                    //} else if (mask.Contains(cell2)) {
-                    //    isCell1 = false;
-                    //} else
-                    //    throw new ArgumentException("fixed boundary not within mask for projection");
-
-                    // set continuity constraints
-                    NodeSet qNodes = AcceptedNodes.ElementAt(count);
-                    if (qNodes == null)
-                        break;
-
-                    //var resultsA = m_Basis.EdgeEval(qNodes, j, 1);
-                    var resultsA = m_Basis.CellEval(qNodes, j, 1);
-
-                    for (int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                        // jCell   
-                        for (int p = 0; p < this.m_Basis.GetLength(j); p++) {
-                            //if (isCell1)
-                            //    A[_nodeCountA + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = resultsA.Item1[0, qN, p];
-                            //else
-                            //    A[_nodeCountA + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = resultsA.Item2[0, qN, p];
-                            A[_nodeCountA + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, j, p)] = resultsA[0, qN, p];
-                        }
-                        // non-zero equality constrain
-                        RHS_non0c[(_nodeCountA - A.RowPartitioning.i0) + qN] = fixedRHS[count][qN];
-                    }
-                    count++;
-                    _nodeCountA += qNodes.NoOfNodes;
-
-                }
-
-                return (count, _nodeCountA);
-            }
-
-            */
-
-            /*
-             * Martin Smudas original version:
-            void assembleConstrainsMatrix(BlockMsrMatrix A, EdgeMask constrainsEdges, int[] NoOfConstraintsPerEdge, int countOffset = 0, long _nodeCountOffset = 0, List<double[]> fixedRHS = null) {
-
-                int[][] edgeSendLists = this.m_grd.Edges.EdgeSendLists;
-                List<int> ownedInterProcEdges = new List<int>();
-                for (int proc = 0; proc < this.m_grd.MpiSize; proc++) {
-                    if (edgeSendLists[proc] != null) {
-                        ownedInterProcEdges.AddRange(edgeSendLists[proc]);
-                    }
-                }
-
-                int count = countOffset;
-                long _nodeCount = _nodeCountOffset;
-                foreach(int edg in constrainsEdges.ItemEnum) {
-
-
-                    var edgeInfo = m_grd.Edges.Info[edg];
-                    if(edgeInfo.HasFlag(EdgeInfo.Interprocess) && !ownedInterProcEdges.Contains(edg))
-                        continue;
-
-                    int cell1 = m_grd.Edges.CellIndices[edg, 0];
-                    int cell2 = m_grd.Edges.CellIndices[edg, 1];
-
-                    // set continuity constraints
-                    NodeSet qNodes = AcceptedNodes.ElementAt(count);
-                    if(qNodes == null)
-                        break;
-
-                    var results = m_Basis.EdgeEval(qNodes, edg, 1);
-
-                    for(int qN = 0; qN < qNodes.NoOfNodes; qN++) {
-                        // Cell1   
-                        for(int p = 0; p < this.m_Basis.GetLength(cell1); p++) {
-                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
-                        }
-                        // Cell2
-                        for(int p = 0; p < this.m_Basis.GetLength(cell2); p++) {
-                            A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
-                        }
-
-                    }
-                    NoOfConstraintsPerEdge[edg]++;
-                    count++;
-                    _nodeCount += qNodes.NoOfNodes;
-                }
-            }
-            */
+             */
 
 
             void assembleConstrainsMatrix(BlockMsrMatrix A, EdgeMask constrainsEdges) {
                 MPICollectiveWatchDog.Watch(this.comm);
 
-                //int[][] edgeSendLists = this.m_grd.Edges.EdgeSendLists;
-                //List<int> ownedInterProcEdges = new List<int>();
-                //for(int proc = 0; proc < this.m_grd.MpiSize; proc++) {
-                //    if(edgeSendLists[proc] != null) {
-                //        ownedInterProcEdges.AddRange(edgeSendLists[proc]);
-                //    }
-                //}
 
                 int Jup = this.m_grd.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -1016,9 +623,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     if(ConsiderEdge(edg, out int cell1, out int cell2)) {
 
 
-                        //int Np1 = PatchBitMask[cell1] ? this.m_Basis.GetLength(cell1) : 0; 
-                        //int Np2 = !EnforceBndy && PatchBitMask[cell2] ? this.m_Basis.GetLength(cell2) : 0; 
-
+                      
                         // Omit any cells outside of the patch:
                         // setting Np1 or Np2 to 0 will enforce a homogeneous boundary
                         int Np1, Np2;
