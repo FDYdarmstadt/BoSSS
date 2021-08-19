@@ -319,7 +319,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             case 1: Np = 1; break;
                             case 2: Np = deg + 1; break;
                             case 3:
-                            Np = (deg + 1).ForLoop(i => i + 1).Sum(); // DG basis vector space dimension in 2D == number of constraints on face required.
+                                // remark: (deg + 1) should be sufficient, but it seems that for numerical accuracy, we need (deg + 2)
+                            Np = (deg + 2).ForLoop(i => i + 1).Sum(); // DG basis vector space dimension in 2D == number of constraints on face required.
+                            //Np = m_Basis.Length;
                             break;
                             default: throw new NotImplementedException("unknown spatial dimension");
                         }
@@ -328,7 +330,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         for(int iEref = 0; iEref < m_ConstrainNodes.Length; iEref++) {
                             int p = 1;
                             do {
+                                //EdgRefElems[iEref].GetInterpolationNodes
+
                                 m_ConstrainNodes[iEref] = EdgRefElems[iEref].GetQuadratureRule(p).Nodes;
+                                EdgRefElems[iEref].GetNodeSet(p + 1, out m_ConstrainNodes[iEref], out _, out _);
+                                
                                 p++;
                             } while(m_ConstrainNodes[iEref].NoOfNodes < Np);
                         }
@@ -725,7 +731,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
         /// </summary>
         public double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
-            return CheckLocalProjection(csMPI.Raw._COMM.WORLD);
+            return CheckLocalProjection(csMPI.Raw._COMM.WORLD, mask, onInterProc);
         }
 
         /// <summary>

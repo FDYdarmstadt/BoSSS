@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// Threshold for the patch-wise projection; patches are determined
         /// that the size of the linear system stays below this number.
         /// </summary>
-        int maxNoOfCoordinates = 10000;
+        int maxNoOfCoordinates = 20000;
 
         /// <summary>
         /// 
@@ -257,6 +257,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 double updateNorm = 0;
                 double relUpdateNorm = 0;
                 bool CheckTerm(int iIter) {
+                    if(TotNoOfSolvers <= 1 && iIter >= 1)
+                        return false;
                     if(iIter < MinIterations)
                         return true;
                     if(iIter >= MaxIterations)
@@ -283,7 +285,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
                     relUpdateNorm = updateNorm / Math.Max(ResNorm, 1e-30); // avoid division by zero
-                    tr.Info("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
+                    //tr.Info
+                    Console.WriteLine("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
                 }
             }
         }
@@ -296,7 +299,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// Maximum allowed iterations for <see cref="ProjectDGField"/>
         /// </summary>
-        public int MaxIterations = 100;
+        public int MaxIterations = 40;
 
         /// <summary>
         /// Relative threshold for the termination of the iterations for <see cref="ProjectDGField"/>
@@ -328,6 +331,17 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             double Totchange = (GlbChange + LocChange).Sqrt();
             return Totchange;
+        }
+
+        int TotNoOfSolvers {
+            get {
+                int Sum = 0;
+                if(globalSeaming != null)
+                    Sum++;
+                Sum += localPatches.Count;
+                Sum += localSeaming.Count;
+                return Sum;
+            }
         }
 
 

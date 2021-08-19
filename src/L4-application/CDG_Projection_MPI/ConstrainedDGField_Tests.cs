@@ -23,8 +23,9 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            //Projection(ProjectionStrategy.globalOnly, 2, 2, 2, 10, GeomShape.Cube);
-            CDG_Projection_MPI.ConstrainedDGField_Tests.ProjectionTest_Global(2, 1, 2, 10, GeomShape.Sphere);
+            NoOfPatches = 20;
+            Projection(ProjectionStrategy.patchwiseOnly, DGDeg: 2, incDeg: 1, Dim: 3, GridRes: 15, shape: GeomShape.Cube, narrowBand: true);
+            //CDG_Projection_MPI.ConstrainedDGField_Tests.ProjectionTest_Global(2, 1, 2, 10, GeomShape.Sphere);
             //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
             //Test4Idempotence(3, 10);
             Application.FinalizeMPI();
@@ -168,7 +169,7 @@ namespace CDG_Projection_MPI {
             [Values(-1)] int __NoOfPatches) {
 
             NoOfPatches = __NoOfPatches;
-            Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape);
+            Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
 
 
@@ -180,7 +181,7 @@ namespace CDG_Projection_MPI {
             [Values(10,15,20)] int GridRes, 
             [Values(GeomShape.Sphere, GeomShape.Cube)] GeomShape shape) {
 
-            Projection(ProjectionStrategy.globalOnly, DGDeg, incDeg, Dim, GridRes, shape);
+            Projection(ProjectionStrategy.globalOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
 #else
         [Test]
@@ -193,7 +194,7 @@ namespace CDG_Projection_MPI {
             [Values(-1, 2, 4)] int __NoOfPatches) {
 
             NoOfPatches = __NoOfPatches;
-            Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape);
+            Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
 
 
@@ -205,14 +206,14 @@ namespace CDG_Projection_MPI {
             [Values(10,15,20)] int GridRes, 
             [Values(GeomShape.Sphere, GeomShape.Cube)] GeomShape shape) {
 
-            Projection(ProjectionStrategy.globalOnly, DGDeg, incDeg, Dim, GridRes, shape);
+            Projection(ProjectionStrategy.globalOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
 
 #endif
 
 
 
-        static public void Projection(ProjectionStrategy PStrategy, int DGDeg, int incDeg, int Dim, int GridRes, GeomShape shape) {
+        static public void Projection(ProjectionStrategy PStrategy, int DGDeg, int incDeg, int Dim, int GridRes, GeomShape shape, bool narrowBand) {
             // Arrange -- Grid
             var grid = CreateGrid(GridRes, Dim);
             // Arrange -- target field
@@ -220,14 +221,14 @@ namespace CDG_Projection_MPI {
             var DGBasis = new Basis(grid, DGDeg);
             var CDGBasis = new Basis(grid, DGDeg + incDeg);
             
-            var mask = CellMask.GetFullMask(grid.GridData);
-            //var mask = ComputeNarrowband(grid, particleRad, FGenerator);
             var FGenerator = FuncGenerator(shape, grid.GridData.SpatialDimension);
+            var projFunc = FGenerator(particleRad);
+
+            var mask = narrowBand ? ComputeNarrowband(grid, particleRad, projFunc) : CellMask.GetFullMask(grid.GridData);
             Console.WriteLine("Cells in mask: " + mask.NoOfItemsLocally.MPISum());
             Console.WriteLine("edges in mask: " + mask.AllEdges().NoOfItemsLocally.MPISum());
 
             // Arrange -- source field
-            var projFunc = FGenerator(particleRad);
             var field = new SinglePhaseField(DGBasis, "DG");
             var ProjF = NonVectorizedScalarFunction.Vectorize(projFunc);
             field.ProjectField(ProjF);
@@ -243,12 +244,13 @@ namespace CDG_Projection_MPI {
                 CDGTestField.ProjectDGField(field);
                 CDGTestField.AccToDGField(1.0, BestApprox, mask);
 
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap", 0.0, 3);
+                
                 double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
                 Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
                 Assert.LessOrEqual(jumpNorm_after, Math.Max(jumpNorm_before * 1E-8, 1e-10), // in case of sphere, we start wit a low jump norm.
                     "Jump norm not sufficiently reduced.");
 
-                //BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap", 0.0, 3);
 
             }
             
