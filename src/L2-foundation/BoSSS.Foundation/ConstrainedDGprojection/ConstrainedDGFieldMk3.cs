@@ -35,6 +35,7 @@ using MPI.Wrappers;
 using ilPSP.Kraypis;
 using ilPSP.Tracing;
 using System.IO;
+using ilPSP.LinSolvers.PARDISO;
 
 namespace BoSSS.Foundation.ConstrainedDGprojection {
 
@@ -424,6 +425,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                 AT = A.Transpose();
                 BlockMsrMatrix AAT = BlockMsrMatrix.Multiply(A, AT);
+                AAT.AssumeSymmetric = true;
                 
                 InitSolver(AAT);
             }
@@ -579,19 +581,17 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             private void InitSolver(BlockMsrMatrix matrix) {
                 if(solver != null)
                     throw new NotSupportedException("can only be called once");
+                this.solverAAT = matrix;
 
-                matrix.AssumeSymmetric = true;
-                if(IsLocal) {
-                    solver = SolverUtils.PatchSolverFactory();
-                    var crunchedmatrix = SolverUtils.GetLocalMatrix(matrix);
-                    //crunchedmatrix.SaveToTextFileSparseDebug("crunch");
-                    this.solverAAT = crunchedmatrix;
-                    solver.DefineMatrix(crunchedmatrix);
-                } else {
-                    solver = SolverUtils.GlobalSolverFactory(matrix.NoOfRows);
-                    this.solverAAT = matrix;
-                    solver.DefineMatrix(matrix);
-                }
+                PARDISOSolver _solver = new PARDISOSolver();
+                this.solver = _solver;
+                _solver.SymmIndefPivot = true;
+                _solver.CacheFactorization = true;
+                _solver.Parallelism = IsLocal ? Parallelism.SEQ : Parallelism.OMP;
+
+                _solver.DefineMatrix(matrix);
+                if(_solver.MpiComm != this.comm)
+                    throw new ApplicationException();
             }
 
 
@@ -620,6 +620,12 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             void assembleConstrainsMatrix(BlockMsrMatrix A, EdgeMask constrainsEdges) {
                 MPICollectiveWatchDog.Watch(this.comm);
+
+                long ColumnOffset;
+                if(IsLocal)
+                    ColumnOffset = -m_Mapping.i0; // translate back to the partitioning living on MPI_SELF 
+                else
+                    ColumnOffset = 0; 
 
 
                 int Jup = this.m_grd.iLogicalCells.NoOfLocalUpdatedCells;
@@ -660,11 +666,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             // Cell1   
 
                             for(int p = 0; p < Np1; p++) {
-                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p)] = results.Item1[0, qN, p];
+                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell1, p) + ColumnOffset] = results.Item1[0, qN, p];
                             }
                             // Cell2
                             for(int p = 0; p < Np2; p++) {
-                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p)] = -results.Item2[0, qN, p];
+                                A[_nodeCount + qN, m_Mapping.GlobalUniqueCoordinateIndex(0, cell2, p) + ColumnOffset] = -results.Item2[0, qN, p];
                             }
 
                             count++;
