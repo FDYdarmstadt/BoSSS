@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -88,16 +89,18 @@ namespace BoSSS.Foundation.Grid {
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
         public bool ComputeGridChange(int[] LocalDesiredLevel, out List<int> localCellsToRefine, out List<int[]> localCellsToCoarsen) {
-            long[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
-            BitArray cutCellsWithNeighbours = GetGlobalNearBand(globalCellNeigbourship);
+            using(new FuncTrace()) {
+                long[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
+                BitArray cutCellsWithNeighbours = GetGlobalNearBand(globalCellNeigbourship);
 
-            int[] globalRefinementLevel = GetGlobalRefinementLevel(globalCellNeigbourship, cutCellsWithNeighbours, LocalDesiredLevel);
-            localCellsToRefine = GetCellsToRefine(globalRefinementLevel);
+                int[] globalRefinementLevel = GetGlobalRefinementLevel(globalCellNeigbourship, cutCellsWithNeighbours, LocalDesiredLevel);
+                localCellsToRefine = GetCellsToRefine(globalRefinementLevel);
 
-            localCellsToCoarsen = GetCellsToCoarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
+                localCellsToCoarsen = GetCellsToCoarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
 
-            bool anyChangeInGrid = (localCellsToRefine.Count() == 0 && localCellsToCoarsen.Count() == 0) ? false : true;
-            return anyChangeInGrid.MPIOr();
+                bool anyChangeInGrid = (localCellsToRefine.Count() == 0 && localCellsToCoarsen.Count() == 0) ? false : true;
+                return anyChangeInGrid.MPIOr();
+            }
         }
 
         /// <summary>
@@ -120,47 +123,52 @@ namespace BoSSS.Foundation.Grid {
         /// True if any refinement or coarsening of the current grid should be performed; otherwise false.
         /// </returns>
         public bool ComputeGridChange(Func<int, int, int> levelIndicator, out List<int> localCellsToRefine, out List<int[]> localCellsToCoarsen) {
-            long[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
-            int[] globalDesiredLevel = GetGlobalDesiredLevel(levelIndicator, globalCellNeigbourship);
-            localCellsToRefine = GetCellsToRefine(globalDesiredLevel);
+            using(new FuncTrace()) {
+                long[][] globalCellNeigbourship = GetGlobalCellNeigbourship();
+                int[] globalDesiredLevel = GetGlobalDesiredLevel(levelIndicator, globalCellNeigbourship);
+                localCellsToRefine = GetCellsToRefine(globalDesiredLevel);
 
-            localCellsToCoarsen = GetCellsToCoarsen(globalDesiredLevel, globalCellNeigbourship, new BitArray((int)GlobalNumberOfCells));
+                localCellsToCoarsen = GetCellsToCoarsen(globalDesiredLevel, globalCellNeigbourship, new BitArray((int)GlobalNumberOfCells));
 
-            bool anyChangeInGrid = (localCellsToRefine.Count() == 0 && localCellsToCoarsen.Count() == 0) ? false : true;
-            return (anyChangeInGrid);
+                bool anyChangeInGrid = (localCellsToRefine.Count() == 0 && localCellsToCoarsen.Count() == 0) ? false : true;
+                return (anyChangeInGrid);
+            }
         }
 
         /// <summary>
-        /// Computes the global cell neighbourship of all cell. Returns an jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// Computes the global cell neighbourship of all cells. 
+        /// Returns an jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
         /// </summary>
         private long[][] GetGlobalCellNeigbourship() {
-            long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
-            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
-            for (long j = 0; j < LocalNumberOfCells; j++) {
-                long globalIndex = j + myI0;
-                // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges((int)j);
-                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
-                for (int i = 0; i < cellNeighbours.Length; i++) {
-                    globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
+            using(new FuncTrace()) {
+                long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
+                long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
+                for(long j = 0; j < LocalNumberOfCells; j++) {
+                    long globalIndex = j + myI0;
+                    // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
+                    Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges((int)j);
+                    globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
+                    for(int i = 0; i < cellNeighbours.Length; i++) {
+                        globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
+                    }
+
+                    // translate local neighbour index into global index
+                    for(int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
+                        if(globalCellNeigbourship[globalIndex][i] < LocalNumberOfCells)
+                            globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + myI0;
+                        else
+                            globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - LocalNumberOfCells];
+                    }
                 }
 
-                // translate local neighbour index into global index
-                for (int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
-                    if (globalCellNeigbourship[globalIndex][i] < LocalNumberOfCells)
-                        globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + myI0;
-                    else
-                        globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - LocalNumberOfCells];
+                for(int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
+                    int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
+                    processID = processID.MPIMax();
+                    globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
                 }
-            }
 
-            for (int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
-                processID = processID.MPIMax();
-                globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+                return globalCellNeigbourship;
             }
-
-            return globalCellNeigbourship;
         }
 
         /// <summary>
@@ -169,26 +177,28 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="globalCellNeighbourship">
         /// </param>
         private BitArray GetGlobalNearBand(long[][] globalCellNeighbourship) {
-            if (CutCells == null)
-                return new BitArray(checked((int)GlobalNumberOfCells));
+            using(new FuncTrace()) {
+                if(CutCells == null)
+                    return new BitArray(checked((int)GlobalNumberOfCells));
 
-            BitArray localCutCells = CutCells.GetBitMask();
-            BitArray globalCutCells = new BitArray(checked((int)GlobalNumberOfCells));
-            for (int j = 0; j < LocalNumberOfCells; j++) {
-                if (localCutCells[j]) {
-                    int globalIndex = checked((int)(j + myI0));
-                    globalCutCells[globalIndex] = true;
-                    for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
-                        globalCutCells[(int)globalCellNeighbourship[globalIndex][i]] = true;
+                BitArray localCutCells = CutCells.GetBitMask();
+                BitArray globalCutCells = new BitArray(checked((int)GlobalNumberOfCells));
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    if(localCutCells[j]) {
+                        int globalIndex = checked((int)(j + myI0));
+                        globalCutCells[globalIndex] = true;
+                        for(int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
+                            globalCutCells[(int)globalCellNeighbourship[globalIndex][i]] = true;
+                        }
                     }
                 }
-            }
 
-            for (int j = 0; j < globalCutCells.Length; j++) {
-                globalCutCells[j] = globalCutCells[j].MPIOr();
-            }
+                for(int j = 0; j < globalCutCells.Length; j++) {
+                    globalCutCells[j] = globalCutCells[j].MPIOr();
+                }
 
-            return globalCutCells;
+                return globalCutCells;
+            }
         }
         
 
@@ -199,19 +209,21 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="cutCellsWithNeighbours"></param>
         /// <param name="LocalDesiredLevel"></param>
         private int[] GetGlobalRefinementLevel(long[][] globalNeighbourship, BitArray cutCellsWithNeighbours, int[] LocalDesiredLevel) {
-            int[] globalDesiredLevel = GetGlobalDesiredLevel(cutCellsWithNeighbours, LocalDesiredLevel);
-            int[] globalCurrentLevel = GetGlobalCurrentLevel();
-            int[] globalRefinementLevel = new int[GlobalNumberOfCells];
-            Debug.Assert(globalRefinementLevel.Length == globalCurrentLevel.Length);
+            using(new FuncTrace()) {
+                int[] globalDesiredLevel = GetGlobalDesiredLevel(cutCellsWithNeighbours, LocalDesiredLevel);
+                int[] globalCurrentLevel = GetGlobalCurrentLevel();
+                int[] globalRefinementLevel = new int[GlobalNumberOfCells];
+                Debug.Assert(globalRefinementLevel.Length == globalCurrentLevel.Length);
 
-            for (long j = 0; j < LocalNumberOfCells; j++) {
-                long globalCellIndex = j + myI0;
-                if (globalRefinementLevel[globalCellIndex] < globalDesiredLevel[globalCellIndex]) {
-                    globalRefinementLevel[globalCellIndex] = globalDesiredLevel[globalCellIndex];
-                    GetRefinementLevelRecursive(globalCellIndex, globalRefinementLevel[globalCellIndex] - 1, globalNeighbourship, globalRefinementLevel);
+                for(long j = 0; j < LocalNumberOfCells; j++) {
+                    long globalCellIndex = j + myI0;
+                    if(globalRefinementLevel[globalCellIndex] < globalDesiredLevel[globalCellIndex]) {
+                        globalRefinementLevel[globalCellIndex] = globalDesiredLevel[globalCellIndex];
+                        GetRefinementLevelRecursive(globalCellIndex, globalRefinementLevel[globalCellIndex] - 1, globalNeighbourship, globalRefinementLevel);
+                    }
                 }
+                return globalRefinementLevel.MPIMax();
             }
-            return globalRefinementLevel.MPIMax();
         }
 
 
@@ -221,55 +233,59 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="cutCellsWithNeighbours"></param>
         /// <param name="CellRefinementLevel"></param>
         private int[] GetGlobalDesiredLevel(BitArray cutCellsWithNeighbours, int[] CellRefinementLevel) {
-            int[] globalDesiredLevel = new int[GlobalNumberOfCells];
-            int levelSetMaxLevel = CellRefinementLevel.Max().MPIMax();
+            using(new FuncTrace()) {
+                int[] globalDesiredLevel = new int[GlobalNumberOfCells];
+                int levelSetMaxLevel = CellRefinementLevel.Max().MPIMax();
 
-            for (int j = 0; j < LocalNumberOfCells; j++) {
-                int globalIndex = checked((int)(j + myI0));
-                if (CellRefinementLevel[j] > 0 && globalDesiredLevel[globalIndex] <= CellRefinementLevel[j])
-                    globalDesiredLevel[globalIndex] = CellRefinementLevel[j];
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    int globalIndex = checked((int)(j + myI0));
+                    if(CellRefinementLevel[j] > 0 && globalDesiredLevel[globalIndex] <= CellRefinementLevel[j])
+                        globalDesiredLevel[globalIndex] = CellRefinementLevel[j];
 
-                if (cutCellsWithNeighbours[globalIndex]) {
-                    globalDesiredLevel[globalIndex] = levelSetMaxLevel;
-                }
+                    if(cutCellsWithNeighbours[globalIndex]) {
+                        globalDesiredLevel[globalIndex] = levelSetMaxLevel;
+                    }
 
-                if (EnsureHighestLevelAtPeriodicBoundary) {
-                    CellFaceTag[] cellFaceTags = CurrentGrid.Cells.GetCell(j).CellFaceTags;
-                    if (cellFaceTags != null) {
-                        for (int c = 0; c < cellFaceTags.Length; c++) {
-                            if (cellFaceTags[c].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
-                                globalDesiredLevel[globalIndex] = levelSetMaxLevel;
-                                break;
+                    if(EnsureHighestLevelAtPeriodicBoundary) {
+                        CellFaceTag[] cellFaceTags = CurrentGrid.Cells.GetCell(j).CellFaceTags;
+                        if(cellFaceTags != null) {
+                            for(int c = 0; c < cellFaceTags.Length; c++) {
+                                if(cellFaceTags[c].EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) {
+                                    globalDesiredLevel[globalIndex] = levelSetMaxLevel;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
-            }
 
-            return globalDesiredLevel.MPIMax();
+                return globalDesiredLevel.MPIMax();
+            }
         }
 
         /// <summary>
         /// Gets the current refinement level for each global cell.
         /// </summary>
         private int[] GetGlobalCurrentLevel() {
-            int[] localCurrentLevel = new int[LocalNumberOfCells];
-            int[] globalCurrentLevel = new int[GlobalNumberOfCells];
-            long[] i0 = CellPartitioning.GetI0s();
+            using(new FuncTrace()) {
+                int[] localCurrentLevel = new int[LocalNumberOfCells];
+                int[] globalCurrentLevel = new int[GlobalNumberOfCells];
+                long[] i0 = CellPartitioning.GetI0s();
 
-            for (int j = 0; j < LocalNumberOfCells; j++) {
-                localCurrentLevel[j] = CurrentGrid.Cells.GetCell(j).RefinementLevel;
-            }
-            int[][] exchangeGlobalCurrentLevel = localCurrentLevel.MPIGatherO(0);
-            exchangeGlobalCurrentLevel = exchangeGlobalCurrentLevel.MPIBroadcast(0);
-
-            for (int m = 0; m < CurrentGrid.MpiSize; m++) {
-                for (int j = 0; j < exchangeGlobalCurrentLevel[m].Length; j++) {
-                    globalCurrentLevel[j + i0[m]] = exchangeGlobalCurrentLevel[m][j];
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    localCurrentLevel[j] = CurrentGrid.Cells.GetCell(j).RefinementLevel;
                 }
-            }
+                int[][] exchangeGlobalCurrentLevel = localCurrentLevel.MPIGatherO(0);
+                exchangeGlobalCurrentLevel = exchangeGlobalCurrentLevel.MPIBroadcast(0);
 
-            return globalCurrentLevel;
+                for(int m = 0; m < CurrentGrid.MpiSize; m++) {
+                    for(int j = 0; j < exchangeGlobalCurrentLevel[m].Length; j++) {
+                        globalCurrentLevel[j + i0[m]] = exchangeGlobalCurrentLevel[m][j];
+                    }
+                }
+
+                return globalCurrentLevel;
+            }
         }
 
         /// <summary>
@@ -430,79 +446,81 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Gets all cells to be coarsend. This operates process local, no coarsening allowed over process boundaries.
+        /// Gets all cells to be coarsened. This operates process local, no coarsening allowed over process boundaries.
         /// </summary>
         /// <param name="oK2CoarsenGlobal">
-        /// A BitArray of all cells which should be coarsend.
+        /// A BitArray of all cells which should be coarsened.
         /// </param>
         private int[][] FindCoarseningClusters(BitArray oK2CoarsenGlobal) {
-            int JE = CurrentGrid.Cells.Count;
-            BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
-            for (long j = myI0; j < myI0 + LocalNumberOfCells; j++) {
-                oK2Coarsen[checked((int)(j - myI0))] = oK2CoarsenGlobal[checked((int)j)];
-            }
-            //int[][] cellNeighbours = currentGrid.Cells.CellNeighbours;
-            List<Cell> temp = new List<Cell>();
-            List<int> tempCoarseningCluster = new List<int>();
-
-            int RecursionDepth = -1;
-            if (CurrentGrid.SpatialDimension == 1)
-                RecursionDepth = 1;
-            else if (CurrentGrid.SpatialDimension == 2)
-                RecursionDepth = 2;
-            else if (CurrentGrid.SpatialDimension == 3)
-                RecursionDepth = 4;
-            else
-                throw new NotSupportedException();
-
-            int[][] CoarseningCluster = new int[JE][];
-
-            BitArray marker = new BitArray(JE);
-            for (int j = 0; j < LocalNumberOfCells; j++) {
-                if (marker[j])
-                    continue;
-                if (!oK2Coarsen[j])
-                    continue;
-
-                Cell currentCell = CurrentGrid.Cells.GetCell(j);
-                int currentRefinmentLevel = currentCell.RefinementLevel;
-
-                if (currentRefinmentLevel == 0) {
-                    marker[j] = true;
-                    continue;
+            using(new FuncTrace()) {
+                int JE = CurrentGrid.Cells.Count;
+                BitArray oK2Coarsen = new BitArray(LocalNumberOfCells);
+                for(long j = myI0; j < myI0 + LocalNumberOfCells; j++) {
+                    oK2Coarsen[checked((int)(j - myI0))] = oK2CoarsenGlobal[checked((int)j)];
                 }
+                //int[][] cellNeighbours = currentGrid.Cells.CellNeighbours;
+                List<Cell> temp = new List<Cell>();
+                List<int> tempCoarseningCluster = new List<int>();
 
-                temp.Clear();
-                temp.Add(currentCell);
+                int RecursionDepth = -1;
+                if(CurrentGrid.SpatialDimension == 1)
+                    RecursionDepth = 1;
+                else if(CurrentGrid.SpatialDimension == 2)
+                    RecursionDepth = 2;
+                else if(CurrentGrid.SpatialDimension == 3)
+                    RecursionDepth = 4;
+                else
+                    throw new NotSupportedException();
 
-                tempCoarseningCluster.Clear();
-                tempCoarseningCluster.Add(j);
+                int[][] CoarseningCluster = new int[JE][];
 
-                int searchClusterID = currentCell.CoarseningClusterID;
-                int currentClusterSize = currentCell.CoarseningClusterSize;
-                Debug.Assert(searchClusterID > 0);
-                CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighborsEdges, out _);
-                CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighborsVertices, out _);
-                List<int> cellNeighbours = new List<int>();
-                cellNeighbours.AddRange(CellNeighborsEdges);
-                cellNeighbours.AddRange(CellNeighborsVertices);
-                bool complete = false;
-                FindCoarseiningClusterRecursive(j, RecursionDepth, cellNeighbours.ToArray(), marker, CurrentGrid.Cells.GetCell, currentRefinmentLevel, searchClusterID, currentClusterSize, tempCoarseningCluster, ref complete);
-                foreach (int jC in tempCoarseningCluster) {
-                    marker[jC] = true;
-                }
+                BitArray marker = new BitArray(JE);
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    if(marker[j])
+                        continue;
+                    if(!oK2Coarsen[j])
+                        continue;
 
-                if (complete) {
-                    if (!tempCoarseningCluster.Any(jC => oK2Coarsen[jC] == false)) {
-                        int[] CC = tempCoarseningCluster.ToArray();
-                        foreach (int jC in CC) {
-                            Debug.Assert(CoarseningCluster[jC] == null);
-                            CoarseningCluster[jC] = CC;
+                    Cell currentCell = CurrentGrid.Cells.GetCell(j);
+                    int currentRefinmentLevel = currentCell.RefinementLevel;
+
+                    if(currentRefinmentLevel == 0) {
+                        marker[j] = true;
+                        continue;
+                    }
+
+                    temp.Clear();
+                    temp.Add(currentCell);
+
+                    tempCoarseningCluster.Clear();
+                    tempCoarseningCluster.Add(j);
+
+                    int searchClusterID = currentCell.CoarseningClusterID;
+                    int currentClusterSize = currentCell.CoarseningClusterSize;
+                    Debug.Assert(searchClusterID > 0);
+                    CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaEdges, out int[] CellNeighborsEdges, out _);
+                    CurrentGrid.GetCellNeighbours(j, GetCellNeighbours_Mode.ViaVertices, out int[] CellNeighborsVertices, out _);
+                    List<int> cellNeighbours = new List<int>();
+                    cellNeighbours.AddRange(CellNeighborsEdges);
+                    cellNeighbours.AddRange(CellNeighborsVertices);
+                    bool complete = false;
+                    FindCoarseiningClusterRecursive(j, RecursionDepth, cellNeighbours.ToArray(), marker, CurrentGrid.Cells.GetCell, currentRefinmentLevel, searchClusterID, currentClusterSize, tempCoarseningCluster, ref complete);
+                    foreach(int jC in tempCoarseningCluster) {
+                        marker[jC] = true;
+                    }
+
+                    if(complete) {
+                        if(!tempCoarseningCluster.Any(jC => oK2Coarsen[jC] == false)) {
+                            int[] CC = tempCoarseningCluster.ToArray();
+                            foreach(int jC in CC) {
+                                Debug.Assert(CoarseningCluster[jC] == null);
+                                CoarseningCluster[jC] = CC;
+                            }
                         }
                     }
                 }
+                return CoarseningCluster;
             }
-            return CoarseningCluster;
         }
 
         /// <summary>
