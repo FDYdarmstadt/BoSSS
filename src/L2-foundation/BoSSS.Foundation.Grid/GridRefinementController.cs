@@ -149,7 +149,7 @@ namespace BoSSS.Foundation.Grid {
                 for(long j = 0; j < LocalNumberOfCells; j++) {
                     long globalIndex = j + myI0;
                     // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                    Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(checked((int)j));
+                    var cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(checked((int)j));
                     globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
                     for(int i = 0; i < cellNeighbours.Length; i++) {
                         globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
@@ -199,6 +199,7 @@ namespace BoSSS.Foundation.Grid {
                 }
 
                 for(int j = 0; j < globalCutCells.Length; j++) {
+                    
                     globalCutCells[j] = globalCutCells[j].MPIOr();
                 }
 
@@ -301,7 +302,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="desiredLevel"></param>
         /// <param name="globalNeighbourship">
-        /// Jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// Jagged int-array where the first index refers to the current cell and the second one to the neighbour cells.
         /// </param>
         /// <param name="globalRefinementLevel"></param>
         private void GetRefinementLevelRecursive(long globalCellIndex, int desiredLevel, long[][] globalNeighbourship, int[] globalRefinementLevel) {

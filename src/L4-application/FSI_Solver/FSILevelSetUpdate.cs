@@ -222,7 +222,7 @@ namespace FSI_Solver {
         private void ColorNeighborCells(int[] coloredCells, int[] coloredCellsExchange) {
             int noOfLocalCells = GridData.iLogicalCells.NoOfLocalUpdatedCells;
             for (int j = 0; j < noOfLocalCells; j++) {
-                Tuple<int, int, int>[] cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
+                var cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
                 for (int i = 0; i < cellNeigbours.Length; i++) {
                     if (coloredCellsExchange[cellNeigbours[i].Item1] != 0 && coloredCellsExchange[j] == 0) {
                         coloredCells[j] = coloredCellsExchange[cellNeigbours[i].Item1];
@@ -294,7 +294,7 @@ namespace FSI_Solver {
             for (int j = 0; j < J; j++) {
                 int currentColor = coloredCells[j];
                 if (currentColor != 0) {
-                    Tuple<int, int, int>[] cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
+                    var cellNeigbours = GridData.GetCellNeighboursViaEdges(j);
                     for (int i = 0; i < cellNeigbours.Length; i++) {
                         int neighbourColor = coloredCells[cellNeigbours[i].Item1];
                         if (neighbourColor != 0 && neighbourColor != currentColor) {

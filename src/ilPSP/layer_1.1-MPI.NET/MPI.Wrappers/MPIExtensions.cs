@@ -446,8 +446,7 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the
-        /// WORLD-communicator
+        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the WORLD-communicator
         /// </summary>
         static public bool MPIOr(this bool i) {
             return MPIOr(i, csMPI.Raw._COMM.WORLD);

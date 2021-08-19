@@ -60,7 +60,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for (long j = 0; j < J; j++) {
                 long globalIndex = j + map.GridDat.CellPartitioning.i0;
                 // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                Tuple<int, int, int>[] cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
+                var cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
                 globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
                 for (int i = 0; i < cellNeighbours.Length; i++) {
                     globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;

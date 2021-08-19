@@ -116,7 +116,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             for (int j = 0; j < LocalNumberOfCells; j++) {
                 long globalIndex = j + CurrentGrid.CellPartitioning.i0;
                 // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
+                var cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
                 globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
                 for (int i = 0; i < cellNeighbours.Length; i++) {
                     int neighIndLoc = cellNeighbours[i].Item1;
