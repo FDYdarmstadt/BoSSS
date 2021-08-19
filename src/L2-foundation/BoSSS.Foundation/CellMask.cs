@@ -31,7 +31,7 @@ namespace BoSSS.Foundation.Grid {
 
 
     /// <summary>
-    /// masks some cells in a <see cref="GridData"/>-object
+    /// masks some cells in a <see cref="IGridData"/>-object
     /// </summary>
     public class CellMask : ExecutionMask {
 
@@ -42,7 +42,8 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="mask">
         /// a "true" entry for all cells in grid <paramref name="grddat"/> that
         /// should be in the mask; The length of this array must not exceed
-        /// <see cref="GridData.CellData.NoOfLocalUpdatedCells"/>
+        /// - <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/> for <see cref="MaskType.Logical"/>
+        /// - <see cref="IGeometricalCellsData.Count"/> for <see cref="MaskType.Geometrical"/>
         /// </param>
         /// <param name="mt">
         /// <see cref="ExecutionMask.MaskType"/>

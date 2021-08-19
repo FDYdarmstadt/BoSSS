@@ -59,7 +59,6 @@ namespace BoSSS.Solution.LevelSetTools {
 
     /// <summary>
     /// Projects a DG Field onto another DGField of higher order, without any discontinuities at the boundary.
-    /// 
     /// </summary>
     public class ContinuityProjection {
         
@@ -272,7 +271,7 @@ namespace BoSSS.Solution.LevelSetTools {
     }
 
     /// <summary>
-    /// Smoothing based on ContinuousDGField 
+    /// Smoothing based on <see cref="ConstrainedDGField"/> 
     /// => Lagrange-Multiplier Approach
     /// </summary>
     /// <remarks>
@@ -283,17 +282,28 @@ namespace BoSSS.Solution.LevelSetTools {
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
-            CDGField = new ConstrainedDGField(myBasis);
+            m_myBasis = myBasis;
         }
-        //Basis m_myBasis;
-        ConstrainedDGField CDGField;
+        Basis m_myBasis;
 
+        ConstrainedDGField m_projector;
+
+        ConstrainedDGField Update(CellMask domain) {
+            if(m_projector == null || !m_projector.domainLimit.Equals(domain)) {
+                if(m_projector != null)
+                    m_projector.Dispose();
+                m_projector = new ConstrainedDgField_Patchwise(m_myBasis, domain);
+            }
+
+            return m_projector;
+        }
+        
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             if(Domain.NoOfItemsLocally.MPISum() > 0) {
-                //CDGField = new ConstrainedDGField(m_myBasis); 
-                CDGField.ProjectDGField(DGLevelSet, Domain);
+                var p = Update(Domain);
+                p.ProjectDGField(DGLevelSet);
                 LevelSet.Clear();
-                CDGField.AccToDGField(1.0, LevelSet);
+                p.AccToDGField(1.0, LevelSet);
             } else {
                 LevelSet.Clear();
                 LevelSet.AccLaidBack(1.0, DGLevelSet);

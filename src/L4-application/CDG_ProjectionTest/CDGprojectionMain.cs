@@ -165,17 +165,17 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         SinglePhaseField origin;
         SinglePhaseField result;
 
-        ConstrainedDGField cdgField;   
 
+        Basis cdgBasis;
 
         protected override void CreateFields() {
 
             Basis dgBasis = new Basis(this.GridData, degree);
             int cdgDegree = projectOnSameBasis ? degree : degree + 1;
-            Basis cdgBasis = new Basis(this.GridData, cdgDegree);
+            cdgBasis = new Basis(this.GridData, cdgDegree);
 
             origin = new SinglePhaseField(dgBasis, "origin");
-            cdgField = new ConstrainedDGField(cdgBasis);
+            
             result = new SinglePhaseField(cdgBasis, "result");
 
         }
@@ -440,11 +440,13 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField
-            //var returnFields = cdgField.ProjectDGField(origin, domain);
-            cdgField.ProjectDGField(origin, domain);
-            //if (!returnFields.IsNullOrEmpty())
-            //    Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
-            cdgField.AccToDGField(1.0, result, domain);
+            using(var cdgField = ConstrainedDGField.Factory(cdgBasis, domain, this.projectStrategy)) {
+                //var returnFields = cdgField.ProjectDGField(origin, domain);
+                cdgField.ProjectDGField(origin);
+                //if (!returnFields.IsNullOrEmpty())
+                //    Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
+                cdgField.AccToDGField(1.0, result, domain);
+            }
 
             var errField = origin.CloneAs();
             errField.AccLaidBack(-1.0, result, domain);

@@ -23,7 +23,7 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            Projection(ProjectionStrategy.patchwiseOnly, 3, 10, GeomShape.Cube);
+            Projection(ProjectionStrategy.globalOnly, 2, 10, GeomShape.Cube);
             //ProjectionPseudo1D(ProjectionStrategy.patchwiseOnly, 10);
             Application.FinalizeMPI();
         }
@@ -151,7 +151,7 @@ namespace CDG_Projection_MPI {
             // Arrange -- target field
             double particleRad = 0.625;
             var DGBasis = new Basis(grid, 2);
-            var CDGBasis = new Basis(grid, 3);
+            var CDGBasis = new Basis(grid, 4);
             
             var mask = CellMask.GetFullMask(grid.GridData);
             //var mask = ComputeNarrowband(grid, particleRad, FGenerator);
@@ -167,7 +167,7 @@ namespace CDG_Projection_MPI {
 
             // Act -- Do the CG-projection
             SinglePhaseField BestApprox = null;
-            for(int i = 0; i < 2; i++) {
+            for(int i = 0; i < 5; i++) {
                 SinglePhaseField Rest;
                 if(BestApprox == null) {
                     Rest = field;
@@ -177,19 +177,21 @@ namespace CDG_Projection_MPI {
                 }
 
 
-                var CDGTestField = new ConstrainedDGField(CDGBasis); 
+                var CDGTestField = Factory(CDGBasis, mask, PStrategy); 
                 CDGTestField.SetDGCoordinatesOnce(Rest, CellMask.GetFullMask(grid.GridData));
                 double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
                 Console.WriteLine("jump norm of initial: " + jumpNorm_before);
-                switch(PStrategy) {
-                    case ProjectionStrategy.globalOnly:
-                    CDGTestField.ProjectDGFieldGlobal(mask, mask);
-                    break;
-                    case ProjectionStrategy.patchwiseOnly:
-                    CDGTestField.ProjectDGField_patchwise(mask, 2);
-                    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
-                    break;
-                }
+                
+                //switch(PStrategy) {
+                //    case ProjectionStrategy.globalOnly:
+                //    CDGTestField.ProjectDGField_global(mask, mask);
+                //    break;
+                //    case ProjectionStrategy.patchwiseOnly:
+                //    CDGTestField.ProjectDGField_patchwise(mask, 2);
+                //    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
+                //    break;
+                //}
+                CDGTestField.ProjectDGField(Rest);
                 
                 
                 double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
@@ -216,6 +218,14 @@ namespace CDG_Projection_MPI {
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
 
+        static public ConstrainedDGField Factory(Basis b, CellMask __domainLimit, ProjectionStrategy s) {
+            switch(s) {
+                case ProjectionStrategy.globalOnly: return new ConstrainedDGField_Global(b, __domainLimit);
+                case ProjectionStrategy.patchwiseOnly: return new ConstrainedDgField_Patchwise(b, __domainLimit, 2);
+                default: throw new NotImplementedException();
+            }
+        }
+
        
         static public void ProjectionPseudo1D(ProjectionStrategy PStrategy, int GridRes) {
             // Arrange -- Grid
@@ -225,15 +235,15 @@ namespace CDG_Projection_MPI {
             int numOfCells = GridRes * NoOfCores;
             double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells);
             var grid = Grid2D.Cartesian2DGrid(xNodes, new double[] { -1, 1 });
+            var mask = CellMask.GetFullMask(grid.GridData);
 
             // Arrange -- initial DG projection
             var BasisDG = new Basis(grid, 0);
             var BasisCDG = new Basis(grid, 2);
-            var CDGTestField = new ConstrainedDGField(BasisCDG);
+            var CDGTestField =  Factory(BasisCDG, mask, PStrategy); 
             //double slope = 0.6;
             //Func<double[],double> ProjFunc = (double[] X) => X[0]* slope * (X[0]<=0.0?1:-1) + slope;
             Func<double[], double> ProjFunc = (double[] X) => X[0];
-            var mask = CellMask.GetFullMask(grid.GridData);
             var field = new SinglePhaseField(BasisDG, "DG");
             var ProjF = NonVectorizedScalarFunction.Vectorize(ProjFunc);
             field.ProjectField(ProjF);
@@ -243,14 +253,15 @@ namespace CDG_Projection_MPI {
             double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump norm of initial: " + jumpNorm_before);
 
-            switch (PStrategy) {
-                case ProjectionStrategy.globalOnly:
-                CDGTestField.ProjectDGFieldGlobal(mask, mask);
-                break;
-                case ProjectionStrategy.patchwiseOnly:
-                CDGTestField.ProjectDGField_patchwise(mask, 2);
-                break;
-            }
+            //switch (PStrategy) {
+            //    case ProjectionStrategy.globalOnly:
+            //    CDGTestField.ProjectDGField_global(mask, mask);
+            //    break;
+            //    case ProjectionStrategy.patchwiseOnly:
+            //    CDGTestField.ProjectDGField_patchwise(mask, 2);
+            //    break;
+            //}
+            CDGTestField.ProjectDGField(field);
 
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
