@@ -93,7 +93,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                 //Parallelism = Parallelism.SEQ,
                 //PrintStats = true,
-                SymmIndefPivot = true
+                SymmIndefPivot = true,
+                CacheFactorization = true
             };
             //return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
             //    Parallelism = Parallelism.SEQ,
