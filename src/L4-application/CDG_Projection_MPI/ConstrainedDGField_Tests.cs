@@ -23,7 +23,8 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            Projection(ProjectionStrategy.globalOnly, 2, 2, 2, 10, GeomShape.Cube);
+            //Projection(ProjectionStrategy.globalOnly, 2, 2, 2, 10, GeomShape.Cube);
+            CDG_Projection_MPI.ConstrainedDGField_Tests.ProjectionTest_Global(2, 1, 2, 10, GeomShape.Sphere);
             //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
             //Test4Idempotence(3, 10);
             Application.FinalizeMPI();
@@ -244,7 +245,8 @@ namespace CDG_Projection_MPI {
 
                 double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
                 Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
-                Assert.LessOrEqual(jumpNorm_after, jumpNorm_before * 1E-8, "Jump norm not sufficiently reduced.");
+                Assert.LessOrEqual(jumpNorm_after, Math.Max(jumpNorm_before * 1E-8, 1e-10), // in case of sphere, we start wit a low jump norm.
+                    "Jump norm not sufficiently reduced.");
 
                 //BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap", 0.0, 3);
 
