@@ -23,7 +23,7 @@ namespace CDG_Projection_MPI {
         static void Main(string[] args) {
             Application.InitMPI();
             Application.DeleteOldPlotFiles();
-            Projection(ProjectionStrategy.globalOnly, 3, 10, GeomShape.Cube);
+            Projection(ProjectionStrategy.patchwiseOnly, 3, 10, GeomShape.Cube);
             //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
             Application.FinalizeMPI();
         }
