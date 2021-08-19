@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
     }
 
-    
+
 
     /// <summary>
     /// Projection of a DG field onto a continuous subspace of the DG space;
@@ -152,15 +152,31 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </summary>
         double[] m_Coordinates0;
 
-      
+
         /// <summary>
         /// DG representation of the current solution
         /// </summary>
-        protected DGField internalProjection;
+        protected SinglePhaseField internalProjection;
+
+        /// <summary>
+        /// DG representation of the current solution;
+        /// <see cref="CheckLocalProjection(CellMask, bool)"/> computes jump norms from this field
+        /// </summary>
+        public SinglePhaseField InternalDGfield {
+            get {
+                return internalProjection;
+            }
+        }
 
 
+        /// <summary>
+        /// hardcoded switch to turn some console output on/off (BAD PRACTICE)
+        /// </summary>
+        protected bool diagnosticOutput = false;
 
-        protected bool diagnosticOutput = true;
+        /// <summary>
+        /// hardcoded switch to turn debugging output for MATLAB on/off
+        /// </summary>
         protected bool diagOutputMatlab = false;
 
 
@@ -184,7 +200,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// sets the internal DG coordinates from <paramref name="orgDGField"/>
         /// </summary>
-        public void SetDGCoordinatesOnce(DGField orgDGField, CellMask mask) {
+        protected void SetDGCoordinatesOnce(DGField orgDGField, CellMask mask) {
             // get DG-coordinates (change of basis for projection on a higher polynomial degree)
             foreach(int j in mask.ItemEnum) {
                 int N = Math.Min(orgDGField.Basis.GetLength(j), this.m_Basis.GetLength(j));
@@ -413,8 +429,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                 AT = A.Transpose();
                 BlockMsrMatrix AAT = BlockMsrMatrix.Multiply(A, AT);
-                A.SaveToTextFileSparse("A.txt");
-
+                
                 InitSolver(AAT);
             }
 
@@ -434,7 +449,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             /// </summary>
             IMutableMatrixEx solverAAT;
 
-            public void PerformProjection() {
+            public double PerformProjection() {
                 using(var tr = new FuncTrace()) {
                     // solve system
                     // ============
@@ -457,7 +472,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     {
                         CheckRHS(solverAAT, RHS);
                         solver.Solve(v, RHS); // solve for the Lagrange multiplyer
-                        CheckSolutionResidual(RHS, v);
+                        CheckSolutionResidual(tr, RHS, v);
                     }
                     // x = RHS - ATv
                     AT.SpMV(-1.0, v, 0.0, x);
@@ -466,18 +481,22 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     // x must be orthogonal to (x-remainder)
                     double[] R = remainder.CloneAs();
                     R.AccV(-1.0, x);
-                    double tst = x.InnerProd(R);
-                    Console.WriteLine("--- scalar prod: " + tst);
+                    double tst = x.InnerProd(R).MPISum(comm);
+                    tr.Info("Inner Product Test (should be 0.0): " + tst);
 
-                    
 
+
+                    double l2_change = 0.0;
                     foreach(int j in Patch.ItemEnum) {
                         int Np = m_Basis.GetLength(j);
                         int ii0 = m_Mapping.LocalUniqueCoordinateIndex(0, j, 0);
                         for(int n = 0; n < Np; n++) {
-                            DgCoordinates[ii0 + n] += x[ii0 + n];
+                            double x_i = x[ii0 + n];
+                            l2_change += x_i * x_i;
+                            DgCoordinates[ii0 + n] += x_i;
                         }
                     }
+                    l2_change = l2_change.MPISum(comm).Sqrt();
 
                  
 
@@ -491,6 +510,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
 
                     }
+
+                    return l2_change;
                 }
             }
 
@@ -515,7 +536,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             /// <summary>
             /// Verifies that the solution of the linear system is sufficiently good.
             /// </summary>
-            void CheckSolutionResidual(double[] RHS, double[] v) {
+            void CheckSolutionResidual(FuncTrace tr, double[] RHS, double[] v) {
 
                 // check solver residual
 
@@ -530,7 +551,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 double Denom = Math.Max(AAT_inf, Math.Max(rhs_l2, Math.Max(v_l2, Math.Sqrt(BLAS.MachineEps))));
                 double RelResidualNorm = resi_l2 / Denom;
 
-                Console.WriteLine("--- solver residual " + RelResidualNorm);
+                tr.Info("solver residual " + RelResidualNorm);
                 if(RelResidualNorm > 1.0e-5) {
 
                     //solverAAT.SaveToTextFileSparse($"Mtx{blabla}.txt");
@@ -707,6 +728,22 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </summary>
         public double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
             return CheckLocalProjection(csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// A hack only used for testing
+        /// </summary>
+        public void ScheissDrauf(SinglePhaseField f) {
+
+            this.SetDGCoordinatesOnce(f, CellMask.GetFullMask(InternalDGfield.GridDat));
+            InternalDGfield.Clear();
+            InternalDGfield.AccLaidBack(1.0, f);
+            
+            this.m_Coordinates0.ClearEntries();
+            this.m_Coordinates0.AccV(1.0, InternalDGfield.CoordinateVector);
+            
+            this.m_Coordinates.ClearEntries();
+            this.m_Coordinates.AccV(1.0, InternalDGfield.CoordinateVector);
         }
 
         /// <summary>

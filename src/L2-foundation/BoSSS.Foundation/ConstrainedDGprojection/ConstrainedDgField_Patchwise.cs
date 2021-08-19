@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections;
@@ -250,32 +251,83 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// input; unchanged on exit
         /// </param>
         public override void ProjectDGField(ConventionalDGField orgDGField) {
-            SetDGCoordinatesOnce(orgDGField, domainLimit);
+            using(var tr = new FuncTrace()) {
+                SetDGCoordinatesOnce(orgDGField, domainLimit);
+
+                double updateNorm = 0;
+                double relUpdateNorm = 0;
+                bool CheckTerm(int iIter) {
+                    if(iIter < MinIterations)
+                        return true;
+                    if(iIter >= MaxIterations)
+                        return false;
+
+                    if(updateNorm < AbsTerminationThreshold)
+                        return false;
+                    if(relUpdateNorm < RelTerminationThreshold)
+                        return false;
 
 
-            for(int i = 0; i < 7; i++) {
 
-                UpdateInternalProjection(csMPI.Raw._COMM.WORLD);
+                    return true;
+                }
 
-                ProjectDGField_SinglePass();
 
-                UpdateInternalProjection(csMPI.Raw._COMM.WORLD);
+                for(int i = 0; CheckTerm(i); i++) {
 
-                double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
-                Console.WriteLine("-----------------------------fucking residual norm " + ResNorm);
+                    UpdateInternalProjection(csMPI.Raw._COMM.WORLD);
+
+                    updateNorm = ProjectDGField_SinglePass();
+
+                    UpdateInternalProjection(csMPI.Raw._COMM.WORLD);
+
+                    double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
+                    relUpdateNorm = updateNorm / Math.Max(ResNorm, 1e-30); // avoid division by zero
+                    tr.Info("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
+                }
             }
         }
 
+        /// <summary>
+        /// Minimum required iterations for <see cref="ProjectDGField"/>
+        /// </summary>
+        public int MinIterations = 3;
 
-        void ProjectDGField_SinglePass() {
+        /// <summary>
+        /// Maximum allowed iterations for <see cref="ProjectDGField"/>
+        /// </summary>
+        public int MaxIterations = 100;
+
+        /// <summary>
+        /// Relative threshold for the termination of the iterations for <see cref="ProjectDGField"/>
+        /// </summary>
+        public double RelTerminationThreshold = 1e-10;
+
+
+        /// <summary>
+        /// Absolute threshold for the termination of the iterations for <see cref="ProjectDGField"/>
+        /// </summary>
+        public double AbsTerminationThreshold = 1e-15;
+
+
+
+
+
+        double ProjectDGField_SinglePass() {
+            double GlbChange = 0.0, LocChange = 0.0;
             if(globalSeaming != null) {
-                globalSeaming.PerformProjection();
+                GlbChange += globalSeaming.PerformProjection().Pow2();
             }
 
             foreach(var s in localSeaming)
-                s.PerformProjection();
+                LocChange += s.PerformProjection().Pow2();
             foreach(var s in localPatches)
-                s.PerformProjection();
+                LocChange += s.PerformProjection().Pow2(); // Note: since the domains are disjoint, we have almost |x + y|^2 = |x]^2 + |y]^2
+            LocChange = LocChange.MPISum();
+
+
+            double Totchange = (GlbChange + LocChange).Sqrt();
+            return Totchange;
         }
 
 
