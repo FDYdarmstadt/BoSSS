@@ -137,16 +137,19 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Computes the global cell neighbourship of all cells. 
-        /// Returns an jaggerd int-array where the first index refers to the current cell and the second one to the neighbour cells.
+        /// Returns an jagged array where the 
+        /// - first index: global index of the current cell 
+        /// - second index: enumeration over neighbors.
+        /// - content: global index of neighbor cells.
         /// </summary>
         private long[][] GetGlobalCellNeigbourship() {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
                 long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
                 for(long j = 0; j < LocalNumberOfCells; j++) {
                     long globalIndex = j + myI0;
                     // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                    Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges((int)j);
+                    Tuple<int, int, int>[] cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(checked((int)j));
                     globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
                     for(int i = 0; i < cellNeighbours.Length; i++) {
                         globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
@@ -157,14 +160,16 @@ namespace BoSSS.Foundation.Grid {
                         if(globalCellNeigbourship[globalIndex][i] < LocalNumberOfCells)
                             globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + myI0;
                         else
-                            globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - LocalNumberOfCells];
+                            globalCellNeigbourship[globalIndex][i] = externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - LocalNumberOfCells];
                     }
                 }
 
-                for(int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                    int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
-                    processID = processID.MPIMax();
-                    globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+                using(new BlockTrace("GetGlobalCellNeigbourship_MPI_Exchange", tr)) {
+                    for(long globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
+                        int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
+                        processID = processID.MPIMax();
+                        globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+                    }
                 }
 
                 return globalCellNeigbourship;
