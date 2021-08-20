@@ -17,6 +17,7 @@ limitations under the License.
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -464,6 +465,69 @@ namespace MPI.Wrappers {
                 return glob > 0;
             }
         }
+
+        /// <summary>
+        /// computes the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// WORLD--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIOr(this BitArray b) {
+            MPIOr(b, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// computes the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIOr(this BitArray b, MPI_Comm comm) {
+            int L = b.Length;
+            int Lx = L / 32 + 1;
+            int[] s_buf = new int[Lx];
+            int[] r_buf = new int[Lx];
+
+            int k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = 0;
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = b[k];
+                    if(b_k) {
+                        a |= (1 << i);
+                    }
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+                s_buf[lx] = a;
+
+                if(k >= L)
+                    break;
+            }
+
+
+            unsafe {
+                fixed(int* p_s_buf = s_buf, p_r_buf = r_buf) {
+                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BOR, comm);
+                }
+            }
+
+            k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = r_buf[lx];
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = (a  & (1 << i)) != 0;
+                    b[k] = b_k;
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+
+                if(k >= L)
+                    break;
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// equal to <see cref="MPIAnd(int,MPI_Comm)"/>, acting on the

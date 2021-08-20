@@ -127,7 +127,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             private set;
         }
 
-        Basis m_Basis;
+        readonly Basis m_Basis;
 
         /// <summary>
         /// 
@@ -138,9 +138,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
         }
 
-        GridData m_grd;
+        readonly GridData m_grd;
 
-        UnsetteledCoordinateMapping m_Mapping;
+        readonly UnsetteledCoordinateMapping m_Mapping;
 
         /// <summary>
         /// DG Coordinates of the current approximation;
@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// DG representation of the current solution
         /// </summary>
-        protected SinglePhaseField internalProjection;
+        protected readonly SinglePhaseField internalProjection;
 
         /// <summary>
         /// DG representation of the current solution;
@@ -254,7 +254,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             }
 
-            ConstrainedDGFieldMk3 owner;
+            readonly ConstrainedDGFieldMk3 owner;
 
             UnsetteledCoordinateMapping m_Mapping => owner.m_Mapping;
             GridData m_grd => owner.m_grd;

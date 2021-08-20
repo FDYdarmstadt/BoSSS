@@ -18,6 +18,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -145,36 +146,87 @@ namespace BoSSS.Foundation.Grid {
         private long[][] GetGlobalCellNeigbourship() {
             using(var tr = new FuncTrace()) {
                 long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
-                long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
-                for(long j = 0; j < LocalNumberOfCells; j++) {
-                    long globalIndex = j + myI0;
+                long[][] globalCellNeigbourship_local = new long[LocalNumberOfCells][];
+
+
+                int NoOfItemsToSend = 0;
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    //long globalIndex = j + myI0;
                     // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                    var cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(checked((int)j));
-                    globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
-                    for(int i = 0; i < cellNeighbours.Length; i++) {
-                        globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
+                    var cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
+                    int NN = cellNeighbours.Length;
+                    globalCellNeigbourship_local[j] = new long[NN];
+
+                    for(int i = 0; i < NN; i++) {
+                        globalCellNeigbourship_local[j][i] = cellNeighbours[i].Item1;
                     }
 
                     // translate local neighbour index into global index
-                    for(int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
-                        if(globalCellNeigbourship[globalIndex][i] < LocalNumberOfCells)
-                            globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + myI0;
+                    for(int i = 0; i < NN; i++) {
+                        long n_ji = globalCellNeigbourship_local[j][i];
+
+                        if(n_ji < LocalNumberOfCells)
+                            globalCellNeigbourship_local[j][i] = n_ji + myI0;
                         else
-                            globalCellNeigbourship[globalIndex][i] = externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - LocalNumberOfCells];
+                            globalCellNeigbourship_local[j][i] = externalCellsGlobalIndices[n_ji - LocalNumberOfCells];
                     }
+
+
+                    NoOfItemsToSend += NN;
                 }
+                NoOfItemsToSend += LocalNumberOfCells;
 
                 using(new BlockTrace("GetGlobalCellNeigbourship_MPI_Exchange", tr)) {
-                    for(long globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                        int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
-                        processID = processID.MPIMax();
-                        globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+                    // compress the jagged array into a linear one which is efficient to send.
+                    long[] SendBuffer = new long[NoOfItemsToSend];
+                    int k = 0;
+                    for(int j = 0; j < LocalNumberOfCells; j++) {
+                        var Nj = globalCellNeigbourship_local[j];
+                        int Lj = Nj != null ? Nj.Length : 0;
+                        SendBuffer[k] = -Lj - 1; k++; // the negative minus one encoding is not necessary, but it will raise an exception if the sequence gets messed up
+                        for(int i = 0; i < Lj; i++) {
+                            SendBuffer[k + i] = Nj[i];
+                        }
+                        k += Lj;
                     }
+                    Assert.AreEqual(k, NoOfItemsToSend);
+
+                    int[] NoOfItemsPerProc = NoOfItemsToSend.MPIAllGather();
+                    long[] RcvBuffer = SendBuffer.MPIAllGatherv(NoOfItemsPerProc);
+
+                    // unpack data to jagged array
+                    long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
+                    k = 0;
+                    long jG = 0;
+                    while(k < RcvBuffer.Length) {
+                        int L_jG = checked((int)(-(RcvBuffer[k] + 1))); k++;
+                        var gN_jG = new long[L_jG];
+                        globalCellNeigbourship[jG] = gN_jG;
+                        for(int i = 0; i < L_jG; i++) {
+                            gN_jG[i] = RcvBuffer[k + i];
+                        }
+                        k += L_jG;
+                    }
+
+                    // finally;
+                    return globalCellNeigbourship;
+
+                    //for(long globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
+                    //    int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
+                    //    processID = processID.MPIMax();
+                    //    globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
+                    //}
                 }
 
-                return globalCellNeigbourship;
+                
             }
         }
+
+
+
+
+
+
 
         /// <summary>
         /// Returns the cutcells + neighbours on a global level.
@@ -198,10 +250,7 @@ namespace BoSSS.Foundation.Grid {
                     }
                 }
 
-                for(int j = 0; j < globalCutCells.Length; j++) {
-                    
-                    globalCutCells[j] = globalCutCells[j].MPIOr();
-                }
+                globalCutCells.MPIOr();
 
                 return globalCutCells;
             }
