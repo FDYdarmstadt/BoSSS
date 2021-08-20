@@ -159,7 +159,7 @@ namespace CDG_Projection_MPI {
             }
         }
 
-#if !DEBUG
+#if DEBUG
         [Test]
         static public void ProjectionTest_Patchwise( 
             [Values(2)] int DGDeg, 
@@ -193,7 +193,6 @@ namespace CDG_Projection_MPI {
             [Values(15, 20)] int GridRes, 
             [Values(GeomShape.Cube)] GeomShape shape, 
             [Values(-1, 2, 4)] int __NoOfPatches) {
-            Debugger.Launch();
             NoOfPatches = __NoOfPatches;
             Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
@@ -245,7 +244,7 @@ namespace CDG_Projection_MPI {
                 CDGTestField.ProjectDGField(field);
                 CDGTestField.AccToDGField(1.0, BestApprox, mask);
 
-                BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap", 0.0, 3);
+                //BoSSS.Solution.Tecplot.Tecplot.PlotFields(new DGField[] { field, BestApprox }, "PrjSnap", 0.0, 3);
                 
                 double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
                 Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);

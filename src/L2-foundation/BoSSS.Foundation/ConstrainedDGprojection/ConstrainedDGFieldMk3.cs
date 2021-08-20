@@ -501,15 +501,15 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
                     double jumpNorm = owner.CheckLocalProjection(this.comm, this.Patch, true);
-                    if(owner.diagnosticOutput)
-                        Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
-                    if(jumpNorm > 1e-11) {
-                        if(owner.diagnosticOutput) {
-                            Console.WriteLine("======================");
-                            Console.WriteLine("project mask: No of cells {0}", this.Patch.NoOfItemsLocally);
-                        }
+                    //if(owner.diagnosticOutput)
+                    //    Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
+                    //if(jumpNorm > 1e-11) {
+                    //    if(owner.diagnosticOutput) {
+                    //        Console.WriteLine("======================");
+                    //        Console.WriteLine("project mask: No of cells {0}", this.Patch.NoOfItemsLocally);
+                    //    }
 
-                    }
+                    //}
 
                     return l2_change;
                 }
@@ -724,7 +724,13 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             internalProjection.Clear();
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
             internalProjection._Acc(1.0, m_Coordinates, 0, stride, true);
-            internalProjection.MPIExchange();
+            if(comm == csMPI.Raw._COMM.WORLD) {
+                internalProjection.MPIExchange();
+            } else if(comm == csMPI.Raw._COMM.SELF) {
+                // noop
+            } else {
+                throw new NotImplementedException("only supported for WORLD and SELF communicator");
+            }
         }
 
         /// <summary>
@@ -756,12 +762,17 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         protected double CheckLocalProjection(MPI_Comm comm, CellMask mask = null, bool onInterProc = false) {
             MPICollectiveWatchDog.Watch(comm);
 
-
-            if(mask == null) {
-                mask = CellMask.GetFullMask(m_grd);
+            bool IsLocal = IsMPIself(comm);
+            EdgeMask innerEM;
+            if(IsLocal) {
+                innerEM = mask.GetAllInnerEdgesMask();
+            } else {
+                if(mask == null) {
+                    mask = CellMask.GetFullMask(m_grd);
+                }
+                SubGrid maskSG = new SubGrid(mask);
+                innerEM = maskSG.InnerEdgesMask;
             }
-            SubGrid maskSG = new SubGrid(mask);
-            EdgeMask innerEM = maskSG.InnerEdgesMask;
 
             UpdateInternalProjection(comm);
 
@@ -821,7 +832,18 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
+        private static bool IsMPIself(MPI_Comm comm) {
+            bool IsLocal;
+            if(comm == csMPI.Raw._COMM.WORLD) {
+                IsLocal = false;
+            } else if(comm == csMPI.Raw._COMM.SELF) {
+                IsLocal = true;
+            } else {
+                throw new NotSupportedException("Only supported for WORLD ans SELF communicator.");
+            }
 
+            return IsLocal;
+        }
 
         private class RuntimeTracker : IDisposable {
             public RuntimeTracker(string recordname, bool activate) {
