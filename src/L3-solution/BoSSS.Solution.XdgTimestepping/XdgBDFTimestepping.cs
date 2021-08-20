@@ -1581,6 +1581,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     } else {
                         // Linear Solver (Stokes)
                         // ----------------------
+                        tr.Info("Using linear solver.");
 
                         // build the saddle-point matrix
                         //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
@@ -1593,11 +1594,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         // update the multigrid operator
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                        MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
-                            System, MaMa,
-                            this.Config_MultigridOperator,
-                            dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
-
+                        MultigridOperator mgOperator;
+                        using(new BlockTrace("MultigridOperator setup", tr)) {
+                            mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                                System, MaMa,
+                                this.Config_MultigridOperator,
+                                dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
+                        }
 
                         // init linear solver
 

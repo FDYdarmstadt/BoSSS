@@ -149,7 +149,6 @@ namespace BoSSS.Foundation.Grid {
                 long[][] globalCellNeigbourship_local = new long[LocalNumberOfCells][];
 
 
-                int NoOfItemsToSend = 0;
                 for(int j = 0; j < LocalNumberOfCells; j++) {
                     //long globalIndex = j + myI0;
                     // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
@@ -171,56 +170,10 @@ namespace BoSSS.Foundation.Grid {
                             globalCellNeigbourship_local[j][i] = externalCellsGlobalIndices[n_ji - LocalNumberOfCells];
                     }
 
-
-                    NoOfItemsToSend += NN;
                 }
-                NoOfItemsToSend += LocalNumberOfCells;
-
-                using(new BlockTrace("GetGlobalCellNeigbourship_MPI_Exchange", tr)) {
-                    // compress the jagged array into a linear one which is efficient to send.
-                    long[] SendBuffer = new long[NoOfItemsToSend];
-                    int k = 0;
-                    for(int j = 0; j < LocalNumberOfCells; j++) {
-                        var Nj = globalCellNeigbourship_local[j];
-                        int Lj = Nj != null ? Nj.Length : 0;
-                        SendBuffer[k] = -Lj - 1; k++; // the negative minus one encoding is not necessary, but it will raise an exception if the sequence gets messed up
-                        for(int i = 0; i < Lj; i++) {
-                            SendBuffer[k + i] = Nj[i];
-                        }
-                        k += Lj;
-                    }
-                    Assert.AreEqual(k, NoOfItemsToSend);
-
-                    int[] NoOfItemsPerProc = NoOfItemsToSend.MPIAllGather();
-                    long[] RcvBuffer = SendBuffer.MPIAllGatherv(NoOfItemsPerProc);
-
-                    // unpack data to jagged array
-                    long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
-                    k = 0;
-                    long jG = 0;
-                    while(k < RcvBuffer.Length) {
-                        int L_jG = checked((int)(-(RcvBuffer[k] + 1))); k++;
-                        var gN_jG = new long[L_jG];
-                        globalCellNeigbourship[jG] = gN_jG;
-                        for(int i = 0; i < L_jG; i++) {
-                            gN_jG[i] = RcvBuffer[k + i];
-                        }
-                        k += L_jG;
-                        jG++;
-                    }
-                    Assert.AreEqual(jG, GlobalNumberOfCells);
-
-                    // finally;
-                    return globalCellNeigbourship;
-
-                    //for(long globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                    //    int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
-                    //    processID = processID.MPIMax();
-                    //    globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
-                    //}
-                }
-
                 
+
+                return globalCellNeigbourship_local.MPI_AllGaterv();
             }
         }
 

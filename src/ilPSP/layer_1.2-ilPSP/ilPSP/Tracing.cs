@@ -291,7 +291,7 @@ namespace ilPSP.Tracing {
                 _name = m.DeclaringType.FullName + "." + m.Name;
                 callingType = m.DeclaringType;
             }
-            Tracer.Push_MethodCallRecord(_name);
+            int newDepth = Tracer.Push_MethodCallRecord(_name);
 
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
@@ -302,7 +302,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING " + _name);
+                m_Logger.Info("ENTERING " + _name + " new stack depth = " + newDepth);
             }
         }
 
@@ -324,7 +324,7 @@ namespace ilPSP.Tracing {
                 callingType = m.DeclaringType;
                 filtername = callingType.FullName;
             }
-            Tracer.Push_MethodCallRecord(UserName);
+            int newDepth = Tracer.Push_MethodCallRecord(UserName);
 
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (filtername.StartsWith(Tracer.m_NamespacesToLog[i])) {
@@ -335,7 +335,7 @@ namespace ilPSP.Tracing {
 
             m_Logger = LogManager.GetLogger(callingType);
             if (m_DoLogging) {
-                m_Logger.Info("ENTERING " + UserName);
+                m_Logger.Info("ENTERING " + UserName + " new stack depth = " + newDepth);
             }
         }
 
@@ -348,12 +348,12 @@ namespace ilPSP.Tracing {
             if(!Tracer.InstrumentationSwitch)
                 return;
 
-            Tracer.Pop_MethodCallrecord(base.Duration.Ticks);
+            int newDepht = Tracer.Pop_MethodCallrecord(base.Duration.Ticks);
 
             if (m_DoLogging) {
                 
                 string time = base.Duration.TotalSeconds.ToString(NumberFormatInfo.InvariantInfo);
-                string str = string.Format("LEAVING {0} ({1} sec)", _name, time);
+                string str = string.Format("LEAVING {0} ({1} sec, return to stack depth = {2})", _name, time, newDepht);
 
                 try {
                     m_Logger.Info(str);
@@ -488,7 +488,7 @@ namespace ilPSP.Tracing {
 
             if (f.DoLogging) {
                 m_Logger = f.m_Logger;
-                m_Logger.Info("BLKENTER " + _name + "  stack depth: " + NewDepth);
+                m_Logger.Info("BLKENTER " + _name + " new stack depth = " + NewDepth);
             }
         }
 
@@ -504,7 +504,7 @@ namespace ilPSP.Tracing {
             if (_f.DoLogging) {
                 m_Logger.Info("LEAVING " + _name + " ("
                     + base.Duration.TotalSeconds.ToString(NumberFormatInfo.InvariantInfo)
-                    + " sec, new stack depth = " + newDepth + ")");
+                    + " sec, return to stack depth = " + newDepth + ")");
             }
         }
 

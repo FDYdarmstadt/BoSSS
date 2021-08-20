@@ -597,7 +597,6 @@ System.ArgumentException: DG degree seems different
             // ============================
 
             //// Create Grid
-            Console.WriteLine("...generating grid");
             C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
 
             // Physical Parameters

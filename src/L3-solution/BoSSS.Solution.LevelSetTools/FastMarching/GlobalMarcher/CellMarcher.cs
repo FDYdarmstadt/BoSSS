@@ -109,21 +109,20 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
             // intermediate solution  
 
             long[] externalCellsGlobalIndices = CurrentGrid.iParallel.GlobalIndicesExternalCells;
-            long GlobalNumberOfCells = CurrentGrid.CellPartitioning.TotalLength;
-            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
             int LocalNumberOfCells = CurrentGrid.CellPartitioning.LocalLength;
+            long[][] local_globalCellNeigbourship = new long[LocalNumberOfCells][];
 
             for (int j = 0; j < LocalNumberOfCells; j++) {
-                long globalIndex = j + CurrentGrid.CellPartitioning.i0;
+                
                 // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
                 var cellNeighbours = CurrentGrid.GetCellNeighboursViaEdges(j);
-                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
+                local_globalCellNeigbourship[j] = new long[cellNeighbours.Length];
                 for (int i = 0; i < cellNeighbours.Length; i++) {
                     int neighIndLoc = cellNeighbours[i].Item1;
                     if (neighIndLoc < LocalNumberOfCells)
-                        globalCellNeigbourship[globalIndex][i] = neighIndLoc + CurrentGrid.CellPartitioning.i0;
+                        local_globalCellNeigbourship[j][i] = neighIndLoc + CurrentGrid.CellPartitioning.i0;
                     else
-                        globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[neighIndLoc - LocalNumberOfCells];
+                        local_globalCellNeigbourship[j][i] = externalCellsGlobalIndices[neighIndLoc - LocalNumberOfCells];
                 }
 
                 // translate local neighbour index into global index
@@ -135,13 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
                 //}
             }
 
-            for (int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
-                processID = processID.MPIMax();
-                globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
-            }
-
-            return globalCellNeigbourship;
+            return local_globalCellNeigbourship.MPI_AllGaterv();
         }
     }
 }

@@ -653,7 +653,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
 
             //// Create Grid
-            Console.WriteLine("...generating grid");
             double xMin = -1, yMin = -1, zMin = -1;
             double xMax = 1, yMax = 1, zMax = 1;
 
