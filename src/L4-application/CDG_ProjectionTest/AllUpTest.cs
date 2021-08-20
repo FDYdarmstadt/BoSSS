@@ -25,11 +25,11 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     /// Unit test for the continuous L2-projection
     /// </summary>
     [TestFixture]
-   public class AllUpTest {
+    static public class AllUpTest {
 
 
         [Test]
-        public void AllUp(
+        static public void AllUp(
             [Values(0, 1, 2)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
@@ -58,7 +58,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         [Test]
-        public void AllUp_LegendrePolynomial(
+        static public void AllUp_LegendrePolynomial(
             [Values(3, 4, 5)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
@@ -86,7 +86,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         [Test]
-        public void AllUp_Cube(
+        static public void AllUp_Cube(
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,

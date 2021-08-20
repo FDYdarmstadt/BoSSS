@@ -26,7 +26,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </param>
         public ConstrainedDGField_Global(Basis b, CellMask __domainLimit) : base(b, __domainLimit) {
             m_grd = (GridData) b.GridDat;
-            mySolver = new ConstrainedProjectionInternal(this, __domainLimit, __domainLimit, false);
+            mySolver = new ConstrainedProjectionInternal(this, base.domainLimit, base.domainLimit, false);
         }
 
         GridData m_grd;
