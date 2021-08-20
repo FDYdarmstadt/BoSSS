@@ -206,7 +206,9 @@ namespace BoSSS.Foundation.Grid {
                             gN_jG[i] = RcvBuffer[k + i];
                         }
                         k += L_jG;
+                        jG++;
                     }
+                    Assert.AreEqual(jG, GlobalNumberOfCells);
 
                     // finally;
                     return globalCellNeigbourship;
