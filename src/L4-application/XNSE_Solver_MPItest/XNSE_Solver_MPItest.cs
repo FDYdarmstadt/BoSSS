@@ -137,7 +137,7 @@ System.ArgumentException: DG degree seems different
         [Test]
         public static void BadInitiallyDistributionTest() {
             var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR:false, useLoadBal: true , UsePredefPartitioning: true);
-
+            //Debugger.Launch();
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -193,11 +193,7 @@ System.ArgumentException: DG degree seems different
             */
 
             BoSSS.Solution.Application.InitMPI();
-            //ParallelRisingDroplet();
-            //RotCube_OrderNotSupportedInHMF();
-            //RotCube_CG_ProjectionOutOfMemoryException();
-            //Rotating_Cube_compare4to1();
-            PardisoFailsInProjection();
+            BadInitiallyDistributionTest();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
