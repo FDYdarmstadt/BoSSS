@@ -182,18 +182,19 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 // ===========================
                 EdgeMask interPatchEM = innerEM;
                 foreach(CellMask patch in patches) {
-                    SubGrid maskPatch = new SubGrid(patch);
-                    EdgeMask innerPatch = maskPatch.InnerEdgesMask;
+                    //SubGrid maskPatch = new SubGrid(patch);
+                    //EdgeMask innerPatch = maskPatch.InnerEdgesMask;
+                    EdgeMask innerPatch = patch.GetAllInnerEdgesMask();
                     interPatchEM = interPatchEM.Except(innerPatch);
                 }
                 Console.WriteLine("inter patch EM No of edges: {0}", interPatchEM.NoOfItemsLocally);
 
                 BitArray interPatchBA = new BitArray(J);
-                foreach(int j in interPatchEM.ItemEnum) {
-                    int cell1 = m_grd.Edges.CellIndices[j, 0];
+                foreach(int edg in interPatchEM.ItemEnum) {
+                    int cell1 = m_grd.Edges.CellIndices[edg, 0];
                     if(cell1 >= 0 && cell1 < J)
                         interPatchBA[cell1] = true;
-                    int cell2 = m_grd.Edges.CellIndices[j, 1];
+                    int cell2 = m_grd.Edges.CellIndices[edg, 1];
                     if(cell2 >= 0 && cell2 < J)
                         interPatchBA[cell2] = true;
                 }

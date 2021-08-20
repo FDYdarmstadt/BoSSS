@@ -610,6 +610,41 @@ namespace BoSSS.Foundation.Grid {
 
         }
 
+
+        /// <summary>
+        /// Obtain all edges adjacent to cells within this mask, on both sides of the edge.
+        /// This is a non-collective alternative to <see cref="SubGrid.Inner"/>
+        /// </summary>
+        /// <returns></returns>
+        public EdgeMask GetAllInnerEdgesMask() {
+
+            if(this.MaskType != MaskType.Logical)
+                throw new NotSupportedException();
+
+
+            int E = this.GridData.iLogicalEdges.Count;
+            int[,] Edges = this.GridData.iLogicalEdges.CellIndices;
+
+            BitArray edges = new BitArray(E, false);
+            BitArray cells = this.GetBitMask();
+
+            // loop over all Edges
+            for(int e = 0; e < E; e++) {
+                int Cel1 = Edges[e, 0];
+                int Cel2 = Edges[e, 1];
+
+                if(cells[Cel1] == true) {
+                    if(Cel2 >= 0 && Cel2 < cells.Length && cells[Cel2] == true) {
+                        edges[e] = true;
+                    }
+                }
+
+            }
+
+            return new EdgeMask(this.GridData, edges);
+
+        }
+
     }
 
 
