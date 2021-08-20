@@ -425,18 +425,20 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="cutCellsWithNeighbours">
         /// </param>
         private List<int[]> GetCellsToCoarsen(int[] globalRefinementLevel, long[][] globalCellNeigbourship, BitArray cutCellsWithNeighbours) {
-            BitArray oK2Coarsen = GetCellsOk2Coarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
-            int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen);
-            List<int[]> coarseningCells = new List<int[]>();
-            for (int j = 0; j < LocalNumberOfCells; j++) {
-                if (coarseningClusters[j] != null) {
-                    Debug.Assert(coarseningClusters[j].Contains(j));
-                    if (j == coarseningClusters[j].Min()) {
-                        coarseningCells.Add(coarseningClusters[j]);
+            using(new FuncTrace()) {
+                BitArray oK2Coarsen = GetCellsOk2Coarsen(globalRefinementLevel, globalCellNeigbourship, cutCellsWithNeighbours);
+                int[][] coarseningClusters = FindCoarseningClusters(oK2Coarsen);
+                List<int[]> coarseningCells = new List<int[]>();
+                for(int j = 0; j < LocalNumberOfCells; j++) {
+                    if(coarseningClusters[j] != null) {
+                        Debug.Assert(coarseningClusters[j].Contains(j));
+                        if(j == coarseningClusters[j].Min()) {
+                            coarseningCells.Add(coarseningClusters[j]);
+                        }
                     }
                 }
+                return coarseningCells;
             }
-            return coarseningCells;
         }
 
         /// <summary>
@@ -495,9 +497,10 @@ namespace BoSSS.Foundation.Grid {
                 }
             }
 
-            for (int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
-                globalCellsNotOK2Coarsen[j] = globalCellsNotOK2Coarsen[j].MPIOr();
-            }
+            //for (int j = 0; j < globalCellsNotOK2Coarsen.Length; j++) {
+            //    globalCellsNotOK2Coarsen[j] = globalCellsNotOK2Coarsen[j].MPIOr();
+            //}
+            globalCellsNotOK2Coarsen.MPIOr();
 
             return globalCellsNotOK2Coarsen;
         }

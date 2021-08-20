@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             ProjectDGField_patchwise_setup(NoOfPatchesPerProcess);
         }
 
-        GridData m_grd;
+        readonly GridData m_grd;
 
         /// <summary>
         /// release of internal solvers
@@ -60,7 +60,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// Threshold for the patch-wise projection; patches are determined
         /// that the size of the linear system stays below this number.
         /// </summary>
-        int maxNoOfCoordinates = 20000;
+        const int maxNoOfCoordinates = 20000;
 
         /// <summary>
         /// 
