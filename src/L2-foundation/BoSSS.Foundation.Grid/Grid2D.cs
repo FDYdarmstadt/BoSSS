@@ -787,6 +787,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
 
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 return grid;
             }
         }

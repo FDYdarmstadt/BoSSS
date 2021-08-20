@@ -15,6 +15,7 @@ using System.Linq;
 using BoSSS.Foundation.IO;
 using ilPSP;
 using BoSSS.Solution.Statistic;
+using System.Diagnostics;
 
 namespace CDG_Projection_MPI {
 

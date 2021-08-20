@@ -285,8 +285,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
                     relUpdateNorm = updateNorm / Math.Max(ResNorm, 1e-30); // avoid division by zero
-                    //tr.Info
-                    Console.WriteLine("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
+                    tr.Info("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
                 }
             }
         }

@@ -987,7 +987,7 @@ namespace BoSSS.Foundation {
 
 
             for(int j = 0; j < J; j++ ) {
-                int bt_j = this.GetBlockType(j);
+                int bt_j = this.GetBlockType(j + this.FirstBlock);
                 _blockType[j] = bt_j;
                 
                 if(_Subblk_i0.Length <= bt_j) {
