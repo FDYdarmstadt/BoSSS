@@ -187,12 +187,12 @@ namespace CDG_Projection_MPI {
 #else
         [Test]
         static public void ProjectionTest_Patchwise( 
-            [Values(3)] int DGDeg, 
-            [Values(2)] int incDeg, 
+            [Values(2)] int DGDeg, 
+            [Values(1)] int incDeg, 
             [Values(3)] int Dim,
-            [Values(15, 20)] int GridRes, 
+            [Values(15)] int GridRes, 
             [Values(GeomShape.Cube)] GeomShape shape, 
-            [Values(-1, 2, 4)] int __NoOfPatches) {
+            [Values(-1, 4)] int __NoOfPatches) {
             NoOfPatches = __NoOfPatches;
             Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
