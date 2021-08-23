@@ -189,15 +189,15 @@ namespace BoSSS.Solution.NSECommon {
             ////===================================================
             //// Limit value of variables using known bounds
             ////====================================================
-     
-            //Temperature = Temperature > 10 ? 10 : Temperature;
-            //Temperature = Temperature < 0.7 ? 0.7 : Temperature;
 
-            //YF = YF > 1.0 ? 1.0 : YF;
-            //YF = YF < 0.0 ? 0.0 : YF;
+            Temperature = Temperature > 10 ? 10 : Temperature;
+            Temperature = Temperature < 0.7 ? 0.7 : Temperature;
 
-            //YO = YO > 1.0 ? 1.0 : YO;
-            //YO = YO < 0.0 ? 0.0 : YO;
+            YF = YF > 1.0 ? 1.0 : YF;
+            YF = YF < 0.0 ? 0.0 : YF;
+
+            YO = YO > 1.0 ? 1.0 : YO;
+            YO = YO < 0.0 ? 0.0 : YO;
 
 
 

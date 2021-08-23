@@ -448,7 +448,7 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    public class LinearizedScalarConvection2Jacobi : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
+    public class LinearizedScalarConvection2Jacobi : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
         private int m_SpatialDimension;
         private IncompressibleBoundaryCondMap m_bcmap;
 
@@ -666,7 +666,7 @@ namespace BoSSS.Solution.NSECommon {
                         double[] Uout = new double[Uin.Length];
                         //Velocity
                         for (int i = 0; i < m_SpatialDimension; i++) {
-                            Uout[i] = m_bcmap.bndFunction[VariableNames.Velocity_d(i)][inp.EdgeTag](inp.X, inp.time);
+                            Uout[i] = m_bcmap.bndFunction[VariableNames.Velocity_d(i)][inp.EdgeTag](inp.X, inp.time)* VelocityMultiplier;
                         }
 
                         switch (m_bcmap.PhysMode) {
@@ -731,7 +731,7 @@ namespace BoSSS.Solution.NSECommon {
                         // Velocity
                         for (int j = 0; j < m_SpatialDimension; j++) {
                             // opt1:
-                            Uout[j] = m_bcmap.bndFunction[VariableNames.Velocity_d(j)][inp.EdgeTag](inp.X, inp.time);
+                            Uout[j] = m_bcmap.bndFunction[VariableNames.Velocity_d(j)][inp.EdgeTag](inp.X, inp.time) * VelocityMultiplier;
                         }
 
                         // Skalar (e.g. temperature or MassFraction)
@@ -902,6 +902,14 @@ namespace BoSSS.Solution.NSECommon {
             var DerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { DerivEdg, DerivVol };
         }
+        /// <summary>
+        /// Multiplier used with every velocity BC
+        /// </summary>
+        double VelocityMultiplier = 1.0;
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("VelocityMultiplier"))
+                VelocityMultiplier = (double)cs.UserDefinedValues["VelocityMultiplier"];
+        }
 
         /// <summary>
         /// Level-Set for multiphase.
@@ -925,7 +933,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -934,7 +942,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags InnerEdgeTerms {
             get {
-                return TermActivationFlags.UxV /*| TermActivationFlags.V*/;
+                return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
 
@@ -943,7 +951,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.UxGradV /*| TermActivationFlags.GradV*/;
+                return TermActivationFlags.UxGradV | TermActivationFlags.GradV;
             }
         }
     }

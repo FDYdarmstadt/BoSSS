@@ -224,6 +224,14 @@ namespace BoSSS.Solution.NSECommon {
         public double getCp(string name, double T) {
             //using (var tr = new FuncTrace()) {
             double[] coefficients;
+
+            if (T > 2500)
+                T = 2500;
+
+            if (T < 200)
+                T = 200;
+
+
             if (/*T >= TemperatureLimits[0] - 200.0 &&*/ T < TemperatureLimits[1]) { // Lower range, with a threshold 5.0 K
                 coefficients = coefficientsDict[name][1];
             } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] + 5.0) { // Higher range
@@ -232,9 +240,14 @@ namespace BoSSS.Solution.NSECommon {
                 throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds. The used temperature is" + T);
             }
 
-            //Force temperature
+            //Force temperature to stay in bounds 
+
             if (T < TemperatureLimits[0])
                 T = TemperatureLimits[0];
+
+
+            if (T > TemperatureLimits[2])
+                T = TemperatureLimits[2];
 
             double R = 8.314; // KJ /Kmol K
             double MW = molecularWeightDict[name]; // Kg/Kmol
