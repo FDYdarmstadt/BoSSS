@@ -37,12 +37,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public XNSE_OperatorConfiguration(XNSE_Control control) {
 
-
-            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z')));
-            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z')));
+            Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("Gravity")).Any();
+            VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("VolumeForce")).Any();
             Continuity = true;
             Viscous = true;
             PressureGradient = true;
+            UseImmersedBoundary = control.UseImmersedBoundary;
             Transport = control.PhysicalParameters.IncludeConvection;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
@@ -211,6 +211,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         public bool withDissP;
 
+        /// <summary>
+        /// Using some form of immersed boundary?
+        /// </summary>
+        public bool UseImmersedBoundary;
+
 
         // getter for interface
         // ====================
@@ -264,7 +269,9 @@ namespace BoSSS.Application.XNSE_Solver {
         public virtual bool isPInterfaceSet {
             get { return false; }
         }
-
+        public bool isImmersedBoundary {
+            get { return UseImmersedBoundary; }
+        }
 
         public virtual KineticEnergyViscousSourceTerms getKinEviscousDiscretization {
             get { return kinEviscous; }
@@ -284,7 +291,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSFE_OperatorConfiguration : XNSE_OperatorConfiguration, IXHeat_Configuration {
 
 
-        public XNSFE_OperatorConfiguration(XNSE_Control control) 
+        public XNSFE_OperatorConfiguration(XNSE_Control control)
             : base(control) {
 
             AgglomerationTreshold = control.AgglomerationThreshold;
@@ -296,6 +303,7 @@ namespace BoSSS.Application.XNSE_Solver {
             HeatTransport = control.ThermalParameters.IncludeConvection;
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
+            Buoyancy = control.ThermalParameters.alpha_A != 0.0 || control.ThermalParameters.alpha_B != 0.0;
             if(control.prescribedMassflux_Evaluator != null)
                 prescribedMassflux = control.prescribedMassflux_Evaluator;
             if (control.prescribedMassflux != null)
@@ -363,6 +371,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool Evaporation;
 
         /// <summary>
+        /// include buoyancy, that is Boussinesq approximation
+        /// </summary>
+        public bool Buoyancy;
+
+        /// <summary>
         /// 
         /// </summary>
         public Func<double[], double, double> prescribedMassflux;
@@ -374,7 +387,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public ConductivityInSpeciesBulk.ConductivityMode getConductMode {
             get { return conductMode; }
         }
-        
+
         public bool isHeatTransport {
             get { return HeatTransport; }
         }
@@ -385,6 +398,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isEvaporation {
             get { return Evaporation; }
+        }
+        public bool isBuoyancy {
+            get { return Buoyancy; }
         }
     }
 }

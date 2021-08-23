@@ -526,11 +526,14 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
         public static XdgTimesteppingTestControl Rarefaction(int degree = 2,
-            int NoOfTimesteps = 20,
+            int NoOfTimesteps = 1,
             InterfaceMode tsm = InterfaceMode.MovingInterface,
             int GridResolutionFactor = 2) {
+            //BoSSS.Application.XdgTimesteppingTest.HardCodedControl2.Rarefaction()
+
 
             XdgTimesteppingTestControl R = new XdgTimesteppingTestControl();
+            R.Eq = Equation.ScalarTransport;
 
             R.ProjectName = "XdgMassMatrixEvolution/Rarefaction";
             R.savetodb = false;
@@ -596,8 +599,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             R.S = ((double[] X, double t) => S);
             R.Phi = ((double[] X, double t) => X[0].Pow2() + X[1].Pow2() - (1.0 + t).Pow2());
 
-            R.CircleRadius = t => (1.0 + t);
-            R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
+            //R.CircleRadius = t => (1.0 + t);
+            //R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
 
             R.InitialValues_Evaluators.Add("Phi", X => R.Phi(X, 0.0));
             R.InitialValues_Evaluators.Add("Vx", X => X[0] / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));
@@ -614,11 +617,11 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             // anderes zeugs
             // =============
 
-            R.TimeSteppingScheme = TimeSteppingScheme.BDF4;
+            R.TimeSteppingScheme = TimeSteppingScheme.RK_CrankNic;
             R.InterfaceMode = tsm;
 
             //R.Endtime = 0.05;
-            R.Endtime = 0.4;
+            R.Endtime = 0.02;
             R.NoOfTimesteps = NoOfTimesteps;
             R.dtFixed = R.Endtime / R.NoOfTimesteps;
 
@@ -630,15 +633,106 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             return R;
         }
 
+        public static XdgTimesteppingTestControl Rarefaction_AdaptiveTimestep(int degree = 2,
+            InterfaceMode tsm = InterfaceMode.MovingInterface,
+            int GridResolutionFactor = 2) {
+            //BoSSS.Application.XdgTimesteppingTest.HardCodedControl2.Rarefaction()
+
+
+            XdgTimesteppingTestControl R = new XdgTimesteppingTestControl();
+            R.Eq = Equation.ScalarTransport;
+
+            R.ProjectName = "XdgMassMatrixEvolution/Rarefaction";
+            R.savetodb = false;
+            //R.DbPath = @"\\fdyprime\userspace\kummer\BoSSS-db-XNSE";
+            R.DbPath = null;
+
+            // DG config
+            // =========
+
+            R.SetDGdegree(degree);
+
+            // grid
+            // ====
+
+            R.GridFunc = delegate () {
+                double[] nodes = GenericBlas.Linspace(-2.7, 2.7, 18 * GridResolutionFactor + 1);
+                BoundingBox cutOut = new BoundingBox(new double[] { -0.3, -0.3 }, new double[] { 0.3, 0.3 });
+                var grd = Grid2D.Cartesian2DGrid(nodes, nodes, CutOuts: cutOut);
+
+                grd.EdgeTagNames.Add(1, "Inflow");
+                grd.EdgeTagNames.Add(2, "Outflow");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret = 2;
+                    if (Math.Abs(X[0]) <= 0.31 && Math.Abs(X[1]) <= 0.31)
+                        ret = 1;
+                    return ret;
+                });
+
+                return grd;
+            };
+
+            // exact solution
+            // ==============
+            R.uA_Ex = ((X, t) => 3.0 / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));
+            R.uB_Ex = ((X, t) => 1.0 / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));
+
+            // boundary condition
+            // ==================
+
+            R.AddBoundaryValue("Inflow", "u", R.uA_Ex);
+            R.AddBoundaryValue("Outflow");
+
+            // Initial values
+            // ==============
+
+            const double S = 1;
+            R.S = ((double[] X, double t) => S);
+            R.Phi = ((double[] X, double t) => X[0].Pow2() + X[1].Pow2() - (1.0 + t).Pow2());
+
+            //R.CircleRadius = t => (1.0 + t);
+            //R.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.ExactCircle;
+
+            R.InitialValues_Evaluators.Add("Phi", X => R.Phi(X, 0.0));
+            R.InitialValues_Evaluators.Add("Vx", X => X[0] / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));
+            R.InitialValues_Evaluators.Add("Vy", X => X[1] / Math.Sqrt(X[0].Pow2() + X[1].Pow2()));
+            R.InitialValues_Evaluators.Add("u#A", X => R.uA_Ex(X, 0.0));
+            R.InitialValues_Evaluators.Add("u#B", X => R.uB_Ex(X, 0.0));
+
+
+            // anderes zeugs
+            // =============
+
+            R.TimeSteppingScheme = TimeSteppingScheme.Adaptive_3;
+            R.InterfaceMode = tsm;
+
+
+            R.Endtime = 0.02;
+            R.NoOfTimesteps = 1;
+            R.dtFixed = R.Endtime / R.NoOfTimesteps;
+
+            R.AgglomerationThreshold = 0.1;
+
+            // return
+            // ======
+
+            return R;
+        }
+
+
+
         public static XdgTimesteppingTestControl[] RarefactionPStudy() {
 
             List<XdgTimesteppingTestControl> All = new List<XdgTimesteppingTestControl>();
 
-            InterfaceMode[] mode = new[] { InterfaceMode.Splitting, InterfaceMode.MovingInterface };
+            //InterfaceMode[] mode = new[] { InterfaceMode.Splitting, InterfaceMode.MovingInterface };
+            InterfaceMode[] mode = new[] { InterfaceMode.MovingInterface };
             TimeSteppingScheme[] schemes = new[] { TimeSteppingScheme.ImplicitEuler };
             int[] DGdegree = new[] { 2 };
             int[] NoOfTimeSteps = new int[] { 1, 2, 4, 8, 16, 32, 64, 128, 256 };
-            int[] GridResolutionFactorS = new int[] { 16 };
+            //int[] GridResolutionFactorS = new int[] { 16 };
+            int[] GridResolutionFactorS = new int[] { 2 };
 
 
             foreach (var tm in mode) {

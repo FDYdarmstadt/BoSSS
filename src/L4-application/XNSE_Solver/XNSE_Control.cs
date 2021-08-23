@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>
@@ -395,10 +395,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-        /// <summary>
-        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
-        /// </summary>
-        public int incrementTimesteps = 1;
+        ///// <summary>
+        ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
+        ///// </summary>
+        //public int incrementTimesteps = 1;
 
        
         /// <summary>
@@ -704,6 +704,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>

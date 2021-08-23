@@ -591,7 +591,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,
-                            Parallelism = Parallelism.SEQ
+                            Parallelism = Parallelism.SEQ,
                         };
 
                         // ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO

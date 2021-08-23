@@ -138,6 +138,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// also called after grid adaptation/MPI redistribution
         /// </summary>
         protected override void CreateFields() {
+
+            ///// Before creating fields make sure the operator is cleared, so that the equations are instantiated with the correct LsTrk and stuff...
+            ///// This is not that clear: This functionality should theoretically belong to <see cref="CreateEquationsAndSolvers(GridUpdateDataVaultBase)"/>,
+            ///// However the Operator and its equations are instantiated on the first call of <see cref="Operator"/> when it is empty. 
+            ///// These occur in this method e.g. in <see cref="InstantiateSolutionFields"/> in the derived classes <see cref="DgApplicationWithSolver{T}"/> and <see cref="XdgApplicationWithSolver{T}"/>
+            ///// So nulling the Operator here ensures, that it is created again with the updated LsTrk and stuff...
+            ClearOperator();
+
             base.CreateFields();
 
             if(this.LsTrk==null) CreateTracker();
@@ -313,7 +321,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// status after the grid has been re-distributed.
         /// </summary>
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
-            Timestepping.DataBackupBeforeBalancing(L);
+            if (Timestepping != null)   // in case of startUp backup
+                Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
             CurrentResidualVector = null;
             ClearOperator();
@@ -384,8 +393,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // combine all results of active level indicators
             foreach (var lvlInd in ActiveAMRLevelIndicators) {
+                if(ActiveAMRLevelIndicators.IndexOf(lvlInd) == 0) {
+                    levelChanges = lvlInd.DesiredCellChanges(); // levelChanges is instantiated to zero. Without this line, coarsening is impossible due to Max(a,b)
+                }
                 int[] lvls = lvlInd.DesiredCellChanges();
-                levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                //levelChanges = levelChanges.Zip(lvls, (a, b) => a + b).ToArray();
+                levelChanges = levelChanges.Zip(lvls, (a, b) => Math.Max(a,b)).ToArray(); // keep finer level indicator, but don't double refine
             }
 
             // get desired level 
@@ -456,20 +469,23 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().ToString().Split('.').Last() + "-" + timestepNo, physTime, superSampling);
+            Tecplot.Tecplot.PlotFields(this.m_RegisteredFields, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="TimestepNo"></param>
+        /// <param name="phystime"></param>
+        /// <param name="dt"></param>
+        /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Timestepping.Solve(phystime, dt);
             return dt;
         }
 
-
-        //protected override void SetInitial() {
-        //    base.SetInitial();
-        //}
     }
 
     /// <summary>
@@ -499,29 +515,40 @@ namespace BoSSS.Solution.XdgTimestepping {
             return ret;
         }
 
-        /// <summary>
-        /// Callback-template for level-set updates.
-        /// </summary>
-        /// <param name="CurrentState"></param>
-        /// <param name="time">
-        /// Actual simulation time for the known value;
-        /// </param>
-        /// <param name="dt">
-        /// Timestep size.
-        /// </param>
-        /// <param name="UnderRelax">
-        /// </param>
-        /// <param name="incremental">
-        /// true for Splitting schemes with subdivided level-set evolution (e.g. Strang-Splitting)
-        /// </param>
-        /// <returns>
-        /// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
-        /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>)
-        /// </returns>
+        /*
+        ///// <summary>
+        ///// Callback-template for level-set updates.
+        ///// </summary>
+        ///// <param name = "CurrentState" ></ param >
+        ///// < param name= "time" >
+        ///// Actual simulation time for the known value;
+        ///// </param>
+        ///// <param name = "dt" >
+        ///// Timestep size.
+        ///// </param>
+        ///// <param name = "UnderRelax" >
+        ///// </ param >
+        ///// < param name="incremental">
+        ///// true for Splitting schemes with subdivided level-set evolution(e.g.Strang-Splitting)
+        ///// </param>
+        ///// <returns>
+        ///// Some kind of level-set-residual in order to check convergence in a fully coupled simulation
+        ///// (see<see cref="LevelSetHandling.Coupled_Iterative"/>)
+        ///// </returns>
         virtual public double UpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
             LsTrk.UpdateTracker(time + dt);
             return 0.0;
         }
+        */
+
+        /// <summary>
+        /// timestepper to update the all involved level-sets (typically one);
+        /// can be null in case of a temporally constant level set.
+        /// </summary>
+        public virtual ISlaveTimeIntegrator GetLevelSetUpdater() {
+            return null;
+        }
+
 
 
         /// <summary>
@@ -604,7 +631,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentState.Fields,
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
-                UpdateLevelset,
+                this.GetLevelSetUpdater,
                 LevelSetHandling,
                 MultigridOperatorConfig,
                 MultigridSequence,
@@ -614,7 +641,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             base.Timestepping = solver;
-
+            Timestepping.RegisterResidualLogger(this.ResLogger);
             if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
                 throw new ApplicationException();
 
@@ -735,8 +762,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Parameters);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
-
             base.Timestepping = solver;
+            Timestepping.RegisterResidualLogger(this.ResLogger);
         }
 
     }

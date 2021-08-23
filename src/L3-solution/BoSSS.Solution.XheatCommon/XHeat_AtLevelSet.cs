@@ -1095,7 +1095,7 @@ namespace BoSSS.Solution.XheatCommon {
             //===========================================================================================================
             //===========================================================================================================
             // Second variant using Roe-Type Scheme
-            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature
+            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature?
             double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
             FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
 
@@ -1151,16 +1151,19 @@ namespace BoSSS.Solution.XheatCommon {
     public class ConductivityAtLevelSet_material : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 
         //LevelSetTracker m_LsTrk;
-
-        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
+        string phaseA, phaseB;
+        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
             this.m_D = SpatialDim;
 
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
-
+            this.iLevSet = iLevSet;
             //m_LsTrk = lstrk;
 
         }
@@ -1170,6 +1173,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         double penalty;
         int m_D;
+        int iLevSet;
 
         //bool DirichletCond;
         double Tsat;
@@ -1286,7 +1290,7 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public int LevelSetIndex {
-            get { return 0; }
+            get { return iLevSet; }
         }
 
         public IList<string> ArgumentOrdering {
@@ -1294,11 +1298,11 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
         public string PositiveSpecies {
-            get { return "B"; }
+            get { return phaseB; }
         }
 
         public string NegativeSpecies {
-            get { return "A"; }
+            get { return phaseA; }
         }
 
         public TermActivationFlags LevelSetTerms {
@@ -1390,6 +1394,7 @@ namespace BoSSS.Solution.XheatCommon {
             //Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
             */
 
+            /*
             // new standalone non-material form
             // symmetry term
             Ret -=  kA * Grad_vA_xN * (uA[0] - Tsat) - kB * Grad_vB_xN * (Tsat - uB[0]);
@@ -1397,8 +1402,30 @@ namespace BoSSS.Solution.XheatCommon {
             // consistency term
             Ret -= (vA * kA * Grad_uA_xN - vB * kB * Grad_uB_xN);
 
-            // penalty, like a dirichlet condition for temperature from both sides
+            // penalty, like a dirichlet condition /for temperature from both sides
             Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
+            */
+
+            double g_D = Tsat;
+
+            // dirichlet condition from A-side
+            for (int d = 0; d < inp.D; d++) {
+                double nd = inp.Normal[d];
+                Ret += (kA * Grad_uA[0, d]) * (vA) * nd;
+                Ret += (kA * Grad_vA[d]) * (uA[0] - g_D) * nd;
+            }
+
+            Ret -= wPenalty * (uA[0] - g_D) * (vA - 0) * pnlty;
+
+            // dirichlet condition from B-side
+            for (int d = 0; d < inp.D; d++) {
+                double nd = inp.Normal[d];
+                Ret += (kB * Grad_uB[0, d]) * (-vB) * nd;
+                Ret += (kB * Grad_vB[d]) * (g_D - uB[0]) * nd;
+            }
+
+            Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
+            Ret *= -1.0;
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

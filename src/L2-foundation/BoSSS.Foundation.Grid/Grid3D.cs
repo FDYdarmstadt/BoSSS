@@ -422,6 +422,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         throw new ApplicationException("Internal error - illegal GlobalID.");
                 }
 
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 return grid;
             }
         }
@@ -935,6 +936,192 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             return madeAdjustments;
+        }
+
+        /// <summary>
+        /// Cutout of a sphere
+        /// </summary>
+        /// <param name="rNodes">Radial nodes, currently r=0 is not supported</param>
+        /// <param name="phiNodes">Azimutal nodes, decoding multiples of 2 Pi </param>
+        /// <param name="thetaNodes">Polar nodes, decoding multiples of Pi,
+        /// supported range is (-0.5, 0.5) excluding the polar points/// </param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        public static Grid3D SphereCutout(double[] rNodes, double[] phiNodes, double[] thetaNodes, CellType type = CellType.Cube_27) {
+            using (new FuncTrace()) {
+                if (!(Cube.Instance).SupportedCellTypes.Contains(type))
+                    throw new ArgumentException("illegal cell type.");
+                if (CellTypeExtensions.IsLinear(type)) {
+                    throw new ArgumentException("illegal cell type.");
+                }
+                CheckMonotonicity(rNodes);
+                CheckMonotonicity(phiNodes);
+                CheckMonotonicity(thetaNodes);
+
+                if ((Math.Abs(phiNodes.First() - phiNodes.Last()) > 1)) {
+                    throw new ArgumentException("phiNodes must not exceed an interval width of 1");
+                };
+                if ((Math.Abs(thetaNodes.First() - thetaNodes.Last()) > 1)) {
+                    throw new ArgumentException("thetaNodes must not exceed an interval width of 1");
+                };
+                if (thetaNodes.First() <-0.5 | thetaNodes.Last() > 0.5) {
+                    throw new ArgumentException("thetaNodes must be in range [-0.5, 0.5]");
+                };
+                if (rNodes.First() < 0) {
+                    throw new ArgumentException("rNodes must be r>0"); // last segment should be filled with a pyramid, currently multiple reference elements are not supported...
+                };
+
+                bool zeroR = false;
+                if ((Math.Abs(rNodes.First()) == 0.0)) {
+                    throw new NotImplementedException();
+                    zeroR = true;
+                }
+                bool fullcirclePhi = false;
+                if ((Math.Abs(phiNodes.First() - phiNodes.Last()) == 1)) {
+                    fullcirclePhi = true;
+                }
+                bool quartercircleThetaMinus = false;
+                if ((Math.Abs(thetaNodes.First()) == 0.5)) {
+                    throw new NotImplementedException();
+                    quartercircleThetaMinus = true;
+                }
+                bool quartercircleThetaPlus = false;
+                if ((Math.Abs(thetaNodes.Last()) == 0.5)) {
+                    throw new NotImplementedException();
+                    quartercircleThetaPlus = true;
+                }
+
+                int NoOfrNodes = rNodes.Length;
+                int NoOfphiNodes = phiNodes.Length;
+                int NoOfthetaNodes = thetaNodes.Length;
+
+                MPICollectiveWatchDog.Watch();
+                Grid3D grid = new Grid3D(Cube.Instance);
+
+                int myrank;
+                int size;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out myrank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+
+                if (myrank == 0) {
+
+                    // create all cells on process 0
+                    // (can be redistributed later on)
+                    // ++++++++++++++++++++++++++++++++++
+                    List<Cell> AllCells = new List<Cell>();
+
+                    // Reference element nodes
+                    // =======================
+                    var Kref = grid.RefElements.Single(KK => KK.GetType() == typeof(Cube));
+                    NodeSet InterpolationNodes = Kref.GetInterpolationNodes(type);
+                    int NoOfNodes = InterpolationNodes.NoOfNodes;
+
+                    // Allocate GlobalID's
+                    long[,,] Gid = new long[NoOfrNodes - 1, NoOfphiNodes - 1, NoOfthetaNodes - 1];
+                    long cnt = 0;
+                    for (int iX = 0; iX < (NoOfrNodes - 1); iX++) {
+                        for (int iY = 0; iY < (NoOfphiNodes - 1); iY++) {
+                            for (int iZ = 0; iZ < (NoOfthetaNodes - 1); iZ++) {
+                                Gid[iX, iY, iZ] = cnt;
+                                cnt++;
+                            }
+                        }
+                    }
+
+                    // meshing of center section
+                    // =========================
+
+                    for (int iX = 0; iX < (NoOfrNodes - 1); iX++) {
+                        for (int iY = 0; iY < (NoOfphiNodes - 1); iY++) {
+                            for (int iZ = 0; iZ < (NoOfthetaNodes - 1); iZ++) {
+                                // create cell
+                                Cell Cj = new Cell();
+                                Cj.GlobalID = Gid[iX, iY, iZ];
+                                Cj.Type = type;
+                                AllCells.Add(Cj);
+
+                                // physical coordinates
+                                Cj.TransformationParams = MultidimensionalArray.Create(NoOfNodes, 3);
+
+                                double r0 = rNodes[iX];
+                                double r1 = rNodes[iX + 1];
+                                double phi0 = phiNodes[iY];
+                                double phi1 = phiNodes[iY + 1];
+                                double theta0 = thetaNodes[iZ];
+                                double theta1 = thetaNodes[iZ + 1];
+
+                                for (int k = 0; k < NoOfNodes; k++) {
+                                    double r = 0.5 * ((1-InterpolationNodes[k,0]) * r0 + (1 + InterpolationNodes[k, 0]) * r1);
+                                    double phi = 0.5 * ((1 - InterpolationNodes[k, 1]) * phi0 + (1 + InterpolationNodes[k, 1]) * phi1);
+                                    double theta = 0.5 * ((1 - InterpolationNodes[k, 2]) * theta0 + (1 + InterpolationNodes[k, 2]) * theta1);
+                                    double x = r * Math.Cos(2 * Math.PI * phi) * Math.Cos(Math.PI * theta);
+                                    double y = r * Math.Sin(2 * Math.PI * phi) * Math.Cos(Math.PI * theta);
+                                    double z = r * Math.Sin(Math.PI * theta);
+                                    Cj.TransformationParams[k, 0] = x;
+                                    Cj.TransformationParams[k, 1] = y;
+                                    Cj.TransformationParams[k, 2] = z;
+                                }
+
+                                // node indices (neighborship via cell face tags 
+                                int NoRNodes = NoOfrNodes;
+                                int NoPhiNodes = NoOfphiNodes;
+                                int NoThetaNodes = NoOfphiNodes;
+                                int offset = 0;
+
+                                if (zeroR) { NoRNodes--; }
+                                if (fullcirclePhi) { NoPhiNodes--; }
+                                if (quartercircleThetaMinus) { offset = -(NoPhiNodes - 1) * NoRNodes; }
+
+                                long[] NodeIndices = new long[] {
+                                    (iZ*NoPhiNodes + iY) * NoRNodes + iX + offset,               // (-1,-1,-1)
+                                    (iZ*NoPhiNodes + iY) * NoRNodes + iX + 1 + offset,           // (1,-1,-1)
+                                    (iZ*NoPhiNodes + iY + 1) * NoRNodes + iX + offset,           // (-1,1,-1)
+                                    ((iZ + 1)*NoPhiNodes + iY) * NoRNodes + iX + offset,         // (-1,-1,1)
+                                    (iZ*NoPhiNodes + iY + 1) * NoRNodes + iX + 1 + offset,       // (1,1,-1)
+                                    ((iZ + 1)*NoPhiNodes + iY + 1) * NoRNodes + iX + 1 + offset, // (1,1,1)
+                                    ((iZ + 1)*NoPhiNodes + iY) * NoRNodes + iX + 1 + offset,     // (1,-1,1)
+                                    ((iZ + 1)*NoPhiNodes + iY + 1) * NoRNodes + iX + offset      // (-1,1,1)
+                                };
+                                
+                                if (fullcirclePhi && iY == NoOfphiNodes - 2) {
+                                    NodeIndices[2] = (iZ * NoPhiNodes) * NoRNodes + iX + offset;
+                                    NodeIndices[4] = (iZ * NoPhiNodes) * NoRNodes + iX + 1 + offset;
+                                    NodeIndices[5] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + 1 + offset;
+                                    NodeIndices[7] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + offset;
+                                }
+                                // theoretical node ids if center point/polar points are part of the domain
+                                // however, with only cubes this leads to degenerate cells...
+                                if (quartercircleThetaMinus && iZ == 0) {
+                                    NodeIndices[0] = iX;
+                                    NodeIndices[1] = iX + 1;
+                                    NodeIndices[2] = iX;
+                                    NodeIndices[4] = iX + 1;
+                                }
+                                if (quartercircleThetaPlus && iZ == NoOfthetaNodes - 2) {
+                                    NodeIndices[3] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + offset;
+                                    NodeIndices[5] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + 1 + offset;
+                                    NodeIndices[6] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + 1 + offset;
+                                    NodeIndices[7] = ((iZ + 1) * NoPhiNodes) * NoRNodes + iX + offset;
+                                }
+                                if (zeroR && iX == 0) {
+                                    NodeIndices[0] = 0;
+                                    NodeIndices[2] = 0;
+                                    NodeIndices[3] = 0;
+                                    NodeIndices[7] = 0;
+                                }                                
+
+                                Cj.NodeIndices = NodeIndices;
+                            }
+                        }
+                    }
+
+                    grid.Cells = AllCells.ToArray();
+                } else {
+                    grid.Cells = new Cell[0];
+                }
+
+                return grid;
+            }
         }
 
 

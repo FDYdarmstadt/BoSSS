@@ -63,7 +63,9 @@ namespace ilPSP.LinSolvers.PARDISO {
             private set;
         }
 
-
+        /// <summary>
+        /// Hints the solver that the matrix is symmetric
+        /// </summary>
         public bool Symmetric = false;
 
         MPI_Comm m_comm;

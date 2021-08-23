@@ -1155,7 +1155,6 @@ namespace BoSSS.Foundation {
         ///         in the associated <see cref="Basis"/>, <see cref="Basis"/>.
         ///   </item>
         /// </list>
-        /// 
         /// </remarks>
         abstract public IMatrix Coordinates {
             get;
