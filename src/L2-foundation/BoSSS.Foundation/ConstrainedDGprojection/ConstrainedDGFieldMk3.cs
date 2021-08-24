@@ -146,12 +146,12 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// DG Coordinates of the current approximation;
         /// after execution of the approximation algorithm, hopefully continuous;
         /// </summary>
-        double[] m_Coordinates;
+        protected double[] m_Coordinates;
 
         /// <summary>
         /// DG coordinates of original discontinuous representation
         /// </summary>
-        double[] m_Coordinates0;
+        protected double[] m_Coordinates0;
 
 
         /// <summary>

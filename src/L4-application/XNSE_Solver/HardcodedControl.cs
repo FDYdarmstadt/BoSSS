@@ -601,6 +601,7 @@ namespace BoSSS.Application.XNSE_Solver {
             };
 
             var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad, PhiFunc);
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
             return C;
         }
 

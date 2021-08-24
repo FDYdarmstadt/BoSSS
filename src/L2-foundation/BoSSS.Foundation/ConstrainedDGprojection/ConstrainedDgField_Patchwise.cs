@@ -286,7 +286,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     double ResNorm = base.internalProjection.L2Error(orgDGField, this.domainLimit);
                     relUpdateNorm = updateNorm / Math.Max(ResNorm, 1e-30); // avoid division by zero
-                    tr.Info("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
+                    //tr.Info
+                    Console.WriteLine("Iteration " + (i + 1) + ", delta to DG = " + ResNorm + "  abs change = " + updateNorm + " rel change = " + relUpdateNorm);
                 }
             }
         }
@@ -313,13 +314,50 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         public double AbsTerminationThreshold = 1e-15;
 
 
+        List<double[]> OnbSystem = new List<double[]>();
+
+        void AddCoord() {
+            var vN = base.m_Coordinates.CloneAs();
+
+            foreach(var v in OnbSystem) {
+                double prj = v.InnerProd(vN);
+                vN.AccV(-prj, v);
+            }
+
+            double alpha = vN.L2Norm();
+            if(alpha > 1.0e-8) {
+                vN.ScaleV(1 / alpha);
+
+                for(int i = 0; i < OnbSystem.Count; i++) {
+                    double test = OnbSystem[i].InnerProd(vN);
+                    if(test > 1e-6) 
+                        Console.WriteLine("orthonormality test failed: " + test);
+                }
+
+                OnbSystem.Add(vN);
+            }
+        }
+
+        double Minimize() {
+            double prj = 0;
+            m_Coordinates.ClearEntries();
+            for(int i = 0; i < OnbSystem.Count; i++) {
+                prj = m_Coordinates0.InnerProd(OnbSystem[i]);
+                m_Coordinates.AccV(prj, OnbSystem[i]);
+            }
+            return prj;
+        }
 
 
 
         double ProjectDGField_SinglePass() {
+            double kryCh = 0;
             double GlbChange = 0.0, LocChange = 0.0;
             if(globalSeaming != null) {
                 GlbChange += globalSeaming.PerformProjection().Pow2();
+
+                //AddCoord();
+                //kryCh += Minimize().Pow2();
             }
 
             foreach(var s in localSeaming)
@@ -328,6 +366,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 LocChange += s.PerformProjection().Pow2(); // Note: since the domains are disjoint, we have almost |x + y|^2 = |x]^2 + |y]^2
             LocChange = LocChange.MPISum();
 
+            //AddCoord();
+            //kryCh += Minimize().Pow2();
 
             double Totchange = (GlbChange + LocChange).Sqrt();
             return Totchange;

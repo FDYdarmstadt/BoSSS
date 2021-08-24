@@ -239,7 +239,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
-            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;            
+            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             return RR;
         }
@@ -247,8 +247,8 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
-            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2)'
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
+            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.classic_pardiso)'
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
@@ -284,7 +284,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver.SolverCode = solver;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;

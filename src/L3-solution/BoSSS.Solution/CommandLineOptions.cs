@@ -23,7 +23,7 @@ namespace BoSSS.Solution {
             /// <summary>
             /// path to control file
             /// </summary>
-            [Option("c", "control", HelpText = "path to control file", MutuallyExclusiveSet = "control,session")]
+            [Option("c", "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object", Required = true)]
             public string ControlfilePath = null;
 
             /// <summary>
@@ -37,9 +37,9 @@ namespace BoSSS.Solution {
             /// </summary>
             [HelpOption(HelpText = "Displays this help screen.")]
             public string GetUsage() {
-                var help = new HelpText("BoSSS");
+                var help = new HelpText("BoSSSpad");
                 help.AdditionalNewLineAfterOption = true;
-                help.Copyright = new CopyrightInfo("Fachgebiet fuer Stroemungsdynamik, TU Darmstadt", 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018);
+                help.Copyright = new CopyrightInfo("Fachgebiet fuer Stroemungsdynamik, TU Darmstadt", 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021);
                 //help.AddPreOptionsLine("This is free software. You may redistribute copies of it under the terms of");
                 //help.AddPreOptionsLine("the MIT License <http://www.opensource.org/licenses/mit-license.php>.");
                 //help.AddPreOptionsLine("Usage: SampleApp -rMyData.in -wMyData.out --calculate");
