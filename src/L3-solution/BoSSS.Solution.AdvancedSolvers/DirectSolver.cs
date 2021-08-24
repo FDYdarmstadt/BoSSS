@@ -178,9 +178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
-            this.SolverVersion = Parallelism.SEQ;
-            Console.WriteLine("Achtung: MUMPS hart auf SEQ gesetzt.");
-
+            
             switch(WhichSolver) {
                 case _whichSolver.PARDISO:
                 solver = new PARDISOSolver() {
