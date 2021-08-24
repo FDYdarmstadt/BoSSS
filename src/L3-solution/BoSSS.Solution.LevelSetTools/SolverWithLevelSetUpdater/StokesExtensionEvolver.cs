@@ -28,12 +28,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
             }
-
+            this.fullStokes = fullStokes;
             this.SpatialDimension = D;
             this.AgglomThreshold = AgglomThreshold;
             this.m_HMForder = hMForder;
@@ -51,6 +51,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         string levelSetName;
         string[] parameters;
         int timeStepOrder;
+        bool fullStokes;
         IncompressibleBoundaryCondMap bcmap;
 
         /// <summary>
@@ -146,7 +147,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     f.Clear();
             }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
+            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
             if(timeStepper == null) {
