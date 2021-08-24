@@ -638,6 +638,28 @@ namespace BoSSS.Solution.XdgTimestepping {
         internal override void ClearOperator() {
             m_XOperator = null;
         }
+
+        bool PlotShadowfields = false;
+        /// <summary>
+        /// Plot using Tecplot
+        /// </summary>
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            if (PlotShadowfields) {
+                List<DGField> Fields2Plot = new List<DGField>();
+                foreach (var field in this.m_RegisteredFields) {
+                    if (field is XDGField xField) {
+                        foreach (var spc in xField.Basis.Tracker.SpeciesNames) {
+                            Fields2Plot.Add(xField.GetSpeciesShadowField(spc));
+                        }
+                    } else {
+                        Fields2Plot.Add(field);
+                    }
+                }
+                Tecplot.Tecplot.PlotFields(Fields2Plot, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
+            } else {
+                base.PlotCurrentState(physTime, timestepNo, superSampling);
+            }
+        }
     }
 
 
