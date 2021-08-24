@@ -1115,7 +1115,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         }
     }
 
-    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm {
+    public class IsotropicSurfaceTension_LaplaceBeltrami : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
 
         int m_comp;
 
@@ -1411,7 +1411,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
             return tau.Normalize();
         }
 
-
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { }; // only parameter dependent, not present in jacobian
+        }
     }
 
     /*
