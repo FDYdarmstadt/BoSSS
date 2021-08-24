@@ -31,6 +31,7 @@ using BoSSS.Solution.NSECommon;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.ConstrainedDGprojection;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -58,7 +59,6 @@ namespace BoSSS.Solution.LevelSetTools {
 
     /// <summary>
     /// Projects a DG Field onto another DGField of higher order, without any discontinuities at the boundary.
-    /// 
     /// </summary>
     public class ContinuityProjection {
         
@@ -73,7 +73,7 @@ namespace BoSSS.Solution.LevelSetTools {
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, DGBasis.Degree + 1);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((GridData)gridData, DGBasis.Degree + 1);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
@@ -240,9 +240,9 @@ namespace BoSSS.Solution.LevelSetTools {
 
     }
 
-
-
-
+    /// <summary>
+    /// Driver interface
+    /// </summary>
     interface IContinuityProjection {
         void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain);
     }
@@ -271,7 +271,7 @@ namespace BoSSS.Solution.LevelSetTools {
     }
 
     /// <summary>
-    /// Smoothing based on ContinuousDGField 
+    /// Smoothing based on <see cref="ConstrainedDGFieldMk3"/> 
     /// => Lagrange-Multiplier Approach
     /// </summary>
     /// <remarks>
@@ -282,17 +282,28 @@ namespace BoSSS.Solution.LevelSetTools {
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
-            CDGField = new ConstrainedDGField(myBasis);
+            m_myBasis = myBasis;
         }
-        //Basis m_myBasis;
-        ConstrainedDGField CDGField;
+        Basis m_myBasis;
 
+        ConstrainedDGFieldMk3 m_projector;
+
+        ConstrainedDGFieldMk3 Update(CellMask domain) {
+            if(m_projector == null || !m_projector.domainLimit.Equals(domain)) {
+                if(m_projector != null)
+                    m_projector.Dispose();
+                m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
+            }
+
+            return m_projector;
+        }
+        
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             if(Domain.NoOfItemsLocally.MPISum() > 0) {
-                //CDGField = new ConstrainedDGField(m_myBasis); 
-                CDGField.ProjectDGField(DGLevelSet, Domain);
+                var p = Update(Domain);
+                p.ProjectDGField(DGLevelSet);
                 LevelSet.Clear();
-                CDGField.AccToDGField(1.0, LevelSet);
+                p.AccToDGField(1.0, LevelSet);
             } else {
                 LevelSet.Clear();
                 LevelSet.AccLaidBack(1.0, DGLevelSet);

@@ -524,7 +524,87 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10,bool writeToDB = false, bool tracing = false, bool loadbalancing = true) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+
+            double anglev = 10;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.261;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double power = 10;
+                //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
+                double angle = -(anglev * t) % (2 * Math.PI);
+                switch (SpaceDim) {
+                    case 2:
+                    // Inf-Norm square
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                        + particleRad;
+
+                    // p-Norm square
+                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
+                    //+ particleRad; // 1e6
+
+                    // 0-Norm square
+                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
+                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
+                    //+ Math.Abs(particleRad);
+
+                    case 3:
+                    // Inf-Norm cube
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
+
+                    // p-Norm cube
+                    //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
+                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
+                    //+ Math.Pow(X[2] - pos[2], power),1.0/power)
+                    //+ particleRad;
+
+                    // 0-Norm cube
+                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
+                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
+                    //- Math.Abs(X[2] - pos[2])
+                    //+ Math.Abs(particleRad);
+
+                    default:
+                    throw new NotImplementedException();
+                }
+            };
+            return Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad, PhiFunc);
+        }
+
+        public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+            double anglev = 10;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.261;
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double power = 10;
+                //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
+                double angle = -(anglev * t) % (2 * Math.PI);
+                switch (SpaceDim) {
+                    case 2:
+                    // circle
+                    return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+
+                    case 3:
+                    // sphere
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+
+                    default:
+                    throw new NotImplementedException();
+                }
+            };
+
+            var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad, PhiFunc);
+            return C;
+        }
+
+        public static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, int NoOfTimesteps,bool writeToDB, bool tracing, bool loadbalancing, double[] pos, double anglev, double particleRad, Func<double[], double, double> PhiFunc ) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -535,7 +615,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 switch(thisOS) {
                     case PlatformID.Unix:
                         C.AlternateDbPaths = new[] {
-                            (@" / work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
                             (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
                         break;
                     case PlatformID.Win32NT:
@@ -573,7 +653,6 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
 
             //// Create Grid
-            Console.WriteLine("...generating grid");
             double xMin = -1, yMin = -1, zMin = -1;
             double xMax = 1, yMax = 1, zMax = 1;
 
@@ -659,62 +738,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.Material = true;
             C.PhysicalParameters.rho_A = rhoA;
             C.PhysicalParameters.mu_A = muA;
-            double anglev = 10;
-            double[] pos = new double[SpaceDim];
-            double particleRad = 0.261;
-
-
-
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double power = 10;
-                //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
-                double angle = -(anglev * t) % (2 * Math.PI);
-                switch (SpaceDim) {
-                    case 2:
-                    // Inf-Norm square
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-
-                    // p-Norm square
-                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
-                    //+ particleRad; // 1e6
-
-                    // 0-Norm square
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //+ Math.Abs(particleRad);
-
-                    // circle
-                    //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-
-                    case 3:
-                    // Inf-Norm cube
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
-
-                    // p-Norm cube
-                    //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power),1.0/power)
-                    //+ particleRad;
-
-                    // 0-Norm cube
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //- Math.Abs(X[2] - pos[2])
-                    //+ Math.Abs(particleRad);
-
-                    // sphere
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-
-                    default:
-                    throw new NotImplementedException();
-                }
-            };
 
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
@@ -747,7 +770,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
 
-            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1); 
             C.UseImmersedBoundary = true;
             if (C.UseImmersedBoundary) {
                 C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);

@@ -218,6 +218,16 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// indexes of all available times, i.e. all valid indexes to access any <see cref="HistoryStack{T}"/>
+        /// </summary>
+        public int[] PopulatedHistoryIndices {
+            get {
+                int L = HistoryLength;
+                return RegionsHistory.PopulatedIndices;
+            }
+        }
+
+        /// <summary>
         /// Number of times <see cref="PushStacks"/> was called;
         /// </summary>
         public int PushCount {
@@ -842,9 +852,9 @@ namespace BoSSS.Foundation.XDG {
         /// - 1st index: index of level-set
         /// - 2nd index: index into stack
         /// </summary>
-        public IList<HistoryStack<ILevelSet>> LevelSetHistories {
+        public IReadOnlyList<HistoryStack<ILevelSet>> LevelSetHistories {
             get {
-                return m_LevelSetHistories.ToList();
+                return m_LevelSetHistories;
             }
         }
 
@@ -897,6 +907,65 @@ namespace BoSSS.Foundation.XDG {
             }
 #endif
         }
+
+        /// <summary>
+        /// throws away the top of the history, reverts to the latest pushed state (<see cref="PushStacks"/>,
+        /// see also <see cref="DataHistories"/>, <see cref="LevelSetHistories"/>, <see cref="RegionsHistory"/>, etc.).
+        /// 
+        /// The top state of the stack can also be back-upped/resored by
+        /// - <see cref="BackupTimeLevel(int)"/>
+        /// - <see cref="ReplaceCurrentTimeLevel(TrackerBackup)"/>
+        /// </summary>
+        public void PopStacks() {
+            int NoOfLs = LevelSets.Count;
+            int PHL = PopulatedHistoryLength;
+            int HL = this.HistoryLength;
+
+
+            Debug.Assert(NoOfLs == m_LevelSets.Count);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                LevelSetHistories[iLs].Pop((ls1, ls0) => {
+                    ls1.CopyFrom(ls0);
+                    return ls1;
+                });//.Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
+            }
+
+            Debug.Assert(NoOfLs == m_DataHistories.Count);
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                DataHistories[iLs].Pop((data1, data0) => data0);//.Push((data1) => new LevelSetData(this, iLs), (data1, data0) => data1);
+
+                // fix the history index...
+                for(int iStack = 1; iStack > -m_DataHistories[iLs].GetPopulatedLength(); iStack--) {
+                    m_DataHistories[iLs][iStack].m_HistoryIndex = iStack;
+                }
+            }
+
+            m_RegionsHistory.Pop((r1, r0) => r0); // .Push((r1) => r1.CloneAs(), (r1, r0) => r1);
+
+            m_QuadFactoryHelpersHistory.Pop((r1, r0) => r0);
+
+            m_XDGSpaceMetricsHistory.Pop((r1, r0) => r0);
+
+#if DEBUG
+            for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                Debug.Assert(object.ReferenceEquals(LevelSets[iLs], LevelSetHistories[iLs].Current));
+            }
+            PHL = PopulatedHistoryLength;
+            for(int iH = 1; iH > -PHL + 1; iH--) {
+                for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                    Debug.Assert(!object.ReferenceEquals(LevelSetHistories[iLs][iH], LevelSetHistories[iLs][iH - 1]));
+                }
+                Debug.Assert(!object.ReferenceEquals(RegionsHistory[iH], RegionsHistory[iH - 1]));
+            }
+
+            for(int iH = 1; iH > -PHL; iH--) {
+                for(int iLs = 0; iLs < NoOfLs; iLs++) {
+                    Debug.Assert(DataHistories[iLs][iH].HistoryIndex == iH);
+                }
+            }
+#endif
+        }
+
 
         /// <summary>
         /// Number of used level-sets fields, between 1 and 4.
@@ -1399,6 +1468,70 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+
+        /// <summary>
+        /// The minimum amount of data required to restore the level-set-tracker state
+        /// after mesh adaptation
+        /// </summary>
+        public class EssentialTrackerBackup {
+            
+            /// <summary>
+            /// clone of the level-set fields, <see cref="m_LevelSetHistories"/>
+            /// </summary>
+            public SinglePhaseField[] LevelSets;
+
+            /// <summary>
+            /// level-set version index, <see cref="LevelSetRegions.Version"/>
+            /// </summary>
+            public int Version;
+            
+            /// <summary>
+            /// associated physical time, <see cref="LevelSetRegions.Time"/>
+            /// </summary>
+            public double time;
+
+        }
+
+
+        /// <summary>
+        /// Full backup of the tracker state at a respective time-step.
+        /// </summary>
+        public class TrackerBackup : EssentialTrackerBackup, ICloneable {
+            /// <summary>
+            /// backup of region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
+            /// </summary>
+            public ushort[] Regions;
+
+
+            /// <summary>
+            /// backup of <see cref="LevelSetRegions.m_LevSetCoincidingFaces"/>
+            /// </summary>
+            public (int iLevSet, int iFace)[][] LevSetCoincidingFaces;
+
+            /// <summary>
+            /// non-shallow cloning
+            /// </summary>
+            public object Clone() {
+                var clone_LevSetCoincidingFaces = new (int iLevSet, int iFace)[LevSetCoincidingFaces.Length][];
+                for(int j = 0; j < clone_LevSetCoincidingFaces.Length; j++) {
+                    var lscf_j = LevSetCoincidingFaces[j];
+                    if(lscf_j != null) {
+                        clone_LevSetCoincidingFaces[j] = lscf_j.CloneAs();
+                        Debug.Assert(lscf_j.Length <= 0 || !object.ReferenceEquals(lscf_j[0], clone_LevSetCoincidingFaces[j][0]));
+                    }
+                }
+
+
+                return new TrackerBackup() {
+                    LevelSets = this.LevelSets.Select(ls => ls.CloneAs()).ToArray(),
+                    Version = this.Version,
+                    time = this.time,
+                    Regions = this.Regions.CloneAs(),
+                    LevSetCoincidingFaces = clone_LevSetCoincidingFaces
+                };
+            }
+        }
+
         
         /// <summary>
         /// Backup of the internal state of the level-set tracker for a certain history stack index (<paramref name="iHistory"/>).
@@ -1407,14 +1540,9 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="iHistory">History stack index.</param>
         /// <returns>
-        /// Can be used as input for <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], int)"/> or <see cref="ReplaceCurrentTimeLevel(SinglePhaseField[], ushort[], int)"/>.
-        /// - 1st item: clone of the level-set fields, <see cref="m_LevelSetHistories"/>
-        /// - 2nd item: region code for each cell, <see cref="LevelSetRegions.RegionsCode"/>
-        /// - 3rd item: <see cref="LevelSetRegions.m_LevSetCoincidingFaces"/>
-        /// - 4th item: level-set version index, <see cref="LevelSetRegions.Version"/>
-        /// - 5th item: associated physical time, <see cref="LevelSetRegions.Time"/>
+        /// Can be used as input for <see cref="ReplaceCurrentTimeLevel(TrackerBackup)"/> or <see cref="ReplaceCurrentTimeLevel(EssentialTrackerBackup)"/>.
         /// </returns>
-        public (LevelSet[] LevelSets, ushort[] Regions, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int Version, double time) BackupTimeLevel(int iHistory) {
+        public TrackerBackup BackupTimeLevel(int iHistory) {
             int Jup = this.GridDat.Cells.NoOfLocalUpdatedCells;
             
             ushort[] RegionClone = new ushort[Jup];
@@ -1439,20 +1567,30 @@ namespace BoSSS.Foundation.XDG {
                 LevSetClones[iLs] = Ls;
             }
 
-            return (LevSetClones, RegionClone, _LevSetCoincidingFaces, this.RegionsHistory[iHistory].Version, this.RegionsHistory[iHistory].Time);
+            return new TrackerBackup() {
+                LevelSets = LevSetClones,
+                LevSetCoincidingFaces = _LevSetCoincidingFaces,
+                Regions = RegionClone,
+                Version = this.RegionsHistory[iHistory].Version,
+                time = this.RegionsHistory[iHistory].Time
+            };
         }
 
         /// <summary>
-        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, but the region codes (<see cref="LevelSetRegions.RegionsCode"/>) are
-        /// re-computed by calling <see cref="UpdateTracker(int, bool, int[])"/>.
+        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, 
+        /// but the region codes (<see cref="LevelSetRegions.RegionsCode"/>) are
+        /// re-computed by calling <see cref="UpdateTracker"/>.
         /// </summary>
-        /// <param name="LevSet">Level-Sets</param>
-        /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
-        /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
         /// <remarks>
-        /// Used e.g. for mesh adaptation.
+        /// Used for **mesh adaptation**,
+        /// i.e. when the mesh changes and region codes must be re-computed.
         /// </remarks>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, int VersionCounter, double time) {
+        public void ReplaceCurrentTimeLevel(EssentialTrackerBackup backup) {
+
+            SinglePhaseField[] LevSet = backup.LevelSets;
+            int VersionCounter = backup.Version;
+            double time = backup.time;
+
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -1488,15 +1626,20 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, but the region codes (<see cref="LevelSetRegions.RegionsCode"/>) are
-        /// re-computed by calling <see cref="UpdateTracker(int, bool, int[])"/>.
+        /// Counterpart of <see cref="BackupTimeLevel(int)"/>, using the full backup.
         /// </summary>
-        /// <param name="LevSet">Level-Sets</param>
-        /// <param name="VersionCounter"><see cref="LevelSetRegions.Version"/></param>
-        /// <param name="RegionCode"><see cref="LevelSetRegions.RegionsCode"/></param>
-        /// <param name="LevSetCoincidingFaces"><see cref="LevelSetRegions.LevSetCoincidingFaces"/></param>
-        /// <param name="time"><see cref="LevelSetRegions.Time"/></param>
-        public void ReplaceCurrentTimeLevel(SinglePhaseField[] LevSet, ushort[] RegionCode, (int iLevSet, int iFace)[][] LevSetCoincidingFaces, int VersionCounter, double time) {
+        /// <param name="fullBackup"></param>
+        /// <remarks>
+        /// Used for **mesh redistribution**  (MPI load balancing)
+        /// i.e. when the mesh remains essentially constant, but the (global and local) indexing of cells changes.
+        /// </remarks>
+        public void ReplaceCurrentTimeLevel(TrackerBackup fullBackup) {
+            SinglePhaseField[] LevSet = fullBackup.LevelSets;
+            ushort[] RegionCode = fullBackup.Regions;
+            (int iLevSet, int iFace)[][] LevSetCoincidingFaces = fullBackup.LevSetCoincidingFaces;
+            int VersionCounter = fullBackup.Version;
+            double time = fullBackup.time;
+
             if(LevSet.Length != this.NoOfLevelSets)
                 throw new ArgumentOutOfRangeException();
             int NoOfLevelSet = this.NoOfLevelSets;
@@ -2143,7 +2286,7 @@ namespace BoSSS.Foundation.XDG {
                 // update memory of XDG fields, etc.
                 // =================================
                 using (new BlockTrace("ObserverUpdate", tr)) {
-                    ObserverUpdate();
+                    ObserverUpdate(null);
                 }
 
                 // throw exception, if levelset CFL violated
@@ -2178,10 +2321,6 @@ namespace BoSSS.Foundation.XDG {
         }
 
       
-
-
-
-
         /// <summary>
         /// Clears all internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
@@ -2210,7 +2349,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Calls the <see cref="IObserver{LevelSetRegions}.OnNext(LevelSetRegions)"/> for all observers.
         /// </summary>
-        private void ObserverUpdate() {
+        private void ObserverUpdate(BehaveUnder_LevSetMoovement? updateBehaveOverride) {
             int rnk = ilPSP.Environment.MPIEnv.MPI_Rank;
             int sz = this.GridDat.MpiSize;
 
@@ -2262,7 +2401,19 @@ namespace BoSSS.Foundation.XDG {
 
             // call the update method of all active fields
             foreach (var t in ObserversRefs) {
+
+                BehaveUnder_LevSetMoovement bkup = BehaveUnder_LevSetMoovement.JustReallocate;
+                XDGField xDG = t as XDGField;
+                if(xDG != null && updateBehaveOverride != null) {
+                    bkup = xDG.UpdateBehaviour;
+                    xDG.UpdateBehaviour = updateBehaveOverride.Value;
+                }
+
                 t.OnNext(Regions);
+
+                if(xDG != null && updateBehaveOverride != null) {
+                    xDG.UpdateBehaviour = bkup;
+                }
             }
             
             
@@ -2274,7 +2425,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public void ObserverHack() {
             using (new FuncTrace()) {
-                this.ObserverUpdate();
+                this.ObserverUpdate(BehaveUnder_LevSetMoovement.JustReallocate);
             }
         }
 

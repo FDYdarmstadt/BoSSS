@@ -38,7 +38,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
     /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   We transform $` \int f dx $` to the reference Element, $` \int f dx = \int f(T) |det D(T)| d\hat{x} $`
     ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
     ///   has approximately degree <= n * p + (p - 1)
     ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
@@ -70,6 +70,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(2, 1, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting, false);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.1, ViscosityMode.FullySymmetric, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
@@ -118,8 +119,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     return p;
                 });
             } else {
-                XNSE<XNSE_Control> ._Main(args, false, delegate () {
-                    var p = new XNSE<XNSE_Control>();
+                XNSE._Main(args, false, delegate () {
+                    var p = new XNSE();
                     return p;
                 });
             }
@@ -549,7 +550,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //Console.WriteLine("droplet volume: volume_A = {0} (ref volume = {1}; {2})", volume, volumeRef, 100*(volume - volumeRef)/volumeRef);
             ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
             // Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"Done with time step {TimestepNo}.");

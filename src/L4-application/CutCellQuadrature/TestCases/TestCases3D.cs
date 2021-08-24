@@ -45,9 +45,9 @@ namespace CutCellQuadrature.TestCases {
                     //for (int i = 1; i < 26; i++) {
                     //for (int i = 1; i < 51; i++) {
                     for (int i = 1; i < 101; i++) {
-                        double x = rng.NextDouble();
-                        double y = rng.NextDouble();
-                        double z = rng.NextDouble();
+                        double x =  rng.NextDouble();
+                        double y =  rng.NextDouble();
+                        double z =  rng.NextDouble();
 
                         myShifts.Add(new Shift3D() {
                             OffsetX = x,
@@ -91,7 +91,9 @@ namespace CutCellQuadrature.TestCases {
                         default:
                             throw new Exception();
                     }
-                    double[] nodes = GenericBlas.Linspace(-2.0, 2.0, noOfCellsPerDirection + 1);
+                    double[] nodes = GenericBlas.Linspace(-2, 2, noOfCellsPerDirection + 1);
+                    //double[] nodes1 = GenericBlas.Linspace(0.8, 1.1, noOfCellsPerDirection + 2);
+                    //nodes1[1] = 0.95;
                     grid = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
                     break;
 
@@ -571,8 +573,8 @@ namespace CutCellQuadrature.TestCases {
                 double y = input[i, 1];
                 double z = input[i, 2];
 
-                double[] pos =  new double[3] { 0.2625, 0.0125, 0.0125 };
-                double scaleup = 80;
+                double[] pos =  new double[3] { -0.275, -0.275, -0.275 };
+                double scaleup = 15;
                 pos.ScaleV(-scaleup);
                 double particleRad = 0.261 * scaleup;
                 double angle = 0.01*10;
@@ -604,6 +606,18 @@ namespace CutCellQuadrature.TestCases {
         }
     }
 
+    class SingleCubeCubeSurfaceTestCase : SingleCubeCubeTestCase, ISurfaceTestCase {
+        public SingleCubeCubeSurfaceTestCase(GridSizes gridSize, GridTypes gridType)
+            : base(gridSize, gridType) {
+        }
+
+        public override double Solution {
+            get {
+                return 0;
+            }
+        }
+    }
+
     class SingleCubeParaboloidVolumeTestCase : SingleCubeParaboloidTestCase, IVolumeTestCase {
 
         public SingleCubeParaboloidVolumeTestCase(GridSizes gridSize, GridTypes gridType)
@@ -612,7 +626,7 @@ namespace CutCellQuadrature.TestCases {
 
         public override double Solution {
             get {
-                return 4.0 * 4.0 / 3.0 + 1.0;
+                return 3.0 + 4.0;
             }
         }
     }
