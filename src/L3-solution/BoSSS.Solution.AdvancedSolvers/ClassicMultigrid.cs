@@ -347,6 +347,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
+
+        public void Dispose() {
+            throw new NotImplementedException();
+        }
+
+        public double UsedMemory() {
+            throw new NotImplementedException();
+        }
     }
 
 }

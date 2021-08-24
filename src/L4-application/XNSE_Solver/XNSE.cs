@@ -550,9 +550,17 @@ namespace BoSSS.Application.XNSE_Solver {
             ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
             // Update Calls
             dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"Done with time step {TimestepNo}.");
+            //try {
+                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
+                Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                Console.WriteLine($"Done with time step {TimestepNo}.");
+            //} catch (Exception ex) {
+            //    string dir = System.IO.Directory.GetCurrentDirectory();
+            //    this.ProfilingLog();
+            //    this.CurrentSessionInfo.AddTag(ex.GetType().ToString());
+            //    this.CurrentSessionInfo.Save();
+            //    throw new Exception("there is something rotten. See output...");
+            //}
             return dt;
         }
     }

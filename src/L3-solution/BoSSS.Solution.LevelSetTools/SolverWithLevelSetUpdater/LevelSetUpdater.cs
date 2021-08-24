@@ -1,4 +1,6 @@
-﻿using BoSSS.Foundation;
+﻿//#define TEST
+
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -352,8 +354,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable, LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1) {
-
+#if TEST
+            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.None;
+#else
             ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
+#endif
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1 };
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1 };
 

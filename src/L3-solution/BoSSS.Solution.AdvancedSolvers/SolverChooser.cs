@@ -687,7 +687,7 @@ namespace BoSSS.Solution {
                 };
                 break;
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
+                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
                 templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
                 break;
 
@@ -1498,10 +1498,11 @@ namespace BoSSS.Solution {
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             int maxDG = getMaxDG(0, 0);
+            bool UsePmg = false; //enables larger Schwarz Blocks
 
             var LocalDOF4directSolver = _LocalDOF;
             // if we use lvlpmg in Sblocks, we can have less and larger blocks ...
-            if (m_lc.pMaxOfCoarseSolver < maxDG) {
+            if (m_lc.pMaxOfCoarseSolver < maxDG && UsePmg) {
                 LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
             }
 
@@ -1515,7 +1516,7 @@ namespace BoSSS.Solution {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
                 if (SizeFraction < 1 && iLevel == 0) {
-                    Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize(iLevel)}) exceeds local system size ({_LocalDOF[iLevel]});");
+                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
@@ -1540,6 +1541,7 @@ namespace BoSSS.Solution {
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
+                        SolverVersion = Parallelism.OMP,
                         TestSolution = false
                     };
                 } else {
@@ -1593,6 +1595,7 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
+                        //(levelSolver as OrthonormalizationMultigrid).MaxKrylovDim = m_lc.MaxKrylovDim;
                     }
 
                     /*

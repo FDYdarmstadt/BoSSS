@@ -98,14 +98,13 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// </summary>
         /// <returns></returns>
         public static ISparseSolver PatchSolverFactory() {
-            //return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-            //    Parallelism = Parallelism.SEQ,
-            //    PrintStats = true,
-            //    SymmIndefPivot = true
-            //};
-            return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
+            return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                 Parallelism = Parallelism.SEQ,
+                SymmIndefPivot = true
             };
+            //return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
+            //    Parallelism = Parallelism.SEQ,
+            //};
         }
     }
 

@@ -994,7 +994,6 @@ namespace ilPSP.LinSolvers.PARDISO {
             if (m_PardInt.m_PardisoInitialized)
                 PARDISODispose();
             m_OrgMatrix = null;
-            
         }
 
         #endregion

@@ -310,11 +310,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             clone.NoOfIterations = this.NoOfIterations;
             clone.TerminationCriterion = this.TerminationCriterion;
             clone.Precond = null;
-        return clone;
+            return clone;
+        }
+
+        public void Dispose() {
+            throw new NotImplementedException();
+        }
+
+        public double UsedMemory() {
+            throw new NotImplementedException();
+        }
     }
-}
-
-   
-
-
 }

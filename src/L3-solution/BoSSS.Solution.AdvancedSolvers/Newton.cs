@@ -1425,6 +1425,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public object Clone() {
                 throw new NotImplementedException();
             }
+
+            public void Dispose() {
+                throw new NotImplementedException();
+            }
+
+            public double UsedMemory() {
+                throw new NotImplementedException();
+            }
         }
 
 

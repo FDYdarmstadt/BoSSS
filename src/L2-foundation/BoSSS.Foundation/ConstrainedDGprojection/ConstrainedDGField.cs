@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+//#define TEST
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -89,7 +89,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         bool reduceLinearDependence = false;
 
-        protected List<DGField> ProjectionSnapshots = new List<DGField>();
+        public List<DGField> ProjectionSnapshots = new List<DGField>();
 
         int NoOfFixedPatches = 0;  // if < 1 the number of patches is determined by maxNoOfCoordinates
         int maxNoOfCoordinates = 10000;
@@ -285,8 +285,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             }
                         }
                     }
-                    localInterProcNeigh = new CellMask(mask.GridData, localInterProcNeighBA);
                 }
+                localInterProcNeigh = new CellMask(mask.GridData, localInterProcNeighBA);
 
                 // plot patches for debugging
                 SinglePhaseField interProcField = new SinglePhaseField(m_Basis, "interProc");
@@ -368,6 +368,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
             Console.WriteLine("inter patch EM No of edges: {0}", interPatchEM.NoOfItemsLocally);
 
+            // Translation to BA
             BitArray interPatchBA = new BitArray(J);
             foreach (var chunk in interPatchEM) {
                 int j0 = chunk.i0;
@@ -399,8 +400,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         }
                     }
                 }
-                interPatchNeigh = new CellMask(mask.GridData, interPatchNeighBA);
             }
+            interPatchNeigh = new CellMask(mask.GridData, interPatchNeighBA);
 
             // plot patches for debugging
             SinglePhaseField interPatchField = new SinglePhaseField(m_Basis, "interPatch");
@@ -674,6 +675,16 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             // x = RHS - ATv
             AT.SpMV(-1.0, v, 0.0, x);
             m_Coordinates.AccV(1.0, x);
+
+#if DEBUG
+            int NoOfNonZeroConstraints = fixedBoundaryMask == null ? 0 : fixedBoundaryMask.Count();
+            int NonZerosInRHS = RHS_non0c.Where(i => i != 0).Count();
+            //Debug.Assert(NoOfNonZeroConstraints == NonZerosInRHS);
+            var y = new double[rowBlockPart.LocalLength];
+            A.SpMV(1.0, m_Coordinates, 0.0, y);
+            AAT.SpMV(-1.0, v, 1.0, y);
+            Console.WriteLine("Res of Solution is: " + y.MPI_L2Norm());
+#endif
         }
 
         private ISparseSolver InitializeSolver(bool IsLocal, BlockMsrMatrix matrix) {
@@ -800,6 +811,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             Console.WriteLine("face center: ({0}, {1}, {2})", face12c[0], face12c[1], face12c[2]);
                         throw new ArgumentException("fixed boundary not within mask for projection");
                     }
+                    
 
                     int[] vertAtCell1 = m_grd.Cells.CellVertices[cell1];
                     int[] vertAtCell2 = m_grd.Cells.CellVertices[cell2];
@@ -830,8 +842,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                                 // set fixed coordinates
                                 gVert.setFixedValue(valueVertice[0, 0]);
+//#if DEBUG
+//                                int otherCell = jCell == cell1 ? cell2 : cell1;
+//                                MultidimensionalArray testVert = MultidimensionalArray.Create(1, 1);
+//                                NodeSet refNds_other = GetVerticeRefNodeSet(vert, otherCell);
+//                                internalProjection.Evaluate(otherCell, 1, refNds_other, testVert);
+//                                Debug.Assert(valueVertice[0, 0] - testVert[0,0] < 1E-6);
+//#endif
                             }
-
                         }
                     }
 
@@ -868,7 +886,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     }
                 }
             }
-
         }
 
 

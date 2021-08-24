@@ -1536,9 +1536,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                     //ExtractSomeSamplepoints("samples");
-
+                    
                 }
-
+                linearSolver.Dispose();
             } else {
                 // ++++++++++++++++++++++++++++++++++++
                 // compute residual of actual solution 
@@ -1661,7 +1661,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             //var dinfo = Directory.CreateDirectory(path+@"\plots");
             //ExecuteWaterfallAnalysis(dinfo.FullName);
             //CreateFAMatrices(dinfo.FullName);
-
 
             m_CurrentPhystime = phystime + dt;
             return success;

@@ -218,6 +218,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return clone;
         }
 
+        public void Dispose() {
+            foreach (var solver in SolverChain) {
+                solver.Dispose();
+            }
+        }
+
+        public double UsedMemory() {
+            throw new NotImplementedException();
+        }
     }
 
 }

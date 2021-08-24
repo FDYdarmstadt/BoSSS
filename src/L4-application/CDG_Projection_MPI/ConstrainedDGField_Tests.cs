@@ -18,134 +18,44 @@ using BoSSS.Solution.Statistic;
 
 namespace CDG_Projection_MPI {
 
+    public enum GeomShape {
+        Sphere = 0,
+        Cube = 1
+    }
+
     [TestFixture]
     class ConstrainedDGField_Tests : ConstrainedDGField {
         static void Main(string[] args) {
             Application.InitMPI();
-            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 15, GeomShape.Cube);
+            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 10, GeomShape.Cube,4);
             //ProjectionPseudo1D(ProjectionStrategy.patchwiseOnly, 40);
             Application.FinalizeMPI();
         }
 
         private static void ZeroPivotWithPardiso() {
-            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 10, GeomShape.Sphere);
+            // 4 because 4 cores
+            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 10*4, GeomShape.Sphere);
         }
 
-        public enum GeomShape {
-            Sphere = 0,
-            Cube = 1
+        private static void BrokenLocalPatches() {
+            // 4 cores; one Patch ok rest shit
+            ProjectionIn3D(ProjectionStrategy.patchwiseOnly, 15, GeomShape.Cube,4);
         }
 
         private ConstrainedDGField_Tests(Basis b) : base(b) { }
 
-        private static Grid3D Create3Dgrid(int Res) {
-            int xMin = -1;
-            int xMax = 1;
-            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
-            //int numOfCells = Res * NoOfCores;
-            int numOfCells = Res;
-            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
-            var grid = Grid3D.Cartesian3DGrid(xNodes, xNodes, xNodes);
-            return grid;
-        }
-
-        private static Grid2D Create2DGrid(int Res) {
-            int xMin = -1;
-            int xMax = 1;
-            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
-            int numOfCells = Res * NoOfCores;
-            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
-            var grid = Grid2D.Cartesian2DGrid(xNodes, xNodes);
-            return grid;
-        }
-
-        private static Grid1D Create1DGrid(int Res) {
-            int xMin = -1;
-            int xMax = 1;
-            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
-            int numOfCells = Res * NoOfCores;
-            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
-            var grid = Grid1D.LineGrid(xNodes);
-            return grid;
-        }
-
-        private static CellMask ComputeNarrowband(GridCommons grid, double radius, Func<double, Func<double[], double>> FGen) {
-            var cells = grid.GridData.Cells;
-            long i0 = grid.GridData.CellPartitioning.i0;
-            long iE = grid.GridData.CellPartitioning.iE;
-            int L = grid.CellPartitioning.LocalLength;
-            double CellLength = grid.GridData.Cells.h_minGlobal;
-            int D = grid.SpatialDimension;
-            var barray = new BitArray(L);
-            double tol = CellLength * 2; // Narrowband of CLength *2 width
-            var UpperBnd = FGen(radius + tol);
-            var LowerBnd = FGen(radius - tol);
-
-            for (int iCell = 0; iCell < L; iCell++) {
-                var center = cells.GetCenter(iCell);
-                double[] tmp = center.GetSubVector(0, D);
-                barray[iCell] = LowerBnd(tmp) < 0 && UpperBnd(tmp) > 0;
-            }
-            return new CellMask(grid.GridData, barray);
-        }
-
-        private static Func<double[], double> GenCube(int Dim, double particleRad) {
-            int power = 10;
-            double angle = 0.7;
-            switch (Dim) {
-                case 2:
-                    return (double[] X) =>
-                        -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle))) + particleRad;
-                case 3:
-                return (double[] X) =>
-                -Math.Pow(Math.Pow((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle), power)
-                + Math.Pow((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle), power)
-                + Math.Pow(X[2], power), 1.0 / power)
-                + particleRad;
-                //return (double[] X) =>
-                //        -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
-                //        Math.Max(Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle)),
-                //        Math.Abs(X[2]))) + particleRad;
-                default:
-                throw new NotSupportedException();
-            }
-            
-        }
-
-        private static Func<double[], double> GenSphere(int Dim, double particleRad) {
-            switch (Dim) {
-                case 2:
-                return (double[] X) => -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-                case 3:
-                return (double[] X) => -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-                default:
-                throw new NotSupportedException();
-            }
-        }
-
-        private static Func<double, Func<double[], double>> FuncGenerator(GeomShape shape, int Dim) {
-            switch (shape) {
-                case GeomShape.Sphere:
-                return (double Radius) => GenSphere(Dim,Radius);
-                case GeomShape.Cube:
-                return (double Radius) => GenCube(Dim, Radius);
-                default:
-                throw new NotImplementedException();
-            }
-        }
-
-        static public void ProjectionIn3D(ProjectionStrategy PStrategy, int GridRes, GeomShape shape) {
+        static public void ProjectionIn3D(ProjectionStrategy PStrategy, int GridRes, GeomShape shape, int NoOfLocalPatches=0) {
             // Arrange -- Grid
-            var grid = Create3Dgrid(GridRes);
+            var grid = CDG_Test_Utils.Create3Dgrid(GridRes);
             // Arrange -- target field
-            double particleRad = 0.625;
+            double DomainLength = grid.GridData.GlobalBoundingBox.Max[0] - grid.GridData.GlobalBoundingBox.Min[0];
+            double particleRad = 0.625/2* DomainLength;
             var DGBasis = new Basis(grid, 2);
             var CDGBasis = new Basis(grid, 2);
             var CDGTestField = new ConstrainedDGField_Tests(CDGBasis);
             //var mask = CellMask.GetFullMask(grid.GridData);
-            var FGenerator = FuncGenerator(shape, grid.GridData.SpatialDimension);
-            var mask = ComputeNarrowband(grid, particleRad, FGenerator);
+            var FGenerator = CDG_Test_Utils.FuncGenerator(shape, grid.GridData.SpatialDimension);
+            var mask = CDG_Test_Utils.ComputeNarrowband(grid, particleRad, FGenerator);
             Console.WriteLine("Cells in mask: "+mask.NoOfItemsLocally.MPISum());
             Console.WriteLine("edges in mask: " + mask.AllEdges().NoOfItemsLocally.MPISum());
 
@@ -165,28 +75,29 @@ namespace CDG_Projection_MPI {
                     CDGTestField.ProjectDGFieldGlobal(mask);
                 break;
                 case ProjectionStrategy.patchwiseOnly:                  
-                    var PrjMasks = CDGTestField.ProjectDGField_patchwise(mask,2);
-                    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
+                    var PrjMasks = CDGTestField.ProjectDGField_patchwise(mask, NoOfLocalPatches);
+                    BoSSS.Solution.Tecplot.Tecplot.PlotFields(PrjMasks, "PrjMasks.plt", 0.0, 0);
                 break;
             }
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump Norm after total projection: "+ jumpNorm_after);
 
-            if (CDGTestField.ProjectionSnapshots != null) BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+            CDGTestField.PrintSnapshots();
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
 
+        
 
         static public void ProjectionIn2D(ProjectionStrategy PStrategy, int GridRes, GeomShape shape) {
             // Arrange -- Grid
-            var grid = Create2DGrid(GridRes);
+            var grid = CDG_Test_Utils.Create2DGrid(GridRes);
             double particleRad = 0.625;
             // Arrange -- target field
             var Basis = new Basis(grid, 2);
             var CDGTestField = new ConstrainedDGField_Tests(Basis);
-            var FGenerator = FuncGenerator(shape, grid.GridData.SpatialDimension);
-            var mask = ComputeNarrowband(grid,particleRad,FGenerator);
+            var FGenerator = CDG_Test_Utils.FuncGenerator(shape, grid.GridData.SpatialDimension);
+            var mask = CDG_Test_Utils.ComputeNarrowband(grid,particleRad,FGenerator);
 
             // Arrange -- source field
             var field = new SinglePhaseField(Basis, "DG");
@@ -219,8 +130,8 @@ namespace CDG_Projection_MPI {
             CDGTestField.AccToDGField(1.0, field);
             field.Identification = "CG";
             list.Add(field);
-            //BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 1);
+
+            CDGTestField.PrintSnapshots();
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
@@ -240,7 +151,7 @@ namespace CDG_Projection_MPI {
             var CDGTestField = new ConstrainedDGField_Tests(BasisCDG);
             double slope = 0.6;
             //Func<double[],double> ProjFunc = (double[] X) => X[0]* slope * (X[0]<=0.0?1:-1) + slope;
-            Func<double[], double> ProjFunc = (double[] X) => X[0];
+            Func<double[], double> ProjFunc = (double[] X) => X[0]; // in combination with dg=0 this leads to a stair like isocontour 
             var mask = CellMask.GetFullMask(grid.GridData);
             var field = new SinglePhaseField(BasisDG, "DG");
             var ProjF = NonVectorizedScalarFunction.Vectorize(ProjFunc);
@@ -264,33 +175,135 @@ namespace CDG_Projection_MPI {
             double jumpNorm_after = CDGTestField.CheckLocalProjection(mask, false);
             Console.WriteLine("jump Norm after total projection: " + jumpNorm_after);
 
-            //var Aux1DGrid = Create1DGrid(GridRes);
-            //var field1D = new SinglePhaseField(new Basis(Aux1DGrid, 2));
-            double[] XCoor = GenericBlas.Linspace(xMin+1E-4, xMax - 1E-4, GridRes * 10);
-            var inital = MultidimensionalArray.Create(XCoor.Length, 2);
-            var interproc = MultidimensionalArray.Create(XCoor.Length, 2);
-            var proclocal = MultidimensionalArray.Create(XCoor.Length, 2);
-            var FieldDingen = new FieldEvaluation(grid.GridData);
-            double LineplotAt = 0.0;
-            for (int i=0;i<XCoor.Length;i++) {
-                inital[i, 1] = XCoor[i];
-                interproc[i, 1] = XCoor[i];
-                proclocal[i, 1] = XCoor[i];
-                //Results[i, 0]=FieldDingen.Evaluate(new Vector(XCoor[i],0.0),field);
-                inital[i, 0] = field.ProbeAt(XCoor[i], LineplotAt);
-                interproc[i, 0] = CDGTestField.ProjectionSnapshots[2].ProbeAt(XCoor[i], LineplotAt);
-                proclocal[i, 0] = CDGTestField.ProjectionSnapshots.Last().ProbeAt(XCoor[i], LineplotAt);
-            }
 
-            //double alpha, IEnumerable< DGField > Flds, MultidimensionalArray Points, double beta, MultidimensionalArray Result, BitArray UnlocatedPoints = null, int[] LocalCellIndices = null
-
-            inital.SaveToTextFile("initial");
-            interproc.SaveToTextFile("interproc");
-            proclocal.SaveToTextFile("proclocal");
-
-            // BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGTestField.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+            CDG_Test_Utils.SaveOutput(grid.GridData, field, CDGTestField);
             // Assert -- effective inter process projection
             // Assert.IsTrue(jumpNorm_after < jumpNorm_before * 1E-8);
         }
     }
+
+    static class CDG_Test_Utils {
+        public static void PrintSnapshots(this ConstrainedDGField CDGfields) {
+            if (CDGfields.ProjectionSnapshots != null && CDGfields.ProjectionSnapshots.Count() != 0) BoSSS.Solution.Tecplot.Tecplot.PlotFields(CDGfields.ProjectionSnapshots, "PrjSnap.plt", 0.0, 2);
+        }
+        public static Grid3D Create3Dgrid(int Res) {
+            double xMin = -1;
+            double xMax = 1;
+            int numOfCells = Res;
+            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
+            var grid = Grid3D.Cartesian3DGrid(xNodes, xNodes, xNodes);
+            return grid;
+        }
+
+        public static Grid2D Create2DGrid(int Res) {
+            int xMin = -1;
+            int xMax = 1;
+            int numOfCells = Res;
+            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
+            var grid = Grid2D.Cartesian2DGrid(xNodes, xNodes);
+            return grid;
+        }
+
+        public static Grid1D Create1DGrid(int Res) {
+            int xMin = -1;
+            int xMax = 1;
+            int numOfCells = Res;
+            double[] xNodes = GenericBlas.Linspace(xMin, xMax, numOfCells + 1);
+            var grid = Grid1D.LineGrid(xNodes);
+            return grid;
+        }
+
+        public static CellMask ComputeNarrowband(GridCommons grid, double radius, Func<double, Func<double[], double>> FGen) {
+            var cells = grid.GridData.Cells;
+            long i0 = grid.GridData.CellPartitioning.i0;
+            long iE = grid.GridData.CellPartitioning.iE;
+            int L = grid.CellPartitioning.LocalLength;
+            double CellLength = grid.GridData.Cells.h_minGlobal;
+            int D = grid.SpatialDimension;
+            var barray = new BitArray(L);
+            double tol = CellLength * 2; // Narrowband of CLength *2 width
+            var UpperBnd = FGen(radius + tol);
+            var LowerBnd = FGen(radius - tol);
+
+            for (int iCell = 0; iCell < L; iCell++) {
+                var center = cells.GetCenter(iCell);
+                double[] tmp = center.GetSubVector(0, D);
+                barray[iCell] = LowerBnd(tmp) < 0 && UpperBnd(tmp) > 0;
+            }
+            return new CellMask(grid.GridData, barray);
+        }
+
+        public static Func<double[], double> GenCube(int Dim, double particleRad) {
+            int power = 10;
+            double angle = 0.7;
+            switch (Dim) {
+                case 2:
+                return (double[] X) =>
+                    -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
+                    Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle))) + particleRad;
+                case 3:
+                return (double[] X) =>
+                -Math.Pow(Math.Pow((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle), power)
+                + Math.Pow((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle), power)
+                + Math.Pow(X[2], power), 1.0 / power)
+                + particleRad;
+                //return (double[] X) =>
+                //        -Math.Max(Math.Abs((X[0]) * Math.Cos(angle) - (X[1]) * Math.Sin(angle)),
+                //        Math.Max(Math.Abs((X[0]) * Math.Sin(angle) + (X[1]) * Math.Cos(angle)),
+                //        Math.Abs(X[2]))) + particleRad;
+                default:
+                throw new NotSupportedException();
+            }
+
+        }
+
+        public static Func<double[], double> GenSphere(int Dim, double particleRad) {
+            switch (Dim) {
+                case 2:
+                return (double[] X) => -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                case 3:
+                return (double[] X) => -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                default:
+                throw new NotSupportedException();
+            }
+        }
+
+        public static Func<double, Func<double[], double>> FuncGenerator(GeomShape shape, int Dim) {
+            switch (shape) {
+                case GeomShape.Sphere:
+                return (double Radius) => GenSphere(Dim, Radius);
+                case GeomShape.Cube:
+                return (double Radius) => GenCube(Dim, Radius);
+                default:
+                throw new NotImplementedException();
+            }
+        }
+
+        public static void SaveOutput(GridData gd, DGField initial, ConstrainedDGField result) {
+            double xMin = gd.GlobalBoundingBox.Min[0];
+            double xMax = gd.GlobalBoundingBox.Max[0];
+            int GridRes = (int)Math.Floor((xMax - xMin) / gd.GlobalBoundingBox.h_min);
+
+            double[] XCoor = GenericBlas.Linspace(xMin + 1E-4, xMax - 1E-4, GridRes * 10);
+            var inital = MultidimensionalArray.Create(XCoor.Length, 2);
+            var interproc = MultidimensionalArray.Create(XCoor.Length, 2);
+            var proclocal = MultidimensionalArray.Create(XCoor.Length, 2);
+            var FieldDingen = new FieldEvaluation(gd);
+            double LineplotAt = 0.0;
+            for (int i = 0; i < XCoor.Length; i++) {
+                inital[i, 1] = XCoor[i];
+                interproc[i, 1] = XCoor[i];
+                proclocal[i, 1] = XCoor[i];
+                //Results[i, 0]=FieldDingen.Evaluate(new Vector(XCoor[i],0.0),field);
+                inital[i, 0] = initial.ProbeAt(XCoor[i], LineplotAt);
+                interproc[i, 0] = result.ProjectionSnapshots[2].ProbeAt(XCoor[i], LineplotAt);
+                proclocal[i, 0] = result.ProjectionSnapshots.Last().ProbeAt(XCoor[i], LineplotAt);
+            }
+
+            inital.SaveToTextFile("initial");
+            interproc.SaveToTextFile("interproc");
+            proclocal.SaveToTextFile("proclocal");
+        }
+    }
+
 }

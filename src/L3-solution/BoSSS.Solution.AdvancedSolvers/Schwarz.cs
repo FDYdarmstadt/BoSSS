@@ -587,10 +587,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullSel.CellSelector(bc.ToList(), false);
                         fullMask = new BlockMask(fullSel, ExtRows);
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
+                        Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
-                        blockSolvers[iPart] = new PARDISOSolver() {
-                            CacheFactorization = true,
-                            UseDoublePrecision = true,
+                        //blockSolvers[iPart] = new PARDISOSolver() {
+                        //    CacheFactorization = true,
+                        //    UseDoublePrecision = true,
+                        //    Parallelism = Parallelism.SEQ,
+                        //};
+
+                        blockSolvers[iPart] = new MUMPSSolver() {
                             Parallelism = Parallelism.SEQ,
                         };
 
@@ -936,9 +941,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Forget any factorization stored for blocks.
         /// </summary>
-        public void DisposeBlocks() {
-            foreach(var b in this.blockSolvers) {
-                b.Dispose();
+        private void DisposeBlockSolver() {
+            if (this.blockSolvers == null || this.blockSolvers.Count() <= 0)
+                return;
+            foreach (var b in this.blockSolvers) {
+                if(b!=null) b.Dispose();
+            }
+        }
+
+        private void DisposePMGSolvers() {
+            if (UsePMGinBlocks && Levelpmgsolvers != null) {
+                foreach (var solver in this.Levelpmgsolvers) {
+                    solver.Dispose();
+                }
+                this.Levelpmgsolvers = null;
             }
         }
 
@@ -1209,6 +1225,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        public void Dispose() {
+            this.DisposeBlockSolver();
+            this.DisposePMGSolvers();
+            this.SolutionScaling = null;
+            this.BlockMatrices = null;
+            this.BMfullBlocks = null;
+            GC.Collect();
+        }
+
+        public double UsedMemory() {
+            double LScaling = this.SolutionScaling.Length * sizeof(double);
+            double MemoryOfBlocks = 0.0;
+            foreach (var block in BlockMatrices)
+                MemoryOfBlocks+=block.UsedMemory;
+            return (LScaling + MemoryOfBlocks) / (1024 * 1024);
+        }
     }
 }
 

@@ -2103,7 +2103,7 @@ namespace BoSSS.Solution {
 
                 // load balancing and adaptive mesh refinement
                 if (this.Control.AdaptiveMeshRefinement) {
-
+                    
                     // unprocessed initial value IO
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
@@ -2669,7 +2669,6 @@ namespace BoSSS.Solution {
             if (this.LsTrk != null) {
                 loadbal.BackupTracker();
             }
-            
         }
 
 
