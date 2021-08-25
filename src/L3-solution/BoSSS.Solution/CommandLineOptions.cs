@@ -23,7 +23,7 @@ namespace BoSSS.Solution {
             /// <summary>
             /// path to control file
             /// </summary>
-            [Option("c", "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object", Required = true)]
+            [Option("c", "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object")]
             public string ControlfilePath = null;
 
             /// <summary>
