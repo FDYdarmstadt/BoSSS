@@ -188,12 +188,13 @@ namespace ilPSP.LinSolvers.PARDISO {
                             }
                             ia[Nrows] = cnt + 1; // fortran indexing
 
-                            
-                            if(((long)a_S - (long)(this.aPtr)) > (long)ObjectSize)
-                                throw new ApplicationException("internal buffer overflow (single)");
-                            if(((long)a_D - (long)(this.aPtr)) > (long)ObjectSize)
-                                throw new ApplicationException("internal buffer overflow (double)");
-
+                            if(UseDoublePrecision) {
+                                if(((long)a_D - (long)(this.aPtr)) > (long)ObjectSize)
+                                    throw new ApplicationException("internal buffer overflow (double)");
+                            } else {
+                                if(((long)a_S - (long)(this.aPtr)) > (long)ObjectSize)
+                                    throw new ApplicationException("internal buffer overflow (single)");
+                            }
 
                             if(len != cnt)
                                 throw new ApplicationException("internal error.");
