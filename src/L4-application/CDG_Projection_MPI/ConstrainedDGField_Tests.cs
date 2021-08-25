@@ -166,8 +166,8 @@ namespace CDG_Projection_MPI {
         static public void ProjectionTest_Patchwise( 
             [Values(2)] int DGDeg, 
             [Values(1)] int incDeg, 
-            [Values(2,3)] int Dim,
-            [Values(10,15)] int GridRes, 
+            [Values(2)] int Dim,
+            [Values(10)] int GridRes, 
             [Values(GeomShape.Cube)] GeomShape shape, 
             [Values(2, 3)] int __NoOfPatches) {
 
