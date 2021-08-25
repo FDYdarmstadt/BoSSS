@@ -578,6 +578,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false) {
+            //cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Sphere(1,10,3,true,10,false,true,true)
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;

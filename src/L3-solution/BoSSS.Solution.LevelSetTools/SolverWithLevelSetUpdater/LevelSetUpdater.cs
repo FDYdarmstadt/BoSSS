@@ -338,9 +338,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet, string interfaceName) {
+            LevelSet dgLevelSet, string interfaceName, ContinuityProjectionOption continuityMode) {
 
-            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet cgLevelSet = ContinuityProjection.CreateField(
                     dgLevelSet, backgroundGrid, continuityMode);
             cgLevelSet.Identification = interfaceName;
@@ -370,9 +369,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1) {
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1,
+            ContinuityProjectionOption continuityMode) {
 
-            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1 };
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1 };
 
@@ -408,9 +407,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,,] _SpeciesTable, 
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2) {
-            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
-
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2,
+            ContinuityProjectionOption continuityMode) {
+            
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2 };
             LevelSet[] cgLevelSets = new LevelSet[dgLevelSets.Length];
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2 };
@@ -443,9 +442,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
             Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> __GetNamedInputFields,
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3) {
-            ContinuityProjectionOption continuityMode = ContinuityProjectionOption.ConstrainedDG;
-
+            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3,
+            ContinuityProjectionOption continuityMode) {
+            
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2, dgLevelSet3 };
             LevelSet[] cgLevelSets = new LevelSet[dgLevelSets.Length];
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2, interfaceName3 };

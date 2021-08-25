@@ -92,21 +92,22 @@ namespace BoSSS.Solution.LevelSetTools {
         }
 
         /// <summary>
-        /// Creates the LevelSet field for the Tracker based on the Option selected
+        /// Creates the LevelSet field for the **continuous representation**,
+        /// for the Tracker based on the <paramref name="Option"/> selected
         /// </summary>
-        /// <param name="DGLevelSet">the unfiltered Level-set</param>
+        /// <param name="DGLevelSet">the unfiltered Level-set (might be discontinuous)</param>
         /// <param name="gridData"></param>
         /// <param name="Option"></param>
-        /// <returns>The filtered Level-Set Field </returns>
+        /// <returns>The Level-Set Field for storing the filtered, i.e. continuous representation.</returns>
         public static LevelSet CreateField(SinglePhaseField DGLevelSet, Foundation.Grid.Classic.GridData gridData, ContinuityProjectionOption Option) {
-            int k = DGLevelSet.Basis.Degree + 1;
+            int k = DGLevelSet.Basis.Degree;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k);
+                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k + 1);
                         return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.ConstrainedDG: {
-                        var ContinuousLevelSetDGBasis = new Basis(gridData, k);
+                        var ContinuousLevelSetDGBasis = new Basis(gridData, k + 1);
                         return new LevelSet(ContinuousLevelSetDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.None: {

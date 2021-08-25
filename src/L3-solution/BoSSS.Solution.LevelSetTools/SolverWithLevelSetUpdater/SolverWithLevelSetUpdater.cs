@@ -196,14 +196,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
                     (string[]) this.SpeciesTable, 
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 case 2:
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
                     (string[,]) this.SpeciesTable, 
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 default:

@@ -374,8 +374,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultigridOperator m_MgOp;
 
-        // Hack the hack, if pressure is equal order ...
-        // Only viable, if p-two-grid used
+        
+        
+        /// <summary>
+        /// Hack the hack, if pressure is equal order ...
+        /// Only viable, if p-two-grid used 
+        /// </summary>
         public bool EqualOrder = false;
 
         /// <summary>
@@ -592,7 +596,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,
-                            Parallelism = Parallelism.SEQ,
+                            Parallelism = Parallelism.SEQ
                         };
                         /*
                         blockSolvers[iPart] = new MUMPSSolver() {
