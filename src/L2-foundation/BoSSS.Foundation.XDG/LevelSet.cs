@@ -750,5 +750,14 @@ namespace BoSSS.Foundation.XDG {
             norm.ProjectAbs<SinglePhaseField>(1.0, Gradient);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public void CopyFrom(ILevelSet other) {
+            if(!(other is DGField other_dg))
+                throw new NotSupportedException();
+            this.Clear();
+            this.Acc(1.0, other_dg);
+        }
     }
 }

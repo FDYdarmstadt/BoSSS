@@ -32,6 +32,16 @@ using BoSSS.Foundation.Comm;
 using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+    
+    /// <summary>
+    /// XDG basis on an aggregation mesh
+    /// </summary>
+    /// <remarks>
+    /// See: 
+    /// Kummer, F., Weber, J., and Smuda, M. (2021);
+    /// BoSSS: A package for multigrid extended discontinuous Galerkin methods,
+    /// Computers and Mathematics with Applications, 81:237–257.
+    /// </remarks>
     public class XdgAggregationBasis : AggregationGridBasis {
 
         /// <summary>
@@ -66,6 +76,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Update the basis to comply with the agglomeration
+        /// </summary>
+        /// See at Figure 6 in: 
+        /// Kummer, F., Weber, J., and Smuda, M. (2021);
+        /// BoSSS: A package for multigrid extended discontinuous Galerkin methods,
+        /// Computers and Mathematics with Applications, 81:237–257.
+        /// </remarks>
         public void Update(MultiphaseCellAgglomerator Agglomerator) {
             using(new FuncTrace()) {
                 //if(!this.XDGBasis.IsSubBasis(mmf.MaxBasis))

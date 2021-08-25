@@ -201,24 +201,12 @@ namespace BoSSS.Foundation.XDG {
                 /// <summary>
                 /// <see cref="ILevelSet.EvaluateGradient"/>
                 /// </summary>
-                /// <param name="NodeSetIndex">
-                /// <see cref="ILevelSet.EvaluateGradient"/>
-                /// </param>
-                /// <param name="j0">
-                /// <see cref="ILevelSet.EvaluateGradient"/>
-                /// </param>
-                /// <param name="Len">
-                /// <see cref="ILevelSet.EvaluateGradient"/>
-                /// </param>
-                /// <param name="output">
-                /// <see cref="ILevelSet.EvaluateGradient"/>
-                /// </param>
                 protected override void ComputeValues(NodeSet N, int j0, int Len, MultidimensionalArray output) {
                     m_owner.GetLevSet().EvaluateGradient(j0, Len, N, output);
                 }
 
                 /// <summary>
-                /// <see cref="NodeSetController.ByCellValueCache{MultidimensionalArray}.Allocate"/>
+                /// 
                 /// </summary>
                 protected override MultidimensionalArray Allocate(int i0, int Len, NodeSet N) {
                     return MultidimensionalArray.Create(Len, N.NoOfNodes, N.SpatialDimension);
@@ -230,7 +218,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Calculates the gradients of the level set in every affected cell
             /// and every point contained the node set identified by
-            /// <paramref name="NodeSetIndex"/>. The layout of the resulting array
+            /// <paramref name="NS"/>. The layout of the resulting array
             /// is equivalent to <see cref="ILevelSet.EvaluateGradient"/>.
             /// </summary>
             /// <param name="NS">
@@ -344,7 +332,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Calculates the gradients in the reference coordinate system of the level set in every affected cell
             /// and every point contained the node set identified by
-            /// <paramref name="NodeSetIndex"/>. The layout of the resulting array
+            /// <paramref name="NS"/>. The layout of the resulting array
             /// is equivalent to <see cref="ILevelSet.EvaluateGradient"/>.
             /// </summary>
             /// <param name="NS">
@@ -521,50 +509,6 @@ namespace BoSSS.Foundation.XDG {
                 }
 
 
-                //{
-                //    double erracc = 0;
-
-                //    var NormalsRef = this.GetLevelSetReferenceNormals(levSetInd, NodeSetIndex, j0, Len);
-                //    var NoramlsPhys = this.GetLevelSetNormals(levSetInd, NodeSetIndex, j0, Len);
-
-                //    MultidimensionalArray Jacobi = MultidimensionalArray.Create(D, D);
-                //    double[] v1 = new double[D];
-
-
-                //    for (int i = 0; i < Len; i++) {
-                //        int jCell = i + j0;
-                //        for (int d1 = 0; d1 < D; d1++) {
-                //            for (int d2 = 0; d2 < D; d2++) {
-                //                Jacobi[d1, d2] = Ctx.GridDat.Transformation[jCell, d1 + D*d2];
-                //            }
-                //        }
-
-                //        for (int iNode = 0; iNode < noOfNodes; iNode++) {
-
-                //            for (int d1 = 0; d1 < D; d1++) {
-                //                double acc = 0;
-                //                for (int d2 = 0; d2 < D; d2++) {
-                //                    acc += Jacobi[d1, d2]*NormalsRef[i, iNode, d2];
-                //                }
-                //                v1[d1] = acc;
-                //            }
-
-                //            double metrix = 0;
-                //            for (int d = 0; d < D; d++)
-                //                metrix += v1[d]*NoramlsPhys[i, iNode, d];
-
-                //            double anderemetrix = result[i, iNode];
-
-                //            erracc += (metrix - anderemetrix).Pow2();
-                //        }
-                //    }
-
-                //    Console.WriteLine("metrix test: " + erracc);
-                //}
-
-
-
-
                 return result;
             }
 
@@ -611,7 +555,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// The Hessian of the level set field with respect to reference coordinates.
             /// </summary>
-            /// <param name="NodeSet"></param>
+            /// <param name="nodes"></param>
             /// <param name="j0">first cell to evaluate</param>
             /// <param name="Len">number of cells to evaluate</param>
             /// <returns></returns>
@@ -693,14 +637,17 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// The curvature of the level set field with respect to reference coordinates.
             /// </summary>
-            /// <param name="levSetInd"></param>
-            /// <param name="NodeSet"></param>
+            /// <param name="NS"></param>
             /// <param name="j0">first cell to evaluate</param>
             /// <param name="Len">number of cells to evaluate</param>
             /// <returns></returns>
             public MultidimensionalArray GetLevelSetReferenceCurvature(NodeSet NS, int j0, int Len) {
                 return m_LevelSetReferenceCurvatureCache.GetValue_Cell(NS, j0, Len);
             }
+
+            /// <summary>
+            /// 
+            /// </summary>
 
             public object Clone() {
                 throw new NotImplementedException();

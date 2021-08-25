@@ -25,17 +25,26 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     /// Unit test for the continuous L2-projection
     /// </summary>
     [TestFixture]
-   public class AllUpTest {
+    static public class AllUpTest {
 
 
         [Test]
-        public void AllUp(
+        static public void AllUp(
+#if DEBUG
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#else
             [Values(0, 1, 2)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;
@@ -58,13 +67,22 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         [Test]
-        public void AllUp_LegendrePolynomial(
+        static public void AllUp_LegendrePolynomial(
+#if DEBUG
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#else
             [Values(3, 4, 5)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;
@@ -86,12 +104,21 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         [Test]
-        public void AllUp_Cube(
+        static public void AllUp_Cube(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+
+#else
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;

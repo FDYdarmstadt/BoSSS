@@ -22,16 +22,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using ilPSP;
-using ilPSP.Connectors.Matlab;
-using ilPSP.Utils;
 using ilPSP.LinSolvers;
-using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.Quadrature;
-using System.Diagnostics;
 using MPI.Wrappers;
-using ilPSP.Kraypis;
 
 namespace BoSSS.Foundation.ConstrainedDGprojection {
     public static class SolverUtils {
@@ -99,8 +91,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <returns></returns>
         public static ISparseSolver PatchSolverFactory() {
             return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                Parallelism = Parallelism.SEQ,
-                SymmIndefPivot = true
+                //Parallelism = Parallelism.SEQ,
+                //PrintStats = true,
+                SymmIndefPivot = true,
+                CacheFactorization = true
             };
             //return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
             //    Parallelism = Parallelism.SEQ,

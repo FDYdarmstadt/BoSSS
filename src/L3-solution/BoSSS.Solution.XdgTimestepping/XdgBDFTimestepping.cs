@@ -82,7 +82,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             ISpatialOperator abstractOperator,
-            DelUpdateLevelset _UpdateLevelset,
+            Func<ISlaveTimeIntegrator> _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -168,13 +168,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            /*
-            // operator matrix - stack
-            // -----------------------
-
-            m_Stack_OpMatrix = new BlockMsrMatrix[m_TSCchain[0].theta0 != 0.0 ? 2 : 1]; // only required for Crank.Nic. and Expl. Euler,
-            m_Stack_OpAffine = new double[m_Stack_OpMatrix.Length][]; //      in this case 'theta0' is unequal 0.0.
-            */
+          
 
             // m_Stack_u
             // ---------
@@ -235,21 +229,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Switch for using XDG-Fields
         /// </summary>
-        bool useX;
+        internal bool useX;
 
         //
         // stack of mass matrices (matrices _without_ agglomeration)
         //
         BlockMsrMatrix[] m_Stack_MassMatrix;
 
-        /*
-        //
-        // stack of operator matrices and affine vectors (matrices _without_ agglomeration)
-        // (since we also do Crank-Nicolson, we may need one previous operator matrix)
-        //
-        BlockMsrMatrix[] m_Stack_OpMatrix;
-        double[][] m_Stack_OpAffine;
-        */
 
         //
         // stack of solution vectors
@@ -299,7 +285,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        void PushStack(int increment) {
+        void PushStack() {
 
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
@@ -334,6 +320,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // --------------
             if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
                 // entry 0 should remain the same object all the time
+
                 var Cvtmp = m_Stack_u[m_Stack_u.Length - 1];
                 for (int i = m_Stack_u.Length - 1; i >= 2; i--) {
                     m_Stack_u[i] = m_Stack_u[i - 1];
@@ -361,15 +348,90 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
 
-
+            /*
             // special hack: increment init
             // ----------------------------
 
             // saves first timesteps (actual timerstpe size dt) in  case of incrementInit
             if (incrementTimesteps > 1 && increment == 1 && m_CurrentPhystime > 0.0)
                 PushIncrementStack();
+            */
         }
 
+        internal void PopStack() {
+            //m_PopulatedStackDepth++;
+            //if (m_PopulatedStackDepth > m_TSCchain[0].S)
+            //    m_PopulatedStackDepth = m_TSCchain[0].S;
+
+            m_PopulatedStackDepth--;
+
+
+            /*
+            // Level-Set tracker
+            // -----------------
+
+            switch (Config_LevelSetHandling) {
+                case LevelSetHandling.None:
+                    // noop
+                    break;
+
+                case LevelSetHandling.LieSplitting:
+                case LevelSetHandling.StrangSplitting:
+                case LevelSetHandling.FSILieSplittingFullyCoupled:
+                    // noop.
+                    break;
+
+                case LevelSetHandling.Coupled_Iterative:
+                case LevelSetHandling.Coupled_Once:
+                    m_LsTrk.IncreaseHistoryLength(m_TSCchain[0].S);
+                    m_LsTrk.PushStacks();
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+            */
+
+
+
+            // Solution-Stack
+            // --------------
+            if(m_CurrentPhystime != fsiOldPhystime || Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled) { // only true in case of fsi_splitting fully coupled
+                // entry 0 should remain the same object all the time
+
+                m_Stack_u[0].Clear();
+                m_Stack_u[0].Acc(1.0, m_Stack_u[1]);
+
+                if(m_Stack_u.Length > 1) {
+                    var Cvtmp = m_Stack_u[1];
+                    for(int i = 1; i <= m_Stack_u.Length - 2; i++) {
+                        m_Stack_u[i] = m_Stack_u[i + 1];
+                    }
+                    m_Stack_u[m_Stack_u.Length - 1] = Cvtmp;
+                }
+            }
+
+            // mass-matrix stack
+            // -----------------
+
+
+            if (this.Config_MassMatrixShapeandDependence != MassMatrixShapeandDependence.IsNonIdentity) {
+                for (int i = 0; i <= m_Stack_MassMatrix.Length - 2; i++) {
+                    m_Stack_MassMatrix[i] = m_Stack_MassMatrix[i + 1];
+                }
+                m_Stack_MassMatrix[m_Stack_MassMatrix.Length - 1] = null;
+                m_PrecondMassMatrix = null;
+            } else {
+                // should already be initialized - see 'InitTimestepping'
+                Debug.Assert(m_Stack_MassMatrix.Length == 1);
+                Debug.Assert(m_Stack_MassMatrix[0] != null);
+                Debug.Assert(m_PrecondMassMatrix != null);
+            }
+        }
+
+
+
+        /*
         /// <summary>
         /// saves the first necessary timesteps at the actual time level for a incremental initialization for higher BDF schemes 
         /// </summary>
@@ -424,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //    m_Stack_CutCellMetrics_incHist[incrementHist] = m_Stack_CutCellMetrics[1];
 
         }
-
+        */
 
         int m_IterationCounter = 0;
 
@@ -442,12 +504,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             using (new FuncTrace()) {
                 InitTimestepping(true);
 
+                /*
                 if (Timestepper_Init == TimeStepperInit.IncrementInit) {
                     if (incrementTimesteps <= 1)
                         throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
 
                     InitIncrementStack();
                 }
+                */
+
                 initialized = true;
             }
         }
@@ -492,7 +557,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     InitTimestepping(iStage == (S - 1));
 
                     if (iStage < (S - 1)) // push, but not the last time in the loop
-                        PushStack(TimestepNo);
+                        PushStack();
                 }
 
                 initialized = true;
@@ -845,13 +910,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 SingleInit();
             }
 
+            /*
             // no increment solve for SinlgeInit and MultiInit!!!
             if (Timestepper_Init != TimeStepperInit.IncrementInit)
                 incrementTimesteps = 1;
+            */
 
         }
 
 
+        /*
         public int incrementTimesteps = 1;
 
         int incrementHist = 0;
@@ -861,7 +929,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         BlockMsrMatrix[] m_Stack_MassMatrix_incHist;
 
         CoordinateVector[] m_Stack_u_incHist;
+        */
 
+        /*
         /// <summary>
         /// 
         /// </summary>
@@ -907,7 +977,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
         }
-
+        */
 
         /// <summary>
         /// Callback-routine  to update the linear resp. linearized system, 
@@ -947,7 +1017,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
-
+                
                 // update of level-set
                 // ----------------------
 
@@ -1019,6 +1089,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     base.MultigridBasis.UpdateXdgAggregationBasis(m_CurrentAgglomeration);
                 }
 
+
                 // mass matrix update
                 // ------------------
 
@@ -1086,7 +1157,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
-
 
                 // assemble system
                 // ---------------
@@ -1186,6 +1256,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
+
                 } else {
                     Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                     if(Linearization) {
@@ -1209,7 +1280,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // increase iteration counter         
                 // --------------------------
-                //OpMatrix.SaveToTextFileSparse("OpMatrix49e.txt");
                 abstractOperator = AbstractOperator;
                 m_IterationCounter++;
             }
@@ -1272,10 +1342,18 @@ namespace BoSSS.Solution.XdgTimestepping {
             return w;
         }
 
+        
+        //public DelPushLevelSetRelatedStuff PushLevelSet {
+        //    get;
+        //    set;
+        //}
+        
 
-        public DelPushLevelSetRelatedStuff PushLevelSet {
-            get;
-            set;
+        /// <summary>
+        /// Perform temporal integration
+        /// </summary>
+        public override bool Solve(double phystime, double dt) {
+            return Solve(phystime, dt, ComputeOnlyResidual: false);
         }
 
 
@@ -1310,17 +1388,20 @@ namespace BoSSS.Solution.XdgTimestepping {
             m_CurrentDt_Timestep = dt;
 
             bool success = true;
-            for (int i = 1; i <= incrementTimesteps; i++) {
+            //for (int i = 1; i <= incrementTimesteps; i++) {
+            { 
                 // push levelsets for every incremental timestep
-                if (i > 1)
-                    PushLevelSet();
+                //if (i > 1)
+                //    PushLevelSet();
 
-                // solve timestep with incremental timestep size
-                double incTimestepSize = dt / (double)incrementTimesteps;
+                //// solve timestep with incremental timestep size
+                //double incTimestepSize = dt / (double)incrementTimesteps;
 
-                success = success && Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+                //success = success && Solve_Increment(i, phystime, incTimestepSize, ComputeOnlyResidual);
+                success = success && Solve_Increment(phystime, dt, ComputeOnlyResidual);
 
-                phystime += incTimestepSize;
+                //phystime += incTimestepSize;
+                phystime += dt;
             }
 
             return success;
@@ -1370,6 +1451,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         double fsiOldPhystime = 0;
 
+
+
+
         /// <summary>
         /// Solver;
         /// </summary>
@@ -1389,150 +1473,158 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        bool Solve_Increment(int increment, double phystime, double dt, bool ComputeOnlyResidual = false) {
-            if (dt <= 0)
-                throw new ArgumentOutOfRangeException();
-            //if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
-            //    throw new ArgumentOutOfRangeException();
+        bool Solve_Increment(double phystime, double dt, bool ComputeOnlyResidual = false) {
+            using(var tr = new FuncTrace()) {
+                if(dt <= 0)
+                    throw new ArgumentOutOfRangeException();
+                //if (m_CurrentDt > 0 && Math.Abs(dt / m_CurrentDt - 1.0) > 1.0e-14)
+                //    throw new ArgumentOutOfRangeException();
 
-            m_CurrentPhystime = phystime;
-            m_CurrentDt = dt;
-            m_IterationCounter = 0;
-            m_CoupledIterations = 0;
-            m_InnerCoupledIterations = 0;
-            PushStack(increment);
-            fsiOldPhystime = phystime;
-            if (incrementTimesteps == 1)
+                m_CurrentPhystime = phystime;
+                m_CurrentDt = dt;
+                m_IterationCounter = 0;
+                m_CoupledIterations = 0;
+                m_InnerCoupledIterations = 0;
+                PushStack();
+                fsiOldPhystime = phystime;
+                //if (incrementTimesteps == 1)
+                //    dt = m_CurrentDt;
+                //else
+                //    Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
                 dt = m_CurrentDt;
-            else
-                Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
 
 
-            // ===========================================
-            // update level-set (in the case of splitting)
-            // ===========================================
-            if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
+                // ===========================================
+                // update level-set (in the case of splitting)
+                // ===========================================
+                if(this.Config_LevelSetHandling == LevelSetHandling.LieSplitting
+                    || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
 
-                Debug.Assert(m_CurrentAgglomeration == null);
+                    Debug.Assert(m_CurrentAgglomeration == null);
 
-                double ls_dt = dt;
-                if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
-                    ls_dt *= 0.5;
+                    double ls_dt = dt;
+                    if(this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
+                        ls_dt *= 0.5;
 
-                // remember which old cells had values
-                //var oldCCM = this.UpdateCutCellMetrics();
+                    // remember which old cells had values
+                    //var oldCCM = this.UpdateCutCellMetrics();
 
-                // evolve the level set
-                if (Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled && !this.coupledOperator)
-                {
-                    m_LsTrk.IncreaseHistoryLength(1);
-                    m_LsTrk.PushStacks();
+                    // evolve the level set
+                    if(Config_LevelSetHandling != LevelSetHandling.FSILieSplittingFullyCoupled && !this.coupledOperator) {
+                        m_LsTrk.IncreaseHistoryLength(1);
+                        m_LsTrk.PushStacks();
+                    }
+
+                    int oldPushCount = m_LsTrk.PushCount;
+                    int oldVersion = m_LsTrk.VersionCnt;
+                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
+
+                    int newPushCount = m_LsTrk.PushCount;
+                    int newVersion = m_LsTrk.VersionCnt;
+                    if((newPushCount - oldPushCount) != 0 && !coupledOperator)
+                        throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
+                    if((newVersion - oldVersion) != 1 && !coupledOperator)
+                        throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+
+                    // in the case of splitting, the fields must be extrapolated 
+                    //var newCCM = this.UpdateCutCellMetrics();
+                    //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                    Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                    var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                        __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                    for(int i = 0; i < this.m_Stack_u.Length; i++)
+                        SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
+
+                    // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
+                    m_CurrentAgglomeration = null;
                 }
-                
-                int oldPushCount = m_LsTrk.PushCount;
-                int oldVersion = m_LsTrk.VersionCnt;
-                this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
 
-                int newPushCount = m_LsTrk.PushCount;
-                int newVersion = m_LsTrk.VersionCnt;
-                if ((newPushCount - oldPushCount) != 0 && !coupledOperator)
-                    throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-                if ((newVersion - oldVersion) != 1 && !coupledOperator)
-                    throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+                // ==============================================
+                // solve main system
+                // ==============================================
+                bool success;
 
-                // in the case of splitting, the fields must be extrapolated 
-                //var newCCM = this.UpdateCutCellMetrics();
-                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
-                Debug.Assert(m_LsTrk.HistoryLength >= 1);
-                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
-                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
-                for (int i = 0; i < this.m_Stack_u.Length; i++)
-                    SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
-                
-                // delete new agglomeration; in case of splitting, the agglomeration for the **bulk operator timestep** does not depend on previous time-steps
-                m_CurrentAgglomeration = null;
-            }
+                int oldLsTrkPushCount = m_LsTrk.PushCount;
 
-            // ==============================================
-            // solve main system
-            // ==============================================
-            bool success;
+                {
+                    int[] Jtot =
+                        (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
+                        .MPISum();
+                    //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
+                    if(Jtot[0] == Jtot[1])
+                        throw new ArithmeticException("All cells are cut cells - check your settings!");
+                }
+                if(!ComputeOnlyResidual) {
 
-            int oldLsTrkPushCount = m_LsTrk.PushCount;
+                    // ++++++++++++++++++
+                    // normal solver run 
+                    // ++++++++++++++++++
 
-            {
-                int[] Jtot =
-                    (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum(), base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
-                    .MPISum();
-                //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
-                if (Jtot[0] == Jtot[1])
-                    throw new ArithmeticException("All cells are cut cells - check your settings!");
-            }
-            if (!ComputeOnlyResidual) {
+                    NonlinearSolver nonlinSolver;
+                    ISolverSmootherTemplate linearSolver;
+                    GetSolver(out nonlinSolver, out linearSolver);
 
-                // ++++++++++++++++++
-                // normal solver run 
-                // ++++++++++++++++++
+                    if(RequiresNonlinearSolver) {
 
-                NonlinearSolver nonlinSolver;
-                ISolverSmootherTemplate linearSolver;
-                GetSolver(out nonlinSolver, out linearSolver);
+                        // Nonlinear Solver (Navier-Stokes)
+                        // --------------------------------
 
-                if (RequiresNonlinearSolver) {
+                        // use solver
+                        success = nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
-                    // Nonlinear Solver (Navier-Stokes)
-                    // --------------------------------
+                        // 'revert' agglomeration
+                        Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                        m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
-                    // use solver
-                    success = nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
+                    } else {
+                        // Linear Solver (Stokes)
+                        // ----------------------
+                        tr.Info("Using linear solver.");
 
-                    // 'revert' agglomeration
-                    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                    m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                        // build the saddle-point matrix
+                        //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
+                        BlockMsrMatrix System, MaMa;
+                        double[] RHS;
+                        this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
+                        RHS.ScaleV(-1);
 
-                } else {
-                    // Linear Solver (Stokes)
-                    // ----------------------
 
-                    // build the saddle-point matrix
-                    //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
-                    BlockMsrMatrix System, MaMa;
-                    double[] RHS;
-                    this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
-                    RHS.ScaleV(-1);
 
-                    // update the multigrid operator
-                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                    MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
-                        System, MaMa,
-                        this.Config_MultigridOperator, 
-                        dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
+                        // update the multigrid operator
+                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        MultigridOperator mgOperator;
+                        using(new BlockTrace("MultigridOperator setup", tr)) {
+                            mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                                System, MaMa,
+                                this.Config_MultigridOperator,
+                                dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
+                        }
 
-                    using (var tr = new FuncTrace()) {
                         // init linear solver
 
 
                         //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
                         //p.PlotInteractive();
 
-                        using (new BlockTrace("Slv Init", tr)) {
+                        using(new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
 
                         // try to solve the saddle-point system.
-                        using (new BlockTrace("Slv Iter", tr)) {
+                        using(new BlockTrace("Slv Iter", tr)) {
+
+
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
 
                         success = linearSolver.Converged;
-                    }
 
-                    // 'revert' agglomeration
-                    Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                    m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+
+                        // 'revert' agglomeration
+                        Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                        m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
 
                     //ExtractSomeSamplepoints("samples");
@@ -1544,128 +1636,116 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // compute residual of actual solution 
                 // ++++++++++++++++++++++++++++++++++++
 
-                
-                double[] Affine;
-                this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
-                Debug.Assert(System == null);
 
-                base.Residuals.Clear();
-                base.Residuals.SetV(Affine, -1.0);
+                    double[] Affine;
+                    this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
+                    Debug.Assert(System == null);
 
-                success = true;
+                    base.Residuals.Clear();
+                    base.Residuals.SetV(Affine, -1.0);
 
-                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! testcode im teimschtepper");
-                //string suffix = "_correcto.txt";
-                //string suffix = "_falscho.txt";
-                //base.Residuals.SaveToTextFile("ResEval" + suffix);
-                //m_Stack_u[0].SaveToTextFile("Sol" + suffix);
+                    success = true;
+
 #if DEBUG
                 {
 
                     this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
-                    //checkAffine.SaveToTextFile("ChkAff" + suffix);
-                    //checkSystem.SaveToTextFileSparse("Matrix" + suffix);
 
                     double[] checkResidual = new double[checkAffine.Length];
                     checkResidual.SetV(checkAffine, -1.0);
                     checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
-
-                    //checkResidual.SaveToTextFile("ResLinz" + suffix);
 
                     double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
                     double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
 
                     if(distL2 >= refL2 * 1.0e-5) {
                         double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
-
-                        //base.Residuals.AccV(-1.0, checkResidual);
-                        //Tecplot.Tecplot.PlotFields(Residuals.Fields, "ResidualDiff", 0.0, 4);
                     }
 
                     Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
-                    //Debug.Assert(distL2 < refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
-
+                    
                 }
 #endif
 
 
-                var ResidualFields = base.Residuals.Mapping.Fields.ToArray();
+                    var ResidualFields = base.Residuals.Mapping.Fields.ToArray();
 
 
-                for (int i = 0; i < ResidualFields.Length; i++) {
-                    double L2Res = ResidualFields[i].L2Norm();
-                    if (m_ResLogger != null) {
-                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-                    } else {
-                        Console.WriteLine("Residual {0}: {1}", m_ResidualNames != null ? m_ResidualNames[i] : ResidualFields[i].Identification, L2Res);
+                    for(int i = 0; i < ResidualFields.Length; i++) {
+                        double L2Res = ResidualFields[i].L2Norm();
+                        if(m_ResLogger != null) {
+                            m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                        } else {
+                            Console.WriteLine("Residual {0}: {1}", m_ResidualNames != null ? m_ResidualNames[i] : ResidualFields[i].Identification, L2Res);
+                        }
                     }
+
+                    if(Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
+                        m_ResLogger.CustomValue(0.0, "LevelSet");
+                    }
+
+                    if(m_ResLogger != null)
+                        m_ResLogger.NextIteration(true);
                 }
 
-                if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative && m_ResLogger != null) {
-                    m_ResLogger.CustomValue(0.0, "LevelSet");
-                }
-
-                if (m_ResLogger != null)
-                    m_ResLogger.NextIteration(true);
-            }
-
-            int newLsTrkPushCount = m_LsTrk.PushCount;
-            if (newLsTrkPushCount != oldLsTrkPushCount)
-                throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-
-            if (Config_LevelSetHandling != LevelSetHandling.None)
-                m_CurrentAgglomeration = null;
-
-            // ===========================================
-            // update level-set (in the case of splitting)
-            // ===========================================
-
-            if (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
-
-                Debug.Assert(m_CurrentAgglomeration == null);
-
-                // evolve the level set
-                m_LsTrk.IncreaseHistoryLength(1);
-                m_LsTrk.PushStacks();
-
-                int oldPushCount = m_LsTrk.PushCount;
-                int oldVersion = m_LsTrk.VersionCnt;
-
-                this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime + dt * 0.5, dt * 0.5, 1.0);
-
-                int newPushCount = m_LsTrk.PushCount;
-                int newVersion = m_LsTrk.VersionCnt;
-                if ((newPushCount - oldPushCount) != 0)
+                int newLsTrkPushCount = m_LsTrk.PushCount;
+                if(newLsTrkPushCount != oldLsTrkPushCount)
                     throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
-                if ((newVersion - oldVersion) != 1)
-                    throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
 
-                // in the case of splitting, the fields must be extrapolated 
-                //var newCCM = this.UpdateCutCellMetrics();
-                //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
-                //SplittingAgg.Extrapolate(this.CurrentStateMapping);
-                Debug.Assert(m_LsTrk.HistoryLength >= 1);
-                var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
-                    __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
-                    oldTs__AgglomerationTreshold: new double[] { 0.0 });
-                for (int i = 0; i < this.m_Stack_u.Length; i++)
-                    SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
+                if(Config_LevelSetHandling != LevelSetHandling.None)
+                    m_CurrentAgglomeration = null;
 
-                Debug.Assert(m_CurrentAgglomeration == null);
+                // ===========================================
+                // update level-set (in the case of splitting)
+                // ===========================================
+
+                if(this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting) {
+
+                    Debug.Assert(m_CurrentAgglomeration == null);
+
+                    // evolve the level set
+                    m_LsTrk.IncreaseHistoryLength(1);
+                    m_LsTrk.PushStacks();
+
+                    int oldPushCount = m_LsTrk.PushCount;
+                    int oldVersion = m_LsTrk.VersionCnt;
+
+                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime + dt * 0.5, dt * 0.5, 1.0);
+
+                    int newPushCount = m_LsTrk.PushCount;
+                    int newVersion = m_LsTrk.VersionCnt;
+                    if((newPushCount - oldPushCount) != 0)
+                        throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
+                    if((newVersion - oldVersion) != 1)
+                        throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+
+                    // in the case of splitting, the fields must be extrapolated 
+                    //var newCCM = this.UpdateCutCellMetrics();
+                    //var SplittingAgg = new MultiphaseCellAgglomerator(newCCM, 0.0, true, false, true, new CutCellMetrics[] { oldCCM }, new double[] { 0.0 });
+                    //SplittingAgg.Extrapolate(this.CurrentStateMapping);
+                    Debug.Assert(m_LsTrk.HistoryLength >= 1);
+                    var SplittingAgg = m_LsTrk.GetAgglomerator(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder,
+                        __AgglomerationTreshold: 0.0, AgglomerateNewborn: true, AgglomerateDecased: false, ExceptionOnFailedAgglomeration: true,
+                        oldTs__AgglomerationTreshold: new double[] { 0.0 });
+                    for(int i = 0; i < this.m_Stack_u.Length; i++)
+                        SplittingAgg.Extrapolate(this.m_Stack_u[i].Mapping);
+
+                    Debug.Assert(m_CurrentAgglomeration == null);
+                }
+
+                // ======
+                // return 
+                // ======
+                //string path = Directory.GetCurrentDirectory();
+                //var dinfo = Directory.CreateDirectory(path+@"\plots");
+                //ExecuteWaterfallAnalysis(dinfo.FullName);
+                //CreateFAMatrices(dinfo.FullName);
+
+
+                m_CurrentPhystime = phystime + dt;
+                return success;
             }
-
-            // ======
-            // return 
-            // ======
-            //string path = Directory.GetCurrentDirectory();
-            //var dinfo = Directory.CreateDirectory(path+@"\plots");
-            //ExecuteWaterfallAnalysis(dinfo.FullName);
-            //CreateFAMatrices(dinfo.FullName);
-
-            m_CurrentPhystime = phystime + dt;
-            return success;
         }
-
 
         /// <summary>
         /// Visualization of multigrid solver convergence. 
@@ -1845,6 +1925,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             mgOperator.UseSolver(linearSolver, StartSolution, RHS);
         }
 
+        /// <summary>
+        /// If an iterative linear solver is used:
+        /// performs a waterfall analysis, <see cref="ConvergenceObserver.WaterfallAnalysis"/>,
+        /// i.e. visualizes the decay of DG modes on different grid levels
+        /// over the solver iterations
+        /// </summary>
+        /// <param name="OutputDir"></param>
         public void ExecuteWaterfallAnalysis(string OutputDir) {
             BlockMsrMatrix System, MaMa;
             double[] RHS;
@@ -1869,6 +1956,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        /// <summary>
+        /// Executes the linear solver with a random right-hand-side (RHS)
+        /// </summary>
+        /// <param name="Iter">on exit, the number of solver iterations used</param>
         public void ExecuteRandom(out int Iter) {
             // Get the configured solvers
             XdgSolverFactory.GetLinearConfig.MaxSolverIterations = int.MaxValue;
@@ -1907,7 +1998,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public event Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
 
-
         protected override string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
             string description = base.GetSolver(out nonlinSolver, out linearSolver);
 
@@ -1931,6 +2021,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         public bool coupledOperator = false;
+
+
 
         /// <summary>
         /// Performs:
@@ -1963,7 +2055,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             int oldVersion = m_LsTrk.VersionCnt;
             int oldPushCount = m_LsTrk.PushCount;
 
-            m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+
+            m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+
 
             int newVersion = m_LsTrk.VersionCnt;
             int newPushCount = m_LsTrk.PushCount;

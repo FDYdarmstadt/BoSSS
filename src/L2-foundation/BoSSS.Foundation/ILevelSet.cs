@@ -113,5 +113,10 @@ namespace BoSSS.Foundation.XDG {
         /// from this method.
         /// </remarks>
         void EvaluateTotalCurvature(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result);
+
+        /// <summary>
+        /// Sets this level-set to be equal to <paramref name="other"/>
+        /// </summary>
+        void CopyFrom(ILevelSet other);
     }
 }

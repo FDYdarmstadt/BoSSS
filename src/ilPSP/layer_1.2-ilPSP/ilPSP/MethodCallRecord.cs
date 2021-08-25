@@ -139,6 +139,18 @@ namespace ilPSP.Tracing {
         public MethodCallRecord ParrentCall;
 
         /// <summary>
+        /// Depth in the call stack
+        /// </summary>
+        public int Depth {
+            get {
+                if(ParrentCall == null)
+                    return 1;
+                else
+                    return ParrentCall.Depth + 1;
+            }
+        }
+
+        /// <summary>
         /// all traces sub-calls
         /// </summary>
         [DataMember]

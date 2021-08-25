@@ -33,7 +33,7 @@ namespace BoSSS.Foundation {
     /// Extensions for handling non-orthonormal, DG approximation of (absolute) degree <see cref="Degree"/>.
     /// Use with caution!!!
     /// </summary>
-    public partial class Basis{
+    public partial class Basis {
 
         /// <summary>
         /// creates a new basis, with a nonstandard polynomial set
@@ -58,7 +58,10 @@ namespace BoSSS.Foundation {
 
     }   
 
-    // Provides routines to transform coefficients between different Polynomial bases
+    
+    /// <summary>
+    /// Provides routines to transform coefficients between different Polynomial bases
+    /// </summary>
     public abstract class BasisTransformator {
 
         protected Basis m_origin;
@@ -129,7 +132,9 @@ namespace BoSSS.Foundation {
             get;
         }
 
-        // To Basis T = <B_i,B_j>^-1 <B_j, P_k> = M^-1*S
+        /// <summary>
+        /// From origin basis to destination basis $` T = <B_i,B_j>^-1 <B_j, P_k> = M^-1*S `$
+        /// </summary>
         protected virtual void ConstructTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
             int N = Krefs.Length;
@@ -178,7 +183,10 @@ namespace BoSSS.Foundation {
             }
         }
 
-        // From Basis T = <P_i,P_j>^-1 <P_j, B_k>
+
+        /// <summary>
+        /// From destination basis to origin basis: $` T = <P_i,P_j>^-1 <P_j, B_k> `$
+        /// </summary>
         protected virtual void ConstructInverseTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
             int N = Krefs.Length;
@@ -227,6 +235,9 @@ namespace BoSSS.Foundation {
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected virtual void TestTransformQuality() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
             int N = Krefs.Length;
@@ -237,6 +248,7 @@ namespace BoSSS.Foundation {
                 MultidimensionalArray TinvT = MultidimensionalArray.Create(J, J);
                 TinvT.DGEMM(1.0, Dest2Origin[iKref], Origin2Dest[iKref], 0.0);
                 TinvT.AccEye(-1.0);
+                /*
                 Console.WriteLine("============================================================");
                 Console.WriteLine("Testing Quality of BasisTransformation, degree:{0}", Math.Max(m_dest.Degree, m_origin.Degree));
                 Console.WriteLine("     |T^-1*T - I|_2:         {0}", TinvT.L2Norm());
@@ -244,6 +256,7 @@ namespace BoSSS.Foundation {
                 Console.WriteLine("     |T^-1|_2:               {0}", Dest2Origin[iKref].L2Norm());
                 Console.WriteLine("     k_2(T)=|T^-1|_2*|T|_2:  {0}", Dest2Origin[iKref].L2Norm()*Origin2Dest[iKref].L2Norm());
                 Console.WriteLine("============================================================");
+                */
             }
         }
 

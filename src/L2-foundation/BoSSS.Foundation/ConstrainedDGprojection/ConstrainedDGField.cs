@@ -36,17 +36,17 @@ using ilPSP.Kraypis;
 namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
-    public enum ProjectionStrategy { 
+    //public enum ProjectionStrategy { 
     
-        globalOnly = 0,
+    //    globalOnly = 0,
 
-        globalWithPatchwisePrecond = 1,
+    //    globalWithPatchwisePrecond = 1,
 
-        patchwiseOnly = 2,
+    //    patchwiseOnly = 2,
 
-        patchwiseWithGlobalPrecond = 3
+    //    patchwiseWithGlobalPrecond = 3
 
-    }
+    //}
 
 
     public class ConstrainedDGField {
@@ -136,39 +136,39 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     this.ProjectDGFieldGlobal(mask);
                 }
                 break;
-                case ProjectionStrategy.globalWithPatchwisePrecond: {
-                    var retFields = ProjectDGField_patchwise(mask, NoOfFixedPatches);
-                    double jumpNorm = CheckLocalProjection(mask, true);
-                    if (diagOutput)
-                        Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
-                    if (jumpNorm > 1e-11) {
-                        if (diagOutput) {
-                            Console.WriteLine("======================");
-                            Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
-                        }
-                        this.ProjectDGFieldGlobal(mask);
-                    }
-                    returnvalue.AddRange(retFields);
-                }
-                break;
-                case ProjectionStrategy.patchwiseOnly: {
-                    returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
-                }
-                break;
-                case ProjectionStrategy.patchwiseWithGlobalPrecond: {
-                    this.ProjectDGFieldGlobal(mask);
-                    double jumpNorm = CheckLocalProjection(mask, true);
-                    if (diagOutput)
-                        Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
-                    if (jumpNorm > 1e-11) {
-                        if (diagOutput) {
-                            Console.WriteLine("======================");
-                            Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
-                        }
-                        returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
-                    }
-                }
-                break;
+                //case ProjectionStrategy.globalWithPatchwisePrecond: {
+                //    var retFields = ProjectDGField_patchwise(mask, NoOfFixedPatches);
+                //    double jumpNorm = CheckLocalProjection(mask, true);
+                //    if (diagOutput)
+                //        Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
+                //    if (jumpNorm > 1e-11) {
+                //        if (diagOutput) {
+                //            Console.WriteLine("======================");
+                //            Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
+                //        }
+                //        this.ProjectDGFieldGlobal(mask);
+                //    }
+                //    returnvalue.AddRange(retFields);
+                //}
+                //break;
+                //case ProjectionStrategy.patchwiseOnly: {
+                //    returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
+                //}
+                //break;
+                //case ProjectionStrategy.patchwiseWithGlobalPrecond: {
+                //    this.ProjectDGFieldGlobal(mask);
+                //    double jumpNorm = CheckLocalProjection(mask, true);
+                //    if (diagOutput)
+                //        Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
+                //    if (jumpNorm > 1e-11) {
+                //        if (diagOutput) {
+                //            Console.WriteLine("======================");
+                //            Console.WriteLine("project mask: No of cells {0}", mask.NoOfItemsLocally);
+                //        }
+                //        returnvalue.AddRange(ProjectDGField_patchwise(mask, NoOfFixedPatches));
+                //    }
+                //}
+                //break;
                 default:
                     throw new ArgumentException("Projection strategy not supported");
             }

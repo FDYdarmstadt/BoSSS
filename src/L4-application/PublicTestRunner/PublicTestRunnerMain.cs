@@ -85,48 +85,55 @@ namespace PublicTestRunner {
     /// </summary>
     public class PublicTests : ITestTypeProvider {
 
+
+        /// <summary>
+        /// Note: for better use of parallel resources, try to put the expensive tests in front
+        /// </summary>
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
-                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-                        typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
-                        typeof(BoSSS.Application.ElementTests.ElementTests),
-                        typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
-                        typeof(CutCellQuadrature.Program),
-                        typeof(BoSSS.Application.XDGTest.UnitTest),
-                        typeof(BoSSS.Application.SpecFEM.AllUpTest),
+                        typeof(AdvancedSolverTests.AdvancedSolverMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
-                        typeof(BoSSS.Application.ipViscosity.TestSolution),
-                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
-                        //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
+                        typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
                         typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                        typeof(CDG_Projection_MPI.ConstrainedDGField_Tests),
+                        typeof(BoSSS.Application.ElementTests.ElementTests),
+                        typeof(BoSSS.Application.MultigridTest.MultigridMain),
+                        typeof(BoSSS.Application.DatabaseTests.DatabaseTestsProgram),
+                        typeof(BoSSS.Application.XDGTest.UnitTest),
+                        typeof(BoSSS.Application.DerivativeTest.DerivativeTestMain),
+                        typeof(CutCellQuadrature.Program),
+                        typeof(BoSSS.Application.SpecFEM.AllUpTest),
+                        typeof(BoSSS.Application.ipViscosity.TestSolution),
+                        //typeof(BoSSS.Application.LevelSetTestBench.LevelSetTestBenchMain),
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program),
-                        typeof(AdvancedSolverTests.AdvancedSolverMain)
                     };
             }
         }
 
+        /// <summary>
+        /// Note: for better use of parallel resources, try to put the expensive tests in front
+        /// </summary>
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
+                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
+                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
+                        typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
-                        typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(ALTSTests.Program),
-                        typeof(BoSSS.Application.XNSE_Solver.XNSE),
-                        //typeof(BoSSS.Application.FSI_Solver.FSI_SolverMain), // solver s deprecated
-                        typeof(BoSSS.Application.XNSERO_Solver.XNSERO)
                     };
             }
         }
@@ -134,11 +141,13 @@ namespace PublicTestRunner {
         virtual public (Type type, int NoOfProcs)[] MpiFullTests {
             get {
                 return new (Type type, int NoOfProcs)[] {
+                        (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 4),
+                        (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 2),
+                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
                     };
             }
         }
@@ -146,16 +155,16 @@ namespace PublicTestRunner {
         virtual public (Type type, int NoOfProcs)[] MpiReleaseOnlyTests {
             get {
                 return new (Type type, int NoOfProcs)[] {
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
-                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
-                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
                         (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),
                         (typeof(ALTSTests.Program), 4),
                         (typeof(CNS_MPITests.Tests.LoadBalancing.ShockTubeLoadBalancingTests), 4),
                         (typeof(HilbertTest.HilbertTest), 4),
-                        (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4)
                     };
             }
         }

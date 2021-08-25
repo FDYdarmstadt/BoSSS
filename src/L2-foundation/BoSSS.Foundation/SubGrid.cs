@@ -237,6 +237,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public EdgeMask BoundaryEdgesMask {
             get {
+                MPICollectiveWatchDog.Watch();
                 if (m_BoundaryEdgesMask == null) {
 
                     int E = m_GridData.iLogicalEdges.Count;
@@ -272,6 +273,7 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         public EdgeMask InnerEdgesMask {
             get {
+                MPICollectiveWatchDog.Watch();
                 if (m_InnerEdgesMask == null) {
                     int E = m_GridData.iLogicalEdges.Count;
                     int[,] Edges = m_GridData.iLogicalEdges.CellIndices;
