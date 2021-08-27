@@ -830,7 +830,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             double dt = 0.01;
             //C.dtMax = dt;
             //C.dtMin = dt*1E-2;
