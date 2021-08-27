@@ -327,17 +327,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //double NormAfter = Mxx.MPI_L2Norm();
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
                     double gamma = 0;
-                    if (Mxx.MPI_L2NormPow2(this.OpMatrix.MPI_Comm)!=0) // prohibits div by 0, if we got zero solution  
-                        gamma = 1.0 / Mxx.MPI_L2Norm();
-                    //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
+                    double NewMxxNorm = Mxx.MPI_L2Norm();
+                    if (NewMxxNorm != 0) // prohibits div by 0, if we got zero solution  
+                        gamma = 1.0 / NewMxxNorm;
                     BLAS.dscal(L, gamma, Mxx, 1);
                     BLAS.dscal(L, gamma, X, 1);
 
-                    if (Mxx.MPI_L2Norm() / NormMxx > 1E-8) {
+                    if (1 / NormMxx > 1E-8) {
                         break;
                     } else {
                         Console.WriteLine("severe cancellation may have occurred. Doing Re-orthonormalization");
                     }
+
                 }
 
 
@@ -938,7 +939,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.PreSmoother = null;
             this.PostSmoother = null;
             this.CoarserLevelSolver = null;
-            GC.Collect();
         }
     }
 }

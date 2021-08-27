@@ -1231,7 +1231,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.SolutionScaling = null;
             this.BlockMatrices = null;
             this.BMfullBlocks = null;
-            GC.Collect();
         }
 
         public double UsedMemory() {

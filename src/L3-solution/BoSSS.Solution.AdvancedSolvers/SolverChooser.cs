@@ -1539,9 +1539,14 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
+                    //levelSolver = new DirectSolver() {
+                    //    WhichSolver = DirectSolver._whichSolver.PARDISO,
+                    //    SolverVersion = Parallelism.OMP,
+                    //    TestSolution = false
+                    //};
                     levelSolver = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.OMP,
+                        WhichSolver = DirectSolver._whichSolver.MUMPS,
+                        SolverVersion = Parallelism.MPI,
                         TestSolution = false
                     };
                 } else {
@@ -1595,7 +1600,6 @@ namespace BoSSS.Solution {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
-                        //(levelSolver as OrthonormalizationMultigrid).MaxKrylovDim = m_lc.MaxKrylovDim;
                     }
 
                     /*

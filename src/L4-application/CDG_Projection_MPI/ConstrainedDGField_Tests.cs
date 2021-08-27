@@ -47,7 +47,7 @@ namespace CDG_Projection_MPI {
             [Values(GeomShape.Cube)] GeomShape shape, 
             [Values(2, 3)] int __NoOfPatches) {
 
-            NoOfPatches = __NoOfPatches;
+            CDG_Test_Utils.NoOfPatches = __NoOfPatches;
             Projection(ProjectionStrategy.patchwiseOnly, DGDeg, incDeg, Dim, GridRes, shape, false);
         }
 

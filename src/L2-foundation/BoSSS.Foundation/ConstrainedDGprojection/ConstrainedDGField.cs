@@ -55,7 +55,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// ctor
         /// </summary>
         /// <param name="b"></param>
-        public ConstrainedDGField(Basis b, ProjectionStrategy projectStrategy = ProjectionStrategy.patchwiseOnly) {
+        public ConstrainedDGField(Basis b, ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly) {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
             m_Mapping = new UnsetteledCoordinateMapping(b);

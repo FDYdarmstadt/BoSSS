@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+#define TEST
 
 using System;
 using System.Collections.Generic;
@@ -249,15 +250,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
           
             if(itc >= MinIter) {
                 // only terminate if we reached the minimum number of iterations
-
                 if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
                     // reached convergence criterion
 
                     double ALNR = LastAverageNormReduction();
                     //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
-
+#if TEST
+                    ALNR = 0;
+#endif
                     // continue until the solver stalls
-                    if(ALNR <= 1.5) {
+                    if (ALNR <= 1.5) {
                         //Console.WriteLine("no sufficient further progress");
                         success = true;
                         terminateLoop = true;
