@@ -17,6 +17,7 @@ limitations under the License.
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using log4net;
 
@@ -108,6 +109,7 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
+        /*
         static private long GetMemory() {
             long mem = 0;
             Process myself = Process.GetCurrentProcess();
@@ -124,16 +126,17 @@ namespace ilPSP.Tracing {
 #endif
             return mem;
         }
+        */
+
 
         private static readonly object padlock = new object();
 
 
-        internal static int Push_MethodCallRecord(string _name) {
+        internal static int Push_MethodCallRecord(string _name, out MethodCallRecord mcr) {
             Debug.Assert(InstrumentationSwitch == true);
             
 
             //if (Tracer.Current != null) {
-            MethodCallRecord mcr;
             lock(padlock) {
                 if(!Tracer.Current.Calls.TryGetValue(_name, out mcr)) {
                     mcr = new MethodCallRecord(Tracer.Current, _name);
@@ -143,7 +146,7 @@ namespace ilPSP.Tracing {
             Tracer.Current = mcr;
             mcr.CallCount++;
             mcr.m_TicksSpentinBlocking = -GetMPITicks();
-            mcr.m_Memory = -GetMemory();
+            //mcr.m_Memory = -GetMemory();
             //} else {
             //    Debug.Assert(Tracer.Root == null);
             //    var mcr = new MethodCallRecord(Tracer.Current, _name);
@@ -154,15 +157,16 @@ namespace ilPSP.Tracing {
             return mcr.Depth;
         }
 
-        internal static int Pop_MethodCallrecord(long ElapsedTicks) {
+        internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
             Debug.Assert(InstrumentationSwitch == true);
 
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
             Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
-            Tracer.Current.m_Memory += GetMemory();
-            Tracer.Current.m_Memory = Tracer.Current.m_Memory < 0 ? 0 : Tracer.Current.m_Memory;
+            Tracer.Current.m_MemoryIncrease = Math.Max(Tracer.Current.m_MemoryIncrease, Memory_increase);
+            Tracer.Current.m_PeakMemoryIncrease = Math.Max(Tracer.Current.m_PeakMemoryIncrease, PeakMemory_increase);
             Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
+            mcr = Tracer.Current;
             Tracer.Current = Tracer.Current.ParrentCall;
             return Tracer.Current.Depth;
         }
@@ -211,9 +215,44 @@ namespace ilPSP.Tracing {
                 return m_Logger;
             }
         }
-               
+
+        public static TextWriter Memtrace;
+        public static int Memtrace_lineCount = 0;
+        static long PreviousLineMem = 0;
+
+
+        /// <summary>
+        /// Very expensive instrumentation option, slows down by a factor of two to three!!!
+        /// </summary>
+        public static bool LogPrivateMem = true;
+
+        /// <summary>
+        /// current process to trace memory
+        /// </summary>
+        static protected long GetPrivateMemory() {
+
+
+            // expensive: 
+            if(LogPrivateMem) {
+                var p = Process.GetCurrentProcess(); // process object must be fresh, otherwise old data
+                //long q = p.PeakWorkingSet64;
+                return p.WorkingSet64;
+            } else {
+                // almost no overhead, does not include un-managed memory.
+                long virt = GC.GetTotalMemory(false);
+                return virt;
+            }
+
+        }
+                       
 
         Stopwatch Watch;
+
+        long PeakWorkingSet_onEntry;
+        long WorkingSet_onEntry;
+
+        long PeakWorkingSet_onExit;
+        long WorkingSet_onExit;
 
         /// <summary>
         /// ctor
@@ -222,6 +261,13 @@ namespace ilPSP.Tracing {
             //startTicks = Watch.ElapsedTicks;
             Watch = new Stopwatch();
             Watch.Start();
+
+            {
+                WorkingSet_onEntry = GetPrivateMemory();
+                PeakWorkingSet_onEntry = 0;
+            }
+
+            
         }
 
         /// <summary>
@@ -235,8 +281,6 @@ namespace ilPSP.Tracing {
         }
 
 
-#region IDisposable Members
-
         /// <summary>
         /// time elapsed after stopping.
         /// </summary>
@@ -245,25 +289,123 @@ namespace ilPSP.Tracing {
             private set;
         }
 
+
         /// <summary>
-        /// stops the measurement
+        /// Increase of the working set memory during this method
         /// </summary>
-        virtual public void Dispose() {
-            //this.DurationTicks = Watch.ElapsedTicks - startTicks;
-            Watch.Stop();
-            this.Duration = Watch.Elapsed;
+        public long AllocatedMem {
+            get {
+                return Math.Max(0, WorkingSet_onExit - WorkingSet_onEntry);
+            }
         }
 
-#endregion
-    }
+        /// <summary>
+        /// Detected increase of peak memory during execution
+        /// </summary>
+        public long PeakMem {
+            get {
+                return Math.Max(0, Math.Max(PeakWorkingSet_onExit - PeakWorkingSet_onEntry, AllocatedMem));
+            }
+        }
 
-    /// <summary>
-    /// measures and logs the runtime of a function
-    /// </summary>
-    public class FuncTrace : Tmeas {
+        /// <summary>
+        /// (selective) Info - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Info(object o) {
+            m_Logger.Info(o);
+        }
 
-        string _name;
 
+
+        /// <summary>
+        /// writes information about system memory usage to trace file;
+        /// This seems to have a severe performance impact on server OS, therefore deactivated (fk,21dec20)
+        /// </summary>
+        public void LogMemoryStat() {
+
+            if(!Tracer.InstrumentationSwitch)
+                return;
+
+            Process myself = Process.GetCurrentProcess();
+
+            {
+                string s = "MEMORY STAT.: garbage collector memory: ";
+                try {
+                    long virt = GC.GetTotalMemory(false) / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Info(s);
+            }
+
+            {
+                string s = "MEMORY STAT.: working set memory: ";
+                try {
+                    long virt = myself.WorkingSet64 / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Info(s);
+            }
+            {
+                string s = "MEMORY STAT.: peak working set memory: ";
+                try {
+                    long virt = myself.PeakWorkingSet64 / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Info(s);
+            }
+
+            /* also not very interesting: 
+            {
+                string s = "MEMORY STAT.: private memory: ";
+                try {
+                    long virt = myself.PrivateMemorySize64 / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Console.WriteLine(s);
+                Info(s);
+            }
+            
+
+            /*
+             * virtual memory seems to be useless information; 
+             * some incredibly high value
+            {
+                string s = "MEMORY STAT.: peak virtual memory: ";
+                try {
+                    long virt = myself.PeakVirtualMemorySize64 / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Console.WriteLine(s);
+                Info(s);
+            }
+            {
+                string s = "MEMORY STAT.: virtual memory: ";
+                try {
+                    long virt = myself.VirtualMemorySize64 / (1024 * 1024);
+                    s += (virt + " Meg");
+                } catch(Exception e) {
+                    s += e.GetType().Name + ": " + e.Message;
+                }
+                Console.WriteLine(s);
+                Info(s);
+            }
+            */
+        }
+
+        static internal ILog s_FtLogger = LogManager.GetLogger(typeof(FuncTrace));
+
+        
         bool m_DoLogging;
 
         /// <summary>
@@ -274,7 +416,131 @@ namespace ilPSP.Tracing {
             get {
                 return m_DoLogging;
             }
+            protected set {
+                m_DoLogging = value;
+            }
         }
+
+        string _name;
+
+        /// <summary>
+        /// Message when the measurement starts.
+        /// </summary>
+        protected void EnterMessage(string elo, string _name) {
+            int newDepth = Tracer.Push_MethodCallRecord(_name, out var mcr);
+            this._name = _name;
+
+            if (DoLogging) {
+                s_FtLogger.Info(elo + _name + " new stack depth = " + newDepth);
+            }
+
+            /*if(Memtrace != null) {
+                Memtrace.Write(Memtrace_lineCount); 
+                Memtrace_lineCount++;
+                Memtrace.Write("\t");
+                Memtrace.Write(WorkingSet_onEntry);
+                long diff = WorkingSet_onEntry - PreviousLineMem;
+                PreviousLineMem = WorkingSet_onEntry;
+                Memtrace.Write("\t");
+                Memtrace.Write($"{Math.Round((double)WorkingSet_onEntry / (1024.0 * 1024.0))}");
+                Memtrace.Write("\t");
+                Memtrace.Write($"{Math.Round((double)diff / (1024.0 * 1024.0))}");
+                Memtrace.Write("\t");
+                Memtrace.Write(WorkingSet_onEntry);
+                Memtrace.Write("\t");
+
+                var _mcr = mcr;
+                while(_mcr != null) {
+                    Memtrace.Write(">");
+                    Memtrace.Write(_mcr.Name);
+                    _mcr = _mcr.ParrentCall;
+                }
+                Memtrace.WriteLine();
+            }*/
+            LogMemtrace(WorkingSet_onEntry, ">", mcr);
+        }
+
+
+        /// <summary>
+        /// Message when the measurement is finished.
+        /// </summary>
+        protected void LeaveLog() {
+            if(!Tracer.InstrumentationSwitch)
+                return;
+
+            int newDepht = Tracer.Pop_MethodCallrecord(this.Duration.Ticks, this.AllocatedMem, this.PeakMem, out var mcr);
+
+            if (DoLogging) {
+                
+                string time = this.Duration.TotalSeconds.ToString(NumberFormatInfo.InvariantInfo);
+                string str = string.Format("LEAVING {0} ({1} sec, return to stack depth = {2})", _name, time, newDepht);
+
+                try {
+                    s_FtLogger.Info(str);
+                } catch (Exception nre) {
+                    Console.Error.WriteLine("ERRROR (logging): " + nre.Message);
+                    Console.Error.WriteLine(nre.StackTrace);
+                }
+            }
+
+            LogMemtrace(WorkingSet_onExit, "<", mcr);
+        }
+
+
+        void LogMemtrace(long WorkingSet, string Ch, MethodCallRecord mcr) {
+            if(Memtrace != null) {
+                Memtrace.Write(Memtrace_lineCount); 
+                Memtrace_lineCount++;
+                Memtrace.Write("\t");
+                Memtrace.Write(WorkingSet);
+                long diff = WorkingSet - PreviousLineMem;
+                PreviousLineMem = WorkingSet_onEntry;
+                Memtrace.Write("\t");
+                Memtrace.Write($"{Math.Round((double)WorkingSet / (1024.0 * 1024.0))}");
+                Memtrace.Write("\t");
+                Memtrace.Write($"{Math.Round((double)diff / (1024.0 * 1024.0))}");
+                Memtrace.Write("\t");
+
+                Memtrace.Write(Ch);
+                var _mcr = mcr;
+                while(_mcr != null) {
+                    Memtrace.Write(_mcr.Name);
+                    _mcr = _mcr.ParrentCall;
+                    if(_mcr != null)
+                        Memtrace.Write(">");
+                }
+                Memtrace.WriteLine();
+            }
+        }
+
+
+#region IDisposable Members
+
+        
+        /// <summary>
+        /// stops the measurement
+        /// </summary>
+        virtual public void Dispose() {
+            //this.DurationTicks = Watch.ElapsedTicks - startTicks;
+            Watch.Stop();
+            this.Duration = Watch.Elapsed;
+            {
+                WorkingSet_onExit = GetPrivateMemory();
+                PeakWorkingSet_onExit = 0;
+            }
+
+            LeaveLog();
+        }
+
+#endregion
+    }
+
+    /// <summary>
+    /// measures and logs the runtime of a function
+    /// </summary>
+    public class FuncTrace : Tmeas {
+
+        
 
         /// <summary>
         /// ctor: logs the 'enter' - message
@@ -283,6 +549,7 @@ namespace ilPSP.Tracing {
             if(!Tracer.InstrumentationSwitch)
                 return;
 
+            string _name;
             Type callingType = null;
             {
                 StackFrame fr = new StackFrame(1, true);
@@ -291,19 +558,16 @@ namespace ilPSP.Tracing {
                 _name = m.DeclaringType.FullName + "." + m.Name;
                 callingType = m.DeclaringType;
             }
-            int newDepth = Tracer.Push_MethodCallRecord(_name);
-
+            
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
-                    m_DoLogging = true;
+                    DoLogging = true;
                     break;
                 }
             }
 
             m_Logger = LogManager.GetLogger(callingType);
-            if (m_DoLogging) {
-                m_Logger.Info("ENTERING " + _name + " new stack depth = " + newDepth);
-            }
+            base.EnterMessage("ENTERING ", _name);
         }
 
         // <summary>
@@ -313,7 +577,7 @@ namespace ilPSP.Tracing {
             if(!Tracer.InstrumentationSwitch)
                 return;
 
-            _name = UserName;
+            string _name = UserName;
 
             Type callingType = null;
             string filtername;
@@ -324,19 +588,16 @@ namespace ilPSP.Tracing {
                 callingType = m.DeclaringType;
                 filtername = callingType.FullName;
             }
-            int newDepth = Tracer.Push_MethodCallRecord(UserName);
-
+            
             for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
                 if (filtername.StartsWith(Tracer.m_NamespacesToLog[i])) {
-                    m_DoLogging = true;
+                    DoLogging = true;
                     break;
                 }
             }
 
             m_Logger = LogManager.GetLogger(callingType);
-            if (m_DoLogging) {
-                m_Logger.Info("ENTERING " + UserName + " new stack depth = " + newDepth);
-            }
+            base.EnterMessage("ENTERING ", _name);
         }
 
 
@@ -345,109 +606,12 @@ namespace ilPSP.Tracing {
         /// </summary>
         public override void Dispose() {
             base.Dispose();
-            if(!Tracer.InstrumentationSwitch)
-                return;
-
-            int newDepht = Tracer.Pop_MethodCallrecord(base.Duration.Ticks);
-
-            if (m_DoLogging) {
-                
-                string time = base.Duration.TotalSeconds.ToString(NumberFormatInfo.InvariantInfo);
-                string str = string.Format("LEAVING {0} ({1} sec, return to stack depth = {2})", _name, time, newDepht);
-
-                try {
-                    m_Logger.Info(str);
-                } catch (Exception nre) {
-                    Console.Error.WriteLine("ERRROR (logging): " + nre.Message);
-                    Console.Error.WriteLine(nre.StackTrace);
-                }
-            }
+            
         }
 
-        /// <summary>
-        /// (selective) Info - message
-        /// </summary>
-        /// <param name="o"></param>
-        public void Info(object o) {
-            if (m_DoLogging)
-                m_Logger.Info(o);
-        }
+     
 
-
-        /// <summary>
-        /// writes information about system memory usage to trace file;
-        /// This seems to have a severe performance impact on server OS, therefore deactivated (fk,21dec20)
-        /// </summary>
-        public void LogMemoryStat() {
-
-            //if (!Tracer.InstrumentationSwitch)
-            //    return;
-
-            //Process myself = Process.GetCurrentProcess();
-
-            //{
-            //    string s = "MEMORY STAT.: garbage collector memory: ";
-            //    try {
-            //        long virt = GC.GetTotalMemory(false) / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-
-            //{
-            //    string s = "MEMORY STAT.: working set memory: ";
-            //    try {
-            //        long virt = myself.WorkingSet64 / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-            //{
-            //    string s = "MEMORY STAT.: peak working set memory: ";
-            //    try {
-            //        long virt = myself.PeakWorkingSet64 / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-            //{
-            //    string s = "MEMORY STAT.: private memory: ";
-            //    try {
-            //        long virt = myself.PrivateMemorySize64 / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-            //{
-            //    string s = "MEMORY STAT.: peak virtual memory: ";
-            //    try {
-            //        long virt = myself.PeakVirtualMemorySize64 / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-            //{
-            //    string s = "MEMORY STAT.: virtual memory: ";
-            //    try {
-            //        long virt = myself.VirtualMemorySize64 / (1024 * 1024);
-            //        s += (virt + " Meg");
-            //    } catch (Exception e) {
-            //        s += e.GetType().Name + ": " + e.Message;
-            //    }
-            //    Info(s);
-            //}
-
-        }
+        
 
         /*
         /// <summary>
@@ -467,7 +631,6 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class BlockTrace : Tmeas {
 
-        string _name;
         FuncTrace _f;
 
         /// <summary>
@@ -482,16 +645,14 @@ namespace ilPSP.Tracing {
         public BlockTrace(string Title, FuncTrace f) {
             if(!Tracer.InstrumentationSwitch)
                 return;
-            _name = Title;
+            string _name = Title;
             _f = f;
-            int NewDepth = Tracer.Push_MethodCallRecord(_name);
-
-            if (f.DoLogging) {
-                m_Logger = f.m_Logger;
-                m_Logger.Info("BLKENTER " + _name + " new stack depth = " + NewDepth);
-            }
+            m_Logger = _f.m_Logger;
+            
+            base.EnterMessage("BLKENTER ", _name);
         }
 
+        /*
         /// <summary>
         /// stops the watch
         /// </summary>
@@ -499,27 +660,14 @@ namespace ilPSP.Tracing {
             base.Dispose();
             if(!Tracer.InstrumentationSwitch)
                 return;
-            int newDepth = Tracer.Pop_MethodCallrecord(base.Duration.Ticks);
+            int newDepth = Tracer.Pop_MethodCallrecord(base.Duration.Ticks, this.AllocatedMem, this.PeakMem);
 
             if (_f.DoLogging) {
-                m_Logger.Info("LEAVING " + _name + " ("
+                FuncTrace.s_FtLogger.Info("LEAVING " + _name + " ("
                     + base.Duration.TotalSeconds.ToString(NumberFormatInfo.InvariantInfo)
                     + " sec, return to stack depth = " + newDepth + ")");
             }
         }
-
-
-        /// <summary>
-        /// (selective) Info - message
-        /// </summary>
-        /// <param name="o"></param>
-        public void Info(object o) {
-            if (_f.DoLogging) {
-                m_Logger.Info(o);
-            }
-        }
-
+        */
     }
-
-
 }

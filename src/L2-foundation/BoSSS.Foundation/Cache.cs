@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.Caching {
     /// </summary>
     public enum CacheStrategy {
         /// <summary>
-        /// Cache object with lowest number of accesses will be discadred first.
+        /// Cache object with lowest number of accesses will be discarded first.
         /// </summary>
         DiscardLeastFrequentlyUsed,
 
@@ -41,9 +41,44 @@ namespace BoSSS.Foundation.Caching {
     
     /// <summary>
     /// Cache for almost everything. All kinds of cache-logic objects
-    /// may place their numerical results here and can have temy back, if they are not thrown away.
+    /// may place their numerical results here and can have them back, if they are not thrown away.
     /// </summary>
     public static class Cache {
+
+        /// <summary>
+        /// Basic checks on the correctness of the data structure.
+        /// </summary>
+        public static void Verify(out long ArraySize, out long LLsize ) {
+
+            ArraySize = 0;
+            for(int i = 0; i < Banks.Count; i++) {
+                var b = Banks[i];
+                if(b != null) { 
+                    ArraySize += b.MemSize;
+                    if(b.iBank != i)
+                        throw new ApplicationException();
+                }
+            }
+
+            LLsize = 0;
+            var bank = Head.next;
+            while(bank.next != null) {
+                LLsize += bank.MemSize;
+
+                if(!object.ReferenceEquals(bank.next.prev, bank))
+                    throw new ApplicationException();
+                
+                if(!object.ReferenceEquals(bank, Banks[bank.iBank]))
+                    throw new ApplicationException();
+
+                bank = bank.next;
+            }
+
+            if(!object.ReferenceEquals(bank, Tail))
+                throw new ApplicationException();
+
+        }
+
 
         
         /// <summary>
@@ -219,6 +254,9 @@ namespace BoSSS.Foundation.Caching {
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static ulong ReCacheItem(MultidimensionalArray Item, int HonestItemSizeInBytes, ulong Reference) {
             return CacheItem(Item, HonestItemSizeInBytes); 
         }

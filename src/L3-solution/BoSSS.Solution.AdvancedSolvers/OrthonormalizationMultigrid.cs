@@ -510,7 +510,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //return;
 
 
-            using (new FuncTrace()) {
+            using (var f = new FuncTrace()) {
+                
+                /*if(this.m_MgOperator.LevelIndex == 0) {
+                    f.LogMemoryStat();
+                    m_MgOperator.GetMemoryInfo(out long alloc, out long used);
+
+
+                    
+                    //this.OpMatrix.GetMemoryInfo(out long alloc, out long used);
+
+                    double alloc_meg = (double)alloc / (1024.0 * 1024.0);
+                    double used_meg = (double)used / (1024.0 * 1024.0);
+                    Console.WriteLine($" MG Operator total: using {used_meg} MB, allocated {alloc_meg} MB.");
+                    Process myself = Process.GetCurrentProcess();
+                    long wsMem = myself.WorkingSet64;
+                    double wsMem_meg = (double)wsMem / (1024.0 * 1024.0);
+                    Console.WriteLine($" Working Set mem: {wsMem_meg} MB.");
+
+                    Console.WriteLine("entering infinity loop.");
+                     while(true) ;
+                    
+
+                   
+                }*/
+
                 double[] B, X;
                 if (_B is double[])
                     B = _B as double[];
@@ -769,6 +793,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
 
                     SpecAnalysisSample(iIter, X, "_");
+
+
 
                 } // end of solver iterations
 

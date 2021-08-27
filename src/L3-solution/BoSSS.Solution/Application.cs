@@ -2870,6 +2870,7 @@ namespace BoSSS.Solution {
                 try {
                     using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
                         using (StreamWriter stw = new StreamWriter(stream)) {
+                            WriteProfilingHeader(stw);
                             WriteProfilingReport(stw, R);
                             stw.Flush();
                             stream.Flush();
@@ -2882,6 +2883,35 @@ namespace BoSSS.Solution {
 
             }
         }
+
+        private void WriteProfilingHeader(StreamWriter stw ) {
+            stw.WriteLine($"Date       : {DateTime.Now}");
+            stw.WriteLine($"Computer   : {ilPSP.Environment.MPIEnv.Hostname} ");
+            stw.WriteLine($"User Name  : {System.Environment.UserName}");
+            stw.WriteLine($"MPI rank   : {this.MPIRank}");
+            stw.WriteLine($"MPI size   : {this.MPISize}");
+
+            void TryWrite(string s, Func<object> o) {
+                try {
+                    stw.WriteLine(s + o());
+                } catch(Exception e) {
+                    stw.WriteLine(s + $"{e.GetType().Name}, {e.Message}");
+                }
+
+            }
+
+            TryWrite("Number of cells (last mesh)      : ", () => this.Grid.NumberOfCells);
+            TryWrite("Number of local cells (last mesh): ", () => this.Grid.CellPartitioning.LocalLength);
+            if(m_RegisteredFields != null) {
+                foreach(var f in m_RegisteredFields) {
+                    //                                         :
+                    TryWrite("    Field: ", () => $"{f.Identification}, degree {f.Basis.Degree}, XDG: {f.Basis is XDGBasis}");
+                }
+            }
+
+            Console.WriteLine();
+        }
+
 
         /// <summary>
         /// Runs this application in parameter study mode which means that it
@@ -3373,10 +3403,34 @@ namespace BoSSS.Solution {
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+            wrt.WriteLine("(sum over all calling parents)");
             wrt.WriteLine("=========================================================");
 
             MethodCallRecordExtension.GetMostExpensiveCalls(wrt, R);
 
+            wrt.WriteLine();
+            wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+            wrt.WriteLine("(distinction by parent call)");
+            wrt.WriteLine("=========================================================");
+
+            MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
+            
+            wrt.WriteLine();
+            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+            wrt.WriteLine("(sum over all calling parents)");
+            wrt.WriteLine("===========================================================================");
+
+            MethodCallRecordExtension.GetMostMemoryConsumingCalls(wrt, R);
+
+            wrt.WriteLine();
+            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+            wrt.WriteLine("(distinction by parent call)");
+            wrt.WriteLine("==========================================================================");
+
+            MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
+            
+
+            /*
             wrt.WriteLine();
             wrt.WriteLine("Details on nonlinear operator evaluation:");
             wrt.WriteLine("=========================================");
@@ -3566,6 +3620,7 @@ namespace BoSSS.Solution {
                     wrt.WriteLine(e.StackTrace);
                 }
             }
+            */
         }
 
         /// <summary>

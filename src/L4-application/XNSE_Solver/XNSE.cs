@@ -16,6 +16,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using CommandLine;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -113,16 +114,24 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
             }
 
-            if (Evap) {
+            if(Evap) {
                 XNSFE<XNSFE_Control>._Main(args, false, delegate () {
-                    var p = new XNSFE<XNSFE_Control>(); 
+                    var p = new XNSFE<XNSFE_Control>();
                     return p;
                 });
             } else {
-                XNSE._Main(args, false, delegate () {
-                    var p = new XNSE();
-                    return p;
-                });
+                using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.csv")) {
+                    DateTime hello = DateTime.Now;
+                    XNSE._Main(args, false, delegate () {
+                        var p = new XNSE();
+                        return p;
+                    });
+                    DateTime fino = DateTime.Now;
+                    Console.WriteLine("Runtime totalo " + (fino - hello));
+
+                    Tmeas.Memtrace.Flush();
+                    Tmeas.Memtrace.Close();
+                }
             }
             
         }
@@ -539,11 +548,17 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            dt = GetTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"Done with time step {TimestepNo}.");
-            return dt;
+            using(var f = new FuncTrace()) {
+                
+
+
+                dt = GetTimestep();
+                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
+                Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                Console.WriteLine($"Done with time step {TimestepNo}.");
+                GC.Collect();
+                return dt;
+            }
         }
     }
 }
