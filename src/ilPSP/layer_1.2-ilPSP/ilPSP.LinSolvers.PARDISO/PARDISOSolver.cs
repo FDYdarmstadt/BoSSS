@@ -898,8 +898,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 int[] buffer = new int[] { error };
                 unsafe {
                     fixed (int* Buffer = buffer) {
-                        MPI_Request req;
-                        MPI.Wrappers.csMPI.Raw.Issend((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, iProc, 112, MpiComm, out req);
+                        csMPI.Raw.Send((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, iProc, 112, MpiComm);
                     }
                 }
             }

@@ -77,6 +77,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
         
+        /*
         /// <summary>
         /// The memory (in MB) that is reserved for every core
         /// </summary>
@@ -85,6 +86,7 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
 
+        /*
         private int m_NumberOfNodes = -1;
 
         /// <summary>
@@ -94,7 +96,7 @@ namespace BoSSS.Application.BoSSSpad {
             get { return m_NumberOfNodes;  }
             set { m_NumberOfNodes = value;  }
         }
-
+        */
         
 
         /// <summary>
@@ -1406,7 +1408,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        string m_ExecutionTime = "00:05:00";
+        string m_ExecutionTime = "05:00:00";
 
         /// <summary>
         /// Estimated execution time limit. Important for slurm queuing

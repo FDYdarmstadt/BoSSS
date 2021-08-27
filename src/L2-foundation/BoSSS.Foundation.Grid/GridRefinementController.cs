@@ -171,7 +171,15 @@ namespace BoSSS.Foundation.Grid {
                     }
 
                 }
-                
+
+
+                //for(int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
+                //    //int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? CurrentGrid.MpiRank : 0;
+                //    //processID = processID.MPIMax();
+                //    int processID = CurrentGrid.CellPartitioning.FindProcess(globalIndex)
+                //    globalCellNeigbourship_local[globalIndex] = globalCellNeigbourship_local[globalIndex].MPIBroadcast(processID);
+                //}
+
 
                 return globalCellNeigbourship_local.MPI_AllGaterv();
             }

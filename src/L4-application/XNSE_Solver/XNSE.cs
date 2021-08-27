@@ -539,17 +539,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //// check some properties (only for debugging)
-            //double r0 = 1;
-            //double volumeRef = (1.0 / 3.0) * Math.PI * Math.Pow(r0, 3); // quarter domain
-            ////double rCalc = 0.9074;
-            ////double volumeCalc = (1.0 / 3.0) * Math.PI * Math.Pow(rCalc, 3); // quarter domain
-            //int quadOrder = QuadOrder();
-            //Console.WriteLine("quadOrder = {0}", quadOrder);
-            //double volume = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"), quadOrder);
-            //Console.WriteLine("droplet volume: volume_A = {0} (ref volume = {1}; {2})", volume, volumeRef, 100*(volume - volumeRef)/volumeRef);
-            ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
-            // Update Calls
             dt = GetTimestep();
             //try {
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");

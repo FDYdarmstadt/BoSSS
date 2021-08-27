@@ -84,17 +84,15 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// <summary>
         /// initializes this matrix as a copy of the matrix <paramref name="M"/>.
         /// </summary>
-        public Matrix(IMutableMatrixEx M, bool __UseDoublePrecision)
-        {
-            using (var tr = new FuncTrace())
-            {
+        public Matrix(IMutableMatrixEx M, bool __UseDoublePrecision) {
+            using(var tr = new FuncTrace()) {
                 this.UseDoublePrecision = __UseDoublePrecision;
-                if (M.RowPartitioning.IsMutable)
+                if(M.RowPartitioning.IsMutable)
                     throw new NotSupportedException();
-                if (M.ColPartition.IsMutable)
+                if(M.ColPartition.IsMutable)
                     throw new NotSupportedException();
 
-                if (M.NoOfCols != M.NoOfRows)
+                if(M.NoOfCols != M.NoOfRows)
                     throw new ArgumentException("Matrix must be quadratic.", "M");
                 this.Symmetric = (M is MsrMatrix) && ((MsrMatrix)M).AssumeSymmetric;
                 RowPart = M.RowPartitioning;
@@ -108,25 +106,20 @@ namespace ilPSP.LinSolvers.PARDISO {
                 long[] col = null;
                 double[] val = null;
 
-                if (size == 1)
-                {
+                if(size == 1) {
                     // serial init on one processor
                     // ++++++++++++++++++++++++++++
-                    using (new BlockTrace("serial init", tr))
-                    {
+                    using(var bt = new BlockTrace("serial init", tr)) {
 
                         n = (int)M.RowPartitioning.TotalLength;
 
                         int len;
-                        if (Symmetric)
-                        {
+                        if(Symmetric) {
                             // upper triangle + diagonal (diagonal entries are 
                             // always required, even if 0.0, for symmetric matrices in PARDISO)
 
                             len = checked((int)(M.GetGlobalNoOfUpperTriangularNonZeros() + n));
-                        }
-                        else
-                        {
+                        } else {
                             len = checked((int)(M.GetTotalNoOfNonZerosPerProcess()));
                         }
                         int Nrows = M.RowPartitioning.LocalLength;
@@ -135,55 +128,49 @@ namespace ilPSP.LinSolvers.PARDISO {
                         ia = new int[n + 1];
                         ja = new int[len];
                         IntPtr ObjectSize;
-                        if (UseDoublePrecision)
+                        if(UseDoublePrecision)
                             ObjectSize = (IntPtr)(((long)len) * sizeof(double));
                         else
                             ObjectSize = (IntPtr)(((long)len) * sizeof(float));
+                        bt.Info($"Requesting {ObjectSize} bytes...");
                         this.aPtr = Marshal.AllocHGlobal(ObjectSize);
+                        bt.Info($"Allocated memory at {this.aPtr}.");
 
-                        unsafe
-                        {
+                        unsafe {
                             float* a_S = (float*)aPtr;
                             double* a_D = (double*)aPtr;
 
 
-                            for (int i = 0; i < Nrows; i++)
-                            {
+                            for(int i = 0; i < Nrows; i++) {
                                 ia[i] = cnt + 1; // fortran indexing
                                 int iRow = checked((int)(M.RowPartitioning.i0 + i));
 
                                 LR = M.GetRow(iRow, ref col, ref val);
 
                                 double diagelem = M[iRow, iRow];
-                                if (Symmetric && diagelem == 0)
-                                {
+                                if(Symmetric && diagelem == 0) {
                                     // in the symmetric case, we always need to provide the diagonal element
                                     ja[cnt] = iRow + 1; // fortran indexing
-                                    if (UseDoublePrecision)
+                                    if(UseDoublePrecision)
                                         //a_D[cnt] = 0.0;
                                         *a_D = 0.0;
                                     else
                                         //a_S[cnt] = 0.0f;
-                                        *(a_S) = 0.0f;
+                                        *a_S = 0.0f;
                                     cnt++;
                                     a_D++;
                                     a_S++;
                                 }
-                                for (int j = 0; j < LR; j++)
-                                {
+                                for(int j = 0; j < LR; j++) { // loop over occupied columns
 
-                                    if (val[j] != 0.0)
-                                    {
+                                    if(val[j] != 0.0) {
 
-                                        if (Symmetric && col[j] < iRow)
-                                        {
+                                        if(Symmetric && col[j] < iRow) {
                                             // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
                                             continue;
-                                        }
-                                        else
-                                        {
+                                        } else {
                                             ja[cnt] = (int)(col[j] + 1); // fortran indexing
-                                            if (UseDoublePrecision)
+                                            if(UseDoublePrecision)
                                                 //a_D[cnt] = val[j];
                                                 *a_D = val[j];
                                             else
@@ -201,23 +188,28 @@ namespace ilPSP.LinSolvers.PARDISO {
                             }
                             ia[Nrows] = cnt + 1; // fortran indexing
 
-                            if (len != cnt)
+                            if(UseDoublePrecision) {
+                                if(((long)a_D - (long)(this.aPtr)) > (long)ObjectSize)
+                                    throw new ApplicationException("internal buffer overflow (double)");
+                            } else {
+                                if(((long)a_S - (long)(this.aPtr)) > (long)ObjectSize)
+                                    throw new ApplicationException("internal buffer overflow (single)");
+                            }
+
+                            if(len != cnt)
                                 throw new ApplicationException("internal error.");
                         }
                     }
-                }
-                else
-                {
+                } else {
                     // collect matrix on processor 0
                     // +++++++++++++++++++++++++++++
-                    using (new BlockTrace("Collect matrix on proc 0", tr))
-                    {
+                    using(new BlockTrace("Collect matrix on proc 0", tr)) {
 
                         // Number of elements, start indices for index pointers
                         // ====================================================
 
                         int len_loc;
-                        if (Symmetric)
+                        if(Symmetric)
                             // number of entries is:
                             // upper triangle + diagonal (diagonal entries are 
                             // always required, even if 0.0, for symmetric matrices in PARDISO)
@@ -227,7 +219,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
 
                         Partitioning part = new Partitioning(len_loc, m_comm);
-                        if (part.TotalLength > int.MaxValue)
+                        if(part.TotalLength > int.MaxValue)
                             throw new ApplicationException("too many matrix entries for PARDISO - more than maximum 32-bit signed integer");
 
                         // local matrix assembly
@@ -238,14 +230,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                         int[] ja_loc = new int[len_loc];
                         double[] a_loc_D = null;
                         float[] a_loc_S = null;
-                        using (new BlockTrace("local matrix assembly", tr))
-                        {
-                            if (UseDoublePrecision)
-                            {
+                        using(new BlockTrace("local matrix assembly", tr)) {
+                            if(UseDoublePrecision) {
                                 a_loc_D = new double[len_loc];
-                            }
-                            else
-                            {
+                            } else {
                                 a_loc_S = new float[len_loc];
                             }
                             {
@@ -253,39 +241,32 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 int cnt = 0;
                                 int i0 = (int)part.i0;
 
-                                for (int i = 0; i < n_loc; i++)
-                                {
+                                for(int i = 0; i < n_loc; i++) {
                                     ia_loc[i] = cnt + 1 + i0; // fortran indexing
                                     int iRow = i + (int)M.RowPartitioning.i0;
 
                                     LR = M.GetRow(iRow, ref col, ref val);
 
                                     double diagelem = M[iRow, iRow];
-                                    if (Symmetric && diagelem == 0)
-                                    {
+                                    if(Symmetric && diagelem == 0) {
                                         // in the symmetric case, we always need to provide the diagonal element
                                         ja_loc[cnt] = iRow + 1; // fortran indexing
-                                        if (UseDoublePrecision)
+                                        if(UseDoublePrecision)
                                             a_loc_D[cnt] = 0.0;
                                         else
                                             a_loc_S[cnt] = 0.0f;
                                         cnt++;
                                     }
-                                    for (int j = 0; j < LR; j++)
-                                    {
+                                    for(int j = 0; j < LR; j++) {
 
-                                        if (val[j] != 0.0)
-                                        {
+                                        if(val[j] != 0.0) {
 
-                                            if (Symmetric && col[j] < iRow)
-                                            {
+                                            if(Symmetric && col[j] < iRow) {
                                                 // entry is in lower triangular matrix -> ignore (for symmetric mtx.)
                                                 continue;
-                                            }
-                                            else
-                                            {
+                                            } else {
                                                 ja_loc[cnt] = (int)(col[j] + 1); // fortran indexing
-                                                if (UseDoublePrecision)
+                                                if(UseDoublePrecision)
                                                     a_loc_D[cnt] = val[j];
                                                 else
                                                     a_loc_S[cnt] = (float)val[j];
@@ -296,15 +277,14 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                 }
 
-                                if (cnt != len_loc)
+                                if(cnt != len_loc)
                                     throw new ApplicationException("internal error.");
                             }
                         }
 
                         // assemble complete matrix on proc. 0
                         // ===================================
-                        if (rank == 0)
-                        {
+                        if(rank == 0) {
                             n = checked((int)(M.RowPartitioning.TotalLength));
 
                             // process 0: collect data from other processors
@@ -327,14 +307,12 @@ namespace ilPSP.LinSolvers.PARDISO {
                             //}
 
                             IntPtr ObjectSize;
-                            if (UseDoublePrecision)
+                            if(UseDoublePrecision)
                                 ObjectSize = (IntPtr)(((long)partLeng) * sizeof(double));
                             else
                                 ObjectSize = (IntPtr)(((long)partLeng) * sizeof(float));
                             aPtr = Marshal.AllocHGlobal(ObjectSize);
-                        }
-                        else
-                        {
+                        } else {
                             aPtr = IntPtr.Zero;
                         }
                         //int partLeng = part.TotalLength;
@@ -342,27 +320,22 @@ namespace ilPSP.LinSolvers.PARDISO {
                         //Console.WriteLine("Partitioning total length is as int: "+ partLeng + "and in 64-bit: "+ partLeng2);
                         Console.Out.Flush();
 
-                        using (new BlockTrace("UNSAFE", tr))
-                        {
-                            unsafe
-                            {
+                        using(new BlockTrace("UNSAFE", tr)) {
+                            unsafe {
                                 float* pa_S = (float*)aPtr;
                                 double* pa_D = (double*)aPtr;
 
 
                                 int* displs = stackalloc int[size];
                                 int* recvcounts = stackalloc int[size];
-                                for (int i = 0; i < size; i++)
-                                {
+                                for(int i = 0; i < size; i++) {
                                     recvcounts[i] = part.GetLocalLength(i);
                                     displs[i] = checked((int)(part.GetI0Offest(i)));
                                 }
 
 
-                                fixed (void* pa_loc_D = a_loc_D, pa_loc_S = a_loc_S)
-                                {
-                                    if (UseDoublePrecision)
-                                    {
+                                fixed(void* pa_loc_D = a_loc_D, pa_loc_S = a_loc_S) {
+                                    if(UseDoublePrecision) {
                                         csMPI.Raw.Gatherv(
                                             (IntPtr)pa_loc_D,
                                             a_loc_D.Length,
@@ -373,9 +346,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                             csMPI.Raw._DATATYPE.DOUBLE,
                                             0,
                                             m_comm);
-                                    }
-                                    else
-                                    {
+                                    } else {
                                         csMPI.Raw.Gatherv(
                                             (IntPtr)pa_loc_S,
                                             a_loc_S.Length,
@@ -389,8 +360,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     }
                                 }
 
-                                fixed (void* pja_loc = ja_loc, pja = ja)
-                                {
+                                fixed(void* pja_loc = ja_loc, pja = ja) {
                                     csMPI.Raw.Gatherv(
                                             (IntPtr)pja_loc,
                                             ja_loc.Length,
@@ -403,14 +373,12 @@ namespace ilPSP.LinSolvers.PARDISO {
                                             m_comm);
                                 }
 
-                                for (int i = 0; i < size; i++)
-                                {
+                                for(int i = 0; i < size; i++) {
                                     displs[i] = checked((int)(M.RowPartitioning.GetI0Offest(i)));
                                     recvcounts[i] = M.RowPartitioning.GetLocalLength(i);
                                 }
 
-                                fixed (void* pia_loc = ia_loc, pia = ia)
-                                {
+                                fixed(void* pia_loc = ia_loc, pia = ia) {
                                     csMPI.Raw.Gatherv(
                                             (IntPtr)pia_loc,
                                             ia_loc.Length,
@@ -426,7 +394,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                         }
 
 
-                        if (rank == 0)
+                        if(rank == 0)
                             this.ia[M.RowPartitioning.TotalLength] = (int)part.TotalLength + 1;
 
 
