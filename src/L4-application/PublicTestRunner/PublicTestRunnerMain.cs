@@ -1336,7 +1336,7 @@ namespace PublicTestRunner {
                 case "runjobmanager":
                 case "runjobmanager-debug":
                 case "runjobmanager-release":
-                case "runjobmanger-ignore_tests_w_deps":
+                case "runjobmanager-ignore_tests_w_deps":
                 DeleteResultFiles();
 
                 bool runRelease;
