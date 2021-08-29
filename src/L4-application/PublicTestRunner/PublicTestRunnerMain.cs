@@ -335,9 +335,11 @@ namespace PublicTestRunner {
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
 
+                        bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." + m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
+                            testAdded = true;
                         }
 
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null
@@ -346,7 +348,7 @@ namespace PublicTestRunner {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
                             if (dc != null) {
-                                if(ignore_tests_w_deps) {
+                                if(ignore_tests_w_deps && testAdded) {
                                     // supposed to ignore tests depending on files in the source code repo
                                     r.RemoveAt(r.Count - 1);
                                     l.RemoveAt(l.Count - 1);
@@ -1270,7 +1272,7 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager         : submit tests to the job manger.");
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
-            Console.WriteLine("         runjobmanger-ignore_tests_w_deps : ignore all tests which have the");
+            Console.WriteLine("         runjobmanager-ignore_tests_w_deps : ignore all tests which have the");
             Console.WriteLine("                                 'NUnitFileToCopyHack' attribute; these depend");
             Console.WriteLine("                                 on files within the source repo; skipping those");
             Console.WriteLine("                                 allows to run without source code in place.");
