@@ -189,8 +189,8 @@ namespace PublicTestRunner {
                 //throw new Exception();
 
             } catch (Exception) {
-                return null;
-                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
+                //return null;
+                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
             }
 
             return repoRoot;
