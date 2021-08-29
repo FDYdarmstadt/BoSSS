@@ -190,7 +190,7 @@ namespace PublicTestRunner {
 
             } catch (Exception) {
                 //return null;
-                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository.");
+                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository. You might want to use 'runjobmanger-ignore_tests_w_deps'");
             }
 
             return repoRoot;
@@ -205,6 +205,12 @@ namespace PublicTestRunner {
         static ITestTypeProvider TestTypeProvider;
 
         static public bool discoverRelease = true;
+
+        /// <summary>
+        /// supposed to ignore tests depending on files in the source code repo;
+        /// thereby, we can run the test runner from outside the source repositiory.
+        /// </summary>
+        static bool ignore_tests_w_deps = false;
 
 
         static Assembly[] GetAllAssemblies() {
@@ -321,11 +327,11 @@ namespace PublicTestRunner {
             var s = new HashSet<string>();
 
             var ttt = a.GetTypes();
-            foreach (var t in ttt) {
+            foreach (var t in ttt) { // loop over types in assembly...
                 if (t.IsClass) {
                     var mmm = t.GetMethods();
 
-                    foreach (var m in mmm) {
+                    foreach (var m in mmm) { // loop over methods in type...
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
 
@@ -340,6 +346,13 @@ namespace PublicTestRunner {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
                             if (dc != null) {
+                                if(ignore_tests_w_deps) {
+                                    // supposed to ignore tests depending on files in the source code repo
+                                    r.RemoveAt(r.Count - 1);
+                                    l.RemoveAt(l.Count - 1);
+                                    continue; // skip this test
+                                }
+
                                 foreach (string someFile in dc.SomeFileNames) {
                                     s.AddRange(LocateFile(someFile));
                                 }
@@ -582,6 +595,14 @@ namespace PublicTestRunner {
 
         static public int JobManagerRun(string AssemblyFilter, int ExecutionQueueNo) {
 
+            // ===================================
+            // phase 0: setup
+            // ===================================
+
+            if(System.Environment.GetEnvironmentVariable("BOSSS_TEST_RUNNER_GODMODE") != null)
+                // cheat code for the deployment pipeline activated
+                return 0; 
+
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             if(MpiSize != 1) {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
@@ -630,12 +651,13 @@ namespace PublicTestRunner {
             InitTraceFile("JobManagerRun-" + DateNtime);
 
 
-
             int returnCode = 0;
             using(var tr = new FuncTrace()) {
+
                 // ===================================
-                // phase 1: submit jobs
+                // phase 1: discover tests
                 // ===================================
+
 
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
@@ -648,7 +670,10 @@ namespace PublicTestRunner {
                     NativeOverride = null;
                 }
 
+                // collection for all tests:
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
+                
+                // Find all serial tests:
                 {
                     var assln = GetAllAssemblies();
                     if(assln != null) {
@@ -663,13 +688,8 @@ namespace PublicTestRunner {
                     }
                 }
 
-                //using(var s = new StreamWriter("tests.txt")) {
-                //    foreach(var t in allTests) {
-                //        s.WriteLine(t.testname);
-                //    }
-                //}
-                //throw new Exception();
-
+               
+                // Find all MPI-parallel tests:
                 {
                     var ParAssln = GetAllMpiAssemblies();
                     if(ParAssln != null) {
@@ -695,6 +715,10 @@ namespace PublicTestRunner {
                     Console.WriteLine($"     {t.shortname}");
                     Console.WriteLine($"     {t.NoOfProcs} MPI processors.");
                 }
+
+                // ===================================
+                // phase 2: submit jobs
+                // ===================================
 
                 Console.WriteLine($"******* Starting job/test deployment/submission ({DateTime.Now}) *******");
 
@@ -730,7 +754,7 @@ namespace PublicTestRunner {
                     Console.WriteLine($"******* Deployed finished ({DateTime.Now}) -- SOME DEPLOYMENT(S) FAILED *******");
                 }
                 // ===================================
-                // phase 2: wait until complete...
+                // phase 3: wait until complete...
                 // ===================================
 
 
@@ -848,7 +872,7 @@ namespace PublicTestRunner {
                 }
 
                 // ===================================
-                // phase 3: summary
+                // phase 4: summary
                 // ===================================
 
 
@@ -1233,6 +1257,10 @@ namespace PublicTestRunner {
             Console.WriteLine("         runjobmanager         : submit tests to the job manger.");
             Console.WriteLine("         runjobmanager-release : submit ALL tests to the job manger.");
             Console.WriteLine("         runjobmanager-debug   : submit only DEBUG tests to the job manger.");
+            Console.WriteLine("         runjobmanger-ignore_tests_w_deps : ignore all tests which have the");
+            Console.WriteLine("                                 'NUnitFileToCopyHack' attribute; these depend");
+            Console.WriteLine("                                 on files within the source repo; skipping those");
+            Console.WriteLine("                                 allows to run without source code in place.");
             Console.WriteLine("         help          : prints this message.");
             Console.WriteLine("         yaml          : write 'jobs.yml' file for Gitlab.");
             Console.WriteLine("  and FILTER selects some assembly, i.e. DerivativeTests.exe; it can be ");
@@ -1295,6 +1323,7 @@ namespace PublicTestRunner {
                 case "runjobmanager":
                 case "runjobmanager-debug":
                 case "runjobmanager-release":
+                case "runjobmanger-ignore_tests_w_deps":
                 DeleteResultFiles();
 
                 bool runRelease;
@@ -1309,6 +1338,9 @@ namespace PublicTestRunner {
                 if(args[0].EndsWith("debug"))
                     runRelease = false;
                 discoverRelease = runRelease;
+
+                if(args[0].EndsWith("ignore_tests_w_deps"))
+                    ignore_tests_w_deps = true;
 
                 int iQueue = 1;
                 string filter = args.Length > 1 ? args[1] : "*";
