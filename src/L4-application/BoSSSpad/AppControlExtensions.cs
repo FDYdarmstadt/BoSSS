@@ -156,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
             var job = job2rest.LatestSession.CreateRestartJob();
             job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
             job.RetryCount = job2rest.RetryCount;
-            job.MemPerCPU = job2rest.MemPerCPU;
+            //job.MemPerCPU = job2rest.MemPerCPU;
             job.ExecutionTime = job2rest.ExecutionTime;
             return job;
         }

@@ -42,44 +42,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
-        ///// <summary>
-        ///// Config of <see cref="DirectSolver"/>. Note none of <see cref="LinearSolverConfig"/> or any config is passed to the solvers right now.
-        ///// </summary>
-        //public class myConfig : ConfigBase {
-            /// <summary>
-            /// Set the type of Parallelism to be used for the linear Solver.
-            /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
-            /// </summary>
-            public Parallelism SolverVersion = Parallelism.SEQ;
 
-            /// <summary>
-            /// Switch between PARDISO and MUMPS.
-            /// </summary>
-            public _whichSolver WhichSolver = _whichSolver.PARDISO;
+        /// <summary>
+        /// Set the type of Parallelism to be used for the linear Solver.
+        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
+        /// </summary>
+        public Parallelism SolverVersion = Parallelism.SEQ;
 
-        //    /// <summary>
-        //    /// ~
-        //    /// </summary>
-        //    /// <returns></returns>
-        //    public override ISolverSmootherTemplate GetInstance() {
-        //        return new DirectSolver();
-        //    }
-        //}
+        /// <summary>
+        /// Switch between PARDISO and MUMPS.
+        /// </summary>
+        public _whichSolver WhichSolver = _whichSolver.PARDISO;
 
-        //myConfig m_config;
-
-        ///// <summary>
-        ///// ~
-        ///// </summary>
-        //public ConfigBase Config {
-        //    get {
-        //        if (m_config == null)
-        //            m_config = new myConfig();
-        //        return m_config;
-        //    }
-        //}
-
-
+       
         /// <summary>
         /// 
         /// </summary>
@@ -108,19 +83,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Matlab
         }
 
-   
+
 
 
 
         public void Init(MultigridOperator op) {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 m_MultigridOp = op;
 
-                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
@@ -158,7 +133,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        class DenseSolverWrapper :  ISparseSolver {
+        class DenseSolverWrapper : ISparseSolver {
 
             MultidimensionalArray FullMatrix;
 
@@ -177,18 +152,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] Int_x = x as double[];
                 bool writeBack = false;
-                if (Int_x == null) {
+                if(Int_x == null) {
                     Int_x = new double[x.Count];
                     writeBack = true;
                 }
 
                 double[] Int_rhs = rhs as double[];
-                if (Int_rhs == null)
+                if(Int_rhs == null)
                     Int_rhs = rhs.ToArray();
-                
+
                 FullMatrix.Solve(Int_x, Int_rhs);
 
-                if (writeBack)
+                if(writeBack)
                     x.SetV(Int_x);
 
                 return new SolverResult() {
@@ -203,33 +178,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
-
-
-            switch (WhichSolver) {
+            
+            switch(WhichSolver) {
                 case _whichSolver.PARDISO:
-                    solver = new PARDISOSolver() {
-                        CacheFactorization = true,
-                        UseDoublePrecision = true,
-                        Parallelism = this.SolverVersion
-                    };
-                    break;
+                solver = new PARDISOSolver() {
+                    CacheFactorization = true,
+                    UseDoublePrecision = true,
+                    Parallelism = this.SolverVersion
+                };
+                break;
 
                 case _whichSolver.MUMPS:
-                    solver = new MUMPSSolver() {
-                        Parallelism=this.SolverVersion
-                    };
-                    break;
+                solver = new MUMPSSolver() {
+                    Parallelism = this.SolverVersion
+                };
+                break;
 
                 case _whichSolver.Matlab:
-                    solver = new MatlabSolverWrapper();
-                    break;
+                solver = new MatlabSolverWrapper();
+                break;
 
                 case _whichSolver.Lapack:
-                    solver = new DenseSolverWrapper();
-                    break;
+                solver = new DenseSolverWrapper();
+                break;
 
                 default:
-                    throw new NotImplementedException();
+                throw new NotImplementedException();
 
             }
 
@@ -249,14 +223,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 B.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", RHS on entry: ");
 
 
                 double[] Residual = this.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
-                using (var solver = GetSolver(m_Mtx)) {
+                using(var solver = GetSolver(m_Mtx)) {
                     SolverName = solver.GetType().FullName;
                     //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
                     IterCnt++;
@@ -265,10 +239,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
-                
+
                 m_ThisLevelIterations++;
 
-                if (Residual != null) {
+                if(Residual != null) {
                     //Console.Write("Checking residual (run {0}) ... ", IterCnt - 1);
                     double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
                     double MatrixInfNorm = m_Mtx.InfNorm();
@@ -281,7 +255,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //Console.WriteLine("done: Abs.: {0}, Rel.: {1}", ResidualNorm, RelResidualNorm);
 
-                    if (RelResidualNorm > 1.0e-10) {
+                    if(RelResidualNorm > 1.0e-10) {
 
                         //Console.WriteLine("High residual from direct solver: abs {0}, rel {1}", ResidualNorm , ResidualNorm / SolutionNorm);
 #if TEST
@@ -291,7 +265,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
                         string ErrMsg;
-                        using (var stw = new StringWriter()) {
+                        using(var stw = new StringWriter()) {
                             stw.WriteLine("High residual from direct solver (using {0}).", SolverName);
                             stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
                             stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
@@ -307,7 +281,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                if (this.IterationCallback != null) {
+                if(this.IterationCallback != null) {
                     double[] _xl = X.ToArray();
                     double[] _bl = B.ToArray();
                     m_Mtx.SpMV(-1.0, _xl, 1.0, _bl);
@@ -326,7 +300,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool TestSolution {
             get {
-                return m_TestSolution; 
+                return m_TestSolution;
             }
             set {
                 m_TestSolution = value;

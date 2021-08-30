@@ -153,7 +153,7 @@ namespace BoSSS.Foundation.IO
             TypeNameHandling = TypeNameHandling.Objects,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new AdvancedLookupBinder()
+            //Binder = new AdvancedLookupBinder()
         };
     }
 }

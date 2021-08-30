@@ -447,6 +447,24 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
+        /// Activates pivoting strategy for highly indefinite symmetric matrices.
+        /// Applies 1x1 and 2x2 Bunch-Kaufman pivoting during factorization.
+        /// </summary>
+        public bool SymmIndefPivot {
+            get {
+                return (m_PardInt.m_parm[20] == 3);
+            }
+            set {
+                if (value) {
+                    m_PardInt.m_parm[20] = 3; // pivoting for symm indefenite matrices}
+                    //m_PardInt.m_parm[9] = 8;
+                    m_PardInt.m_parm[10] = 1;
+                    m_PardInt.m_parm[12] = 1;
+                }
+            }
+        }
+
+        /// <summary>
         /// From PARDISO manual: Actual matrix for the solution phase. 
         /// With this scalar you can define the matrix that you would like to factorize. 
         /// The value must be: 1 &lt; <see cref="mnum"/> &lt; <see cref="maxfct"/>
@@ -635,8 +653,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                     int[] jaClone = m_PardisoMatrix.ja.CloneAs();
 #endif
                    
-                    unsafe
-                    {
+                    unsafe {
                         fixed (double* px = _x, pb = _b, dparam = m_PardInt.m_dparam) {
                             fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt) {
                                 int n = m_PardisoMatrix.n;
@@ -668,7 +685,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     b = pb;
                                     x = px;
                                 } else {
-                                  
+
                                     b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
                                     x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
 
@@ -714,8 +731,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                     }
 
-                                    using (new BlockTrace("PARDISOINIT", tr))
-                                    {
+                                    using (new BlockTrace("PARDISOINIT", tr)) {
                                         wrapper.PARDISOINIT(pt, &mtype, iparm, dparam);
                                     }
 
@@ -736,10 +752,9 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* ..  Reordering and Symbolic Factorization.  This step also allocates */
                                     /*     all memory that is necessary for the factorization.              */
                                     /* -------------------------------------------------------------------- */
-                                    using (new BlockTrace("PARDISO_phase11", tr))
-                                    {
+                                    using (new BlockTrace("PARDISO_phase11", tr)) {
                                         phase = 11;
-                                        iparm[59] = 0; // in-core (1 == out-of-core)
+                                        iparm[59] = 0; // in-core (1 == out-of-core)                            
 
                                         //Console.Write("calling pardiso, phase 11... ");
                                         Phase_11.Start();
@@ -751,6 +766,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     }
                                     if (error != 0) {
                                         PARDISODispose();
+                                        SendErrorToOtherRanks(error);
                                         Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         return false;
                                     }
@@ -761,8 +777,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* -------------------------------------------------------------------- */
                                     /* ..  Numerical factorization.                                         */
                                     /* -------------------------------------------------------------------- */
-                                    using (new BlockTrace("PARDISO_phase22", tr))
-                                    {
+                                    using (new BlockTrace("PARDISO_phase22", tr)) {
                                         phase = 22;
 
                                         Phase_22.Start();
@@ -775,6 +790,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     if (error != 0) {
                                         // some error occured: release mem, dispose objects...
                                         PARDISODispose();
+                                        SendErrorToOtherRanks(error);
                                         Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();
                                         return false;
@@ -786,11 +802,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 /* -------------------------------------------------------------------- */
                                 phase = 33;
 
-                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
+                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == 2 steps */
 
                                 //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
-                                using (new BlockTrace("PARDISO_phase33", tr))
-                                {
+                                using (new BlockTrace("PARDISO_phase33", tr)) {
                                     Phase_33.Start();
                                     wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                       &n, a, ia, ja, &idum, &nrhs,
@@ -800,6 +815,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 if (error != 0) {
                                     // some error occurred: release mem, dispose objects...
                                     PARDISODispose();
+                                    SendErrorToOtherRanks(error);
                                     Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                     //InitAndSolve.Stop();
                                     return false;
@@ -824,6 +840,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                         }
                     }
 
+
+
 #if DEBUG
                     //if(UseDoublePrecision)
                     //    Debug.Assert(ArrayTools.ListEquals<double>(a_DClone, m_PardisoMatrix.a_D), "PARDISO changed the matrix.");
@@ -846,13 +864,43 @@ namespace ilPSP.LinSolvers.PARDISO {
                     Debug.Assert(ArrayTools.ListEquals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
                     Debug.Assert(ArrayTools.ListEquals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
 #endif
-
+                    SendErrorToOtherRanks(0); // Everything is fine
+                } else {
+                    /*
+                     procs != 0 are waiting for the error code
+                     if error != 0 an error is thrown on all ranks of MPI_Comm (error code is distributed by rank0)
+                     see SendErrorToOtherRanks
+                     This makes pardiso exceptions catchable
+                    */
+                    int[] error = new int[] { -1 };
+                    unsafe {
+                        fixed (int* Buffer = error) {
+                            MPI_Status status;
+                            MPI.Wrappers.csMPI.Raw.Recv((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, 0, 112, MpiComm, out status);
+                        }
+                    }
+                    if (error[0] != 0)
+                        wrapper.PARDISOerror2string(error[0]);
                 }
 
 
                 m_PardInt.m_PardisoInitialized = true;
                 //InitAndSolve.Stop();
                 return true;
+            }
+        }
+
+        // Broadcasts the error code over MPI_Comm.
+        // Receive is at the end of PardisoInitAndSolver
+        private void SendErrorToOtherRanks(int error) {
+            csMPI.Raw.Comm_Size(MpiComm, out int size);
+            for (int iProc = 1; iProc < size; iProc++) {
+                int[] buffer = new int[] { error };
+                unsafe {
+                    fixed (int* Buffer = buffer) {
+                        csMPI.Raw.Send((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, iProc, 112, MpiComm);
+                    }
+                }
             }
         }
 

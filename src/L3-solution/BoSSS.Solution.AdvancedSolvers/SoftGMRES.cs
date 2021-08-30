@@ -358,6 +358,9 @@ namespace BoSSS.Solution.AdvancedSolvers
                 if (!object.ReferenceEquals(_X, X))
                     _X.SetV(X);
                 B.SetV(z);
+
+                if (this.Precond is IDisposable)
+                    (this.Precond as IDisposable).Dispose();
             }
         }
 

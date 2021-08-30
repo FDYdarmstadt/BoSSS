@@ -465,6 +465,30 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
 
         /// <summary>
+        /// wrapper introduced due to API change
+        /// </summary>
+        class LevelSetTimeIntegratorWrapper : ISlaveTimeIntegrator {
+
+            public LevelSetTimeIntegratorWrapper(XNSE_SolverMain __owner) {
+                m_owner = __owner;
+            }
+            XNSE_SolverMain m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                m_owner.PushLevelSetAndRelatedStuff();
+            }
+
+            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+                return m_owner.DelUpdateLevelSet(CurrentState, time, dt, UnderRelax, incremental);
+            }
+        }
+
+
+        /// <summary>
         /// Computes the new level set field at time <paramref name="Phystime"/> + <paramref name="dt"/>.
         /// This is a 'driver function' which provides a universal interface to the various level set evolution algorithms.
         /// It also acts as a callback to the time stepper (see <see cref="m_BDF_Timestepper"/> resp. <see cref="m_RK_Timestepper"/>),

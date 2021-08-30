@@ -32,9 +32,6 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 using static BoSSS.Foundation.SpatialOperator;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -281,12 +278,6 @@ namespace BoSSS.Foundation.XDG {
                                 Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
                                 Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
-
-                            //IFormatter formatter = new BinaryFormatter();
-                            //using (Stream stream = new FileStream("MyFile.bin", FileMode.Create, FileAccess.Write, FileShare.None)) {
-                            //    formatter.Serialize(stream, m_lsTrk);
-                            //};
-
 
 #endif
 

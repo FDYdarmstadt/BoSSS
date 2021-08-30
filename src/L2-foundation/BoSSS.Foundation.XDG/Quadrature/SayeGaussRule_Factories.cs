@@ -203,9 +203,23 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 foreach (int cell in chunk.Elements)
                 {
-                    QuadRule sayeRule = rule.Evaluate(cell);
-                    ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
-                    result.Add(sayePair);
+                    ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                    try {
+                        var sayeRule = rule.Evaluate(cell);
+                        ChunkRulePair<QuadRule> sayePair = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(cell), sayeRule);
+                        result.Add(sayePair);
+                    } catch (Exception e) {
+                        var vector = mask.GridData.iGeomCells.GetCenter(cell);
+                        //double volume = mask.GridData.iGeomCells.GetCellVolume(cell);
+                        //double edge = Math.Pow(volume,0.33333);
+                        //Console.WriteLine("volume of cell: " + volume);
+                        //Console.WriteLine("edge of cell: "+edge);
+                        Console.WriteLine("proc{2} reporting: coord of {0}:{1}", cell, String.Join(",", vector), ilPSP.Environment.MPIEnv.MPI_Rank);
+                        Console.WriteLine("MaskType: " + mask.MaskType.ToString());
+                        //Console.WriteLine("MaskLength: " + mask.Count());
+                        throw e;
+                    }
+                    ilPSP.Environment.StdoutOnlyOnRank0 = true;
                 }
             }
 #if LOG_TIME

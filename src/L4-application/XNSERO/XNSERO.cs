@@ -262,7 +262,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             InitializeParticlesNewTimestep(dt);
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);

@@ -129,6 +129,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> VariableNames => new string[] { };
 
+        // nothing to do
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+
         /// <summary>
         /// <see cref="ILevelSetEvolver.InternalFields"/>; here, empty;
         /// </summary>

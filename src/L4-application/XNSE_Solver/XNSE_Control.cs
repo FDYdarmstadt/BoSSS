@@ -38,6 +38,7 @@ using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -89,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>
@@ -394,10 +395,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-        /// <summary>
-        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
-        /// </summary>
-        public int incrementTimesteps = 1;
+        ///// <summary>
+        ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
+        ///// </summary>
+        //public int incrementTimesteps = 1;
 
        
         /// <summary>
@@ -432,12 +433,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
 
-
-        /// <summary>
-        /// See <see cref="ContinuityProjection"/>
-        /// </summary>
-        [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
@@ -703,6 +698,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>
@@ -711,6 +708,8 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
 
+        [DataMember]
+        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
 
         /// <summary>
         /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>

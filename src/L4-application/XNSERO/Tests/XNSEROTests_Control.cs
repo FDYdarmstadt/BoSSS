@@ -221,8 +221,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitializeMotion motion2 = new InitializeMotion(particleDensity2, false, true, true);
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }),
-                new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
-                new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
+                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
+                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
             C.SetParticles(particles);
             C.PhysicalParameters.IncludeConvection = false;

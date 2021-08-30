@@ -31,6 +31,7 @@ using BoSSS.Solution.NSECommon;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.ConstrainedDGprojection;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -58,7 +59,6 @@ namespace BoSSS.Solution.LevelSetTools {
 
     /// <summary>
     /// Projects a DG Field onto another DGField of higher order, without any discontinuities at the boundary.
-    /// 
     /// </summary>
     public class ContinuityProjection {
         
@@ -73,7 +73,7 @@ namespace BoSSS.Solution.LevelSetTools {
             myOption = Option;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis((BoSSS.Foundation.Grid.Classic.GridData)gridData, DGBasis.Degree + 1);
+                        var ContinuousLevelSetBasis = new SpecFemBasis((GridData)gridData, DGBasis.Degree + 1);
                         MyProjection = new ContinuityProjectionSpecFem(ContinuousLevelSetBasis);
                         break;
                     }
@@ -92,21 +92,22 @@ namespace BoSSS.Solution.LevelSetTools {
         }
 
         /// <summary>
-        /// Creates the LevelSet field for the Tracker based on the Option selected
+        /// Creates the LevelSet field for the **continuous representation**,
+        /// for the Tracker based on the <paramref name="Option"/> selected
         /// </summary>
-        /// <param name="DGLevelSet">the unfiltered Level-set</param>
+        /// <param name="DGLevelSet">the unfiltered Level-set (might be discontinuous)</param>
         /// <param name="gridData"></param>
         /// <param name="Option"></param>
-        /// <returns>The filtered Level-Set Field </returns>
+        /// <returns>The Level-Set Field for storing the filtered, i.e. continuous representation.</returns>
         public static LevelSet CreateField(SinglePhaseField DGLevelSet, Foundation.Grid.Classic.GridData gridData, ContinuityProjectionOption Option) {
-            int k = DGLevelSet.Basis.Degree + 1;
+            int k = DGLevelSet.Basis.Degree;
             switch (Option) {
                 case ContinuityProjectionOption.SpecFEM: {
-                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k);
+                        var ContinuousLevelSetBasis = new SpecFemBasis(gridData, k + 1);
                         return new LevelSet(ContinuousLevelSetBasis.ContainingDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.ConstrainedDG: {
-                        var ContinuousLevelSetDGBasis = new Basis(gridData, k);
+                        var ContinuousLevelSetDGBasis = new Basis(gridData, k + 1);
                         return new LevelSet(ContinuousLevelSetDGBasis, VariableNames.LevelSetCG);
                     }
                 case ContinuityProjectionOption.None: {
@@ -135,7 +136,7 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
 
-            //Console.WriteLine("calling ContinuityProjection.MakeContinuous()");
+            //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
 
             MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
 
@@ -240,9 +241,9 @@ namespace BoSSS.Solution.LevelSetTools {
 
     }
 
-
-
-
+    /// <summary>
+    /// Driver interface
+    /// </summary>
     interface IContinuityProjection {
         void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain);
     }
@@ -271,7 +272,7 @@ namespace BoSSS.Solution.LevelSetTools {
     }
 
     /// <summary>
-    /// Smoothing based on ContinuousDGField 
+    /// Smoothing based on <see cref="ConstrainedDGFieldMk3"/> 
     /// => Lagrange-Multiplier Approach
     /// </summary>
     /// <remarks>
@@ -282,17 +283,28 @@ namespace BoSSS.Solution.LevelSetTools {
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
-            CDGField = new ConstrainedDGField(myBasis);
+            m_myBasis = myBasis;
         }
-        //Basis m_myBasis;
-        ConstrainedDGField CDGField;
+        Basis m_myBasis;
 
+        ConstrainedDGFieldMk3 m_projector;
+
+        ConstrainedDGFieldMk3 Update(CellMask domain) {
+            if(m_projector == null || !m_projector.domainLimit.Equals(domain)) {
+                if(m_projector != null)
+                    m_projector.Dispose();
+                m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
+            }
+
+            return m_projector;
+        }
+        
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
             if(Domain.NoOfItemsLocally.MPISum() > 0) {
-                //CDGField = new ConstrainedDGField(m_myBasis); 
-                CDGField.ProjectDGField(DGLevelSet, Domain);
+                var p = Update(Domain);
+                p.ProjectDGField(DGLevelSet);
                 LevelSet.Clear();
-                CDGField.AccToDGField(1.0, LevelSet);
+                p.AccToDGField(1.0, LevelSet);
             } else {
                 LevelSet.Clear();
                 LevelSet.AccLaidBack(1.0, DGLevelSet);

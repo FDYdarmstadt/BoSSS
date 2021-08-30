@@ -37,7 +37,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         ImplicitEuler = 1,
 
         /// <summary>
-        /// (Implicit) Crank-Nicholson using the BDF-implementation (<see cref="XdgBDFTimestepping"/>), <see cref="BDFSchemeCoeffs.CrankNicolson"/>
+        /// (Implicit) Crank-Nicholson using the BDF-implementation (<see cref="XdgBDFTimestepping"/>), <see cref="BDFSchemeCoeffs.CrankNicolson"/>, <see cref="BDFSchemeCoeffs.theta0"/>
         /// </summary>
         CrankNicolson = 2000,
 
@@ -104,7 +104,13 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Implicit, <see cref="RungeKuttaScheme.IMEX3"/>
         /// </summary>
-        RK_IMEX3 = 203
+        RK_IMEX3 = 203,
+
+
+        /// <summary>
+        /// Adaptive timestep 
+        /// </summary>
+        Adaptive_3 = 10003
     }
 
 
@@ -118,6 +124,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             private set;
         }
 
+
+        /// <summary>
+        /// spatial operator in the case of XDG, i.e. can be null if DG is used;
+        /// </summary>
         public XSpatialOperatorMk2 XdgOperator {
             get;
             private set;
@@ -133,6 +143,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         
+        /// <summary>
+        /// spatial operator in the case of DG, i.e. can be null if XDG is used; 
+        /// </summary>
         public SpatialOperator DgOperator {
             get;
             private set;
@@ -148,7 +161,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
+        /// <summary>
+        /// spatial operator which is integrated over time (<see cref="XdgOperator"/>, <see cref="DgOperator"/>)
+        /// </summary>
         public ISpatialOperator Operator {
             get {
                 
@@ -183,6 +198,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
             
         }
+
+        
 
         /// <summary>
         /// Residual vector during/after linear/nonlinear solver iterations
@@ -220,14 +237,14 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Constructor for an XDG operator
+        /// Constructor for an XDG operator (see <see cref="XdgOperator"/>)
         /// </summary>
         public XdgTimestepping(
             XSpatialOperatorMk2 op,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
-            DelUpdateLevelset _UpdateLevelset = null,
+            Func<ISlaveTimeIntegrator> _UpdateLevelset = null,
             LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
             AggregationGridData[] _MultigridSequence = null,
@@ -281,7 +298,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISpatialOperator op, bool UseX, 
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
             SpeciesId[] spcToCompute,
-            DelUpdateLevelset _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
+            Func<ISlaveTimeIntegrator> _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
             double _AgglomerationThreshold,
             LinearSolverConfig LinearSolver, NonLinearSolverConfig NonLinearSolver) //
@@ -322,7 +339,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // ===========================
 
             if (_UpdateLevelset == null) {
-                _UpdateLevelset = this.UpdateLevelsetWithNothing;
+                _UpdateLevelset = () => new UpdateLevelsetWithNothing(this);
                 if (_LevelSetHandling != LevelSetHandling.None)
                     throw new ArgumentException($"If level-set handling is set to {_LevelSetHandling} (anything but {LevelSetHandling.None}) an updating routine must be specified.");
             }
@@ -379,6 +396,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
 
+        internal void ResetTimestepper() {
+
+
+            var resLoggerBkup = TimesteppingBase.m_ResLogger ?? null;
+            var Fields = this.CurrentState.Fields.ToArray();
+            var IterationResiduals = this.IterationResiduals.Fields.ToArray();
+
+            bool UseX = Fields.Any(f => f is XDGField) || IterationResiduals.Any(f => f is XDGField);
+
+
+            ConstructorCommon(this.Operator,
+                UseX,
+                Fields, this.Parameters, IterationResiduals,
+                this.UsedSpecies,
+                this.TimesteppingBase.UpdateLevelset, this.TimesteppingBase.Config_LevelSetHandling,
+                this.TimesteppingBase.Config_MultigridOperator, this.TimesteppingBase.MultigridSequence,
+                this.TimesteppingBase.Config_AgglomerationThreshold,
+                TimesteppingBase.XdgSolverFactory.GetLinearConfig, TimesteppingBase.XdgSolverFactory.GetNonLinearConfig);
+
+            if(resLoggerBkup!=null) {
+                this.RegisterResidualLogger(resLoggerBkup);
+            }
+        }
+
+
+
         /// <summary>
         /// translates a time-stepping scheme code
         /// </summary>
@@ -410,7 +453,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 rksch = RungeKuttaScheme.ImplicitEuler;
             else if(Scheme == TimeSteppingScheme.RK_CrankNic)
                 rksch = RungeKuttaScheme.CrankNicolson;
-            else if(Scheme == TimeSteppingScheme.RK_IMEX3)
+            else if(Scheme == TimeSteppingScheme.RK_IMEX3 || Scheme == TimeSteppingScheme.Adaptive_3)
                 rksch = RungeKuttaScheme.IMEX3;
             else
                 throw new NotImplementedException();
@@ -443,7 +486,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                UpdateLevelsetWithNothing,
+                () => new UpdateLevelsetWithNothing(this),
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
@@ -472,17 +515,43 @@ namespace BoSSS.Solution.XdgTimestepping {
             return spcA;
         }
 
-        double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
-            this.LsTrk.UpdateTracker(time + dt, incremental: true);
-            return 0.0;
+        class UpdateLevelsetWithNothing : ISlaveTimeIntegrator {
+
+            public UpdateLevelsetWithNothing(XdgTimestepping __owner) {
+                m_owner = __owner;
+            }
+
+            XdgTimestepping m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                throw new NotImplementedException();
+            }
+
+            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+                m_owner.LsTrk.UpdateTracker(time + dt, incremental: true);
+                return 0.0;
+            }
         }
+
+
+        //double UpdateLevelsetWithNothing(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+        //    this.LsTrk.UpdateTracker(time + dt, incremental: true);
+        //    return 0.0;
+        //}
 
         DGField[] JacobiParameterVars = null;
 
         
         /// <summary>
-        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>
-        /// </summary>
+        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
+        /// - either update operator linearization matrix 
+        /// - or evaluate the operator in the current linearization point
+        /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
+        /// /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             // compute operator
             Debug.Assert(OpAffine.L2Norm() == 0.0);
@@ -722,13 +791,22 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Assert.IsTrue((AvailTimesBefore[0] - phystime).Abs() < dt*1e-7, "Error in Level-Set tracker time");
             }
 
-            if(m_BDF_Timestepper != null) {
-                success = m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
-            } else {
-                if (SkipSolveAndEvaluateResidual == true)
-                    throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
+            if(UseAdaptiveTimestepping()) {
 
-                success = m_RK_Timestepper.Solve(phystime, dt);
+                TimeLevel TL = new TimeLevel(this, dt, StateAtTime.Obtain(this, phystime));
+                TL.Compute();
+                success = true;
+
+            } else {
+
+                if(m_BDF_Timestepper != null) {
+                    success = m_BDF_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
+                } else {
+                    if(SkipSolveAndEvaluateResidual == true)
+                        throw new NotSupportedException("SkipSolveAndEvaluateResidual == true is not supported for Runge-Kutta");
+
+                    success = m_RK_Timestepper.Solve(phystime, dt);
+                }
             }
 
             double[] AvailTimesAfter;
@@ -740,6 +818,32 @@ namespace BoSSS.Solution.XdgTimestepping {
             JacobiParameterVars = null;
             return success;
         }
+
+        bool UseAdaptiveTimestepping() {
+            if(this.Scheme == TimeSteppingScheme.Adaptive_3)
+                return true;
+
+            return false;
+        }
+
+
+
+        
+        public void UndoLastTs() {
+            if(m_BDF_Timestepper != null) {
+                LsTrk.PopStacks();
+                m_BDF_Timestepper.PopStack();
+            } else if(m_RK_Timestepper != null) {
+                throw new NotImplementedException();
+            } else {
+                throw new NotImplementedException();
+            }
+
+
+        }
+
+
+
 
         /// <summary>
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
@@ -757,11 +861,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException();
             if(LsTrk != null)
                 this.LsTrk = LsTrk;
-            
+
+            // Reset dependent spatial operator, otherwise AMR can lead e.g. to invalid LsTrks in some equation components
+            if (this.m_JacobiXdgOperator != null)
+                this.m_JacobiXdgOperator = null;
+
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
             } else if(m_RK_Timestepper != null) {
                 throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
             } else {

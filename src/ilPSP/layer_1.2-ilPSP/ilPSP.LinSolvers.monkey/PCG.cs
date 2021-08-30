@@ -219,7 +219,7 @@ namespace ilPSP.LinSolvers.monkey {
         /// </summary>
         public IImplicitPrecond NestedPrecond {
             get {
-                return m_NestedPrecond;
+                return (IImplicitPrecond)m_NestedPrecond;
             }
             set {
                 m_NestedPrecond = (IMonkeyImplicitPrecond)value;

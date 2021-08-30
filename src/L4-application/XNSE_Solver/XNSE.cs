@@ -1,8 +1,10 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
@@ -12,10 +14,12 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
+using CommandLine;
 using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -34,7 +38,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
     /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   We transform $` \int f dx $` to the reference Element, $` \int f dx = \int f(T) |det D(T)| d\hat{x} $`
     ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
     ///   has approximately degree <= n * p + (p - 1)
     ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
@@ -66,7 +70,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(2, 1, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting, false);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.1, ViscosityMode.FullySymmetric, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
             //Tests.ASUnitTest.CurvedElementsTest(3);
             //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
@@ -74,17 +81,50 @@ namespace BoSSS.Application.XNSE_Solver {
             //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
             ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
             ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
             //throw new Exception("Remove me");
 
-            void KatastrophenPlot(DGField[] dGFields) {
-                Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
-            }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            bool Evap = false;
+            // not sure if this works always, idea is to determine on startup which solver should be run.
+            // default is XNSE<XNSE_Control>
+            try {
+                // peek at control file and select correct solver depending on controlfile type
+                // parse arguments
+                args = ArgsFromEnvironmentVars(args);
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                argsParseSuccess = parser.ParseArguments(args, opt);
 
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });
+                if (!argsParseSuccess) {
+                    System.Environment.Exit(-1);
+                }
+
+                if (opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+
+                XNSE_Control ctrlV2 = null;
+                XNSE_Control[] ctrlV2_ParameterStudy = null;
+
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                Evap = ctrlV2 is XNSFE_Control | ctrlV2_ParameterStudy is XNSFE_Control[];
+            } catch {
+                Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
+            }
+
+            if (Evap) {
+                XNSFE<XNSFE_Control>._Main(args, false, delegate () {
+                    var p = new XNSFE<XNSFE_Control>(); 
+                    return p;
+                });
+            } else {
+                XNSE._Main(args, false, delegate () {
+                    var p = new XNSE();
+                    return p;
+                });
+            }
+            
         }
     }
 
@@ -92,8 +132,6 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Generic versions which should be used for derivatives 
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
-
-
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -126,8 +164,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
+
             return quadOrder;
         }
+
 
         /// <summary>
         /// Current velocity
@@ -251,6 +291,12 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// Cell-performance classes:
+        /// cell performance class equals number of species present in that cell
+        /// </summary>
+        protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
+            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.DynamicLoadbalancing_ClassifierType);
+        }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int pVel = VelocityDegree();
@@ -459,12 +505,23 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
+                // so far only no slip!
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                }
+
+                // surface tension on IBM
+                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                    opFactory.AddEquation(new NSEimmersedBoundary_SurfaceTension("A", "B", d, D, 1));
+                }
+
+                // GNBC
+                if (config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
+                    opFactory.AddEquation(new NSEimmersedBoundary_GNBC("A", "B", d, D, config.getPhysParams, 1));
                 }
             }
 
@@ -473,11 +530,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
+
+            if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine || config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
+                var normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
+                opFactory.AddParameter(normalsParameter);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), normalsParameter);
+            }
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"Done with time step {TimestepNo}.");
