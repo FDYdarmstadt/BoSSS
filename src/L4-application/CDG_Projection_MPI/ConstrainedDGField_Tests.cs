@@ -31,7 +31,7 @@ namespace CDG_Projection_MPI {
             Application.InitMPI();
             Tracer.NamespacesToLog = new string[] { "" };
             Application.DeleteOldPlotFiles();
-            NoOfPatches = 2;
+            CDG_Test_Utils.NoOfPatches = 2;
             Projection(ProjectionStrategy.patchwiseOnly, DGDeg: 2, incDeg: 1, Dim: 2, GridRes: 10, shape: GeomShape.Cube, narrowBand: true);
             //CDG_Projection_MPI.ConstrainedDGField_Tests.ProjectionTest_Global(2, 1, 2, 10, GeomShape.Sphere);
             //ProjectionPseudo1D(ProjectionStrategy.globalOnly, 10);
@@ -111,10 +111,10 @@ namespace CDG_Projection_MPI {
                 var DGBasis = new Basis(grid, DGDeg);
                 var CDGBasis = new Basis(grid, DGDeg + incDeg);
 
-                var FGenerator = FuncGenerator(shape, grid.GridData.SpatialDimension);
+                var FGenerator = CDG_Test_Utils.FuncGenerator(shape, grid.GridData.SpatialDimension);
                 var projFunc = FGenerator(particleRad);
 
-                var mask = narrowBand ? ComputeNarrowband(grid, particleRad, projFunc) : CellMask.GetFullMask(grid.GridData);
+                var mask = narrowBand ? CDG_Test_Utils.ComputeNarrowband(grid, particleRad, projFunc) : CellMask.GetFullMask(grid.GridData);
                 Console.WriteLine("Cells in mask: " + mask.NoOfItemsLocally.MPISum());
                 Console.WriteLine("edges in mask: " + mask.AllEdges().NoOfItemsLocally.MPISum());
 
@@ -125,7 +125,7 @@ namespace CDG_Projection_MPI {
 
                 // Act -- Do the CG-projection
                 SinglePhaseField BestApprox = new SinglePhaseField(CDGBasis, "CG");
-                using(var CDGTestField = Factory(CDGBasis, mask, PStrategy)) {
+                using(var CDGTestField = CDG_Test_Utils.Factory(CDGBasis, mask, PStrategy)) {
 
                     CDGTestField.ScheissDrauf(field);
                     double jumpNorm_before = CDGTestField.CheckLocalProjection(mask, false);

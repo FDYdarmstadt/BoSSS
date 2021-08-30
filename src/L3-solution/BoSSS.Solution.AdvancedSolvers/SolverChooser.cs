@@ -431,7 +431,7 @@ namespace BoSSS.Solution {
                     CoarseSolver = null,
                     Overlap = 1
                 };
-                precond[0] = BareMGSquence(lc.NoOfMultigridLevels, dirSolver, Smoother);
+                precond[0] = BareMGSquence(2, dirSolver, Smoother);
                     break;
 
                 /*
@@ -1159,17 +1159,25 @@ namespace BoSSS.Solution {
         private ISolverSmootherTemplate BareMGSquence(int MGlevels, ISolverSmootherTemplate coarseSolver, ISolverSmootherTemplate smoother=null)
         {
             ISolverSmootherTemplate solver;
+            ISolverSmootherTemplate thislevelsmoother = null;
+            if (smoother != null) {
+                thislevelsmoother = smoother.CloneAs();
+            }
             if (MGlevels > 0)
             {
-                solver = new ClassicMultigrid() {
+                solver = new ClassicMultigrid() {                  
                     CoarserLevelSolver = BareMGSquence(MGlevels - 1, coarseSolver, smoother),
-                    PreSmoother= smoother.CloneAs(),
-                    PostSmoother= smoother.CloneAs(),
+                    PreSmoother = thislevelsmoother,
+                    PostSmoother = thislevelsmoother,
                 };
             }
             else
             {
-                solver = coarseSolver;
+                solver = new ClassicMultigrid() {
+                    CoarserLevelSolver = coarseSolver,
+                    PreSmoother = thislevelsmoother,
+                    PostSmoother = thislevelsmoother,
+                };
             }
             return solver;
         }
@@ -1539,16 +1547,15 @@ namespace BoSSS.Solution {
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
-                    //levelSolver = new DirectSolver() {
-                    //    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    //    SolverVersion = Parallelism.OMP,
-                    //    TestSolution = false
-                    //};
                     levelSolver = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.MUMPS,
-                        SolverVersion = Parallelism.MPI,
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
+                    //levelSolver = new DirectSolver() {
+                    //    WhichSolver = DirectSolver._whichSolver.MUMPS,
+                    //    SolverVersion = Parallelism.MPI,
+                    //    TestSolution = false
+                    //};
                 } else {
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,

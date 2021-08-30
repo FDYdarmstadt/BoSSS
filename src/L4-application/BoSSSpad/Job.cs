@@ -76,8 +76,8 @@ namespace BoSSS.Application.BoSSSpad {
             private set;
             get;
         }
-        
-        /*
+
+
         /// <summary>
         /// The memory (in MB) that is reserved for every core
         /// </summary>
@@ -97,7 +97,7 @@ namespace BoSSS.Application.BoSSSpad {
             set { m_NumberOfNodes = value;  }
         }
         */
-        
+
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).

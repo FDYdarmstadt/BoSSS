@@ -184,7 +184,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // ======================
             if(this.PreSmoother != null)
                 this.PreSmoother.Init(op);
-            if(this.PostSmoother != null)
+            if(this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
                 this.PostSmoother.Init(op);
         }
 
@@ -349,7 +349,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            PreSmoother.Dispose();
+            PostSmoother.Dispose();
+            OpMatrix = null;
         }
 
         public double UsedMemory() {

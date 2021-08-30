@@ -1,4 +1,6 @@
-﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿//#define TEST
+
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -540,17 +542,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             dt = GetTimestep();
-            //try {
-                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
+            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
+#if TEST
+            try {
+               
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                Console.WriteLine($"Done with time step {TimestepNo}.");
-            //} catch (Exception ex) {
-            //    string dir = System.IO.Directory.GetCurrentDirectory();
-            //    this.ProfilingLog();
-            //    this.CurrentSessionInfo.AddTag(ex.GetType().ToString());
-            //    this.CurrentSessionInfo.Save();
-            //    throw new Exception("there is something rotten. See output...");
-            //}
+                
+            } catch (Exception ex) {
+                string dir = System.IO.Directory.GetCurrentDirectory();
+                this.ProfilingLog();
+                this.CurrentSessionInfo.AddTag(ex.GetType().ToString());
+                this.CurrentSessionInfo.Save();
+                throw new Exception("there is something rotten. See output...");
+            }
+#else
+            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+#endif
+            Console.WriteLine($"Done with time step {TimestepNo}.");
             return dt;
         }
     }

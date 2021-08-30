@@ -166,6 +166,18 @@ namespace ilPSP.LinSolvers.PARDISO {
         Version m_Version = Version.MKL;
 
         string m_LicenseCode = "";
+        int m_OrgMatrixLength = -1;
+
+        private int OrgLength {
+            get {
+                if (m_OrgMatrix != null) {
+                    m_OrgMatrixLength = m_OrgMatrix.RowPartitioning.LocalLength;
+                }
+                if (m_OrgMatrixLength == -1 && m_OrgMatrix == null)
+                    throw new Exception("Input Matrix deleted!");
+                return m_OrgMatrixLength;
+            }
+        }
 
         /// <summary>
         /// PARDISO license code; if this is set, a file called 'pardiso.lic' will be 
@@ -298,9 +310,11 @@ namespace ilPSP.LinSolvers.PARDISO {
                 // check input arguments
                 // =====================
 
-                if (x.Count != m_OrgMatrix.RowPartitioning.LocalLength)
+                int LOrg = OrgLength;
+
+                if (x.Count != LOrg)
                     throw new ArgumentException("length of x must be equal to matrix size.");
-                if (rhs.Count != m_OrgMatrix.RowPartitioning.LocalLength)
+                if (rhs.Count != LOrg)
                     throw new ArgumentException("length of rhs must be equal to matrix size.");
                 if (Math.Abs(Scale) <= double.Epsilon)
                     throw new ArgumentException("scale to small.");
@@ -317,7 +331,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 if (rhs.GetType() == typeof(double[]))
                     _rhs = (double[])((ICloneable)rhs).Clone();
                 else {
-                    int L = m_OrgMatrix.RowPartitioning.LocalLength;
+                    int L = LOrg;
                     _rhs = new double[L];
                     for (int i = 0; i < L; i++) _rhs[i] = rhs[i];
                 }
@@ -391,7 +405,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                     // write back / return
                     if(x.GetType() != typeof(double[])) {
-                        int NN = m_OrgMatrix.RowPartitioning.LocalLength;
+                        int NN = LOrg;
                         for(int i = 0; i < NN; i++)
                             x[i] = _x[i];
                     }
@@ -762,6 +776,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
                                         Phase_11.Stop();
+                                        SetMemoryConsumption();
                                         //Console.WriteLine("11: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
                                     }
                                     if (error != 0) {
@@ -906,6 +921,32 @@ namespace ilPSP.LinSolvers.PARDISO {
 
         int m_MpiRank = -1;
 
+        int m_PeakmemoryFac = -1;
+        int m_PeakmemorySol = -1;
+        int m_PermanentMemoryFac = -1;
+
+        void SetMemoryConsumption() {
+            m_PeakmemoryFac = Math.Max(m_PardInt.m_parm[14], m_PeakmemoryFac);
+            m_PermanentMemoryFac = Math.Max(m_PardInt.m_parm[15], m_PermanentMemoryFac);
+            m_PeakmemorySol = Math.Max(m_PardInt.m_parm[16], m_PeakmemorySol);
+        }
+
+        /// <summary>
+        /// Used memory for factorization in MB
+        /// </summary>
+        /// <returns></returns>
+        public double UsedMemory() {
+            return m_PermanentMemoryFac/1024;
+        }
+
+        /// <summary>
+        /// Returns the Peak Memory in MB
+        /// </summary>
+        /// <returns></returns>
+        public int PeakMemory() {
+            return Convert.ToInt32(Math.Max(m_PeakmemoryFac, m_PeakmemorySol + m_PermanentMemoryFac)/1024);
+        }
+
         /// <summary>
         /// disposal of things cached by Pardiso
         /// </summary>
@@ -955,7 +996,6 @@ namespace ilPSP.LinSolvers.PARDISO {
                 Array.Clear(m_PardInt.m_parm, 0, m_PardInt.m_parm.Length);
                 Array.Clear(m_PardInt.m_pt, 0, m_PardInt.m_pt.Length);
             }
-
             m_PardisoMatrix.Dispose();
             m_PardisoMatrix = null;
             m_PardInt.m_PardisoInitialized = false;

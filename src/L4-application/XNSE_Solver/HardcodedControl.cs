@@ -524,7 +524,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
 
             double anglev = 10;
             double[] pos = new double[SpaceDim];
@@ -582,7 +582,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
@@ -816,7 +816,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;
 
-            C.Tags.Add("BlockSolver:MUMPS");
             C.Tags.Add("convection:" + C.PhysicalParameters.IncludeConvection);
 
             C.AdaptiveMeshRefinement = useAMR;
@@ -843,7 +842,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps=100 ,bool UseAMR=false, bool writeToDB=false, bool loadbalancing=true) {
+        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps=100 ,bool UseAMR=true, bool writeToDB=false, bool loadbalancing=true) {
             XNSE_Control C = new XNSE_Control();
 
             // Session Options
@@ -943,7 +942,7 @@ namespace BoSSS.Application.XNSE_Solver {
             const double muA = 1E-3; // Pa*s
             //const double muA = 1; // Pa*s
             double[] pos = new double[SpaceDim];
-            const double radius = 0.125;
+            const double radius = 0.5;
             const double Re = 700;
             double VeloMag = Re * muA / (2 * radius * rhoA);
             double M = VeloMag/(SpaceDim == 3 ? 1.0/3.0 : 2.0/3.0);
@@ -1027,6 +1026,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("Pressure_Outlet");
 
             // misc. solver options
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
             // ====================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.UseSchurBlockPrec = true;
@@ -1036,7 +1036,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 200;
             C.LinearSolver.TargetBlockSize = 10000;
@@ -1044,10 +1044,9 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
-            C.NonLinearSolver.MaxSolverIterations = 100;
+            C.NonLinearSolver.MaxSolverIterations = 5;
             C.NonLinearSolver.verbose = true;
 
-            C.Tags.Add("BlockSolver:MUMPS");
             C.Tags.Add("convection:" + C.PhysicalParameters.IncludeConvection);
 
             // AMR
