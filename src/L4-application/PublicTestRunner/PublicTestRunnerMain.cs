@@ -335,11 +335,12 @@ namespace PublicTestRunner {
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
 
-                        bool testAdded = false;
+                        //bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." + m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
-                            testAdded = true;
+                            //Console.WriteLine("Added: " + r.Last());
+                            //testAdded = true;
                         }
 
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null
@@ -348,12 +349,13 @@ namespace PublicTestRunner {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
 
                             if (dc != null) {
-                                if(ignore_tests_w_deps && testAdded) {
-                                    // supposed to ignore tests depending on files in the source code repo
-                                    r.RemoveAt(r.Count - 1);
-                                    l.RemoveAt(l.Count - 1);
-                                    continue; // skip this test
-                                }
+                                //Console.WriteLine("Added: " + r.Last() + " depends on " + dc.SomeFileNames[0]);
+                                //if(ignore_tests_w_deps && testAdded) {
+                                //    // supposed to ignore tests depending on files in the source code repo
+                                //    r.RemoveAt(r.Count - 1);
+                                //    l.RemoveAt(l.Count - 1);
+                                //    continue; // skip this test
+                                //}
 
                                 foreach (string someFile in dc.SomeFileNames) {
                                     s.AddRange(LocateFile(someFile));
@@ -683,6 +685,10 @@ namespace PublicTestRunner {
                             if(FilterAssembly(a, AssemblyFilter)) {
                                 var allTst4Assi = GetTestsInAssembly(a);
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
+                                        Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
+                                        break;
+                                    }
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
                                 }
                             }
@@ -702,6 +708,11 @@ namespace PublicTestRunner {
                                 var allTst4Assi = GetTestsInAssembly(a);
 
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
+                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
+                                        Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
+                                        break;
+                                    }
+
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
                                 }
                             }
