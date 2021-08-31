@@ -277,6 +277,11 @@ namespace ilPSP.Tracing {
         }
 
         /// <summary>
+        /// Hack to write <see cref="Info"/> also to cout.
+        /// </summary>
+        public bool InfoToConsole = false;
+
+        /// <summary>
         /// ctor: logs the 'enter' - message
         /// </summary>
         public FuncTrace() : base() {
@@ -371,6 +376,32 @@ namespace ilPSP.Tracing {
         public void Info(object o) {
             if (m_DoLogging)
                 m_Logger.Info(o);
+
+            if(InfoToConsole)
+                Console.WriteLine(o);
+        }
+
+
+        /// <summary>
+        /// (selective) error - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Error(object o) {
+            if (m_DoLogging)
+                m_Logger.Error(o);
+
+            Console.Error.WriteLine(o);
+        }
+
+        /// <summary>
+        /// (selective) Warning - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Warning(object o) {
+            if (m_DoLogging)
+                m_Logger.Warn(o);
+
+            Console.WriteLine(o);
         }
 
 

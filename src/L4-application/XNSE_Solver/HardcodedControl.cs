@@ -1043,7 +1043,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.ConvergenceCriterion = 1.1123E-6;
             C.NonLinearSolver.MaxSolverIterations = 5;
             C.NonLinearSolver.verbose = true;
 
