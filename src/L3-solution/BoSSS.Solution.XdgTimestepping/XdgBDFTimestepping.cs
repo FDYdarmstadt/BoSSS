@@ -1568,51 +1568,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                         tr.Info("Using linear solver.");
 
                         // build the saddle-point matrix
-                        //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
                         BlockMsrMatrix System, MaMa;
                         double[] RHS;
-
-
-
-                        //// testcode: remove:
-                        ////Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
-                        //GC.Collect();
-                        //double memB4 = tr.GetMemoryMB();
-                        //Console.WriteLine("Before Matrix assembly: " + memB4 + " MB");
-                        ////Console.WriteLine("snap1");
-                        ////Console.ReadKey();
-
-
-                        //Stopwatch stopwatch = new Stopwatch();
-                        //stopwatch.Start();
                         this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
-                        //RHS.ScaleV(-1);
-                        //stopwatch.Stop();
-
-                        //Console.WriteLine("Zeit: " + stopwatch.Elapsed.TotalSeconds + " sec");
-
-                        //{
-
-
-                        //    GC.Collect();
-                        //    double memAf = tr.GetMemoryMB();
-                        //    Console.WriteLine("After Matrix assembly: " + memAf + " MB, diff = " + (memAf - memB4) + " MB");
-                        //    long totSize = 0;
-                        //    totSize += RHS.Length * sizeof(double);
-                        //    System.GetMemoryInfo(out long sysAllocated, out _);
-
-                        //    totSize += sysAllocated;
-
-                        //    double totSizeMB = totSize / 1024.0 / 1024.0;
-
-                        //    Console.WriteLine("Total size of returned objects: " + totSizeMB + " MB");
-
-
-                        //    Tmeas.Memtrace.Flush();
-                        //    Console.WriteLine("Entering infinty loop");
-                        //    while(true) ;
-                        //}
-
+                        RHS.ScaleV(-1);
 
                         // update the multigrid operator
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
