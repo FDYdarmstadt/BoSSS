@@ -362,10 +362,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                                         // transform edgerule to volume rule
                                         specialRule = new QuadRule();
                                         specialRule.Nodes = specialRule_t.Nodes.GetVolumeNodeSet(mask.GridData, trf);
-                                        specialRule.Weights = specialRule_t.Weights; 
-                                        // scale accordingly!
-                                        double scale = Math.Sqrt(mask.GridData.iGeomCells.GetRefElement(i).Volume / mask.GridData.iGeomCells.GetCellVolume(i));
-                                        specialRule.Weights.Scale(scale);
+                                        specialRule.Weights = specialRule_t.Weights;                                       
+                                        // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
+                                        double scale = mask.GridData.iGeomCells.GetRefElement(i).Volume / mask.GridData.iGeomCells.GetCellVolume(i) * mask.GridData.iGeomEdges.SqrtGramian[iEdge]; 
+                                        specialRule.Weights.Scale(scale); 
                                     } else {
                                         throw new NotImplementedException();
                                     }

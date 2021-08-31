@@ -131,7 +131,12 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             foreach (var t in CoIncFaces[i]) {
                 if (t.iLevSet == iLevSet) {
                     int iEdge = grddat.CellToEdge(i, t.iFace);
-                    int trf = t.iFace;
+                    int trf;
+                    if (grddat.iGeomEdges.CellIndices[iEdge, 0] == i) {
+                        trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+                    } else {
+                        trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 1];
+                    }
                     return (iEdge, trf); // jetzt geht der Spass los!
                 }
             }
