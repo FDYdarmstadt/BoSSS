@@ -72,9 +72,9 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            InitMPI();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
-            throw new Exception("Remove me");
+            //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
+            //throw new Exception("Remove me");
 
             bool Evap = false;
             // not sure if this works always, idea is to determine on startup which solver should be run.
