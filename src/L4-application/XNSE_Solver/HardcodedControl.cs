@@ -1027,6 +1027,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // misc. solver options
             C.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            
+            
             // ====================
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.UseSchurBlockPrec = true;
@@ -1035,6 +1037,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1E-8;

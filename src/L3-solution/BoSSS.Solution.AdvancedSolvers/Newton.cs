@@ -235,7 +235,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //tr.InfoToConsole = true;
                 tr.Info($"Checking termination criterion: Iter {itc}, Current residual norm {norm_CurRes}, Initial Residual Norm {fnorminit}");
                 
-                if(ConvCrit > 0) {
+                 if(ConvCrit > 0) {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // **if** the convergence criterion is set by the user, we should aim for it
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

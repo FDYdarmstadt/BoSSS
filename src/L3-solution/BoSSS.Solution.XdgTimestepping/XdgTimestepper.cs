@@ -784,6 +784,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime))
+                throw new ApplicationException($"Before timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime})");
+
+
 
             double[] AvailTimesBefore;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
@@ -812,10 +816,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             double[] AvailTimesAfter;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
                 AvailTimesAfter = LsTrk.RegionsHistory.AvailabelIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
-                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt*1e-7, "Error in Level-Set tracker time");
+                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt * 1e-7, "Error in Level-Set tracker time");
             }
+             
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime + dt))
+                throw new ApplicationException($"After timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime + dt}), level-set handling is '{TimesteppingBase.Config_LevelSetHandling}'.");
+            
 
             JacobiParameterVars = null;
+            
             return success;
         }
 
