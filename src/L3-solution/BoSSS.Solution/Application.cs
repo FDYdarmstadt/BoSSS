@@ -1706,22 +1706,13 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Loads all fields in <see cref="m_IOFields"/> from the database
-        /// using the given <paramref name="sessionToLoad"/> at time-step
-        /// <paramref name="timestep"/>
+        /// using the given <see cref="AppControl.RestartInfo"/> (<see cref="Control"/>)
         /// </summary>
-        /// <param name="sessionToLoad">
-        /// The GUID of the session to be loaded
-        /// </param>
-        /// <param name="timestep">
-        /// The time-step within the session to be loaded. If negative, the
-        /// latest available time-step will be taken.
-        /// </param>
         /// <param name="time">
         /// On exit, contains the physical time represented by the time-step
         /// </param>
         /// <returns>
-        /// Returns the actual time-step loaded (which may not be known in
-        /// advance if <paramref name="timestep"/> is negative)
+        /// Returns the actual time-step number of the loaded time-step
         /// </returns>
         protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
@@ -2085,8 +2076,11 @@ namespace BoSSS.Solution {
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                    if (LsTrk != null)
+                    if(LsTrk != null) {
+                        if(LsTrk.Regions.Time != physTime)
+                            LsTrk.UpdateTracker(physTime);
                         LsTrk.PushStacks();
+                    }
                 }
 
                 // =========================================================
@@ -2594,6 +2588,10 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                                     //PostRestart(physTime, TimeStepNo);
+                    if(this.LsTrk != null) {
+                        if(this.LsTrk.Regions.Time != physTime)
+                            this.LsTrk.UpdateTracker(physTime);
+                    }
 
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
@@ -3296,6 +3294,11 @@ namespace BoSSS.Solution {
             }
 
             PostRestart(Time, TimestepNo);
+
+            if(this.LsTrk != null) {
+                if(this.LsTrk.Regions.Time != Time)
+                    this.LsTrk.UpdateTracker(Time);
+            }
 
             System.GC.Collect();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
