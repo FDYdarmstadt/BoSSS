@@ -498,7 +498,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             m_CurrentPhystime = phystime + dt;
-            
+
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
+                m_LsTrk.UpdateTracker(m_CurrentPhystime); // call is required to bring the internal time-stamp up-to-date;
+            }
+
             return success;
         }
 
