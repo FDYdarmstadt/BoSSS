@@ -2204,6 +2204,14 @@ namespace BoSSS.Solution {
                         physTime += dt;
 
 
+                        if(LsTrk != null) {
+                            if(LsTrk.Regions.Time != physTime) {
+                                // correct the level-set tracker time if some solver did not correctly updated it.
+                                LsTrk.UpdateTracker(physTime);
+                            }
+                        }
+
+
                         foreach (var l in PostprocessingModules) {
                             l.DriverTimestepPostProcessing(i, physTime);
                         }
