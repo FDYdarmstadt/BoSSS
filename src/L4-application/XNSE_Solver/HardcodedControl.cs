@@ -842,7 +842,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps=100 ,bool UseAMR=true, bool writeToDB=false, bool loadbalancing=true) {
+        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps = 100 ,bool UseAMR=true, bool writeToDB=false, bool loadbalancing=true) {
             XNSE_Control C = new XNSE_Control();
 
             // Session Options

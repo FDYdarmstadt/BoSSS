@@ -714,7 +714,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             ISpatialOperator abstractOperator) //
         {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
 
                 if (m_PrivateBalancingInfo == null)
                     throw new NotSupportedException();
