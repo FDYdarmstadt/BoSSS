@@ -301,6 +301,7 @@ namespace BoSSS.Application.XNSE_Solver {
             solveEnergy = control.solveKineticEnergyEquation;
 
             HeatTransport = control.ThermalParameters.IncludeConvection;
+            HeatSource = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.HeatSource)) || control.FieldOptions.Keys.Where(k => k.Contains(VariableNames.HeatSource)).Any();
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
             Buoyancy = control.ThermalParameters.alpha_A != 0.0 || control.ThermalParameters.alpha_B != 0.0;
@@ -361,6 +362,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool HeatTransport;
 
         /// <summary>
+        /// include volumetric heat source
+        /// </summary>
+        public bool HeatSource;
+
+        /// <summary>
         /// use upwind discretization
         /// </summary>
         public bool HeatUpwinding = false;
@@ -390,6 +396,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public bool isHeatTransport {
             get { return HeatTransport; }
+        }
+
+        public bool isHeatSource {
+            get { return HeatSource; }
         }
 
         public bool useUpwind {

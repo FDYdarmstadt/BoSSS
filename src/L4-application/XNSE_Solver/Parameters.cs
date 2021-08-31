@@ -765,5 +765,69 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
     }
+
+    /// <summary>
+    /// Heat source Parameter, note a few specials:
+    /// 1.  The sign of this heat source set in the controlfile is that of resultant source. 
+    ///     However here we need to project that field by factor -1. I.e. when looking at the field it is exactly opposite in sign to that speciified in the controlfile.
+    ///     This is due to the implementation, where the source term is brought to the left-hand-side of the  Heat Equation
+    ///     <see cref="Solution.XNSECommon.Operator.MultiPhaseSource"/>
+    /// </summary>
+    public class HeatSource : ParameterS {
+        int degree;
+
+        ScalarFunctionTimeDep initial;
+
+        string[] names;
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public override DelPartialParameterUpdate Update => ParameterUpdate;
+
+        public HeatSource(string species, ScalarFunctionTimeDep initial, int degree) {
+            this.degree = degree;
+
+            names = new string[1];
+            string source = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+            names[0] = source + "#" + species;
+            this.initial = initial;
+        }
+
+        public static HeatSource CreateFrom(string species, AppControl control, ScalarFunctionTimeDep sourceFunc) {
+            string source = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+            string sourceOfSpecies = source + "#" + species;            
+
+            int sourceDegree;
+            if (control.FieldOptions.TryGetValue(source, out FieldOpts opts)) {
+                sourceDegree = Math.Max(0, opts.Degree);
+            } else if (control.FieldOptions.TryGetValue("Velocity*", out FieldOpts velOpts)) {
+                sourceDegree = velOpts.Degree;
+            } else {
+                sourceDegree = 0;
+            }
+
+            return new HeatSource(species, sourceFunc, sourceDegree);
+        }
+
+        public override IList<string> ParameterNames => names;
+
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
+            DGField source = new SinglePhaseField(basis, names[0]);
+            source.Clear();
+            if (initial != null)
+                source.ProjectField(-1.0, initial.SetTime(0.0));
+
+            return new (string, DGField)[] { (names[0], source) };
+        }
+
+        public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            if (initial != null) {
+                DGField source = ParameterVarFields[names[0]];
+                source.Clear();
+                source.ProjectField(-1.0, initial.SetTime(time));
+            }
+        }
+    }
 }
 
