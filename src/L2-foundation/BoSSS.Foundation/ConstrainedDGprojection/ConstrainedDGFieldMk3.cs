@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-#define TEST
+//#define TEST
 
 using System;
 using System.Collections;
@@ -589,15 +589,19 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     throw new NotSupportedException("can only be called once");
                 this.solverAAT = matrix;
 
-                PARDISOSolver _solver = new PARDISOSolver();
-                this.solver = _solver;
-                _solver.SymmIndefPivot = true;
-                _solver.CacheFactorization = true;
-                _solver.Parallelism = IsLocal ? Parallelism.SEQ : Parallelism.OMP;
+                //PARDISOSolver _solver = new PARDISOSolver();
+                //this.solver = _solver;
+                //_solver.SymmIndefPivot = true;
+                //_solver.CacheFactorization = true;
+                //_solver.Parallelism = IsLocal ? Parallelism.SEQ : Parallelism.OMP;
+
+                long DOF = matrix.RowPartitioning.TotalLength;
+                var _solver = IsLocal ? SolverUtils.PatchSolverFactory() : SolverUtils.GlobalSolverFactory(DOF);
 
                 _solver.DefineMatrix(matrix);
-                if(_solver.MpiComm != this.comm)
-                    throw new ApplicationException();
+                this.solver = _solver;
+                //if(_solver. != this.comm)
+                //    throw new ApplicationException();
             }
 
 

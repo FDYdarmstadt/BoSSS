@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
+//#define TEST
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -566,6 +566,11 @@ namespace ilPSP.Tracing {
         
 
         /// <summary>
+        /// Hack to write <see cref="Info"/> also to cout.
+        /// </summary>
+        public bool InfoToConsole = false;
+
+        /// <summary>
         /// ctor: logs the 'enter' - message
         /// </summary>
         public FuncTrace() : base() {
@@ -629,7 +634,43 @@ namespace ilPSP.Tracing {
         /// </summary>
         public override void Dispose() {
             base.Dispose();
+
             
+        }
+
+        /// <summary>
+        /// (selective) Info - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Info(object o) {
+            if (base.DoLogging)
+                m_Logger.Info(o);
+
+            if(InfoToConsole)
+                Console.WriteLine(o);
+        }
+
+
+        /// <summary>
+        /// (selective) error - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Error(object o) {
+            if (base.DoLogging)
+                m_Logger.Error(o);
+
+            Console.Error.WriteLine(o);
+        }
+
+        /// <summary>
+        /// (selective) Warning - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Warning(object o) {
+            if (base.DoLogging)
+                m_Logger.Warn(o);
+
+            Console.WriteLine(o);
         }
 
      

@@ -2103,7 +2103,7 @@ namespace BoSSS.Solution {
 
                 // load balancing and adaptive mesh refinement
                 if (this.Control.AdaptiveMeshRefinement) {
-
+                    
                     // unprocessed initial value IO
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
@@ -2381,7 +2381,7 @@ namespace BoSSS.Solution {
                     BackupDataOnInit(oldGridData, this.LsTrk, loadbal, out tau);
                     //BackupData(oldGridData, this.LsTrk, loadbal, out tau);
                 else
-                    BackupData(oldGridData, this.LsTrk, loadbal, out tau);
+                    BackupData(oldGridData, this.LsTrk, physTime, loadbal, out tau);
 
                 // create new grid
                 // ===============
@@ -2522,7 +2522,7 @@ namespace BoSSS.Solution {
                         BackupDataOnInit(oldGridData, this.LsTrk, remshDat, out tau);
                         //BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                     else
-                        BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                        BackupData(oldGridData, this.LsTrk, physTime, remshDat, out tau);
                     
                     // save new grid to database
                     // ==========================
@@ -2626,7 +2626,7 @@ namespace BoSSS.Solution {
 
 
 
-        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk,
+        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, double physTime,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {
             if(oldLsTrk != null && !object.ReferenceEquals(oldGridData, oldLsTrk.GridDat))
                 throw new ApplicationException();
@@ -2639,7 +2639,7 @@ namespace BoSSS.Solution {
 
             // backup level-set tracker 
             if (this.LsTrk != null) {
-                loadbal.BackupTracker();
+                loadbal.BackupTracker(physTime);
             }
 
             // backup DG Fields
@@ -2667,9 +2667,8 @@ namespace BoSSS.Solution {
 
             // backup level-set tracker 
             if (this.LsTrk != null) {
-                loadbal.BackupTracker();
+                loadbal.BackupTracker(0.0);
             }
-            
         }
 
 

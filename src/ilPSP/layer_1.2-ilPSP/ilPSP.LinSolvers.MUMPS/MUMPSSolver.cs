@@ -74,7 +74,6 @@ namespace ilPSP.LinSolvers.MUMPS {
             private set;
         }
 
-
         /// <summary>
         /// 
         /// </summary>
@@ -266,10 +265,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                 csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
                 csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
 
-                
                 //Initialize MUMPS
                 mumps_par.par = 1; mumps_par.job = -1; mumps_par.comm_fortran = this.m_MPI_Comm.m1; mumps_par.sym = m_MumpsMatrix.Symmetric;
-
                 MUMPS_csharp.mumps_cs(ref mumps_par);
 
                 if (rank == 0) {
@@ -286,7 +283,7 @@ namespace ilPSP.LinSolvers.MUMPS {
 
                 // if solution vector should be distributed set 1, otherwise set to 0 for rhs
                 mumps_par.icntl[20] = 0;
-                
+
                 mumps_par.nz_loc = m_MumpsMatrix.nz_loc;
                 mumps_par.irn_loc = m_MumpsMatrix.irn_loc;
                 mumps_par.jcn_loc = m_MumpsMatrix.jrn_loc;
@@ -303,7 +300,7 @@ namespace ilPSP.LinSolvers.MUMPS {
                     // ICNTL(4) is the level of printing for error, warning, and diagnostic messages
                     mumps_par.icntl[3] = 0;
                 }
-                
+
                 // Call MUMPS
                 mumps_par.job = 1;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
@@ -377,13 +374,15 @@ namespace ilPSP.LinSolvers.MUMPS {
                 //if (rank != 0)
                 //mumps_par.irn = new int[] { };
                 //mumps_par.irn.SaveToTextFile("MUMPS_irn.txt");
+                //
                 mumps_par.job = -2;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
-                // }       
 
                 return true;
             }
         }
+
+
 
         /// <summary>
         /// Scatters solution vector from process 0 to other MPI processors.
@@ -490,37 +489,19 @@ namespace ilPSP.LinSolvers.MUMPS {
 
         }
 
-#region IDisposable Support
-        private bool disposedValue = false; // To detect redundant calls
-
-        protected virtual void Dispose(bool disposing) {
-            if (!disposedValue) {
-                if (disposing) {
-                    // TODO: dispose managed state (managed objects).
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
+        ~MUMPSSolver() {
+            this.Dispose();
         }
 
-
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~MUMPSSolver() {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
+        #region IDisposable Support
 
         // This code added to correctly implement the disposable pattern.
         public void Dispose() {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
+            m_MumpsMatrix = null;
+            m_OrgMatrix = null;
+            MUMPS_csharp = null;
+            GC.Collect();
         }
-#endregion
+        #endregion
     }
 }

@@ -348,15 +348,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
 
-
-            /*
-            // special hack: increment init
-            // ----------------------------
-
-            // saves first timesteps (actual timerstpe size dt) in  case of incrementInit
-            if (incrementTimesteps > 1 && increment == 1 && m_CurrentPhystime > 0.0)
-                PushIncrementStack();
-            */
         }
 
         internal void PopStack() {
@@ -431,64 +422,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-
-        /*
-        /// <summary>
-        /// saves the first necessary timesteps at the actual time level for a incremental initialization for higher BDF schemes 
-        /// </summary>
-        void PushIncrementStack() {
-
-            incrementHist++;
-            if (incrementHist == m_TSCchain[0].S - 1) {
-
-                // Copy increment history to the actual stack with timestepsize dt
-                // ---------------------------------------------------------------
-                for (int i = m_TSCchain[0].S; i > 1; i--) {
-                    // Solution-Stack
-                    m_Stack_u[i].Clear();
-                    m_Stack_u[i].Acc(1.0, m_Stack_u_incHist[m_TSCchain[0].S - i]);
-
-                    // mass-matrix stack
-                    if (m_Stack_MassMatrix_incHist != null)
-                        m_Stack_MassMatrix[i] = m_Stack_MassMatrix_incHist[m_TSCchain[0].S - i];
-
-                    //// cut-cell metrics
-                    //if (m_Stack_CutCellMetrics_incHist != null)
-                    //    m_Stack_CutCellMetrics[i] = m_Stack_CutCellMetrics_incHist[m_TSCchain[0].S - i];
-
-                    // get rid off the incrementHistory
-                    m_Stack_u_incHist = null;
-                    if (m_Stack_MassMatrix_incHist != null)
-                        m_Stack_MassMatrix_incHist = null;
-                    if (m_Stack_CutCellMetrics_incHist != null)
-                        m_Stack_CutCellMetrics_incHist = null;
-
-                }
-
-                // restore the actual timestepsize
-                m_CurrentDt *= incrementTimesteps;
-                incrementTimesteps = 1;
-
-                return;
-            }
-
-            // save history for the actual timestep size
-
-            // Solution-Stack
-            m_Stack_u_incHist[incrementHist].Clear();
-            m_Stack_u_incHist[incrementHist].Acc(1.0, m_Stack_u[0]);
-
-            // mass-matrix stack
-            if (m_Stack_MassMatrix_incHist != null)
-                m_Stack_MassMatrix_incHist[incrementHist] = m_Stack_MassMatrix[1];
-
-            //// cut-cell metrics
-            //if (m_Stack_CutCellMetrics_incHist != null)
-            //    m_Stack_CutCellMetrics_incHist[incrementHist] = m_Stack_CutCellMetrics[1];
-
-        }
-        */
-
         int m_IterationCounter = 0;
 
         bool initialized = false;
@@ -505,14 +438,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             using (new FuncTrace()) {
                 InitTimestepping(true);
 
-                /*
-                if (Timestepper_Init == TimeStepperInit.IncrementInit) {
-                    if (incrementTimesteps <= 1)
-                        throw new ArgumentOutOfRangeException("incrementInit needs a number of increment timesteps larger than 1");
-
-                    InitIncrementStack();
-                }
-                */
+               
 
                 initialized = true;
             }
@@ -788,7 +714,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence,
             ISpatialOperator abstractOperator) //
         {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
 
                 if (m_PrivateBalancingInfo == null)
                     throw new NotSupportedException();
@@ -826,15 +753,20 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_Stack_MassMatrix = new BlockMsrMatrix[m_PrivateBalancingInfo.m_Stack_MassMatrix.Length];
                 for (int i = 0; i < m_Stack_MassMatrix.Length; i++) {
                     if (m_PrivateBalancingInfo.m_Stack_MassMatrix[i]) {
-                        m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
 
-                        base.ComputeMassMatrixImpl(m_Stack_MassMatrix[i], LsTrk.RegionsHistory[1 - i].Time);
+                        if(i == 0 // most recent time-step: mass matrix for all circumstances
+                            || Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
+                            || Config_LevelSetHandling == LevelSetHandling.Coupled_Once) {
+                            // in general, only for moving interface (i.e. Coupled_*)
+                         
+                            tr.Info($"Restoring Mass Matrix after AMR or load-balancing for time-index {1 - i}, should be physical time {m_CurrentPhystime - m_CurrentDt * i}");
+                            m_Stack_MassMatrix[i] = new BlockMsrMatrix(this.CurrentStateMapping);
+                            base.ComputeMassMatrixImpl(m_Stack_MassMatrix[i], LsTrk.RegionsHistory[1 - i].Time);
+                        } else {
+                            // for Splitting, None: only mass matrix for most recent timestep
 
-                        /*
-                        m_LsTrk.GetXDGSpaceMetrics(base.Config_SpeciesToCompute, base.Config_CutCellQuadratureOrder, 1 - i)
-                            .MassMatrixFactory
-                            .AccMassMatrix(m_Stack_MassMatrix[i], CurrentStateMapping, _alpha: Config_MassScale);
-                        */
+                            m_Stack_MassMatrix[i] = m_Stack_MassMatrix[0];
+                        }
                     }
                 }
 
@@ -1125,7 +1057,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         // mass matrix for time derivative
                         m_Stack_MassMatrix[0] = new BlockMsrMatrix(CurrentStateMapping);
-                        //MassFact.AccMassMatrix(m_Stack_MassMatrix[0], CurrentStateMapping, _alpha: Config_MassScale);
                         base.ComputeMassMatrixImpl(m_Stack_MassMatrix[0], m_LsTrk.RegionsHistory.Current.Time);
                     }
 
@@ -1454,6 +1385,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 phystime += dt;
             }
 
+            
+
+
             return success;
         }
 
@@ -1715,14 +1649,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
 
-                        //ExtractSomeSamplepoints("samples");
-
-                    }
-
-                } else {
-                    // ++++++++++++++++++++++++++++++++++++
-                    // compute residual of actual solution 
-                    // ++++++++++++++++++++++++++++++++++++
+                    //ExtractSomeSamplepoints("samples");
+                    
+                }
+                linearSolver.Dispose();
+            } else {
+                // ++++++++++++++++++++++++++++++++++++
+                // compute residual of actual solution 
+                // ++++++++++++++++++++++++++++++++++++
 
 
                     double[] Affine;
@@ -1831,6 +1765,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
                 m_CurrentPhystime = phystime + dt;
+
+                if(Config_LevelSetHandling == LevelSetHandling.None) {
+                    m_LsTrk.UpdateTracker(m_CurrentPhystime); // call is required to bring the internal time-stamp up-to-date;
+                }
+
                 return success;
             }
         }
@@ -2126,6 +2065,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new ApplicationException("internal error");
             }
 
+
             // perform extrapolation:
             // If we use Agglomeration, the extrapolation is
             // also necessary for SinglePhaseFields, since we have no valid values in cells which are agglomerated.
@@ -2143,6 +2083,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             int oldVersion = m_LsTrk.VersionCnt;
             int oldPushCount = m_LsTrk.PushCount;
 
+            if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime))
+                throw new ApplicationException($"Before Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime}).");
+
+
 
             m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
 
@@ -2158,6 +2102,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if ((newPushCount - oldPushCount) != 0)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
 
+            if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime + dt))
+                throw new ApplicationException($"After Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime + dt}).");
+            
 
             //// new cut-cell metric
             //m_Stack_CutCellMetrics[0] = this.UpdateCutCellMetrics();

@@ -357,5 +357,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             set;
         }
+
+        public void Dispose() {
+            throw new NotImplementedException();
+        }
+
+        public double UsedMemory() {
+            throw new NotImplementedException();
+        }
     }
 }

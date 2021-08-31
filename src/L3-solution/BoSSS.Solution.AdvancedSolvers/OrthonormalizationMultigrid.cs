@@ -49,7 +49,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //    /// config cctor of <see cref="OrthonormalizationMultigrid"/>
         //    /// </summary>
         //    public myConfig() {
-        int MaxKrylovDim = int.MaxValue;
+        public int MaxKrylovDim = int.MaxValue;
         //    }
             /// <summary>
             /// No restriction and prolongation on coarsest grid
@@ -231,54 +231,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="X">input: solution approximation</param>
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
-            Debug.Assert(Res.Length == m_MgOperator.Mapping.LocalLength);
-            Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
-            Debug.Assert(B.Length == m_MgOperator.Mapping.LocalLength);
-            int L = Res.Length;
-            Array.Copy(B, Res, L);
-            OpMatrix.SpMV(-1.0, X, 1.0, Res);
-            //Res.AccV(1.0, B);
+            using (new FuncTrace()) {
+                Debug.Assert(Res.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(B.Length == m_MgOperator.Mapping.LocalLength);
+                int L = Res.Length;
+                Res.SetV(B);
+                //Array.Copy(B, Res, L);
+                OpMatrix.SpMV(-1.0, X, 1.0, Res);
+                //Res.AccV(1.0, B);
 
 
-            /*
-            int L = Res.Count;
+                /*
+                int L = Res.Count;
 
-            var OpMatrix_coarse = m_MgOperator.CoarserLevel.OperatorMatrix;
-            int Lc = OpMatrix_coarse._RowPartitioning.LocalLength;
+                var OpMatrix_coarse = m_MgOperator.CoarserLevel.OperatorMatrix;
+                int Lc = OpMatrix_coarse._RowPartitioning.LocalLength;
 
-            double[] Xc = new double[Lc];
-            double[] Bc = new double[Lc];
-            m_MgOperator.CoarserLevel.Restrict(X, Xc);
-            m_MgOperator.CoarserLevel.Restrict(B, Bc);
+                double[] Xc = new double[Lc];
+                double[] Bc = new double[Lc];
+                m_MgOperator.CoarserLevel.Restrict(X, Xc);
+                m_MgOperator.CoarserLevel.Restrict(B, Bc);
 
-            double[] Res_coarse = Bc; Bc = null;
-            OpMatrix_coarse.SpMV(-1.0, Xc, 1.0, Res_coarse);
+                double[] Res_coarse = Bc; Bc = null;
+                OpMatrix_coarse.SpMV(-1.0, Xc, 1.0, Res_coarse);
 
-            m_MgOperator.CoarserLevel.Restrict(Res, Res_coarse);
+                m_MgOperator.CoarserLevel.Restrict(Res, Res_coarse);
 
-            double[] Res1 = new double[L];// Res.ToArray();
-            m_MgOperator.CoarserLevel.Prolongate(-1.0, Res1, 0.0, Res_coarse);
+                double[] Res1 = new double[L];// Res.ToArray();
+                m_MgOperator.CoarserLevel.Prolongate(-1.0, Res1, 0.0, Res_coarse);
 
-            double alpha = ParallelBlas.MPI_ddot(Res, Res1) / Res1.L2NormPow2().MPISum();
-
-
-
-            double[] RemRes = Res.ToArray();
-            RemRes.AccV(-alpha, Res1);
-
-            Res1.ScaleV(alpha);
+                double alpha = ParallelBlas.MPI_ddot(Res, Res1) / Res1.L2NormPow2().MPISum();
 
 
-            int iLevel = m_MgOperator.LevelIndex;
-            Console.Write("    ");
-            for(int iLv = 0; iLv <= iLevel; iLv++) {
-                Console.Write("  ");
+
+                double[] RemRes = Res.ToArray();
+                RemRes.AccV(-alpha, Res1);
+
+                Res1.ScaleV(alpha);
+
+
+                int iLevel = m_MgOperator.LevelIndex;
+                Console.Write("    ");
+                for(int iLv = 0; iLv <= iLevel; iLv++) {
+                    Console.Write("  ");
+                }
+
+                Console.WriteLine(iLevel + " " + Res.L2Norm().ToString("0.####E-00") + "   " + RemRes.L2Norm().ToString("0.####E-00") + "   " + Res1.L2Norm().ToString("0.####E-00") + "   " + GenericBlas.InnerProd(RemRes, Res1));
+
+                //viz.PlotVectors(new double[][] { Res.ToArray(), Res1, Res_coarse, RemRes }, new[] { "Residual", "ProloResi", "CarseResi", "RestResi" });
+                */
             }
-
-            Console.WriteLine(iLevel + " " + Res.L2Norm().ToString("0.####E-00") + "   " + RemRes.L2Norm().ToString("0.####E-00") + "   " + Res1.L2Norm().ToString("0.####E-00") + "   " + GenericBlas.InnerProd(RemRes, Res1));
-
-            //viz.PlotVectors(new double[][] { Res.ToArray(), Res1, Res_coarse, RemRes }, new[] { "Residual", "ProloResi", "CarseResi", "RestResi" });
-            */
         }
 
 
@@ -324,17 +327,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //double NormAfter = Mxx.MPI_L2Norm();
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
                     double gamma = 0;
-                    if (Mxx.MPI_L2NormPow2(this.OpMatrix.MPI_Comm)!=0) // prohibits div by 0, if we got zero solution  
-                        gamma = 1.0 / Mxx.MPI_L2Norm();
-                    //double gamma = 1.0 / BLAS.dnrm2(L, Mxx, 1).Pow2().MPISum().Sqrt();
+                    double NewMxxNorm = Mxx.MPI_L2Norm();
+                    if (NewMxxNorm != 0) // prohibits div by 0, if we got zero solution  
+                        gamma = 1.0 / NewMxxNorm;
                     BLAS.dscal(L, gamma, Mxx, 1);
                     BLAS.dscal(L, gamma, X, 1);
 
-                    if (Mxx.MPI_L2Norm() / NormMxx > 1E-8) {
+                    if (1 / NormMxx > 1E-8) {
                         break;
                     } else {
                         Console.WriteLine("severe cancellation may have occurred. Doing Re-orthonormalization");
                     }
+
                 }
 
 
@@ -596,6 +600,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Converged = true;
                         break;
                     }
+
+                    //if (SolHistory.Count > MaxKrylovDim) {
+                    //    int Length = 5;
+                    //    var tmpSol = SolHistory.GetRange(MaxKrylovDim - Length - 1, Length).CloneNonshallow();
+                    //    var tmpMxx = MxxHistory.GetRange(MaxKrylovDim - Length - 1, Length).CloneNonshallow();
+                    //    var tmpAlpha = Alphas.GetRange(MaxKrylovDim - Length - 1, Length);
+                    //    var tmptmpAlpha = new List<(double, double, int)>();
+                    //    foreach (var tuple in tmpAlpha) {
+                    //        tmptmpAlpha.Add((tuple.Item1, tuple.Item2, tuple.Item3));
+                    //    }
+
+                    //    SolHistory.Clear();
+                    //    MxxHistory.Clear();
+                    //    Alphas.Clear();
+
+                    //    SolHistory.AddRange(tmpSol);
+                    //    MxxHistory.AddRange(tmpMxx);
+                    //    Alphas.AddRange(tmptmpAlpha);
+                    //}
 
                     // pre-smoother
                     // ------------
@@ -891,6 +914,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+        bool m_verbose = true;
+
+        public double UsedMemory() {
+            double Memory = 0.0;
+            Memory += MemoryOfMultigrid();
+            Memory += MemoryOfSmoother();
+            return Memory;
+        }
+
+        public double MemoryOfSmoother() {
+            double Memory = 0;
+            if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
+                Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
+            Memory += PreSmoother.UsedMemory();
+            Memory += PostSmoother.UsedMemory();
+            return Memory;
+        }
+
+        public double MemoryOfMultigrid() {
+            double Memory = 0;
+            if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
+                Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
+            int SizeSol = this.SolHistory.Count() * this.SolHistory[0].Length * sizeof(double);
+            int SizeMxx = this.MxxHistory.Count() * this.MxxHistory[0].Length * sizeof(double);
+            int SizeAlpha = this.Alphas.Count() * (sizeof(double)*2+sizeof(int));
+            Memory += (double)(SizeSol + SizeMxx + SizeAlpha) / (1024.0 * 1024.0);
+            return Memory;
+        }
+
+        public void Dispose() {
+            if (m_verbose && this.m_MgOperator.LevelIndex == 0) {
+                Console.WriteLine($"OrthoMG - total memory: {UsedMemory()} MB");
+                Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid()} MB");
+                Console.WriteLine($"OrthoMG - smoother memory: {MemoryOfSmoother()} MB");
+            }
+            if(this.CoarserLevelSolver != null)
+                this.CoarserLevelSolver.Dispose();
+            this.SolHistory.Clear();
+            this.MxxHistory.Clear();
+            this.Alphas.Clear();
+            this.SolHistory = null;
+            this.MxxHistory = null;
+            this.Alphas = null;
+
+            this.PreSmoother.Dispose();
+            this.PostSmoother.Dispose();
+            this.PreSmoother = null;
+            this.PostSmoother = null;
+            this.CoarserLevelSolver = null;
         }
     }
 }

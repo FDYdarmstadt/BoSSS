@@ -336,7 +336,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="newGrid"></param>
         /// <param name="old2NewGrid"></param>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 if (this.Control.AdaptiveMeshRefinement) {
 

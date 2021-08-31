@@ -131,6 +131,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
+
+
         /// <summary>
         /// ~
         /// </summary>
@@ -231,12 +233,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        public void Dispose() {
+            throw new NotImplementedException();
+        }
+
         public object Clone() {
             var clone = new BlockJacobi();
             clone.IterationCallback = this.IterationCallback;
             clone.omega = this.omega;
             clone.NoOfIterations = this.NoOfIterations;
             return clone;
+        }
+
+        public double UsedMemory() {
+            throw new NotImplementedException();
         }
     }
 }

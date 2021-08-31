@@ -87,8 +87,9 @@ namespace BoSSS.Application.BoSSSpad {
          *          "#SBATCH -C avx512",
          *          "#SBATCH --mem-per-cpu=8000"
          * ]
-         * ```` 
+         * ```
          * 
+
         /// <summary>
         /// The memory (in MB) that is reserved for every core
         /// </summary>
@@ -108,7 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
             set { m_NumberOfNodes = value;  }
         }
         */
-        
+
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
