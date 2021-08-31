@@ -353,15 +353,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_Iter++;
         }
 
+        /// <summary>
+        /// Called upon each iteration
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose() {
-            throw new NotImplementedException();
+            if(lowSolver != null) {
+                lowSolver.Dispose();
+                lowSolver = null;
+            }
+            if(hiSolver != null) {
+                hiSolver.Dispose();
+                hiSolver = null;
+            }
+
+
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public double UsedMemory() {
             throw new NotImplementedException();
         }
