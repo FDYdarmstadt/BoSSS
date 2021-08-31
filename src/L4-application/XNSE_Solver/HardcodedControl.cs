@@ -55,6 +55,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int degree = 2,
             double dt = 2e-4,
             double elipsDelta = 0.1,
+            int resolution = 54,
             int NoOfTs = 100000) {
 
 
@@ -69,7 +70,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Multiphase Droplet";
             C.Tags.Add("oscillating");
-            C.Tags.Add("fourier");
 
             // DG degrees
             // ==========
@@ -83,8 +83,8 @@ namespace BoSSS.Application.XNSE_Solver {
             const bool xPeriodic = false;
             const double VelXBase = 0.0;
 
-            int xkelem = 54;
-            int ykelem = 54;
+            int xkelem = resolution;
+            int ykelem = resolution;
             double xSize = -4.5 * BaseSize;
             double ySize = -4.5 * BaseSize;
 
@@ -92,8 +92,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.GridFunc = delegate {
-                double[] Xnodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, 55);
-                double[] Ynodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, 55);
+                double[] Xnodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, xkelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, ykelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
                 grd.EdgeTagNames.Add(1, "wall_lower");
                 grd.EdgeTagNames.Add(2, "wall_upper");
@@ -194,15 +194,12 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²     
             */
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             // misc. solver options
             // ====================
 
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-
-            //C.Solver_ConvergenceCriterion = 1.0e-6;
             C.LevelSet_ConvergenceCriterion = 1.0e-6;
 
 
@@ -240,10 +237,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
             C.NoOfTimesteps = NoOfTs;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 0;
 
             // haben fertig...
             // ===============
@@ -342,8 +344,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// See publication, Section 6.3:
-        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+        /// See:
+        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017,
+        /// section 6.3.
         /// </summary>
         public static XNSE_Control TaylorCouette(string _DbPath = null, int k = 3, int sizeFactor = 4) {
             XNSE_Control C = new XNSE_Control();

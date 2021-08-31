@@ -592,7 +592,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullMask = new BlockMask(fullSel, ExtRows);
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
 
-                        
+
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,

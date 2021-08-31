@@ -216,15 +216,20 @@ namespace ilPSP.Tracing {
             }
         }
 
+        /// <summary>
+        /// Must be initialized to write memory-tracing
+        /// </summary>
         public static TextWriter Memtrace;
+
         public static int Memtrace_lineCount = 0;
+        
         static long PreviousLineMem = 0;
 
 
         /// <summary>
         /// Very expensive instrumentation option, slows down by a factor of two to three!!!
         /// </summary>
-        public static bool LogPrivateMem = true;
+        public static bool LogPrivateMem = false;
 
         /// <summary>
         /// current process to trace memory
@@ -241,8 +246,26 @@ namespace ilPSP.Tracing {
                 // almost no overhead, does not include un-managed memory.
                 long virt = GC.GetTotalMemory(false);
                 return virt;
+                //var p = Process.GetCurrentProcess();
+                //return p.WorkingSet64;
             }
 
+        }
+
+        /// <summary>
+        /// Currently allocated memory in bytes;
+        /// </summary>
+        /// <returns></returns>
+        public long GetMemory() {
+            return GetPrivateMemory();
+        }
+
+        /// <summary>
+        /// Currently allocated memory Megabytes
+        /// </summary>
+        /// <returns></returns>
+        public double GetMemoryMB() {
+            return (double)GetPrivateMemory() /(1024.0 * 1024.0);
         }
                        
 
@@ -494,7 +517,7 @@ namespace ilPSP.Tracing {
                 Memtrace.Write("\t");
                 Memtrace.Write(WorkingSet);
                 long diff = WorkingSet - PreviousLineMem;
-                PreviousLineMem = WorkingSet_onEntry;
+                PreviousLineMem = WorkingSet;
                 Memtrace.Write("\t");
                 Memtrace.Write($"{Math.Round((double)WorkingSet / (1024.0 * 1024.0))}");
                 Memtrace.Write("\t");

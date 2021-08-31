@@ -284,7 +284,6 @@ namespace BoSSS.Solution.LevelSetTools {
     public class ContinuityProjectionCDG : IContinuityProjection {
 
         public ContinuityProjectionCDG(Basis myBasis) {
-            throw new Exception("fucking remove me");
             m_myBasis = myBasis;
         }
         Basis m_myBasis;
@@ -302,7 +301,6 @@ namespace BoSSS.Solution.LevelSetTools {
         }
         
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain) {
-            throw new Exception("fucking remove me");
             if(Domain.NoOfItemsLocally.MPISum() > 0) {
                 var p = Update(Domain);
                 p.ProjectDGField(DGLevelSet);

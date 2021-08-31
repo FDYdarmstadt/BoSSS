@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ilPSP.Tracing;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -111,88 +112,88 @@ namespace BoSSS.Foundation {
         /// in order to allocate operator storage.
         /// </summary>
         public static void InvokeParameterUpdate(this ISpatialOperator op, double time, DGField[] __DomainFields, DGField[] __ParameterFields) {
+            using(new FuncTrace()) {
+                if(!op.IsCommitted)
+                    throw new NotSupportedException("not allowed before commit.");
+                if(__DomainFields.Length != op.DomainVar.Count)
+                    throw new ArgumentException("Mismatch in number of domain variables.");
+                if(__ParameterFields.Length != op.ParameterVar.Count)
+                    throw new ArgumentException("Mismatch in number of parameter variables.");
 
-            if (!op.IsCommitted)
-                throw new NotSupportedException("not allowed before commit.");
-            if (__DomainFields.Length != op.DomainVar.Count)
-                throw new ArgumentException("Mismatch in number of domain variables.");
-            if (__ParameterFields.Length != op.ParameterVar.Count)
-                throw new ArgumentException("Mismatch in number of parameter variables.");
+                int NoOfParams = op.ParameterVar.Count;
+                DGField[] ret = new DGField[NoOfParams];
 
-            int NoOfParams = op.ParameterVar.Count;
-            DGField[] ret = new DGField[NoOfParams];
+                var DomainVarsDict = new Dictionary<string, DGField>();
+                for(int iVar = 0; iVar < __DomainFields.Length; iVar++) {
+                    DomainVarsDict.Add(op.DomainVar[iVar], __DomainFields[iVar]);
+                }
 
-            var DomainVarsDict = new Dictionary<string, DGField>();
-            for (int iVar = 0; iVar < __DomainFields.Length; iVar++) {
-                DomainVarsDict.Add(op.DomainVar[iVar], __DomainFields[iVar]);
-            }
+                var ParameterVarsDict = new Dictionary<string, DGField>();
+                for(int iVar = 0; iVar < __ParameterFields.Length; iVar++) {
+                    ParameterVarsDict.Add(op.ParameterVar[iVar], __ParameterFields[iVar]);
+                }
 
-            var ParameterVarsDict = new Dictionary<string, DGField>();
-            for (int iVar = 0; iVar < __ParameterFields.Length; iVar++) {
-                ParameterVarsDict.Add(op.ParameterVar[iVar], __ParameterFields[iVar]);
-            }
+                // invoke update functions in the operator
+                foreach(var PartialParameterUpdate in op.ParameterUpdates) {
+                    PartialParameterUpdate(time, DomainVarsDict, ParameterVarsDict);
+                }
 
-            // invoke update functions in the operator
-            foreach (var PartialParameterUpdate in op.ParameterUpdates) {
-                PartialParameterUpdate(time, DomainVarsDict, ParameterVarsDict);
-            }
+                // invoke update functions in the equation components
+                bool[] ParameterIsUpdated = new bool[NoOfParams]; // for the equation components, we mark parameters that are already updated, to avoid doing the update multiple times
 
-            // invoke update functions in the equation components
-            bool[] ParameterIsUpdated = new bool[NoOfParams]; // for the equation components, we mark parameters that are already updated, to avoid doing the update multiple times
+                bool ComponentUpdateUseful(IParameterHandling _ph, out DGField[] _ph_args, out DGField[] _ph_params, out int[] targIdx) {
+                    var phParams = _ph.ParameterOrdering;
+                    targIdx = new int[phParams != null ? phParams.Count : 0];
 
-            bool ComponentUpdateUseful(IParameterHandling _ph, out DGField[] _ph_args, out DGField[] _ph_params, out int[] targIdx) {
-                var phParams = _ph.ParameterOrdering;
-                targIdx = new int[phParams != null ? phParams.Count : 0];
+                    _ph_params = new DGField[phParams != null ? phParams.Count : 0];
+                    bool useful = false;
+                    if(_ph_params.Length > 0) {
+                        int c = 0;
+                        foreach(string phParamName in phParams) {
+                            int idx = op.ParameterVar.IndexOf(phParamName);
+                            if(idx < 0)
+                                throw new ApplicationException("should not happen if operator is committed and verified");
+                            _ph_params[c] = ParameterVarsDict[phParamName];
+                            targIdx[c] = idx;
 
-                _ph_params = new DGField[phParams != null ? phParams.Count : 0];
-                bool useful = false;
-                if (_ph_params.Length > 0) {
-                    int c = 0;
-                    foreach (string phParamName in phParams) {
-                        int idx = op.ParameterVar.IndexOf(phParamName);
-                        if (idx < 0)
-                            throw new ApplicationException("should not happen if operator is committed and verified");
-                        _ph_params[c] = ParameterVarsDict[phParamName];
-                        targIdx[c] = idx;
+                            if(ParameterIsUpdated[idx] == false) {
+                                useful = true;
+                            }
 
-                        if (ParameterIsUpdated[idx] == false) {
-                            useful = true;
+                            if(ret[idx] == null)
+                                useful = true; // some parameter has not been allocated yet
+                            c++;
                         }
-
-                        if (ret[idx] == null)
-                            useful = true; // some parameter has not been allocated yet
-                        c++;
                     }
+
+                    var phArgs = _ph.ArgumentOrdering;
+                    _ph_args = new DGField[phArgs != null ? phArgs.Count : 0];
+                    if(_ph_args.Length > 0) {
+                        int c = 0;
+                        foreach(string phArgName in phArgs) {
+                            _ph_args[c] = DomainVarsDict[phArgName];
+                            c++;
+                        }
+                    }
+                    return useful;
                 }
 
-                var phArgs = _ph.ArgumentOrdering;
-                _ph_args = new DGField[phArgs != null ? phArgs.Count : 0];
-                if (_ph_args.Length > 0) {
-                    int c = 0;
-                    foreach (string phArgName in phArgs) {
-                        _ph_args[c] = DomainVarsDict[phArgName];
-                        c++;
-                    }
-                }
-                return useful;
-            }
 
+                foreach(string codName in op.CodomainVar) {
+                    foreach(IEquationComponent comp in op.EquationComponents[codName]) {
+                        if(comp is IParameterHandling ph) {
+                            if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields, out int[] targIdx)) {
+                                ph.MyParameterUpdate(ph_argFields, ph_paramFields);
 
-            foreach (string codName in op.CodomainVar) {
-                foreach (IEquationComponent comp in op.EquationComponents[codName]) {
-                    if (comp is IParameterHandling ph) {
-                        if(ComponentUpdateUseful(ph, out var ph_argFields, out var ph_paramFields, out int[] targIdx)) {
-                            ph.MyParameterUpdate(ph_argFields, ph_paramFields);
-
-                            for(int i = 0; i < ph_paramFields.Length; i++) {
-                                if (ph_paramFields[i] != null) // hack: if the 'MyParameterUpdate' sets some entry to null, it signals that it did not updated the parameter variable
-                                    ParameterIsUpdated[targIdx[i]] = true; 
+                                for(int i = 0; i < ph_paramFields.Length; i++) {
+                                    if(ph_paramFields[i] != null) // hack: if the 'MyParameterUpdate' sets some entry to null, it signals that it did not updated the parameter variable
+                                        ParameterIsUpdated[targIdx[i]] = true;
+                                }
                             }
                         }
                     }
                 }
             }
         }
-
     }
 }

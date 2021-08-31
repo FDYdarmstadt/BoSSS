@@ -97,11 +97,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 bool argsParseSuccess;
                 argsParseSuccess = parser.ParseArguments(args, opt);
 
-                if (!argsParseSuccess) {
+                if(!argsParseSuccess) {
                     System.Environment.Exit(-1);
                 }
 
-                if (opt.ControlfilePath != null) {
+                if(opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
 
@@ -120,20 +120,21 @@ namespace BoSSS.Application.XNSE_Solver {
                     return p;
                 });
             } else {
-                using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.csv")) {
-                    DateTime hello = DateTime.Now;
+                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
+                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
+                    //DateTime hello = DateTime.Now;
                     XNSE._Main(args, false, delegate () {
                         var p = new XNSE();
                         return p;
                     });
-                    DateTime fino = DateTime.Now;
-                    Console.WriteLine("Runtime totalo " + (fino - hello));
+                    //DateTime fino = DateTime.Now;
+                    //Console.WriteLine("Runtime totalo " + (fino - hello));
 
-                    Tmeas.Memtrace.Flush();
-                    Tmeas.Memtrace.Close();
-                }
+                    //Tmeas.Memtrace.Flush();
+                    //Tmeas.Memtrace.Close();
+                //}
             }
-            
+
         }
     }
 

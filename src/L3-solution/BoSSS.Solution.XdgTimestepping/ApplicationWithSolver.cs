@@ -388,6 +388,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <returns></returns>
         private int[] GetDesiredRefinementLevels() {
 
+            if(Control.AdaptiveMeshRefinement == true)
+                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0)
+                    throw new ArgumentException("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+
             int J = this.GridData.CellPartitioning.LocalLength;
             int[] levelChanges = new int[J];
 
@@ -419,7 +423,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
 
         /// <summary>
-        /// <see cref="Control.AppControl.AMRLevelIndicator"/>
+        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
         /// </summary>
         public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
             get {

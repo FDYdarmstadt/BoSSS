@@ -34,6 +34,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using BoSSS.Solution.Gnuplot;
 using System.IO;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -998,7 +999,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
         internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
                 // -----------------------------------------------------------
@@ -1142,6 +1143,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
+
+
+
                 // clear operator matrix (clearing and re-alloc are pretty equal, i.e. 'BlockMsrMatrix.Clear()' just releases all internal memory)
                 BlockMsrMatrix OpMatrix;
                 if(Linearization)
@@ -1149,14 +1153,60 @@ namespace BoSSS.Solution.XdgTimestepping {
                 else
                     OpMatrix = null;
 
+                /*
+                void FillMatrixWithRandomShit(BlockMsrMatrix OpMtx) {
+                    Random rnd = new Random();
+                    double[] buf = 10000.ForLoop(i => rnd.NextDouble());
+
+                    int c = 0;
+                    int J = this.m_LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                    var bs = CurrentStateMapping.BasisS;
+                    for(int row_j = 0; row_j < J; row_j++) {
+                        this.m_LsTrk.GridDat.GetCellNeighbours(row_j, GetCellNeighbours_Mode.ViaEdges, out int[] Neighs, out _);
+                        row_j.AddToArray(ref Neighs);
+
+                        foreach(int col_j in Neighs) {
+                            for(int rowVar = 0; rowVar < bs.Count; rowVar++) {
+                                for(int colVar = 0; colVar < bs.Count; colVar++) {
+                                    int N = bs[rowVar].GetLength(row_j);
+                                    int M = bs[colVar].GetLength(col_j);
+
+                                    for(int n = 0; n < N; n++) {
+                                        for(int m = 0; m < M; m++) {
+                                            long iRow = CurrentStateMapping.GlobalUniqueCoordinateIndex(rowVar, row_j, n);
+                                            long iCol = CurrentStateMapping.GlobalUniqueCoordinateIndex(colVar, col_j, m);
+
+                                            OpMtx[iRow, iCol] = buf[c];
+                                            c++;
+                                            if(c >= buf.Length)
+                                                c = 0;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+
+                if(OpMatrix != null) {
+                    FillMatrixWithRandomShit(OpMatrix);
+                }
+                //*/
+
                 // clear affine part
                 double[] OpAffine = new double[CurrentStateMapping.LocalLength];
+
+
                 
                 // assemble matrix & affine part
                 Debug.Assert(OpMatrix == null || OpMatrix.InfNorm() == 0);
                 Debug.Assert(OpAffine.L2Norm() == 0);
                 Debug.Assert(object.ReferenceEquals(this.m_CurrentAgglomeration.Tracker, this.m_LsTrk));
                 this.ComputeOperatorMatrix(OpMatrix, OpAffine, CurrentStateMapping, locCurSt, base.GetAgglomeratedLengthScales(), m_CurrentPhystime + m_CurrentDt, 1);
+
+                
+
 
                 // assemble system
                 // ---------------
@@ -1587,9 +1637,47 @@ namespace BoSSS.Solution.XdgTimestepping {
                         //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
                         BlockMsrMatrix System, MaMa;
                         double[] RHS;
-                        this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
-                        RHS.ScaleV(-1);
 
+
+
+                        //// testcode: remove:
+                        ////Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
+                        //GC.Collect();
+                        //double memB4 = tr.GetMemoryMB();
+                        //Console.WriteLine("Before Matrix assembly: " + memB4 + " MB");
+                        ////Console.WriteLine("snap1");
+                        ////Console.ReadKey();
+
+
+                        //Stopwatch stopwatch = new Stopwatch();
+                        //stopwatch.Start();
+                        this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
+                        //RHS.ScaleV(-1);
+                        //stopwatch.Stop();
+
+                        //Console.WriteLine("Zeit: " + stopwatch.Elapsed.TotalSeconds + " sec");
+
+                        //{
+
+
+                        //    GC.Collect();
+                        //    double memAf = tr.GetMemoryMB();
+                        //    Console.WriteLine("After Matrix assembly: " + memAf + " MB, diff = " + (memAf - memB4) + " MB");
+                        //    long totSize = 0;
+                        //    totSize += RHS.Length * sizeof(double);
+                        //    System.GetMemoryInfo(out long sysAllocated, out _);
+
+                        //    totSize += sysAllocated;
+
+                        //    double totSizeMB = totSize / 1024.0 / 1024.0;
+
+                        //    Console.WriteLine("Total size of returned objects: " + totSizeMB + " MB");
+
+
+                        //    Tmeas.Memtrace.Flush();
+                        //    Console.WriteLine("Entering infinty loop");
+                        //    while(true) ;
+                        //}
 
 
                         // update the multigrid operator
