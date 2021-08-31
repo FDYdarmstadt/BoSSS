@@ -933,11 +933,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
-        /// Used memory for factorization in MB
+        /// Used memory for factorization in bates
         /// </summary>
         /// <returns></returns>
-        public double UsedMemory() {
-            return m_PermanentMemoryFac/1024;
+        public long UsedMemory() {
+            return m_PermanentMemoryFac*1024;
         }
 
         /// <summary>

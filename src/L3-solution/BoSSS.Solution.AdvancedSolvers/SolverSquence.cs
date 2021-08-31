@@ -224,7 +224,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public double UsedMemory() {
+        public long UsedMemory() {
             throw new NotImplementedException();
         }
     }

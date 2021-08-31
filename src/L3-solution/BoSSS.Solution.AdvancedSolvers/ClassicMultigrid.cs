@@ -354,7 +354,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             OpMatrix = null;
         }
 
-        public double UsedMemory() {
+        public long UsedMemory() {
             throw new NotImplementedException();
         }
     }

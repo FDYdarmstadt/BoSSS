@@ -380,8 +380,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// 
         /// </summary>
-        public double UsedMemory() {
-            throw new NotImplementedException();
+        public long UsedMemory() {
+            long r = 0;
+
+            foreach(var mda in this.HighOrderBlocks_LU) {
+                if(mda != null) {
+                    r += mda.Length * sizeof(double);
+                }
+            }
+
+            foreach(var ia in this.HighOrderBlocks_LUpivots) {
+                if(ia != null) {
+                    r += ia.Length * sizeof(int);
+                }
+            }
+
+
+            return r;
         }
     }
 }

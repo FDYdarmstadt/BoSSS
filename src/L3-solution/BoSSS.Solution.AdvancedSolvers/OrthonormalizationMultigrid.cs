@@ -918,15 +918,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool m_verbose = true;
 
-        public double UsedMemory() {
-            double Memory = 0.0;
+        public long UsedMemory() {
+            long Memory = 0;
             Memory += MemoryOfMultigrid();
             Memory += MemoryOfSmoother();
             return Memory;
         }
 
-        public double MemoryOfSmoother() {
-            double Memory = 0;
+        public long MemoryOfSmoother() {
+            long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
             Memory += PreSmoother.UsedMemory();
@@ -934,14 +934,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Memory;
         }
 
-        public double MemoryOfMultigrid() {
-            double Memory = 0;
+        public long MemoryOfMultigrid() {
+            long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
             int SizeSol = this.SolHistory.Count() * this.SolHistory[0].Length * sizeof(double);
             int SizeMxx = this.MxxHistory.Count() * this.MxxHistory[0].Length * sizeof(double);
             int SizeAlpha = this.Alphas.Count() * (sizeof(double)*2+sizeof(int));
-            Memory += (double)(SizeSol + SizeMxx + SizeAlpha) / (1024.0 * 1024.0);
+            Memory += (SizeSol + SizeMxx + SizeAlpha);
             return Memory;
         }
 

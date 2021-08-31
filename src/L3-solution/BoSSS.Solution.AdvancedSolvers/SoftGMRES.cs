@@ -417,7 +417,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             this.Precond.Dispose();
         }
 
-        public double UsedMemory() {
+        public long UsedMemory() {
             throw new NotImplementedException();
         }
     }

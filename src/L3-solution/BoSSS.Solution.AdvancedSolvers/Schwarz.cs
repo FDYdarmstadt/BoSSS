@@ -976,12 +976,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Forget any factorization stored for blocks.
         /// </summary>
         private void DisposeBlockSolver() {
-            if (this.blockSolvers == null || this.blockSolvers.Count() <= 0)
+            if(this.blockSolvers == null || this.blockSolvers.Count() <= 0)
                 return;
             int mempeak = -1;
-            foreach (var b in this.blockSolvers) {
-                mempeak = Math.Max((b as PARDISOSolver).PeakMemory(),mempeak);
-                if(b!=null) b.Dispose();
+            foreach(var b in this.blockSolvers) {
+                mempeak = Math.Max((b as PARDISOSolver).PeakMemory(), mempeak);
+                if(b != null) b.Dispose();
             }
             Console.WriteLine($"peak memory: {mempeak} MB");
         }
@@ -1273,14 +1273,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.BMfullBlocks = null;
         }
 
-        public double UsedMemory() {
-            double LScaling = this.SolutionScaling.Length * sizeof(double);
-            double MemoryOfBlocks = UsedMem;
-            double MemoryOfFac = 0.0;
+        public long UsedMemory() {
+            long LScaling = this.SolutionScaling.Length * sizeof(double);
+            long MemoryOfBlocks = UsedMem;
+            long MemoryOfFac = 0;
             foreach(var solver in blockSolvers) {
-                MemoryOfFac += (solver as PARDISOSolver).UsedMemory();
+                if(solver is PARDISOSolver ps)
+                    MemoryOfFac += ps.UsedMemory();
             }
-            return (LScaling + MemoryOfBlocks) / (1024 * 1024) + MemoryOfFac;
+            return (LScaling + MemoryOfBlocks) + MemoryOfFac;
         }
     }
 }

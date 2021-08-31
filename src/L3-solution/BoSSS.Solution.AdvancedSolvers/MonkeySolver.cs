@@ -201,7 +201,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_Mtx = null;
         }
 
-        public double UsedMemory() {
+        public long UsedMemory() {
             throw new NotImplementedException();
         }
 
