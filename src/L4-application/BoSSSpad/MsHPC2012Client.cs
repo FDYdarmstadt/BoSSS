@@ -466,7 +466,7 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new IOException("'Username' for MS HPC scheduler is empty or white");
 
 
-            string pass = this.Password != null ? ("/password:" + this.Password) : "";
+            string pass = !this.Password.IsEmptyOrWhite() ? ("/password:" + this.Password) : "";
             var ret = $" /scheduler:{this.ServerName} /user:{this.Username} {pass}";
             return ret;
         }
@@ -786,7 +786,7 @@ namespace BoSSS.Application.BoSSSpad {
                         errorWaitHandle.WaitOne(timeout)) {
                         if(process.ExitCode != 0) {
                             string modArguments = arguments;
-                            if(this.Password != null)
+                            if(!this.Password.IsEmptyOrWhite())
                                 modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
                             throw new IOException(filename + " " + modArguments + " exited with code " + process.ExitCode + System.Environment.NewLine + output.ToString() + System.Environment.NewLine + error.ToString());
                         }
