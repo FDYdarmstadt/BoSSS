@@ -1,4 +1,5 @@
 ﻿
+using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
@@ -11,7 +12,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSFE_Solver {
 
     /// <summary>
     /// base-class for post-processing modules in XNSE

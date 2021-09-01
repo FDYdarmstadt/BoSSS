@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -21,8 +22,27 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace BoSSS.Application.XNSE_Solver {
-   
+namespace BoSSS.Application.XNSFE_Solver {
+
+    /// <summary>
+    /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
+    /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
+    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
+    /// </summary>
+    public class XNSFE : XNSE<XNSE_Control> {
+
+        // ===========
+        //  Main file
+        // ===========
+        static void Main(string[] args) {
+
+            XNSFE._Main(args, false, delegate () {
+                var p = new XNSFE();
+                return p;
+            });
+        }
+    }
+
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
@@ -166,41 +186,43 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSFE_OperatorConfiguration, int, int)"/>
+        /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSE_OperatorConfiguration, int, int)"/>
         /// adding evaporation extension for Navier-Stokes equations
         /// </summary>
         /// <param name="opFactory"></param>
         /// <param name="config"></param>
         /// <param name="d"></param>
         /// <param name="D"></param>
-        protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+        protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
             base.DefineMomentumEquation(opFactory, config, d, D);
 
+            var extendedConfig = new XNSFE_OperatorConfiguration(this.Control);
             // === evaporation extension === //
-            if (config.isEvaporation) {
+            if (extendedConfig.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, config));                    
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, extendedConfig));                    
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     NonlinearCouplingEvaporation = true; // When using Newton evaporation coupling is always nonlinear
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, config));
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, extendedConfig));
                 }                    
             }
-            if (config.isBuoyancy && config.isGravity) {
-                opFactory.AddEquation(new NavierStokesBuoyancy("A", D, d, config));
-                opFactory.AddEquation(new NavierStokesBuoyancy("B", D, d, config));
+            if (extendedConfig.isBuoyancy && config.isGravity) {
+                opFactory.AddEquation(new NavierStokesBuoyancy("A", D, d, extendedConfig));
+                opFactory.AddEquation(new NavierStokesBuoyancy("B", D, d, extendedConfig));
             }
         }
 
 
-        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
             base.DefineContinuityEquation(opFactory, config, D);
 
+            var extendedConfig = new XNSFE_OperatorConfiguration(this.Control);
             // === evaporation extension === //
-            if (config.isEvaporation) {
+            if (extendedConfig.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, extendedConfig));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, extendedConfig));
                 }
             }
         }

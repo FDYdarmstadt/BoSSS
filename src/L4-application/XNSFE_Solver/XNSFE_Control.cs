@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSFE_Solver {
 
     /// <summary>
     /// control object for <see cref="XNSFE"/>

@@ -120,43 +120,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
     }
 
-    interface IXHeatTest : ITest {
-        /// <summary>
-        /// heat capacity of fluid A
-        /// </summary>
-        double c_A { get; }
-
-        /// <summary>
-        /// heat capacity of fluid A
-        /// </summary>
-        double c_B { get; }
-
-        /// <summary> heat conductivity fluid A </summary>
-        double k_A { get; }
-
-        /// <summary> heat conductivity fluid B </summary>
-        double k_B { get; }
-
-        /// <summary> saturation temperature </summary>
-        double T_sat { get; }
-
-        /// <summary> latent heat of evaporation </summary>
-        double h_vap { get; }
-
-        /// <summary>
-        /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
-        /// </summary>
-        Func<double[], double, double> GetT(string species);
-
-        /// <summary>
-        /// Exact solution for total thermal energy.
-        /// </summary>
-        Func<double, double> GetE();
-
-        bool CheckT { get; }
-        bool CheckE { get; }
-    }
-
     public interface IXNSETest : ITest {
 
         /// <summary> 
@@ -200,12 +163,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetPhi2U(int d);
     }
-
-    interface IXNSFETest : IXNSETest, IXHeatTest {
-
-    }
-
-
 
     public interface IXNSECTest : IXNSETest {
 

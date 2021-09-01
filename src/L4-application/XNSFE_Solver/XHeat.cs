@@ -16,9 +16,10 @@ using System.Collections.Generic;
 using System.Linq;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.LevelSetTools;
+using BoSSS.Application.XNSE_Solver;
 
-namespace BoSSS.Application.XNSE_Solver {
-    public class XHeat : SolverWithLevelSetUpdater<XNSE_Control> {
+namespace BoSSS.Application.XNSFE_Solver {
+    public class XHeat : SolverWithLevelSetUpdater<XNSFE_Control> {
         ThermalMultiphaseBoundaryCondMap boundaryMap;
 
         protected override LevelSetHandling LevelSetHandling => this.Control.Timestepper_LevelSetHandling;

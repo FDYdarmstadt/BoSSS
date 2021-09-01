@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver.Tests {
+namespace BoSSS.Application.XNSFE_Solver.Tests {
     class SteadyStateEvaporationTest : IXNSFETest {
 
         public bool TestImmersedBoundary => false;

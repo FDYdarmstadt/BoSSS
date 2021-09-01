@@ -16,7 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
+namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
 
     /// <summary>
