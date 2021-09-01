@@ -16,7 +16,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// Benchmark quantities for droplet-testcases, <see cref="Droplet"/>
     /// </summary>
     [Serializable]
-    public class Dropletlike : XNSEinSituPostProcessingModule {
+    public class Dropletlike : Dropletlike<XNSE_Control> { }
+
+    /// <summary>
+    /// Benchmark quantities for droplet-testcases, <see cref="Droplet"/>
+    /// </summary>
+    [Serializable]
+    public class Dropletlike<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
 
         /// <summary>
         /// SemiAxis

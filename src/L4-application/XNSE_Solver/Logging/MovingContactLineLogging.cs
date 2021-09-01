@@ -19,7 +19,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// Used by <see cref="HeatedWall"/>, <see cref="TwoPhaseCouetteFlow"/>, etc.
     /// </summary>
     [Serializable]
-    public class MovingContactLineLogging : XNSEinSituPostProcessingModule {
+    public class MovingContactLineLogging : MovingContactLineLogging<XNSE_Control> { }
+
+    /// <summary>
+    /// Used by <see cref="HeatedWall"/>, <see cref="TwoPhaseCouetteFlow"/>, etc.
+    /// </summary>
+    [Serializable]
+    public class MovingContactLineLogging<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
 
         /// <summary>
         /// 

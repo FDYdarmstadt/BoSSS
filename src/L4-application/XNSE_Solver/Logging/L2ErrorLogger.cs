@@ -11,14 +11,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver {
-    
+namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
     /// <summary>
     /// Errors against exact solution (<see cref="XNSE_Control.ExactSolutionVelocity"/>, <see cref="XNSE_Control.ExactSolutionPressure"/>)
     /// </summary>
     [Serializable]
-    public class L2ErrorLogger : XNSEinSituPostProcessingModule {
+    public class L2ErrorLogger: L2ErrorLogger<XNSE_Control> { }
+
+    /// <summary>
+    /// Errors against exact solution (<see cref="XNSE_Control.ExactSolutionVelocity"/>, <see cref="XNSE_Control.ExactSolutionPressure"/>)
+    /// </summary>
+    [Serializable]
+    public class L2ErrorLogger<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// Null: no log-file will be created; only queries will be saved

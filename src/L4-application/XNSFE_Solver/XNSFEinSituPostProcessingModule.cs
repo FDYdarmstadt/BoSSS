@@ -17,23 +17,23 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// <summary>
     /// base-class for post-processing modules in XNSE
     /// </summary>
-    public abstract class XNSFEinSituPostProcessingModule : XNSEinSituPostProcessingModule {
+    public abstract class XNSFEinSituPostProcessingModule<T> : XNSEinSituPostProcessingModule<T> where T:XNSFE_Control, new() {
 
         /// <summary>
-        /// override to access XNSFE specific properties for postprocessing
+        /// reference to solver application class
         /// </summary>
-        protected new XNSFE<XNSFE_Control> SolverMainOverride {
+        protected new XNSE<T> SolverMainOverride {
             get {
-                return (XNSFE<XNSFE_Control>)base.SolverMain;
-            }           
+                return (XNSE<T>)base.SolverMain;
+            }
         }
 
         /// <summary>
         /// control object
         /// </summary>
-        new protected XNSFE_Control Control {
+        new protected T Control {
             get {
-                return (XNSFE_Control)(base.Control);
+                return (T)(base.Control);
             }
         }
 

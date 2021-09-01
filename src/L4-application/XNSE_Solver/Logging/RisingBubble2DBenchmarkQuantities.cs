@@ -15,12 +15,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class RisingBubble2DBenchmarkQuantities : RisingBubble2DBenchmarkQuantities<XNSE_Control> { }
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class RisingBubble2DBenchmarkQuantities : XNSEinSituPostProcessingModule {
+    public class RisingBubble2DBenchmarkQuantities<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// 

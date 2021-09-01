@@ -23,7 +23,17 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class StefanProblemBenchmarkQuantities : XNSFEinSituPostProcessingModule {
+    public class StefanProblemBenchmarkQuantities : StefanProblemBenchmarkQuantities<XNSFE_Control> {
+        public StefanProblemBenchmarkQuantities(byte OutletTag) :base(OutletTag)  {
+
+        }
+    }
+
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class StefanProblemBenchmarkQuantities<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
 
         /// <summary>
         /// 

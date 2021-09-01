@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
     /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
     /// </summary>
-    public class XNSFE : XNSE<XNSE_Control> {
+    public class XNSFE : XNSFE<XNSFE_Control> {
 
         // ===========
         //  Main file

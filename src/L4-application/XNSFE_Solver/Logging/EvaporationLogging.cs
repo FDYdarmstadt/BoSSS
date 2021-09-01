@@ -14,12 +14,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
+    /// <summary>
+    /// Logging of evaporation, <see cref="HeatedWall"/>
+    /// </summary>
+    [Serializable]
+    public class EvaporationLogging : EvaporationLogging<XNSFE_Control> { }
 
     /// <summary>
     /// Logging of evaporation, <see cref="HeatedWall"/>
     /// </summary>
     [Serializable]
-    public class EvaporationLogging : XNSFEinSituPostProcessingModule {
+    public class EvaporationLogging<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
         
         /// <summary>
         /// Probably some specialization for the Fourier level set.

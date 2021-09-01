@@ -16,12 +16,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class MassfluxLogging : MassfluxLogging<XNSFE_Control> { }
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class MassfluxLogging : XNSFEinSituPostProcessingModule {
+    public class MassfluxLogging<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
 
         /// <summary>
         /// 

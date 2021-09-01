@@ -14,24 +14,26 @@ namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
     /// base-class for post-processing modules in XNSE
+    /// the generic type is necessary to make the methods e.g. <see cref="CurrentVel"/> also available in solvers
+    /// deriving from <see cref="XNSE{T}"/>. otherwise we are unable to cast e.g. XNSE<T> to XNSE<P> where T:P.
     /// </summary>
-    public abstract class XNSEinSituPostProcessingModule : InSituPostProcessingModule {
+    public abstract class XNSEinSituPostProcessingModule<T> : InSituPostProcessingModule where T:XNSE_Control, new() {
 
         /// <summary>
         /// reference to solver application class
         /// </summary>
-        protected new XNSE<XNSE_Control> SolverMainOverride {
+        protected new XNSE<T> SolverMainOverride {
             get {
-                return (XNSE<XNSE_Control>)base.SolverMain;
+                return (XNSE<T>) base.SolverMain;
             }
         }
 
         /// <summary>
         /// control object
         /// </summary>
-        new protected XNSE_Control Control {
+        new protected T Control {
             get {
-                return (XNSE_Control)(base.Control);
+                return (T)(base.Control);
             }
         }
 
