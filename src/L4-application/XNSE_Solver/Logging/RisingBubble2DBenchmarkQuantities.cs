@@ -92,7 +92,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ).Execute();
 
             // center of mass/geometric center (for incompressible fluid)
-            int D = SolverMain.Grid.SpatialDimension;
+            int D = SolverMainOverride.Grid.SpatialDimension;
             MultidimensionalArray center = MultidimensionalArray.Create(1, D);
             CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),

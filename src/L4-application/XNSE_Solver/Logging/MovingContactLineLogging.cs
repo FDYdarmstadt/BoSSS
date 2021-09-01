@@ -1,5 +1,4 @@
-﻿using BoSSS.Application.XNSE_Solver.Legacy;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
@@ -123,23 +122,18 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
         ConventionalDGField[] GetMeanVelocityFromXDGField(DGField[] EvoVelocity) {
-            if(base.SolverMain is XNSE_SolverMain oldSolver) {
-                return oldSolver.GetMeanVelocityFromXDGField(EvoVelocity);
-            } else if(base.SolverMain is XNSE newSolver) {
-                IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
-                IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
 
-                List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
-                for (int i = 0; i < 3; ++i) {
+            IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
+            IReadOnlyDictionary<string, DGField> parameters = this.SolverMainOverride.LsUpdater.Parameters;
 
-                    if (parameters.TryGetValue(velocityName[i], out DGField velocityField)) {
-                        velocity.Add((ConventionalDGField)velocityField);
-                    }
+            List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
+            for (int i = 0; i < 3; ++i) {
+
+                if (parameters.TryGetValue(velocityName[i], out DGField velocityField)) {
+                    velocity.Add((ConventionalDGField)velocityField);
                 }
-                return velocity.ToArray();
-            } else {
-                throw new NotSupportedException();
             }
+            return velocity.ToArray();
 
         }
 
@@ -153,14 +147,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ConventionalDGField[] meanVelocity = GetMeanVelocityFromXDGField(this.CurrentVel);
 
             var Phi = (LevelSet)LsTrk.LevelSets[0];
-            var LevelSetGradient = new VectorField<SinglePhaseField>(SolverMain.GridData.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
+            var LevelSetGradient = new VectorField<SinglePhaseField>(SolverMainOverride.GridData.SpatialDimension, Phi.Basis, SinglePhaseField.Factory);
             LevelSetGradient.Gradient(1.0, (SinglePhaseField)LsTrk.LevelSets[0]);
             SinglePhaseField[] Normals = LevelSetGradient.ToArray();
 
             XQuadSchemeHelper SchemeHelper = this.LsTrk.GetXDGSpaceMetrics(this.LsTrk.SpeciesIdS.ToArray(), this.m_HMForder).XQuadSchemeHelper;
             EdgeQuadratureScheme SurfaceElement_Edge = SchemeHelper.Get_SurfaceElement_EdgeQuadScheme(this.LsTrk.GetSpeciesId("A"), 0);
 
-            var gridDat = (GridData)this.SolverMain.GridData;
+            var gridDat = (GridData)this.SolverMainOverride.GridData;
             var QuadDom = SurfaceElement_Edge.Domain;
             var boundaryEdge = gridDat.GetBoundaryEdgeMask().GetBitMask();
             var boundaryCutEdge = QuadDom.Intersect(new EdgeMask(gridDat, boundaryEdge, MaskType.Geometrical));
@@ -181,7 +175,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);
                     //Console.WriteLine("contact point: ({0},{1})", Vnode_g[0, 0], Vnode_g[0, 1]);
 
-                    int D = base.SolverMain.Grid.SpatialDimension;
+                    int D = base.SolverMainOverride.Grid.SpatialDimension;
                     for (int d = 0; d < D; d++) {
                         EvalResult[0, 0, d] = Vnode_g[0, d];
                     }
@@ -209,11 +203,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     double theta = (theta_surf - theta_edge) * (180 / Math.PI);
 
                     EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2]);
+                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
                 },
                 delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {
-                    int D = SolverMain.Grid.SpatialDimension;
+                    int D = SolverMainOverride.Grid.SpatialDimension;
                     for (int i = 0; i < length; i++) {
                         if (ResultsOfIntegration[i, 2 * D] != 0.0) {
                             contactAngles.Add(Math.Abs(ResultsOfIntegration[i, 2 * D]));

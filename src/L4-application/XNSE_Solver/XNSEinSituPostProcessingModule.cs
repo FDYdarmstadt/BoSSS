@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -18,6 +17,14 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public abstract class XNSEinSituPostProcessingModule : InSituPostProcessingModule {
 
+        /// <summary>
+        /// reference to solver application class
+        /// </summary>
+        protected new XNSE<XNSE_Control> SolverMainOverride {
+            get {
+                return (XNSE<XNSE_Control>)base.SolverMain;
+            }
+        }
 
         /// <summary>
         /// control object
@@ -33,23 +40,16 @@ namespace BoSSS.Application.XNSE_Solver {
         /// current velocity solution
         /// </summary>
         protected XDGField[] CurrentVel {
-            get {
-                if(this.SolverMain is XNSE_SolverMain oldSolver) {
-                    
-                    return oldSolver.CurrentVel;
-                } else if(this.SolverMain is XNSE newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
+            get {                
+                int D = this.SolverMainOverride.GridData.SpatialDimension;
 
-                    var ret = newSolver.CurrentState.Fields.Take(D).Select(f => (XDGField)f).ToArray();
-                    for(int d = 0; d < D; d++) {
-                        if(ret[d].Identification != VariableNames.Velocity_d(d))
-                            throw new ApplicationException("Unable to identify velocity fields.");
-                    }
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
+                var ret = this.SolverMainOverride.CurrentState.Fields.Take(D).Select(f => (XDGField)f).ToArray();
+                for(int d = 0; d < D; d++) {
+                    if(ret[d].Identification != VariableNames.Velocity_d(d))
+                        throw new ApplicationException("Unable to identify velocity fields.");
                 }
+
+                return ret;
             }
         }
 
@@ -57,21 +57,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// current velocity solution
         /// </summary>
         protected XDGField CurrentPressure {
-            get {
-                if(this.SolverMain is XNSE_SolverMain oldSolver) {
-                    
-                    return oldSolver.Pressure;
-                } else if(this.SolverMain is XNSE newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
+            get {               
+                int D = this.SolverMainOverride.GridData.SpatialDimension;
 
-                    var ret = newSolver.CurrentState.Fields.ElementAt(D) as XDGField;
-                    if(ret.Identification != VariableNames.Pressure)
-                        throw new ApplicationException("Unable to identify pressure field.");
+                var ret = this.SolverMainOverride.CurrentState.Fields.ElementAt(D) as XDGField;
+                if(ret.Identification != VariableNames.Pressure)
+                    throw new ApplicationException("Unable to identify pressure field.");
                     
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
+                return ret;               
             }
         }
 
@@ -91,16 +84,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected int m_HMForder {
             get {
-                if(this.SolverMain is XNSE_SolverMain oldSolver) {
-                    
-                    return oldSolver.m_HMForder;
-                } else if(this.SolverMain is XNSE<XNSE_Control> newSolver) {
-
-                    return newSolver.QuadOrder();
-                    
-                } else {
-                    throw new NotImplementedException();
-                }
+                return this.SolverMainOverride.QuadOrder();   
             }
         }
 
@@ -110,16 +94,8 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected XDGField KineticEnergy {
             get {
-                if(this.SolverMain is XNSE_SolverMain oldSolver) {
-                    
-                    return oldSolver.KineticEnergy;
-                } else if(this.SolverMain is XNSE<XNSE_Control> newSolver) {
-
-                    var a =  newSolver.Timestepping.Parameters.First(t => t.Identification == BoSSS.Solution.NSECommon.VariableNames.KineticEnergy);
-                    return (XDGField) a;
-                } else {
-                    throw new NotImplementedException();
-                }
+                var a = this.SolverMainOverride.Timestepping.Parameters.First(t => t.Identification == BoSSS.Solution.NSECommon.VariableNames.KineticEnergy);
+                return (XDGField) a;
             }
         }
 
@@ -127,17 +103,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// If used, the Fourier level set; otherwise null;
         /// </summary>
         protected FourierLevSetBase Fourier_LevSet {
-            get { 
-                if(base.SolverMain is XNSE_SolverMain oldSolver) {
-                    return oldSolver.Fourier_LevSet;
-                } else if(base.SolverMain is XNSE newSolver) {
-                    if(newSolver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet is FourierLevelSet fls) {
-                        return fls.Fourier_LevSet;
-                    } else {
-                        return null;
-                    }
+            get {                 
+                if(this.SolverMainOverride.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet is FourierLevelSet fls) {
+                    return fls.Fourier_LevSet;
                 } else {
-                    throw new NotSupportedException();
+                    return null;
                 }
             }
         }
@@ -147,7 +117,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected BoSSS.Foundation.Grid.Classic.GridData GridData {
             get {
-                return (Foundation.Grid.Classic.GridData)(this.SolverMain.GridData);
+                return (Foundation.Grid.Classic.GridData)(this.SolverMainOverride.GridData);
             }
         }
 
