@@ -706,7 +706,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
             //    int K = result.GetLength(1); // No nof Nodes
             //    for (int j = 0; j < Len; j++) {
-            //        for (int k = 0; k < K; k++) {                        
+            //        for (int k = 0; k < K; k++) {
             //            result[j, k] = j0 + j;
             //        }
             //    }

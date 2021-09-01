@@ -519,7 +519,7 @@ namespace BoSSS.Application.XNSE_Solver {
                             //}
                         }
                     }
-                }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask())).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
+                }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex))).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
             }
         }
     }
