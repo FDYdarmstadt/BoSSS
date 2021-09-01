@@ -91,7 +91,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 
-    class BlockLevelPmg {
+    class BlockLevelPmg : IDisposable {
 
         public bool m_FullSolveOfCutcells = true;
         public bool m_EqualOrder = false;
@@ -367,6 +367,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
+        public void Dispose() {
+            throw new NotImplementedException();
+        }
     }
 }

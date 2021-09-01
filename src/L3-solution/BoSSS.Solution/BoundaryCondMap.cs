@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
+using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
@@ -126,6 +127,30 @@ namespace BoSSS.Solution.Utils {
 
             var bndy = new Dictionary<string, AppControl.BoundaryValueCollection>(_bndy, new StringIgnoreCaseEq());
 
+            {
+                string[] allBndys = bndy.Keys.ToArray();
+                string[][] allBndys_allProcs = allBndys.MPIAllGatherO();
+
+                for(int r = 0; r < allBndys_allProcs.Length; r++) {
+                    if(!allBndys_allProcs[r].SetEquals(allBndys)) {
+                        throw new ArgumentException("mismatch in boundary names among MPI processors.");
+                    }
+                
+                }
+            }
+
+            {
+                string[] allBndys = grdDat.EdgeTagNames.Values.ToArray();
+                string[][] allBndys_allProcs = allBndys.MPIAllGatherO();
+
+                for(int r = 0; r < allBndys_allProcs.Length; r++) {
+                    if(!allBndys_allProcs[r].SetEquals(allBndys)) {
+                        throw new ArgumentException("Illegal mesh: mismatch in edge tag names among MPI processors.");
+                    }
+                }
+            }
+
+
             m_grdDat = grdDat;
             //m_grid = grdDat.Grid;
             //var grid = m_grid;
@@ -215,6 +240,9 @@ namespace BoSSS.Solution.Utils {
                 }
 
                 // 2nd: look if all boundary conditions in the control file can be found in the grid.
+
+                
+
                 foreach (string edgetagname in bndy.Keys) { // loop over all boundary conditions in control file
                     if (edgetagname == null || edgetagname.Length <= 0)
                         Problems.Add("found some boundary condition with zero-length name");

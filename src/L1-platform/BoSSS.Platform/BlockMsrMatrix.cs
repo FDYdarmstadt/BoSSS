@@ -3053,7 +3053,7 @@ namespace ilPSP.LinSolvers {
             where V5 : IEnumerable<long>
             where V6 : IEnumerable<long> //
         {
-            using(new FuncTrace()) {
+            using(new FuncTrace("BlockMsrMatrix.AccSubMatrixTo")) {
 
                 // check input arguments
                 // =====================

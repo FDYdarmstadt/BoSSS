@@ -169,36 +169,39 @@ namespace ilPSP.Utils {
         static public double drnm2<TX>(int N, TX x, int incx, MPI_Comm comm) where TX : IList<double> {
             double locRes = 0;
 
-            double[] dx = x as double[];
-            if (dx != null) {
-                // double[] - implementation
-                locRes = BLAS.dnrm2(N, dx, incx);
-                locRes = locRes * locRes;
-            } else {
-                ISparseVector<double> spx = x as ISparseVector<double>;
+            if(N > 0) {
+                // in MPI parallel mode, some vector might be actually of zero size on a certain processor
 
-                if (spx != null) {
-                    // sparse implementation
-
-                    foreach (var entry in spx.SparseStruct) {
-                        int m = entry.Key % incx;
-                        if (m != 0)
-                            // entry is skipped by x-increment
-                            continue;
-
-                        double xi = entry.Value;
-                        locRes += xi * xi;
-                    }
+                double[] dx = x as double[];
+                if(dx != null) {
+                    // double[] - implementation
+                    locRes = BLAS.dnrm2(N, dx, incx);
+                    locRes = locRes * locRes;
                 } else {
-                    // default implementation
-                    for (int n = 0; n < N; n++) {
-                        double xi = x[n * incx];
-                        locRes += xi * xi;
+                    ISparseVector<double> spx = x as ISparseVector<double>;
+
+                    if(spx != null) {
+                        // sparse implementation
+
+                        foreach(var entry in spx.SparseStruct) {
+                            int m = entry.Key % incx;
+                            if(m != 0)
+                                // entry is skipped by x-increment
+                                continue;
+
+                            double xi = entry.Value;
+                            locRes += xi * xi;
+                        }
+                    } else {
+                        // default implementation
+                        for(int n = 0; n < N; n++) {
+                            double xi = x[n * incx];
+                            locRes += xi * xi;
+                        }
                     }
                 }
-            }
 
-            
+            }
 
             double globRes = double.NaN;
             unsafe {

@@ -362,11 +362,14 @@ namespace MPI.Wrappers {
         /// allocated by a nonblocking communication operation, then it is
         /// deallocated and the request handle is set to MPI_REQUEST_NULL.
         /// </summary>
-        /// <param name="count"></param>
-        /// <param name="array_of_requests"></param>
-        /// <param name="index"></param>
-        /// <param name="status"></param>
         void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
+
+
+        /// <summary>
+        /// Waits for an <see cref="MPI_Request"/> to complete
+        /// </summary>
+        void Wait(ref MPI_Request request, out MPI_Status status);
+
 
         /// <summary>
         /// Return the parent communicator for this process.

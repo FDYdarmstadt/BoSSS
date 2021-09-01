@@ -607,9 +607,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         private int[] GetNeighboursViaEdgesAndVertices(int currentCellIndex) {
             this.GetCellNeighbours(currentCellIndex, GetCellNeighbours_Mode.ViaEdges, out int[] neighbourCellsEdges, out _);
-            Tuple<int, int, int>[] edgeNeighbours = this.GetCellNeighboursViaEdges(currentCellIndex);
+            var edgeNeighbours = this.GetCellNeighboursViaEdges(currentCellIndex);
             List<int> testSomething = new List<int>();
-            foreach(Tuple<int, int, int> i in edgeNeighbours) {
+            foreach(var i in edgeNeighbours) {
                 testSomething.Add(i.Item1);
             }
             neighbourCellsEdges = testSomething.ToArray();

@@ -191,19 +191,19 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             // phase 2: create updater
             // =======================
             LevelSetUpdater lsUpdater;
-            switch(NoOfLevelSets) {
+            switch (NoOfLevelSets) {
                 case 1:
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
-                    (string[]) this.SpeciesTable, 
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    (string[])this.SpeciesTable,
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 case 2:
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
-                    (string[,]) this.SpeciesTable, 
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    (string[,])this.SpeciesTable,
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 default:
@@ -213,7 +213,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             // phase 3: instantiate evolvers
             // ============================
-            for(int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
+            for (int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
