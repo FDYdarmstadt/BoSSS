@@ -504,6 +504,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
