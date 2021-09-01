@@ -92,7 +92,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         /// <summary>
         /// Index of the current rule's reference element into
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>.
+        /// <see cref="BoSSS.Foundation.Grid.IGeometricalCellsData.RefElements"/>.
         /// </summary>
         public override int CurrentRuleRefElementIndex {
             get {

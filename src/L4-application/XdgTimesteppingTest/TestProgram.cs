@@ -371,6 +371,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
 
             ctrl.NonLinearSolver.SolverCode = Solution.Control.NonLinearSolverCode.Picard;
+            ctrl.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
 
             // run
             // ------------------------------------------

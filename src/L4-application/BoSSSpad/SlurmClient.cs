@@ -391,7 +391,7 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
                 sw.WriteLine("#SBATCH -t " + executiontime);
-                //sw.WriteLine("#SBATCH --mem-per-cpu=" + memPerCPU);
+                //sw.WriteLine("#SBATCH --mem-per-cpu=" + myJob.MemPerCPU);
                 if (myJob.UseComputeNodesExclusive) {
                     sw.WriteLine("#SBATCH --exclusive");
                 }

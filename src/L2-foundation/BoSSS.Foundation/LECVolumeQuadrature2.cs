@@ -473,7 +473,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 
 
         protected void EvaluateEx(int i0, int Length, QuadRule qr, MultidimensionalArray QuadResult) {
-
+            
             // intitial checks
             // ===============
             NodeSet qrNodes = qr.Nodes;
@@ -505,7 +505,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
 #endif
             }
 
-
+            
             // evaluate parameters
             // ===================
             #region PARAMETERS
@@ -514,17 +514,20 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             {
                 Debug.Assert(m_ParameterFieldsValues.Length == m_ParameterFields.Length);
                 for(int i = 0; i < m_ParameterFields.Length; i++) {
-                    if(m_ParameterFields[i] != null)
+                    if(m_ParameterFields[i] != null) {
                         m_ParameterFields[i].Evaluate(i0, Length, qrNodes, m_ParameterFieldsValues[i]);
-                    else
+                        //m_ParameterFieldsValues[i].Clear();
+                        //m_ParameterFieldsValues[i].ApplyAll(delegate(int[] idxs, ref double entry) { entry += idxs[0] + 1; });
+                    } else {
                         m_ParameterFieldsValues[i].Clear();
+                    }
                 }
                 globalNodes = this.m_GridDat.GlobalNodes.GetValue_Cell(qrNodes, i0, Length);
 
             }
             this.ParametersAndNormals.Stop();
             #endregion
-
+            
             // Evaluate test and trial space basis
             // ===================================
             #region BASIS_EVAL
@@ -584,7 +587,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     GradsXquadWgt.Multiply(1.0, qr.Weights, Grad.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NoOfNodes - 1, MaxN_TestGrad - 1, D - 1 }), 0.0, ref mp_knd_k_knd);
                 }
 
-
+                
                 for(int gamma = 0; gamma < GAMMA; gamma++) {
                     Debug.Assert(object.ReferenceEquals(m_Vfunctions[gamma].GridDat.ChefBasis, MasterBasis), "We assume that all test functions redict to the same master basis");
 
@@ -601,17 +604,18 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                     if(TrialGradientreq[delta])
                         GradU[delta] = Grad.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { NoOfNodes - 1, this.m_ColL[delta] - 1, D - 1 });
                 }
-
+                
                 NZ3 = Math.Max(MaxN_Test, Math.Max(MaxN_TestGrad, MaxN_TrialGrad));
                 NZ4 = MaxN_TrialGrad;
                 MR = Math.Max(MaxN_Test, MaxN_TestGrad);
                 NR = Math.Max(MaxN_Trial, MaxN_TrialGrad);
                 maxDeg = Math.Max(MaxDeg_Test, Math.Max(MaxDeg_TestGrad, Math.Max(MaxDeg_Trial, MaxDeg_TrialGrad)));
                 JacobiRequired = (MaxN_TestGrad >= 0) || (MaxDeg_TrialGrad >= 0);
+                
             }
             this.Basis_Eval.Stop();
             #endregion
-
+            
             // evaluate forms/fluxes
             // =====================
             #region FLUXEVAL
@@ -637,7 +641,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
             this.Flux_Eval.Stop();
             #endregion
-
+            
             // transform forms/fluxes
             // ======================
             #region FLUX_TRAFO
@@ -858,6 +862,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
             this.Loops.Stop();
             #endregion
+            //*/
         }
 
         private MultidimensionalArray ExtractTrafo(MultidimensionalArray trafo, int N) {
@@ -1000,6 +1005,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         protected void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+            
             bool bLinearRequired = LinearRequired;
             bool bAffineRequired = AffineRequired;
             int M = m_RowMap.NoOfCoordinatesPerCell;
@@ -1041,6 +1047,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 }
                  
             }
+       
         }
 
         /// <summary>

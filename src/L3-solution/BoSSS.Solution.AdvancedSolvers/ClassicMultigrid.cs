@@ -184,7 +184,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // ======================
             if(this.PreSmoother != null)
                 this.PreSmoother.Init(op);
-            if(this.PostSmoother != null)
+            if(this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
                 this.PostSmoother.Init(op);
         }
 
@@ -346,6 +346,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         public object Clone() {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+        }
+
+        public void Dispose() {
+            PreSmoother.Dispose();
+            PostSmoother.Dispose();
+            OpMatrix = null;
+        }
+
+        public long UsedMemory() {
+            throw new NotImplementedException();
         }
     }
 

@@ -32,6 +32,7 @@ using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.ConstrainedDGprojection;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.LevelSetTools {
 
@@ -135,18 +136,18 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="Domain"></param>
         /// <param name="PosMask"></param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
+            using(var ft = new FuncTrace()) {
+                //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
 
-            //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
+                MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
 
-            MyProjection.MakeContinuous(DGLevelSet, LevelSet, Domain);
+                double Jnorm = JumpNorm(LevelSet, Domain);
+                ft.Info($"jump norm after continuity projection = {Jnorm}");
 
-            double Jnorm = JumpNorm(LevelSet, Domain);
-            Console.WriteLine("jump norm after continuity projection = {0}", Jnorm);
-
-            if (myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
-                SetFarField(LevelSet, Domain, PosMask);
+                if(myOption != ContinuityProjectionOption.None && setFarFieldConstant) {
+                    SetFarField(LevelSet, Domain, PosMask);
+                }
             }
-
         }
 
         /// <summary>

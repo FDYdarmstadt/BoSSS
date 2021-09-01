@@ -225,6 +225,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             R.AgglomerationThreshold = 0.1;
 
+            R.NonLinearSolver.ConvergenceCriterion = 1.0e-10;
+
             // return
             // ======
 

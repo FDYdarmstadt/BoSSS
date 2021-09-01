@@ -189,8 +189,9 @@ namespace PublicTestRunner {
                 //throw new Exception();
 
             } catch (Exception) {
-                //return null;
-                throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository. You might want to use 'runjobmanger-ignore_tests_w_deps'");
+                // must be null, for the nunit3 sub-program when running from somewhere.
+                return null;
+                //throw new IOException("Unable to find repository root. 'runjobmanger' must be invoked from its default location within the BoSSS git repository. You might want to use 'runjobmanger-ignore_tests_w_deps'");
             }
 
             return repoRoot;
@@ -1158,9 +1159,6 @@ namespace PublicTestRunner {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
-
-            //if(MpiRank == 0)
-            //    Debugger.Launch();
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 

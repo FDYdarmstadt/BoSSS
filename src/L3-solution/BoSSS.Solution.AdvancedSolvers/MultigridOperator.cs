@@ -1011,36 +1011,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         public void UseSolver<T1, T2>(ISolverSmootherTemplate solver, T1 INOUT_X, T2 IN_RHS, bool UseGuess = true)
             where T1 : IList<double>
-            where T2 : IList<double> 
+            where T2 : IList<double>  //
         {
-            if(this.LevelIndex != 0)
-                throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+            using(new FuncTrace()) {
+                if(this.LevelIndex != 0)
+                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
 
-            int I = this.Mapping.ProblemMapping.LocalLength;
-            if(INOUT_X.Count != I)
-                throw new ArgumentException("Vector length mismatch.", "INOUT_X");
-            if(IN_RHS.Count != I)
-                throw new ArgumentException("Vector length mismatch.", "IN_RHS");
+                int I = this.Mapping.ProblemMapping.LocalLength;
+                if(INOUT_X.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "INOUT_X");
+                if(IN_RHS.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "IN_RHS");
 
-            if(this.FinerLevel != null)
-                throw new NotSupportedException("This method may only be called on the top level.");
+                if(this.FinerLevel != null)
+                    throw new NotSupportedException("This method may only be called on the top level.");
 
-            //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
-            //    throw new ArgumentException();
-            //int J = this.Mapping.AggGrid.NoOfAggregateCells;
-            
-            
-            int L = this.Mapping.LocalLength;
-            double[] X = new double[L];
-            double[] B = new double[L];
-            this.TransformRhsInto(IN_RHS, B, true);
-            if(UseGuess)
-                this.TransformSolInto(INOUT_X, X);
+                //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
+                //    throw new ArgumentException();
+                //int J = this.Mapping.AggGrid.NoOfAggregateCells;
 
-            solver.ResetStat();
-            solver.Solve(X, B);
 
-            this.TransformSolFrom(INOUT_X, X);
+                int L = this.Mapping.LocalLength;
+                double[] X = new double[L];
+                double[] B = new double[L];
+                this.TransformRhsInto(IN_RHS, B, true);
+                if(UseGuess)
+                    this.TransformSolInto(INOUT_X, X);
+
+                solver.ResetStat();
+                solver.Solve(X, B);
+
+                this.TransformSolFrom(INOUT_X, X);
+            }
         }
 
         public void TransformSolInto<T1, T2>(T1 u_IN, T2 v_OUT)
