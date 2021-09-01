@@ -252,6 +252,7 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
+                    
                     using(new BlockTrace("surface_integration", tr)) {
 #if DEBUG
                         {
@@ -313,7 +314,7 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-
+                   
                     // allow all processes to catch up
                     // -------------------------------
                     if(trx != null) {

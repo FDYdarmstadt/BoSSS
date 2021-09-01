@@ -523,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < parameters.Length; ++i) {
                 ParameterVarFields[parameters[i]].Clear();
-                ParameterVarFields[parameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                ParameterVarFields[parameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }
@@ -595,7 +595,7 @@ namespace BoSSS.Solution.XNSECommon {
             for (int i = 0; i < lsParameters.Length - 1; ++i) {
                 ParameterVarFields[lsParameters[i]].Clear();
                 if(filtLevSetGradient != null)
-                    ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                    ParameterVarFields[lsParameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }

@@ -177,7 +177,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// Saves the internal state of <see cref="m_OldTracker"/>.
         /// </summary>
-        public void BackupTracker () {
+        public void BackupTracker (double physTime) {
             using(new FuncTrace()) {
                 if(m_LsTrkPrivData != null)
                     throw new NotSupportedException("Can only be called once.");
@@ -185,6 +185,9 @@ namespace BoSSS.Solution {
                 int NoOfLS = m_OldTracker.NoOfLevelSets;
 
                 if(m_OldTracker != null) {
+                    if(!ilPSP.DoubleExtensions.ApproxEqual(m_OldTracker.Regions.Time, physTime))
+                        throw new ApplicationException($"Mismatch in time between tracker (Regions.Time = {m_OldTracker.Regions.Time}) and physical time ({physTime})");
+
                     m_LsTrkPrivData.HistoryLength = m_OldTracker.HistoryLength;
                     m_LsTrkPrivData.PopultatedHistoryLength = m_OldTracker.PopulatedHistoryLength;
                     m_LsTrkPrivData.Versions = new int[m_LsTrkPrivData.PopultatedHistoryLength + 1];
@@ -201,7 +204,7 @@ namespace BoSSS.Solution {
                         m_LsTrkPrivData.Versions[1 - iH] = TimeLevel.Version;
                         m_LsTrkPrivData.Times[1 - iH] = TimeLevel.time;
                     }
-
+                    
                 }
             }
         }
