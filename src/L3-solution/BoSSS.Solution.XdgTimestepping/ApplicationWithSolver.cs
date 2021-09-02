@@ -638,9 +638,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
                 Parameters);
-
             base.Timestepping = solver;
             Timestepping.RegisterResidualLogger(this.ResLogger);
+            Timestepping.TimesteppingBase.Config_LevelSetConvergenceCriterion = Control.LevelSet_ConvergenceCriterion;
             if (!object.ReferenceEquals(base.LsTrk, solver.LsTrk))
                 throw new ApplicationException();
 

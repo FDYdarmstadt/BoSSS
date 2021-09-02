@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public NavierCauchy(string speciesName, Solid material, int d, int D, double artificialViscosity) {
+        public NavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
@@ -23,7 +23,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
             
-            var convection = new NonLinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), D, material.Density);
+            var convection = new NonLinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),d, material.Density);
             AddComponent(convection);
 
             var pressure = new PressureGradientForm(SpeciesName, d);
@@ -35,7 +36,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
             AddComponent(eulerAlmansi1);
 
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
+            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
         }
 

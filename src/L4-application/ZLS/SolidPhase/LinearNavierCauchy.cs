@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public LinearNavierCauchy(string speciesName, Solid material, int d, int D, double artificialViscosity) {
+        public LinearNavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
@@ -23,7 +23,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
-            var convection = new LinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], D, material.Density);
+            var convection = new LinearTransportForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, material.Density);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
             AddComponent(convection);
@@ -32,13 +32,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(pressure);
 
             var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            //eulerAlmansi0.PenaltySafety = 0.0;
             AddComponent(eulerAlmansi0);
 
             var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
             AddComponent(eulerAlmansi1);
+            //eulerAlmansi1.PenaltySafety = 0.0;
 
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
+            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
+
+            //var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 1);
+            //AddComponent(velocityBoundaryPenalty);
         }
 
         public override string SpeciesName => speciesName;

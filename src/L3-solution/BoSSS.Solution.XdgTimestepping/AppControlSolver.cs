@@ -125,5 +125,10 @@ namespace BoSSS.Solution.Control {
             return true;
         }
 
+        /// <summary>
+        /// The termination criterion for fully coupled/implicit level-set evolution.
+        /// </summary>
+        [DataMember]
+        public double LevelSet_ConvergenceCriterion = 1.0e-6;
     }
 }

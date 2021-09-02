@@ -14,7 +14,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string species;
         int d;
         string[] variableNames;
-
+        public double PenaltySafety = 1.0;
         public SIPTransposeForm(string species, string[] variables, int d, double viscosity) {
             this.species = species;
             this.viscosity = viscosity;
@@ -48,7 +48,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
 
             double pnlty = Penalty(inp.jCellIn, -1);
-            acc1 += (_uIN[d] - 0) * (_vIN) * pnlty * viscosity;
+            acc1 += PenaltySafety * (_uIN[d] - 0) * (_vIN) * pnlty * viscosity;
             return acc1;
         }
 
@@ -94,7 +94,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
 
             double pnlty = Penalty(inp.jCellIn, inp.jCellOut);
-            acc1 += (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * pnlty * viscosity;
+            acc1 += PenaltySafety * (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * pnlty * viscosity;
             return acc1;
         }
 

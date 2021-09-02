@@ -60,8 +60,8 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         double Penalty(int jCellIn, int jCellOut) {
-            double penaltySizeFactor_A = 1.0 / cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+            double penaltySizeFactor_A = 1/cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1/cj[jCellOut] : 0;
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
@@ -74,6 +74,7 @@ namespace ZwoLevelSetSolver.Boundary {
             double µ = penaltySizeFactor * penalty;
             if(µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
+            //return 100;
             return µ;
         }
 

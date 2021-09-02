@@ -413,14 +413,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] prescribedLSwaveData;
 
-
-        /// <summary>
-        /// The termination criterion for fully coupled/implicit level-set evolution.
-        /// </summary>
-        [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
-
-
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>

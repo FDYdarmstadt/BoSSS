@@ -226,6 +226,16 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     spatialOperator.EquationComponents[equation.CodomainName].Add(component);
                 }
             }
+            foreach (SpatialEquation equation in eqSystem.BulkEquations) {
+                foreach (IEquationComponent component in equation.Components) {
+                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
+                }
+            }
+            foreach (SpatialEquation equation in eqSystem.InterfaceEquations) {
+                foreach (IEquationComponent component in equation.Components) {
+                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
+                }
+            }
         }
 
         void AddSurfaceEquationComponents(XSpatialOperatorMk2 spatialOperator) {

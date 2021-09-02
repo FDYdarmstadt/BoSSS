@@ -1,6 +1,7 @@
 ﻿using ilPSP;
 using ilPSP.Utils;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -10,7 +11,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// A spatial equation is an equation for one codomain. 
     /// Implement this class, if you have a single phase equation. 
     /// </summary>
-    public abstract class SpatialEquation {
+    public abstract class SpatialEquation : ICodomainEquation<SpatialEquation> {
         /// <summary>
         /// Empty spatial equation.
         /// </summary>
@@ -98,13 +99,31 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public void AddComponent(IEquationComponent component) {
             Components.AddLast(component);
         }
+
+        public void Combine(SpatialEquation other) {
+            if(other.CodomainName != this.CodomainName) {
+                throw new Exception("Can only add eqations of same codomain name");
+            }
+            AddVariableNames(other.VariableNames);
+            if(other.Parameters != null) {
+                AddParameter(other.Parameters);
+            }
+            if(other.Coefficients != null) {
+                AddCoefficient(other.Coefficients);
+            }
+            Components.AddRange(other.Components);
+        }
+
+        public bool EqualCodomain(SpatialEquation other) {
+            return CodomainName == other.CodomainName;
+        }
     }
 
     /// <summary>
     /// XDG Equations on a surface. 
     /// Surface is between to species.
     /// </summary>
-    public abstract class SurfaceEquation : SpatialEquation {
+    public abstract class SurfaceEquation : SpatialEquation, ICodomainEquation<SurfaceEquation>{
         /// <summary>
         /// Empty surface equation.
         /// </summary>
@@ -153,12 +172,28 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public void AddContactLineComponent(IEquationComponent surfaceComponent) {
             ContactLineComponents.AddLast(surfaceComponent);
         }
+
+        public void Combine(SurfaceEquation other) {
+            if(other.FirstSpeciesName != FirstSpeciesName || other.SecondSpeciesName != SecondSpeciesName) {
+                throw new Exception("Species Names do not match");
+            }
+            base.Combine(other);
+            SurfaceComponents.AddRange(other.SurfaceComponents);
+            ContactLineComponents.AddRange(other.ContactLineComponents);
+        }
+
+        public bool EqualCodomain(SurfaceEquation other) {
+            bool isEqual = CodomainName == other.CodomainName;
+            isEqual &= (FirstSpeciesName == other.FirstSpeciesName);
+            isEqual &= (SecondSpeciesName == other.SecondSpeciesName);
+            return isEqual;
+        }
     }
 
     /// <summary>
     /// XDG Equations for bulk phase.
     /// </summary>
-    public abstract class BulkEquation : SpatialEquation {
+    public abstract class BulkEquation : SpatialEquation, ICodomainEquation<BulkEquation> {
         /// <summary>
         /// Name of species for which equation is valid.
         /// </summary>
@@ -189,45 +224,122 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public void AddGhostComponent(IEquationComponent ghostComponent) {
             GhostComponents.AddLast(ghostComponent);
         }
+
+        public void Combine(BulkEquation other) {
+            if (other.SpeciesName != SpeciesName || other.MassScale != MassScale) {
+                throw new Exception("species name or mass scale do not match");
+            };
+            base.Combine(other);
+            GhostComponents.AddRange(other.GhostComponents);
+        }
+
+        public bool EqualCodomain(BulkEquation other) {
+            bool isEqual = CodomainName == other.CodomainName;
+            isEqual &= (SpeciesName == other.SpeciesName);
+            return isEqual;
+        }
     }
+
+
+    interface ICodomainEquation<T> {
+        void Combine(T other);
+
+        bool EqualCodomain(T other);
+    }
+
+    /// <summary>
+    /// List of Equations. There is only one equation for each codomain species pair.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    class EquationList<T> : IEnumerable<T> where T : ICodomainEquation<T> {
+        LinkedList<T> equations;
+
+        public EquationList() {
+            equations = new LinkedList<T>();
+        }
+
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <param name="equation">
+        /// If the codomain of equation is already present, equation will be combined with the present entry.
+        /// </param>
+        public void Add(T equation) {
+            LinkedListNode<T> node = equations.First;
+            while(node != null) {
+                T q = node.Value;
+                if(q.EqualCodomain(equation)) {
+                    T combo = Combine(equation, q);
+                    node.Value = combo;
+                    return;
+                }
+                node = node.Next;
+            }
+            equations.AddLast(equation);
+        }
+
+        public IEnumerator<T> GetEnumerator() {
+            return equations.GetEnumerator();
+        }
+
+        T Combine(T a, T b) {
+            a.Combine(b);
+            return a;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return equations.GetEnumerator();
+        }
+    }
+
 
     /// <summary>
     /// Accumulation of equations
     /// Finds the names of all required parameters and coefficients
     /// </summary>
     class SystemOfEquations {
-        public LinkedList<SpatialEquation> SpatialEquations;
+        public EquationList<SpatialEquation> SpatialEquations;
 
-        public LinkedList<SurfaceEquation> InterfaceEquations;
+        public EquationList<SurfaceEquation> InterfaceEquations;
 
-        public LinkedList<BulkEquation> BulkEquations;
+        public EquationList<BulkEquation> BulkEquations;
 
         /// <summary>
         /// Create empty System
         /// </summary>
         public SystemOfEquations() {
-            InterfaceEquations = new LinkedList<SurfaceEquation>();
-            BulkEquations = new LinkedList<BulkEquation>();
-            SpatialEquations = new LinkedList<SpatialEquation>();
+            InterfaceEquations = new EquationList<SurfaceEquation>();
+            BulkEquations = new EquationList<BulkEquation>();
+            SpatialEquations = new EquationList<SpatialEquation>();
+        }
+
+        IEnumerable<SpatialEquation> AllEquations() {
+            foreach (SpatialEquation equation in SpatialEquations) {
+                yield return equation;
+            }
+            foreach (SpatialEquation equation in InterfaceEquations) {
+                yield return equation;
+            }
+            foreach (SpatialEquation equation in BulkEquations) {
+                yield return equation;
+            }
         }
 
         public void AddEquation(SurfaceEquation A) {
-            InterfaceEquations.AddLast(A);
-            SpatialEquations.AddLast(A);
+            InterfaceEquations.Add(A);
         }
 
         public void AddEquation(BulkEquation A) {
-            BulkEquations.AddLast(A);
-            SpatialEquations.AddLast(A);
+            BulkEquations.Add(A);
         }
 
         public void AddEquation(SpatialEquation A) {
-            SpatialEquations.AddLast(A);
+            SpatialEquations.Add(A);
         }
 
         public string[] DomainVars() {
             LinkedList<string> domainVars = new LinkedList<string>();
-            foreach(SpatialEquation equation in BulkEquations) {
+            foreach(SpatialEquation equation in AllEquations()) {
                 if(domainVars.Count == 0) {
                     domainVars.AddRange(equation.VariableNames);
                 } else {
@@ -244,7 +356,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public string[] CoDomainVars() {
             LinkedList<string> coDomainVars = new LinkedList<string>();
-            foreach(BulkEquation equation in BulkEquations) {
+            foreach(SpatialEquation equation in AllEquations()) {
                 string coDomainVar = equation.CodomainName;
                 if(!coDomainVars.Contains(coDomainVar)) {
                     coDomainVars.AddLast(coDomainVar);
@@ -255,7 +367,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         public string[] Parameters() {
             LinkedList<string> parameterNames = new LinkedList<string>();
-            foreach(SpatialEquation equation in SpatialEquations) {
+            foreach(SpatialEquation equation in AllEquations()) {
                 if(equation.Parameters != null) {
                     foreach(string parameter in equation.Parameters) {
                         if(!parameterNames.Contains(parameter)) {
@@ -264,13 +376,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                     }
                 }
             }
-
             return parameterNames.ToArray();
         }
 
         public string[] Coefficients() {
             LinkedList<string> coefficientsNames = new LinkedList<string>();
-            foreach(SpatialEquation equation in SpatialEquations) {
+            foreach(SpatialEquation equation in AllEquations()) {
                 if(equation.Coefficients != null) {
                     foreach(string coefficient in equation.Coefficients) {
                         if(!coefficientsNames.Contains(coefficient)) {
@@ -341,7 +452,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             public void Add(string key, T value) {
                 int pointer = ValuePointer(key);
                 if(isInitialized[pointer]) {
-                    throw new Exception("already initialized");
+                    throw new Exception("value has already been initialized");
                 }
                 Values[pointer] = value;
                 isInitialized[pointer] = true;

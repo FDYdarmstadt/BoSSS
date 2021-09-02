@@ -433,8 +433,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
 
-            if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)&&(nonlinSolver.Equals(typeof(FixpointIterator)))) {
-                ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+            if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)) {
+                if(nonlinSolver is FixpointIterator fixPoint) {
+                    fixPoint.CoupledIteration_Converged = LevelSetConvergenceReached;
+                }
             }
 
             // set callback for diagnostic output

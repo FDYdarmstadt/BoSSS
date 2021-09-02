@@ -150,9 +150,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.NonLinearSolver.MaxSolverIterations = 80;
+            C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 10;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
             C.LinearSolver.ConvergenceCriterion = 1e-10;
@@ -303,6 +303,164 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
+            C.TimesteppingMode = compMode;
+            double dt = 0.01;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 0.5;
+            C.NoOfTimesteps = 1000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
+
+        public static ZLS_Control SimpleConvergence(int p = 2, int kelem = 18) {
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 4;
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+            int D = 2;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+
+
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 0.001;
+            C.PhysicalParameters.mu_B = 0.001;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = false;
+
+            C.Material = new ConvergenceTest();
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+            double xSize = 2;
+            double ySize = 2;
+
+            C.GridFunc = delegate () {
+
+                double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true, periodicY: true);
+
+                return grd;
+
+            };
+
+
+            #endregion
+
+
+            // basic database options
+            // ======================
+            #region db
+            C.ProjectName = "ConvergenceTests";
+            //C.ProjectDescription = "Test for Convergence";
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            Func<double[], double> PhiFunc = (X => -1);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            Func<double[], double> Phi1Func = delegate (double[] X) {
+                // only solid
+                return 1;
+            };
+
+
+            Func<double[], double> Vx = delegate (double[] X) {
+                double sum = 0;
+                //sum = Math.Sin(Math.PI * X[1]);
+                sum = 0.1;
+                return sum;
+            };
+
+            Func<double[], double> Vy = delegate (double[] X) {
+                double sum = 0;
+                return sum;
+            };
+
+
+
+            //C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
+
+
+            C.InitialValues_Evaluators.Add("VelocityX#A", Vx);
+            C.InitialValues_Evaluators.Add("VelocityX#B", Vx);
+            C.InitialValues_Evaluators.Add("VelocityX#C", Vx);
+
+            C.InitialValues_Evaluators.Add("VelocityY#A", Vy);
+            C.InitialValues_Evaluators.Add("VelocityY#B", Vy);
+            C.InitialValues_Evaluators.Add("VelocityY#C", Vy);
+            #endregion
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 10;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.LinearSolver.ConvergenceCriterion = 1e-10;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.TimesteppingMode = compMode;
             double dt = 0.01;

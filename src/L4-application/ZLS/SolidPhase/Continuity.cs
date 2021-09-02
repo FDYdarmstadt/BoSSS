@@ -23,7 +23,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
             AddVariableNames(pressure);
-            var pressurePenalty = new PressurePenaltyForm(spcName, pressure);
+            //var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1);
             //AddComponent(pressurePenalty);
         }
 
@@ -74,6 +74,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double flux = (_uIN[0] - _uOUT[0]) * inp.Normal[d];
             flux *= 0.5 * (_vIN + _vOUT);
 
+            //double flux = 0.5 * (_uIN[0] + _uOUT[0]) * inp.Normal[d];
+            //flux *= (_vIN - _vOUT);
             return flux;
 
         }
