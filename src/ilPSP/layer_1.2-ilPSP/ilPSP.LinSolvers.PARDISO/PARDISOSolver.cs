@@ -30,9 +30,10 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// a direct solver using the PARDISO library from the Intel MKL
     /// </summary>
     /// <remarks>
-    /// <b>IMPORTANT: Licensing issues:</b><br/>
+    /// **IMPORTANT: Licensing issues:**
     /// PARDISO does not ship with free license, neither source nor 
-    /// binaries compiled from it can be shipped with this software;<br/>
+    /// binaries compiled from it can be shipped with this software;
+    /// 
     /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
     /// from http://www.pardiso-project.org/;
     /// </remarks>
@@ -932,11 +933,11 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
-        /// Used memory for factorization in MB
+        /// Used memory for factorization in bates
         /// </summary>
         /// <returns></returns>
-        public double UsedMemory() {
-            return m_PermanentMemoryFac/1024;
+        public long UsedMemory() {
+            return m_PermanentMemoryFac*1024;
         }
 
         /// <summary>

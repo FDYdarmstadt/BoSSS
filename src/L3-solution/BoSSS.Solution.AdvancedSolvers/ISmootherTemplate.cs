@@ -77,9 +77,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void ResetStat();
 
         /// <summary>
-        /// Estimate of used memory
+        /// Estimate of used memory in bytes
         /// </summary>
-        double UsedMemory();
+        long UsedMemory();
     }
 
 

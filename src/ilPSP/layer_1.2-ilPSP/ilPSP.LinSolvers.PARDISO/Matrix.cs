@@ -134,7 +134,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                             ObjectSize = (IntPtr)(((long)len) * sizeof(float));
                         bt.Info($"Requesting {ObjectSize} bytes...");
                         this.aPtr = Marshal.AllocHGlobal(ObjectSize);
-                        bt.Info($"Allocated memory at {this.aPtr}.");
+                        bt.Info($"Allocated memory at 0x{(this.aPtr):X}.");
 
                         unsafe {
                             float* a_S = (float*)aPtr;

@@ -18,6 +18,7 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using CommandLine;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -72,18 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(2, 1, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting, false);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.1, ViscosityMode.FullySymmetric, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
-            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
-            //Tests.ASUnitTest.CurvedElementsTest(3);
-            //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
-            //Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
-            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
-            ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
             //throw new Exception("Remove me");
 
             bool Evap = false;
@@ -98,11 +88,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 bool argsParseSuccess;
                 argsParseSuccess = parser.ParseArguments(args, opt);
 
-                if (!argsParseSuccess) {
+                if(!argsParseSuccess) {
                     System.Environment.Exit(-1);
                 }
 
-                if (opt.ControlfilePath != null) {
+                if(opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
 
@@ -115,18 +105,27 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
             }
 
-            if (Evap) {
+            if(Evap) {
                 XNSFE<XNSFE_Control>._Main(args, false, delegate () {
-                    var p = new XNSFE<XNSFE_Control>(); 
+                    var p = new XNSFE<XNSFE_Control>();
                     return p;
                 });
             } else {
-                XNSE._Main(args, false, delegate () {
-                    var p = new XNSE();
-                    return p;
-                });
+                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
+                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
+                    //DateTime hello = DateTime.Now;
+                    XNSE._Main(args, false, delegate () {
+                        var p = new XNSE();
+                        return p;
+                    });
+                    //DateTime fino = DateTime.Now;
+                    //Console.WriteLine("Runtime totalo " + (fino - hello));
+
+                    //Tmeas.Memtrace.Flush();
+                    //Tmeas.Memtrace.Close();
+                //}
             }
-            
+
         }
     }
 
@@ -549,25 +548,14 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            dt = GetTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
-#if TEST
-            try {
-               
+            using(var f = new FuncTrace()) {
+                dt = GetTimestep();
+                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                
-            } catch (Exception ex) {
-                string dir = System.IO.Directory.GetCurrentDirectory();
-                this.ProfilingLog();
-                this.CurrentSessionInfo.AddTag(ex.GetType().ToString());
-                this.CurrentSessionInfo.Save();
-                throw new Exception("there is something rotten. See output...");
+                Console.WriteLine($"Done with time step {TimestepNo}.");
+                GC.Collect();
+                return dt;
             }
-#else
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-#endif
-            Console.WriteLine($"Done with time step {TimestepNo}.");
-            return dt;
         }
     }
 }

@@ -551,7 +551,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //return;
 
 
-            using (new FuncTrace()) {
+            using (var f = new FuncTrace()) {
+                
+                /*if(this.m_MgOperator.LevelIndex == 0) {
+                    f.LogMemoryStat();
+                    m_MgOperator.GetMemoryInfo(out long alloc, out long used);
+
+
+                    
+                    //this.OpMatrix.GetMemoryInfo(out long alloc, out long used);
+
+                    double alloc_meg = (double)alloc / (1024.0 * 1024.0);
+                    double used_meg = (double)used / (1024.0 * 1024.0);
+                    Console.WriteLine($" MG Operator total: using {used_meg} MB, allocated {alloc_meg} MB.");
+                    Process myself = Process.GetCurrentProcess();
+                    long wsMem = myself.WorkingSet64;
+                    double wsMem_meg = (double)wsMem / (1024.0 * 1024.0);
+                    Console.WriteLine($" Working Set mem: {wsMem_meg} MB.");
+
+                    Console.WriteLine("entering infinity loop.");
+                     while(true) ;
+                    
+
+                   
+                }*/
+
                 double[] B, X;
                 if (_B is double[])
                     B = _B as double[];
@@ -830,6 +854,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     SpecAnalysisSample(iIter, X, "_");
 
+
+
                 } // end of solver iterations
 
                 // solution copy
@@ -929,15 +955,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool m_verbose = true;
 
-        public double UsedMemory() {
-            double Memory = 0.0;
+        public long UsedMemory() {
+            long Memory = 0;
             Memory += MemoryOfMultigrid();
             Memory += MemoryOfSmoother();
             return Memory;
         }
 
-        public double MemoryOfSmoother() {
-            double Memory = 0;
+        public long MemoryOfSmoother() {
+            long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
             Memory += PreSmoother.UsedMemory();
@@ -945,14 +971,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Memory;
         }
 
-        public double MemoryOfMultigrid() {
-            double Memory = 0;
+        public long MemoryOfMultigrid() {
+            long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
             int SizeSol = this.SolHistory.Count() * this.SolHistory[0].Length * sizeof(double);
             int SizeMxx = this.MxxHistory.Count() * this.MxxHistory[0].Length * sizeof(double);
             int SizeAlpha = this.Alphas.Count() * (sizeof(double)*2+sizeof(int));
-            Memory += (double)(SizeSol + SizeMxx + SizeAlpha) / (1024.0 * 1024.0);
+            Memory += (SizeSol + SizeMxx + SizeAlpha);
             return Memory;
         }
 
