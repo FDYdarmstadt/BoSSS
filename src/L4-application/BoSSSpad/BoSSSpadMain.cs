@@ -409,6 +409,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using BoSSS.Solution.Gnuplot;");
                 stw.WriteLine("using BoSSS.Application.BoSSSpad;");
                 stw.WriteLine("using BoSSS.Application.XNSE_Solver;");
+                stw.WriteLine("using BoSSS.Application.XNSFE_Solver;");
                 stw.WriteLine("using static BoSSS.Application.BoSSSpad.BoSSSshell;");
                 stw.WriteLine("Init();");
 
@@ -517,6 +518,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(CNS.Program).FullName);
             Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
+            Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
         }
 
