@@ -111,8 +111,8 @@ namespace BoSSS.Solution {
         private int m_MaxMGLevel = -1;
 
         /// <summary>
-        /// Maximal used Mg Level is saved here.
-        /// This will be saved in queries
+        /// Maximal used Mg Level. Note: Is available during Solver run but variable in Solver Chooser.
+        /// Therefore, only valid after lin. Solver generation terminates
         /// </summary>
         private int MaxMGLevel {
             get { return m_MaxMGLevel; }
@@ -431,7 +431,7 @@ namespace BoSSS.Solution {
                     CoarseSolver = null,
                     Overlap = 1
                 };
-                precond[0] = BareMGSquence(2, dirSolver, Smoother);
+                precond[0] = BareMGSquence(3, dirSolver, Smoother);
                     break;
 
                 /*
@@ -1173,11 +1173,7 @@ namespace BoSSS.Solution {
             }
             else
             {
-                solver = new ClassicMultigrid() {
-                    CoarserLevelSolver = coarseSolver,
-                    PreSmoother = thislevelsmoother,
-                    PostSmoother = thislevelsmoother,
-                };
+                solver = coarseSolver;
             }
             return solver;
         }
@@ -1557,12 +1553,19 @@ namespace BoSSS.Solution {
                     //    TestSolution = false
                     //};
                 } else {
+
+                    Func<int, int, bool> delayedCaching = delegate (int Iter, int MgLevel) {
+                        int VcycleIteration = 1;
+                        return Iter >= ((MaxMGLevel - MgLevel) * 2 + 1) * VcycleIteration;
+                    };
+
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,
                         CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks,
                         },
+                        ActivateCachingOfBlockMatrix = delayedCaching,
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                     };

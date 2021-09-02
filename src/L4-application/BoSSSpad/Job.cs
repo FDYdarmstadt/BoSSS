@@ -78,13 +78,13 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
-        /// <summary>
-        /// The memory (in MB) that is reserved for every core
-        /// </summary>
-        public string MemPerCPU {
-            set;
-            get;
-        }
+        ///// <summary>
+        ///// The memory (in MB) that is reserved for every core
+        ///// </summary>
+        //public string MemPerCPU {
+        //    set;
+        //    get;
+        //}
 
         /*
         private int m_NumberOfNodes = -1;

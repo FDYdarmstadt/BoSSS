@@ -33,6 +33,7 @@ using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -126,7 +127,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(MultigridOperator op) {
-            using (var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {             
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;
@@ -141,7 +142,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MxxHistory.Clear();
                 SolHistory.Clear();
 
-                
+
                 // set operator
                 // ============
                 this.OpMatrix = Mtx;
@@ -185,6 +186,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        private void TrackMemory(int pos) {
+            if (m_MgOperator.LevelIndex != 0) return;
+            long memWork = 0, memPrivate = 0, memGC = 0;
+            Process myself = Process.GetCurrentProcess();
+            {
+                try {
+                    memWork = myself.WorkingSet64 / (1024 * 1024);
+                    memPrivate = myself.PrivateMemorySize64 / (1024 * 1024);
+                    memGC = GC.GetTotalMemory(false) / (1024 * 1024);
+                    memWork=memWork.MPISum();
+                    memPrivate=memPrivate.MPISum();
+                    memGC=memGC.MPISum();
+                } catch (Exception e) {
+                    Console.WriteLine(e.Message);
+                }
+            }
+            if (m_MgOperator.Mapping.MpiRank == 0) {
+                if (m_MTracker == null) m_MTracker = new StreamWriter("MemoryTrack");
+                var strw = m_MTracker;
+                if (pos == 1) {
+                    strw.Write("workingset\t");
+                    strw.Write("private\t");
+                    strw.Write("GC\t\n");
+                }
+                strw.Write(memWork + "\t");
+                strw.Write(memPrivate + "\t");
+                strw.Write(memGC + "\t\n");
+                if (pos == 3) {
+                    m_MTracker.Flush();
+                    m_MTracker.Dispose();
+                }
+            }
+        }
+
+        StreamWriter m_MTracker = null;
 
 #pragma warning disable 0649
         MGViz viz;
@@ -236,8 +273,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
                 Debug.Assert(B.Length == m_MgOperator.Mapping.LocalLength);
                 int L = Res.Length;
-                Res.SetV(B);
-                //Array.Copy(B, Res, L);
+                //Res.SetV(B);
+                Array.Copy(B, Res, L);
                 OpMatrix.SpMV(-1.0, X, 1.0, Res);
                 //Res.AccV(1.0, B);
 

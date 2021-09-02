@@ -33,6 +33,8 @@ using MPI.Wrappers;
 using System.Runtime.InteropServices;
 using ilPSP.Tracing;
 using ilPSP.LinSolvers.MUMPS;
+using BoSSS.Foundation.XDG;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -421,7 +423,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
-
                 if (m_MgOp != null) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // someone is trying to re-use this solver: see if the settings permit that
@@ -446,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArgumentException("Blocking, unable to re-use");
                     }
                     return;
-                }
+                }               
 
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
@@ -499,6 +500,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
                 int[][] BlockCells = null;
+
+
 
                 // extend blocks according to desired overlap
                 // ==========================================
@@ -597,7 +600,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         } catch(ArgumentException ex) {
                             // void cells, lead to empty selection error this is a fallback for this case
                             RedList.Add(iPart);
-                            Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Hopefully a void cell!?");
+                            Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Probably a void cell!?");
                             continue;
                         }
                         ilPSP.Environment.StdoutOnlyOnRank0 = true;
@@ -605,11 +608,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
-                        blockSolvers[iPart] = new PARDISOSolver() {
-                            CacheFactorization = true,
-                            UseDoublePrecision = true,
-                            Parallelism = Parallelism.SEQ,
-                        };
+                        InitializeDirSolver(iPart);
+
 
                         //blockSolvers[iPart] = new MUMPSSolver() {
                         //    Parallelism = Parallelism.SEQ,
@@ -627,7 +627,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     BMfullBlocks[iPart] = fullMask;
                 }
-                m_BlocksInitialized = true;
 
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();
@@ -637,6 +636,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tmp1.RemoveAt(iRed);
                     tmp2.RemoveAt(iRed);
                     tmp3.RemoveAt(iRed);
+                    NoOfSchwzBlocks--;
                 }
                 BMfullBlocks = tmp1.ToArray();
                 BlockMatrices = tmp2.ToArray();
@@ -656,7 +656,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MPICollectiveWatchDog.Watch();
                 MPICollectiveWatchDog.Watch();
                 MPICollectiveWatchDog.Watch();
-
 
                 // solution scaling in overlapping regions
                 // =======================================
@@ -760,7 +759,60 @@ namespace BoSSS.Solution.AdvancedSolvers {
         BlockMask[] BMfullBlocks;
 
         private int m_Overlap = 1;
-        private bool m_BlocksInitialized = false;
+
+        /// <summary>
+        /// Instruction for delayed caching of the factorization of block solver.
+        /// Useful if memory peaks in linear solver tend to burst the memory.
+        /// </summary>
+        public Func<int,int, bool> ActivateCachingOfBlockMatrix {
+            private get;
+            set;
+        }
+
+        private bool IsSolverSuppored(int iPart) {
+            bool IsSupported = (blockSolvers[iPart] is PARDISOSolver);
+            return IsSupported;
+        }
+
+        /// <summary>
+        /// If CacheFactorization activated. Matrix is already stored in Pardiso-Format.
+        /// No need to keep Schwarzblocks ...
+        /// </summary>
+        /// <param name="iPart"></param>
+        /// <returns></returns>
+        private bool DisposeSchwarzBlocks(int iPart) {
+            if (!IsSolverSuppored(iPart))
+                return false;
+            bool Disposethisblock = (blockSolvers[iPart] as PARDISOSolver).CacheFactorization && BlockMatrices[iPart] != null;
+            if (Disposethisblock) {
+                BlockMatrices[iPart].Clear();
+                BlockMatrices[iPart] = null;
+            }
+            return Disposethisblock;
+        }
+
+        private bool ActivateCachingOfSolver(int iPart) {
+            if (!IsSolverSuppored(iPart))
+                return false;
+            bool CachingActivated = (blockSolvers[iPart] as PARDISOSolver).CacheFactorization;
+            bool DoDelayedActivationOfCaching = ActivateCachingOfBlockMatrix(NoIter,m_MgOp.LevelIndex) && !CachingActivated;
+            if (DoDelayedActivationOfCaching) {
+                blockSolvers[iPart].Dispose();
+                InitializeDirSolver(iPart);
+                Debug.Assert(blockSolvers[iPart] != null);
+                Debug.Assert(BlockMatrices[iPart] != null);
+                blockSolvers[iPart].DefineMatrix(BlockMatrices[iPart]);
+            }
+            return DoDelayedActivationOfCaching;
+        }
+
+        private void InitializeDirSolver(int iPart) {
+            blockSolvers[iPart] = new PARDISOSolver() {
+                CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex),
+                UseDoublePrecision = true,
+                Parallelism = Parallelism.SEQ,
+            };
+        }
 
         /// <summary>
         /// Overlap of the Schwarz blocks, in number-of-cells.
@@ -893,12 +945,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // ++++++++++++++++++++++++++++++
                                 // use block solver for all modes
                                 // ++++++++++++++++++++++++++++++
-
+                                bool DelayedCaching = ActivateCachingOfSolver(iPart);
+                                if (DelayedCaching) Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
                                 blockSolvers[iPart].Solve(xi, bi);
-                                if (m_BlocksInitialized) {
-                                    BlockMatrices[iPart].Clear();
-                                    BlockMatrices[iPart] = null;
-                                }
+                                bool IsDisposed = DisposeSchwarzBlocks(iPart);
                                 //SingleFilter(xi);
                             }
 
@@ -907,7 +957,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // accumulate block solution 'xi' to global solution 'X'
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
-                        m_BlocksInitialized = false;
                     }
 
                     using (new BlockTrace("overlap_scaling", tr)) {
@@ -983,7 +1032,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 mempeak = Math.Max((b as PARDISOSolver).PeakMemory(),mempeak);
                 if(b!=null) b.Dispose();
             }
-            Console.WriteLine($"peak memory: {mempeak} MB");
+            //Console.WriteLine($"peak memory: {mempeak} MB");
         }
 
         private void DisposePMGSolvers() {

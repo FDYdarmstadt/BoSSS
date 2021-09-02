@@ -36,6 +36,7 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -44,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// non-trivial cases.
     /// </summary>
     [TestFixture]
-    public static class XNSE_Solver_MPItest {
+    public class XNSE_Solver_MPItest {
 
         [Test]
         static public void ParallelRisingDroplet() {
@@ -83,7 +84,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 solver.RunSolverMode();
             }
         }
-
 
         //[Test]
         static public void Rotating_Cube_compare4to1() {
@@ -164,6 +164,15 @@ System.ArgumentException: DG degree seems different
             }
         }
 
+        //public static void emptyMaskInSchwarz() {
+        //    var C = PartlyCoverdDomain(2, 50, 2, false, false, false);
+        //    using (var solver = new XNSE()) {
+        //        solver.Init(C);
+        //        solver.RunSolverMode();
+        //    }
+        //    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+        //}
+
         /// <summary>
         /// 
         /// </summary>
@@ -193,7 +202,7 @@ System.ArgumentException: DG degree seems different
             */
 
             BoSSS.Solution.Application.InitMPI();
-            BadInitiallyDistributionTest();
+            //BadInitiallyDistributionTest();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -511,6 +520,10 @@ System.ArgumentException: DG degree seems different
 
         }
 
+        public static XNSE_Control PartlyCoverdDomain(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Parted, UsePredefPartitioning);
+        }
+
         public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
             return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube, UsePredefPartitioning);
         }
@@ -522,6 +535,7 @@ System.ArgumentException: DG degree seems different
         enum Geometry {
             Cube = 0,
             Sphere = 1,
+            Parted = 2
         }
 
         public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
@@ -560,6 +574,40 @@ System.ArgumentException: DG degree seems different
                     return 2;
                 });
                 return grd;
+            };
+        }
+
+        private static Func<double[], double, double> GenPhiFunc(double anglev, Geometry Gshape, int SpaceDim, double particleRad, double[] pos) {
+            return delegate (double[] X, double t) {
+                double angle = -(anglev * t) % (2 * Math.PI);
+                switch (Gshape) {
+                    case Geometry.Cube:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                            + particleRad;
+                        case 3:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                                Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                                + particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    };
+                    case Geometry.Sphere:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                        case 3:
+                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    }
+                    case Geometry.Parted:
+                        return -X[0] + 0.7;
+                    default:
+                    throw new NotImplementedException("Shape unknown");
+                }
             };
         }
 
@@ -608,35 +656,7 @@ System.ArgumentException: DG degree seems different
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
 
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double angle = -(anglev * t) % (2 * Math.PI);
-                switch (Gshape) {
-                    case Geometry.Cube:
-                    switch (SpaceDim) {
-                        case 2:
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                            + particleRad;
-                        case 3:
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                                Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
-                                                + particleRad;
-                        default:
-                        throw new NotImplementedException("Dimension not supported");
-                    };
-                    case Geometry.Sphere:
-                    switch (SpaceDim) {
-                        case 2:
-                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-                        case 3:
-                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-                        default:
-                        throw new NotImplementedException("Dimension not supported");
-                    }
-                    default:
-                    throw new NotImplementedException("Shape unknown");
-                }
-            };
+            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim,particleRad,pos);
 
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
@@ -696,7 +716,7 @@ System.ArgumentException: DG degree seems different
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 50000;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
@@ -727,9 +747,16 @@ System.ArgumentException: DG degree seems different
             return C;
         }
 
+        public Func<double[], double, double> GetPhi() {
+            throw new NotImplementedException();
+        }
 
+        public GridCommons CreateGrid(int Resolution) {
+            throw new NotImplementedException();
+        }
 
-
-
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            throw new NotImplementedException();
+        }
     }
 }
