@@ -888,7 +888,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control Test_VerticalBeamInChannel(int p = 2, int kelem = 8, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 10;
+            C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -997,7 +997,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double power = 2;
             double a = 0.05;
             double b = 0.475;
-            double velX = 0.003;
+            double velX = 0.05;
 
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -1049,12 +1049,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.AddBoundaryValue("velocity_inlet_left", "velocityx#B", inflow);
 
             //=======COMSOL setup=========
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => (velX * Math.Pow(t, 2) / Math.Sqrt(Math.Pow(t, 4) - 0.07 * Math.Pow(t, 2) + 0.0016) * 6 * (ySize - X[1]) * X[1] / Math.Pow(ySize, 2)));
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => (velX * Math.Pow(t, 2) / Math.Sqrt(Math.Pow(t, 4) - 0.07 * Math.Pow(t, 2) + 0.0016) * 6 * (ySize - X[1]) * X[1] / Math.Pow(ySize, 2)));
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => (velX * Math.Pow(t, 2) / Math.Sqrt(Math.Pow(t, 4) - 0.07 * Math.Pow(t, 2) + 0.0016) * 6 * (ySize - X[1]) * X[1] / Math.Pow(ySize, 2)));
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => (velX * Math.Pow(t, 2) / Math.Sqrt(Math.Pow(t, 4) - 0.07 * Math.Pow(t, 2) + 0.0016) * 6 * (ySize - X[1]) * X[1] / Math.Pow(ySize, 2)));
 
             //==========parabola with maxmal velX=========
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => (4 * velX / ySize) * ((-1 / ySize) * Math.Pow(X[1], 2) + X[1]));
-            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => (4 * velX / ySize) * ((-1 / ySize) * Math.Pow(X[1], 2) + X[1]));
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => (4 * velX / ySize) * ((-1 / ySize) * Math.Pow(X[1], 2) + X[1]));
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => (4 * velX / ySize) * ((-1 / ySize) * Math.Pow(X[1], 2) + X[1]));
 
             #endregion
 
@@ -1100,8 +1100,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 10;
-            C.NoOfTimesteps = 10000;
+            C.Endtime = 50;
+            C.NoOfTimesteps = 500000;
             C.saveperiod = 1;
 
             #endregion
@@ -1112,7 +1112,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control BallInChannel(int p = 2, int kelem = 3, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 5;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1146,8 +1146,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 0.05;
-            C.PhysicalParameters.mu_B = 0.05;
+            C.PhysicalParameters.mu_A = 1e-3;
+            C.PhysicalParameters.mu_B = 1e-3;
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
@@ -1163,7 +1163,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double xLeft = -3;
             double xRight = 8;
-            double ySize = 1;
+            double ySize = 2;
 
             C.GridFunc = delegate ()
             {
@@ -1203,6 +1203,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // Initial Values
             // ==============
             #region init
+            double r = 0.3;
 
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -1210,32 +1211,33 @@ namespace ZwoLevelSetSolver.ControlFiles {
             Func<double[], double> Phi1Func = delegate (double[] X)
             {
                 //return -Math.Pow((Math.Pow(Math.Abs(X[0] / a), power) + Math.Pow(Math.Abs(X[1] / b), power)), 1.0 / 1.0) + 1;
-                return -((X[0]).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() + 0.2;
+                return -((X[0]).Pow2() + (X[1] - 1).Pow2()).Sqrt() + r;
             };
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
-            double v0 = 0.00;
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => v0);
-            C.InitialValues_Evaluators.Add("VelocityX#C", X => v0);
+            double v0 = 1;
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
             #endregion
 
 
             // boundary conditions
             // ===================
             #region BC
-            double R(double t) {
-                if (t < 1) {
-                    return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
-                } else {
-                    return 1;
-                }
-            }
+            //double R(double t) {
+            //    if (t < 1) {
+            //        return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
+            //    } else {
+            //        return 1;
+            //    }
+            //}
 
-            double vmax = 0.01;
+            double vmax = 0.1;
             double inflow(double[] x, double t) {
-                    return v0 + R(t) * vmax;
+                    //return v0 + R(t) * vmax;
+                return 0.1;
             }
 
 
@@ -1294,11 +1296,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 100;
-            C.NoOfTimesteps = 100000;
+            C.Endtime = 10;
+            C.NoOfTimesteps = 10000;
             C.saveperiod = 1;
 
             #endregion
@@ -1309,7 +1311,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control Test_BallInChannel(int p = 2, int kelem = 3, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 5;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1341,7 +1343,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // DG degrees
             // ==========
             #region degrees
-            C.SetDGdegree(p);
+            //C.SetDGdegree(p);
 
             #endregion
 
@@ -1408,9 +1410,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // Initial Values
             // ==============
             #region init
-            double velX = 0.01;
 
-            double r = 0.2;
+            double r = 0.3;
 
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -1425,6 +1426,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
+            double velX = 0.1;
             C.InitialValues_Evaluators.Add("VelocityX#A", X => velX);
             C.InitialValues_Evaluators.Add("VelocityX#B", X => velX);
             C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
@@ -1508,7 +1510,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;
-            C.NoOfTimesteps = 100000;
+            C.NoOfTimesteps = 10000;
             C.saveperiod = 1;
 
             #endregion
@@ -1519,7 +1521,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public static ZLS_Control Test_Convergence_BoSSS(int p = 2, int kelem = 18, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1551,7 +1553,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // DG degrees
             // ==========
             #region degrees
-            C.SetDGdegree(p);
+            //C.SetDGdegree(p);
 
             #endregion
 
@@ -1725,6 +1727,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             //double dt = 0.0001;
@@ -1739,11 +1742,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-
-        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 8, int AMRlvl = 0)
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16, int AMRlvl = 0)
         {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1888,7 +1890,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             VelocityY Vy = new VelocityY(K);
 
             C.AddInitialValue("Phi", new Formula("X => -1"));
-            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => -1"));
+            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
             C.AddInitialValue("VelocityX#A", Vx);
             C.AddInitialValue("VelocityX#B", Vx);
             C.AddInitialValue("VelocityX#C", Vx);
@@ -1931,7 +1933,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+         
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
@@ -1949,13 +1951,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 0.00001;
+            double dt = 0.001;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 0.5;
-            C.NoOfTimesteps = 1;
+            C.Endtime = 1;
+            C.NoOfTimesteps = 1000000;
             C.saveperiod = 1;
 
             #endregion

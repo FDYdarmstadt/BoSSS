@@ -3,15 +3,17 @@ using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver {
     public class ZLS_Control : XNSE_Control {
-
+        [DataMember]
         public Solid Material = new AllOne();
 
+        [DataMember]
         public int Degree { get; private set; }
 
         public ZLS_Control() : base() { }

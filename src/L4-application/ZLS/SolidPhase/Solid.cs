@@ -1,21 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
     public class Solid {
         public double PoissonsRatio { get; protected set; }
-        
         //In GPA
         public double ModulusOfElasticity { get; protected set; }
-
         //In g/cc
         public double Density { get; protected set; }
-
         public double Lame1 { get; protected set; }
-
         //Schubmodul
         public double Lame2 { get; protected set; }
 
@@ -66,7 +63,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public Ball() {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 0.01;
-            Density = 1;
+            Density = 3;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
@@ -83,7 +80,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
     }
 
-    class ConvergenceTest : Solid {
+    public class ConvergenceTest : Solid {
         public ConvergenceTest() {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 3;

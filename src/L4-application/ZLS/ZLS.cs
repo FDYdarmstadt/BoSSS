@@ -49,7 +49,7 @@ namespace ZwoLevelSetSolver {
         }
 
         //Artificial Viscosity Term in displacement transport equations
-        double displacementViscosity = 0.1;
+        double displacementViscosity = 0;
         //Viscosity Term in momentum balance equations
         double momentumViscosity = 0.1;
 

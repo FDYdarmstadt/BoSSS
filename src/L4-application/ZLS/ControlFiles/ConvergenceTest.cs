@@ -15,9 +15,9 @@ using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.ControlFiles {
     public static class ConvergenceTests {
-        public static ZLS_Control RycroftPaper(int p = 2, int kelem = 18) {
+        public static ZLS_Control RycroftPaper(int p = 2, int kelem = 16) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -45,7 +45,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_B = 0.001;
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = false;
+            C.PhysicalParameters.Material = true;
 
             C.Material = new ConvergenceTest();
 
@@ -128,7 +128,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
 
 
-            int K = 0;
+            int K = 5;
             C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
             C.AddInitialValue("VelocityX#A", new VelocityX(K));
@@ -176,14 +176,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 0.001;
+            double dt = 0.005;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 0.5;
-            C.NoOfTimesteps = 1000;
+            C.Endtime = 1;
+            C.NoOfTimesteps = 100000;
             C.saveperiod = 1;
 
             #endregion
@@ -331,8 +331,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
         public double Evaluate(double[] X, double t) {
             double sum = 0;
             for (int k = 0; k <= K; k++) {
-                Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                sum = sum + (Math.Pow(-1, k) * this.Vvorx(x, 2 * (k + 1)));
+                //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                sum = sum + (Math.Pow(-1, k) * this.Vvorx(X, 2 * (k + 1)));
             }
             return sum;
         }
@@ -361,8 +361,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             for (int k = 0; k <= K; k++)
             {
-                Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+                //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                sum = sum + (Math.Pow(-1, k) * Vvory(X, 2 * (k + 1)));
             }
             return sum;
 
