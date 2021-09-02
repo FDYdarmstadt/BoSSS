@@ -1,4 +1,5 @@
-﻿using ilPSP.Tracing;
+﻿using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -251,13 +252,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
 
-        static bool ApproxEqual(double a, double b) {
-            if(a == b)
-                return true;
-
-            double tol = Math.Max(Math.Abs(a), Math.Abs(b)) * BLAS.MachineEps * 10;
-            return Math.Abs(a - b) <= tol;
-        }
+       
 
 
         /// <summary>
@@ -272,13 +267,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     Debug.Assert(i0 == 0);
                     (int StartSolLevel, var StartSol) = GetBestSol(i0);
                     StartSol.Apply(this.m_owner);
-                    Assert.IsTrue(ApproxEqual(StartSol.time, m_physTime + dtSub * i0), "Wrong time level of initial value.");
+                    Assert.IsTrue(DoubleExtensions.ApproxEqual(StartSol.time, m_physTime + dtSub * i0), "Wrong time level of initial value.");
 
                     Console.Write($"Level {iLevel}, rst_lv {StartSolLevel} dt_sub = {dtSub}: ");
                     Console.Write("0");
                     m_owner.TimesteppingBase.Solve(m_physTime, dtSub);
                     TimeLevels[i0 + 1] = StateAtTime.Obtain(m_owner, m_physTime + dtSub);
-                    Assert.IsTrue(ApproxEqual(TimeLevels[i0 + 1].time, m_physTime + dtSub), "wrong time level of solution, Level 1");
+                    Assert.IsTrue(DoubleExtensions.ApproxEqual(TimeLevels[i0 + 1].time, m_physTime + dtSub), "wrong time level of solution, Level 1");
                     Console.WriteLine(".");
 
                     //this.Subdivide();
@@ -293,12 +288,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         // initial value:
                         (int StartSolLevel, var StartSol) = GetBestSol(i0);
-                        Assert.IsTrue(ApproxEqual(StartSol.time, m_physTime + dtSub * i0), "Wrong time level of initial value.");
+                        Assert.IsTrue(StartSol.time.ApproxEqual(m_physTime + dtSub * i0), "Wrong time level of initial value.");
                         StartSol.Apply(this.m_owner);
 
                         // coarser solution on top time level to compare with:
                         (int CoarseLevel, var CoarseSol) = GetParrentSol(iE);
-                        Assert.IsTrue(ApproxEqual(CoarseSol.time, m_physTime + dtSub * iE), "Wrong time level of coarse solution");
+                        Assert.IsTrue(CoarseSol.time.ApproxEqual( m_physTime + dtSub * iE), "Wrong time level of coarse solution");
 
 
                         if(CoarseLevel < this.iLevel - 1)
@@ -311,14 +306,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                             Console.Write(i);
                             m_owner.TimesteppingBase.Solve(physTime, dtSub);
                             TimeLevels[i + 1] = StateAtTime.Obtain(m_owner, physTime + dtSub);
-                            Assert.IsTrue(ApproxEqual(TimeLevels[i + 1].time, physTime + dtSub), "wrong time level of solution");
+                            Assert.IsTrue(TimeLevels[i + 1].time.ApproxEqual( physTime + dtSub), "wrong time level of solution");
                             Console.Write(".");
                         }
                         //Console.WriteLine();
 
                         // improved solution
                         var FineSol = TimeLevels[iE];
-                        Debug.Assert(ApproxEqual(CoarseSol.time, FineSol.time));
+                        Debug.Assert(CoarseSol.time.ApproxEqual( FineSol.time));
 
                         // comparison:
                         double Delta = GenericBlas.L2Dist(CoarseSol.SolutionState, FineSol.SolutionState);

@@ -71,6 +71,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   
 </Project>

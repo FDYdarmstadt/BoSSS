@@ -22,15 +22,11 @@ using BoSSS.Solution.Queries;
 using ilPSP;
 using System.Linq;
 using System.Reflection;
-using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using System.IO;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using System.Runtime.Serialization;
-using MPI.Wrappers;
-using System.Diagnostics;
 using BoSSS.Foundation;
 using System.Collections;
 using BoSSS.Solution.Utils;
@@ -1053,11 +1049,6 @@ namespace BoSSS.Solution.Control {
         public int AMR_startUpSweeps = 1;
 
 
-        /// <summary>
-        /// List of active AMR level indicators 
-        /// </summary>
-        [DataMember]
-        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
 
 
         /// <summary>

@@ -899,6 +899,38 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSFESolverTest(Tst, C);
         }
 
+#if !DEBUG
+        /// <summary>
+        /// Tests the combination of AMR and 
+        /// The test is considered a success if no exception is thrown
+        /// </summary>
+        [Test]
+        public static void AMRAndBDFTest([Values(LevelSetHandling.None, LevelSetHandling.LieSplitting)] LevelSetHandling lsh) {
+            int _res = 10;
+            var C = HardcodedControl.KarmanVortexStreet(k: 1, Res: _res, writeToDB: false, NoOfTimeSteps:50);
+            C.Timestepper_LevelSetHandling = lsh;
+
+            Assert.IsTrue(C.AdaptiveMeshRefinement == true);
+            Assert.IsTrue(C.activeAMRlevelIndicators.Count > 0);
+            Assert.IsTrue(C.TimeSteppingScheme == TimeSteppingScheme.BDF2 || C.TimeSteppingScheme == TimeSteppingScheme.BDF3 || C.TimeSteppingScheme == TimeSteppingScheme.BDF4);
+
+            long JEnd = 0;
+            using(var solver = new XNSE()) {
+
+                //Console.WriteLine("Warning! - enabled immediate plotting");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
+
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                JEnd = solver.Grid.NumberOfCells;
+            }
+
+            Assert.IsTrue(JEnd != _res * _res, "AMR was probably not active.");
+        }
+#endif
+
 
         private static void XNSESolverTest(IXNSETest Tst, XNSE_Control C) {
             

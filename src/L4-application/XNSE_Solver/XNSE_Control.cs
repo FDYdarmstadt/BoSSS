@@ -427,12 +427,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// See <see cref="ContinuityProjection"/>
-        /// </summary>
-        [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
-
-        /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
         [DataMember]

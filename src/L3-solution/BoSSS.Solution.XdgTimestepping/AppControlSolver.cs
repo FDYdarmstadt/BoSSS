@@ -89,6 +89,14 @@ namespace BoSSS.Solution.Control {
             return base.GetHashCode();
         }
 
+        
+        /// <summary>
+        /// List of active AMR level indicators 
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
+
         /// <summary>
         /// 
         /// </summary>

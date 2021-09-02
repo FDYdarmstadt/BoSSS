@@ -878,10 +878,7 @@ namespace ilPSP.LinSolvers {
                 //Console.WriteLine("local norm (R=" + M.RowPartitioning.Rank + ") = " + normLoc);
                 //tr.Info("local norm " + normLoc);
 
-                double normGlob = double.NaN;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&normLoc), (IntPtr)(&normGlob), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                }
+                double normGlob = normLoc.MPIMax(M.MPI_Comm);
                 return normGlob;
             }
         }

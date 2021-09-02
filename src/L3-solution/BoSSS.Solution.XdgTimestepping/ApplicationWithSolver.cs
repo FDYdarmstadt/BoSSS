@@ -321,7 +321,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// status after the grid has been re-distributed.
         /// </summary>
         public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
-            Timestepping.DataBackupBeforeBalancing(L);
+            if (Timestepping != null)   // in case of startUp backup
+                Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
             CurrentResidualVector = null;
             ClearOperator();
@@ -335,7 +336,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="newGrid"></param>
         /// <param name="old2NewGrid"></param>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 
                 if (this.Control.AdaptiveMeshRefinement) {
 
@@ -387,6 +388,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <returns></returns>
         private int[] GetDesiredRefinementLevels() {
 
+            if(Control.AdaptiveMeshRefinement == true)
+                if(ActiveAMRLevelIndicators == null || ActiveAMRLevelIndicators.Count <= 0) {
+                    Console.Error.WriteLine("Control object configuration inconsistent: 'AdaptiveMeshRefinement == true', but no refinement indicators in 'activeAMRLevelIndicators' are set.");
+                }
+
             int J = this.GridData.CellPartitioning.LocalLength;
             int[] levelChanges = new int[J];
 
@@ -418,7 +424,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         List<AMRLevelIndicator> m_AMRLevelIndicators = new List<AMRLevelIndicator>();
 
         /// <summary>
-        /// <see cref="Control.AppControl.AMRLevelIndicator"/>
+        /// <see cref="Control.AppControl.activeAMRlevelIndicators"/>
         /// </summary>
         public IList<AMRLevelIndicator> ActiveAMRLevelIndicators {
             get {
