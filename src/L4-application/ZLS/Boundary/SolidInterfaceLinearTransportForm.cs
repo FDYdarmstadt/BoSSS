@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.Boundary {
 
-    class DisplacementBoundaryConvectionForm : ILevelSetForm {
+    class SolidInterfaceLinearTransportForm : ILevelSetForm {
         int m_iLevSet;
         double m_rho;
         string m_FluidSpc;
@@ -21,7 +21,7 @@ namespace ZwoLevelSetSolver.Boundary {
         int m_D;
         int m_d;
 
-        public DisplacementBoundaryConvectionForm(string[] variableNames, double rho, int d, int _D, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public SolidInterfaceLinearTransportForm(string[] variableNames, double rho, int d, int _D, int iLevSet, string FluidSpc, string SolidSpecies) {
             m_D = _D;
             m_d = d;
             m_iLevSet = iLevSet;

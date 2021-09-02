@@ -49,7 +49,7 @@ namespace ZwoLevelSetSolver {
         }
 
         //Artificial Viscosity Term in displacement transport equations
-        double displacementViscosity = 0.0;
+        double displacementViscosity = 0.00;
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             
@@ -57,6 +57,7 @@ namespace ZwoLevelSetSolver {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D, displacementViscosity));
+
                 }else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new DisplacementEvolution("C", d, D, displacementViscosity));
@@ -64,14 +65,14 @@ namespace ZwoLevelSetSolver {
                     throw new NotSupportedException();
                 }
 
+                opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
+
                 opFactory.AddEquation(new Dummy("A", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
             }
-            
             opFactory.AddEquation(new SolidPhase.Continuity("C", D));
             //opFactory.AddEquation(new PressurePenalty("A", -1));
             //opFactory.AddEquation(new PressurePenalty("B", -1));
-
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {

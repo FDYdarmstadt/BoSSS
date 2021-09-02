@@ -18,7 +18,7 @@ namespace ZwoLevelSetSolver.Boundary {
             this.solidSpecies = solidSpecies;
             //Stress equality
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            AddComponent(new DisplacementBoundaryConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), 1.0, d, D, 1, fluidSpecies, solidSpecies));
+            AddComponent(new SolidInterfaceLinearTransportForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), 1.0, d, D, 1, fluidSpecies, solidSpecies));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 

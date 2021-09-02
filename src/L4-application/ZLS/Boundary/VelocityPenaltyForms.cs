@@ -74,7 +74,7 @@ namespace ZwoLevelSetSolver.Boundary {
             double µ = penaltySizeFactor * penalty;
             if(µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
-            //return 100;
+            return 200;
             return µ;
         }
 

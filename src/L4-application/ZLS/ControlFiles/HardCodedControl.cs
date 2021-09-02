@@ -1,8 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver;
-using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
@@ -14,11 +12,6 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using ZwoLevelSetSolver.SolidPhase;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Foundation.IO;
-using BoSSS.Solution.Utils;
 
 namespace ZwoLevelSetSolver.ControlFiles {
 
@@ -1061,7 +1054,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3, int AMRlvl = 0) {
+        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
@@ -1223,7 +1216,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 1e-2;
