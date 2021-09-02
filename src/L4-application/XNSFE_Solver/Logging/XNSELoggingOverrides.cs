@@ -58,6 +58,12 @@ namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
     }
 
     /// <summary>
+    /// Used by <see cref="HeatedWall"/>, <see cref="TwoPhaseCouetteFlow"/>, etc.
+    /// </summary>
+    [Serializable]
+    public class MovingContactLineZwoLsLogging : MovingContactLineZwoLsLogging<XNSFE_Control> { }
+
+    /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
