@@ -94,7 +94,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.m_HMForder;
-                } else if(this.SolverMain is XNSE newSolver) {
+                } else if(this.SolverMain is XNSE<XNSE_Control> newSolver) {
 
                     return newSolver.QuadOrder();
                     
@@ -113,7 +113,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(this.SolverMain is XNSE_SolverMain oldSolver) {
                     
                     return oldSolver.KineticEnergy;
-                } else if(this.SolverMain is XNSE newSolver) {
+                } else if(this.SolverMain is XNSE<XNSE_Control> newSolver) {
 
                     var a =  newSolver.Timestepping.Parameters.First(t => t.Identification == BoSSS.Solution.NSECommon.VariableNames.KineticEnergy);
                     return (XDGField) a;

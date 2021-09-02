@@ -353,9 +353,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_Iter++;
         }
 
+        /// <summary>
+        /// Called upon each iteration
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Dispose() {
+            if(lowSolver != null) {
+                lowSolver.Dispose();
+                lowSolver = null;
+            }
+            if(hiSolver != null) {
+                hiSolver.Dispose();
+                hiSolver = null;
+            }
+
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public long UsedMemory() {
+            long r = 0;
+
+            foreach(var mda in this.HighOrderBlocks_LU) {
+                if(mda != null) {
+                    r += mda.Length * sizeof(double);
+                }
+            }
+
+            foreach(var ia in this.HighOrderBlocks_LUpivots) {
+                if(ia != null) {
+                    r += ia.Length * sizeof(int);
+                }
+            }
+
+
+            return r;
         }
     }
 }

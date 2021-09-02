@@ -82,7 +82,7 @@ namespace ZwoLevelSetSolver.Boundary {
             // ((fluidTension + solidTension) * n 
             for(int i = 0; i < D; i++) {
                 // = consistency terms
-                tension -= 0.5 * viscosity * (_Grad_uIN[d, i] + _Grad_uOUT[d, i]) * inp.Normal[i];
+                tension -= viscosity * _Grad_uOUT[d, i] * inp.Normal[i];
             }
             tension *= 1 * (-_vOUT);
             return tension;

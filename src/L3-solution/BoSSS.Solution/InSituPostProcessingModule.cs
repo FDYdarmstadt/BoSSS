@@ -68,6 +68,8 @@ namespace BoSSS.Solution {
                     this.Log = new StreamWriter(LogFileName + ".txt");
                 }
             }
+            WriteHeader(this.Log);
+
         }
 
         /// <summary>

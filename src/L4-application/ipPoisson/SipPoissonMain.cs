@@ -170,13 +170,15 @@ namespace BoSSS.Application.SipPoisson {
             pp = pp != null ? pp : "NIX";
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
-            
+            DateTime hello = DateTime.Now;
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
                 return p;
             });
+            DateTime fino = DateTime.Now;
+            Console.WriteLine("Runtime totalo " + (fino - hello));
         }
 
         /// <summary>

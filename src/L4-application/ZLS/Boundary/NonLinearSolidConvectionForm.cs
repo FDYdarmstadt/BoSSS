@@ -18,16 +18,18 @@ namespace ZwoLevelSetSolver.Boundary {
         string m_SolidSpecies;
         string[] variableNames;
         string[] parameterNames;
-        int m_D;
+        int D;
+        int d;
 
-        public NonLinearSolidConvectionForm(string variableName, string[] velocityName, double rho, int _D, int iLevSet, string FluidSpc, string SolidSpecies) {
-            m_D = _D;
+        public NonLinearSolidConvectionForm(string[] variableNames, string[] velocityNames, double rho, int d, int iLevSet, string FluidSpc, string SolidSpecies) {
+            D = velocityNames.Length;
             m_iLevSet = iLevSet;
             m_SolidSpecies = SolidSpecies;
             m_FluidSpc = FluidSpc;
             m_rho = rho;
-            variableNames = new string[] { variableName }.Cat(velocityName);
+            this.variableNames = velocityNames.Cat( variableNames);
             parameterNames = new string[] { };
+            this.d = d;
         }
 
         public IList<string> ArgumentOrdering {
@@ -67,12 +69,11 @@ namespace ZwoLevelSetSolver.Boundary {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += uOut[0] * ((uOut[1+0] + uIn[1+0]) * inp.Normal[0] + (uOut[1+1] + uIn[1+1]) * inp.Normal[1]);
-            if(m_D == 3) {
-                r += uOut[0] * (uOut[1+2] + uIn[1+2]) * inp.Normal[2];
+            r += uOut[d] * (uOut[D + 0] * inp.Normal[0] + uOut[D + 1] * inp.Normal[1]);
+            if (D == 3) {
+                r += uOut[d] * uOut[D + 2] * inp.Normal[2];
             }
-
-            r *= 0.5 * m_rho;
+            r *= m_rho;
             return r * (-vOut);
         }
 

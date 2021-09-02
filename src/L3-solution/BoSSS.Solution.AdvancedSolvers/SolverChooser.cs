@@ -431,7 +431,7 @@ namespace BoSSS.Solution {
                     CoarseSolver = null,
                     Overlap = 1
                 };
-                precond[0] = BareMGSquence(lc.NoOfMultigridLevels, dirSolver, Smoother);
+                precond[0] = BareMGSquence(2, dirSolver, Smoother);
                     break;
 
                 /*
@@ -687,7 +687,7 @@ namespace BoSSS.Solution {
                 };
                 break;
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
+                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
                 templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
                 break;
 
@@ -823,7 +823,6 @@ namespace BoSSS.Solution {
                 LocalDOF = GetLocalDOF_DG(MultigridBasis, MGChangeOfBasis, pOfLowOrderSystem);
             } else if(IsXdg) {
                 // Don't you dare to comment this out!!!
-                Console.WriteLine("XDG measure usedl. nice. delete this comment plz.");
                 LocalDOF = GetLocalDOF_XDG(MultigridBasis, pOfLowOrderSystem);
             } else {
                 throw new NotSupportedException("the type of "+ MGBasis[0][0].GetType()+" is not supported");
@@ -1160,17 +1159,25 @@ namespace BoSSS.Solution {
         private ISolverSmootherTemplate BareMGSquence(int MGlevels, ISolverSmootherTemplate coarseSolver, ISolverSmootherTemplate smoother=null)
         {
             ISolverSmootherTemplate solver;
+            ISolverSmootherTemplate thislevelsmoother = null;
+            if (smoother != null) {
+                thislevelsmoother = smoother.CloneAs();
+            }
             if (MGlevels > 0)
             {
-                solver = new ClassicMultigrid() {
+                solver = new ClassicMultigrid() {                  
                     CoarserLevelSolver = BareMGSquence(MGlevels - 1, coarseSolver, smoother),
-                    PreSmoother= smoother.CloneAs(),
-                    PostSmoother= smoother.CloneAs(),
+                    PreSmoother = thislevelsmoother,
+                    PostSmoother = thislevelsmoother,
                 };
             }
             else
             {
-                solver = coarseSolver;
+                solver = new ClassicMultigrid() {
+                    CoarserLevelSolver = coarseSolver,
+                    PreSmoother = thislevelsmoother,
+                    PostSmoother = thislevelsmoother,
+                };
             }
             return solver;
         }
@@ -1499,10 +1506,11 @@ namespace BoSSS.Solution {
             //MultigridOperator Current = op;
             var SolverChain = new List<ISolverSmootherTemplate>();
             int maxDG = getMaxDG(0, 0);
+            bool UsePmg = false; //enables larger Schwarz Blocks
 
             var LocalDOF4directSolver = _LocalDOF;
             // if we use lvlpmg in Sblocks, we can have less and larger blocks ...
-            if (m_lc.pMaxOfCoarseSolver < maxDG) {
+            if (m_lc.pMaxOfCoarseSolver < maxDG && UsePmg) {
                 LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
             }
 
@@ -1516,7 +1524,7 @@ namespace BoSSS.Solution {
                 int SysSize = _LocalDOF[iLevel].MPISum();
                 Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
                 if (SizeFraction < 1 && iLevel == 0) {
-                    Console.WriteLine($"WARNING: Schwarz-Block size ({SchwarzblockSize(iLevel)}) exceeds local system size ({_LocalDOF[iLevel]});");
+                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
                 int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
@@ -1543,6 +1551,11 @@ namespace BoSSS.Solution {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
                         TestSolution = false
                     };
+                    //levelSolver = new DirectSolver() {
+                    //    WhichSolver = DirectSolver._whichSolver.MUMPS,
+                    //    SolverVersion = Parallelism.MPI,
+                    //    TestSolution = false
+                    //};
                 } else {
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,

@@ -19,7 +19,8 @@ namespace ZwoLevelSetSolver.Boundary {
             int D = xdgFieldNames.Length;
             this.fieldNames = xdgFieldNames;
             this.species = species;
-            parameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();    
+            parameterNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(
+                levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();    
         }
         
         public IList<string> ParameterNames => parameterNames;

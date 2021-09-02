@@ -7,10 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using ilPSP.Tracing;
 
-namespace ilPSP
-{
-    public static class MethodCallRecordExtension
-    {
+namespace ilPSP {
+    public static class MethodCallRecordExtension {
+        
+        
         public static void PrintMostExpensiveCalls(this MethodCallRecord mcr, int count) {
 
             GetMostExpensiveCalls(Console.Out, mcr, count);
@@ -29,22 +29,81 @@ namespace ilPSP
             GetMostExpensiveMemory(Console.Out, mcr, count);
             Console.Out.Flush();
         }
+       
 
+        /// <summary>
+        /// Writes a summary on 
+        /// most expensive calls
+        /// (sum over all calls, i.e. no distinction by parent) 
+        /// </summary>
         public static void GetMostExpensiveCalls(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
             int i = 1;
             var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveTicks);
-            foreach (var cr in mostExpensive) {
-                wrt.Write("Rank " + i + ": ");
+            foreach(var cr in mostExpensive) {
+                wrt.Write("Rank " + i + ": \t");
+                wrt.Write($"{(cr.ExclusiveTimeFractionOfRoot * 100):F3}%\t{(new TimeSpan(cr.ExclusiveTicks)).TotalSeconds:0.##E-00}\t");
                 wrt.WriteLine(cr.ToString());
-                if (i == cnt) return;
+                if(i == cnt) return;
                 i++;
             }
         }
 
-        private struct Stats
-        {
+        /// <summary>
+        /// Writes a summary on 
+        /// most expensive calls
+        /// (sum over all calls, i.e. no distinction by parent) 
+        /// </summary>
+        public static void GetMostMemoryConsumingCalls(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
+            int i = 1;
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveMemoryIncrease);
+            foreach(var cr in mostExpensive) {
+                wrt.Write("Rank " + i + ": \t");
+                wrt.Write($"{Math.Round((double)cr.ExclusiveMemoryIncrease / (1024.0 * 1024.0))}\t");
+                wrt.WriteLine(cr.ToString());
+                if(i == cnt) return;
+                i++;
+            }
+        }
+        
+        /// <summary>
+        /// Writes a detailed summary on 
+        /// most expensive calls
+        /// (distinction by parent calls) 
+        /// </summary>
+        public static void GetMostExpensiveCallsDetails(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
+            int i = 1;
+            var mostExpensive = R.Flatten().OrderByDescending(cr => cr.ExclusiveMemoryIncrease);
+            foreach(MethodCallRecord cr in mostExpensive) {
+                wrt.Write("Rank " + i + ": \t");
+                wrt.Write($"{(cr.ExclusiveTimeFractionOfRoot * 100):F3}%\t{cr.TimeExclusive.TotalSeconds:0.##E-00}\t");
+                wrt.WriteLine(cr.ToString());
+                if(i == cnt) return;
+                i++;
+            }
+        }
+
+        /// <summary>
+        /// Writes a detailed summary on 
+        /// most expensive calls
+        /// (distinction by parent calls) 
+        /// </summary>
+        public static void GetMostMemoryConsumingCallsDetails(TextWriter wrt, MethodCallRecord R, int cnt = 0) {
+            int i = 1;
+            var mostExpensive = R.Flatten().OrderByDescending(cr => cr.ExclusiveMemoryIncrease);
+            foreach(var cr in mostExpensive) {
+                wrt.Write("Rank " + i + ": \t");
+                wrt.Write($"{Math.Round((double)cr.ExclusiveMemoryIncrease / (1024.0 * 1024.0))}\t");
+                
+                wrt.WriteLine(cr.ToString());
+                if(i == cnt) return;
+                i++;
+            }
+        }
+
+
+        private struct Stats {
             public Stats(double[] times) {
-                m_Max=times.Max();
+                m_Max = times.Max();
                 m_Min = times.Min();
                 m_Average = times.Sum() / times.Length;
                 m_Imbal = m_Max - m_Min;
@@ -102,17 +161,17 @@ namespace ilPSP
             mcrs[0].CompleteCollectiveReport().ForEach(r => method_names.Add(r.Name));
             double[] rootTimes = new double[mcrs.Length];
 
-            for (int j = 0; j < mcrs.Length; j++) {
+            for(int j = 0; j < mcrs.Length; j++) {
                 rootTimes[j] = mcrs[j].TimeSpentInMethod.TotalSeconds;
             }
 
             var rootStat = new Stats(rootTimes);
 
-            foreach (string method in method_names) {
+            foreach(string method in method_names) {
                 double[] times = new double[mcrs.Length];
                 int cnt = 0;
 
-                for (int j = 0; j < times.Length; j++) {
+                for(int j = 0; j < times.Length; j++) {
                     mcrs[j].FindChildren(method).ForEach(s => times[j] += TimeToCollect(s));
                 }
 
@@ -134,14 +193,14 @@ namespace ilPSP
         private static void GetMostExpensiveBlocking(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
             int i = 1;
             var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveBlockingTicks);
-            foreach (var kv in mostExpensive) {
+            foreach(var kv in mostExpensive) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
                 "'{0}': {1} calls, {2:0.##E-00} sec. exclusive runtime",
                     kv.Name,
                     kv.CallCount,
                     new TimeSpan(kv.ExclusiveBlockingTicks).TotalSeconds));
-                if (i == printcnt) return;
+                if(i == printcnt) return;
                 i++;
             }
             Console.Out.Flush();
@@ -149,20 +208,18 @@ namespace ilPSP
 
         private static void GetMostExpensiveMemory(TextWriter wrt, MethodCallRecord R, int printcnt = 0) {
             int i = 1;
-            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveMemorySpent);
-            foreach (var kv in mostExpensive) {
+            var mostExpensive = R.CompleteCollectiveReport().OrderByDescending(cr => cr.ExclusiveMemoryIncrease);
+            foreach(var kv in mostExpensive) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
                 "'{0}': {1} calls, {2} MB, exclusive memory",
                     kv.Name,
                     kv.CallCount,
-                    kv.ExclusiveMemorySpent));
-                if (i == printcnt) return;
+                    kv.ExclusiveMemoryIncrease));
+                if(i == printcnt) return;
                 i++;
             }
             Console.Out.Flush();
         }
-
-
     }
 }

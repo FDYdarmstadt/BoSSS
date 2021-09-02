@@ -534,7 +534,28 @@ namespace ilPSP {
             return r;
         }
 
+        /// <summary>
+        /// The annoying comparison of doubles...
+        /// </summary>
+        public static bool ApproxEqual(this double a, double b, double RelTol = -1, double AbsTol = -1) {
+            if(a == b)
+                return true;
 
+
+            if(AbsTol >= 0) {
+                if(Math.Abs(a - b) <= AbsTol)
+                    return true;
+            }
+
+            if(RelTol < 0)
+                RelTol = BLAS.MachineEps * 100;
+            double tol = Math.Max(Math.Abs(a), Math.Abs(b)) * RelTol;
+            if(Math.Abs(a - b) <= tol)
+                return true;
+
+            return false;
+
+        }
 
 
 

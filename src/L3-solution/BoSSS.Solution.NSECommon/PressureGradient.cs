@@ -34,7 +34,7 @@ namespace BoSSS.Solution.NSECommon {
     /// </remarks>
     public class PressureGradientLin_d : LinearFlux {
 
-        int m_d = -1;
+        protected int m_d = -1;
 
         BoundaryCondMap<IncompressibleBcType> m_bcmap;
 

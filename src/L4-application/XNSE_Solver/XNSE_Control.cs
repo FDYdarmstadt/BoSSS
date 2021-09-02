@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>
@@ -395,10 +395,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-        /// <summary>
-        /// defines the number of incremental timesteps in one global timestep (for incrementInit)
-        /// </summary>
-        public int incrementTimesteps = 1;
+        ///// <summary>
+        ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
+        ///// </summary>
+        //public int incrementTimesteps = 1;
 
        
         /// <summary>
@@ -413,14 +413,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] prescribedLSwaveData;
 
-
-        /// <summary>
-        /// The termination criterion for fully coupled/implicit level-set evolution.
-        /// </summary>
-        [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
-
-
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
@@ -433,12 +425,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
 
-
-        /// <summary>
-        /// See <see cref="ContinuityProjection"/>
-        /// </summary>
-        [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
@@ -704,6 +690,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>

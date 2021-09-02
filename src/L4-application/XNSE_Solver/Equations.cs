@@ -370,4 +370,31 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
     }
+
+    class NavierStokesBuoyancy : SpatialEquation {
+
+        string codomainName;
+        string speciesName;
+        public NavierStokesBuoyancy(string spc,
+            int dimension,
+            int d,
+            XNSFE_OperatorConfiguration config) : base() {
+
+            this.speciesName = spc;
+
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+
+            var thermparams = config.getThermParams;
+
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(dimension)[d];
+            string gravityOfSpecies = gravity + "#" + speciesName;
+            // keep in mind the special treatment of gravity in XNSE G = -rho * g
+            var buoyancyComponent = new Solution.XheatCommon.BoussinesqApproximation_Buoyancy(speciesName, gravityOfSpecies, d, thermparams);
+            AddComponent(buoyancyComponent);
+            AddParameter(gravityOfSpecies);
+        }        
+
+        public override string CodomainName => codomainName;
+    }
 }

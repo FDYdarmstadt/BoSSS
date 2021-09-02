@@ -179,6 +179,16 @@ namespace BoSSS.Foundation.Grid {
             return R;
         }
 
+        public PolynomialList[] SetCustomPolynomials(int Degree, PolynomialList[] P) {
+            PolynomialList[] R;
+            if (!this.m_PolynomialLists.TryGetValue(Degree, out R)) {
+                var Krefs = this.m_Owner.iGeomCells.RefElements;
+                R = P;                
+                this.m_PolynomialLists.Add(Degree, R);
+            }
+            return R;
+        }
+
         SortedDictionary<int, PolynomialList[,]> m_Polynomial1stDerivLists = new SortedDictionary<int, PolynomialList[,]>();
 
         /// <summary>

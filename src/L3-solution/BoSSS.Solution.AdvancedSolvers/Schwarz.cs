@@ -374,8 +374,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         MultigridOperator m_MgOp;
 
-        // Hack the hack, if pressure is equal order ...
-        // Only viable, if p-two-grid used
+        
+        
+        /// <summary>
+        /// Hack the hack, if pressure is equal order ...
+        /// Only viable, if p-two-grid used 
+        /// </summary>
         public bool EqualOrder = false;
 
         /// <summary>
@@ -569,6 +573,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     FullSolveOfCutcells = CoarseSolveOfCutcells
                 };
 
+                var RedList = new List<int>();
                 for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
@@ -585,14 +590,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // generates the block mask
                         var fullSel = new SubBlockSelector(op.Mapping);
                         fullSel.CellSelector(bc.ToList(), false);
-                        fullMask = new BlockMask(fullSel, ExtRows);
+
+                        ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                        try {
+                            fullMask = new BlockMask(fullSel, ExtRows);
+                        } catch(ArgumentException ex) {
+                            // void cells, lead to empty selection error this is a fallback for this case
+                            RedList.Add(iPart);
+                            Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Hopefully a void cell!?");
+                            continue;
+                        }
+                        ilPSP.Environment.StdoutOnlyOnRank0 = true;
+
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
+                        Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
                         blockSolvers[iPart] = new PARDISOSolver() {
                             CacheFactorization = true,
                             UseDoublePrecision = true,
-                            Parallelism = Parallelism.SEQ
+                            Parallelism = Parallelism.SEQ,
                         };
+
+                        //blockSolvers[iPart] = new MUMPSSolver() {
+                        //    Parallelism = Parallelism.SEQ,
+                        //};
 
                         // ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO
                         //blockSolvers[iPart] = new ilPSP.LinSolvers.HYPRE.Euclid() {
@@ -602,11 +623,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         blockSolvers[iPart].DefineMatrix(fullBlock);
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
-
                         
                     }
                     BMfullBlocks[iPart] = fullMask;
                 }
+                m_BlocksInitialized = true;
+
+                // dismisses void selections
+                var tmp1 = BMfullBlocks.ToList();
+                var tmp2 = BlockMatrices.ToList();
+                var tmp3 = blockSolvers.ToList();
+                foreach (var iRed in RedList) {
+                    tmp1.RemoveAt(iRed);
+                    tmp2.RemoveAt(iRed);
+                    tmp3.RemoveAt(iRed);
+                }
+                BMfullBlocks = tmp1.ToArray();
+                BlockMatrices = tmp2.ToArray();
+                blockSolvers = tmp3.ToArray();
 
                 // Watchdog bomb!
                 // ==============
@@ -726,7 +760,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         BlockMask[] BMfullBlocks;
 
         private int m_Overlap = 1;
-
+        private bool m_BlocksInitialized = false;
 
         /// <summary>
         /// Overlap of the Schwarz blocks, in number-of-cells.
@@ -861,6 +895,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // ++++++++++++++++++++++++++++++
 
                                 blockSolvers[iPart].Solve(xi, bi);
+                                if (m_BlocksInitialized) {
+                                    BlockMatrices[iPart].Clear();
+                                    BlockMatrices[iPart] = null;
+                                }
                                 //SingleFilter(xi);
                             }
 
@@ -869,6 +907,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // accumulate block solution 'xi' to global solution 'X'
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
+                        m_BlocksInitialized = false;
                     }
 
                     using (new BlockTrace("overlap_scaling", tr)) {
@@ -936,9 +975,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Forget any factorization stored for blocks.
         /// </summary>
-        public void DisposeBlocks() {
+        private void DisposeBlockSolver() {
+            if(this.blockSolvers == null || this.blockSolvers.Count() <= 0)
+                return;
+            int mempeak = -1;
             foreach(var b in this.blockSolvers) {
-                b.Dispose();
+                mempeak = Math.Max((b as PARDISOSolver).PeakMemory(), mempeak);
+                if(b != null) b.Dispose();
+            }
+            Console.WriteLine($"peak memory: {mempeak} MB");
+        }
+
+        private void DisposePMGSolvers() {
+            if (UsePMGinBlocks && Levelpmgsolvers != null) {
+                foreach (var solver in this.Levelpmgsolvers) {
+                    solver.Dispose();
+                }
+                this.Levelpmgsolvers = null;
             }
         }
 
@@ -985,7 +1038,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     s += Levelpmgsolvers.Sum(solver => solver.UsedMem);
                 } else {
                     if (BlockMatrices != null) {
-                        s += BlockMatrices.Sum(mtx => mtx.UsedMemory);
+                        foreach(var block in BlockMatrices) {
+                            if (block != null)
+                                s += block.UsedMemory;
+                        }
                     }
                 }
                 return s;
@@ -1209,6 +1265,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        public void Dispose() {
+            this.DisposeBlockSolver();
+            this.DisposePMGSolvers();
+            this.SolutionScaling = null;
+            this.BlockMatrices = null;
+            this.BMfullBlocks = null;
+        }
+
+        public long UsedMemory() {
+            long LScaling = this.SolutionScaling.Length * sizeof(double);
+            long MemoryOfBlocks = UsedMem;
+            long MemoryOfFac = 0;
+            foreach(var solver in blockSolvers) {
+                if(solver is PARDISOSolver ps)
+                    MemoryOfFac += ps.UsedMemory();
+            }
+            return (LScaling + MemoryOfBlocks) + MemoryOfFac;
+        }
     }
 }
 

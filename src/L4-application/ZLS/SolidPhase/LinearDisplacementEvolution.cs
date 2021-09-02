@@ -22,7 +22,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
 
-            var convection = new LinearTransportForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),d, D, 1.0);
+            var convection = new LinearTransportForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1.0);
             AddComponent(convection);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
@@ -31,6 +31,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);
+
+            var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
+            AddComponent(velocityBoundaryPenalty);
         }
 
         public override string SpeciesName => speciesName;

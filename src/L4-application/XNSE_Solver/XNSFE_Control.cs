@@ -21,7 +21,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// type for solver factory
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSFE);
+            return typeof(XNSFE<XNSFE_Control>);
         }        
     }
 }

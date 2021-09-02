@@ -165,6 +165,18 @@ namespace BoSSS.Foundation.IO {
                 configAllreadyDone = true;
             }
 
+            /*
+            {
+                var CCA = new ColoredConsoleAppender();
+                CCA.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+                CCA.ActivateOptions();
+                BasicConfigurator.Configure(CCA);
+            
+            }
+            */
+
+
+
         }
 
         /// <summary>

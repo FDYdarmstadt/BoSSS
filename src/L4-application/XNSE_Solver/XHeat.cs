@@ -162,7 +162,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting timesetp {TimestepNo}, dt={dt}");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with timestep {TimestepNo}");

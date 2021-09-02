@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.ConstrainedDGprojection;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -423,6 +424,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
             // Continuity projection
             ContinuityProjection continuityProjection = new ContinuityProjection(continuousLevelSet.Basis, DGLevelSet.Basis, gridData, ContinuityProjectionOption.ConstrainedDG);
             continuityProjection.MakeContinuous(DGLevelSet, continuousLevelSet, narrowBand, posMask);
+
 
             Console.WriteLine("finished");
 

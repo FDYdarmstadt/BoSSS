@@ -16,6 +16,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
                 string variableName = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                //string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
                 AddVariableNames(variableName);
                 var divergence = new Divergence(spcName, variableName, i);
                 AddComponent(divergence);
@@ -23,7 +24,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
             AddVariableNames(pressure);
-            var pressurePenalty = new PressurePenaltyForm(spcName, pressure);
+            //var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1);
             //AddComponent(pressurePenalty);
         }
 
@@ -74,6 +75,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double flux = (_uIN[0] - _uOUT[0]) * inp.Normal[d];
             flux *= 0.5 * (_vIN + _vOUT);
 
+            //double flux = 0.5 * (_uIN[0] + _uOUT[0]) * inp.Normal[d];
+            //flux *= (_vIN - _vOUT);
             return flux;
 
         }

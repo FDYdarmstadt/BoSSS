@@ -585,7 +585,7 @@ namespace BoSSS.Application.Rheology {
 
                 base.ResLogger.TimeStep = TimestepInt;
 
-                dt = base.GetFixedTimestep();
+                dt = base.GetTimestep();
 
 
                 int NoIncrementTimestep;

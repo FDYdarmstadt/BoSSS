@@ -456,9 +456,9 @@ namespace BoSSS.Solution.XheatCommon {
                     //===========================================================================================================
                     //===========================================================================================================
                     // Second variant using Roe-Type Scheme
-                    // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow) we still enforce the boundary value
+                    // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow) we still enforce the boundary value?
                     double uJump = _uOUT[0] - _uIN[0];
-                    flx = 0.5 * (vINxN- Math.Abs(vINxN)) * uJump * _vIN;
+                    flx = 0.5 * (vINxN - Math.Abs(vINxN)) * uJump * _vIN;
                     flx -= 0.5 * (vINxN + Math.Abs(vINxN)) * uJump * _vIN;
                     //===========================================================================================================
                     //===========================================================================================================

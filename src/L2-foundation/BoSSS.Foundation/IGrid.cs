@@ -43,6 +43,9 @@ namespace BoSSS.Foundation.Grid {
         /// </summary>
         void InvalidateGridData();
 
+        
+
+
         /// <summary>
         /// Driver method for grid redistribution; this includes 
         /// - computing a new partition 

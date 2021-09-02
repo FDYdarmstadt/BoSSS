@@ -16,7 +16,9 @@ limitations under the License.
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -446,8 +448,7 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the
-        /// WORLD-communicator
+        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the WORLD-communicator
         /// </summary>
         static public bool MPIOr(this bool i) {
             return MPIOr(i, csMPI.Raw._COMM.WORLD);
@@ -465,6 +466,69 @@ namespace MPI.Wrappers {
                 return glob > 0;
             }
         }
+
+        /// <summary>
+        /// computes the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// WORLD--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIOr(this BitArray b) {
+            MPIOr(b, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// computes the logical or of <paramref name="b"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator and stores the result in-place
+        /// </summary>
+        static public void MPIOr(this BitArray b, MPI_Comm comm) {
+            int L = b.Length;
+            int Lx = L / 32 + 1;
+            int[] s_buf = new int[Lx];
+            int[] r_buf = new int[Lx];
+
+            int k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = 0;
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = b[k];
+                    if(b_k) {
+                        a |= (1 << i);
+                    }
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+                s_buf[lx] = a;
+
+                if(k >= L)
+                    break;
+            }
+
+
+            unsafe {
+                fixed(int* p_s_buf = s_buf, p_r_buf = r_buf) {
+                    csMPI.Raw.Allreduce(((IntPtr)(p_s_buf)), ((IntPtr)(p_r_buf)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BOR, comm);
+                }
+            }
+
+            k = 0;
+            for(int lx = 0; lx < Lx; lx++) {
+                int a = r_buf[lx];
+                for(int i = 0; i < 32; i++) {
+                    bool b_k = (a  & (1 << i)) != 0;
+                    b[k] = b_k;
+                    k++;
+                    if(k >= L)
+                        break;
+                }
+
+                if(k >= L)
+                    break;
+            }
+        }
+
+
+
+
 
         /// <summary>
         /// equal to <see cref="MPIAnd(int,MPI_Comm)"/>, acting on the
@@ -1401,6 +1465,66 @@ namespace MPI.Wrappers {
             
             return result;
         }
+
+
+        /// <summary>
+        /// Gathering of a jagged array on all processors
+        /// </summary>
+        static public long[][] MPI_AllGaterv(this long[][] send) {
+            return MPI_AllGaterv(send, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathering of a jagged array on all processors
+        /// </summary>
+        static public long[][] MPI_AllGaterv(this long[][] send, MPI_Comm comm) {
+            int Jloc = send.Length;
+            int NoOfItemsToSend = 0;
+            for(int j = 0; j < Jloc; j++) {
+                if(send[j] != null)
+                    NoOfItemsToSend += send[j].Length;
+            }
+            NoOfItemsToSend += Jloc;
+
+
+            // compress the jagged array into a linear one which is efficient to send.
+            long[] SendBuffer = new long[NoOfItemsToSend];
+            int k = 0;
+            for(int j = 0; j < Jloc; j++) {
+                var Nj = send[j];
+                int Lj = Nj != null ? Nj.Length : 0;
+                SendBuffer[k] = -Lj - 1; k++; // the negative minus one encoding is not necessary, but it will raise an exception if the sequence gets messed up
+                for(int i = 0; i < Lj; i++) {
+                    SendBuffer[k + i] = Nj[i];
+                }
+                k += Lj;
+            }
+            Assert.AreEqual(k, NoOfItemsToSend);
+
+            int[] NoOfItemsPerProc = NoOfItemsToSend.MPIAllGather(comm);
+            int Jglob = Jloc.MPISum(comm);
+            long[] RcvBuffer = SendBuffer.Long_MPIAllGatherv(NoOfItemsPerProc, comm);
+
+            // unpack data to jagged array
+            long[][] globalCellNeigbourship = new long[Jglob][];
+            k = 0;
+            long jG = 0;
+            while(k < RcvBuffer.Length) {
+                int L_jG = checked((int)(-(RcvBuffer[k] + 1))); k++;
+                var gN_jG = new long[L_jG];
+                globalCellNeigbourship[jG] = gN_jG;
+                for(int i = 0; i < L_jG; i++) {
+                    gN_jG[i] = RcvBuffer[k + i];
+                }
+                k += L_jG;
+                jG++;
+            }
+            Assert.AreEqual(jG, Jglob);
+
+            // finally;
+            return globalCellNeigbourship;
+        }
+
 
         /// <summary>
         /// MPI-process with rank 0 gathers this int[] over all MPI-processes in the world-communicator.

@@ -300,7 +300,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
                     KineticEnergyOperator.InvokeParameterFactory(this.KineticEnergy.Mapping.Fields),
                     LsTrk,
                     true,
-                    DelComputeEnergyOperatorMatrix, KineticEnergyOperator, DelUpdateLevelSet_EnergyOperator,
+                    DelComputeEnergyOperatorMatrix, KineticEnergyOperator, null, //DelUpdateLevelSet_EnergyOperator,
                     (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? bdfOrder + 0 : 1,
                     (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? LevelSetHandling.Coupled_Once : this.Control.Timestepper_LevelSetHandling,
                     this.XOpConfig.mmsd,
@@ -315,8 +315,8 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             KineticEnergyTimestepper.m_ResLogger = m_EnergyResLogger;
             KineticEnergyTimestepper.m_ResidualNames = this.ResidualKineticEnergy.Mapping.Fields.Select(f => f.Identification).ToArray();
             KineticEnergyTimestepper.Timestepper_Init = (this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) ? this.Control.Timestepper_BDFinit : TimeStepperInit.SingleInit;
-            KineticEnergyTimestepper.incrementTimesteps = this.Control.incrementTimesteps;
-            KineticEnergyTimestepper.PushLevelSet = delegate() { }; // dummy push does nothing
+            //KineticEnergyTimestepper.incrementTimesteps = this.Control.incrementTimesteps;
+            //KineticEnergyTimestepper.PushLevelSet = delegate() { }; // dummy push does nothing
             KineticEnergyTimestepper.IterUnderrelax = this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative ? this.Control.LSunderrelax : 1.0;
 
             KineticEnergyTimestepper.Config_LevelSetConvergenceCriterion = this.Control.LevelSet_ConvergenceCriterion;
@@ -742,6 +742,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
 
         }
 
+        /*
         /// <summary>
         /// dummy delegate for coupled operators
         /// </summary>
@@ -755,7 +756,7 @@ namespace BoSSS.Application.XNSE_Solver.Legacy {
             // do nothing
             return 0.0;
         }
-
+        */
 
         /// <summary>
         /// The residual logger for this application.

@@ -22,6 +22,7 @@ using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 
 namespace CutCellQuadrature {
 
@@ -170,6 +171,10 @@ namespace CutCellQuadrature {
         }
 
         public void EvaluateTotalCurvature(int j0, int Len, NodeSet NodeSet, MultidimensionalArray result) {
+            throw new NotImplementedException();
+        }
+
+        public void CopyFrom(ILevelSet other) {
             throw new NotImplementedException();
         }
 

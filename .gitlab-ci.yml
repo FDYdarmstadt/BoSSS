@@ -1,0 +1,41 @@
+#
+# This is the Gitlab CI file for the public repository.
+# Its main purpose is to define a pipeline which
+# publishes the BoSSS tutorials and other Jupyter sheets as static pages.
+#
+
+
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  script: 
+    - dotnet build ./src/Public.sln -c Release  # build the project
+  tags:
+    - C#7.0
+  artifacts:
+    paths:
+      - src/L4-application/TutorialTests/bin/Release/net5.0
+    expire_in: 8 hrs
+
+# Remarks:
+# (1) It seems to be very important that the directory is named 'public';
+#     Otherwise, I always got a 404 error on the pages site.
+# (2) At this point, I'm only dummy-copying HTMLs from the server.
+#
+pages:
+  stage: deploy
+  script:
+    - mkdir public
+    - copy c:\tmp\pagestest\*.html .\public\
+    - dir .\public
+  artifacts:
+    paths:
+      - public/
+  only:
+    - master
+  tags:
+    - C#7.0
+    - big_server

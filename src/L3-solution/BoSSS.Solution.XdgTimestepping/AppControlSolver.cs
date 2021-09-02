@@ -89,6 +89,14 @@ namespace BoSSS.Solution.Control {
             return base.GetHashCode();
         }
 
+        
+        /// <summary>
+        /// List of active AMR level indicators 
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -125,5 +133,10 @@ namespace BoSSS.Solution.Control {
             return true;
         }
 
+        /// <summary>
+        /// The termination criterion for fully coupled/implicit level-set evolution.
+        /// </summary>
+        [DataMember]
+        public double LevelSet_ConvergenceCriterion = 1.0e-6;
     }
 }

@@ -119,6 +119,70 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
+    public class SolidHeat : BulkEquation {
+        string speciesName;
+
+        string codomainName;
+
+        int D;
+
+        double cap;
+
+        public SolidHeat(
+            string spcName,
+            int D,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            IHeat_Configuration config) {
+
+            speciesName = spcName;
+            codomainName = EquationNames.HeatEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(D));
+
+            this.D = D;
+
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capSpc;
+            switch (spcName) {
+                case "C": { capSpc = thermParams.rho_C * thermParams.c_C; break; }
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            cap = capSpc;  
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+
+                var Visc = new ConductivityInSolid(
+                    penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
+                    1.0,
+                    boundaryMap, D, spcName, thermParams.k_C);
+
+                AddComponent(Visc);
+
+                //if (dntParams.UseGhostPenalties) {
+                //    var ViscPenalty = new ConductivityInSpeciesBulk(penalty * 1.0, 0.0, boundaryMap, D,
+                //        spcName, spcId, thermParams.k_A, thermParams.k_B);
+                //    AddGhostComponent(ViscPenalty);
+                //}
+            } else {
+                // Local DG add divergence term
+                throw new NotImplementedException();
+            }
+        }        
+
+        public override string SpeciesName => speciesName;
+
+        public override double MassScale => cap;
+
+        public override string CodomainName => codomainName;
+    }
+
     public class HeatFlux : BulkEquation {
         string speciesName;
 
@@ -229,7 +293,7 @@ namespace BoSSS.Solution.XheatCommon {
                 double penalty = dntParams.PenaltySafety;
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-                var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName);
                 AddComponent(Visc);
             } else {
                 AddComponent(new HeatFluxDivergencetAtLevelSet(dimension));
@@ -310,6 +374,138 @@ namespace BoSSS.Solution.XheatCommon {
 
             AddComponent(new TemperatureGradientAtLevelSet(d, kA, kB, Tsat));
 
+        }
+    }
+
+    public class ImmersedBoundaryHeat : SurfaceEquation {
+
+
+        string codomainName;
+        string fluidPhase, solidPhase;
+        //Methode aus der XNSF_OperatorFactory
+        public ImmersedBoundaryHeat(
+            string phaseA,
+            string phaseB,
+            int iLevSet,
+            int dimension,            
+            IXHeat_Configuration config) : base() {
+
+            
+
+            this.fluidPhase = phaseA;
+            this.solidPhase = phaseB;
+
+            codomainName = EquationNames.HeatEquation;
+            AddInterfaceHeatEq(iLevSet, dimension, config);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            if (config.getConductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.HeatFluxVector(dimension));
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => fluidPhase;
+
+        public override string SecondSpeciesName => solidPhase;
+
+        public override string CodomainName => codomainName;
+
+
+        //Methode aus der XNSF_OperatorFactory
+        void AddInterfaceHeatEq(
+            int iLevSet,
+            int dimension,
+            IXHeat_Configuration config) {
+
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double kF;
+            switch (fluidPhase) {
+                case "A": { kF = thermParams.k_A; break; }
+                case "B": { kF = thermParams.k_B; break; }
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            double kS = thermParams.k_C;
+            double Tsat = thermParams.T_sat;            
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+
+                double penalty = dntParams.PenaltySafety;
+
+                //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+
+        }
+        
+    }
+
+    public class ImmersedBoundaryDummyMomentum : BulkEquation {
+
+        string codomainName;
+        string spc;
+        public override string SpeciesName => spc;
+        public override double MassScale => 0.0;
+        public override string CodomainName => codomainName;
+        public ImmersedBoundaryDummyMomentum(
+            string spc,
+            int d) : base() {
+
+
+
+            this.spc = spc;
+
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
+            AddComponent(new DummyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d)));
+        }        
+    }
+
+    public class ImmersedBoundaryDummyConti : BulkEquation {
+
+        string codomainName;
+        string spc;
+        public override string SpeciesName => spc;
+        public override double MassScale => 0.0;
+        public override string CodomainName => codomainName;
+        public ImmersedBoundaryDummyConti(
+            string spc) : base() {
+
+
+
+            this.spc = spc;
+
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
+            AddComponent(new DummyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure));
+        }
+    }
+
+    public class DummyForm : IVolumeForm, ISpeciesFilter, ISupportsJacobianComponent {
+        public DummyForm(string spc, string variable) {
+            ValidSpecies = spc;
+            ArgumentOrdering = new string[] { variable };
+        }
+        public TermActivationFlags VolTerms => TermActivationFlags.UxV;
+
+        public IList<string> ArgumentOrdering{ get; private set; }
+
+        public IList<string> ParameterOrdering => null;
+
+        public string ValidSpecies { get; private set; }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            return U[0] * V;
         }
     }
 }

@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public LinearNavierCauchy(string speciesName, Solid material, int d, int D, double artificialViscosity) {
+        public LinearNavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
@@ -32,13 +32,24 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(pressure);
 
             var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            //eulerAlmansi0.PenaltySafety = 0.0;
             AddComponent(eulerAlmansi0);
 
             var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
             AddComponent(eulerAlmansi1);
+            //eulerAlmansi1.PenaltySafety = 0.0;
 
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, artificialViscosity);
+            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
+
+            //var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 1);
+            //AddComponent(velocityBoundaryPenalty);
+
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + SpeciesName;
+            var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            AddComponent(gravityComponent);
+            AddParameter(gravityOfSpecies);
         }
 
         public override string SpeciesName => speciesName;

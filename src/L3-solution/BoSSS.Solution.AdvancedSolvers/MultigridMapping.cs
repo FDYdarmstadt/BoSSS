@@ -574,11 +574,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                     long Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, Np_row*iSpc_Row);
 
-                                    //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
-                                    //    if(Col0 <= 3 && 3 < Col0 + Np_col) {
-                                    //        Debugger.Break();
-                                    //    }
-                                    //}
                                     PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
                                 }
                             }
@@ -600,11 +595,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 long Row0 = finerLevel.GlobalUniqueIndex(iVar, jf, 0);
 
                                 PrlgMtx.AccBlock(Row0, Col0, 1.0, Inj_iVar_jc.ExtractSubArrayShallow(new[] { i, 0, 0 }, new[] { i - 1, Np_row - 1, Np_col - 1 }));
-                                //if(Row0 <= 12 &&  12 < Row0 + Np_row) {
-                                //        if(Col0 <= 3 && 3 < Col0 + Np_col) {
-                                //            Debugger.Break();
-                                //        }
-                                //    }
+                                
                             }
                         }
                     }

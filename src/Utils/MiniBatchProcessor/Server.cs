@@ -136,7 +136,9 @@ namespace MiniBatchProcessor {
             if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
-                ProcessStartInfo psi = new ProcessStartInfo();
+                ProcessStartInfo psi = new ProcessStartInfo() { 
+                    UseShellExecute = true // default value changed from .net framework to .net, set this true, so an external window is opened
+                };
                 psi.FileName = "dotnet";
                 psi.Arguments = typeof(Server).Assembly.Location;
 

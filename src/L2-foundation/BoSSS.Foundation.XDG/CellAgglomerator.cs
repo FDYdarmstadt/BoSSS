@@ -658,109 +658,111 @@ namespace BoSSS.Foundation.XDG {
         public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
             bool MakeInPlace, CellMask cm) {
+            using(new FuncTrace()) {
 
-            int J = this.GridDat.Cells.NoOfLocalUpdatedCells;
-            int mpiRank = this.GridDat.CellPartitioning.MpiRank;
+                int J = this.GridDat.Cells.NoOfLocalUpdatedCells;
+                int mpiRank = this.GridDat.CellPartitioning.MpiRank;
 
-            this.InitCouplingMatrices(MaxDegree);
+                this.InitCouplingMatrices(MaxDegree);
 
-            BlockMsrMatrix CompleteMtx = null;
-            for (int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
+                BlockMsrMatrix CompleteMtx = null;
+                for(int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
 
-                // alloc matrix for the current agglomeration level
-                // ------------------------------------------------
+                    // alloc matrix for the current agglomeration level
+                    // ------------------------------------------------
 
-                BlockMsrMatrix LevelMtx = new BlockMsrMatrix(map, map);
+                    BlockMsrMatrix LevelMtx = new BlockMsrMatrix(map, map);
 
-                if (!MakeInPlace) {
-                    // ++++++++++++
-                    // if not an in-place matrix, we have to initialize the identity matrix.
-                    // ++++++++++++
-                    if (cm == null)
-                        cm = CellMask.GetFullMask(this.GridDat);
+                    if(!MakeInPlace) {
+                        // ++++++++++++
+                        // if not an in-place matrix, we have to initialize the identity matrix.
+                        // ++++++++++++
+                        if(cm == null)
+                            cm = CellMask.GetFullMask(this.GridDat);
 
-                    foreach (int j in cm.ItemEnum) { // loop over cells...
-                        for (int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
-                            int N = NjFunc(j, gamma);
-                            long i0 = i0Func(j, gamma);
+                        foreach(int j in cm.ItemEnum) { // loop over cells...
+                            for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
+                                int N = NjFunc(j, gamma);
+                                long i0 = i0Func(j, gamma);
 
-                            for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
-                                LevelMtx[i0 + n, i0 + n] = 1.0;
-                            }
-                        }
-                    }
-                }
-
-                // accumulate agglomeration entries
-                // --------------------------------
-
-                int iPair = -1;
-                foreach (var pair in this.AggInfo.AgglomerationPairs) {
-                    iPair++;
-
-                    if (pair.OwnerRank4Target == mpiRank) {
-                        var Aj = this.CouplingMtx.ExtractSubArrayShallow(iPair, -1, -1);
-
-                        if (pair.AgglomerationLevel != AggLevel)
-                            continue;
-
-                        for (int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
-                            int N = NjFunc(pair.jCellSource, gamma);
-                            int N2 = NjFunc(pair.jCellTarget, gamma);
-                            if (N != N2) {
-                                throw new NotSupportedException("Different number of DOF in source and target is not supported.");
-                            }
-
-                            long i0_Row = i0Func(pair.jCellTarget, gamma);
-                            long i0_Col = i0Func(pair.jCellSource, gamma);
-
-                            for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
-                                for (int m = 0; m < N; m++) {
-                                    LevelMtx[i0_Row + n, i0_Col + m] = Aj[m, n];
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                    LevelMtx[i0 + n, i0 + n] = 1.0;
                                 }
                             }
                         }
-
                     }
 
-                    if (pair.OwnerRank4Source == mpiRank) {
-                        // clear agglomeration source
+                    // accumulate agglomeration entries
+                    // --------------------------------
 
-                        for (int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
-                            int N = NjFunc(pair.jCellSource, gamma);
-                            long i0 = i0Func(pair.jCellSource, gamma);
+                    int iPair = -1;
+                    foreach(var pair in this.AggInfo.AgglomerationPairs) {
+                        iPair++;
 
-                            for (int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
-                                if (MakeInPlace)
-                                    LevelMtx[i0 + n, i0 + n] = -1.0;
-                                else
-                                    LevelMtx[i0 + n, i0 + n] = 0.0;
+                        if(pair.OwnerRank4Target == mpiRank) {
+                            var Aj = this.CouplingMtx.ExtractSubArrayShallow(iPair, -1, -1);
+
+                            if(pair.AgglomerationLevel != AggLevel)
+                                continue;
+
+                            for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
+                                int N = NjFunc(pair.jCellSource, gamma);
+                                int N2 = NjFunc(pair.jCellTarget, gamma);
+                                if(N != N2) {
+                                    throw new NotSupportedException("Different number of DOF in source and target is not supported.");
+                                }
+
+                                long i0_Row = i0Func(pair.jCellTarget, gamma);
+                                long i0_Col = i0Func(pair.jCellSource, gamma);
+
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                    for(int m = 0; m < N; m++) {
+                                        LevelMtx[i0_Row + n, i0_Col + m] = Aj[m, n];
+                                    }
+                                }
+                            }
+
+                        }
+
+                        if(pair.OwnerRank4Source == mpiRank) {
+                            // clear agglomeration source
+
+                            for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
+                                int N = NjFunc(pair.jCellSource, gamma);
+                                long i0 = i0Func(pair.jCellSource, gamma);
+
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                    if(MakeInPlace)
+                                        LevelMtx[i0 + n, i0 + n] = -1.0;
+                                    else
+                                        LevelMtx[i0 + n, i0 + n] = 0.0;
+                                }
                             }
                         }
                     }
-                }
 
-                // combine the matrix for the current agg. level 'LevelMtx' with the complete matrix
-                // ---------------------------------------------------------------------------------
+                    // combine the matrix for the current agg. level 'LevelMtx' with the complete matrix
+                    // ---------------------------------------------------------------------------------
 
-                if (AggLevel == 0) {
-                    CompleteMtx = LevelMtx;
-                } else {
-                    if (MakeInPlace) {
-                        BlockMsrMatrix P = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
-                        CompleteMtx.Acc(1.0, LevelMtx);
-                        CompleteMtx.Acc(1.0, P);
+                    if(AggLevel == 0) {
+                        CompleteMtx = LevelMtx;
                     } else {
-                        CompleteMtx = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        if(MakeInPlace) {
+                            BlockMsrMatrix P = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                            CompleteMtx.Acc(1.0, LevelMtx);
+                            CompleteMtx.Acc(1.0, P);
+                        } else {
+                            CompleteMtx = BlockMsrMatrix.Multiply(LevelMtx, CompleteMtx);
+                        }
                     }
+
                 }
 
+                // return
+                // ======
+
+                return CompleteMtx;
             }
-
-            // return
-            // ======
-
-            return CompleteMtx;
         }
 
         /// <summary>

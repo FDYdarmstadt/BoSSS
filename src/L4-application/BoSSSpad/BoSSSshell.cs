@@ -644,6 +644,30 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Simple plotting interface
+        /// </summary>
+        /// <returns>Output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        static public object Plot(IEnumerable<double>[] X, IEnumerable<double>[] Y, string[] Name1 = null, string[] Format1 = null,
+            bool logX = false, bool logY = false) {
+
+            using (var gp = new Gnuplot()) {
+
+                IEnumerable<double>[] Xs = X;
+                IEnumerable<double>[] Ys = Y;
+
+                for (int i = 0; i < Xs.Length; i++) {
+                    if (Ys.ElementAtOrDefault(i) != null) {
+                        var f1 = new PlotFormat();
+                        if (Format1?.ElementAtOrDefault(i) != null)
+                            f1.FromString(Format1[i]);
+                        gp.PlotXY(Xs[i], Ys[i], title: Name1?.ElementAtOrDefault(i), format: f1, logX: logX, logY: logY);
+                    }
+                }
+
+                return gp.PlotSVG();
+            }
+        }
 
         /// <summary>
         /// Plotting of an grid with dummy data, 

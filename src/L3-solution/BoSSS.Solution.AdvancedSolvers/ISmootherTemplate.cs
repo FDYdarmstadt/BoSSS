@@ -26,7 +26,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// The basic interface for a linear solver. 
     /// </summary>
-    public interface ISolverSmootherTemplate : ICloneable {
+    public interface ISolverSmootherTemplate : ICloneable, IDisposable {
 
         /// <summary>
         /// Initializes the linear solver.
@@ -75,6 +75,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Reset solver statistics, i.e. set <see cref="IterationsInNested"/>, <see cref="ThisLevelIterations"/>, etc. to 0.
         /// </summary>
         void ResetStat();
+
+        /// <summary>
+        /// Estimate of used memory in bytes
+        /// </summary>
+        long UsedMemory();
     }
 
 

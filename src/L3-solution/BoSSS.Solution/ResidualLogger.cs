@@ -468,12 +468,13 @@ namespace BoSSS.Solution {
 
         void WriteHeader(bool WriteTimeStepNo, TextWriter sw) {
             if (m_MPIrank == 0) {
-                sw.Write("#Line,");
+                sw.Write("{0,6},","#Line");
                 if (WriteTimeStepNo)
-                    sw.Write("#Time,");
-                sw.Write("#Iter");
+                    sw.Write("{0,6},", "#Time");
+                sw.Write("{0,6}", " #Iter");
+                sw.Write("\t");
                 foreach (var key in m_Residuals.Keys) {
-                    sw.Write("\t " + key);
+                    sw.Write("{0,-20}", key);
                 }
                 sw.WriteLine();
                 sw.Flush();
@@ -482,14 +483,13 @@ namespace BoSSS.Solution {
 
         void WriteResiduals(bool WriteTimeStepNo, TextWriter sw) {
             if (m_MPIrank == 0) {
-                sw.Write(m_LineCounter);
-                sw.Write(",");
+                sw.Write("{0,6},", m_LineCounter);
                 if (WriteTimeStepNo)
-                    sw.Write(m_TimeStep + ",");
-                sw.Write(m_IterationCounter);
-
+                    sw.Write("{0,6},", m_TimeStep);
+                sw.Write("{0,6}", m_IterationCounter);
+                sw.Write("\t");
                 foreach (var value in m_Residuals.Values) {
-                    sw.Write("\t " + value.ToString("E", NumberFormatInfo.InvariantInfo));
+                    sw.Write("{0,-20}", value.ToString("E", NumberFormatInfo.InvariantInfo));
                 }
                 sw.WriteLine();
                 sw.Flush();

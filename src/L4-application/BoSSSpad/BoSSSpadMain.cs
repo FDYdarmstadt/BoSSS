@@ -90,9 +90,9 @@ namespace BoSSS.Application.BoSSSpad {
             Jupyterfile,
 
             /// <summary>
-            /// application deployment
+            /// application deployment and running on a cluster
             /// </summary>
-            deploy
+            RunBatch
 
         }
 
@@ -334,8 +334,9 @@ namespace BoSSS.Application.BoSSSpad {
                     break;
                 }
 
-                case Modes.deploy:
-                throw new NotImplementedException("will come soon");
+                case Modes.RunBatch:
+                errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
+                break;
 
                 default:
                 throw new NotImplementedException();
@@ -511,7 +512,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Dummy function which ensures that certain referenced assemblies 
         /// </summary>
-        private static void LinkEnforcer() {
+        public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.Program).FullName);
             Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
@@ -519,5 +520,9 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
         }
+
+
+        
+
     }
 }

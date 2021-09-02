@@ -25,10 +25,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int D;
 
-        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int D, double rho) {
+        int d;
+
+        public NonLinearConvectionForm(string speciesName, string[] variableNames, string[] velocity, int d, double rho) {
             this.speciesName = speciesName;
-            this.variableNames = new string[] { variableName }.Cat(velocity);
-            this.D = D;
+            this.variableNames = velocity.Cat(variableNames);
+            this.D = velocity.Length;
+            this.d = d;
             this.rho = rho;
             this.parameternames = new string[] { };
         }
@@ -56,21 +59,21 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double r = 0.0;
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += _uIN[0] * (_uIN[1+0] * inp.Normal[0] + _uIN[1 + 1] * inp.Normal[1]);
+            r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
             if(D == 3) {
-                r += _uIN[0] * _uIN[1 + 2] * inp.Normal[2];
+                r += _uIN[d] * _uIN[D + 2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
             // ==========================
 
             Vector VelocityMeanIn = new Vector(D);
-            for(int d = 0; d < D; ++d) {
-                VelocityMeanIn[d] = _uIN[1 + d];
+            for(int dim = 0; dim < D; ++dim) {
+                VelocityMeanIn[dim] = _uIN[dim];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal);
-            double uJump = _uIN[0];
+            double uJump = _uIN[D+d];
             r += LambdaIn * uJump;
 
             r *= rho;
@@ -88,10 +91,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             // 2 * {u_i * u_j} * n_j,
             // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            r += _uIN[0] * (_uIN[1+0] * inp.Normal[0] + _uIN[1 + 1] * inp.Normal[1]);
-            r += _uOUT[0] * (_uOUT[1+0] * inp.Normal[0] + _uOUT[1+1] * inp.Normal[1]);
+            r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
+            r += _uOUT[d] * (_uOUT[D+0] * inp.Normal[0] + _uOUT[D+1] * inp.Normal[1]);
             if(D == 3) {
-                r += _uIN[0] * _uIN[1+2] * inp.Normal[2] + _uOUT[0] * _uOUT[1+2] * inp.Normal[2];
+                r += _uIN[d] * _uIN[D+2] * inp.Normal[2] + _uOUT[d] * _uOUT[D+2] * inp.Normal[2];
             }
 
             // Calculate dissipative part
@@ -99,15 +102,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             Vector VelocityMeanIn = new Vector(D);
             Vector VelocityMeanOut = new Vector(D);
-            for(int d = 0; d < D; ++d) {
-                VelocityMeanIn[d] = _uIN[1 + d];
-                VelocityMeanOut[d] = _uOUT[1 + d];
+            for(int dim = 0; dim < D; ++dim) {
+                VelocityMeanIn[dim] = _uIN[dim];
+                VelocityMeanOut[dim] = _uOUT[dim];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal);
             double LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal);
             double Lambda = Math.Max(LambdaIn, LambdaOut);
-            double uJump = _uIN[0] - _uOUT[0];
+            double uJump = _uIN[D+d] - _uOUT[D+d];
             r += Lambda * uJump;
             r *= 0.5;
 
@@ -117,8 +120,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
-            for(int d = 0; d < D; d++)
-                acc += U[0] * U[1+d] * GradV[d];
+            for(int dim = 0; dim < D; dim++)
+                acc += U[d] * U[D+dim] * GradV[dim];
             acc *= rho;
             return -acc;
         }

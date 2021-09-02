@@ -970,7 +970,41 @@ namespace BoSSS.Foundation {
         /// </summary>
         public static implicit operator Basis[](UnsetteledCoordinateMapping cm) {
             return cm.BasisS.ToArray();
-        }    
+        }
+        
+        /// <summary>
+        /// Creates a local clone of this object, which lives only on the MPI_SELF communicator.
+        /// </summary>
+        public BlockPartitioning GetLocalBlockPartitioning() {
+
+            int J = this.LocalNoOfBlocks;
+            int L = this.LocalLength;
+            int FrameBlockSize = this.MaxTotalNoOfCoordinatesPerCell;
+
+            int[][] _Subblk_i0 = new int[0][];
+            int[][] _SubblkLen = new int[0][];
+            int[] _blockType = new int[J];
+
+
+            for(int j = 0; j < J; j++ ) {
+                int bt_j = this.GetBlockType(j + this.FirstBlock);
+                _blockType[j] = bt_j;
+                
+                if(_Subblk_i0.Length <= bt_j) {
+                    Array.Resize(ref _Subblk_i0, bt_j + 1);
+                    Array.Resize(ref _SubblkLen, bt_j + 1);
+                }
+
+                if(_Subblk_i0[bt_j] == null) {
+                    _Subblk_i0[bt_j] = this.GetSubblk_i0(bt_j).CloneAs();
+                    _SubblkLen[bt_j] = this.GetSubblkLen(bt_j).CloneAs();
+                }
+            }
+
+           
+
+            return new BlockPartitioning(L, FrameBlockSize, _Subblk_i0.ToArray(), _SubblkLen.ToArray(), _blockType, csMPI.Raw._COMM.SELF);
+        }
     
     }
 }

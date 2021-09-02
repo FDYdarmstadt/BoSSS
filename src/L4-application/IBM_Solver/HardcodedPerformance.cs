@@ -76,11 +76,9 @@ namespace BoSSS.Application.IBM_Solver {
             if (!restart) {
 
                 if (load_Grid == true) {
-                    Console.WriteLine("...loading grid");
                     C.GridGuid = new Guid(_GridGuid);
                 } else {
                     //// Create Grid
-                    Console.WriteLine("...generating grid");
                     C.GridFunc = delegate {
 
                         // x-direction

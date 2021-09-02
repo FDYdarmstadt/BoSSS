@@ -421,6 +421,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 switch (spc) {
                     case "A": { rhoA = physicalParameters.rho_A; break; }
                     case "B": { rhoB = physicalParameters.rho_B; break; }
+                    case "C": { break; }
                     default: { throw new ArgumentException("unknown species"); }
                 }
             }
@@ -547,7 +548,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public MassFluxExtension_Evaporation(XNSFE_OperatorConfiguration config) {
-            this.config = config;            
+            this.config = config;
         }
 
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -568,6 +569,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 switch (spc) {
                     case "A": { kA = thermalParams.k_A; break; }
                     case "B": { kB = thermalParams.k_B; break; }
+                    case "C": { break; }
                     default: { throw new ArgumentException("unknown species"); }
                 }
             }
@@ -631,24 +633,24 @@ namespace BoSSS.Application.XNSE_Solver {
             ParameterVarFields[paramName].Acc(1.0, MassFluxField);
 
             // extension
-            SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
-            CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
-            CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
-            int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
-            double[][] MassFluxMin = new double[1][];
-            double[][] MassFluxMax = new double[1][];
-            MassFluxMin[0] = new double[J];
-            MassFluxMax[0] = new double[J];
+            //SubGrid CCgrid = levelSet.Tracker.Regions.GetCutCellSubGrid();
+            //CellMask CC = levelSet.Tracker.Regions.GetCutCellMask();
+            //CellMask NEAR = levelSet.Tracker.Regions.GetNearFieldMask(1);
+            //int J = this.levelSet.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
+            //double[][] MassFluxMin = new double[1][];
+            //double[][] MassFluxMax = new double[1][];
+            //MassFluxMin[0] = new double[J];
+            //MassFluxMax[0] = new double[J];
 
-            VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
-            DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
+            //VectorField<SinglePhaseField> DGLevSetGradient = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(levelSet.DGLevelSet.Basis)));
+            //DGLevSetGradient.Gradient(1.0, levelSet.DGLevelSet);
 
-            NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
-                levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
+            //NarrowMarchingBand.ConstructExtVel_PDE(levelSet.Tracker, CCgrid, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] }, new SinglePhaseField[] { MassFluxField },
+            //    levelSet.DGLevelSet, DGLevSetGradient, MassFluxMin, MassFluxMax, order);
 
-            var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
-            marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
-                MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
+            //var marcher = new FastMarchReinit(levelSet.DGLevelSet.Basis);
+            //marcher.ConstructExtension(levelSet.DGLevelSet, NEAR.Except(CC), CC, new SinglePhaseField[] { (SinglePhaseField)ParameterVarFields[paramName] },
+            //    MassFluxMin, MassFluxMax, DGLevSetGradient, 0);
 
             ParameterVarFields[paramName].CheckForNanOrInf(true, true, true);
         }
@@ -749,7 +751,7 @@ namespace BoSSS.Application.XNSE_Solver {
             for (int d = 0; d < D; d++) {
                 foreach(var spc in lstrk.SpeciesNames) {
                     
-                    DGField temperaure_Spc = ((temperaure as XDGField).GetSpeciesShadowField(spc));
+                    DGField temperature_Spc = ((temperaure as XDGField).GetSpeciesShadowField(spc));
 
                     double aSpc = (k_spc != null && k_spc.ContainsKey(spc)) ? k_spc[spc] : 1.0;
 
@@ -757,7 +759,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     DGField heatflux = ParameterVarFields[paramname];
                     heatflux.Clear();
                     // q=-k*grad(T)
-                    (heatflux as XDGField).GetSpeciesShadowField(spc).DerivativeByFlux(-aSpc, temperaure_Spc, d, Sgrd);
+                    (heatflux as XDGField).GetSpeciesShadowField(spc).DerivativeByFlux(-aSpc, temperature_Spc, d, Sgrd);
                 }
             }            
         }

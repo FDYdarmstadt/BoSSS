@@ -66,6 +66,9 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+
+
+
         /// <summary>
         /// Identification of the grid in the BoSSS database, 
         /// equal to the <see cref="BoSSS.Foundation.IO.IDatabaseEntityInfo{T}.ID"/>.
@@ -250,15 +253,16 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
-            if (m_Cells != null) {
+            m_IsAlive = false;
+            if(m_Cells != null) {
                 this.m_Cells.CellCenter = null;
                 this.m_Cells.Cells2Edges = null;
             }
             this.m_Cells = null;
-            
+
             this.m_CurrentGlobalIdPermutation = null;
             this.m_InnerCells = null;
-                        
+
             this.m_Edges = null;
 
             this.m_GlobalNodes = null;
@@ -278,6 +282,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             this.m_Subgrid4RefElement = null;
         }
 
+        bool m_IsAlive = true;
+
+        /// <summary>
+        /// indicates that <see cref="Invalidate"/> has been called
+        /// </summary>
+        public bool IsAlive() {
+            return m_IsAlive;
+        }
 
 
         private void InitNoOfCellsPerRefElement() {
@@ -1804,6 +1816,17 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public IntPtr _GetForeignPointer() {
             return m_ForeignPtr;
+        }
+
+        /// <summary>
+        /// Makes a shallow copy of the GridData object, except for the Chefbasis! 
+        /// This allows to use the same GridData for different basis functions.
+        /// </summary>
+        /// <returns></returns>
+        public GridData CopyWithNewBasis() {
+            var GrdDatClone = (GridData)this.MemberwiseClone();
+            GrdDatClone.ChefBasis = new GridData._BasisData(GrdDatClone);
+            return GrdDatClone;
         }
     }
 }

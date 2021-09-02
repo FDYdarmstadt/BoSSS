@@ -14,7 +14,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string solidSpecies;
         string codomainName;
 
-        public LinearNavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, Solid material, double rho_fluid, double viscosity, double artificialViscosity) {
+        public LinearNavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, Solid material, double rho_fluid, double viscosity) {
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -33,7 +33,7 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
-            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, 1, artificialViscosity));
+            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, 1, material.Viscosity));
         }
 
         public override string FirstSpeciesName => fluidSpecies;

@@ -10,6 +10,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double PoissonsRatio { get; protected set; }
         //In GPA
         public double ModulusOfElasticity { get; protected set; }
+
+        public double Viscosity { get; protected set; }
+
         //In g/cc
         public double Density { get; protected set; }
         public double Lame1 { get; protected set; }
@@ -22,7 +25,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public SoftSiliconeRubber() {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 0.000005;
-            Density = 0.7;
+            Density = 300;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
@@ -41,10 +44,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
     class HardSiliconeRubber : Solid {
         public HardSiliconeRubber() {
             PoissonsRatio = 0.5;
-            ModulusOfElasticity = 1.9;
+            ModulusOfElasticity = 19;
             Density = 3.8;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
+            Viscosity = 1;
         }
     }
 
@@ -85,6 +89,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 3;
             Density = 1;
+            Viscosity = 0.1;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }

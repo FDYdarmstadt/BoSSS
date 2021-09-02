@@ -49,28 +49,30 @@ namespace ZwoLevelSetSolver {
         }
 
         //Artificial Viscosity Term in displacement transport equations
-        double displacementViscosity = 0;
-        //Viscosity Term in momentum balance equations
-        double momentumViscosity = 0.1;
+        double displacementViscosity = 0.00;
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             
             for(int d = 0; d < D; ++d) {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D, momentumViscosity));
+                    opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D, displacementViscosity));
+
                 }else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D, momentumViscosity));
+                    opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new DisplacementEvolution("C", d, D, displacementViscosity));
                 } else {
                     throw new NotSupportedException();
                 }
 
+                opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
+
                 opFactory.AddEquation(new Dummy("A", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
             }
             opFactory.AddEquation(new SolidPhase.Continuity("C", D));
-
+            //opFactory.AddEquation(new PressurePenalty("A", -1));
+            //opFactory.AddEquation(new PressurePenalty("B", -1));
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
@@ -85,13 +87,13 @@ namespace ZwoLevelSetSolver {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "A", "C", d, D, displacementViscosity));
                     opFactory.AddEquation(new LinearDisplacementBoundary(LsTrk, "B", "C", d, D, displacementViscosity));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, momentumViscosity));
-                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, momentumViscosity));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
+                    opFactory.AddEquation(new LinearNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                 } else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, displacementViscosity));
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, displacementViscosity));
-                    opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A, momentumViscosity));
-                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B, momentumViscosity));
+                    opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
+                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                 } else {
                     throw new NotSupportedException();
                 }
@@ -106,9 +108,9 @@ namespace ZwoLevelSetSolver {
                 lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, v0Mean);
             }
 
-            //*
-            //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-            //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            /*
+            opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+            opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             //*/
 
             /*
@@ -139,7 +141,7 @@ namespace ZwoLevelSetSolver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             Timestepping.Solve(phystime, dt, false);
             Console.WriteLine($"done with time step {TimestepNo}");

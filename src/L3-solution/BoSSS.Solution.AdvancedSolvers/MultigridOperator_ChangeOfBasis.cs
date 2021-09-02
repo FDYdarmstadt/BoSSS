@@ -127,7 +127,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        ChangeOfBasisConfig[] m_Config;
+        readonly ChangeOfBasisConfig[] m_Config;
 
         /// <summary>
         /// Multigrid Operator configuration in current level

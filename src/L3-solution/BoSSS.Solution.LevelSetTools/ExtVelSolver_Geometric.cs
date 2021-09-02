@@ -109,8 +109,8 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             //Find neighbors that define the cells edges
             //Scheme: find used edges, associate a neighbouring edge to each used edge, count the number of used edges.
-            Tuple<int, int, int>[] neighbors = this.GridDat.GetCellNeighboursViaEdges(jCell);
-            foreach (Tuple<int, int, int> neighbor in neighbors) {
+            var neighbors = this.GridDat.GetCellNeighboursViaEdges(jCell);
+            foreach (var neighbor in neighbors) {
                 if (Accepted_Mutuable[neighbor.Item1] == true) {
                     edgesOfCell[numberOfUsedEdges].AssociatedNeighbour = neighbor; //NumberOfEdges is incremented in class Edge
                     numberOfUsedEdges++;
@@ -154,7 +154,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             public NodeSet EdgeNodes;
             public int noOfEdgeNodes;
             GridData Solver_Grid;
-            Tuple<int, int, int> associatedNeighbour; 
+            (int jCellLoc, int iEdge, int InOrOut) associatedNeighbour; 
             
             public Edge(MultidimensionalArray NodeGrid, GridData Solver_Grid) {
                 noOfEdgeNodes = NodeGrid.Lengths[0];
@@ -182,7 +182,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 this.ExtEdgeEvalBuffer.Clear();
             } 
 
-            public Tuple<int, int, int> AssociatedNeighbour {
+            public (int jCellLoc, int iEdge, int InOrOut) AssociatedNeighbour {
                 set {
                     this.associatedNeighbour = value;
                     Edge.numberOfUsedEdges++;

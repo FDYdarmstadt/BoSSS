@@ -107,7 +107,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             List<Node> Accepted = new List<Node>();
             
             //Find accepted edges
-            Tuple<int, int, int>[] neighbors = gridDat.GetCellNeighboursViaEdges(jCell);
+            var neighbors = gridDat.GetCellNeighboursViaEdges(jCell);
 
             //Set values for nodes on edges in NodeGraph
             //-------------------------------------------------------------------------------------------------------------------------------
@@ -122,7 +122,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             MultidimensionalArray EdgeNodesLocal = MultidimensionalArray.Create(resolution, gridDat.SpatialDimension );
 
             //For each accepted edge set value for nodes in NodeGraph
-            foreach (Tuple<int, int , int> neighbor in neighbors) {
+            foreach (var neighbor in neighbors) {
                 if (AcceptedMask[neighbor.Item1]) {
 
                     //Build Nodeset for evaluation

@@ -1,9 +1,12 @@
-﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿//#define TEST
+
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
@@ -13,7 +16,9 @@ using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
+using CommandLine;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -36,7 +41,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// - Current (jan2021) Maintainers: Beck, Rieckmann, Kummer
     /// - successor of the old XNSE solver <see cref="XNSE_SolverMain"/>, which was mainly used for SFB 1194 and PhD thesis of M. Smuda.
     /// - Quadrature order: saye algorithm can be regarded as a nonlinear transformation to the [-1,1] reference Element. 
-    ///   We transform \int f dx to the reference Element, \int f dx = \int f(T) |det D(T)| d\hat{x}
+    ///   We transform $` \int f dx $` to the reference Element, $` \int f dx = \int f(T) |det D(T)| d\hat{x} $`
     ///   Suppose f has degree n and suppose the transformation T has degree p, then the integrand in reference space
     ///   has approximately degree <= n * p + (p - 1)
     ///   This is problematic, because we need to find sqrt(n * p + (p - 1)) roots of the level set function, if we want to integrate f exactly.
@@ -68,39 +73,59 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(3, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
-            //BoSSS.Application.XNSE_Solver.Legacy.LegacyTests.UnitTest.BcTest_PressureOutletTest(2, 1, 0.1d, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false);
-            //Tests.ASUnitTest.CurvedElementsTest(3);
-            //Tests.ASUnitTest.IBMChannelTest(1, 0.0d, NonLinearSolverCode.Newton);
-            //Tests.ASUnitTest.MovingDropletTest_rel_p3_Saye_FullySymmetric(0.1, true, SurfaceStressTensor_IsotropicMode.Curvature_Projected, 0.70611, true, false);
-            //Tests.LevelSetUnitTests.LevelSetAdvectionTest2D(4, 2, LevelSetEvolution.StokesExtension, LevelSetHandling.LieSplitting, false);
-            ////Tests.LevelSetUnitTests.LevelSetAdvectionOnWallTest3D(Math.PI / 4, 2, 0, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            ////Tests.LevelSetUnitTests.LevelSetShearingTest(2, 3, LevelSetEvolution.FastMarching, LevelSetHandling.LieSplitting);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.IBMChannelSolverTest(1, 0.0d, LinearSolverCode.exp_gmres_levelpmg);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
             //throw new Exception("Remove me");
 
-            
+            bool Evap = false;
+            // not sure if this works always, idea is to determine on startup which solver should be run.
+            // default is XNSE<XNSE_Control>
+            try {
+                // peek at control file and select correct solver depending on controlfile type
+                // parse arguments
+                args = ArgsFromEnvironmentVars(args);
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                argsParseSuccess = parser.ParseArguments(args, opt);
 
-            _Main(args, false, delegate () {
-                var p = new XNSE();
-                //Debugger.Launch();
-                void KatastrophenPlot(DGField[] dGFields) {
-
-                    List<DGField> allfields = new();
-                    allfields.AddRange(dGFields);
-                    
-                    foreach(var f in p.RegisteredFields) {
-                        if(!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
-                            allfields.Add(f);
-                    }
-
-                    Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
+                if(!argsParseSuccess) {
+                    System.Environment.Exit(-1);
                 }
-                MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
 
-                return p;
-            });
+                if(opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+
+                XNSE_Control ctrlV2 = null;
+                XNSE_Control[] ctrlV2_ParameterStudy = null;
+
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                Evap = ctrlV2 is XNSFE_Control | ctrlV2_ParameterStudy is XNSFE_Control[];
+            } catch {
+                Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
+            }
+
+            if(Evap) {
+                XNSFE<XNSFE_Control>._Main(args, false, delegate () {
+                    var p = new XNSFE<XNSFE_Control>();
+                    return p;
+                });
+            } else {
+                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
+                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
+                    //DateTime hello = DateTime.Now;
+                    XNSE._Main(args, false, delegate () {
+                        var p = new XNSE();
+                        return p;
+                    });
+                    //DateTime fino = DateTime.Now;
+                    //Console.WriteLine("Runtime totalo " + (fino - hello));
+
+                    //Tmeas.Memtrace.Flush();
+                    //Tmeas.Memtrace.Close();
+                //}
+            }
+
         }
     }
 
@@ -481,12 +506,23 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
             for (int d = 0; d < D; ++d) {
+                // so far only no slip!
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
+                }
+
+                // surface tension on IBM
+                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                    opFactory.AddEquation(new NSEimmersedBoundary_SurfaceTension("A", "B", d, D, 1));
+                }
+
+                // GNBC
+                if (config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
+                    opFactory.AddEquation(new NSEimmersedBoundary_GNBC("A", "B", d, D, config.getPhysParams, 1));
                 }
             }
 
@@ -495,25 +531,23 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //throw new NotImplementedException("todo");
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
+
+            if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine || config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
+                var normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
+                opFactory.AddParameter(normalsParameter);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), normalsParameter);
+            }
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            //// check some properties (only for debugging)
-            //double r0 = 1;
-            //double volumeRef = (1.0 / 3.0) * Math.PI * Math.Pow(r0, 3); // quarter domain
-            ////double rCalc = 0.9074;
-            ////double volumeCalc = (1.0 / 3.0) * Math.PI * Math.Pow(rCalc, 3); // quarter domain
-            //int quadOrder = QuadOrder();
-            //Console.WriteLine("quadOrder = {0}", quadOrder);
-            //double volume = XNSEUtils.GetSpeciesArea(LsTrk, LsTrk.GetSpeciesId("A"), quadOrder);
-            //Console.WriteLine("droplet volume: volume_A = {0} (ref volume = {1}; {2})", volume, volumeRef, 100*(volume - volumeRef)/volumeRef);
-            ////Console.WriteLine("droplet volume: volume_A = {0} (calc volume = {1}; {2})", volume, volumeCalc, 100 * (volume - volumeCalc) / volumeCalc);
-            // Update Calls
-            dt = GetFixedTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"Done with time step {TimestepNo}.");
-            return dt;
+            using(var f = new FuncTrace()) {
+                dt = GetTimestep();
+                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
+                Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                Console.WriteLine($"Done with time step {TimestepNo}.");
+                GC.Collect();
+                return dt;
+            }
         }
     }
 }

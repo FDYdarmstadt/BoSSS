@@ -1,8 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver;
-using BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
@@ -14,11 +12,6 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using ZwoLevelSetSolver.SolidPhase;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BoSSS.Foundation.IO;
-using BoSSS.Solution.Utils;
 
 namespace ZwoLevelSetSolver.ControlFiles {
 
@@ -419,7 +412,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.SuperSampling = 3;
 
-            C.AgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.0;
             C.NoOfMultigridLevels = 1;
 
             int D = 2;
@@ -473,9 +466,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===============
             #region grid
 
-            double xSize = 0.5;
-            double yTop = 0.5 - 0.001;
-            double yBottom = -0.5 - 0.001;
+            double xSize = 0.3;
+            double yTop = 0.3 - 0.00625;
+            double yBottom = -0.3 - 0.00625;
 
             C.GridFunc = delegate ()
             {
@@ -1094,7 +1087,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.TimesteppingMode = compMode;
             double dt = 1e-2;
@@ -1109,22 +1102,16 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3, int AMRlvl = 0)
-        {
+        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
-            C.AgglomerationThreshold = 0.3;
+            C.AgglomerationThreshold = 0.1;
             C.NoOfMultigridLevels = 1;
 
             int D = 2;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
-
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
-            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
-
             // basic database options
             // ======================
             #region db
@@ -1134,9 +1121,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.ProjectDescription = "Ball in channel";
 
             C.ContinueOnIoError = false;
-
-            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
-            //C.PostprocessingModules.Add(new MovingContactLineLogging());
 
             #endregion
 
@@ -1162,13 +1146,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region grid
 
             double xLeft = -3;
-            double xRight = 8;
+            double xRight = 3;
             double ySize = 2;
 
             C.GridFunc = delegate ()
             {
 
-                double[] Xnodes = GenericBlas.Linspace(xLeft, xRight, 11 * kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(xLeft, xRight, 6 * kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(0, ySize, 2 * kelem + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
@@ -1462,26 +1446,15 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ====================
             #region solver
 
-
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
-            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
-
-            C.NonLinearSolver.MaxSolverIterations = 80;
-            C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MinSolverIterations = 3;
+            C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
+            
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
             C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
-
-
-
-            //C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
-            //C.EllipticExtVelAlgoControl.solverFactory = () => new ilPSP.LinSolvers.PARDISO.PARDISOSolver();
-            //C.EllipticExtVelAlgoControl.IsotropicViscosity = 1e-3;
-            //C.fullReInit = false; 
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1948,7 +1921,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
