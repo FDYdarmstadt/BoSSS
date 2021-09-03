@@ -1555,8 +1555,7 @@ namespace BoSSS.Solution {
                 } else {
 
                     Func<int, int, bool> delayedCaching = delegate (int Iter, int MgLevel) {
-                        int VcycleIteration = 1;
-                        return Iter >= ((MaxMGLevel - MgLevel) * 2 + 1) * VcycleIteration;
+                        return Iter >= ((MaxMGLevel - MgLevel) * 3);
                     };
 
                     var smoother1 = new Schwarz() {

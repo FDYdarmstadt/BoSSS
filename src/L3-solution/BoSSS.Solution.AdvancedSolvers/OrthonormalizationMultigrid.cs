@@ -133,7 +133,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var MgMap = op.Mapping;
                 if(op.LevelIndex == 0)
                     viz = new MGViz(op);
-
+                TrackMemory(1);
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -141,7 +141,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 MxxHistory.Clear();
                 SolHistory.Clear();
-
+                Alphas.Clear();
+                
 
                 // set operator
                 // ============
@@ -214,9 +215,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 strw.Write(memWork + "\t");
                 strw.Write(memPrivate + "\t");
                 strw.Write(memGC + "\t\n");
-                if (pos == 3) {
+                if (pos == 2) {
                     m_MTracker.Flush();
-                    m_MTracker.Dispose();
                 }
             }
         }
@@ -637,7 +637,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Converged = true;
                         break;
                     }
-
+                    if(iIter==5) TrackMemory(2);
                     //if (SolHistory.Count > MaxKrylovDim) {
                     //    int Length = 5;
                     //    var tmpSol = SolHistory.GetRange(MaxKrylovDim - Length - 1, Length).CloneNonshallow();
@@ -968,7 +968,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
             Memory += PreSmoother.UsedMemory();
             Memory += PostSmoother.UsedMemory();
-            return Memory;
+            return Memory/(1024*1024);
         }
 
         public long MemoryOfMultigrid() {

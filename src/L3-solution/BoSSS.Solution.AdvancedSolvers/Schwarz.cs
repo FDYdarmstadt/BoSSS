@@ -447,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ArgumentException("Blocking, unable to re-use");
                     }
                     return;
-                }               
+                }
 
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
@@ -763,6 +763,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Instruction for delayed caching of the factorization of block solver.
         /// Useful if memory peaks in linear solver tend to burst the memory.
+        /// int1: number of iterations
+        /// int2: multigrid level
         /// </summary>
         public Func<int,int, bool> ActivateCachingOfBlockMatrix {
             private get;

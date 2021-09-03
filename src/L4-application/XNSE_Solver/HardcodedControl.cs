@@ -527,7 +527,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = true) {
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
@@ -540,15 +540,27 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 1, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
-            double anglev = 10;
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 1, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = true) {
+            
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.261;
+            double particleRad = 0.861;
+            double rhoA = 890;
+            double muA = 1;
+            double anglev = muA/(rhoA*(1- particleRad))*41.3 * Math.Sqrt((particleRad + 1) / (2* (1 - particleRad)));
 
             var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad);
             C.Rigidbody.SetParameters(pos, anglev, particleRad, SpaceDim);
             C.Rigidbody.SpecifyShape(Shape.Sphere);
             C.PhysicalParameters.IncludeConvection = IncludeConv;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            double dt = 1000;
+            C.dtFixed = dt;
+            C.NoOfTimesteps = NoOfTimesteps;
             return C;
         }
 
@@ -676,8 +688,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // Physical Parameters
             // ===================
-            const double rhoA = 1;
-            const double muA = 1;
+            const double rhoA = 1000;
+            const double muA = 1E-3;
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
@@ -750,7 +762,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -782,7 +794,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
 
-        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=3, int NoOfTimeSteps=100 ,bool UseAMR=false, bool writeToDB=false, bool loadbalancing=true) {
+        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps=100 ,bool UseAMR=true, bool writeToDB=false, bool loadbalancing=true) {
             XNSE_Control C = new XNSE_Control();
 
             // Session Options
