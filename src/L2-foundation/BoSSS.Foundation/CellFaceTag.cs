@@ -82,8 +82,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_SignedEdgeTag = (value & 0xFF) | (m_SignedEdgeTag & ~0xFF);
 
 
-                if(PeriodicInverse)
-                    throw new ApplicationException("bist depat, oida?");
             }
             get {
                 int r;
@@ -93,9 +91,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     r = m_SignedEdgeTag & 0xFF;
                 }
                 Debug.Assert(r < 255, "in reserved value range");
-
-                if(PeriodicInverse)
-                    throw new ApplicationException("bist depat, oida?");
 
                 return (byte)r;
             }
@@ -114,9 +109,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 bool r =  (m_SignedEdgeTag & PeriodicInverseMask) != 0
                     || m_SignedEdgeTag < 0; // legacy stuff
 
-                if(r == true)
-                    throw new ApplicationException("bist depat, oida?");
-
                 return r;
             }
             set {
@@ -127,9 +119,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                     m_SignedEdgeTag |= PeriodicInverseMask;
                 else
                     m_SignedEdgeTag &= ~PeriodicInverseMask;
-
-                if(PeriodicInverse)
-                    throw new ApplicationException("bist depat, oida?");
 
             }
         }
