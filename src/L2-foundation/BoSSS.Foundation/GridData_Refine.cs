@@ -260,7 +260,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if(Edge2Cell.GetLength(0) != NoOfEdges)
                     throw new Exception("Edge2Cell to long");
 
-                //exchange cell data between processes
+                // exchange cell data between processes
                 List<(long, Cell[])> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
                 for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) { // loop over edges in actual grid...
                     int localCellIndex1 = Edge2Cell[iEdge, 0];
@@ -412,7 +412,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if(conCount1 > 0)
                                 continue;
 
-                            byte iEdgeTag = 0;
+                            byte EdgeTag = 0;
                             MultidimensionalArray VtxFace2;
                             {
                                 MultidimensionalArray VtxFace2_L;
@@ -431,7 +431,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     var perTrf = this.Grid.GridData.Edges.GetPeriodicTrafo(iEdge, false);
                                     MultidimensionalArray VtxFace2_Gtmp = VtxFace2_G.CloneAs();
                                     perTrf.Transform(VtxFace2_Gtmp, VtxFace2_G);
-                                    iEdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
+                                    EdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
                                 }
 
                                 bool[] Converged = new bool[VtxFace2_L.NoOfRows];
@@ -478,7 +478,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                             bool periodicInverse = false;
                             for(int j = 0; j < CellFaceTagsWithPeriodicInverse.Count(); j++) {
-                                if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == iEdgeTag) {
+                                if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == EdgeTag) {
                                     periodicInverse = CellFaceTagsWithPeriodicInverse[j].Item3;
                                     break;
                                 }
@@ -490,16 +490,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl2.GlobalID,
                                     FaceIndex = iFace1,
-                                    EdgeTag = iEdgeTag,
-                                    PeriodicInverse = periodicInverse
+                                    EdgeTag = EdgeTag,
+                                    PeriodicInverse = (EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) && periodicInverse
                                 }, ref Cl1.CellFaceTags);
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl1.GlobalID,
                                     FaceIndex = iFace2,
-                                    EdgeTag = iEdgeTag,
-                                    PeriodicInverse = !periodicInverse
+                                    EdgeTag = EdgeTag,
+                                    PeriodicInverse = (EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) && (!periodicInverse)
                                 }, ref Cl2.CellFaceTags);
                             }
                         }
