@@ -439,11 +439,43 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if(Converged.Any(t => t == false))
                                     throw new ArithmeticException("Newton divergence");
                             }
-                            bool bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
-                                    Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
-                                    VerticesFor_KrefEdge,
-                                    out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
 
+                            bool bIntersect = false;
+                            try {
+                                bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
+                                        Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
+                                        VerticesFor_KrefEdge,
+                                        out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+                            } catch (Exception e) {
+                                var rnd = new Random();
+                                
+                                using (var stw = new System.IO.StreamWriter("AdaptCrash.rank" + MpiRank + ".txt")) {
+                                    stw.WriteLine(e.GetType().Name + ": " + e.Message);
+                                    
+                                    stw.WriteLine("Face1: " + VtxFace1.NoOfRows + " vertices");
+                                    for (int i = 0; i < VtxFace1.NoOfRows; i++) {
+                                        stw.WriteLine("#" + i + ": " + VtxFace1.GetRowPt(i).ToString());
+                                    }
+                                    stw.WriteLine("Face2: " + VtxFace2.NoOfRows + " vertices");
+                                    for (int i = 0; i < VtxFace2.NoOfRows; i++) {
+                                        stw.WriteLine("#" + i + ": " + VtxFace2.GetRowPt(i).ToString());
+                                    }
+                                    stw.WriteLine("Face1 Trafo:");
+                                    stw.WriteLine(Kref1.GetFaceTrafo(iFace1).ToString());
+                                    stw.WriteLine("Face1 Inverse Trafo:");
+                                    stw.WriteLine(Kref1.GetInverseFaceTrafo(iFace1).ToString());
+                                    stw.Flush();
+
+                                    stw.WriteLine("Cell 1:");
+                                    stw.WriteLine(Cl1.ToString());
+                                    stw.WriteLine("Cell 2:");
+                                    stw.WriteLine(Cl2.ToString());
+
+                                    stw.Close();
+                                }
+
+                                throw new AggregateException(e);
+                            }
                             bool periodicInverse = false;
                             for(int j = 0; j < CellFaceTagsWithPeriodicInverse.Count(); j++) {
                                 if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == iEdgeTag) {

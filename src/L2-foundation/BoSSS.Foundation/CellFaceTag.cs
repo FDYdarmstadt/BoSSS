@@ -147,6 +147,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         [DataMember]
         public bool ConformalNeighborship;
 
-       
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"Face index: {FaceIndex}, EdgeTag: {EdgeTag}, NeighCell_GlobalID: {NeighCell_GlobalID}, ConformalNeighborship: {ConformalNeighborship}, PeriodicInverse: {PeriodicInverse}, (m_SignedEdgeTag {m_SignedEdgeTag})";
+        }
+
+
     }
 }
