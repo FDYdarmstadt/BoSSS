@@ -1159,6 +1159,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (second_polygon.Count <= 2) {
                             return false;
                         }
+                        if (intersect.Count <= 2) {
+                            return false;
+                        }
 
                         double span_area = SpanArea(intersect, "intersect");
                         if (span_area < ref_area * (1.0e-10)) {
@@ -1324,7 +1327,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 double span_area;
                 int N2 = second_polygon.Count;
 
-                if (N2 < 3)
+                if (N2 < 2)
                     throw new ArgumentException($"Empty polygon, only {N2} vertices; ({errorMark}). ");
 
 
