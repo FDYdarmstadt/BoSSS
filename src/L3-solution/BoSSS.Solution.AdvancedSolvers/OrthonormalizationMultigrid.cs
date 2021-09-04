@@ -968,7 +968,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
             Memory += PreSmoother.UsedMemory();
             Memory += PostSmoother.UsedMemory();
-            return Memory/(1024*1024);
+            return Memory;
         }
 
         public long MemoryOfMultigrid() {

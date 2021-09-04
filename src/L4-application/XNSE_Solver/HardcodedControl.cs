@@ -556,11 +556,11 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.rho_A = rhoA;
             C.PhysicalParameters.mu_A = muA;
 
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
-            double dt = 1000;
-            C.dtFixed = dt;
-            C.NoOfTimesteps = NoOfTimesteps;
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            //double dt = 1000;
+            //C.dtFixed = dt;
+            //C.NoOfTimesteps = NoOfTimesteps;
             return C;
         }
 
