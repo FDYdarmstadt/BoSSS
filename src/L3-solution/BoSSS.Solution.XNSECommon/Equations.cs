@@ -734,6 +734,7 @@ namespace BoSSS.Solution.XNSECommon {
                             throw new NotImplementedException();
                     }
                 } else {
+                    if (dntParams.GNBC_Localization != NavierSlip_Localization.Everywhere) Console.WriteLine("Careful, sliplength might not be set in correct regions. Consider using 'NavierSlip_Localization.Everywhere'");
                     switch (dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:
