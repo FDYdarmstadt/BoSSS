@@ -1,5 +1,4 @@
-﻿using BoSSS.Application.XNSE_Solver.Legacy;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
@@ -17,14 +16,24 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
+namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class StefanProblemBenchmarkQuantities : XNSFEinSituPostProcessingModule {
+    public class StefanProblemBenchmarkQuantities : StefanProblemBenchmarkQuantities<XNSFE_Control> {
+        public StefanProblemBenchmarkQuantities(byte OutletTag) :base(OutletTag)  {
+
+        }
+    }
+
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class StefanProblemBenchmarkQuantities<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
 
         /// <summary>
         /// 
@@ -81,7 +90,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
         internal (double interface_xpos_min, double interface_xpos_max, double mass_vapor, double mass_liquid, double mass_flux_interface, double mass_flux_outlet) ComputeBenchmarkQuantities_Massflux() {
 
-            int D = SolverMain.Grid.SpatialDimension;
+            int D = SolverMainOverride.Grid.SpatialDimension;
 
             double mass_flux_interface = 0.0;
             int order = 0;
@@ -177,83 +186,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             mass_flux_outlet *= ThermParams.rho_A * dt;
 
             return (interface_xpos_min, interface_xpos_max, mass_vapor, mass_liquid, mass_flux_interface, mass_flux_outlet);
-        }
-
-        /// <summary>
-        /// current massflux parameter
-        /// </summary>
-        protected DGField CurrentMassFlux {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-                    IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
-
-                    DGField ret = null;
-                    for (int i = 0; i < 3; ++i) {
-                        if (parameters.TryGetValue(VariableNames.MassFluxExtension, out DGField velocityField)) {
-                            ret = velocityField;
-                        } else {
-                            throw new ApplicationException("Unable to identify mass flux extension field.");
-                        }
-                    }
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-
-        /// <summary>
-        /// current ls velocity y parameter
-        /// </summary>
-        protected DGField CurrentVelocityYLevelSet {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-                    IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
-
-                    DGField ret = null;
-                    for (int i = 0; i < 3; ++i) {
-                        if (parameters.TryGetValue(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, VariableNames.Velocity_d(1)), out DGField velocityField)) {
-                            ret = velocityField;
-                        } else {
-                            throw new ApplicationException("Unable to identify level set velocity y field.");
-                        }
-                    }
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-
-        /// <summary>
-        /// current temperature solution
-        /// </summary>
-        protected XDGField CurrentTemperature {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSE newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-
-                    var ret = newSolver.CurrentState.Fields.ElementAt(D+1) as XDGField;
-                    
-                    if (ret.Identification != VariableNames.Temperature)
-                        throw new ApplicationException("Unable to identify temperature field.");
-                    
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
         }
     }    
 }

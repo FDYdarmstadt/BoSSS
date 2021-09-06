@@ -289,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     Vector gradient = new Vector(grad[0, i, 0], grad[0, i, 1]);
                     rule.Weights[i] *= gradient.Abs() / Math.Abs(gradient[0]);
                 }
-            }
+            }            
             return rule;
         }
 

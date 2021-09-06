@@ -9,7 +9,7 @@ using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP.Utils;
 using System;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSFE_Solver {
 
     // Outdated forms from old XNSFE (pre 2021), disabled 4/2021 - MR
     /*

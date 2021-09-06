@@ -221,6 +221,11 @@ namespace BoSSS.Solution.XheatCommon {
         ConductivityInSpeciesBulk.ConductivityMode getConductMode { get; }
 
         /// <summary>
+        /// include volumetric heat source
+        /// </summary>
+        bool isHeatSource { get; }
+
+        /// <summary>
         /// include transport operator
         /// </summary>
         bool isHeatTransport { get; }

@@ -23,7 +23,6 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using MPI.Wrappers;
 using BoSSS.Solution;
-using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 

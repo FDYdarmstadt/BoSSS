@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation;
+﻿using BoSSS.Application.XNSE_Solver;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -17,11 +18,31 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
-namespace BoSSS.Application.XNSE_Solver {
-   
+namespace BoSSS.Application.XNSFE_Solver {
+
+    /// <summary>
+    /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
+    /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
+    /// Changed to Newton Solver 4/2021, Picard might give unexpected results - MR
+    /// </summary>
+    public class XNSFE : XNSFE<XNSFE_Control> {
+
+        // ===========
+        //  Main file
+        // ===========
+        static void Main(string[] args) {
+
+            XNSFE._Main(args, false, delegate () {
+                var p = new XNSFE();
+                return p;
+            });
+        }
+    }
+
     /// <summary>
     /// Extension of the <see cref="XNSE"/>-solver for additional heat transfer.
     /// (The 'F' stands for Fourier equation, i.e. Heat equation.)
@@ -114,6 +135,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddParameter(new Velocity0(D)); 
             }
 
+            // Add HeatSource
+            if (config.isHeatSource) {
+                var HeatA = HeatSource.CreateFrom("A", Control, Control.GetHeatSource("A"));
+                opFactory.AddParameter(HeatA);
+                var HeatB = HeatSource.CreateFrom("B", Control, Control.GetHeatSource("B"));
+                opFactory.AddParameter(HeatB);
+            }
+
             if (config.isEvaporation) {
                 //Console.WriteLine("Including mass transfer.");
 
@@ -157,41 +186,43 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSFE_OperatorConfiguration, int, int)"/>
+        /// override of <see cref="DefineMomentumEquation(OperatorFactory, XNSE_OperatorConfiguration, int, int)"/>
         /// adding evaporation extension for Navier-Stokes equations
         /// </summary>
         /// <param name="opFactory"></param>
         /// <param name="config"></param>
         /// <param name="d"></param>
         /// <param name="D"></param>
-        protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+        protected override void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
             base.DefineMomentumEquation(opFactory, config, d, D);
 
+            var extendedConfig = new XNSFE_OperatorConfiguration(this.Control);
             // === evaporation extension === //
-            if (config.isEvaporation) {
+            if (extendedConfig.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, config));                    
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, extendedConfig));                    
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     NonlinearCouplingEvaporation = true; // When using Newton evaporation coupling is always nonlinear
-                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, config));
+                    opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, extendedConfig));
                 }                    
             }
-            if (config.isBuoyancy && config.isGravity) {
-                opFactory.AddEquation(new NavierStokesBuoyancy("A", D, d, config));
-                opFactory.AddEquation(new NavierStokesBuoyancy("B", D, d, config));
+            if (extendedConfig.isBuoyancy && config.isGravity) {
+                opFactory.AddEquation(new NavierStokesBuoyancy("A", D, d, extendedConfig));
+                opFactory.AddEquation(new NavierStokesBuoyancy("B", D, d, extendedConfig));
             }
         }
 
 
-        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
             base.DefineContinuityEquation(opFactory, config, D);
 
+            var extendedConfig = new XNSFE_OperatorConfiguration(this.Control);
             // === evaporation extension === //
-            if (config.isEvaporation) {
+            if (extendedConfig.isEvaporation) {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation("A", "B", D, extendedConfig));
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, config));
+                    opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, extendedConfig));
                 }
             }
         }
@@ -200,6 +231,12 @@ namespace BoSSS.Application.XNSE_Solver {
             base.DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
 
             XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+
+            // Add HeatSource
+            if (config.isHeatSource) {                
+                var HeatC = HeatSource.CreateFrom("C", Control, Control.GetHeatSource("C"));
+                opFactory.AddParameter(HeatC);
+            }
 
             opFactory.AddEquation(new SolidHeat("C", D, thermBoundaryMap, config));
             opFactory.AddEquation(new ImmersedBoundaryHeat("A", "C", 1, D, config));
@@ -334,8 +371,370 @@ namespace BoSSS.Application.XNSE_Solver {
             return 1 / safety * Math.Sqrt((C.PhysicalParameters.rho_A + C.PhysicalParameters.rho_B) * Math.Pow(h / (p + 1), 3) / (2 * Math.PI * Math.Abs(C.PhysicalParameters.Sigma)));
         }
 
+        private void PlotAdditionalFields(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            #region additional fields
+
+            var ThermParam = this.Control.ThermalParameters;
+            var PhysParam = this.Control.PhysicalParameters;
+            int D = this.GridData.SpatialDimension;
+            var gdat = this.GridData;
+
+
+            XDGField Temperature = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == VariableNames.Temperature).SingleOrDefault();
+            var Tracker = Temperature.Basis.Tracker;
+            var cm = Tracker.Regions.GetCutCellMask();
+            VectorField<XDGField> Velocity = new VectorField<XDGField>(D.ForLoop(d => (XDGField)m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.Velocity_d(d))));
+            VectorField<XDGField>[] VelocityGrad = new VectorField<XDGField>[D];
+            for (int d = 0; d < D; d++) {
+                VelocityGrad[d] = new VectorField<XDGField>(D.ForLoop(_d => new XDGField(Velocity[d].Basis, VariableNames.Velocity_GradientVector(D)[d, _d])));
+                VelocityGrad[d].Gradient(1.0, Velocity[d]);
+            }
+            XDGField Pressure = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == VariableNames.Pressure).SingleOrDefault();
+            var LevelSet = this.m_RegisteredFields.Where(s => s.Identification == VariableNames.LevelSetCG).SingleOrDefault();
+            int p = LevelSet.Basis.Degree;
+            VectorField<DGField> Normal = new VectorField<DGField>(D.ForLoop(d => m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.NormalVectorComponent(d)))).CloneAs();
+
+            Basis b = new Basis(gdat, 2 * p);
+            XDGBasis xb = new XDGBasis(Tracker, 2 * p);
+            List<DGField> TrueNormal = new List<DGField>();
+            for (int d = 0; d < D; d++) {
+                var Field = this.m_RegisteredFields.Where(s => s.Identification == $"TrueNormal_{d}").SingleOrDefault();
+                if (Field == null) {
+                    Field = new SinglePhaseField(b, $"TrueNormal_{d}");
+                    this.RegisterField(Field);
+                }
+                TrueNormal.Add(Field);
+            }
+            // this normal is the direct gradient of phi, we normalize first, but only in cut cells!!
+            {
+                Normal.Clear();
+                Normal.Gradient(1.0, LevelSet);
+                SinglePhaseField Normalizer = new SinglePhaseField(b);
+                for (int d = 0; d < D; d++) {
+                    Normalizer.ProjectPow(1.0, Normal[d], 2.0, cm);
+                }
+                var NormalizerTemp = Normalizer.CloneAs();
+                Normalizer.Clear();
+                Normalizer.ProjectPow(1.0, NormalizerTemp, -0.5, cm);
+
+                Normal.ScalePointwise(1.0, Normalizer);
+                for (int d = 0; d < D; d++) {
+                    TrueNormal[d].Clear();
+                    TrueNormal[d].AccLaidBack(1.0, Normal[d], cm);
+                }
+            }
+            DGField Curvature = this.m_RegisteredFields.Where(s => s.Identification == VariableNames.Curvature).SingleOrDefault();
+
+            // Heat Flux
+            List<XDGField> HeatFlux = new List<XDGField>();
+            for (int d = 0; d < D; d++) {
+                var xField = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == VariableNames.HeatFluxVectorComponent(d)).SingleOrDefault();
+                if (xField == null) {
+                    xField = new XDGField(xb, VariableNames.HeatFluxVectorComponent(d));
+                    this.RegisterField(xField);
+                }
+                HeatFlux.Add(xField);
+            }
+
+            for (int d = 0; d < D; d++) {
+                HeatFlux[d].Clear();
+                HeatFlux[d].Derivative(1.0, Temperature, d);
+                ((XDGField)HeatFlux[d]).GetSpeciesShadowField("A").Scale(-ThermParam.k_A);
+                ((XDGField)HeatFlux[d]).GetSpeciesShadowField("B").Scale(-ThermParam.k_B);
+            }
+
+            // Mass Flux
+            var MassFlux = this.m_RegisteredFields.Where(s => s.Identification == "MassFlux").SingleOrDefault();
+            if (MassFlux == null) {
+                MassFlux = new SinglePhaseField(b, "MassFlux");
+                this.RegisterField(MassFlux);
+            }
+
+            MassFlux.Clear();
+            for (int d = 0; d < D; d++) {
+                MassFlux.ProjectProduct(1.0 / ThermParam.hVap, Normal[d], HeatFlux[d].GetSpeciesShadowField("A"), cm);
+                MassFlux.ProjectProduct(-1.0 / ThermParam.hVap, Normal[d], HeatFlux[d].GetSpeciesShadowField("B"), cm);
+            }
+
+            // Interface velocity
+            List<XDGField> xInterfaceVelocity = new List<XDGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityXDG")).ToList();
+            List<DGField> InterfaceVelocity = new List<DGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityDG")).ToList();
+            for (int d = 0; d < D; d++) {
+                var xField = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityXDG_{d}").SingleOrDefault();
+                if (xField == null) {
+                    xField = new XDGField(xb, $"IntefaceVelocityXDG_{d}");
+                    this.RegisterField(xField);
+                }
+                xInterfaceVelocity.Add(xField);
+
+                var Field = (DGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityDG_{d}").SingleOrDefault();
+                if (Field == null) {
+                    Field = new SinglePhaseField(b, $"IntefaceVelocityDG_{d}");
+                    this.RegisterField(Field);
+                }
+                InterfaceVelocity.Add(Field);
+            }
+
+            for (int d = 0; d < D; d++) {
+                var xField = xInterfaceVelocity[d];
+                xField.Clear();
+                xField.AccLaidBack(1.0, Velocity[d], cm);
+                xField.GetSpeciesShadowField("A").ProjectProduct(-1.0 / ThermParam.rho_A, MassFlux, Normal[d], cm);
+                xField.GetSpeciesShadowField("B").ProjectProduct(-1.0 / ThermParam.rho_B, MassFlux, Normal[d], cm);
+
+                var Field = InterfaceVelocity[d];
+                Field.Clear();
+                Field.AccLaidBack(ThermParam.rho_A, xField.GetSpeciesShadowField("A"), cm);
+                Field.AccLaidBack(ThermParam.rho_B, xField.GetSpeciesShadowField("B"), cm);
+                Field.Scale(1.0 / (ThermParam.rho_A + ThermParam.rho_B), cm);
+            }
+
+            //// Conti
+            //var ContiRes = this.m_RegisteredFields.Where(s => s.Identification == "ContinuityResidual").SingleOrDefault();
+            //if (ContiRes == null) {
+            //    ContiRes = new XDGField(xb, "ContinuityResidual");
+            //    this.RegisterField(ContiRes);
+            //}
+
+            //ContiRes.Clear();
+            //for (int d = 0; d < D; d++) {
+            //    ContiRes.Derivative(1.0, Velocity[d], d);
+            //}
+
+            //// Momentum
+
+            //// Heat
+
+            // Divergence jump
+            var DivJump = this.m_RegisteredFields.Where(s => s.Identification == "DivergenceJump").SingleOrDefault();
+            if (DivJump == null) {
+                DivJump = new SinglePhaseField(b, "DivergenceJump");
+                this.RegisterField(DivJump);
+            }
+
+            DivJump.Clear();
+            for (int d = 0; d < D; d++) {
+                DivJump.ProjectProduct(ThermParam.rho_A, Velocity[d].GetSpeciesShadowField("A"), Normal[d], cm);
+                DivJump.ProjectProduct(-ThermParam.rho_A, InterfaceVelocity[d], Normal[d], cm);
+
+                DivJump.ProjectProduct(-ThermParam.rho_B, Velocity[d].GetSpeciesShadowField("B"), Normal[d], cm);
+                DivJump.ProjectProduct(ThermParam.rho_B, InterfaceVelocity[d], Normal[d], cm);
+            }
+
+            // Tangential velocity jump
+            var TanJump = this.m_RegisteredFields.Where(s => s.Identification == "TangentialJump").SingleOrDefault();
+            if (TanJump == null) {
+                TanJump = new SinglePhaseField(b, "TangentialJump");
+                this.RegisterField(TanJump);
+            }
+
+            TanJump.Clear();
+            // Assuming 2D
+            TanJump.ProjectProduct(-1.0, Velocity[0].GetSpeciesShadowField("A"), Normal[1], cm);
+            TanJump.ProjectProduct(1.0, Velocity[0].GetSpeciesShadowField("B"), Normal[1], cm);
+            TanJump.ProjectProduct(1.0, Velocity[1].GetSpeciesShadowField("A"), Normal[0], cm);
+            TanJump.ProjectProduct(-1.0, Velocity[1].GetSpeciesShadowField("B"), Normal[0], cm);
+
+            // Momentum jump
+            List<DGField> MomentumJump = new List<DGField>();
+            for (int d = 0; d < D; d++) {
+                var Field = this.m_RegisteredFields.Where(s => s.Identification == $"MomentumJump_{d}").SingleOrDefault();
+                if (Field == null) {
+                    Field = new SinglePhaseField(b, $"MomentumJump_{d}");
+                    this.RegisterField(Field);
+                }
+                MomentumJump.Add(Field);
+            }
+
+            for (int d = 0; d < D; d++) {
+                MomentumJump[d].Clear();
+
+                // recoil pressure
+                MomentumJump[d].ProjectProduct(-1.0, MassFlux, Velocity[d].GetSpeciesShadowField("A"), cm);
+                MomentumJump[d].ProjectProduct(1.0, MassFlux, Velocity[d].GetSpeciesShadowField("B"), cm);
+
+                // pressure jump
+                MomentumJump[d].ProjectProduct(-1.0, Pressure.GetSpeciesShadowField("A"), Normal[d], cm);
+                MomentumJump[d].ProjectProduct(1.0, Pressure.GetSpeciesShadowField("B"), Normal[d], cm);
+
+                // stress jump
+                for (int _d = 0; _d < D; _d++) {
+                    MomentumJump[d].ProjectProduct(PhysParam.mu_A, VelocityGrad[d][_d].GetSpeciesShadowField("A"), Normal[_d], cm);
+                    MomentumJump[d].ProjectProduct(PhysParam.mu_A, VelocityGrad[_d][d].GetSpeciesShadowField("A"), Normal[_d], cm);
+
+                    MomentumJump[d].ProjectProduct(-PhysParam.mu_B, VelocityGrad[d][_d].GetSpeciesShadowField("B"), Normal[_d], cm);
+                    MomentumJump[d].ProjectProduct(-PhysParam.mu_B, VelocityGrad[_d][d].GetSpeciesShadowField("B"), Normal[_d], cm);
+                }
+
+                if (Curvature != null) {
+                    MomentumJump[d].ProjectProduct(PhysParam.Sigma, Curvature, Normal[d], cm);
+                } else {
+                    Console.WriteLine("Warning, no curvature detected jump condition vizualization is incorrect!");
+                }
+            }
+
+            // Energy jump, should be fullfilled, as we use this to evaluate the mass flux
+            var EnergyJump = this.m_RegisteredFields.Where(s => s.Identification == "EnergyJump").SingleOrDefault();
+            if (EnergyJump == null) {
+                EnergyJump = new SinglePhaseField(b, "EnergyJump");
+                this.RegisterField(EnergyJump);
+            }
+
+            EnergyJump.Clear();
+            EnergyJump.AccLaidBack(-ThermParam.hVap, MassFlux);
+            for (int d = 0; d < D; d++) {
+                EnergyJump.ProjectProduct(1.0, HeatFlux[d].GetSpeciesShadowField("A"), Normal[d]);
+
+                EnergyJump.ProjectProduct(-1.0, HeatFlux[d].GetSpeciesShadowField("B"), Normal[d]);
+            }
+
+            // Plot Points on Interface
+            var spaceMetrics = Tracker.GetXDGSpaceMetrics(Tracker.SpeciesIdS.ToArray(), this.QuadOrder());
+            var surfRule = spaceMetrics.XQuadSchemeHelper.GetLevelSetquadScheme(0, cm);
+            var log = new StreamWriter($"JumpConditions_{timestepNo}.csv");
+            log.Write("Cell\tNode");
+            for (int d = 0; d < D; d++) {
+                log.Write($"\tx{d}");
+            }
+            for (int d = 0; d < D; d++) {
+                log.Write($"\tInterfaceVelocity_{d}");
+            }
+            log.Write($"\tDivergenceJump");
+            for (int d = 0; d < D; d++) {
+                log.Write($"\tMomentumJump_{d}");
+            }
+            log.Write($"\tEnergyJump");
+            log.Write($"\tTangentialJump");
+            log.Write("\n");
+            log.Flush();
+
+            double vMax = 0.0;
+            foreach (var factory in surfRule.FactoryChain) {
+                foreach (var chunkRulePair in factory.RuleFactory.GetQuadRuleSet(cm.ToGeometicalMask(), this.QuadOrder())) {
+                    foreach (int cell in chunkRulePair.Chunk.Elements) {
+                        QuadRule rule = chunkRulePair.Rule;
+
+                        MultidimensionalArray globalVertices = MultidimensionalArray.Create(
+                            1, rule.NoOfNodes, Grid.SpatialDimension);
+                        MultidimensionalArray jumpConditions = MultidimensionalArray.Create(
+                            1, rule.NoOfNodes, 2 * D + 3);
+
+                        for (int d = 0; d < D; d++) {
+                            InterfaceVelocity[d].Evaluate(cell, 1, rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, d));
+                            MomentumJump[d].Evaluate(cell, 1, rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, D + 1 + d));
+                        }
+                        DivJump.Evaluate(cell, 1, rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, D));
+                        EnergyJump.Evaluate(cell, 1, rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 2 * D + 1));
+                        TanJump.Evaluate(cell, 1, rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 2 * D + 2));
+
+
+                        MultidimensionalArray metrics = Tracker.DataHistories[0].Current.GetLevelSetNormalReferenceToPhysicalMetrics(
+                            rule.Nodes, cell, 1);
+                        GridData.TransformLocal2Global(rule.Nodes, cell, 1, globalVertices, 0);
+
+                        for (int k = 0; k < rule.NoOfNodes; k++) {
+                            double weight = rule.Weights[k];
+
+                            log.Write("{0}\t{1}", cell, k);
+                            for (int d = 0; d < D; d++) {
+                                log.Write($"\t{globalVertices[0, k, d]}");
+                            }
+                            double v = 0.0;
+                            for (int d = 0; d < D; d++) {
+                                log.Write($"\t{jumpConditions[0, k, d]}");
+                                v += jumpConditions[0, k, d].Pow2();
+                            }
+                            v = v.Sqrt();
+                            vMax = v > vMax ? v : vMax;
+                            log.Write($"\t{jumpConditions[0, k, D]}");
+                            for (int d = 0; d < D; d++) {
+                                log.Write($"\t{jumpConditions[0, k, D + 1 + d]}");
+                            }
+                            log.Write($"\t{jumpConditions[0, k, 2 * D + 1]}");
+                            log.Write($"\t{jumpConditions[0, k, 2 * D + 2]}");
+                            log.Write("\n");
+                            log.Flush();
+
+                        }
+                    }
+                }
+            }
+            Console.WriteLine("Maximum Absolute interface Velocity: {0}", vMax);
+        }
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
-            base.PlotCurrentState(physTime, timestepNo, superSampling);
+
+            //Basis b = new Basis(this.GridData, 0);
+            //// Cut Cells 0
+            //var CC0 = this.m_RegisteredFields.Where(s => s.Identification == "CC0").SingleOrDefault();
+            //if (CC0 == null) {
+            //    CC0 = new SinglePhaseField(b, "CC0");
+            //    this.RegisterField(CC0);
+            //}
+            //var ccm0 = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
+            //CC0.Clear();
+            //CC0.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+            //    int K = result.GetLength(1); // No nof Nodes
+            //    for (int j = 0; j < Len; j++) {
+            //        for (int k = 0; k < K; k++) {
+            //            if(ccm0.Contains(j0+j))
+            //                result[j, k] = 1;
+            //        }
+            //    }
+            //}, new CellQuadratureScheme());
+
+            ////Cut Cells 1
+            //var CC1 = this.m_RegisteredFields.Where(s => s.Identification == "CC1").SingleOrDefault();
+            //if (CC1 == null) {
+            //    CC1 = new SinglePhaseField(b, "CC1");
+            //    this.RegisterField(CC1);
+            //}
+            //var ccm1 = this.LsTrk.Regions.GetCutCellMask4LevSet(1);
+            //CC1.Clear();
+            //CC1.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+            //    int K = result.GetLength(1); // No nof Nodes
+            //    for (int j = 0; j < Len; j++) {
+            //        for (int k = 0; k < K; k++) {
+            //            if (ccm1.Contains(j0 + j))
+            //                result[j, k] = 1;
+            //        }
+            //    }
+            //}, new CellQuadratureScheme());
+
+            //// Double Cut Cells
+            //var DCC = this.m_RegisteredFields.Where(s => s.Identification == "DCC").SingleOrDefault();
+            //if (DCC == null) {
+            //    DCC = new SinglePhaseField(b, "DCC");
+            //    this.RegisterField(DCC);
+            //}
+            //var dccm = ccm0.Intersect(ccm1);
+            //DCC.Clear();
+            //DCC.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+            //    int K = result.GetLength(1); // No nof Nodes
+            //    for (int j = 0; j < Len; j++) {
+            //        for (int k = 0; k < K; k++) {
+            //            if (dccm.Contains(j0 + j))
+            //                result[j, k] = 1;
+            //        }
+            //    }
+            //}, new CellQuadratureScheme());
+
+            //// Cells Numbers
+            //var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
+            //if (CellNumbers == null) {
+            //    CellNumbers = new SinglePhaseField(b, "CellNumbers");
+            //    this.RegisterField(CellNumbers);
+            //}
+            //CellNumbers.Clear();
+            //CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+            //    int K = result.GetLength(1); // No nof Nodes
+            //    for (int j = 0; j < Len; j++) {
+            //        for (int k = 0; k < K; k++) {
+            //            result[j, k] = j0 + j;
+            //        }
+            //    }
+            //}, new CellQuadratureScheme());
+
+            //PlotAdditionalFields(physTime, timestepNo, superSampling);
 
             //XDGField GradT_X = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_X");
             //XDGField GradT_Y = new XDGField((XDGBasis)this.CurrentStateVector.Fields.Where(s => s.Identification == "Temperature").First().Basis, "GradT_Y");
@@ -351,10 +750,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //        }
             //    }
             //}, new CellQuadratureScheme());
-
+            #endregion
             //Tecplot.PlotFields(new List<DGField> { CellNumbers }, "XNSFE_GradT-" + timestepNo, physTime, 3);
             //Tecplot.PlotFields(GradT, "XNSFE_GradT-" + timestepNo, physTime, 3);
 
+            base.PlotCurrentState(physTime, timestepNo, superSampling);
         }
 
         bool PrintOnlyOnce = true;

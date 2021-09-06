@@ -1,5 +1,4 @@
-﻿using BoSSS.Application.XNSE_Solver.Legacy;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
@@ -15,14 +14,19 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
-
+namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class MassfluxLogging : XNSEinSituPostProcessingModule {
+    public class MassfluxLogging : MassfluxLogging<XNSFE_Control> { }
+
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class MassfluxLogging<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
 
         /// <summary>
         /// 
@@ -155,83 +159,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             LastState = (mass_liq, mass_vap, mass_evap, mass_total, interface_length);
 
             return (mass_liq, mass_vap, mass_total, mass_evap, mass_evap_v, mass_evap_l, mass_evap_t, interface_length);
-        }
-
-        /// <summary>
-        /// current massflux parameter
-        /// </summary>
-        protected DGField CurrentMassFlux {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-                    IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
-
-                    DGField ret = null;
-                    for (int i = 0; i < 3; ++i) {
-                        if (parameters.TryGetValue(VariableNames.MassFluxExtension, out DGField velocityField)) {
-                            ret = velocityField;
-                        } else {
-                            throw new ApplicationException("Unable to identify mass flux extension field.");
-                        }
-                    }
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-
-        /// <summary>
-        /// current ls velocity y parameter
-        /// </summary>
-        protected DGField CurrentVelocityYLevelSet {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSFE<XNSFE_Control> newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-                    IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
-
-                    DGField ret = null;
-                    for (int i = 0; i < 3; ++i) {
-                        if (parameters.TryGetValue(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, VariableNames.Velocity_d(1)), out DGField velocityField)) {
-                            ret = velocityField;
-                        } else {
-                            throw new ApplicationException("Unable to identify level set velocity y field.");
-                        }
-                    }
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
-        }
-
-        /// <summary>
-        /// current temperature solution
-        /// </summary>
-        protected XDGField CurrentTemperature {
-            get {
-                if (this.SolverMain is XNSE_SolverMain oldSolver) {
-                    throw new NotImplementedException();
-                } else if (this.SolverMain is XNSE newSolver) {
-                    int D = this.SolverMain.GridData.SpatialDimension;
-
-                    var ret = newSolver.CurrentState.Fields.ElementAt(D+1) as XDGField;
-                    
-                    if (ret.Identification != VariableNames.Temperature)
-                        throw new ApplicationException("Unable to identify temperature field.");
-                    
-
-                    return ret;
-                } else {
-                    throw new NotImplementedException();
-                }
-            }
-        }
+        } 
     }    
 }
