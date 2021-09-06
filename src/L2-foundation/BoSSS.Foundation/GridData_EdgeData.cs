@@ -1148,83 +1148,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // ++++++++++++++++++++++++++++++++
 
 
-                        // For each edge V1-V2 in the first polygon,
-                        //     Let H := Half-plane tangenting V1-V2, with the remaining
-                        //         vertices on the "inside".
-                        //     Let C := New empty polygon.
-                        //     For each edge V3-V4 in the second polygon,
-                        //         Let X := The intersection between V3-V4 and H.
-                        //         If V3 inside H, and V4 is outside H then,
-                        //             Add V3 to C.
-                        //             Add X to C.
-                        //         Else if both V3 and V4 lies outside H then,
-                        //             Skip.
-                        //         Else if V3 outside H, and V4 is inside H then,
-                        //             Add X to C.
-                        //         Else
-                        //             Add V3 to C.
-                        //     Replace the second polygon with C.
-
-
-
                         var first_polygon = CheckFace(VtxEdge1_Loc);
                         var second_polygon = CheckFace(VtxEdge2_Loc);
-                        double ref_area = Math.Min(SpanArea(first_polygon), SpanArea(second_polygon));
+                        double ref_area = Math.Min(SpanArea(first_polygon, "first"), SpanArea(second_polygon, "second"));
 
-                        var intersect = new List<Vector>(second_polygon);
-                        bool _conformal2 = true;
-                        for (int i = 0; i < first_polygon.Count; i++) {
-                            Vector V1 = first_polygon[i];
-                            int ip1 = (i + 1) % first_polygon.Count;
-                            Vector V2 = first_polygon[ip1];
 
-                            var H = AffineManifold.FromPoints(V1, V2);
-                            var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
 
-                            {
-                                int ip2 = (i + 2) % first_polygon.Count;
-                                var Pin = first_polygon[ip2];
-                                if (H.PointDistance(Pin) < 0)
-                                    H.Normal.ScaleInPlace(-1);
-                            }
-
-                            var C = new List<Vector>();
-                            for (int j = 0; j < intersect.Count; j++) {
-                                var V3 = intersect[j];
-                                int jp1 = (j + 1) % intersect.Count;
-                                var V4 = intersect[jp1];
-                                
-                                bool V3_in = H.PointDistance(V3) > (-1*Tol_Dist);
-                                bool V4_in = H.PointDistance(V4) > (-1*Tol_Dist);
-
-                                if (V3_in && !V4_in) {
-                                    C.Add(V3);
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else if (!V3_in && !V4_in) {
-                                    // skip
-                                    _conformal2 = false;
-                                } else if (!V3_in && V4_in) {
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else {
-                                    C.Add(V3);
-                                }
-                            }
-
-                            intersect = C;
-                        }
-
+                        (List<Vector> intersect, bool _conformal2) = PolygonalIntersect(first_polygon, second_polygon);
 
                         if (second_polygon.Count <= 2) {
                             return false;
                         }
+                        if (intersect.Count <= 2) {
+                            return false;
+                        }
 
-                        double span_area = SpanArea(intersect);
+                        double span_area = SpanArea(intersect, "intersect");
                         if (span_area < ref_area * (1.0e-10)) {
                             return false;
                         }
@@ -1246,7 +1185,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                                 for (int j = 0; j < N1; j++) {
-                                    if (H.PointDistance(first_polygon[j]) < -1*Tol_Dist) {
+                                    if (H.PointDistance(first_polygon[j]) < -1 * Tol_Dist) {
                                         _conformal1 = false;
                                         break;
                                     }
@@ -1297,22 +1236,124 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            private static double SpanArea(List<Vector> second_polygon) {
+            /// <summary>
+            /// intersection of two polygons
+            /// </summary>
+            /// <param name="first_polygon"></param>
+            /// <param name="second_polygon"></param>
+            /// <returns>
+            /// - the intersection 
+            /// - a boolean which indicates if the intersection is identical to the <paramref name="second_polygon"/>
+            /// </returns>
+            private static (List<Vector> intersect, bool _conformal2) PolygonalIntersect(List<Vector> first_polygon, List<Vector> second_polygon) {
+
+                //
+                // Polygon intersection algorithm:
+                //
+                // For each edge V1-V2 in the first polygon,
+                //     Let H := Half-plane tangenting V1-V2, with the remaining
+                //         vertices on the "inside".
+                //     Let C := New empty polygon.
+                //     For each edge V3-V4 in the second polygon,
+                //         Let X := The intersection between V3-V4 and H.
+                //         If V3 inside H, and V4 is outside H then,
+                //             Add V3 to C.
+                //             Add X to C.
+                //         Else if both V3 and V4 lies outside H then,
+                //             Skip.
+                //         Else if V3 outside H, and V4 is inside H then,
+                //             Add X to C.
+                //         Else
+                //             Add V3 to C.
+                //     Replace the second polygon with C.
+
+                bool _conformal2 = true;
+
+                List<Vector> intersect = new List<Vector>(second_polygon);
+                for (int i = 0; i < first_polygon.Count; i++) {
+                    Vector V1 = first_polygon[i];
+                    int ip1 = (i + 1) % first_polygon.Count;
+                    Vector V2 = first_polygon[ip1];
+
+                    var H = AffineManifold.FromPoints(V1, V2);
+                    var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
+
+                    {
+                        int ip2 = (i + 2) % first_polygon.Count;
+                        var Pin = first_polygon[ip2];
+                        if (H.PointDistance(Pin) < 0)
+                            H.Normal.ScaleInPlace(-1);
+                    }
+
+                    var C = new List<Vector>();
+                    for (int j = 0; j < intersect.Count; j++) {
+                        var V3 = intersect[j];
+                        int jp1 = (j + 1) % intersect.Count;
+                        var V4 = intersect[jp1];
+
+                        bool V3_in = H.PointDistance(V3) > (-1 * Tol_Dist);
+                        bool V4_in = H.PointDistance(V4) > (-1 * Tol_Dist);
+
+                        if (V3_in && !V4_in) {
+                            C.Add(V3);
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else if (!V3_in && !V4_in) {
+                            // skip
+                            _conformal2 = false;
+                        } else if (!V3_in && V4_in) {
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else {
+                            C.Add(V3);
+                        }
+                    }
+
+                    intersect = C;
+                }
+
+                return (intersect, _conformal2);
+            }
+
+            /// <summary>
+            /// Area of the parallelogram spanned by a polygons first and last edge
+            /// </summary>
+            private static double SpanArea(List<Vector> second_polygon, string errorMark) {
+                //try {
                 double span_area;
                 int N2 = second_polygon.Count;
+
+                if (N2 < 2)
+                    throw new ArgumentException($"Empty polygon, only {N2} vertices; ({errorMark}). ");
+
+
                 double sp1x = second_polygon[1][0] - second_polygon[0][0];
                 double sp1y = second_polygon[1][1] - second_polygon[0][1];
                 double sp2x = second_polygon[N2 - 1][0] - second_polygon[0][0];
                 double sp2y = second_polygon[N2 - 1][1] - second_polygon[0][1];
                 span_area = sp1x * sp2y - sp1y * sp2x;
                 return Math.Abs(span_area);
+                //} catch (Exception e) {
+                //    Random rnd = new Random();
+                //    using(var stw = new StreamWriter("SpanAreaChrash." + rnd.Next() + ".txt")) {
+                //        stw.WriteLine("Count " + second_polygon.Count);
+                //        foreach(var v in second_polygon) {
+                //            stw.WriteLine(v.ToString());
+                //        }
+                //        stw.Flush();
+                //        stw.Close();
+                //    }
+                //    throw new AggregateException(e);
+                //}
             }
 
             /// <summary>
-            /// 
+            /// Ensures that that in the 3D case -- i.e. when faces are 2D objects -- that vertices of an edge are in counter-clockwise sequence.  (or maybe clock-wise?)
             /// </summary>
-            /// <param name="VtxEdge1_Loc"></param>
-            /// <returns></returns>
             private static List<Vector> CheckFace(MultidimensionalArray _VtxEdge1_Loc) {
 
                 MultidimensionalArray VtxEdge1_Loc = MultidimensionalArray.Create(_VtxEdge1_Loc.Lengths);

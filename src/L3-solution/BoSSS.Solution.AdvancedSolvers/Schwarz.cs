@@ -981,8 +981,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int mempeak = -1;
             foreach(var b in this.blockSolvers) {
                 mempeak = Math.Max((b as PARDISOSolver).PeakMemory(), mempeak);
-                if(b != null) b.Dispose();
+                if(b != null) 
+                    b.Dispose();
             }
+            this.blockSolvers = null;
             Console.WriteLine($"peak memory: {mempeak} MB");
         }
 
@@ -1265,12 +1267,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Dispose() {
             this.DisposeBlockSolver();
             this.DisposePMGSolvers();
             this.SolutionScaling = null;
             this.BlockMatrices = null;
             this.BMfullBlocks = null;
+
+            if(this.CoarseSolver != null) {
+                this.CoarseSolver.Dispose();
+                this.CoarseSolver = null;
+            }
         }
 
         public long UsedMemory() {

@@ -634,13 +634,15 @@ namespace BoSSS.Application.XNSE_Solver {
                             C.DbPath = @"D:\trash_db";
                             //C.DbPath = @"D:\2D_Partitioning_samples";
                         } else {
-                            C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                            C.DbPath = @"\\dc1\userspace\kummer\bosss-db-sept21";
                         }
                         break;
                     default:
                         throw new Exception("No Db-path specified. You stupid?");
                 }               
                 (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+                (@"\\dc1\userspace\kummer\bosss-db-sept21", default(string)).AddToArray(ref C.AlternateDbPaths);
             }
             C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
