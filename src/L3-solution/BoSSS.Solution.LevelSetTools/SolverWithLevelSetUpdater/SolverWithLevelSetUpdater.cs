@@ -171,6 +171,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
                     case LevelSetEvolution.None: 
@@ -249,6 +250,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             this.Control.AgglomerationThreshold, this.GridData);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.LaplaceExtension: {
+                        ILevelSetEvolver laplaceExtEvo;
+                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            laplaceExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData, false);
+                        } else {
+                            laplaceExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData, false);
+                        }
+                        lsUpdater.AddEvolver(LevelSetCG, laplaceExtEvo);
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
@@ -352,6 +367,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();
