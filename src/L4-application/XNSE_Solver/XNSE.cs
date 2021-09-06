@@ -76,56 +76,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
             //throw new Exception("Remove me");
 
-            bool Evap = false;
-            // not sure if this works always, idea is to determine on startup which solver should be run.
-            // default is XNSE<XNSE_Control>
-            try {
-                // peek at control file and select correct solver depending on controlfile type
-                // parse arguments
-                args = ArgsFromEnvironmentVars(args);
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                argsParseSuccess = parser.ParseArguments(args, opt);
-
-                if(!argsParseSuccess) {
-                    System.Environment.Exit(-1);
-                }
-
-                if(opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-
-                XNSE_Control ctrlV2 = null;
-                XNSE_Control[] ctrlV2_ParameterStudy = null;
-
-                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                Evap = ctrlV2 is XNSFE_Control | ctrlV2_ParameterStudy is XNSFE_Control[];
-            } catch {
-                Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
-            }
-
-            if(Evap) {
-                XNSFE<XNSFE_Control>._Main(args, false, delegate () {
-                    var p = new XNSFE<XNSFE_Control>();
-                    return p;
-                });
-            } else {
-                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
-                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
-                    //DateTime hello = DateTime.Now;
-                    XNSE._Main(args, false, delegate () {
-                        var p = new XNSE();
-                        return p;
-                    });
-                    //DateTime fino = DateTime.Now;
-                    //Console.WriteLine("Runtime totalo " + (fino - hello));
-
-                    //Tmeas.Memtrace.Flush();
-                    //Tmeas.Memtrace.Close();
-                //}
-            }
-
+            
+            XNSE._Main(args, false, delegate () {
+                var p = new XNSE();
+                return p;
+            });  
         }
     }
 
@@ -376,7 +331,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = QuadOrder();
             GetBcMap();
 
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
             // === momentum equations === //
             for (int d = 0; d < D; ++d) {
@@ -407,7 +362,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if (((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+            if ((config.physParams.IncludeConvection && config.isTransport) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -470,7 +425,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="config"></param>
         /// <param name="d">Momentum component index</param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
-        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
 
             // === linearized or parameter free variants, difference only in convective term === //
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
@@ -493,7 +448,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="opFactory"></param>
         /// <param name="config"></param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
-        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
             opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
             opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
             opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
@@ -504,7 +459,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Override to customize.
         /// </summary>
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
@@ -516,7 +474,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // surface tension on IBM
-                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine && config.physParams.Sigma != 0.0) {
                     opFactory.AddEquation(new NSEimmersedBoundary_SurfaceTension("A", "B", d, D, 1));
                 }
 

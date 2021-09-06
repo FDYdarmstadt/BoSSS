@@ -15,7 +15,7 @@ using BoSSS.Solution.NSECommon;
 //using BoSSS.Solution.Utils.Formula;
 using BoSSS.Foundation.Grid.Classic;
 
-namespace BoSSS.Application.XNSE_Solver.Tests {
+namespace BoSSS.Application.XNSFE_Solver.Tests {
 
     /// <summary>
     /// a simple Test for HeatTransport in a box shaped domain

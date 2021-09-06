@@ -219,11 +219,11 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol) {
+        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             if (zwoLSBruteForceFactories == null) {
                 zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1);
+            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
         }
 
 
@@ -324,13 +324,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates an edge quadrature rule factory for edges cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             if (zwoLSBruteForceFactories == null)
             {
                 zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
+            return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
         }
 
         /// <summary>
@@ -417,13 +417,13 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Generates a volume quadrature rule factory for cells cut by two level sets.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             if(zwoLSBruteForceFactories == null)
             {
                 zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
+            return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
         }
 
         /// <summary>
@@ -538,7 +538,7 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory for integrating over a surface.
         /// The surface is defined by two conditions: levelset0 = 0 and on side jmp1 of levelset1
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol)
+        public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
             if (zwoLSBruteForceFactories == null)
             {
@@ -546,7 +546,7 @@ namespace BoSSS.Foundation.XDG {
             }
             return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0, 
                 levSetIndex1, 
-                jmp1);
+                jmp1, backupFactory);
         }
 
 
@@ -554,11 +554,11 @@ namespace BoSSS.Foundation.XDG {
         /// Generates a quadrature rule factory the intersection of levelset0 and levelset1 where levelset0 = levelset1 = 0
         /// This is a point in 2D, a line in 3D.
         /// </summary>
-        public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol) {
+        public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
             if (zwoLSBruteForceFactories == null) {
                 zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1);
+            return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
         }
 
         /// <summary>
