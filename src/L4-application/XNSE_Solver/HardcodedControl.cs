@@ -540,13 +540,15 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 1, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = true) {
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 1, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             
             double[] pos = new double[SpaceDim];
-            double particleRad = 0.861;
+            double particleRad = 0.5001;
             double rhoA = 890;
             double muA = 1;
-            double anglev = muA/(rhoA*(1- particleRad))*41.3 * Math.Sqrt((particleRad + 1) / (2* (1 - particleRad)));
+            double Re = 1000;
+            double anglev = Re * muA / (1 - particleRad) / rhoA;
+            //double anglev = muA/(rhoA*(1- particleRad))*41.3 * Math.Sqrt((particleRad + 1) / (2* (1 - particleRad)));
 
             var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad);
             C.Rigidbody.SetParameters(pos, anglev, particleRad, SpaceDim);
@@ -662,7 +664,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     if (SpaceDim == 3)
                         z = X[2];
 
-                    return 2;
+                    return 3;
                 });
 
                 return grd;
@@ -738,7 +740,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //    //    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             //}
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.AddBoundaryValue("Wall");
+            //C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("Pressure_Outlet");
 
             //C.OperatorMatrixAnalysis = false;
 
@@ -762,7 +765,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.MaxSolverIterations = 50;

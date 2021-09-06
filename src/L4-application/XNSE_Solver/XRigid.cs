@@ -38,6 +38,9 @@ namespace BoSSS.Application.XNSE_Solver {
             return m_SpaceDim > 0;
         }
 
+        /// <summary>
+        /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
+        /// </summary>
         public XRigid() {
         }
 

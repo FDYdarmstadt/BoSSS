@@ -584,7 +584,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
 
-                    BlockMask fullMask;
+                    BlockMask fullMask=null;
                     BlockMsrMatrix fullBlock;
 
                     if (UsePMGinBlocks && AnyHighOrderTerms) {
@@ -598,14 +598,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullSel.CellSelector(bc.ToList(), false);
 
                         ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                        try {
+                        //try {
                             fullMask = new BlockMask(fullSel, ExtRows);
-                        } catch (ArgumentException ex) {
-                            // void cells, lead to empty selection error this is a fallback for this case
-                            RedList.Add(iPart);
-                            Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Probably a void cell!?");
-                            continue;
-                        }
+                        //} catch (ArgumentException ex) {
+                        //    // void cells, lead to empty selection error this is a fallback for this case
+                        //    RedList.Add(iPart);
+                        //    Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Probably a void cell!?");
+                        //    continue;
+                        //}
                         ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
@@ -630,6 +630,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     BMfullBlocks[iPart] = fullMask;
                 }
+
+                if ((RedList.Count() > 0).MPIOr()) {
+                    //var Basis = new Basis(op.Mapping.AggGrid.AncestorGrid, 0);
+                    //var field = new SinglePhaseField(Basis, "SchwarzBlock");
+                    //field.AccConstant(-1.0);
+
+                    //for (int iPart = 0; iPart < BlockCells.Length; iPart++) {
+
+                    //    foreach (var cell in BlockCells[iPart]) {
+                    //        if (cell >= ag.iLogicalCells.NoOfLocalUpdatedCells)
+                    //            continue;
+                    //        field.SetMeanValue(cell, iPart);
+                    //    }
+
+                    //}
+                    //var plist = new List<SinglePhaseField>();
+                    //plist.Add(field);
+                    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(plist, $"BLargh_{op.LevelIndex}.plt", 0.0, 0);
+                    foreach (int voidblock in RedList) {
+                        int core = ilPSP.Environment.MPIEnv.MPI_Rank;
+                        var strw = new StreamWriter($"c{core}_l{m_MgOp.LevelIndex}_sb{voidblock}.txt");
+                        foreach (int cell in BlockCells[voidblock]) {
+                            var center = op.Mapping.AggGrid.AncestorGrid.iGeomCells.GetCenter(cell);
+                            strw.WriteLine(cell + ":\t" + center.x + "\t" + center.y + "\t" + center.z);
+                        }
+                    }
+                }
+
 
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();

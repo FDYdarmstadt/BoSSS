@@ -85,58 +85,10 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        //[Test]
-        static public void Rotating_Cube_compare4to1() {
-            /*
-            Unhandled Exception:
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-             */
-            var C = Rotating_Cube(3, 20, 2, false);
-            string bla = "IOTest_ofVelocity";
-
-            using (var solver = new XNSE()) {
-               
-
-                solver.Init(C);
-                solver.RunSolverMode();
-
-                var grid = solver.GridData;
-                var testIO = new TestingIO(grid, bla, 1);
-                LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
-
-                var projCheck = new TestingIO(solver.GridData, $"{bla}.csv", 1);
-                projCheck.AddDGField(PhiDG);
-                projCheck.AddDGField(PhiCG);
-                projCheck.DoIOnow();
-
-                Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
-                Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
-            }
-        }
-
         [Test]
-        public static void LoadbalancingAndAMR_Activated() {
-            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR: true, useLoadBal: true);
-
-            using (var solver = new XNSE()) {
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
-        }
-
-        [Test]
-        public static void BadInitiallyDistributionTest() {
-            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR:false, useLoadBal: true , UsePredefPartitioning: true);
+        public static void BadInitiallyDistributionTest(
+            [Values(true,false)] bool useAMR) {
+            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR, useLoadBal: true , UsePredefPartitioning: true);
             //Debugger.Launch();
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -154,24 +106,24 @@ System.ArgumentException: DG degree seems different
             }
         }
 
-        [Test]
-        public static void PardisoFailsInProjection() {
-            // 4 cores
-            var C = Rotating_Sphere(1, 10, 3, false, false, false);
+        //[Test]
+        //public static void PardisoFailsInProjection() {
+        //    // 4 cores
+        //    var C = Rotating_Sphere(1, 10, 3, false, false, false);
+        //    using (var solver = new XNSE()) {
+        //        solver.Init(C);
+        //        solver.RunSolverMode();
+        //    }
+        //}
+
+        public static void emptyMaskInSchwarz() {
+            var C = PartlyCoverdDomain(2, 40, 2, false, false, false);
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
         }
-
-        //public static void emptyMaskInSchwarz() {
-        //    var C = PartlyCoverdDomain(2, 50, 2, false, false, false);
-        //    using (var solver = new XNSE()) {
-        //        solver.Init(C);
-        //        solver.RunSolverMode();
-        //    }
-        //    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-        //}
 
         /// <summary>
         /// 
@@ -203,6 +155,7 @@ System.ArgumentException: DG degree seems different
 
             BoSSS.Solution.Application.InitMPI();
             //BadInitiallyDistributionTest();
+            emptyMaskInSchwarz();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -617,6 +570,7 @@ System.ArgumentException: DG degree seems different
             // ======================
 
             C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
             C.ProjectName = "XNSE/IBM_test";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");

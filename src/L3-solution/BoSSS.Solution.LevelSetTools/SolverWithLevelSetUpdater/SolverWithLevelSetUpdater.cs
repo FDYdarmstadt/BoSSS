@@ -1,4 +1,6 @@
-﻿using BoSSS.Foundation;
+﻿
+#define TEST
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -550,11 +552,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
             }
 #if TEST
-            MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            var MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
             MPIrankField.AccConstant(this.MPIRank);
             base.RegisterField(MPIrankField, IOListOption.Always);
 
-            CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
+            var CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
             var MaskSpcA = LsTrk.Regions.GetSpeciesMask("A");
             var VoidMask = CellMask.Complement(MaskSpcA);
 
