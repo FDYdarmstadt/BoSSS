@@ -51,6 +51,13 @@ namespace BoSSS.Solution.XheatCommon {
                 DefineConvective(D, boundaryMap, spcName, capSpc, LFFSpc, config.useUpwind);               
             }
 
+            if (config.isHeatSource) {
+                string heatsource = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+                string heatsourceOfSpecies = heatsource + "#" + SpeciesName;
+                var heatsourceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(heatsourceOfSpecies, speciesName);
+                AddComponent(heatsourceComponent);
+                AddParameter(heatsourceOfSpecies);
+            }
 
             // viscous operator (laplace)
             // ==========================
@@ -151,7 +158,15 @@ namespace BoSSS.Solution.XheatCommon {
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            cap = capSpc;  
+            cap = capSpc;
+
+            if (config.isHeatSource) {
+                string heatsource = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+                string heatsourceOfSpecies = heatsource + "#" + SpeciesName;
+                var heatsourceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(heatsourceOfSpecies, speciesName);
+                AddComponent(heatsourceComponent);
+                AddParameter(heatsourceOfSpecies);
+            }
 
             // viscous operator (laplace)
             // ==========================

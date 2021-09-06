@@ -110,6 +110,28 @@ namespace BoSSS.Foundation.Grid.Classic {
 
         int MyCount;
 
+
+        void CheckPeriodcFaceTags() {
+            bool MayContainPeriodic = (m_Grid.PeriodicTrafo?.Count??0) > 0;
+
+            if(!MayContainPeriodic) {
+                //
+                // there is no periodic boundary; check all cell face tags
+                // (I noticed a bug in the grid data structure after adaptive mesh refinement)
+                //
+
+                foreach(var cl in m_Grid.Cells) {
+                    if(cl.CellFaceTags != null) {
+                        foreach(var et in cl.CellFaceTags) {
+                            if(et.PeriodicInverse)
+                                throw new ApplicationException($"Found periodic transformation, but no periodic transformation in grid; cell {cl}.");
+                        }
+                    }
+                }
+            }
+        }
+
+
         /// <summary>
         /// constructor 
         /// </summary>
@@ -183,6 +205,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // cell init
                 // ---------
 
+                CheckPeriodcFaceTags();
                 ParallelSetup();
                 m_Cells.Init();
 
@@ -1086,7 +1109,7 @@ namespace BoSSS.Foundation.Grid.Classic {
  
         /// <summary>
         /// Parallel setup, e.g. send and receive lists.
-        /// - 'ínput data': cell-neighborship information obtained from <see cref="GridCommons.GetCellNeighbourship"/>.
+        /// - 'input data': cell-neighborship information obtained from <see cref="GridCommons.GetCellNeighbourship"/>.
         /// - 'output data': <see cref="CellData.CellNeighbours_global_tmp"/>, <see cref="CellData.CellNeighbours"/> and various entries of <see cref="Parallel"/>
         /// </summary>
         void ParallelSetup() {

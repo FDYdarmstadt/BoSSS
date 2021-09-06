@@ -30,7 +30,6 @@ using ilPSP;
 using System.Diagnostics;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
-using BoSSS.Application.XNSE_Solver.Legacy;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
@@ -696,7 +695,7 @@ System.ArgumentException: DG degree seems different
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.TargetBlockSize = 50000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;

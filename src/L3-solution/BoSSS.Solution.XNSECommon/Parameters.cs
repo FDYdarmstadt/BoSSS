@@ -471,7 +471,8 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            //VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D.ForLoop( d => new SinglePhaseField(basis, ParameterNames[d])) );
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
@@ -522,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < parameters.Length; ++i) {
                 ParameterVarFields[parameters[i]].Clear();
-                ParameterVarFields[parameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                ParameterVarFields[parameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }
@@ -594,7 +595,7 @@ namespace BoSSS.Solution.XNSECommon {
             for (int i = 0; i < lsParameters.Length - 1; ++i) {
                 ParameterVarFields[lsParameters[i]].Clear();
                 if(filtLevSetGradient != null)
-                    ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                    ParameterVarFields[lsParameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }

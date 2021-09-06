@@ -61,7 +61,30 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public CellType Type;
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            using(var stw = new System.IO.StringWriter()) {
+                stw.WriteLine("Cell " + GlobalID + " (" + Type + "): ");
+                if(NodeIndices != null) {
+                    stw.Write("Node indices:");
+                    foreach (long ni in NodeIndices)
+                        stw.Write(ni + " ");
+                } else {
+                    stw.Write("No Node Indices defined. ");
+                }
+                stw.Write("Transformation parameters: ");
+                if (TransformationParams != null) {
+                    stw.WriteLine();
+                    IMatrixExtensions.SaveToStream(this.TransformationParams, stw);
+                } else {
+                    stw.WriteLine("NULL.");
+                }
+                return stw.ToString();
+            }
+        }
+
     }
 
     /// <summary>
@@ -128,6 +151,29 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// the index within the coarsening cluster.
         /// </summary>
         public int CoarseningLeafIndex;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            using (var stw = new System.IO.StringWriter()) {
+                stw.Write(base.ToString());
+                stw.WriteLine("Parent cell: " + (ParentCell != null));
+                stw.WriteLine("Refinement Level: " + RefinementLevel);
+                stw.WriteLine("CoarseningClusterID: " + CoarseningClusterID);
+                stw.WriteLine("CoarseningClusterSize: " + CoarseningClusterSize);
+                stw.WriteLine("CoarseningLeafIndex: " + CoarseningLeafIndex);
+
+                if(CellFaceTags != null ) {
+                    foreach (var e in CellFaceTags)
+                        stw.WriteLine("Face Tag: " + e.ToString());
+                } else {
+                    stw.WriteLine("no cell face tags");
+                }
+
+                return stw.ToString();
+            }
+        }
 
     }
 

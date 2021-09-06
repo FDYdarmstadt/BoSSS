@@ -169,6 +169,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
                     case LevelSetEvolution.None: 
@@ -191,19 +192,19 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             // phase 2: create updater
             // =======================
             LevelSetUpdater lsUpdater;
-            switch(NoOfLevelSets) {
+            switch (NoOfLevelSets) {
                 case 1:
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
-                    (string[]) this.SpeciesTable, 
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    (string[])this.SpeciesTable,
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 case 2:
-                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth, 
-                    (string[,]) this.SpeciesTable, 
+                lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
+                    (string[,])this.SpeciesTable,
                     this.GetLsUpdaterInputFields,
-                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs);
+                    DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 default:
@@ -213,7 +214,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             // phase 3: instantiate evolvers
             // ============================
-            for(int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
+            for (int iLevSet = 0; iLevSet < this.LevelSetNames.Length; iLevSet++) {
                 var LevelSetCG = lsNames[iLevSet].ContLs;
                 var LevelSetDG = lsNames[iLevSet].DgLs;
 
@@ -247,6 +248,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             this.Control.AgglomerationThreshold, this.GridData);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
+                        break;
+                    }
+                    case LevelSetEvolution.LaplaceExtension: {
+                        ILevelSetEvolver laplaceExtEvo;
+                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            laplaceExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData, false);
+                        } else {
+                            laplaceExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData, false);
+                        }
+                        lsUpdater.AddEvolver(LevelSetCG, laplaceExtEvo);
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
@@ -350,6 +365,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
+                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();

@@ -8,6 +8,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Timestepping;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -545,7 +546,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         DGField[] JacobiParameterVars = null;
 
-        
+
         /// <summary>
         /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
         /// - either update operator linearization matrix 
@@ -553,160 +554,168 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
-            // compute operator
-            Debug.Assert(OpAffine.L2Norm() == 0.0);
+            using(var ft = new FuncTrace()) {
+                // compute operator
+                Debug.Assert(OpAffine.L2Norm() == 0.0);
 
-            // all kinds of checks
-            if(!this.CurrentState.EqualsPartition(Mapping))
-                throw new ApplicationException("something is weired");
-            if(OpMtx != null) {
-                if(!OpMtx.RowPartitioning.EqualsPartition(Mapping))
-                    throw new ArgumentException("Codomain/Matrix Row mapping mismatch.");
-                if(!OpMtx.ColPartition.EqualsPartition(Mapping))
-                    throw new ArgumentException("Domain/Matrix column mapping mismatch.");
-            }
-                    
-            if(XdgOperator != null) {
-                // +++++++++++++++++++++++++++++++++++++++++++++++
-                // XDG Branch: still requires length-scale-hack
-                // (should be cleaned some-when in the future)
-                // +++++++++++++++++++++++++++++++++++++++++++++++
-
-                //if(XdgOperator.AgglomerationThreshold <= 0)
-                //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
-
+                // all kinds of checks
+                if(!this.CurrentState.EqualsPartition(Mapping))
+                    throw new ApplicationException("something is weired");
                 if(OpMtx != null) {
-                    // +++++++++++++++++++++++++++++
-                    // Solver requires linearization
-                    // +++++++++++++++++++++++++++++
+                    if(!OpMtx.RowPartitioning.EqualsPartition(Mapping))
+                        throw new ArgumentException("Codomain/Matrix Row mapping mismatch.");
+                    if(!OpMtx.ColPartition.EqualsPartition(Mapping))
+                        throw new ArgumentException("Domain/Matrix column mapping mismatch.");
+                }
 
-                    Debug.Assert(OpMtx.InfNorm() == 0.0);
-                    switch(XdgOperator.LinearizationHint) {
+                if(XdgOperator != null) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
+                    // XDG Branch: still requires length-scale-hack
+                    // (should be cleaned some-when in the future)
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                        case LinearizationHint.AdHoc: {
+                    //if(XdgOperator.AgglomerationThreshold <= 0)
+                    //    throw new ArgumentException("Mismatch between agglomeration threshold provided ");
+
+                    if(OpMtx != null) {
+                        // +++++++++++++++++++++++++++++
+                        // Solver requires linearization
+                        // +++++++++++++++++++++++++++++
+
+                        Debug.Assert(OpMtx.InfNorm() == 0.0);
+                        switch(XdgOperator.LinearizationHint) {
+
+                            case LinearizationHint.AdHoc: using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft)) {
+                                this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
+
+
+                                
+                                var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
+                                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                
+                                return;
+                            }
+
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft)){
+                                var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
+                                    foreach(var kv in AgglomeratedCellLengthScales) {
+                                        evn.CellLengthScales[kv.Key] = kv.Value;
+                                    }
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+
+                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft)){
+                                var op = GetJacobiXdgOperator();
+
+                                if(JacobiParameterVars == null)
+                                    JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
+
+                                op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
+
+                                var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
+                                    mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                                }
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+                        }
+                    } else {
+                        // ++++++++++++++++++++++++
+                        // only operator evaluation
+                        // ++++++++++++++++++++++++
+
+
+                        using(new BlockTrace("XDG-Evaluate", ft)) {
                             this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
-                            var mtxBuilder = XdgOperator.GetMatrixBuilder(LsTrk, Mapping, this.Parameters, Mapping, LsTrkHistoryIndex);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
+                            var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
+                            eval.time = time;
+
+                            eval.MPITtransceive = true;
                             foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
-                                mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
+                                eval.CellLengthScales[kv.Key] = kv.Value;
                             }
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
-                        }
-
-                        case LinearizationHint.FDJacobi: {
-                            var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
-                            if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) { // length-scale hack
-                                foreach(var kv in AgglomeratedCellLengthScales) {
-                                    evn.CellLengthScales[kv.Key] = kv.Value;
-                                }
-                            }
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
-                        }
-
-                        case LinearizationHint.GetJacobiOperator: {
-                            var op = GetJacobiXdgOperator();
-
-                            if(JacobiParameterVars == null)
-                                JacobiParameterVars = op.InvokeParameterFactory(this.CurrentState);
-
-                            op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
-
-                            var mtxBuilder = op.GetMatrixBuilder(LsTrk, Mapping, this.JacobiParameterVars, Mapping, LsTrkHistoryIndex);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
-                            foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
-                                mtxBuilder.CellLengthScales[kv.Key] = kv.Value;
-                            }
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
+                            eval.Evaluate(1.0, 0.0, OpAffine);
                         }
                     }
-                } else {
-                    // ++++++++++++++++++++++++
-                    // only operator evaluation
-                    // ++++++++++++++++++++++++
-
-                   
-
-                    this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
-
-                    var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
-                    eval.time = time;
-
-                    eval.MPITtransceive = true;
-                    foreach(var kv in AgglomeratedCellLengthScales) { // length-scale hack
-                        eval.CellLengthScales[kv.Key] = kv.Value;
-                    }
-                    eval.Evaluate(1.0, 0.0, OpAffine);
-                }
 
 
 
-            } else if(DgOperator != null) {
-                // +++++++++++++++++++++++++++++++++++++++++++++++
-                // DG Branch
-                // +++++++++++++++++++++++++++++++++++++++++++++++
+                } else if(DgOperator != null) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
+                    // DG Branch
+                    // +++++++++++++++++++++++++++++++++++++++++++++++
 
-                if(OpMtx != null) {
-                    // +++++++++++++++++++++++++++++
-                    // Solver requires linearization
-                    // +++++++++++++++++++++++++++++
+                    if(OpMtx != null) {
+                        // +++++++++++++++++++++++++++++
+                        // Solver requires linearization
+                        // +++++++++++++++++++++++++++++
 
-                    Debug.Assert(OpMtx.InfNorm() == 0.0);
-                    switch(DgOperator.LinearizationHint) {
+                        Debug.Assert(OpMtx.InfNorm() == 0.0);
+                        switch(DgOperator.LinearizationHint) {
 
-                        case LinearizationHint.AdHoc: {
+                            case LinearizationHint.AdHoc: using(new BlockTrace("DG-LinearizationHint.AdHoc", ft)) {
+                                this.DgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
+
+                                var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("DG-LinearizationHint.FDJacobi", ft)){
+                                var mtxBuilder = DgOperator.GetFDJacobianBuilder(__CurrentState, this.Parameters, Mapping);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+
+                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("DG-LinearizationHint.GetJacobiOperator", ft)){
+                                var op = GetJacobiDgOperator();
+
+                                if(JacobiParameterVars == null)
+                                    JacobiParameterVars = op.InvokeParameterFactory(__CurrentState);
+                                op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
+
+                                var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
+                                mtxBuilder.time = time;
+                                mtxBuilder.MPITtransceive = true;
+                                mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
+                                return;
+                            }
+                        }
+                    } else {
+                        // ++++++++++++++++++++++++
+                        // only operator evaluation
+                        // ++++++++++++++++++++++++
+
+                        using(new BlockTrace("DG-Evaluate", ft)) {
                             this.DgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
-                            var mtxBuilder = DgOperator.GetMatrixBuilder(Mapping, this.Parameters, Mapping);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
-                        }
-
-                        case LinearizationHint.FDJacobi: {
-                            var mtxBuilder = DgOperator.GetFDJacobianBuilder(__CurrentState, this.Parameters, Mapping);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
-                        }
-
-                        case LinearizationHint.GetJacobiOperator: {
-                            var op = GetJacobiDgOperator();
-
-                            if(JacobiParameterVars == null)
-                                JacobiParameterVars = op.InvokeParameterFactory(__CurrentState);
-                            op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
-
-                            var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
-                            mtxBuilder.time = time;
-                            mtxBuilder.MPITtransceive = true;
-                            mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
-                            return;
+                            var eval = DgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
+                            eval.time = time;
+                            eval.MPITtransceive = true;
+                            eval.Evaluate(1.0, 0.0, OpAffine);
                         }
                     }
                 } else {
-                    // ++++++++++++++++++++++++
-                    // only operator evaluation
-                    // ++++++++++++++++++++++++
-
-                    this.DgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
-
-                    var eval = DgOperator.GetEvaluatorEx(__CurrentState, this.Parameters, Mapping);
-                    eval.time = time;
-                    eval.MPITtransceive = true;
-                    eval.Evaluate(1.0, 0.0, OpAffine);
+                    throw new NotImplementedException();
                 }
-            } else {
-                throw new NotImplementedException();
             }
         }
 
@@ -784,6 +793,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime))
+                throw new ApplicationException($"Before timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime})");
+
+
 
             double[] AvailTimesBefore;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
@@ -812,10 +825,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             double[] AvailTimesAfter;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
                 AvailTimesAfter = LsTrk.RegionsHistory.AvailabelIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
-                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt*1e-7, "Error in Level-Set tracker time");
+                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt * 1e-7, "Error in Level-Set tracker time");
             }
+             
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime + dt))
+                throw new ApplicationException($"After timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime + dt}), level-set handling is '{TimesteppingBase.Config_LevelSetHandling}'.");
+            
 
             JacobiParameterVars = null;
+            
             return success;
         }
 

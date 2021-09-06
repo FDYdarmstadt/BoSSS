@@ -62,7 +62,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         internal bool projectOnSameBasis = false;   // if false projection on a DG basis with degree + 1
         internal int projectionCase = 5;
 
-        internal ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
+        internal ProjectionStrategy projectStrategy = ProjectionStrategy.patchwiseOnly;
 
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
