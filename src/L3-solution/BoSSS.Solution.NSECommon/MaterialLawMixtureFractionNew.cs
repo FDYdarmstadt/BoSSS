@@ -165,8 +165,8 @@ namespace BoSSS.Solution.NSECommon {
                     double greater = getVariableFromZ_FuelSide(Z, id);
                     double smaller = getVariableFromZ_AirSide(Z, id);
 
-                    double bla = Math.Tanh(K * (Z - zst));
-                    res = smaller + (1 + bla) / 2 * (greater - smaller);
+                    //double bla = Math.Tanh(K * (Z - zst));
+                    res = smaller + (1 + Math.Tanh(K * (Z - zst))) / 2 * (greater - smaller);
                 }
             } else {
                 res = getVariableFromZ_FrozenLimit(Z, id);

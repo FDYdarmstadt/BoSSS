@@ -34,7 +34,7 @@ namespace BoSSS.Solution.NSECommon {
         [DataMember] private CpCalculationMode myCpCalculationsMode;
 
         [DataMember] public double R;
-        [DataMember] private double[] MolarMasses;
+        [DataMember] public double[] MolarMasses;
         [DataMember] public double T_ref;
 
         /// <summary>
