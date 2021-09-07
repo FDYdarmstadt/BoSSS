@@ -598,14 +598,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullSel.CellSelector(bc.ToList(), false);
 
                         ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                        //try {
+                        try {
                             fullMask = new BlockMask(fullSel, ExtRows);
-                        //} catch (ArgumentException ex) {
-                        //    // void cells, lead to empty selection error this is a fallback for this case
-                        //    RedList.Add(iPart);
-                        //    Console.WriteLine("Warning: empty selection at " + iPart + "th Schwarz block. Probably a void cell!?");
-                        //    continue;
-                        //}
+                        } catch (ArgumentException ex) {
+                            // void cells, lead to empty selection error this is a fallback for this case
+                            if (fullMask == null || fullMask.GetNoOfMaskedCells == 0) {
+                                //Console.WriteLine("Exception caught:" + ex.Message);
+                                RedList.Add(iPart);
+                                Console.WriteLine($"Warning: empty selection at proc{op.Mapping.MpiRank}/lvl{op.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
+                                continue;
+                            } else {
+                                throw ex;
+                            }
+                        }
                         ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
@@ -631,39 +636,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     BMfullBlocks[iPart] = fullMask;
                 }
 
-                if ((RedList.Count() > 0).MPIOr()) {
-                    //var Basis = new Basis(op.Mapping.AggGrid.AncestorGrid, 0);
-                    //var field = new SinglePhaseField(Basis, "SchwarzBlock");
-                    //field.AccConstant(-1.0);
-
-                    //for (int iPart = 0; iPart < BlockCells.Length; iPart++) {
-
-                    //    foreach (var cell in BlockCells[iPart]) {
-                    //        if (cell >= ag.iLogicalCells.NoOfLocalUpdatedCells)
-                    //            continue;
-                    //        field.SetMeanValue(cell, iPart);
-                    //    }
-
-                    //}
-                    //var plist = new List<SinglePhaseField>();
-                    //plist.Add(field);
-                    //BoSSS.Solution.Tecplot.Tecplot.PlotFields(plist, $"BLargh_{op.LevelIndex}.plt", 0.0, 0);
-                    foreach (int voidblock in RedList) {
-                        int core = ilPSP.Environment.MPIEnv.MPI_Rank;
-                        var strw = new StreamWriter($"c{core}_l{m_MgOp.LevelIndex}_sb{voidblock}.txt");
-                        foreach (int cell in BlockCells[voidblock]) {
-                            var center = op.Mapping.AggGrid.AncestorGrid.iGeomCells.GetCenter(cell);
-                            strw.WriteLine(cell + ":\t" + center.x + "\t" + center.y + "\t" + center.z);
-                        }
-                    }
-                }
+              
 
 
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();
                 var tmp2 = BlockMatrices.ToList();
                 var tmp3 = blockSolvers.ToList();
-                foreach (var iRed in RedList) {
+                RedList.OrderByDescending(e => e);
+                foreach (int iRed in RedList) {
                     tmp1.RemoveAt(iRed);
                     tmp2.RemoveAt(iRed);
                     tmp3.RemoveAt(iRed);
@@ -672,6 +653,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BMfullBlocks = tmp1.ToArray();
                 BlockMatrices = tmp2.ToArray();
                 blockSolvers = tmp3.ToArray();
+
+                if (NoOfSchwzBlocks == 0)
+                    throw new ArgumentException($"No Schwarz Blocks on process {op.Mapping.MpiRank} / MgLevel {op.LevelIndex}!. If void cells are present, consider adjusting partitioning.");
 
                 // Watchdog bomb!
                 // ==============

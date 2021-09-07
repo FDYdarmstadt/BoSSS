@@ -1,6 +1,4 @@
-﻿//#define TEST
-
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;

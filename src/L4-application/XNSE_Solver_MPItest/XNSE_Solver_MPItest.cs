@@ -115,9 +115,21 @@ namespace BoSSS.Application.XNSE_Solver {
         //    }
         //}
 
+        [Test]
         public static void emptyMaskInSchwarz() {
-            var C = PartlyCoverdDomain(2, 40, 2, false, false, false);
+            // This test simulates bad initial distribution of void cells over ranks
+            // which would lead to an error within Schwarz solver
+            // because of voidcells Schwarzblocks would be empty
+            // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
+            var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -686,6 +698,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
             C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping
             // ============
