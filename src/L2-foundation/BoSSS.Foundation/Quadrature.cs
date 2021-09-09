@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <summary>
         /// Number of floats (#items * #nodes * #integrals per cell) done at maximum
         /// </summary>
-        public static int CHUNK_DATA_LIMIT = 12*1024*1024;
+        public static int CHUNK_DATA_LIMIT = 1;//12*1024*1024;
     }
 
     /// <summary>
@@ -399,7 +399,7 @@ namespace BoSSS.Foundation.Quadrature {
                     int cdl = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
                     if (ChunkDataLimitOverride > 0)
                         cdl = ChunkDataLimitOverride;
-                    int MaxChunkLength = Quadrature_Bulksize.CHUNK_DATA_LIMIT / ItemSize;
+                    int MaxChunkLength = cdl / ItemSize;
                     if(MaxChunkLength < 1)
                         MaxChunkLength = 1;
 

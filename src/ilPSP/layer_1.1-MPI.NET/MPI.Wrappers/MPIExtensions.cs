@@ -1011,6 +1011,33 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// equal to <see cref="MPIMin(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPIMin(this long i) {
+            return MPIMin(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPIMin(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MaxValue;
+                csMPI.Raw.Allreduce(
+                    (IntPtr)(&loc),
+                    (IntPtr)(&glob),
+                    1,
+                    csMPI.Raw._DATATYPE.LONG_LONG,
+                    csMPI.Raw._OP.MIN,
+                    comm);
+                return glob;
+            }
+        }
+
 
         /// <summary>
         /// Gathers single numbers form each MPI rank in an array

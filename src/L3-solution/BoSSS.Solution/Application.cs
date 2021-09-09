@@ -44,6 +44,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Xml;
 
 namespace BoSSS.Solution {
@@ -1195,6 +1196,7 @@ namespace BoSSS.Solution {
                 }
 
 
+
                 //// Make sure grid guid is accessible even if the user has some
                 //// custom handling of the grid loading
                 //if (m_control != null && !passiveIo && m_control.confBase.Grid.Equals(Guid.Empty)) {
@@ -1489,6 +1491,9 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
+
+                
+
 
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)

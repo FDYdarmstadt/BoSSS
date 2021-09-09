@@ -166,6 +166,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             m_Grid = grd;
 
+            
+
 
             using(var ft = new ilPSP.Tracing.FuncTrace()) {
 

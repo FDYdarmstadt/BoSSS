@@ -134,16 +134,17 @@ namespace BoSSS.Foundation {
 
 
             /// <summary>
-            /// 1st index: cell index (minus some offset);
-            /// 2nd index: node index;
-            /// 3rd index; spatial coordinate;
+            /// Nodes in global coordinates
+            /// - 1st index: cell index (minus some offset);
+            /// - 2nd index: node index;
+            /// - 3rd index; spatial coordinate;
             /// </summary>
             protected MultidimensionalArray m_NodesTransformed = new MultidimensionalArray(3);
 
             /// <summary>
             /// results of function evaluation
-            /// 1st index: cell index (minus some offset);
-            /// 2nd index: node index;
+            /// - 1st index: cell index (minus some offset);
+            /// - 2nd index: node index;
             /// </summary>
             protected MultidimensionalArray m_FunctionValues = new MultidimensionalArray(2);
 
@@ -157,6 +158,7 @@ namespace BoSSS.Foundation {
                 int NoOfNodes = rule.GetLength(0);
                 m_NodesTransformed.Allocate(new int[] { NoOfItems, NoOfNodes, GridDat.SpatialDimension });
                 m_FunctionValues.Allocate(new int[] { NoOfItems, NoOfNodes });
+                Console.WriteLine($"Projection Quadrature: NoOfItems = {NoOfItems}");
             }
 
             /// <summary>

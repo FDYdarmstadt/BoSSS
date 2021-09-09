@@ -24,6 +24,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MPI.Wrappers;
+using System.Threading;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -71,11 +73,16 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
+            //var c = BoSSS.Foundation.Grid.RefElements.Cube.Instance;
+            //foreach(var p in c.GetOrthonormalPolynomials(c.HighestSupportedPolynomialDegree)) {
+            //    Console.WriteLine(p.AbsoluteDegree);
+            //}
+            //Thread.Sleep(1000 * 1000);
 
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
-            //throw new Exception("Remove me");
 
+
+            
+    
             bool Evap = false;
             // not sure if this works always, idea is to determine on startup which solver should be run.
             // default is XNSE<XNSE_Control>
@@ -111,9 +118,15 @@ namespace BoSSS.Application.XNSE_Solver {
                     return p;
                 });
             } else {
+                InitMPI();
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
+                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+
                 //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
-                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
-                    //DateTime hello = DateTime.Now;
+
+                using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
+                { 
+                    
                     XNSE._Main(args, false, delegate () {
                         var p = new XNSE();
                         return p;
@@ -121,9 +134,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     //DateTime fino = DateTime.Now;
                     //Console.WriteLine("Runtime totalo " + (fino - hello));
 
-                    //Tmeas.Memtrace.Flush();
-                    //Tmeas.Memtrace.Close();
-                //}
+                    Tmeas.Memtrace.Flush();
+                    Tmeas.Memtrace.Close();
+                }
             }
 
         }
@@ -542,6 +555,12 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
+
+                Console.WriteLine("Exiting before solving...");
+                csMPI.Raw.mpiFinalize();
+                Tmeas.Memtrace.Close();
+                System.Environment.Exit(-9);
+                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");

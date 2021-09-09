@@ -580,9 +580,18 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             internal void DetermineEdgeTrafo() {
-                using (new FuncTrace()) {
+                using (var ft = new FuncTrace()) {
+                    ft.InfoToConsole = true;
+
+                    //Bad_memory_scaling();
 
                     m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
+
+                    double mem1 = ft.GetMemoryMB().MPISum();
+                    double cch1 = ((double)(Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    double cov1 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    double cno1 = Caching.Cache.NoOfUsedBanks.MPISum();
+                    Console.WriteLine($"Checkpoint 1: mem is {mem1}, in cache {cch1} + {cov1} ({cno1})");
 
 
                     // preparation: helper vars
@@ -603,7 +612,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int skippedEdgesCount = 0;
                     List<int> skippedEdges = new List<int>();
                     for (int e = 0; e < this.m_EdgesTmp.Count; e++) {
-
+                        
                         // cache some vars..
                         // -----------------
                         var Edge = this.m_EdgesTmp[e];
@@ -632,6 +641,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int face1 = Edge.FaceIndex1;
                         int face2 = Edge.FaceIndex2;
 
+                        
 
                         // first face of edge: cell j1, face e1, in local coordinates of cell j1
                         NodeSet V_f1 = Kref1.GetFaceVertices(face1);
@@ -703,7 +713,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     throw new ArithmeticException("Newton divergence");
                             }
                         }
-
+                        
 
                         AffineTrafo newTrafo = null;
 
@@ -791,7 +801,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             cell1_edges.Add(e - skippedEdgesCount);
                             cell2_edges.Add(e - skippedEdgesCount);
                         }
-
+                        
                         {
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
@@ -809,11 +819,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var V2G = MultidimensionalArray.Create(V1.Lengths);
                             m_owner.TransformLocal2Global(V2, V2G, j2);
 
-                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet1.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V1, JacDet1, 0, K_j1.Type, K_j1.TransformationParams);
                             var JacDet1 = m_owner.JacobianDeterminat.GetValue_Cell(V1, j1, 1);
                            
-                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet2.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V2, JacDet2, 0, K_j2.Type, K_j2.TransformationParams);
                             var JacDet2 = m_owner.JacobianDeterminat.GetValue_Cell(V2, j2, 1);
 
@@ -823,14 +833,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 throw new ArithmeticException("Non-positive Jacobian found in cell " + j2 + ".");
                             
                             var RelScale = Math.Max(Math.Max(V1G.MaxdistBetweenRows(), V2G.MaxdistBetweenRows()), Math.Max(JacDet1.Max(), JacDet2.Max()));
-
+                            RelScale = 1261737681;
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
                             if (!(err <= 1.0e-8 || Edge.IsPeriodic))
                                 throw new ArithmeticException("Edges do not match geometrically.");
                         }
-
+                        
                         int iKref1 = this.m_owner.Cells.GetRefElementIndex(j1); 
                         int iKref2 = this.m_owner.Cells.GetRefElementIndex(j2); 
 
@@ -847,11 +857,31 @@ namespace BoSSS.Foundation.Grid.Classic {
                             e2cTrafo.Add(Trafo2Pair);
                             Edge.Cell2TrafoIdx = e2cTrafo.Count - 1;
                         }
+                        
 
                         // store
                         // -----
                         this.m_EdgesTmp[e] = Edge;
                     }
+
+                    int NoOfEdges = m_EdgesTmp.Count.MPISum();
+                    ft.Info("NoOf e2c: " + e2cTrafo.Count.MPIMax());
+                    ft.Info("No of edges: " + NoOfEdges);
+                    
+                    this.m_EdgesTmp = null;
+                    this.m_CellsToEdgesTmp = null;
+                    double mem2 = ft.GetMemoryMB().MPISum();
+                    double cch2 = ((double)(BoSSS.Foundation.Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    double cov2 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    double cno2 = Caching.Cache.NoOfUsedBanks.MPISum();
+
+
+                    double perEdge = (mem2 - mem1) / (NoOfEdges.MPISum());
+                    Console.WriteLine($"Checkpoint 2: mem is {mem2}, inc is {mem2-mem1}, per proc {(mem2-mem1)/this.m_owner.MpiSize}, per edge {perEdge}");
+                    Console.WriteLine($"Checkpoint 1: mem is {mem2}, in cache {cch2} + {cov2} ({cno2})");
+                    csMPI.Raw.mpiFinalize();
+                    System.Environment.Exit(-99);
+
 
                     if(skippedEdgesCount > 0) {
                         int sk = 1;
@@ -866,6 +896,10 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     }
 
+                    
+
+
+                   
                     // MPI synchronization
                     // ===================
                     /*
@@ -913,7 +947,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     }
 
-                    */
+                    //*/
 
                     lock(padlock) {
                         this.e2C_offet = offset_counter;
@@ -2550,41 +2584,43 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// sets <see cref="NormalsForAffine"/>.
             /// </summary>
             internal void InitNormals() {
-                int E = this.Count;
-                int D = m_owner.SpatialDimension;
-                var __Normals = MultidimensionalArray.Create(E, D);
+                using(new FuncTrace()) {
+                    int E = this.Count;
+                    int D = m_owner.SpatialDimension;
+                    var __Normals = MultidimensionalArray.Create(E, D);
 
-                var Krefs = this.m_owner.Grid.RefElements;
+                    var Krefs = this.m_owner.Grid.RefElements;
 
-                MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
+                    MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
 
-                for (int e = 0; e < E; e++) {
-                    var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
+                    for(int e = 0; e < E; e++) {
+                        var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
 
-                    if (this.IsEdgeAffineLinear(e)) {
+                        if(this.IsEdgeAffineLinear(e)) {
 
-                        int jCell = this.CellIndices[e, 0];
-                        //var Kref = this.m_owner.Cells.GetRefElement(jCell);
-                        int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
-                        int iFace = this.FaceIndices[e, 0];
+                            int jCell = this.CellIndices[e, 0];
+                            //var Kref = this.m_owner.Cells.GetRefElement(jCell);
+                            int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
+                            int iFace = this.FaceIndices[e, 0];
 
-                        //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
-                        //todo
+                            //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
+                            //todo
 
-                        //if(FaceCenters[iKref, iFace] == null)
-                        //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
-
-
-                        this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+                            //if(FaceCenters[iKref, iFace] == null)
+                            //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
 
 
-                    } else {
-                        // 
-                        Normal_e.SetAll(double.NaN);
+                            this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+
+
+                        } else {
+                            // 
+                            Normal_e.SetAll(double.NaN);
+                        }
                     }
-                }
 
-                this.NormalsForAffine = __Normals;
+                    this.NormalsForAffine = __Normals;
+                }
             }
 
             /// <summary>
