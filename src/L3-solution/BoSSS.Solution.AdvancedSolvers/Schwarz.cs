@@ -424,6 +424,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
                 ResetStat();
+                // Without checking the matrix, the other criteria is not enough to determine if reusing is possible
+                // Init shall be a Init, so skip that ... 
                 //                if (m_MgOp != null) {
                 //                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 //                    // someone is trying to re-use this solver: see if the settings permit that
@@ -580,6 +582,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 };
 
                 var RedList = new List<int>();
+                ilPSP.Environment.StdoutOnlyOnRank0 = false;
                 for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
@@ -597,7 +600,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var fullSel = new SubBlockSelector(op.Mapping);
                         fullSel.CellSelector(bc.ToList(), false);
 
-                        ilPSP.Environment.StdoutOnlyOnRank0 = false;
+                        
                         try {
                             fullMask = new BlockMask(fullSel, ExtRows);
                         } catch (ArgumentException ex) {
@@ -611,7 +614,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 throw ex;
                             }
                         }
-                        ilPSP.Environment.StdoutOnlyOnRank0 = true;
+                        
 
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
@@ -635,15 +638,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     BMfullBlocks[iPart] = fullMask;
                 }
+                ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
-              
 
 
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();
                 var tmp2 = BlockMatrices.ToList();
                 var tmp3 = blockSolvers.ToList();
-                RedList.OrderByDescending(e => e);
+                var tmpRedList = RedList.OrderByDescending(e => e).ToList();
+                RedList = tmpRedList;
                 foreach (int iRed in RedList) {
                     tmp1.RemoveAt(iRed);
                     tmp2.RemoveAt(iRed);

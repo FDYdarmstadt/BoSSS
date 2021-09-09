@@ -687,7 +687,7 @@ namespace BoSSS.Solution {
                 };
                 break;
                 case LinearSolverCode.exp_Kcycle_schwarz:
-                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
+                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
                 templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
                 break;
 
@@ -1534,6 +1534,7 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
+                useDirect |= iLevel == MaxMGDepth - 1; // otherwise error, due to missing coarse solver
                 useDirect = useDirect.MPIOr();
 
                 if(useDirect)
@@ -1556,6 +1557,7 @@ namespace BoSSS.Solution {
 
                     Func<int, int, bool> delayedCaching = delegate (int Iter, int MgLevel) {
                         return Iter >= ((MaxMGLevel - MgLevel) * 3);
+                        //return false;
                     };
 
                     var smoother1 = new Schwarz() {

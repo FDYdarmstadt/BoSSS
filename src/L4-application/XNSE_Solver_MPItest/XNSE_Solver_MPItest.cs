@@ -123,6 +123,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
             var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 1000;
             C.GridPartType = GridPartType.clusterHilbert;
             C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = true;

@@ -527,7 +527,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = true) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 2, bool writeToDB = true, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
@@ -540,7 +540,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 1, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 3, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             
             double[] pos = new double[SpaceDim];
             double particleRad = 0.5001;
@@ -777,7 +777,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
-                C.SetMaximalRefinementLevel(2);
+                C.SetMaximalRefinementLevel(1);
                 C.AMR_startUpSweeps = 1;
             }
 

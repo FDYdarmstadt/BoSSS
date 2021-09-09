@@ -85,9 +85,9 @@ namespace ilPSP.Tracing {
                 TotalTime.Stop();
                 _Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
                 TotalTime.Start();
-#if TEST
-                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
-#endif
+//#if TEST
+//                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
+//#endif
                 return _Root;
             }
         }
