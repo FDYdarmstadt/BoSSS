@@ -33,6 +33,8 @@ namespace BoSSS.Application.XNSE_Solver {
         private Shape theShape = Shape.None;
         [NonSerialized]
         private XNSE_Control m_ctrl;
+        [DataMember]
+        private string m_RotationAxis = "z";
 
         public bool IsInitialized() {
             return m_SpaceDim > 0;
@@ -55,7 +57,21 @@ namespace BoSSS.Application.XNSE_Solver {
             theShape = shape;
         }
 
-     
+        public void SetRotationAxis(string Axis) {
+            switch (m_SpaceDim) {
+                case 3:
+                    string[] verify = new string[] { "x", "y", "z" };
+                    bool isSupported = verify.Any(s => s == Axis);
+                    if (!isSupported)
+                        throw new NotSupportedException("Axis not supported: " + Axis);
+                break;
+                case 2:
+                    if (Axis!="z")
+                        throw new NotSupportedException("Axis not supported: " + Axis);
+                break;
+            }
+            m_RotationAxis = Axis;
+        }
 
         public void ArrangeAll(XNSE_Control ctrl) {
             m_ctrl = ctrl;
@@ -113,12 +129,26 @@ namespace BoSSS.Application.XNSE_Solver {
                         + particleRad;
 
                     case 3:
-                    // Inf-Norm cube
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
-
+                        switch (m_RotationAxis) {
+                        case "x":
+                        return -Math.Max(Math.Abs(X[0] - pos[0]),
+                                    Math.Max(Math.Abs((X[1] - pos[1]) * Math.Cos(angle) - (X[2] - pos[2]) * Math.Sin(angle)),
+                                    Math.Abs((X[1] - pos[1]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+                                    + particleRad;
+                        case "y":
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) + (X[2] - pos[2]) * Math.Sin(angle)),
+                                    Math.Max(Math.Abs(X[1] - pos[1]),
+                                    Math.Abs(-(X[0] - pos[0]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+                                    + particleRad;
+                        case "z":
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                    Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                    Math.Abs(X[2] - pos[2])))
+                                    + particleRad;
+                        default:
+                            throw new NotSupportedException();
+                        }
+                        
                     default:
                     throw new NotImplementedException();
                 }
@@ -135,7 +165,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (pos.Length != X.Length)
                     throw new ArgumentException("check dimension of center of mass");
 
-                Vector angVelo = new Vector(new double[] { 0, 0, anglevelocity });
+                Vector angVelo = new Vector(new double[] { 0, 0, 0 });
+                switch (m_RotationAxis) {
+                    case "x":
+                        angVelo.x = anglevelocity;
+                        break;
+                    case "y":
+                        angVelo.y = anglevelocity;
+                        break;
+                    case "z":
+                        angVelo.z = anglevelocity;
+                        break;
+                    default:
+                        throw new NotSupportedException("Axis not suppored");
+                }
+
                 Vector CenterofMass = new Vector(pos);
                 Vector radialVector = new Vector(X) - CenterofMass;
                 Vector transVelocity = new Vector(new double[SpaceDim]);
