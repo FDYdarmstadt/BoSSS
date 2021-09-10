@@ -124,9 +124,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
 
-                using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
-                { 
-                    
+                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
+                //{ 
+                {     
                     XNSE._Main(args, false, delegate () {
                         var p = new XNSE();
                         return p;
@@ -556,10 +556,10 @@ namespace BoSSS.Application.XNSE_Solver {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
 
-                Console.WriteLine("Exiting before solving...");
-                csMPI.Raw.mpiFinalize();
-                Tmeas.Memtrace.Close();
-                System.Environment.Exit(-9);
+                //Console.WriteLine("Exiting before solving...");
+                //csMPI.Raw.mpiFinalize();
+                //Tmeas.Memtrace.Close();
+                //System.Environment.Exit(-9);
                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);

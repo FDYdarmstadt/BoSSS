@@ -243,7 +243,7 @@ namespace ilPSP.Tracing {
                 return p.WorkingSet64;
             } else {
                 // almost no overhead, does not include un-managed memory.
-                long virt = GC.GetTotalMemory(true);
+                long virt = GC.GetTotalMemory(false);
                 return virt;
                 //var p = Process.GetCurrentProcess();
                 //return p.WorkingSet64;

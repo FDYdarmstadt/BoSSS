@@ -515,7 +515,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             using (var f = new FuncTrace()) {
-                
+                /*
                 if(this.m_MgOperator.LevelIndex == 0) {
                     f.LogMemoryStat();
                     //m_MgOperator.GetMemoryInfo(out long alloc, out long used);
@@ -562,6 +562,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                    
                 }
+                */
+
 
                 double[] B, X;
                 if (_B is double[])
