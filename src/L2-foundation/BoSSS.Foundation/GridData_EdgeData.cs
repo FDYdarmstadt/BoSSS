@@ -581,17 +581,16 @@ namespace BoSSS.Foundation.Grid.Classic {
 
             internal void DetermineEdgeTrafo() {
                 using (var ft = new FuncTrace()) {
-                    ft.InfoToConsole = true;
+                    //ft.InfoToConsole = true;
 
-                    //Bad_memory_scaling();
-
+                   
                     m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
 
-                    double mem1 = ft.GetMemoryMB().MPISum();
-                    double cch1 = ((double)(Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
-                    double cov1 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
-                    double cno1 = Caching.Cache.NoOfUsedBanks.MPISum();
-                    Console.WriteLine($"Checkpoint 1: mem is {mem1}, in cache {cch1} + {cov1} ({cno1})");
+                    //double mem1 = ft.GetMemoryMB().MPISum();
+                    //double cch1 = ((double)(Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov1 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno1 = Caching.Cache.NoOfUsedBanks.MPISum();
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem1}, in cache {cch1} + {cov1} ({cno1})");
 
 
                     // preparation: helper vars
@@ -868,19 +867,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                     ft.Info("NoOf e2c: " + e2cTrafo.Count.MPIMax());
                     ft.Info("No of edges: " + NoOfEdges);
                     
-                    this.m_EdgesTmp = null;
-                    this.m_CellsToEdgesTmp = null;
-                    double mem2 = ft.GetMemoryMB().MPISum();
-                    double cch2 = ((double)(BoSSS.Foundation.Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
-                    double cov2 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
-                    double cno2 = Caching.Cache.NoOfUsedBanks.MPISum();
+                    //this.m_EdgesTmp = null;
+                    //this.m_CellsToEdgesTmp = null;
+                    //double mem2 = ft.GetMemoryMB().MPISum();
+                    //double cch2 = ((double)(BoSSS.Foundation.Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov2 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno2 = Caching.Cache.NoOfUsedBanks.MPISum();
 
 
-                    double perEdge = (mem2 - mem1) / (NoOfEdges.MPISum());
-                    Console.WriteLine($"Checkpoint 2: mem is {mem2}, inc is {mem2-mem1}, per proc {(mem2-mem1)/this.m_owner.MpiSize}, per edge {perEdge}");
-                    Console.WriteLine($"Checkpoint 1: mem is {mem2}, in cache {cch2} + {cov2} ({cno2})");
-                    csMPI.Raw.mpiFinalize();
-                    System.Environment.Exit(-99);
+                    //double perEdge = (mem2 - mem1) / (NoOfEdges.MPISum());
+                    //Console.WriteLine($"Checkpoint 2: mem is {mem2}, inc is {mem2-mem1}, per proc {(mem2-mem1)/this.m_owner.MpiSize}, per edge {perEdge}");
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem2}, in cache {cch2} + {cov2} ({cno2})");
+                    //csMPI.Raw.mpiFinalize();
+                    //System.Environment.Exit(-99);
 
 
                     if(skippedEdgesCount > 0) {
@@ -902,7 +901,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                    
                     // MPI synchronization
                     // ===================
-                    /*
+                    
                     {
                         // We must ensure that `e2cTrafo` is equal on all MPI ranks
 
@@ -911,39 +910,61 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int myRank = m_owner.MpiRank;
                         var All_e2c = e2cTrafo.MPIGatherO(0); // gather all trafos on rank 0...
 
-                        int[][] IdxRemapS = new int[MpiSize][];
-                        int rnk = 1;
-                        foreach(var Lst in All_e2c.Skip(1)) { // ... and unify the lists.
-                            int LL = Lst.Count;
-                            int[] IdxRemap = new int[LL];
-                            for(int l = 0; l < LL; l++) {
-                                var tt = Lst[l];
-                                int newIdx = e2cTrafo.IndexOf(tt, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
-                                if( newIdx < 0) {
-                                    e2cTrafo.Add(tt);
-                                    newIdx = e2cTrafo.Count - 1;
+                        // unify the lists:
+                        //if(myRank == 1)
+                        //    Debugger.Launch();
+                        int[][] IdxRemapS = null;
+                        if(myRank == 0) {
+                            IdxRemapS = new int[MpiSize][];
+                            int rnk = 1;
+                            foreach(var Lst in All_e2c.Skip(1)) { // ... and unify the lists. (loop over MPI ranks...)
+                                int LL = Lst.Count;
+                                int[] IdxRemap = new int[LL];
+                                for(int l = 0; l < LL; l++) { // loop over e2c-Trafo of rank rnk
+                                    var tt = Lst[l];
+                                    int newIdx = e2cTrafo.IndexOf(tt, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
+                                    if(newIdx < 0) {
+                                        e2cTrafo.Add(tt);
+                                        newIdx = e2cTrafo.Count - 1;
+                                    }
+                                    IdxRemap[l] = newIdx; // trafo index `l` must be changed into `newIdx`
                                 }
-                                IdxRemap[l] = newIdx;
+                                IdxRemapS[rnk] = IdxRemap;
+                                rnk++;
                             }
-
-                            rnk++;
                         }
-
+                        // distribute affine trafos from rank 0 to all others:
                         var new_e2cTrafo = e2cTrafo.MPIBroadcast(0);
                         if(myRank > 0)
                             e2cTrafo = new_e2cTrafo;
 
-                        int[] SendLoad;
-                        if(myRank == 0) {
-                            SendLoad = new int[e2cTrafo.Count * MpiSize];
-                            for(int r = 0; r < MpiSize; r++)
-                                Array.Copy(IdxRemapS[r], 0, SendLoad, r*e2cTrafo.Count, IdxRemapS[r].Length);
-                        } else {
-                            SendLoad = null;
+                        // distribute modified indices for trafos from rank 0 to all others:
+                        int[] myIdxRemapS;
+                        {
+                            int[] SendLoad;
+                            if(myRank == 0) {
+                                SendLoad = new int[e2cTrafo.Count * MpiSize];
+                                for(int r = 1; r < MpiSize; r++)
+                                    Array.Copy(IdxRemapS[r], 0, SendLoad, r * e2cTrafo.Count, IdxRemapS[r].Length);
+                            } else {
+                                SendLoad = null;
+                            }
+                            myIdxRemapS = SendLoad.MPIScatter(new_e2cTrafo.Count, 0);
                         }
-                        int[] myIdxRemapS = SendLoad.MPIScatter(new_e2cTrafo.Count, 0);
 
-                        
+                        // modify the indices for the new `e2cTrafo`-List
+                        if(myRank > 0) {
+                            int EE = m_EdgesTmp.Count;
+                            for(int e = 0; e < EE; e++) {
+                                var Edg = m_EdgesTmp[e];
+
+                                Edg.Cell1TrafoIdx = myIdxRemapS[Edg.Cell1TrafoIdx];
+                                if(Edg.Cell2_PeriodicTrafoIdx >= 0)
+                                    Edg.Cell2TrafoIdx = myIdxRemapS[Edg.Cell2TrafoIdx];
+
+                                m_EdgesTmp[e] = Edg;
+                            }
+                        }
 
                     }
 

@@ -585,7 +585,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Debug.Assert(OpMtx.InfNorm() == 0.0);
                         switch(XdgOperator.LinearizationHint) {
 
-                            case LinearizationHint.AdHoc: using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft)) {
+                            case LinearizationHint.AdHoc: using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft, true)) {
                                 this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
 
@@ -601,7 +601,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.FDJacobi: using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft)){
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft, true)){
                                 var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
@@ -614,7 +614,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft)){
+                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft, true)){
                                 var op = GetJacobiXdgOperator();
 
                                 if(JacobiParameterVars == null)
@@ -638,7 +638,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // ++++++++++++++++++++++++
 
 
-                        using(new BlockTrace("XDG-Evaluate", ft)) {
+                        using(new BlockTrace("XDG-Evaluate", ft, true)) {
                             this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);

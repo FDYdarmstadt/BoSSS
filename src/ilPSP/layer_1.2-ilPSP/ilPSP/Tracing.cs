@@ -118,25 +118,7 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
-        /*
-        static private long GetMemory() {
-            long mem = 0;
-            Process myself = Process.GetCurrentProcess();
-#if TEST
-            {
-                try {
-                    //mem = myself.WorkingSet64 / (1024 * 1024);
-                    mem = myself.PrivateMemorySize64 / (1024 * 1024);
-                    //mem = GC.GetTotalMemory(false) / (1024 * 1024);
-                } catch (Exception e) {
-                    mem = 0;
-                }
-            }
-#endif
-            return mem;
-        }
-        */
-
+        
 
         private static readonly object padlock = new object();
 
@@ -241,9 +223,7 @@ namespace ilPSP.Tracing {
         
         static long PreviousLineMem = 0;
 
-        static long PreviousLineMem_mpi = 0;
-
-
+    
         /// <summary>
         /// Very expensive instrumentation option, slows down by a factor of two to three!!!
         /// </summary>
@@ -288,7 +268,10 @@ namespace ilPSP.Tracing {
         }
                        
 
-        Stopwatch Watch;
+        /// <summary>
+        /// the internal stopwatch
+        /// </summary>
+        protected Stopwatch Watch;
 
         long PeakWorkingSet_onEntry;
         long WorkingSet_onEntry;
@@ -490,7 +473,10 @@ namespace ilPSP.Tracing {
             }
         }
 
-        string _name;
+        /// <summary>
+        /// name of the time tracing block
+        /// </summary>
+        protected string _name;
 
         /// <summary>
         /// Message when the measurement starts.
@@ -542,12 +528,7 @@ namespace ilPSP.Tracing {
 
 
             if(Memtrace != null) {
-                if(Memtrace_lineCount >= 272) {
-                    Console.WriteLine("Sufficient data so far...");
-                    csMPI.Raw.mpiFinalize();
-                    Tmeas.Memtrace.Close();
-                    System.Environment.Exit(-9);
-                }
+               
 
 
                 Memtrace.Write(Memtrace_lineCount); // col 0: line number
@@ -735,15 +716,20 @@ namespace ilPSP.Tracing {
         /// <param name="f">
         /// tracing of function which contains the block
         /// </param>
-        public BlockTrace(string Title, FuncTrace f) {
+        /// <param name="timeToCout">
+        /// if true, the time elapsed in the block will be printed to console 
+        /// </param>
+        public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
             if(!Tracer.InstrumentationSwitch)
                 return;
             string _name = Title;
             _f = f;
             m_Logger = _f.m_Logger;
-            
+            m_timeToCout = timeToCout;
             base.EnterMessage("BLKENTER ", _name);
         }
+
+        bool m_timeToCout = false;
 
         /*
         /// <summary>
@@ -762,5 +748,16 @@ namespace ilPSP.Tracing {
             }
         }
         */
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override void Dispose() {
+            base.Dispose();
+
+            if(m_timeToCout) {
+                Console.WriteLine(base._name + ": " + base.Watch.Elapsed.TotalSeconds + " sec.");
+            }
+        }
     }
 }

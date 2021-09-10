@@ -1112,7 +1112,7 @@ namespace MPI.Wrappers {
         /// Scatters form <paramref name="root"/> rank to all other ranks
         /// </summary>
         static public int[] MPIScatter(this int[] L, int recvCount, int root) {
-            return L.MPIScatter(root, recvCount, csMPI.Raw._COMM.WORLD);
+            return L.MPIScatter(recvCount, root, csMPI.Raw._COMM.WORLD);
         }
         
         /// <summary>
@@ -1127,7 +1127,7 @@ namespace MPI.Wrappers {
 
             int SndCount;
             if(rank == root) {
-                SndCount = L.Length;
+                SndCount = recvCount;
                 if(L.Length != recvCount * size)
                     throw new ArgumentOutOfRangeException("Send buffer length must be == receive count * number of processors.");
             } else {

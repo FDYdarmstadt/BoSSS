@@ -130,9 +130,6 @@ namespace BoSSS.Foundation {
             /// </summary>
             protected double m_alpha;
 
-
-
-
             /// <summary>
             /// Nodes in global coordinates
             /// - 1st index: cell index (minus some offset);
@@ -151,14 +148,12 @@ namespace BoSSS.Foundation {
             /// <summary>
             /// Allocates memory for the global coordinates and the function values
             /// </summary>
-            /// <param name="NoOfItems"></param>
-            /// <param name="rule"></param>
             protected override void AllocateBuffers(int NoOfItems, NodeSet rule) {
                 base.AllocateBuffers(NoOfItems, rule);
                 int NoOfNodes = rule.GetLength(0);
                 m_NodesTransformed.Allocate(new int[] { NoOfItems, NoOfNodes, GridDat.SpatialDimension });
                 m_FunctionValues.Allocate(new int[] { NoOfItems, NoOfNodes });
-                Console.WriteLine($"Projection Quadrature: NoOfItems = {NoOfItems}");
+                //Console.WriteLine($"Projection Quadrature: NoOfItems = {NoOfItems}");
             }
 
             /// <summary>
@@ -269,8 +264,13 @@ namespace BoSSS.Foundation {
             using (new FuncTrace()) {
                 int order = this.Basis.Degree * 2 + 2;
                 var rule = scheme.SaveCompile(this.Basis.GridDat, order);
+
+                //Stopwatch w = new Stopwatch();
+                //w.Start();
                 var pq = new ProjectionQuadrature(this, alpha, func, rule);
                 pq.Execute();
+                //w.Stop();
+                //Console.WriteLine("Projection took: " + w.Elapsed.TotalSeconds + " seconds.");
             }
         }
 

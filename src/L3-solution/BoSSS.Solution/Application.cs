@@ -1325,7 +1325,9 @@ namespace BoSSS.Solution {
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateTracker();
-                CreateFields(); // full user control                
+                using(new BlockTrace("CreateFieldsBlock", ht)) {
+                    CreateFields(); // full user control
+                }
 
 
 

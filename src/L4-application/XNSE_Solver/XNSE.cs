@@ -560,7 +560,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 csMPI.Raw.mpiFinalize();
                 Tmeas.Memtrace.Close();
                 System.Environment.Exit(-9);
-                
+               
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");
