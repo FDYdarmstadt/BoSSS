@@ -67,5 +67,36 @@ namespace BoSSS.Solution {
                 return levels;
             }
         }
+
+        /// <summary>
+        /// refinement everywhere
+        /// </summary>
+        [Serializable]
+        public class AMReveryWhere : AMRLevelIndicator {
+            public AMReveryWhere() {
+            }
+
+            public override int[] DesiredCellChanges() {
+
+                int J = GridData.CellPartitioning.LocalLength;
+                int[] levels = new int[J];
+                int cellsToRefine = 0;
+                int cellsToCoarse = 0;
+                Cell[] cells = GridData.Grid.Cells;
+                for (int j = 0; j < J; j++) {
+                    int currentLevel = cells[j].RefinementLevel;
+
+                    if (currentLevel < maxRefinementLevel) {
+                        levels[j] = 1;
+                        cellsToRefine++;
+                    } else if (currentLevel > maxRefinementLevel) {
+                        levels[j] = -1;
+                        cellsToCoarse++;
+                    }
+                }
+
+                return levels;
+            }
+        }
     }
 }

@@ -1,5 +1,4 @@
-﻿using BoSSS.Application.XNSE_Solver.Legacy;
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.XNSECommon;
@@ -13,14 +12,19 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
-
+namespace BoSSS.Application.XNSFE_Solver.PhysicalBasedTestcases {
 
     /// <summary>
     /// Logging of evaporation, <see cref="HeatedWall"/>
     /// </summary>
     [Serializable]
-    public class EvaporationLogging : XNSEinSituPostProcessingModule {
+    public class EvaporationLogging : EvaporationLogging<XNSFE_Control> { }
+
+    /// <summary>
+    /// Logging of evaporation, <see cref="HeatedWall"/>
+    /// </summary>
+    [Serializable]
+    public class EvaporationLogging<T> : XNSFEinSituPostProcessingModule<T> where T : XNSFE_Control, new() {
         
         /// <summary>
         /// Probably some specialization for the Fourier level set.
@@ -112,11 +116,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
         ConventionalDGField[] ConstructEvaporativeVelocity(DGField[] EvoVelocity) {
             
-            if(base.SolverMain is XNSE_SolverMain oldSolver) {
-                return oldSolver.ConstructEvaporativeVelocity(oldSolver.GetMeanVelocityFromXDGField(EvoVelocity));
-            } else if(base.SolverMain is XNSE newSolver) {
+
                 IList<string> velocityName = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(3));
-                IReadOnlyDictionary<string, DGField> parameters = newSolver.LsUpdater.Parameters;
+                IReadOnlyDictionary<string, DGField> parameters = this.SolverMainOverride.LsUpdater.Parameters;
 
                 List<ConventionalDGField> velocity = new List<ConventionalDGField>(3);
                 for(int i = 0; i < 3; ++i) {
@@ -126,10 +128,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     }
                 }
                 return velocity.ToArray();
-                
-            } else {
-                throw new NotSupportedException();
-            }
+
         }
 
         double ComputeEvapVelocityMean() {

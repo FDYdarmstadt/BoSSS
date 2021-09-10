@@ -7,7 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace BoSSS.Application.XNSE_Solver {
+namespace BoSSS.Application.XNSFE_Solver {
 
     /// <summary>
     /// EvapMicroRegion, provides a BitArray to tag cells for a Evaporation Model

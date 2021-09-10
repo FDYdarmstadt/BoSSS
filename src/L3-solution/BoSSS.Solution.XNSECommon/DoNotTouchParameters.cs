@@ -430,6 +430,12 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public double StressPenalty = 1.0;
 
+        /// <summary>
+        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride"/>
+        /// </summary>
+        [DataMember]
+        public bool DoubleCutSpecialQuadrature = false;
+
 
         /// <summary>
         /// clone

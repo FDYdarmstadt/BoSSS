@@ -101,6 +101,16 @@ namespace BoSSS.Solution.LevelSetTools {
         StokesExtension,
 
         /// <summary>
+        /// An extension velocity computed from a Laplace equation; 
+        /// Same as <see cref="StokesExtension"/> but lacks artificial pressure
+        /// </summary>
+        /// <remarks>
+        /// For details:
+        /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.StokesExtensionEvolver"/>.
+        /// </remarks>
+        LaplaceExtension,
+
+        /// <summary>
         /// A level set formulation for the surface of rigid objects. The Movement depends only on the position and orientation of the object.
         /// </summary>
         RigidObject,
