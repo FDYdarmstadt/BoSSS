@@ -25,7 +25,7 @@ using BoSSS.Foundation.Grid.RefElements;
 namespace BoSSS.Foundation.Quadrature {
 
     /// <summary>
-    /// a container for quadrature rules
+    /// a container for quadrature rules, used by the <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}"/> class
     /// </summary>
     public class QuadRule : ICloneable, IEquatable<QuadRule> {
 

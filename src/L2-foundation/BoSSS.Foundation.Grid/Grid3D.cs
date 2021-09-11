@@ -25,6 +25,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -239,7 +240,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
                                 cnt++;
 
-
+                                
                                 Cell C_cnt = new Cell();
                                 Cells.Add(C_cnt);
 
@@ -405,6 +406,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if(cnt <= 0) {
                     throw new ArgumentException("Grid is empty - check arguments (cut-outs).");
                 }
+
+               
 
                 // return
                 // ======

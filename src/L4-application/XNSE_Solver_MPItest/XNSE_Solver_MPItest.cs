@@ -191,8 +191,13 @@ System.ArgumentException: DG degree seems different
             return;
             */
 
+        
+
             BoSSS.Solution.Application.InitMPI();
-            BadInitiallyDistributionTest();
+            //Debugger.Launch();
+            //BadInitiallyDistributionTest();
+            //RotCube_OrderNotSupportedInHMF();
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.ParallelRisingDroplet();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

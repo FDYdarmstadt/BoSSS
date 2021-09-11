@@ -515,29 +515,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             using (var f = new FuncTrace()) {
-                
-                /*if(this.m_MgOperator.LevelIndex == 0) {
+                if(this.m_MgOperator.LevelIndex == 0) {
+                    GC.Collect();
+                }
+                /*
+                if(this.m_MgOperator.LevelIndex == 0) {
                     f.LogMemoryStat();
-                    m_MgOperator.GetMemoryInfo(out long alloc, out long used);
+                    //m_MgOperator.GetMemoryInfo(out long alloc, out long used);
 
 
-                    
-                    //this.OpMatrix.GetMemoryInfo(out long alloc, out long used);
-
-                    double alloc_meg = (double)alloc / (1024.0 * 1024.0);
-                    double used_meg = (double)used / (1024.0 * 1024.0);
-                    Console.WriteLine($" MG Operator total: using {used_meg} MB, allocated {alloc_meg} MB.");
+                    //double alloc_meg = (double)alloc / (1024.0 * 1024.0);
+                    //double used_meg = (double)used / (1024.0 * 1024.0);
+                    //Console.WriteLine($" MG Operator total: using {used_meg} MB, allocated {alloc_meg} MB.");
                     Process myself = Process.GetCurrentProcess();
                     long wsMem = myself.WorkingSet64;
-                    double wsMem_meg = (double)wsMem / (1024.0 * 1024.0);
-                    Console.WriteLine($" Working Set mem: {wsMem_meg} MB.");
+                    long gcMem = System.GC.GetTotalMemory(true);
+                    //double wsMem_meg = (double)wsMem / (1024.0 * 1024.0);
+                    //Console.WriteLine($" Working Set mem: {wsMem_meg} MB.");
+
+                    string PrintMeg(long bytes) {
+                        double megs = (double)bytes / (1024.0 * 1024.0);
+                        return Math.Round(megs).ToString();
+                    }
+
+                    int mpisize = m_MgOperator.Mapping.MpiSize;
+
+                    long wsTot = wsMem.MPISum();
+                    long wsMax = wsMem.MPIMax();
+                    long wsMin = wsMem.MPIMin();
+                    long wsAvg = wsTot / mpisize;
+
+                    long gcTot = gcMem.MPISum();
+                    long gcMax = gcMem.MPIMax();
+                    long gcMin = gcMem.MPIMin();
+                    long gcAvg = gcTot / mpisize;
+
+                    Console.WriteLine($"{mpisize} cores.");
+                    Console.WriteLine($"GC: tot {PrintMeg(gcTot)}:  {PrintMeg(gcMin)} -- {PrintMeg(gcAvg)} -- {PrintMeg(gcMax)}");
+                    Console.WriteLine($"WS: tot {PrintMeg(wsTot)}:  {PrintMeg(wsMin)} -- {PrintMeg(wsAvg)} -- {PrintMeg(wsMax)}");
+
+                    
+
+
+
 
                     Console.WriteLine("entering infinity loop.");
                      while(true) ;
                     
 
                    
-                }*/
+                }
+                */
+
 
                 double[] B, X;
                 if (_B is double[])
