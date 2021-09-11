@@ -556,7 +556,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine();
                 Console.Error.Flush();
-                throw new AggregateException(e);
+                //System.Environment.Exit(-1);
             }
 #endif
         }

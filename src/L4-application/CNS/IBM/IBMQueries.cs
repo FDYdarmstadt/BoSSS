@@ -155,38 +155,38 @@ namespace CNS.IBM {
                 // for Field's; However, _avoid_ a projection.
                 DGField dummy = new SinglePhaseField(new Basis(program.GridData, 0));
                 Material material = speciesMap.GetMaterial(double.NaN);
-                int index = 0;
+                //int index = 0;
                 double value = dummy.LxError(
-                    (ScalarFunctionEx)delegate (int j0, int Len, NodeSet nodes, MultidimensionalArray result) {
-                        MultidimensionalArray input = program.GridData.GlobalNodes.GetValue_Cell(nodes, j0, Len);
+                    (ScalarFunctionEx)delegate (int i0, int Len, NodeSet nodes, MultidimensionalArray result) {
+                        MultidimensionalArray input = program.GridData.GlobalNodes.GetValue_Cell(nodes, i0, Len);
 
-                        Chunk chunk = chunkRulePairs[index].Chunk;
-                        QuadRule rule = chunkRulePairs[index].Rule;
+                        //Chunk chunk = chunkRulePairs[index].Chunk;
+                        //QuadRule rule = chunkRulePairs[index].Rule;
 
-                        if (chunk.i0 != j0 || chunk.Len != Len) {
-                            throw new Exception();
-                        }
+                        //if (chunk.i0 != j0 || chunk.Len != Len) {
+                        //    throw new Exception();
+                        //}
 
-                        if (rule.NoOfNodes != nodes.GetLength(0)) {
-                            throw new Exception();
-                        }
-
-                        MultidimensionalArray rho = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
-                        density.Evaluate(chunk.i0, chunk.Len, nodes, rho);
+                        //if (rule.NoOfNodes != nodes.GetLength(0)) {
+                        //    throw new Exception();
+                        //}
+                        
+                        MultidimensionalArray rho = MultidimensionalArray.Create(Len, nodes.NoOfNodes);
+                        density.Evaluate(i0, Len, nodes, rho);
 
                         MultidimensionalArray[] m = new MultidimensionalArray[CompressibleEnvironment.NumberOfDimensions];
                         for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
-                            m[d] = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
-                            momentum[d].Evaluate(chunk.i0, chunk.Len, nodes, m[d]);
+                            m[d] = MultidimensionalArray.Create(Len, nodes.NoOfNodes);
+                            momentum[d].Evaluate(i0, Len, nodes, m[d]);
                         }
 
-                        MultidimensionalArray rhoE = MultidimensionalArray.Create(chunk.Len, rule.NoOfNodes);
-                        energy.Evaluate(chunk.i0, chunk.Len, nodes, rhoE);
+                        MultidimensionalArray rhoE = MultidimensionalArray.Create(Len, nodes.NoOfNodes);
+                        energy.Evaluate(i0, Len, nodes, rhoE);
 
                         double[] X = new double[CompressibleEnvironment.NumberOfDimensions];
                         Vector mVec = new Vector(CompressibleEnvironment.NumberOfDimensions);
-                        for (int i = 0; i < chunk.Len; i++) {
-                            for (int j = 0; j < rule.NoOfNodes; j++) {
+                        for (int i = 0; i < Len; i++) {
+                            for (int j = 0; j < nodes.NoOfNodes; j++) {
                                 for (int d = 0; d < CompressibleEnvironment.NumberOfDimensions; d++) {
                                     X[d] = input[i, j, d];
                                     mVec[d] = m[d][i, j];
@@ -204,7 +204,7 @@ namespace CNS.IBM {
                             }
                         }
 
-                        index++;
+                        //index++;
                     },
                     (X, a, b) => (a - b) * (a - b),
                     composititeRule);
