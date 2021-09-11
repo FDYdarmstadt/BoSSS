@@ -935,6 +935,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                         // distribute affine trafos from rank 0 to all others:
                         var new_e2cTrafo = e2cTrafo.MPIBroadcast(0);
+                        var old_e2cTrafo = e2cTrafo;
                         if(myRank > 0)
                             e2cTrafo = new_e2cTrafo;
 
@@ -958,9 +959,18 @@ namespace BoSSS.Foundation.Grid.Classic {
                             for(int e = 0; e < EE; e++) {
                                 var Edg = m_EdgesTmp[e];
 
+                                if(!old_e2cTrafo[Edg.Cell1TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell1TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization.");
+                                }
+                                if(!old_e2cTrafo[Edg.Cell2TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell2TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization (2).");
+                                }
+
                                 Edg.Cell1TrafoIdx = myIdxRemapS[Edg.Cell1TrafoIdx];
-                                if(Edg.Cell2_PeriodicTrafoIdx >= 0)
-                                    Edg.Cell2TrafoIdx = myIdxRemapS[Edg.Cell2TrafoIdx];
+                                Edg.Cell2TrafoIdx = myIdxRemapS[Edg.Cell2TrafoIdx];
+                                
 
                                 m_EdgesTmp[e] = Edg;
                             }
