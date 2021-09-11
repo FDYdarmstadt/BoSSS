@@ -1194,14 +1194,10 @@ namespace BoSSS.Solution {
                 if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
+                // access the GridData object here, to enforce its creation:
+                ht.Info("loaded grid with " + this.GridData.CellPartitioning.TotalLength + " cells");
 
 
-
-                //// Make sure grid guid is accessible even if the user has some
-                //// custom handling of the grid loading
-                //if (m_control != null && !passiveIo && m_control.confBase.Grid.Equals(Guid.Empty)) {
-                //    this.Control.confBase.Grid = Grid.GridGuid;
-                //}
 
                 bool DoDbLogging = !passiveIo
                     && this.Control != null

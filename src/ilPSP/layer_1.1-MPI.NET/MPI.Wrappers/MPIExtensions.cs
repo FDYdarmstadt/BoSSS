@@ -1122,8 +1122,9 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            if(recvCount <= 0)
+            if(recvCount < 0)
                 throw new ArgumentOutOfRangeException("Receive size must be greater than 0.");
+
 
             int SndCount;
             if(rank == root) {
@@ -1135,7 +1136,9 @@ namespace MPI.Wrappers {
             }
 
             int[] result = new int[recvCount];
-            
+
+            if(recvCount == 0)
+                return result;
 
             unsafe {
                 fixed(int* pL = L, pResult = result) {

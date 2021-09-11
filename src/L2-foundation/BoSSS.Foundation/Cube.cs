@@ -164,8 +164,6 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int OrderOfPrecision = m_1Drules.Keys.Where(order => order >= DesiredOrder).Min();
 
                 if(!m_3drules.TryGetValue(OrderOfPrecision, out realQr)) {
-
-
                     var _1Drule = m_1Drules[OrderOfPrecision];
 
                     int NN = _1Drule.Weights.GetLength(0);
@@ -187,7 +185,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     realQr.Nodes.LockForever();
                     realQr.Weights.LockForever();
                     m_3drules.Add(OrderOfPrecision, realQr); // the rule of order 'OrderOfPrecision' must also be used for order 'DesiredOrder'
-                    m_3drules.Add(DesiredOrder, realQr);
+                    if(DesiredOrder != OrderOfPrecision)
+                        m_3drules.Add(DesiredOrder, realQr);
                 } else {
                     m_3drules.Add(DesiredOrder, realQr);
                 }
