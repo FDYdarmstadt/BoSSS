@@ -591,14 +591,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>; Schur complement off
         /// </summary>
         [Test]
-        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff(
-            [Values(2, 3)] int FlowSolverDegree = 3,
+        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(
+            //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
             [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
             ) {
+
+            int FlowSolverDegree = 2;
             bool SchurCompl = false;
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl, nonlinsolver: nonlinsolver);
@@ -608,16 +610,47 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
         [Test]
-        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son(
-            [Values(2, 3)] int FlowSolverDegree = 3,
+        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3(
+            //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
             [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
             ) {
+            int FlowSolverDegree = 3;
             bool SchurCompl = true;
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl, nonlinsolver: nonlinsolver);
         }
 
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>; Schur complement off
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3(
+            //[Values(2, 3)] int FlowSolverDegree = 3,
+            //[Values(false,true)] bool SchurCompl = true,
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            ) {
+
+            int FlowSolverDegree = 3;
+            bool SchurCompl = false;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl, nonlinsolver: nonlinsolver);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p2(
+            //[Values(2, 3)] int FlowSolverDegree = 3,
+            //[Values(false,true)] bool SchurCompl = true,
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            ) {
+            int FlowSolverDegree = 2;
+            bool SchurCompl = true;
+            Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.Curvature_Projected, SchurCompl, nonlinsolver: nonlinsolver);
+        }
 #endif
 
         /// <summary>

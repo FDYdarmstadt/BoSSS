@@ -71,17 +71,22 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// A new Guid (<see cref="ID"/>) is created;
         /// </summary>
         public GridCommons(RefElement[] RefElm, RefElement[] EdgeRefElm) {
-            using (new FuncTrace() ) { 
+            using (var tr = new FuncTrace() ) { 
                 ilPSP.MPICollectiveWatchDog.Watch();
                 m_GridGuid = Guid.NewGuid();
                 m_GridGuid = m_GridGuid.MPIBroadcast(0);
                 EdgeTagNames.Add(0, "inner edge");
                 this.m_CreationTime = DateTime.Now;
 
-                int D = RefElm.First().SpatialDimension;
-                foreach (var Kref in RefElm) {
-                    if (Kref.SpatialDimension != D)
-                        throw new ArgumentException("All reference elements must have the same spatial dimension.");
+                tr.Info("Created grid: " + m_GridGuid);
+
+                int D;
+                using(new BlockTrace("First_ref_elm_access", tr)) {
+                    D = RefElm.First().SpatialDimension;
+                    foreach(var Kref in RefElm) {
+                        if(Kref.SpatialDimension != D)
+                            throw new ArgumentException("All reference elements must have the same spatial dimension.");
+                    }
                 }
 
                 for (int i = 0; i < RefElm.Length; i++) {

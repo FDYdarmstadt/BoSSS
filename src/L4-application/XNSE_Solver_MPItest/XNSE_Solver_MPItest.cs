@@ -165,6 +165,8 @@ namespace BoSSS.Application.XNSE_Solver {
             return;
             */
 
+        
+
             BoSSS.Solution.Application.InitMPI();
             //BadInitiallyDistributionTest();
             emptyMaskInSchwarz();

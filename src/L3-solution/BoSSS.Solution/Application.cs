@@ -44,6 +44,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Xml;
 
 namespace BoSSS.Solution {
@@ -555,7 +556,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine();
                 Console.Error.Flush();
-                System.Environment.Exit(-1);
+                //System.Environment.Exit(-1);
             }
 #endif
         }
@@ -1193,13 +1194,10 @@ namespace BoSSS.Solution {
                 if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
+                // access the GridData object here, to enforce its creation:
+                ht.Info("loaded grid with " + this.GridData.CellPartitioning.TotalLength + " cells");
 
 
-                //// Make sure grid guid is accessible even if the user has some
-                //// custom handling of the grid loading
-                //if (m_control != null && !passiveIo && m_control.confBase.Grid.Equals(Guid.Empty)) {
-                //    this.Control.confBase.Grid = Grid.GridGuid;
-                //}
 
                 bool DoDbLogging = !passiveIo
                     && this.Control != null
@@ -1323,7 +1321,9 @@ namespace BoSSS.Solution {
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateTracker();
-                CreateFields(); // full user control                
+                using(new BlockTrace("CreateFieldsBlock", ht)) {
+                    CreateFields(); // full user control
+                }
 
 
 
@@ -1489,6 +1489,9 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
+
+                
+
 
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
