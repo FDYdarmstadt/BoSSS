@@ -607,15 +607,13 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.classic_mumps:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    SolverVersion = Parallelism.MPI,
+                    WhichSolver = DirectSolver._whichSolver.MUMPS
                 };
                 break;
 
                 case LinearSolverCode.classic_pardiso:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.OMP,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 break;
 
@@ -1558,7 +1556,7 @@ namespace BoSSS.Solution {
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        TestSolution = false
+                        TestSolution = false,
                     };
                     //levelSolver = new DirectSolver() {
                     //    WhichSolver = DirectSolver._whichSolver.MUMPS,
@@ -2053,7 +2051,7 @@ namespace BoSSS.Solution {
 
                     if (sparsesolver.WhichSolver != DirectSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
-                    CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
+                    //CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;
             }
 

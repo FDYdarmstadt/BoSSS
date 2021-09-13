@@ -880,6 +880,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     using (new BlockTrace("block_solve_level", tr)) {
 
+                        Stopwatch stw = new Stopwatch();
+                        double mintime = double.MaxValue;
+                        double maxtime = 0.0;
+                        double totTime = 0;
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
                             var bi = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
@@ -896,7 +900,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // use block solver for all modes
                                 // ++++++++++++++++++++++++++++++
 
+                                stw.Reset();
+                                stw.Start();
                                 blockSolvers[iPart].Solve(xi, bi);
+                                stw.Stop();
+
+                                double t = stw.Elapsed.TotalSeconds;
+                                mintime = Math.Min(t, mintime);
+                                maxtime = Math.Max(t, maxtime);
+                                totTime += t;
+
                                 if (m_BlocksInitialized) {
                                     BlockMatrices[iPart].Clear();
                                     BlockMatrices[iPart] = null;
@@ -911,6 +924,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // accumulate block solution 'xi' to global solution 'X'
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
+
+                        mintime = mintime.MPIMin();
+                        maxtime = maxtime.MPIMax();
+                        totTime = totTime.MPISum();
+                        int NoPartsTot = NoParts.MPISum();
+                        double avgTime = totTime / NoPartsTot;
+
+                        Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoPartsTot} blks, {mintime} -- {avgTime} -- {maxtime}");
+
                         m_BlocksInitialized = false;
                     }
 

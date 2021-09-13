@@ -550,7 +550,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 dt = GetTimestep();
 
                 //Console.WriteLine("Spatial dimension is: " + GridData.SpatialDimension);
-
+                if(csMPI.Raw._COMM.SELF.Equals(csMPI.Raw._COMM.WORLD))
+                    throw new Exception("com is world");
+                else
+                    Console.WriteLine("puh");
                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);

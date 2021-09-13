@@ -69,11 +69,11 @@ namespace ilPSP.LinSolvers.PARDISO {
             string[] liborder;
             switch(par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:
-                liborder = new string[] { "PARDISO.dll", "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
+                liborder = new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
                 break;
 
                 default:
@@ -88,10 +88,12 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
             SelectLibrary(par),
-            new string[3][][],
-            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-            new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix },
-            new int[] { -1, -1, -1 }) {
+            new string[2][][],
+            new GetNameMangling[] {  DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
+            new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+            new int[] { -1, -1 }) {
+
+            
         }
 
         /// <summary>
