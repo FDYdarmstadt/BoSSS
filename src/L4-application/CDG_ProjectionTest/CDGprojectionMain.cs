@@ -41,14 +41,15 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         static void Main(string[] args) {
 
-            //BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(2, 3, 2, 8, true, ProjectionStrategy.patchwiseOnly);
             //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(1, 3, 2, 4, false, ProjectionStrategy.patchwiseOnly);
             //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(0, 2, 2, 2, true, ProjectionStrategy.globalOnly);
             //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
             //AUT.AllUp(4, 3, 4, 2, false, ProjectionStrategy.globalOnly);
             ////AUT.AllUp_Cube(3, 4, 4, true);
             //BoSSS.Solution.Application.FinalizeMPI();
-            //Assert.IsTrue(false, "Remove me");
+            Assert.IsTrue(false, "Remove me");
             //return;
 
             BoSSS.Solution.Application._Main(args, true, delegate () {
@@ -458,7 +459,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             bool checkL2err = (gridResolution > 4 && degree > 2) ? (L2err < 1.0e-2) : true;
             Console.WriteLine("========================");
-            if (checkL2err && L2jump < 1.0e-9) {
+            if (checkL2err && L2jump < 1.0e-8) {
                 Console.WriteLine("// projection PASSED //");
                 _passed = true;
             } else {
