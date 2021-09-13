@@ -42,6 +42,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         static void Main(string[] args) {
 
             //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(1, 3, 2, 4, false, ProjectionStrategy.patchwiseOnly);
             //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(0, 2, 2, 2, true, ProjectionStrategy.globalOnly);
             //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
             //AUT.AllUp(4, 3, 4, 2, false, ProjectionStrategy.globalOnly);

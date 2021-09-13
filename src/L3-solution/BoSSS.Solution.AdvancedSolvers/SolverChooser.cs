@@ -419,7 +419,7 @@ namespace BoSSS.Solution {
                 precond[0] = null;
                 break;
                 case LinearSolverCode.exp_gmres_ILU:
-                precond[0] = new ILU();
+                precond[0] = new HypreILU();
                 break;
                 case LinearSolverCode.exp_gmres_AS_MG:
                 var dirSolver = new DirectSolver() {
@@ -1668,20 +1668,15 @@ namespace BoSSS.Solution {
                     };
 
                 } else {
-                    //var smoother1 = new Schwarz() {
-                    //    FixedNoOfIterations = 1,
-                    //    CoarseSolver = null,
-                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                    //        NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks,
-                    //    },
-                    //    Overlap = 1, // overlap seems to help; more overlap seems to help more
-                    //    EnableOverlapScaling = true,
-                    //};
-
-                    var smoother1 = new DirectSolver() {
-                        TestSolution = true
-                    };
                    
+                    //var smoother1 = new DirectSolver() {
+                    //    TestSolution = true
+                    //};
+                   
+                    var smoother1 = new HypreILU() {
+                        
+                    };
+
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,

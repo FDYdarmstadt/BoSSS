@@ -457,6 +457,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double xNorm = outX.MPI_L2Norm();
                 ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
 
+
                 /*
                 // -------------------
                 var rjCheck = Res0.CloneAs();
