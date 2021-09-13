@@ -246,7 +246,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            ConditionNumberScalingTest.Perform(Controls);
+            ConditionNumberScalingTest.Perform(Controls, true);
         }
 
 #if !DEBUG

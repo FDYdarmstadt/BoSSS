@@ -528,6 +528,8 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control Rotating_Cube(int k = 2, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+            // cs:BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Cube(2,10,3,false,1,false,false,false,false)
+
 
             double anglev = 10;
             double[] pos = new double[SpaceDim];
@@ -582,6 +584,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Tags.Add("Cube");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_ILU;
             return C;
         }
 

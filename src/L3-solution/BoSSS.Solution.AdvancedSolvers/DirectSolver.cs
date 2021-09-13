@@ -216,6 +216,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int IterCnt = 1;
 
 
+        long m_UsedMemoryInLastCall = 0; 
+
         /// <summary>
         /// %
         /// </summary>
@@ -236,6 +238,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     IterCnt++;
                     solver.Solve(X, B);
                     //Console.WriteLine("done.");
+
+                    if(solver is PARDISOSolver pslv) {
+                        m_UsedMemoryInLastCall = pslv.UsedMemory();
+                    }
                 }
                 X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
@@ -340,7 +346,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return m_UsedMemoryInLastCall;
         }
 
     }
