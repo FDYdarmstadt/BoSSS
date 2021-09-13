@@ -629,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // ------------
 
                     {
-                        VerivyCurrentResidual(X, B, Res);
+                        VerivyCurrentResidual(X, B, Res, iIter);
 
 
                         // compute correction
@@ -664,7 +664,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
-                    VerivyCurrentResidual(X, B, Res);
+                    VerivyCurrentResidual(X, B, Res, iIter);
 
 
                     for(int i = 0; i < m_omega; i++) {
@@ -729,7 +729,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for(int g = 0; g < 2; g++) { // doppelt hält besser
                                                  // Test: Residual on this level / already computed by 'MinimizeResidual' above
                         
-                        VerivyCurrentResidual(X, B, Res);
+                        VerivyCurrentResidual(X, B, Res, iIter);
 
                         // compute correction
                         double[] PostCorr = new double[L];
@@ -778,17 +778,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } // end of functrace
         }
 
-        private void VerivyCurrentResidual(double[] X, double[] B, double[] Res) {
-            double[] rTest = new double[Res.Length];
-            Residual(rTest, X, B); // Residual on this level; 
-                                   // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-            double resDist = rTest.MPI_L2Dist(Res);
-            //Console.WriteLine("verified Residual: " + resDist);
-            double resNormTst = Res.MPI_L2Norm();
-            double XnormTest = X.MPI_L2Norm();
-            if(resDist > resNormTst * 10e-5 + XnormTest*1e-5)
-                Console.WriteLine($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
-            //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+        private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
+#if DEBUG
+            {
+#else 
+            if(iter % 20 == 0 && iter > 1) {
+#endif
+                double[] rTest = new double[Res.Length];
+                Residual(rTest, X, B); // Residual on this level; 
+                                       // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                double resDist = rTest.MPI_L2Dist(Res);
+                //Console.WriteLine("verified Residual: " + resDist);
+                double resNormTst = Res.MPI_L2Norm();
+                double XnormTest = X.MPI_L2Norm();
+                if(resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
+                    throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
+                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+            }
         }
 
         private double[] cloneofX;
