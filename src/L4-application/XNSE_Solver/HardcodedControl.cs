@@ -527,7 +527,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 2, bool writeToDB = true, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 20, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
