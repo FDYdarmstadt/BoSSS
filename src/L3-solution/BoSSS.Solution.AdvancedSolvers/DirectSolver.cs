@@ -180,7 +180,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolver solver;
 
             bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
-
+            
             
             switch(WhichSolver) {
                 case _whichSolver.PARDISO:

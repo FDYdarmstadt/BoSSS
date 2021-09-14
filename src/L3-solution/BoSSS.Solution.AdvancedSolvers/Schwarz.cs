@@ -475,11 +475,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(op);
 
+
+                int CellsInBlockMin = int.MaxValue;
+                int CellsInBlockMax = 0;
+
                 foreach(var b in _Blocks) {
                     if (b.Count <= 0)
                         throw new ArithmeticException("Empty Schwarz-Block found");
+
+                    CellsInBlockMin = Math.Min(CellsInBlockMin, b.Count);
+                    CellsInBlockMax = Math.Max(CellsInBlockMax, b.Count);
                 }
                 int NoOfSchwzBlocks = _Blocks.Count();
+
+                CellsInBlockMin = CellsInBlockMin.MPIMin();
+                CellsInBlockMax = CellsInBlockMax.MPIMax();
+                int NoOfSchwarzTot = NoOfSchwzBlocks.MPISum();
+                int CellsInBlockTot = _Blocks.Sum(b => b.Count());
+                double CellsInBlockAvg = (double)CellsInBlockTot / (double)NoOfSchwarzTot;
+
+                Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoOfSchwarzTot} blks, cells: {CellsInBlockMin} -- {CellsInBlockAvg} -- {CellsInBlockMax}");
+                        
+
 
                 // test cell blocks
                 // ================
@@ -549,6 +566,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
+
+
+                    int _CellsInBlockMin = BlockCells.Min(l => l.Length).MPIMin();
+                    int _CellsInBlockMax = BlockCells.Max(l => l.Length).MPIMax();
+                    int _CellsInBlockTot = BlockCells.Sum(b => b.Length);
+                    double _CellsInBlockAvg = (double)_CellsInBlockTot / (double)NoOfSchwarzTot;
+
+                    Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoOfSchwarzTot} enl blks, cells: {_CellsInBlockMin} -- {_CellsInBlockAvg} -- {_CellsInBlockMax}");
 
                 }
 
@@ -884,6 +909,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double mintime = double.MaxValue;
                         double maxtime = 0.0;
                         double totTime = 0;
+                        int MinBlockSize = int.MaxValue;
+                        int MaxBlockSize = 0;
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
                             var bi = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
@@ -905,6 +932,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 blockSolvers[iPart].Solve(xi, bi);
                                 stw.Stop();
 
+                                MinBlockSize = Math.Min(MinBlockSize, xi.Length);
+                                MaxBlockSize = Math.Max(MaxBlockSize, xi.Length);
+
                                 double t = stw.Elapsed.TotalSeconds;
                                 mintime = Math.Min(t, mintime);
                                 maxtime = Math.Max(t, maxtime);
@@ -925,6 +955,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
 
+                        MinBlockSize = MinBlockSize.MPIMin();
+                        MaxBlockSize = MaxBlockSize.MPIMax();
+
                         mintime = mintime.MPIMin();
                         maxtime = maxtime.MPIMax();
                         totTime = totTime.MPISum();
@@ -932,6 +965,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         double avgTime = totTime / NoPartsTot;
 
                         Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoPartsTot} blks, {mintime} -- {avgTime} -- {maxtime}");
+                        Console.WriteLine($"        Blksize:  {MinBlockSize}  -- {MaxBlockSize}");
 
                         m_BlocksInitialized = false;
                     }
