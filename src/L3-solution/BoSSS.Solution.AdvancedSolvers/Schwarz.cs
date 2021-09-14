@@ -620,10 +620,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //    Level = 4,
                         //    Comm = csMPI.Raw._COMM.SELF
                         //};
+                                                
 
                         blockSolvers[iPart].DefineMatrix(fullBlock);
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
                         
+
                     }
                     BMfullBlocks[iPart] = fullMask;
                 }
@@ -899,6 +901,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     BlockMatrices[iPart].Clear();
                                     BlockMatrices[iPart] = null;
                                 }
+
+                          
                                 //SingleFilter(xi);
                             }
 

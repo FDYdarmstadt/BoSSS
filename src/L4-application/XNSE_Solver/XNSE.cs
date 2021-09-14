@@ -549,10 +549,8 @@ namespace BoSSS.Application.XNSE_Solver {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
 
-                //Console.WriteLine("Exiting before solving...");
-                //csMPI.Raw.mpiFinalize();
-                //Tmeas.Memtrace.Close();
-                //System.Environment.Exit(-9);
+                //Console.WriteLine("Spatial dimension is: " + GridData.SpatialDimension);
+
                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);

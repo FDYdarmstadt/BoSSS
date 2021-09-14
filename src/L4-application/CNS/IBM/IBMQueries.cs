@@ -160,17 +160,7 @@ namespace CNS.IBM {
                     (ScalarFunctionEx)delegate (int i0, int Len, NodeSet nodes, MultidimensionalArray result) {
                         MultidimensionalArray input = program.GridData.GlobalNodes.GetValue_Cell(nodes, i0, Len);
 
-                        //Chunk chunk = chunkRulePairs[index].Chunk;
-                        //QuadRule rule = chunkRulePairs[index].Rule;
-
-                        //if (chunk.i0 != j0 || chunk.Len != Len) {
-                        //    throw new Exception();
-                        //}
-
-                        //if (rule.NoOfNodes != nodes.GetLength(0)) {
-                        //    throw new Exception();
-                        //}
-                        
+                                                
                         MultidimensionalArray rho = MultidimensionalArray.Create(Len, nodes.NoOfNodes);
                         density.Evaluate(i0, Len, nodes, rho);
 

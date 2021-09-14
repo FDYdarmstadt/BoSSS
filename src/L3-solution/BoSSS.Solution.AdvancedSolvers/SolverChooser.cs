@@ -410,6 +410,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_cg:
                 case LinearSolverCode.exp_softgmres:
                 case LinearSolverCode.exp_Kcycle_schwarz:
+                case LinearSolverCode.exp_Kcycle_ILU:
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                 case LinearSolverCode.exp_AS:
@@ -418,7 +419,7 @@ namespace BoSSS.Solution {
                 precond[0] = null;
                 break;
                 case LinearSolverCode.exp_gmres_ILU:
-                precond[0] = new ILU();
+                precond[0] = new HypreILU();
                 break;
                 case LinearSolverCode.exp_gmres_AS_MG:
                 var dirSolver = new DirectSolver() {
@@ -686,10 +687,18 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
-                case LinearSolverCode.exp_Kcycle_schwarz:
-                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
-                templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
-                break;
+
+                case LinearSolverCode.exp_Kcycle_schwarz: {
+                    Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
+                    templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
+                    break;
+                }
+
+                case LinearSolverCode.exp_Kcycle_ILU: {
+                    Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
+                    templinearSolve = KcycleMultiILU(MaxMGDepth, LocalDOF, SblkSizeFunc);
+                    break;
+                }
 
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                 templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
@@ -1566,36 +1575,7 @@ namespace BoSSS.Solution {
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                     };
-
-                    //var solve1 = new LevelPmg() {
-                    //    OrderOfCoarseSystem = 1,
-                    //    UseHiOrderSmoothing = true,
-                    //    FullSolveOfCutcells = true,
-                    //    SkipLowOrderSolve = true,
-                    //};
-
-                    //var solve2 = new LevelPmg() {
-                    //    OrderOfCoarseSystem = 1,
-                    //    UseHiOrderSmoothing = false,
-                    //    FullSolveOfCutcells = true,
-                    //    SkipLowOrderSolve = false,
-                    //};
-
-                    //var smoother1 = new LevelPmg() {
-                    //    OrderOfCoarseSystem = 1,
-                    //    UseHiOrderSmoothing = true,
-                    //    FullSolveOfCutcells = false,
-                    //    UseDiagonalPmg = false,
-                    //    SkipLowOrderSolve = true
-                    //};
-
-                    //var solve2 = new BlockJacobi() { omega = 0.3 };
-
-                    //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve2, solve1 } };
-
-                    //if (iLevel == 0) SetQuery("KcycleSchwarz:XdgCellsToLowBlock", ((Schwarz)smoother1).CoarseSolveOfCutcells ? 1 : 0, true);
-                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapON", ((Schwarz)smoother1).EnableOverlapScaling ? 1 : 0, true);
-                    //if (iLevel == 0) SetQuery("KcycleSchwarz:OverlapScale", ((Schwarz)smoother1).Overlap, true);
+                   
 
                     levelSolver = new OrthonormalizationMultigrid() {
                         PreSmoother = smoother1,
@@ -1637,6 +1617,108 @@ namespace BoSSS.Solution {
 
             return SolverChain[0];
         }
+
+        /// <summary>
+        /// I want to ride my k-cycle ...
+        /// </summary>
+        ISolverSmootherTemplate KcycleMultiILU(int MaxMGDepth, int[] _LocalDOF, Func<int,int> SchwarzblockSize) {
+
+            //MultigridOperator Current = op;
+            var SolverChain = new List<ISolverSmootherTemplate>();
+            int maxDG = getMaxDG(0, 0);
+            bool UsePmg = false; //enables larger Schwarz Blocks
+
+            var LocalDOF4directSolver = _LocalDOF;
+            // if we use lvlpmg in Sblocks, we can have less and larger blocks ...
+            if (m_lc.pMaxOfCoarseSolver < maxDG && UsePmg) {
+                LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
+            }
+
+            int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            int LocSysSizeZeroLvl = _LocalDOF[0];
+            
+
+            for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
+                MaxMGLevel = iLevel;
+                double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
+                int SysSize = _LocalDOF[iLevel].MPISum();
+                Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
+                if (SizeFraction < 1 && iLevel == 0) {
+                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
+                    Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
+                }
+
+                bool useDirect = false;
+                // It has to be ensured, that directKickin takes place on all ranks at same level
+                // therefore only global criterion have to be used here !!!
+                useDirect |= (SysSize < DirectKickIn);
+                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                useDirect = useDirect.MPIOr();
+
+                if(useDirect)
+                    Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", iLevel);
+                else
+                    Console.WriteLine("KcycleMultiILU: lv {0}, ", iLevel);
+
+                ISolverSmootherTemplate levelSolver;
+                if (useDirect) {
+                    levelSolver = new DirectSolver() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO,
+                        TestSolution = false
+                    };
+
+                } else {
+                   
+                    //var smoother1 = new DirectSolver() {
+                    //    TestSolution = true
+                    //};
+                   
+                    var smoother1 = new HypreILU() {
+                        
+                    };
+
+
+                    levelSolver = new OrthonormalizationMultigrid() {
+                        PreSmoother = smoother1,
+                        PostSmoother = smoother1,
+                        m_omega = 1,
+                    };
+
+                    if (iLevel > 0) {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                    } else {
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
+                    }
+
+                    /*
+                    ((OrthonormalizationMultigrid)levelSolver).IterationCallback =
+                        delegate (int iter, double[] X, double[] Res, MultigridOperator op) {
+                            double renorm = Res.MPI_L2Norm();
+                            Console.WriteLine("      OrthoMg " + iter + " : " + renorm);
+                        };
+                    */
+
+                    // Extended Multigrid Analysis
+                    //((OrthonormalizationMultigrid)levelSolver).IterationCallback += MultigridAnalysis;                    
+
+                }
+                SolverChain.Add(levelSolver);
+
+                if (iLevel > 0) {
+
+                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+
+                }
+
+                if (useDirect) {
+                    Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    break;
+                }
+            }
+
+            return SolverChain[0];
+        }
+
 
         ISolverSmootherTemplate expKcycleSchwarz(int MaxMGDepth, int[] _LocalDOF, Func<int, int> SchwarzblockSize) {
 
