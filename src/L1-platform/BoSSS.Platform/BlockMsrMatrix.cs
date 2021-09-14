@@ -1362,6 +1362,9 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
+
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1449,6 +1452,8 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);

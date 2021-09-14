@@ -1671,8 +1671,10 @@ namespace BoSSS.Solution {
                     //    TestSolution = true
                     //};
                    
-                    var smoother1 = new HypreILU() {
-                        
+                    //var smoother1 = new HypreILU() {
+                    //};
+
+                    var smoother1 = new CellILU() {
                     };
 
 

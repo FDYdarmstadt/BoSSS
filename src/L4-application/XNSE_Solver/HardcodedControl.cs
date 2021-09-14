@@ -584,7 +584,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Tags.Add("Cube");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_ILU;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_ILU;
             return C;
         }
 
