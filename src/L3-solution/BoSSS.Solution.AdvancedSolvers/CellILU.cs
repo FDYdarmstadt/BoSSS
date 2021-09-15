@@ -358,12 +358,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return P1;
         }
 
+        int ILU_level = 1; 
+
         /// <summary>
         /// Optimized version
         /// </summary>
         private bool[,] GetPattern() {
             if(m_op.Mapping.MpiSize > 1)
                 throw new NotImplementedException();
+
+            if(ILU_level < 0)
+                throw new ArgumentException("ILU-Level must be >= 0, got " + ILU_level);
+            if(ILU_level > Math.Min((int)(byte.MaxValue), 10))
+                throw new ArgumentException("ILU-Level must be <= 10, got " + ILU_level);
 
             var grd = m_op.Mapping.GridData;
             var Mtx = m_op.OperatorMatrix;
@@ -373,7 +380,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long cell0 = part.FirstBlock;
             int J = part.LocalNoOfBlocks;
 
-            bool[,] P1 = new bool[J, J];
+            byte[,] lev = new byte[J, J];
+            lev.SetAll(byte.MaxValue);
+            
+            // determinte ILU-0 pattern
             for(long i = cell0; i < (J + cell0); i++) { // loop over block rows
 
                 //long iB = part.GetBlockI0(i);
@@ -384,22 +394,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 foreach(long j in colBlocks) { // loop over block columns
                     var Blk = Mtx.GetBlock(j, i);
                     if(Blk.L2Norm() > 0)
-                        P1[i, j] = true;
+                        lev[i, j] = 0;
                     else
                         Console.WriteLine("Mem occupied, but the block is 0");
                 }
-
             }
-            
 
-            for(int j = 0; j < J; j++) {
-                for(int i = 0; i < J; i++) {
-                    if(P1[i, j] != P1[j, i])
-                        throw new ArithmeticException("missing structural symmetry of operator matrix");
+            for(int iLevel = 1; iLevel <= ILU_level; iLevel++) {
+                for(int j = 0; j < J; j++) {
+                    for(int i = 0; i < J; i++) {
+                        byte lev_ij = lev[i, j];
+
+                        for(int k = 0; k < J; k++) {
+                            lev_ij = checked((byte)Math.Min(lev_ij, (int)lev[i, k] + (int)lev[k, j] + 1));
+                        }
+
+                        lev[i, j] = lev_ij;
+                    }
                 }
             }
 
-            return P1;
+            bool[,] ret = new bool[J, J];
+            for(int j = 0; j < J; j++) {
+                for(int i = 0; i < J; i++) {
+                    if(lev[i, j] != lev[j, i])
+                        throw new ArithmeticException("missing structural symmetry of operator matrix");
+                    
+                    ret[i, j] = lev[i, j] <= ILU_level;
+                }
+            }
+
+            return ret;
         }
 
 
