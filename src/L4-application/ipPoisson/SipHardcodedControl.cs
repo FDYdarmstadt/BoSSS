@@ -525,7 +525,6 @@ namespace BoSSS.Application.SipPoisson {
             //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
-            R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             R.GridFunc = delegate () {
@@ -545,10 +544,8 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
-            R.NoOfSolverRuns = 1;
-
             R.AdaptiveMeshRefinement = true;
-            R.NoOfTimesteps = 5;
+            R.NoOfTimesteps = 1;
 
             R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_ILU;
             return R;
@@ -592,7 +589,6 @@ namespace BoSSS.Application.SipPoisson {
             //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             R.GridFunc = delegate () {
@@ -611,8 +607,6 @@ namespace BoSSS.Application.SipPoisson {
             };
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
-
-            R.NoOfSolverRuns = 1;
 
             R.AdaptiveMeshRefinement = true;
             R.NoOfTimesteps = 100;

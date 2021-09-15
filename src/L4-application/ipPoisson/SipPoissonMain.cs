@@ -357,9 +357,6 @@ namespace BoSSS.Application.SipPoisson {
 
                 // call solver
                 // -----------
-                //double mintime, maxtime;
-                //bool converged;
-                //int NoOfIterations;
 
                 LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
 

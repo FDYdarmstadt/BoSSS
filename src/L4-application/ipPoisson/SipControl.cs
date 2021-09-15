@@ -78,55 +78,17 @@ namespace BoSSS.Application.SipPoisson {
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double penalty_poisson = 1.3;
 
-        ///// <summary>
-        ///// string identifying the solver variant
-        ///// </summary>
-        //[DataMember]
-        //public SolverCodes solver_name = SolverCodes.classic_pardiso;
-
-        ///// <summary>
-        ///// If any blocking is used (Schwarz, block Jacobi), a target for the block size.
-        ///// Tests show that the ideal block size may be around 10000, but this may depend on computer, DG polynomial order, etc.
-        ///// </summary>
-        //[DataMember]
-        //[BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]
-        //public int TargetBlockSize = 10000;
-        
-        /// <summary>
-        /// run the solver more than once, e.g. for more reliable timing-results.
-        /// </summary>
-        [DataMember]
-        [BoSSS.Solution.Control.InclusiveLowerBound(1.0)]
-        public int NoOfSolverRuns = 1;
-
+       
         /// <summary>
         /// True, if an exact solution -- in order to determine the error -- is provides.
         /// </summary>
         [DataMember]
         public bool ExactSolution_provided = false;
 
-        /// <summary>
-        /// Suppresses exception prompt, which disturbs local batch run with MiniBatchprocessor.
-        /// </summary>
-        [DataMember]
-        public bool SuppressExceptionPrompt = false;
-
         ///// <summary>
-        ///// Outputpath for analysis data. Set path to enable analysis output, e.g. calculation of condition number, residual plots for each multigridlevel, etc.
+        ///// Suppresses exception prompt, which disturbs local batch run with MiniBatchprocessor.
         ///// </summary>
         //[DataMember]
-        //public string WriteMeSomeAnalyse = null;
-
-
-        ///// <summary>
-        ///// public member to 
-        ///// ensures binding of respective assembly,
-        ///// makes de-serialization more robust.
-        ///// </summary>
-        ///// <returns></returns>
-        //static public BoSSS.Solution.Statistic.CellLocalization BinderDummy() {
-        //    return new Solution.Statistic.CellLocalization(null);
-        //}
-
+        //public bool SuppressExceptionPrompt = false;
     }
 }

@@ -227,28 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
 
 
-            MultidimensionalArray GetBlock(BlockMsrMatrix M, long iBlk, long jBlk) {
-                int _sz_i = part.GetBlockLen(iBlk);
-                int _sz_j = part.GetBlockLen(jBlk);
-                long _idx_i = part.GetBlockI0(iBlk);
-                long _idx_j = part.GetBlockI0(jBlk);
-                var ret = MultidimensionalArray.Create(_sz_i, _sz_j);
-                M.ReadBlock(_idx_i, _idx_j, ret);
-                return ret;
-            }
-
-            void SetBlock(BlockMsrMatrix M, MultidimensionalArray Blk, long iBlk, long jBlk) {
-                int _sz_i = part.GetBlockLen(iBlk);
-                int _sz_j = part.GetBlockLen(jBlk);
-                if(_sz_i != Blk.NoOfRows)
-                    throw new ArgumentException();
-                if(_sz_j != Blk.NoOfCols)
-                    throw new ArgumentException();
-                long _idx_i = part.GetBlockI0(iBlk);
-                long _idx_j = part.GetBlockI0(jBlk);
-
-                M.AccBlock(_idx_i, _idx_j, 1.0, Blk, 0.0);
-            }
+            
 
             var A = Mtx.CloneAs();
            
@@ -260,7 +239,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(sz_k <= 0)
                     continue; // cell i is empty
 
-                var invAkk = GetBlock(A, k, k);
+                var invAkk = A.GetBlock(k, k);
                 invAkk.InvertInPlace();
 
                 for(long i = k + 1; i < (cell0 + J); i++) {
@@ -268,16 +247,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(P1[i, k]) {
 
 
-                        var Aik = GetBlock(A, i, k);
+                        var Aik = A.GetBlock(i, k);
                         Aik = Aik.GEMM(invAkk);
-                        SetBlock(A, Aik, i, k);
+                        A.SetBlock(Aik, i, k);
 
                         for(long j = k + 1; j < (cell0 + J); j++) {
                             if(P1[i, j]) {
-                                var Aij = GetBlock(A, i, j);
-                                var Akj = GetBlock(A, k, j);
+                                var Aij = A.GetBlock(i, j);
+                                var Akj = A.GetBlock(k, j);
                                 Aij.GEMM(-1, Aik, Akj, 1.0);
-                                SetBlock(A, Aij, i, j);
+                                A.SetBlock(Aij, i, j);
                             }
                         }
 
@@ -294,18 +273,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for(long j = cell0; j < J + cell0; j++) {
                 for(long i = cell0; i < J + cell0; i++) {
                     if(P1[i,j]) {
-                        var Aji = GetBlock(A, j, i);
+                        var Aji = A.GetBlock(j, i);
                         if(j > i) {
                             // lower tri
-                            SetBlock(m_BlockL, Aji, j, i);
+                            m_BlockL.SetBlock(Aji, j, i);
                         } else {
                             // upper tri
-                            SetBlock(m_BlockU, Aji, j, i);
+                            m_BlockU.SetBlock(Aji, j, i);
                         }
 
 
                     } else {
-                        var Aji = GetBlock(A, j, i);
+                        var Aji = A.GetBlock(j, i);
                         double ErrNorm = Aji.L2Norm();
                         if(ErrNorm > 0)
                             throw new ArithmeticException();
@@ -318,8 +297,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         
-        
-        private bool[,] GetPattern() {
+        /// <summary>
+        /// Very slow reference version, probably does not work in the presence of agglomeration
+        /// </summary>
+        private bool[,] GetPattern_ref() {
             if(m_op.Mapping.MpiSize > 1)
                 throw new NotImplementedException();
 
@@ -333,25 +314,39 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             bool[,] P1 = new bool[J, J];
             bool[,] P2 = new bool[J, J];
-            for(int j = 0; j < J; j++) {
+            for(int i = 0; i < J; i++) { // loop over block rows
 
+                /*
                 var Neighs_of_j = grd.GetCellNeighboursViaEdges(checked((int)(j - cell0))).Select(ttt => ttt.jCellLoc).ToArray();
                 var colPattern = ArrayTools.Cat(Neighs_of_j, checked((int)(j - cell0)));
                 foreach(int i in colPattern)
                     P2[j, i] = true;
+                */
 
-                for(int i = 0; i < J; i++) {
-                    long iB = part.GetBlockI0(i);
-                    long jB = part.GetBlockI0(j);
-                    int sz_i = part.GetBlockLen(i);
-                    int sz_j = part.GetBlockLen(j);
+                long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
+                foreach(long j in colBlocks) { // loop over block columns
+                    var Blk = Mtx.GetBlock(j, i);
+                    if(Blk.L2Norm() > 0)
+                        P2[i, j] = true;
+                    else
+                        Console.WriteLine("Mem occupied, but the block is 0");
+                }
+
+
+                for(int j = 0; j < J; j++) { // loop over block columns
+                    long iB = part.GetBlockI0(j);
+                    long jB = part.GetBlockI0(i);
+                    int sz_i = part.GetBlockLen(j);
+                    int sz_j = part.GetBlockLen(i);
 
                     var Mji = MultidimensionalArray.Create(sz_i, sz_j);
                     m_op.OperatorMatrix.ReadBlock(jB, iB, Mji);
                     if(Mji.L2Norm() > 0)
-                        P1[j, i] = true;
+                        P1[i, j] = true;
+                    
                 }
             }
+            
 
             for(int j = 0; j < J; j++) {
                 for(int i = 0; i < J; i++) {
@@ -362,6 +357,51 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return P1;
         }
+
+        /// <summary>
+        /// Optimized version
+        /// </summary>
+        private bool[,] GetPattern() {
+            if(m_op.Mapping.MpiSize > 1)
+                throw new NotImplementedException();
+
+            var grd = m_op.Mapping.GridData;
+            var Mtx = m_op.OperatorMatrix;
+            IBlockPartitioning part = m_op.Mapping;
+            Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
+            Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
+            long cell0 = part.FirstBlock;
+            int J = part.LocalNoOfBlocks;
+
+            bool[,] P1 = new bool[J, J];
+            for(long i = cell0; i < (J + cell0); i++) { // loop over block rows
+
+                //long iB = part.GetBlockI0(i);
+                //int sz_i = part.GetBlockLen(i);
+
+
+                long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
+                foreach(long j in colBlocks) { // loop over block columns
+                    var Blk = Mtx.GetBlock(j, i);
+                    if(Blk.L2Norm() > 0)
+                        P1[i, j] = true;
+                    else
+                        Console.WriteLine("Mem occupied, but the block is 0");
+                }
+
+            }
+            
+
+            for(int j = 0; j < J; j++) {
+                for(int i = 0; i < J; i++) {
+                    if(P1[i, j] != P1[j, i])
+                        throw new ArithmeticException("missing structural symmetry of operator matrix");
+                }
+            }
+
+            return P1;
+        }
+
 
         void CheckILU() {
             BlockMsrMatrix LxU = BlockMsrMatrix.Multiply(m_BlockL, m_BlockU);
@@ -454,7 +494,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Console.WriteLine("Low Error in U: " + Uerr);
             Console.WriteLine("Upp error in L: " + Lerr);
 
-            System.Environment.Exit(-1);
+            //System.Environment.Exit(-1);
         }
     
     }
