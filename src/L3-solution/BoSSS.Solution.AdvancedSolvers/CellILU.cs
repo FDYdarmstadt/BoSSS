@@ -81,14 +81,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
-            where V : IList<double> {
+            where V : IList<double>  //
+        {
 
 
             int L = X.Count;
-            double[] y = new double[L];
 
-            m_BlockL.Solve_Direct(y, B);
-            m_BlockU.Solve_Direct(X, y);
+            //double[] _B;
+            //if(B.GetType() == typeof(double[]))
+            //    _B = B as double[];
+            //else
+            //    _B = B.ToArray();
+
+
+            double[] y = new double[L];
+            //double[] yref = new double[L];
+            //m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
+            LoTriDiagonalSolve(m_BlockL, y, B, true);
+            //double check1 = GenericBlas.L2Dist(yref, y);
+            //Console.WriteLine("Check value (lo solve) is: " + check1);
+
+
+            //double[] Xref = new double[y.Length];
+            //m_BlockU.Solve_Direct(Xref, y.CloneAs());
+            UpTriDiagonalSolve(m_BlockU, X, y, false);
+            //double check2 = GenericBlas.L2Dist(Xref, X);
+            //Console.WriteLine("Check value (hi solve) is: " + check2);
 
             
             m_ThisLevelIterations += 1;
@@ -222,12 +240,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
             long cell0 = part.FirstBlock;
             int J = part.LocalNoOfBlocks;
-
-
-            
-
-
-            
+           
 
             var A = Mtx.CloneAs();
            
@@ -292,8 +305,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            m_BlockL.SaveToTextFileSparse("L.txt");
-            m_BlockU.SaveToTextFileSparse("U.txt");
+            //m_BlockL.SaveToTextFileSparse("L.txt");
+            //m_BlockU.SaveToTextFileSparse("U.txt");
         }
 
         
@@ -521,6 +534,113 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //System.Environment.Exit(-1);
         }
+
+        void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye) 
+            where U : IList<double>
+            where V : IList<double>  //
+        {
+            var rowPart = Mtx._RowPartitioning;
+            var colPart = Mtx._ColPartitioning;
+            long i0 = rowPart.FirstBlock;
+            long J = rowPart.LocalNoOfBlocks;
+            long i0Idx = rowPart.i0;
+            long j0Idx = colPart.i0;
+
+
+            for(long i = i0; i < i0 + J; i++) {
+                int sz_i = rowPart.GetBlockLen(i);
+                if(sz_i <= 0)
+                    continue; // empty cell;
+
+                if(colPart.GetBlockLen(i) <= 0)
+                    throw new NotSupportedException("cannot do (lower) trigonal solve on non-quadratic zero diagonal block");
+
+                long iIdx = rowPart.GetBlockI0(i);
+                int iIdxLoc = checked((int)(iIdx - i0Idx));
+
+                double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                foreach(long j in jS) {
+                    if(j >= i) // ignore everything above the diagonal
+                        continue;
+                    int sz_j = colPart.GetBlockLen(j);
+                    if(sz_j <= 0)
+                        continue;
+
+                    long jIdx = colPart.GetBlockI0(j);
+                    int jIdxLoc = checked((int)(jIdx - j0Idx));
+
+                    double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
+                    var Mtx_ij = Mtx.GetBlock(i, j);
+
+                    Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
+                }
+
+                if(diagEye) {
+                    X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
+                } else {
+                    double[] Xi = new double[sz_i];
+                    var Mtx_ii = Mtx.GetBlock(i, i);
+                    Mtx_ii.Solve(Xi, Bi);
+                    X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
+                }
+            }
+        }
     
+
+        void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye) 
+            where U : IList<double>
+            where V : IList<double>  //
+        {
+            var rowPart = Mtx._RowPartitioning;
+            var colPart = Mtx._ColPartitioning;
+            long i0 = rowPart.FirstBlock;
+            long J = rowPart.LocalNoOfBlocks;
+            long i0Idx = rowPart.i0;
+            long j0Idx = colPart.i0;
+
+
+            for(long i = i0 + J - 1; i >= i0; i--) {
+                int sz_i = rowPart.GetBlockLen(i);
+                if(sz_i <= 0)
+                    continue; // empty cell;
+
+                if(colPart.GetBlockLen(i) <= 0)
+                    throw new NotSupportedException("cannot do (upper) trigonal solve on non-quadratic zero diagonal block");
+
+                long iIdx = rowPart.GetBlockI0(i);
+                int iIdxLoc = checked((int)(iIdx - i0Idx));
+
+                double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                foreach(long j in jS) {
+                    if(j <= i) // ignore everything below the diagonal
+                        continue;
+                    int sz_j = colPart.GetBlockLen(j);
+                    if(sz_j <= 0)
+                        continue;
+
+                    long jIdx = colPart.GetBlockI0(j);
+                    int jIdxLoc = checked((int)(jIdx - j0Idx));
+
+                    double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
+                    var Mtx_ij = Mtx.GetBlock(i, j);
+
+                    Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
+                }
+
+                if(diagEye) {
+                    X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
+                } else {
+                    double[] Xi = new double[sz_i];
+                    var Mtx_ii = Mtx.GetBlock(i, i);
+                    Mtx_ii.Solve(Xi, Bi);
+                    X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
+                }
+            }
+        }
+
     }
 }
