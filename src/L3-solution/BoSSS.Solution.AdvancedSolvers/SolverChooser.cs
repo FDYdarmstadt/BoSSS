@@ -1632,7 +1632,8 @@ namespace BoSSS.Solution {
                 LocalDOF4directSolver = GetLocalDOF(m_lc.pMaxOfCoarseSolver);
             }
 
-            int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            //int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            int DirectKickIn = 10;
             int LocSysSizeZeroLvl = _LocalDOF[0];
             
 
@@ -1650,7 +1651,8 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                //useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                useDirect |= (iLevel >= 1);
                 useDirect = useDirect.MPIOr();
 
                 if(useDirect)

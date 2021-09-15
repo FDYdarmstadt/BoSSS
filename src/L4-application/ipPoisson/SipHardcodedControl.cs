@@ -550,7 +550,7 @@ namespace BoSSS.Application.SipPoisson {
             R.AdaptiveMeshRefinement = true;
             R.NoOfTimesteps = 5;
 
-
+            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_ILU;
             return R;
         }
 
