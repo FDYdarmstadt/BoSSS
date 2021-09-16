@@ -48,6 +48,10 @@ test:
     expire_in: 2 days
     
 
+# ============================================================
+# Publication of the TutorialTests HTML output on Gitlab pages
+# ============================================================
+#
 # Remarks:
 # (1) It seems to be very important that the directory is named 'public';
 #     Otherwise, I always got a 404 error on the pages site.
@@ -62,14 +66,14 @@ pages:
     - dir src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html
     - mkdir public
     - copy src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html ./public/
-    - python ..\doc\Generate-Index-Files-1.0\generate-index.py
+    - python ../doc/Generate-Index-Files-1.0/generate-index.py
     - dir ./public
   artifacts:
     paths:
       - public/
   only:
 # replace by master  
-    - main
+    - master
   tags:
     - C#7.0
     - big_server
