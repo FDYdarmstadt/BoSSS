@@ -13,55 +13,63 @@ stages:
 build:
   stage: build
   script: 
-    - dotnet build ./src/Public.sln -c Release  # build the project
+    - dotnet build ./src/Public.sln -c Release -v q # build the project
   tags:
     - C#7.0
+    - big_server
   artifacts:
     paths:
-      - src/L4-application/TutorialTests/bin/Release/net5.0
+#      - src/L4-application/TutorialTests/bin/Release/net5.0
+      - src/L4-application/PublicTestRunner/bin/Release/net5.0
     expire_in: 2 days
     
-compileHandBook:
-   stage: test
-   before_script:
-      - cd src/L4-application/PublicTestRunner/bin/Release/net5.0
-      - bash -c "chmod +x PublicTestRunner.exe"
-   artifacts:
-    reports:
-      junit: public/src/L4-application/PublicTestRunner/bin/Release/net5.0/result*.xml
-      
-    expire_in: 2 days
-  rules:
-    - changes:
-      - src/**/*
-      - internal/src/**/*
-  needs:
-    - Release
-  extends: .ReleaseTest
+test:
   stage: test
-  script:
-    - ./PublicTestRunner.exe nunit3 TutorialTests --result=testResult.xml
+  before_script:
+    - cd src/L4-application/PublicTestRunner
+    - dir 
+    - cd bin/Release/net5.0
+#    - cd src/L4-application/PublicTestRunner/bin/Release/net5.0
+    - bash -c "chmod +x PublicTestRunner.exe"
   tags:
-    - 4cores
-    - big_server   
+    - C#7.0
+    - big_server    
+  script:
+    - ./PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
+  dependencies:
+    - build
+  needs:
+    - build  
+  artifacts:
+    reports:
+      junit: public/src/L4-application/PublicTestRunner/bin/Release/net5.0/result.xml
+    paths:
+      - src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html
+    expire_in: 2 days
     
 
 # Remarks:
 # (1) It seems to be very important that the directory is named 'public';
 #     Otherwise, I always got a 404 error on the pages site.
-# (2) At this point, I'm only dummy-copying HTMLs from the server.
+# (2) the 'generate-index.py' script is used to generate a raw index file.
 #
 pages:
   stage: deploy
+  needs:
+    - build
+    - test
   script:
+    - dir src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html
     - mkdir public
-    - copy c:\tmp\pagestest\*.html .\public\
-    - dir .\public
+    - copy src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html ./public/
+    - python ..\doc\Generate-Index-Files-1.0\generate-index.py
+    - dir ./public
   artifacts:
     paths:
       - public/
   only:
-    - master
+# replace by master  
+    - main
   tags:
     - C#7.0
     - big_server
