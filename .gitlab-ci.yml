@@ -66,8 +66,9 @@ pages:
     - dir src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html
     - mkdir public
     - copy src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html ./public/
+    - cd public    
     - python ../doc/Generate-Index-Files-1.0/generate-index.py
-    - dir ./public
+    - dir 
   artifacts:
     paths:
       - public/
