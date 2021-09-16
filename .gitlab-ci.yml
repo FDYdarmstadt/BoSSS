@@ -7,6 +7,7 @@
 
 stages:
   - build
+  - test
   - deploy
 
 build:
@@ -18,7 +19,32 @@ build:
   artifacts:
     paths:
       - src/L4-application/TutorialTests/bin/Release/net5.0
-    expire_in: 8 hrs
+    expire_in: 2 days
+    
+compileHandBook:
+   stage: test
+   before_script:
+      - cd src/L4-application/PublicTestRunner/bin/Release/net5.0
+      - bash -c "chmod +x PublicTestRunner.exe"
+   artifacts:
+    reports:
+      junit: public/src/L4-application/PublicTestRunner/bin/Release/net5.0/result*.xml
+      
+    expire_in: 2 days
+  rules:
+    - changes:
+      - src/**/*
+      - internal/src/**/*
+  needs:
+    - Release
+  extends: .ReleaseTest
+  stage: test
+  script:
+    - ./PublicTestRunner.exe nunit3 TutorialTests --result=testResult.xml
+  tags:
+    - 4cores
+    - big_server   
+    
 
 # Remarks:
 # (1) It seems to be very important that the directory is named 'public';
