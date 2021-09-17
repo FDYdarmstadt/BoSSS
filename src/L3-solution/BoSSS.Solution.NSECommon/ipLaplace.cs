@@ -128,6 +128,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = 1.0/LengthScales[jCellIn];
+
+            
             double mu = m_penalty_base*m_penalty_deg * cj_in;
             if(jCellOut >= 0) {
                 double cj_out = LengthScales[jCellOut];

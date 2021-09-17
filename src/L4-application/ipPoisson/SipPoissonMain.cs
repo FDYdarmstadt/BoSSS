@@ -157,9 +157,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
+            BoSSS.Solution.Application.InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence2D(2);
+            Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
@@ -365,6 +366,9 @@ namespace BoSSS.Application.SipPoisson {
 
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
+                //var Matrix_SIP_posdef = LapaceIp.ComputeMatrix(T.Mapping, new DGField[] { RHS }, T.Mapping);
+                //Matrix_SIP_posdef.Solve_Direct(T.CoordinateVector, RHS.CoordinateVector);
+
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
@@ -372,6 +376,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     double L2_ERR = Error.L2Norm();
                     Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
+                    last_L2_ERR = L2_ERR;
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 
                 }
@@ -396,6 +401,8 @@ namespace BoSSS.Application.SipPoisson {
                 return 0.0;
             }
         }
+
+        internal double last_L2_ERR;
 
         List<DGField> MGColoring = new List<DGField>();
 
