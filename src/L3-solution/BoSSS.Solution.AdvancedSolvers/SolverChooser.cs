@@ -1512,12 +1512,18 @@ namespace BoSSS.Solution {
 
             int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
             int LocSysSizeZeroLvl = _LocalDOF[0];
-            
+
+            //Precompute Total Systemsize
+            var TotalSizeOnLevel = new int[MaxMGDepth];
+            for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
+                TotalSizeOnLevel[iLevel] = _LocalDOF[iLevel].MPISum();
+            }
 
             for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
                 MaxMGLevel = iLevel;
+                var SysSize = TotalSizeOnLevel[iLevel];
+                var PrevSize = TotalSizeOnLevel[Math.Max(iLevel - 1, 0)];
                 double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
-                int SysSize = _LocalDOF[iLevel].MPISum();
                 Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
                 if (SizeFraction < 1 && iLevel == 0) {
                     Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
@@ -1532,6 +1538,7 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
+                useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
                 useDirect |= iLevel == MaxMGDepth - 1; // otherwise error, due to missing coarse solver
@@ -1550,13 +1557,13 @@ namespace BoSSS.Solution {
                     };
                     //levelSolver = new DirectSolver() {
                     //    WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    //    SolverVersion = Parallelism.MPI,
+                    //    SolverVersion = Parallelism.SEQ,
                     //    TestSolution = false
                     //};
                 } else {
 
-                    Func<int, int, bool> delayedCaching = delegate (int Iter, int MgLevel) {
-                        return Iter >= ((MaxMGLevel - MgLevel) * 3);
+                    Func<int, int, int, bool> delayedCaching = delegate (int Iter, int MgLevel, int iBlock) {
+                        return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
                         //return false;
                     };
 

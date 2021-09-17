@@ -785,14 +785,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// int1: number of iterations
         /// int2: multigrid level
         /// </summary>
-        public Func<int, int, bool> ActivateCachingOfBlockMatrix {
+        public Func<int, int, int, bool> ActivateCachingOfBlockMatrix {
             private get;
             set;
         }
 
         private bool IsSolverSuppored(int iPart) {
-            bool IsSupported = (blockSolvers[iPart] is PARDISOSolver);
+            bool IsSupported =
+                (blockSolvers[iPart] is PARDISOSolver);
             return IsSupported;
+        }
+
+        private bool IsCachingActivated(int iPart) {
+            var solver = blockSolvers[iPart];
+            if (solver is PARDISOSolver)
+                return (solver as PARDISOSolver).CacheFactorization;
+            return false;
         }
 
         /// <summary>
@@ -804,7 +812,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private bool DisposeSchwarzBlocks(int iPart) {
             if (!IsSolverSuppored(iPart))
                 return false;
-            bool Disposethisblock = (blockSolvers[iPart] as PARDISOSolver).CacheFactorization && BlockMatrices[iPart] != null;
+            bool Disposethisblock = IsCachingActivated(iPart) && BlockMatrices[iPart] != null;
             if (Disposethisblock) {
                 BlockMatrices[iPart].Clear();
                 BlockMatrices[iPart] = null;
@@ -815,8 +823,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private bool ActivateCachingOfSolver(int iPart) {
             if (!IsSolverSuppored(iPart))
                 return false;
-            bool CachingActivated = (blockSolvers[iPart] as PARDISOSolver).CacheFactorization;
-            bool DoDelayedActivationOfCaching = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex) && !CachingActivated;
+            bool CachingActivated = IsCachingActivated(iPart);
+            bool DoDelayedActivationOfCaching = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex, iPart) && !CachingActivated;
             if (DoDelayedActivationOfCaching) {
                 InitializeDirSolver(iPart);
                 Debug.Assert(blockSolvers[iPart] != null);
@@ -829,10 +837,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 blockSolvers[iPart].Dispose();
 
             blockSolvers[iPart] = new PARDISOSolver() {
-                CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex),
+                CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex, iPart),
                 UseDoublePrecision = true,
                 Parallelism = Parallelism.SEQ,
             };
+            //blockSolvers[iPart] = new MUMPSSolver() {
+            //    //CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex),
+            //    Parallelism = Parallelism.SEQ,
+            //};
+
             Debug.Assert(BlockMatrices[iPart] != null);
             blockSolvers[iPart].DefineMatrix(BlockMatrices[iPart]);
         }
@@ -968,10 +981,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // ++++++++++++++++++++++++++++++
                                 // use block solver for all modes
                                 // ++++++++++++++++++++++++++++++
-                                bool DelayedCaching = ActivateCachingOfSolver(iPart);
-                                if (DelayedCaching) Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
-                                blockSolvers[iPart].Solve(xi, bi);
-                                bool IsDisposed = DisposeSchwarzBlocks(iPart);
+
+                                string Caching = (blockSolvers[iPart] is PARDISOSolver) && (blockSolvers[iPart] as PARDISOSolver).CacheFactorization ? "caching" : "nocaching";
+                                using (new BlockTrace(Caching,tr)) {
+                                    bool DelayedCaching = ActivateCachingOfSolver(iPart);
+                                    if (DelayedCaching) Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
+                                    blockSolvers[iPart].Solve(xi, bi);
+                                    bool IsDisposed = DisposeSchwarzBlocks(iPart);
+                                }
                                 //SingleFilter(xi);
                             }
 
@@ -1050,14 +1067,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private void DisposeBlockSolver() {
             if (this.blockSolvers == null || this.blockSolvers.Count() <= 0)
                 return;
-            int mempeak = -1;
+            //int mempeak = -1;
             foreach (var b in this.blockSolvers) {
-                mempeak = Math.Max((b as PARDISOSolver).PeakMemory(), mempeak);
+                //mempeak = Math.Max((b as PARDISOSolver).PeakMemory(), mempeak);
                 if (b != null)
                     b.Dispose();
             }
             this.blockSolvers = null;
-            Console.WriteLine($"peak memory: {mempeak} MB");
+            //Console.WriteLine($"peak memory: {mempeak} MB");
         }
 
         private void DisposePMGSolvers() {

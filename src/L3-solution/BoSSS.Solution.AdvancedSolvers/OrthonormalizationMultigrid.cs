@@ -188,6 +188,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         private void TrackMemory(int pos) {
+#if TEST
             if (m_MgOperator.LevelIndex != 0) return;
             long memWork = 0, memPrivate = 0, memGC = 0;
             Process myself = Process.GetCurrentProcess();
@@ -219,6 +220,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 strw.Write(memGC + "\t\n");
                 strw.Flush();
             }
+#endif
         }
 
         StreamWriter m_MTracker = null;

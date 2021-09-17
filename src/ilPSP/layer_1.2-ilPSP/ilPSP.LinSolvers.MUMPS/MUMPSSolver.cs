@@ -265,6 +265,11 @@ namespace ilPSP.LinSolvers.MUMPS {
                 csMPI.Raw.Comm_Rank(this.m_MPI_Comm, out rank);
                 csMPI.Raw.Comm_Size(this.m_MPI_Comm, out size);
 
+                //if (size > 0) {
+                //    csMPI.Raw.Barrier(this.m_MPI_Comm);
+                //    Console.WriteLine("Barrier passed");
+                //}
+
                 //Initialize MUMPS
                 mumps_par.par = 1; mumps_par.job = -1; mumps_par.comm_fortran = this.m_MPI_Comm.m1; mumps_par.sym = m_MumpsMatrix.Symmetric;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
@@ -368,7 +373,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                             break;
                         }
                 }
-                               
+                // MUMPS does not support caching of factorization,
+                // for every call of phase 3, phase 2 has to be called
                 mumps_par.job = 3;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
                 //if (rank != 0)
