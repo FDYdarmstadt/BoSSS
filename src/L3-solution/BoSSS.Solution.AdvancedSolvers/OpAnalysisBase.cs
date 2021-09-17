@@ -455,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the maximum and minimum eigenvalues of the matrix
         /// </summary>
         /// <returns>Array myeigs =[MaximumEig, MinimumEig]</returns>
-        public double[] Eigenval(){
+        public double[] Eigenval() {
 
             double[] eigenvalues = new double[2];
             MultidimensionalArray eigs = MultidimensionalArray.Create(1, 2);
@@ -464,7 +464,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             int[] DepVars = this.VarGroup;
             double[] DepVars_subvec = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
 
-            using (BatchmodeConnector bmc = new BatchmodeConnector()){
+            using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
                 // if Octave should be used instead of Matlab....
                 //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
@@ -475,7 +475,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bmc.Cmd("output(1) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'lm');");
                 bmc.Cmd("output(2) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'sm');");
                 bmc.GetMatrix(output, "output");
-                bmc.Execute(false);     
+                bmc.Execute(false);
             }
 
             double[] myeigs = new double[] { output[0, 0], output[1, 0] };

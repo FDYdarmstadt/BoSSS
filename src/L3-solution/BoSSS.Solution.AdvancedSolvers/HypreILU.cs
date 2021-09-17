@@ -30,7 +30,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Parallel ILU from HYPRE library
     /// </summary>
-    public class ILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
+    public class HypreILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }
@@ -86,17 +86,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ILUmatrix = Mtx.CloneAs();
             m_HYPRE_ILU = new ilPSP.LinSolvers.HYPRE.Euclid() {
                 Level = FillInLevel, // This corresponds to ILU(0), with zero fill in, there are other versions available like ILUT, etc.
+                
             };
 
             // Zeros on diagonal elements because of saddle point structure
             long i0 = m_ILUmatrix._RowPartitioning.i0;
             long iE = m_ILUmatrix._RowPartitioning.iE;
-            for (long bla = i0; bla < iE; bla++) {
-                if (m_ILUmatrix.GetDiagonalElement(bla) == 0) {
-                    m_ILUmatrix.SetDiagonalElement(bla, 1);
+            for (long iRow = i0; iRow < iE; iRow++) {
+                if (m_ILUmatrix.GetDiagonalElement(iRow) == 0) {
+                    m_ILUmatrix.SetDiagonalElement(iRow, 1);
                 }
             }
-            if (m_ILUmatrix != null && m_ILUmatrix.RowPartitioning.LocalLength > 0) m_HYPRE_ILU.DefineMatrix(m_ILUmatrix);
+            if (m_ILUmatrix != null && m_ILUmatrix.RowPartitioning.LocalLength > 0) 
+                m_HYPRE_ILU.DefineMatrix(m_ILUmatrix);
         }
 
         ilPSP.LinSolvers.HYPRE.Solver m_HYPRE_ILU;
@@ -105,8 +107,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Solve<P, Q>(P X, Q B)
             where P : IList<double>
-            where Q : IList<double> {
-            var SolverResult = m_HYPRE_ILU.Solve(X,B);
+            where Q : IList<double> //
+        {
+            var SolverResult = m_HYPRE_ILU.Solve(X, B);
+            m_ThisLevelIterations += SolverResult.NoOfIterations;
         }
 
         public void Dispose() {
@@ -120,7 +124,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return 0;
         }
 
     }

@@ -343,19 +343,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         void AddSol(ref double[] X) {
-            using(new FuncTrace()) {
+            using(var ft = new FuncTrace()) {
+
+                double FillXwithRandom(double[] __X, double[] __Mxx) {
+                    double __NormMxx;
+                    ft.Error("Solution norm is exactly 0.0; trying with a random vector instead to recover.");
+                    Random rnd = new Random();
+                    for(int i = 0; i < __X.Length; i++) {
+                        __X[i] = rnd.NextDouble();
+                    }
+
+                    __Mxx.ClearEntries();
+                    OpMatrix.SpMV(1.0, __X, 0.0, __Mxx);
+                    __NormMxx = __Mxx.MPI_L2Norm();
+
+                    if(__NormMxx == 0)
+                        throw new ArithmeticException("Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
+                    if(__NormMxx.IsNaNorInf())
+                        throw new ArithmeticException("Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
+                    return __NormMxx;
+                }
+
+
 
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
                 Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
                 int L = X.Length;
                 int KrylovDim = SolHistory.Count;
 
+
                 double[] Mxx = new double[L];
                 OpMatrix.SpMV(1.0, X, 0.0, Mxx);
                 double NormMxx = Mxx.MPI_L2Norm();
-                //double NormInitial = Mxx.MPI_L2Norm();
+                if(NormMxx.IsNaNorInf())
+                    throw new ArithmeticException("Numerical breakdown: norm of matrix * solution is " + NormMxx);
 
-                for (int jj = 0; jj < 2; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
+                if(NormMxx == 0) {
+                    // solution is really strange: try with a random vector.
+                    NormMxx = FillXwithRandom(X, Mxx);
+                }
+
+
+                Mxx.ScaleV(1.0 / NormMxx); // scale Mxx to norm 1, should allow better stability when compared to the Krylov vectors who have all norm 1;
+                X.ScaleV(1.0 / NormMxx);
+
+
+                for(int jj = 0; jj < 20; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
                     for(int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
                         double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
@@ -365,19 +398,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //double NormAfter = Mxx.MPI_L2Norm();
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
-                    double gamma = 0;
+
                     double NewMxxNorm = Mxx.MPI_L2Norm();
-                    if (NewMxxNorm != 0) // prohibits div by 0, if we got zero solution  
-                        gamma = 1.0 / NewMxxNorm;
-                    BLAS.dscal(L, gamma, Mxx, 1);
-                    BLAS.dscal(L, gamma, X, 1);
 
-                    if (1 / NormMxx > 1E-8) {
-                        break;
+
+                    if(NewMxxNorm <= 1E-5) {
+                        // a lot of canceling out has occurred.
+                        // do another loop, to ensure ortho-normality:
+                        //
+                        // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
+                        
+                        // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
+                        // To ensure stability, we must start over with a re-scaled X!
+                        // We have to re-scale what is remaining of X:
+                        double Xnorm = X.MPI_L2Norm();
+
+                        ft.Info("severe cancellation may have occurred, norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
+                        
+                        if(Xnorm < 1e-200) {
+                            // prohibits div by 0, if we got zero solution  
+                            NormMxx = FillXwithRandom(X, Mxx);
+                        } else {
+                            X.ScaleV(1.0 / Xnorm);
+                            Mxx.ClearEntries();
+                            OpMatrix.SpMV(1.0, X, 0.0, Mxx);
+                            NormMxx = Mxx.MPI_L2Norm();
+
+                            if(NormMxx == 0) 
+                                // solution is really strange: try with a random vector.
+                                NormMxx = FillXwithRandom(X, Mxx);
+                        }
+
+                        double gamma = 1 / NewMxxNorm;
+                        BLAS.dscal(L, gamma, Mxx, 1);
+                        BLAS.dscal(L, gamma, X, 1);
+
                     } else {
-                        Console.WriteLine("severe cancellation may have occurred. Doing Re-orthonormalization");
+                        double gamma = 1 / NewMxxNorm;
+                        BLAS.dscal(L, gamma, Mxx, 1);
+                        BLAS.dscal(L, gamma, X, 1);
                     }
-
                 }
 
 
@@ -406,7 +466,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="id"></param>
         double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
-            using(new FuncTrace()) {
+            using(var ft = new FuncTrace()) {
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
                 Debug.Assert(outX.Length == m_MgOperator.Mapping.LocalLength);
                 //Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
@@ -414,16 +474,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(outRes.Length == m_MgOperator.Mapping.LocalLength);
 
 
-
-                /*
-                // -------------------
-                var rjCheck = Res0.CloneAs();
-                OpMatrix.SpMV(-1.0, outX, 1.0, rjCheck);
-                double dist = rjCheck.L2Dist(outRes);
-
-
-                // --------------------
-                */
 
                 int KrylovDim = SolHistory.Count;
                 int L = outX.Length;
@@ -442,7 +492,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double alpha_i = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1).MPISum();
                 BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1); // accumulate solution correction...
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
-                
+
+                double xNorm = outX.MPI_L2Norm();
+                ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
+
 
                 /*
                 // -------------------
@@ -553,66 +606,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //return;
 
 
-            using (var f = new FuncTrace()) {
+            using(var f = new FuncTrace()) {
                 if(this.m_MgOperator.LevelIndex == 0) {
                     GC.Collect();
                 }
-                /*
-                if(this.m_MgOperator.LevelIndex == 0) {
-                    f.LogMemoryStat();
-                    //m_MgOperator.GetMemoryInfo(out long alloc, out long used);
 
-
-                    //double alloc_meg = (double)alloc / (1024.0 * 1024.0);
-                    //double used_meg = (double)used / (1024.0 * 1024.0);
-                    //Console.WriteLine($" MG Operator total: using {used_meg} MB, allocated {alloc_meg} MB.");
-                    Process myself = Process.GetCurrentProcess();
-                    long wsMem = myself.WorkingSet64;
-                    long gcMem = System.GC.GetTotalMemory(true);
-                    //double wsMem_meg = (double)wsMem / (1024.0 * 1024.0);
-                    //Console.WriteLine($" Working Set mem: {wsMem_meg} MB.");
-
-                    string PrintMeg(long bytes) {
-                        double megs = (double)bytes / (1024.0 * 1024.0);
-                        return Math.Round(megs).ToString();
-                    }
-
-                    int mpisize = m_MgOperator.Mapping.MpiSize;
-
-                    long wsTot = wsMem.MPISum();
-                    long wsMax = wsMem.MPIMax();
-                    long wsMin = wsMem.MPIMin();
-                    long wsAvg = wsTot / mpisize;
-
-                    long gcTot = gcMem.MPISum();
-                    long gcMax = gcMem.MPIMax();
-                    long gcMin = gcMem.MPIMin();
-                    long gcAvg = gcTot / mpisize;
-
-                    Console.WriteLine($"{mpisize} cores.");
-                    Console.WriteLine($"GC: tot {PrintMeg(gcTot)}:  {PrintMeg(gcMin)} -- {PrintMeg(gcAvg)} -- {PrintMeg(gcMax)}");
-                    Console.WriteLine($"WS: tot {PrintMeg(wsTot)}:  {PrintMeg(wsMin)} -- {PrintMeg(wsAvg)} -- {PrintMeg(wsMax)}");
-
-                    
-
-
-
-
-                    Console.WriteLine("entering infinity loop.");
-                     while(true) ;
-                    
-
-                   
-                }
-                */
 
 
                 double[] B, X;
-                if (_B is double[])
+                if(_B is double[])
                     B = _B as double[];
                 else
                     B = _B.ToArray();
-                if (_xl is double[])
+                if(_xl is double[])
                     X = _xl as double[];
                 else
                     X = _xl.ToArray();
@@ -623,20 +629,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Alphas.Clear();
 
 
-                //// in case of spectral analysis
-                //if (this.m_MgOperator.LevelIndex == 0 && SpectralAnalysis)
-                //{
-                //    // Set RHS to zero and introduce random intitial guess respectively error
-                //    Console.WriteLine("Performing Spectral Analysis, inserting initial error ...");
-                //    B.Clear();
-                //    X.Clear();
-                //    var rand = new Random();
-                //    X = Enumerable.Repeat(0, X.Length).Select(i => rand.NextDouble() * 2 - 1).ToArray();                    
-                //}
-
                 int L = X.Length;
                 int Lc;
-                if (this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                if(this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
                     Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
                 else
                     Lc = -1;
@@ -661,83 +656,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
 
-                //var tmpX = new double[L];
-
+                
                 for(int iIter = 1; true; iIter++) {
                     if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
                     }
-                    if(iIter==5) TrackMemory(2);
-                    //if (SolHistory.Count > MaxKrylovDim) {
-                    //    int Length = 5;
-                    //    var tmpSol = SolHistory.GetRange(MaxKrylovDim - Length - 1, Length).CloneNonshallow();
-                    //    var tmpMxx = MxxHistory.GetRange(MaxKrylovDim - Length - 1, Length).CloneNonshallow();
-                    //    var tmpAlpha = Alphas.GetRange(MaxKrylovDim - Length - 1, Length);
-                    //    var tmptmpAlpha = new List<(double, double, int)>();
-                    //    foreach (var tuple in tmpAlpha) {
-                    //        tmptmpAlpha.Add((tuple.Item1, tuple.Item2, tuple.Item3));
-                    //    }
 
-                    //    SolHistory.Clear();
-                    //    MxxHistory.Clear();
-                    //    Alphas.Clear();
-
-                    //    SolHistory.AddRange(tmpSol);
-                    //    MxxHistory.AddRange(tmpMxx);
-                    //    Alphas.AddRange(tmptmpAlpha);
-                    //}
+               
 
                     // pre-smoother
                     // ------------
 
                     {
+                        VerivyCurrentResidual(X, B, Res, iIter);
 
-                        // Test: residual is already computed by 'MinimizeResidual' form previous iter; 
-#if DEBUG
-                        {
-                            double[] rTest = new double[Res.Length];
-                            Residual(rTest, X, B); // Residual on this level; 
-                            double resDist = rTest.MPI_L2Dist(Res);
-                            double resNormTst = Res.MPI_L2Norm();
-                            if(resDist > resNormTst * 10e-5)
-                                Console.WriteLine($"Residual vector (before pre-smoother) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                            //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                        }
-#endif
 
                         // compute correction
-                        double[] PreCorr = new double[L];
                         //var oldRl = rl.CloneAs();
 
-                        if (PreSmoother != null) {
+                        if(PreSmoother != null) {
+                            double[] PreCorr = new double[L];
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
-
-
-                            //if (Corr != null) // only for plotting/debugging
-                            //    Corr.SetV(PreCorr);
-
-                            //{
-                            //    var checkPreCor = new double[L];
-                            //    DebugSmoother.Solve(checkPreCor, oldRl);
-
-                            //    var diffCorr = PreCorr.CloneAs(); diffCorr.AccV(-1.0, checkPreCor);
-
-                            //    this.viz.PlotVectors(new double[][] {
-                            //        PreCorr, checkPreCor, diffCorr
-                            //    }, new[] { "preSmoother", "debugSmoother", "diff" });
-                            //}
-
-                            //tmpX.SetV(X);
-                            //tmpX.AccV(1.0, PreCorr);
-
-                            //SpecAnalysisSample(iIter, PreCorr, "smooth1");
 
                             // orthonormalization and residual minimization
                             AddSol(ref PreCorr);
-                            //if (Xprev != null)
-                            //    Xprev.SetV(X);
                             resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+
                         }
 #if TEST
                         CatchThisExclamationmark(Res, "Res", pos);
@@ -747,7 +692,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //SpecAnalysisSample(iIter, X, "ortho1");
 
-                        if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                             Converged = true;
                             break;
                         }
@@ -759,18 +704,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // coarse grid correction
                     // ----------------------
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
-#if DEBUG
-                    {
-                        double[] rTest = new double[Res.Length];
-                        Residual(rTest, X, B); // Residual on this level; 
-                                               // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                        double resDist = rTest.MPI_L2Dist(Res);
-                        double resNormTst = Res.MPI_L2Norm();
-                        if(resDist > resNormTst * 10e-5)
-                            Console.WriteLine($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                        //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                    }
-#endif
+                    VerivyCurrentResidual(X, B, Res, iIter);
+
 
                     for(int i = 0; i < m_omega; i++) {
                         if(this.CoarserLevelSolver != null) {
@@ -831,32 +766,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // post-smoother
                     // -------------
 
-                    for (int g = 0; g < 2; g++) { // doppelt hält besser
+                    for(int g = 0; g < 2; g++) { // doppelt hält besser
                                                  // Test: Residual on this level / already computed by 'MinimizeResidual' above
-#if DEBUG
-                            {
-                                double[] rTest = new double[Res.Length];
-                                Residual(rTest, X, B); // Residual on this level; 
-                                double resDist = rTest.MPI_L2Dist(Res);
-                                double resNormTst = Res.MPI_L2Norm();
-                                if(resDist > resNormTst * 10e-5)
-                                    Console.WriteLine($"Residual vector (before post-smoother run #{g}) is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
-                            }
-#endif
+                        
+                        VerivyCurrentResidual(X, B, Res, iIter);
 
                         // compute correction
                         double[] PostCorr = new double[L];
                         PostSmoother.Solve(PostCorr, Res); // Vorglättung
-                                                           //if (Corr != null)
-                                                           //    Corr.SetV(PostCorr);
-
-                        //SpecAnalysisSample(iIter, PostCorr, "smooth2_" + g);
 
                         //orthonormalization and residual minimization
                         AddSol(ref PostCorr);
-                        //if (Xprev != null)
-                        //    Xprev.SetV(X);
                         resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
 
 
@@ -870,11 +790,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } // end of post-smoother loop
 
 
-                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
                         Converged = true;
                         break;
                     }
-                    
+
 
                     // iteration callback
                     // ------------------
@@ -896,6 +816,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
             } // end of functrace
+        }
+
+        private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
+#if DEBUG
+            {
+#else 
+            if(iter % 20 == 0 && iter > 1) {
+#endif
+                double[] rTest = new double[Res.Length];
+                Residual(rTest, X, B); // Residual on this level; 
+                                       // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                double resDist = rTest.MPI_L2Dist(Res);
+                //Console.WriteLine("verified Residual: " + resDist);
+                double resNormTst = Res.MPI_L2Norm();
+                double XnormTest = X.MPI_L2Norm();
+                if(resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
+                    throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
+                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+            }
         }
 
         private double[] cloneofX;

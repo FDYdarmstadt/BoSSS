@@ -989,6 +989,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     blockSolvers[iPart].Solve(xi, bi);
                                     bool IsDisposed = DisposeSchwarzBlocks(iPart);
                                 }
+
+                          
                                 //SingleFilter(xi);
                             }
 
