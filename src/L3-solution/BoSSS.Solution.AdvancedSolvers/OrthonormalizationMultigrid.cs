@@ -663,7 +663,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         break;
                     }
 
-               
+                    TrackMemory(2);
 
                     // pre-smoother
                     // ------------
@@ -716,17 +716,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // coarse grid solver defined on COARSER MESH LEVEL:
                                 // this solver must perform restriction and prolongation
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                                // restriction of residual
-                                this.m_MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
-
+                                using (new BlockTrace("Restriction",f)) {
+                                    // restriction of residual
+                                    this.m_MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
+                                }
                                 // Berechnung der Grobgitterkorrektur
                                 double[] vlc = new double[Lc];
                                 this.CoarserLevelSolver.Solve(vlc, ResCoarse);
-
-                                // Prolongation der Grobgitterkorrektur
-                                this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-
+                                using (new BlockTrace("Prolongation", f)) {
+                                    // Prolongation der Grobgitterkorrektur
+                                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                                }
 
                             } else {
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -819,21 +819,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
+            using (new FuncTrace()) {
 #if DEBUG
             {
-#else 
-            if(iter % 20 == 0 && iter > 1) {
+#else
+                if (iter % 20 == 0 && iter > 1) {
 #endif
-                double[] rTest = new double[Res.Length];
-                Residual(rTest, X, B); // Residual on this level; 
-                                       // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                double resDist = rTest.MPI_L2Dist(Res);
-                //Console.WriteLine("verified Residual: " + resDist);
-                double resNormTst = Res.MPI_L2Norm();
-                double XnormTest = X.MPI_L2Norm();
-                if(resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
-                    throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
-                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                    double[] rTest = new double[Res.Length];
+                    Residual(rTest, X, B); // Residual on this level; 
+                                           // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                    double resDist = rTest.MPI_L2Dist(Res);
+                    //Console.WriteLine("verified Residual: " + resDist);
+                    double resNormTst = Res.MPI_L2Norm();
+                    double XnormTest = X.MPI_L2Norm();
+                    if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
+                        throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
+                    //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                }
             }
         }
 

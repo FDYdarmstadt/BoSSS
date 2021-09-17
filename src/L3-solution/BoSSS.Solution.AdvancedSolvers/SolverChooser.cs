@@ -687,11 +687,11 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
-                case LinearSolverCode.exp_Kcycle_schwarz:
-                Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
-                templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
-                break;
-
+                case LinearSolverCode.exp_Kcycle_schwarz: {
+                    Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
+                    templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
+                    break;
+                }
                 case LinearSolverCode.exp_Kcycle_ILU: {
                     Func<int, int> SblkSizeFunc = delegate (int iLevel) { return 10000; };
                     templinearSolve = KcycleMultiILU(MaxMGDepth, LocalDOF, SblkSizeFunc);
