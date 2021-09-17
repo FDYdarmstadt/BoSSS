@@ -304,10 +304,11 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
         }
 
-
+#if !DEBUG
         /// <summary>
         /// operator condition number scaling
         /// </summary>
+        [Test()]
         public static void TestOperatorConvergence3D(int dgDeg) {
 
   
@@ -333,13 +334,14 @@ namespace BoSSS.Application.SipPoisson.Tests {
             SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
 
         }
+#endif
 
 
 
-        
         /// <summary>
         /// operator condition number scaling
         /// </summary>
+        [Test()]
         public static void TestOperatorConvergence2D(int dgDeg) {
 
   
@@ -363,7 +365,6 @@ namespace BoSSS.Application.SipPoisson.Tests {
             }
 
             SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
-
         }
 
 

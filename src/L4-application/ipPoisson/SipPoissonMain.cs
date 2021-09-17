@@ -157,10 +157,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence2D(2);
-            Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
+            //BoSSS.Solution.Application.InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence2D(2);
+            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
@@ -358,12 +358,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 // call solver
                 // -----------
-                //double mintime, maxtime;
-                //bool converged;
-                //int NoOfIterations;
-
-                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
-
+                
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
                 //var Matrix_SIP_posdef = LapaceIp.ComputeMatrix(T.Mapping, new DGField[] { RHS }, T.Mapping);
