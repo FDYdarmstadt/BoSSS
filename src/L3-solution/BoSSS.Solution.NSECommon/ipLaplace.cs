@@ -52,7 +52,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// penalty parameter base multiplyer
         /// </summary>
-        private double m_penalty_base;
+        protected double m_penalty_base;
 
         /// <summary>
         /// Dirichlet boundary value

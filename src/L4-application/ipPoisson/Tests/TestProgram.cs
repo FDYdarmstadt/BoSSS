@@ -310,6 +310,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// </summary>
         [Test()]
         public static void TestOperatorConvergence3D(int dgDeg) {
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2)
 
   
             var Controls = new List<SipControl>();
