@@ -501,6 +501,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
         public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5) {
+//            BoSSS.Application.SipPoisson.SipHardcodedControl.Square(16, 16, 2);
 
             double ax = 1.0; // must be an odd number to comply with homogeneous boundary condition
             double ay = 1.0; // must be an odd number to comply with homogeneous boundary condition
@@ -551,7 +552,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ImmediatePlotPeriod = 1;
             R.SuperSampling = 2;
 
-            R.penalty_poisson = 0.001; // then, it should fail
+            //R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }

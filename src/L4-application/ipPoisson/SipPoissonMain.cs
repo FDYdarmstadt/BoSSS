@@ -358,11 +358,38 @@ namespace BoSSS.Application.SipPoisson {
 
                 // call solver
                 // -----------
-                
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                /*
+                this.RHS.CoordinateVector.FillRandom(0);
+
+                this.m_MgConfig = MultigridOperator.Mode.Eye;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol1 = T.CoordinateVector.ToArray();
+                T.Clear();
+
+                this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol2 = T.CoordinateVector.ToArray();
+                T.Clear();
+
+                this.m_MgConfig = MultigridOperator.Mode.LeftInverse_DiagBlock;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol3 = T.CoordinateVector.ToArray();
+                //T.Clear();
+
+                double dist12 = sol1.L2Distance(sol2);
+                double dist13 = sol1.L2Distance(sol3);
+                double dist23 = sol2.L2Distance(sol3);
+
+                Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
+                */
 
                 //var Matrix_SIP_posdef = LapaceIp.ComputeMatrix(T.Mapping, new DGField[] { RHS }, T.Mapping);
                 //Matrix_SIP_posdef.Solve_Direct(T.CoordinateVector, RHS.CoordinateVector);
+
+
+
+
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -402,6 +429,8 @@ namespace BoSSS.Application.SipPoisson {
         List<DGField> MGColoring = new List<DGField>();
 
 
+        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
+
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
                 //Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
@@ -414,7 +443,7 @@ namespace BoSSS.Application.SipPoisson {
                     config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
-                            mode = MultigridOperator.Mode.DiagBlockEquilib,
+                            mode = m_MgConfig,
                             DegreeS = new int[] { p }
                             //Degree = Math.Max(1, p - iLevel)
                         }

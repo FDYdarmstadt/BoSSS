@@ -240,7 +240,8 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
 
                 foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    var C = SipHardcodedControl.Square(res, res, deg: dgDeg);
                     //C.TracingNamespaces = "*";
                     C.savetodb = false;
                     Controls.Add(C);
@@ -309,7 +310,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// operator condition number scaling
         /// </summary>
         [Test()]
-        public static void TestOperatorConvergence3D(int dgDeg) {
+        public static void TestOperatorConvergence3D([Values(1,2,3)] int dgDeg) {
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2)
 
   
@@ -343,7 +344,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
         /// operator condition number scaling
         /// </summary>
         [Test()]
-        public static void TestOperatorConvergence2D(int dgDeg) {
+        public static void TestOperatorConvergence2D([Values(2,3)] int dgDeg) {
 
   
             var Controls = new List<SipControl>();
