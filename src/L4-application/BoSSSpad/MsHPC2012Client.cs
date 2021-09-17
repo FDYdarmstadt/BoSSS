@@ -164,9 +164,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="Username">
         /// Can be null for the local user.
         /// </param>
-        /// <param name="Password">
-        /// Password for user <paramref name="Username"/>, can be null if the user is the local user.
-        /// </param>
         /// <param name="ComputeNodes">
         /// </param>
         /// <param name="DeployRuntime">

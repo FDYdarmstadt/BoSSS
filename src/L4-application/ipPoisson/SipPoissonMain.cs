@@ -159,7 +159,7 @@ namespace BoSSS.Application.SipPoisson {
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
             //DeleteOldPlotFiles();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2);
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
