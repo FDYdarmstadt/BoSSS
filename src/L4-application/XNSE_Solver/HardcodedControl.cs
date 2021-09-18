@@ -527,7 +527,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 1, int Res = 10, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 10, bool writeToDB = true, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
             double anglev = 10;
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
@@ -536,6 +536,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.LS_TrackerWidth = 6;
             C.Rigidbody.SetParameters(pos, anglev, particleRad, SpaceDim);
             C.Rigidbody.SpecifyShape(Shape.Cube);
+            C.Rigidbody.SetRotationAxis("x");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
             return C;
         }
@@ -617,7 +618,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //// Create Grid
             double xMin = -1, yMin = -1, zMin = -1;
-            double xMax = 1, yMax = 1, zMax = 1;
+            double xMax = 3, yMax = 1, zMax = 1;
 
             Func<double[], int> MakeDebugPart = delegate (double[] X) {
                 double x = X[0];
@@ -665,8 +666,10 @@ namespace BoSSS.Application.XNSE_Solver {
                     y = X[1];
                     if (SpaceDim == 3)
                         z = X[2];
-
-                    return 3;
+                    if (Math.Abs(x - xMin) < 1E-8)
+                        return 1;
+                    else
+                        return 3;
                 });
 
                 return grd;
@@ -690,15 +693,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // Phi (X,t): p-norm cube with forced rotation
 
-            // Physical Parameters
-            // ===================
-            const double rhoA = 1000;
-            const double muA = 1E-3;
 
-            C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.mu_A = muA;
 
             //Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
@@ -729,7 +724,20 @@ namespace BoSSS.Application.XNSE_Solver {
             //Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
             //Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
 
-            
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1E-3;
+            double d_hyd = 2 * particleRad;
+            double Re = 100;
+            double VelocityIn = Re * muA / rhoA / d_hyd;
+            double ts = 2 * Math.PI / anglev;
+            double inletdelay = 5 * ts;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
 
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1); 
             C.UseImmersedBoundary = true;
@@ -742,7 +750,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //    //    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             //}
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            //C.AddBoundaryValue("Wall");
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
             C.AddBoundaryValue("Pressure_Outlet");
 
             //C.OperatorMatrixAnalysis = false;
