@@ -1018,36 +1018,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             //hS = hS.Take(hS.Length - 1).ToArray();
 
-            double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
-                double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
-                double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
-
-                double xAvg = xValues.Average();
-                double yAvg = yValues.Average();
-
-                double v1 = 0.0;
-                double v2 = 0.0;
-
-                for (int i = 0; i < yValues.Length; i++) {
-                    v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
-                    v2 += Math.Pow(xValues[i] - xAvg, 2);
-                }
-
-                double a = v1 / v2;
-                double b = yAvg - a * xAvg;
-
-                return a;
-            }
+           
 
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
 
                 Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
             }
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
             }
 

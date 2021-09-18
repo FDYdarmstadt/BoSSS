@@ -17,10 +17,12 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Gnuplot;
+using ilPSP;
 using MPI.Wrappers;
 using NUnit.Framework;
 using SolverCodes = BoSSS.Solution.Control.LinearSolverCode;
@@ -238,7 +240,8 @@ namespace BoSSS.Application.SipPoisson.Tests {
                 }
 
                 foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //var C = SipHardcodedControl.TestCartesian2(res, 2, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    var C = SipHardcodedControl.Square(res, res, deg: dgDeg);
                     //C.TracingNamespaces = "*";
                     C.savetodb = false;
                     Controls.Add(C);
@@ -300,6 +303,134 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             ConditionNumberScalingTest.Perform(Controls);
 
+        }
+
+#if !DEBUG
+        /// <summary>
+        /// operator condition number scaling
+        /// </summary>
+        [Test()]
+        public static void TestOperatorConvergence3D([Values(1,2,3)] int dgDeg) {
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2)
+
+  
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] { 4, 8, 16 }; break;
+                    case 2: ResS = new int[] { 4, 8, 16 }; break;
+                    case 3: ResS = new int[] { 4, 8 }; break;
+                    case 4: ResS = new int[] { 4, 8 }; break;
+                    default: throw new NotImplementedException();
+                }
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+            }
+
+            SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
+
+        }
+#endif
+
+
+
+        /// <summary>
+        /// operator condition number scaling
+        /// </summary>
+        [Test()]
+        public static void TestOperatorConvergence2D([Values(2,3)] int dgDeg) {
+
+  
+            var Controls = new List<SipControl>();
+            {
+                int[] ResS = null;
+
+                switch(dgDeg) {
+                    case 1: ResS = new int[] {  8, 16, 32, 64 }; break;
+                    case 2: ResS = new int[] {  8, 16, 32, 64 }; break;
+                    case 3: ResS = new int[] { 4, 8, 16 }; break;
+                    case 4: ResS = new int[] { 4, 8, 16 }; break;
+                    default: throw new NotImplementedException();
+                }
+                foreach(int res in ResS) {
+                    var C = SipHardcodedControl.Square(res, res, dgDeg);
+                    //C.TracingNamespaces = "*";
+                    C.savetodb = false;
+                    Controls.Add(C);
+                }
+            }
+
+            SipSolverConvergenceTest(Controls, true, new double[] { dgDeg + 0.5 });
+        }
+
+
+        private static void SipSolverConvergenceTest(IEnumerable<SipControl> _CS, bool useExactSolution, double[] ExpectedSlopes) {
+            var CS = _CS.ToArray();
+            int NoOfMeshes = CS.Length;
+
+            double[] hS = new double[NoOfMeshes];
+            MultidimensionalArray errorS = MultidimensionalArray.Create(NoOfMeshes, 1);
+            string[] Names = new[] { "u" };
+
+            SipPoissonMain[] solvers = new SipPoissonMain[NoOfMeshes];
+            if (useExactSolution) {
+
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSE()) {
+                    var solver = new SipPoissonMain();
+                    solvers[k] = solver;
+                    {
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+
+                        errorS[k,0] = solver.last_L2_ERR;
+                        hS[k] = solver.GridData.iGeomCells.h_min.Min();
+                    }
+
+                }
+            } else {
+                if (NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+                throw new NotImplementedException("todo");
+            }
+
+
+            //hS = hS.Take(hS.Length - 1).ToArray();
+
+            
+
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression( errorS.GetColumn(i));
+
+                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+            }
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression( errorS.GetColumn(i));
+                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+
+            foreach (var s in solvers) {
+                s.Dispose();
+            }
         }
     }
 }
