@@ -233,6 +233,48 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Computes the slope of a double-logarithmic regression model
+        /// </summary>
+        public static double LogLogRegression(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+            double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
+            return xValues.LinearRegressionSlope(yValues);
+
+        }
+
+        /// <summary>
+        /// Computes the slope of a linear regression model
+        /// </summary>
+        public static double LinearRegressionSlope(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            double[] xValues = _xValues.ToArray();
+            double[] yValues = _yValues.ToArray();
+
+            if(xValues.Length != yValues.Length)
+                throw new ArgumentException("number of x and y values must be equal");
+            if(xValues.Length < 2)
+                throw new ArgumentException("require at least 2 values for computing a slope");
+
+            double xAvg = xValues.Average();
+            double yAvg = yValues.Average();
+
+            double v1 = 0.0;
+            double v2 = 0.0;
+
+            for(int i = 0; i < yValues.Length; i++) {
+                v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
+                v2 += Math.Pow(xValues[i] - xAvg, 2);
+            }
+
+            double a = v1 / v2;
+            double b = yAvg - a * xAvg;
+
+            return a;
+        }
+
+
+
+        /// <summary>
         /// normalizes some vector 
         /// </summary>
         public static T Normalize<T>(this T vec) where T : IList<double> {

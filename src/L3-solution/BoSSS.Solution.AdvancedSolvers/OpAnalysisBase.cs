@@ -301,7 +301,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             double[] Inner_0Vars = (new BlockMask(InnerSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
 
             MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
-            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+            //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
@@ -367,7 +367,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
             
             MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
-            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+            //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
@@ -403,7 +403,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// Test if the matrix is symmetric positive definite
         /// </summary>
         /// <returns>bool array res=[symmetry, positive definit]</returns>
-        public bool[] Symmetry(){
+        public bool[] Symmetry() {
 
             bool[] res = new bool[2];
 
@@ -425,7 +425,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             // symmetry test by calculation of symmetry deviation
             bool sym = false;
             double SymmDev = m_OpMtx.SymmetryDeviation();
-            if (SymmDev < 1e-5)
+            if(SymmDev < 1e-5)
                 sym = true;
 
             res[0] = sym;
@@ -436,10 +436,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             bool posDef = true;
             // only proc 0 gets info so the following is executed exclusively on rank 0
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+            if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 try {
                     FullyPopulatedMatrix.Cholesky();
-                } catch (ArithmeticException) {
+                } catch(ArithmeticException) {
                     posDef = false;
                 }
             }

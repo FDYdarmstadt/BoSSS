@@ -348,10 +348,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double FillXwithRandom(double[] __X, double[] __Mxx) {
                     double __NormMxx;
                     ft.Error("Solution norm is exactly 0.0; trying with a random vector instead to recover.");
-                    Random rnd = new Random();
-                    for(int i = 0; i < __X.Length; i++) {
-                        __X[i] = rnd.NextDouble();
-                    }
+                    __X.FillRandom();
 
                     __Mxx.ClearEntries();
                     OpMatrix.SpMV(1.0, __X, 0.0, __Mxx);
