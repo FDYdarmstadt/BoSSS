@@ -1068,6 +1068,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        /// <summary>
+        /// Transforms a right-hand-side from the <see cref="BaseGridProblemMapping"/> into this levels <see cref="Mapping"/>,
+        /// i.e. application of the left-side preconditioner <see cref="LeftChangeOfBasis"/>.
+        /// </summary>
+        /// <param name="u_IN">input, length according to <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_OUT">output, length according to <see cref="Mapping"/></param>
+        /// <param name="ApplyRef">
+        /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="FreeMeanValue"/>
+        /// </param>
         public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT, bool ApplyRef)
             where T1 : IList<double>
             where T2 : IList<double> 

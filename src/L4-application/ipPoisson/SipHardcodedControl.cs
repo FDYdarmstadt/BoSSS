@@ -40,6 +40,7 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     static public class SipHardcodedControl {
 
+        /*
         public static SipControl ConvergenceTest(int Res = 20, int Dim = 2, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 1) {
 
             if(Dim != 2 && Dim != 3)
@@ -89,7 +90,8 @@ namespace BoSSS.Application.SipPoisson {
                  });
 
             return R;
-        }
+        }*/
+
 
         /// <summary>
         /// Test on a curved grid.
@@ -524,7 +526,7 @@ namespace BoSSS.Application.SipPoisson {
             R.ExactSolution_provided = true;
             //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
@@ -549,8 +551,8 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AdaptiveMeshRefinement = false;
             R.NoOfTimesteps = 1;
-            R.ImmediatePlotPeriod = 1;
-            R.SuperSampling = 2;
+            //R.ImmediatePlotPeriod = 1;
+            //R.SuperSampling = 2;
 
             //R.penalty_poisson = 0.001; // then, it should fail
 
