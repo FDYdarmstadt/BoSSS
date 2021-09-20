@@ -528,8 +528,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
             R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             R.SuppressExceptionPrompt = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-
+            
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
                 double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
@@ -554,7 +553,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-            //R.penalty_poisson = 0.001; // then, it should fail
+            R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }

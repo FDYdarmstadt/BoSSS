@@ -594,7 +594,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
                         Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
                     }
-                    LastMtx = MultigridOp.OperatorMatrix.CloneAs();
+                    //LastMtx = MultigridOp.OperatorMatrix.CloneAs();
                     
                     // call the linear solver
                     // ----------------------
@@ -690,7 +690,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public static BlockMsrMatrix LastMtx;
+        //public static BlockMsrMatrix LastMtx;
         
         /// <summary>
         /// Easy-to-use driver routine for operator analysis
@@ -735,10 +735,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
 
-            ana.MatrixStabilityTest();
-
-            throw new Exception("testcode to be removed");
-            //return ana.GetNamedProperties();
+            return ana.GetNamedProperties();
         }
     }
 }

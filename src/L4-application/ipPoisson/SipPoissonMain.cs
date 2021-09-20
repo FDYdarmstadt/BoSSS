@@ -351,6 +351,7 @@ namespace BoSSS.Application.SipPoisson {
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
                 
+                /*
                 this.RHS.CoordinateVector.FillRandom(0);
 
                 this.m_MgConfig = MultigridOperator.Mode.Eye;
@@ -377,7 +378,7 @@ namespace BoSSS.Application.SipPoisson {
                 Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
                 //*/
 
-                this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
+                //this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
                 this.OperatorAnalysis();
 
      

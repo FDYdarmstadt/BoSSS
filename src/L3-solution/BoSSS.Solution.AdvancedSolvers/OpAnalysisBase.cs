@@ -401,8 +401,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         }
 
 
-        public static BlockMsrMatrix DbeMatrix;
-        public static BlockMsrMatrix LidMatrix;
+        //public static BlockMsrMatrix DbeMatrix;
+        //public static BlockMsrMatrix LidMatrix;
 
         public double MatrixStabilityTest() {
 
@@ -438,7 +438,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var MtxOrg = OpOrg.OperatorMatrix;
             var MtxAlt = OpAlt.OperatorMatrix;
 
-
+            /*
             {
                 var Diff2 = DbeMatrix.CloneAs();
                 Diff2.Acc(-1.0, MtxOrg);
@@ -452,7 +452,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 double diffLidNorm = Diff1.InfNorm();
                 Console.WriteLine("Lid diff = " + diffLidNorm);
             }
-
+            */
             //var diff = MtxAlt.CloneAs();
             //diff.Acc(-1.0, MtxOrg);
             //double r2123 = diff.InfNorm();
@@ -477,7 +477,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             RhsOrgMap_Block.AccVi64(1.0, RhsOrgMap, acc_index: default(long[]), b_index: GidxS, b_index_shift: -i0);
             RhsAltMap_Block.AccVi64(1.0, RhsAltMap, acc_index: default(long[]), b_index: GidxS, b_index_shift: -i0);
 
-
+            /*
             {
                 var Diff2 = DbeMatrix.CloneAs();
                 Diff2.Acc(-1.0, MtxOrg_Block);
@@ -491,6 +491,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 double diffLidNorm = Diff1.InfNorm();
                 Console.WriteLine("Lid diff = " + diffLidNorm);
             }
+            */
 
             // solve original and alternative system
             // =====================================
@@ -498,13 +499,14 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             double[] Xorg_Block, Xalt_Block;
             {
                 Xorg_Block = new double[LBlock];
-                //MtxOrg_Block.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
-                DbeMatrix.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
+                MtxOrg_Block.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
+                MtxOrg_Block.SaveToTextFileSparse("OrgBlock.txt");
+                //DbeMatrix.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
 
                 Xalt_Block = new double[LBlock];
-                //MtxAlt_Block.Solve_Direct(Xalt_Block, RhsAltMap_Block);
-                LidMatrix.Solve_Direct(Xalt_Block, RhsAltMap_Block);
-
+                MtxAlt_Block.Solve_Direct(Xalt_Block, RhsAltMap_Block);
+                MtxAlt_Block.SaveToTextFileSparse("AltBlock.txt");
+                //LidMatrix.Solve_Direct(Xalt_Block, RhsAltMap_Block);
             }
 
             // transform back int order to compare
@@ -530,9 +532,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Console.Error.WriteLine("!!!!!!!!!!!! Probably unstable discretization !!!!!!!!!!");
             }
 
-
             return DisturbanceMeasure;
-
         }
 
 
@@ -827,8 +827,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 // matrix stability
                 // ================
 
-                double Stab = MatrixStabilityTest();
-                Ret.Add("MatrixStabilityMeasure-" + VarNames, Stab);
+                //double Stab = MatrixStabilityTest();
+                //Ret.Add("MatrixStabilityMeasure-" + VarNames, Stab);
 
                 // global condition numbers
                 // ========================
