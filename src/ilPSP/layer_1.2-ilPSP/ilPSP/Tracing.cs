@@ -94,9 +94,9 @@ namespace ilPSP.Tracing {
                 TotalTime.Stop();
                 _Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
                 TotalTime.Start();
-#if TEST
-                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
-#endif
+//#if TEST
+//                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
+//#endif
                 return _Root;
             }
         }
@@ -217,7 +217,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Must be initialized to write memory-tracing
         /// </summary>
-        public static TextWriter Memtrace;
+        public static TextWriter Memtrace;// = new System.IO.StreamWriter("memory_nocache." + ilPSP.Environment.MPIEnv.MPI_Rank + ".csv");
 
         public static int Memtrace_lineCount = 0;
         
@@ -227,7 +227,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Very expensive instrumentation option, slows down by a factor of two to three!!!
         /// </summary>
-        public static bool LogPrivateMem = false;
+        public static bool LogPrivateMem = true;
 
         /// <summary>
         /// current process to trace memory

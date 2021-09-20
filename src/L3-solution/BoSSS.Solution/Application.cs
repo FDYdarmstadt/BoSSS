@@ -2346,10 +2346,11 @@ namespace BoSSS.Solution {
         /// <param name="fixedPermutation"></param>
         /// <returns></returns>
         virtual protected bool MpiRedistributeAndMeshAdaptOnInit(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
-
+            double tmp = this.Control.DynamicLoadBalancing_ImbalanceThreshold;
+            this.Control.DynamicLoadBalancing_ImbalanceThreshold = 0.0; // ensures that there is a redistribution at startup, idependant of threshold
             DoMeshAdaption(TimeStepNo, physTime, true);
             DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation, true);
-
+            this.Control.DynamicLoadBalancing_ImbalanceThreshold = tmp;
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
