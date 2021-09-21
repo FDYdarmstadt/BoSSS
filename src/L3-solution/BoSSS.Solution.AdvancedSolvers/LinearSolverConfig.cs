@@ -118,6 +118,12 @@ namespace BoSSS.Solution.Control {
         exp_another_Kcycle = 53,
 
 
+        /// <summary>
+        /// a k-cycle, with ILU at each level
+        /// </summary>
+        exp_Kcycle_ILU = 54,
+
+
         selfmade = 999,
     }
 

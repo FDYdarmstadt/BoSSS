@@ -1,6 +1,4 @@
-﻿//#define TEST
-
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -24,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MPI.Wrappers;
+using System.Threading;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -70,17 +70,63 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            /*
+             * should not be required anymore?
+             * Delete
+    
+            bool Evap = false;
+            // not sure if this works always, idea is to determine on startup which solver should be run.
+            // default is XNSE<XNSE_Control>
+            try {
+                // peek at control file and select correct solver depending on controlfile type
+                // parse arguments
+                args = ArgsFromEnvironmentVars(args);
+                CommandLineOptions opt = new CommandLineOptions();
+                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+                bool argsParseSuccess;
+                argsParseSuccess = parser.ParseArguments(args, opt);
 
+                if(!argsParseSuccess) {
+                    System.Environment.Exit(-1);
+                }
+
+                if(opt.ControlfilePath != null) {
+                    opt.ControlfilePath = opt.ControlfilePath.Trim();
+                }
+
+                XNSE_Control ctrlV2 = null;
+                XNSE_Control[] ctrlV2_ParameterStudy = null;
+
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                Evap = ctrlV2 is XNSFE_Control | ctrlV2_ParameterStudy is XNSFE_Control[];
+            } catch {
+                Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
+            }
+
+            if(Evap) {
+                XNSFE<XNSFE_Control>._Main(args, false, delegate () {
+                    var p = new XNSFE<XNSFE_Control>();
+                    return p;
+                });
+            } else {
+            */
 
             //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
-            //throw new Exception("Remove me");
+            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
+            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+            //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
+            {
+                XNSE._Main(args, false, delegate () {
+                    var p = new XNSE();
+                    return p;
+                });
 
-            
-            XNSE._Main(args, false, delegate () {
-                var p = new XNSE();
-                return p;
-            });  
+                //Tmeas.Memtrace.Flush();
+                //Tmeas.Memtrace.Close();
+            }
+
+
+
         }
     }
 
@@ -88,6 +134,15 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Generic versions which should be used for derivatives 
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
+
+        public override void Init(AppControl control) {
+            base.Init(control);
+            var ctrl = (control as XNSE_Control);
+            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
+                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            if (ctrl.Rigidbody.IsInitialized())
+                ctrl.Rigidbody.ArrangeAll(ctrl);
+        }
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -208,7 +263,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 for(int d = 0; d < D; d++) {
                     Control.InitialValues_EvaluatorsVec.TryGetValue(VelocityNames[d], out VelFuncs[d]);
                 }
-
 
                 ILevelSetParameter levelSetVelocity = new ExplicitLevelSetVelocity(VariableNames.LevelSetCGidx(1), VelFuncs);
                 return levelSetVelocity;
@@ -500,6 +554,10 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
+
+                //Console.WriteLine("Spatial dimension is: " + GridData.SpatialDimension);
+
+               
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");

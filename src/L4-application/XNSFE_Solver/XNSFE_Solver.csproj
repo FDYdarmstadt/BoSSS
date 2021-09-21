@@ -105,7 +105,4 @@
     <Compile Remove="SolverType.cs" />
     <Compile Remove="XNSE_OperatorFactory.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="PhysicalBasedTestcases\" />
-  </ItemGroup>
 </Project>

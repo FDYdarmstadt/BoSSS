@@ -34,17 +34,6 @@ namespace BoSSS.Application.IBM_Solver {
         /// <summary>
         /// As implemented for performance measurements in handbook
         /// </summary>
-        /// <param name="_DbPath"></param>
-        /// <param name="k"></param>
-        /// <param name="cells_x"></param>
-        /// <param name="cells_yz"></param>
-        /// <param name="only_channel"></param>
-        /// <param name="no_p"></param>
-        /// <param name="no_it"></param>
-        /// <param name="restart"></param>
-        /// <param name="load_Grid"></param>
-        /// <param name="_GridGuid"></param>
-        /// <returns></returns>
         static public IBM_Control Rotating_Cube(string _DbPath = null, int k = 3, int cells_x = 50, int cells_yz = 50, bool only_channel = false, int no_p = 1, int no_it = 1, int SpaceDim = 2, bool restart = false, bool load_Grid = false, string _GridGuid = null) {
             IBM_Control C = new IBM_Control();
 
