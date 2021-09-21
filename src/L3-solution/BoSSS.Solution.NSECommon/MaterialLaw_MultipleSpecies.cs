@@ -35,7 +35,7 @@ namespace BoSSS.Solution.NSECommon {
 
         [DataMember] public double R;
         [DataMember] public double[] MolarMasses;
-        [DataMember] public double T_ref;
+        [DataMember] public double T_RefSutherland;
 
         /// <summary>
         /// Heat of Reaction
@@ -56,12 +56,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, double gasConstant, double T_ref, OneStepChemicalModel chemModel, double _cpRef, CpCalculationMode mycpMode) {
+        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, double gasConstant, double TRefSutherland, OneStepChemicalModel chemModel, double _cpRef, CpCalculationMode mycpMode) {
             this.MatParamsMode = MatParamsMode;
             this.R = gasConstant;
             this.thermoProperties = new ThermodynamicalProperties();
             this.MolarMasses = MolarMasses;
-            this.T_ref = T_ref;
+            this.T_RefSutherland = TRefSutherland;
             this.rhoOne = _rhoOne;
 
             this.cpRef = _cpRef;
@@ -196,7 +196,10 @@ namespace BoSSS.Solution.NSECommon {
                     arguments = ArrayTools.Cat(arguments, lastMassFract);
                     double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
                     string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
-                    cp = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature2) / cpRef;
+                    double cpMixture = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature2) ;
+
+
+                    cp = cpMixture / cpRef;
                     break;
 
                 case CpCalculationMode.constant:
@@ -251,8 +254,8 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.56;
-                        visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        double S = 110.5;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_RefSutherland) / (phi + S / T_RefSutherland);
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {

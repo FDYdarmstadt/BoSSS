@@ -49,7 +49,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         ///
         /// </summary>
-        /// <param name="T_ref"> Reference temperature of Sutherland Law </param>
+        /// <param name="T_ref_Sutherland"> Reference temperature of Sutherland Law </param>
         /// <param name="MolarMasses">Array of molar masses </param>
         /// <param name="MatParamsMode">Material law (constant, sutherland, etc) </param>
         /// <param name="rhoOne">Switch for constant density </param>
@@ -63,18 +63,29 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="CC"></param>
         ///
         /// <param name="Prandtl"></param>
-        public MaterialLawMixtureFractionNew(double T_ref, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, double Prandtl, OneStepChemicalModel chemModel) : base(MolarMasses, MatParamsMode, rhoOne, gasConstant, T_ref, chemModel, _cpRef: 1.0, mycpMode: CpCalculationMode.constant) {
+        public MaterialLawMixtureFractionNew(double T_ref_Sutherland, double[] MolarMasses, MaterialParamsMode MatParamsMode, bool rhoOne, double gasConstant, double Q, double TO0, double TF0, double YO0, double YF0, double zst, ChemicalConstants CC, OneStepChemicalModel chemModel, double cpRef, double _smoothingFactor) : base(MolarMasses, MatParamsMode, rhoOne, gasConstant, T_ref_Sutherland, chemModel, _cpRef: 1.0, mycpMode: CpCalculationMode.mixture) {
             base.Q = Q;
+            this.CC = CC;
+
             this.TO0 = TO0;
             this.TF0 = TF0;
             this.YF0 = YF0;
             this.YO0 = YO0;
             this.zst = zst;
-            this.cp = 1.0;
-            this.CC = CC;
+
+            this.cp = GetCpFlameSheet(7.0); // Dimensional value
+
             this.MatParamsMode = MatParamsMode;
+
+
             this.rhoOne = rhoOne;
             this.s = (CC.nu_O2 * CC.MW_O2) / (CC.nu_CH4 * CC.MW_CH4);
+            this.SmoothingFactor = _smoothingFactor;
+            if(this.SmoothingFactor > 0) {
+                Console.WriteLine("The mixture fraction is smoothed with a factor" + SmoothingFactor);
+            } else {
+                Console.WriteLine("The mixture fraction is not being smoothed");
+            }
         }
 
         public override IList<string> ParameterOrdering {
@@ -150,8 +161,7 @@ namespace BoSSS.Solution.NSECommon {
             /////////// Irreversible fast chemistry (with chemical reaction)
             ////////////////////////////////////////////////////////////
 
-
-            bool useSmoothFunctionForMF = true;
+            bool useSmoothFunctionForMF = SmoothingFactor > 0;
 
             if (Q > 0) {
                 if (!useSmoothFunctionForMF) {
@@ -161,7 +171,7 @@ namespace BoSSS.Solution.NSECommon {
                         res = getVariableFromZ_AirSide(Z, id);
                     }
                 } else {
-                    double K = 10;
+                    double K = SmoothingFactor;
                     double greater = getVariableFromZ_FuelSide(Z, id);
                     double smaller = getVariableFromZ_AirSide(Z, id);
 
@@ -173,7 +183,10 @@ namespace BoSSS.Solution.NSECommon {
             }
             return res;
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        [DataMember] public double SmoothingFactor = 10;
         /// <summary>
         ///
         /// </summary>
@@ -300,7 +313,33 @@ namespace BoSSS.Solution.NSECommon {
             }
             return res;
         }
+        /// <summary>
+        /// calculates iteratively temperature at the flame sheet, 
+        /// asuming a variable mixture cp formulation.
+        /// </summary>
+        /// <param name="t_start">Initial estimate of temperature</param>
+        /// <returns></returns>
+        public double GetCpFlameSheet(double t_start) {
+            double zst = this.zst;
 
+            double YF = getVariableFromZ(zst, VariableNames.MassFraction0);
+            double YO = getVariableFromZ(zst, VariableNames.MassFraction1);
+            double YP1 = getVariableFromZ(zst, VariableNames.MassFraction2);
+            double YP2 = getVariableFromZ(zst, VariableNames.MassFraction3);
+            double YN = getVariableFromZ(zst, VariableNames.MassFraction4);
+
+
+            double res = 1000;
+            double temperature = t_start;
+            while (res > 1e-7) {                
+                double cpit = GetMixtureHeatCapacity(new double[] { temperature, YF, YO, YP1, YP2 });
+                double T = TO0 + Q * YF0 / cpit * zst;
+                res = Math.Abs(temperature - T);
+                temperature = T;
+            }
+
+            return GetMixtureHeatCapacity(new double[] { temperature, YF, YO, YP1, YP2 });
+        }
         /// <summary>
         /// Dimensionless Sutherland's law.
         /// </summary>

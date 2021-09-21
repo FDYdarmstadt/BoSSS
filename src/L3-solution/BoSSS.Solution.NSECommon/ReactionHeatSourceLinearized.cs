@@ -199,7 +199,7 @@ namespace BoSSS.Solution.NSECommon {
             YO = YO < 0.0 ? 0.0 : YO;
 
 
-
+            double cp = 1.0;// EoS.GetMixtureHeatCapacity(U);
 
             if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
                 Ta = EoS.m_ChemModel.getTa(YF, YO) / TRef;
@@ -230,7 +230,7 @@ namespace BoSSS.Solution.NSECommon {
 
         
 
-            return -HeatReleaseFactor * ReactionRate * PM_CH4;
+            return -HeatReleaseFactor * ReactionRate * PM_CH4 / cp;
 
         }
     }

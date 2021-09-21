@@ -225,29 +225,22 @@ namespace BoSSS.Solution.NSECommon {
             //using (var tr = new FuncTrace()) {
             double[] coefficients;
 
-            if (T > 2500)
-                T = 2500;
+            if (T > 2100)
+                T = 2100;
 
-            if (T < 200)
-                T = 200;
+            if (T < 280)
+                T = 280;
 
 
             if (/*T >= TemperatureLimits[0] - 200.0 &&*/ T < TemperatureLimits[1]) { // Lower range, with a threshold 5.0 K
                 coefficients = coefficientsDict[name][1];
-            } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] + 5.0) { // Higher range
+            } else if (T >= TemperatureLimits[1] && T <= TemperatureLimits[2] ) { // Higher range
                 coefficients = coefficientsDict[name][0];
             } else {
                 throw new ArgumentOutOfRangeException("Temperature for calculation of cp is out of bounds. The used temperature is" + T);
             }
 
-            //Force temperature to stay in bounds 
 
-            if (T < TemperatureLimits[0])
-                T = TemperatureLimits[0];
-
-
-            if (T > TemperatureLimits[2])
-                T = TemperatureLimits[2];
 
             double R = 8.314; // KJ /Kmol K
             double MW = molecularWeightDict[name]; // Kg/Kmol

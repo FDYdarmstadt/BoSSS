@@ -471,7 +471,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected Func<double[], double, double>[,] velFunction;
 
-        private bool isEnergy = false;
+        private bool multiplyBy_cp = false;
 
         /// <summary>
         /// Ctor
@@ -495,7 +495,7 @@ namespace BoSSS.Solution.NSECommon {
 
             //if idx == 0, the heat capacity should multiply this term.
             if (idx == 0)
-                isEnergy = true;
+                multiplyBy_cp = true;
 
             switch (BcMap.PhysMode) {
                 case PhysicsMode.Multiphase:
@@ -569,7 +569,7 @@ namespace BoSSS.Solution.NSECommon {
                     double[] DensityArgumentsOut2 = Uout.GetSubVector(m_SpatialDimension, NumberOfReactants + 1);
                     rhoIn = EoS.GetDensity(DensityArgumentsIn2);
                     rhoOut = EoS.GetDensity(DensityArgumentsOut2);
-                    if (isEnergy) {
+                    if (multiplyBy_cp) {
                         cpIn = EoS.GetMixtureHeatCapacity(DensityArgumentsIn2);
                         cpOut = EoS.GetMixtureHeatCapacity(DensityArgumentsOut2);
                     }
@@ -607,15 +607,15 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.LowMach:
                     double ScalarMeanIn = Uin[m_SpatialDimension];
                     double ScalarMeanOut = Uout[m_SpatialDimension];
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, isEnergy, ScalarMeanIn);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, isEnergy, ScalarMeanOut);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, multiplyBy_cp, ScalarMeanIn);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, multiplyBy_cp, ScalarMeanOut);
                     break;
 
                 case PhysicsMode.Combustion:
                     double[] ScalarMeanIn_vec = Uin.GetSubVector(m_SpatialDimension, NumberOfReactants + 1);
                     double[] ScalarMeanOut_vec = Uout.GetSubVector(m_SpatialDimension, NumberOfReactants + 1);
-                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, isEnergy, ScalarMeanIn_vec);
-                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, isEnergy, ScalarMeanOut_vec);
+                    LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, EoS, false, multiplyBy_cp, ScalarMeanIn_vec);
+                    LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, EoS, false, multiplyBy_cp, ScalarMeanOut_vec);
                     break;
 
                 default:
@@ -804,7 +804,7 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Combustion:
                                 double[] args = ArrayTools.GetSubVector(Uin, m_SpatialDimension, NumberOfReactants + 1);
                                 rho = EoS.GetDensity(args);
-                                if (isEnergy == true)
+                                if (multiplyBy_cp == true)
                                     cp = EoS.GetMixtureHeatCapacity(args);
                                 break;
 
@@ -859,7 +859,7 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.Combustion:
                     double[] arguments = U.GetSubVector(m_SpatialDimension, NumberOfReactants + 1); // T, Y0,Y1,Y2, Y3
                     rho = EoS.GetDensity(arguments);
-                    if (isEnergy)
+                    if (multiplyBy_cp)
                         cp = EoS.GetMixtureHeatCapacity(arguments);
                     break;
 
