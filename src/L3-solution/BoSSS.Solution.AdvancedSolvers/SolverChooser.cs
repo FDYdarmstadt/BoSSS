@@ -1561,7 +1561,7 @@ namespace BoSSS.Solution {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
                         SolverVersion = Parallelism.SEQ,
-                        TestSolution = false
+                        TestSolution = false,
                     };
                     //levelSolver = new DirectSolver() {
                     //    WhichSolver = DirectSolver._whichSolver.MUMPS,
