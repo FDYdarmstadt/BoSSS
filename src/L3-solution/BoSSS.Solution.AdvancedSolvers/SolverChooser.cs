@@ -1676,6 +1676,7 @@ namespace BoSSS.Solution {
                     //};
 
                     var smoother1 = new CellILU() {
+                        ILU_level = iLevel == 0 ? 2 : 0
                     };
 
 
