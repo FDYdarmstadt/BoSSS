@@ -16,10 +16,10 @@ application of numerical discretization schemes based on the Discontinuous Galer
 - [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing)
 - [Installation/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Installation-and-Testing)
 
-### Developer Starting Guide
+### Developer Starting Guide:
 (Compiling from source code, etc.)
-- [Getting Stated as Developer/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
-- [Getting Stated as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
+- [Getting Started as Developer/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
+- [Getting Started as Developer/Internal Wiki](https://git.rwth-aachen.de/bosss1/experimental/-/wikis/Getting-Started/Working-with-BoSSS-as-a-Developer)
 
 ## Note for publication
 

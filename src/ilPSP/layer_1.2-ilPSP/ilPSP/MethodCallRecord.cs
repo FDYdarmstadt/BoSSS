@@ -226,6 +226,13 @@ namespace ilPSP.Tracing {
         [DataMember]
         internal long m_TicksSpentinBlocking = 0;
 
+        [JsonIgnore]
+        public TimeSpan TimeSpentInMPIBlocking {
+            get {
+                return new TimeSpan(m_TicksSpentinBlocking);
+            }
+        }
+
         /// <summary>
         /// Ticks spent in blocking MPI routines.
         /// ticks are exclusive the child calls.

@@ -80,7 +80,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="gp"></param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
-        static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 1024, int yRes = 768) {
+        static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
             if(xRes <= 0)
                 throw new ArgumentOutOfRangeException();
             if(yRes <= 0)

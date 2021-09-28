@@ -19,6 +19,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 
 namespace BoSSS.Foundation {
@@ -26,16 +27,16 @@ namespace BoSSS.Foundation {
     public partial class Basis {
 
         /// <summary>
-        /// 
+        /// Basis transformation between adjacent cells, required e.g. for cell agglomeration
         /// </summary>
         /// <param name="CellPairs">
-        /// 1st index: list of cells <br/>
-        /// 2nd index: in {0, 1}
+        /// - 1st index: list of cells 
+        /// - 2nd index: in {0, 1}
         /// </param>
         /// <param name="M">
-        /// 1st index: corresponds with 1st index of <paramref name="CellPairs"/><br/>
-        /// 2nd index: matrix row index <br/>
-        /// 3rd index: matrix column index
+        /// - 1st index: corresponds with 1st index of <paramref name="CellPairs"/>
+        /// - 2nd index: matrix row index 
+        /// - 3rd index: matrix column index
         /// </param>
         /// <param name="Minv">the inverse of <paramref name="M"/></param>
         /// <remarks>
@@ -50,6 +51,7 @@ namespace BoSSS.Foundation {
         /// \f]
         /// where \f$ \vec{1}_X \f$ denotes the characteristic function for set \f$ X \f$
         /// and \f$ p_n\f$  and \f$ p_m\f$  are polynomials.
+        /// 
         /// Then, for the output \f$ M \f$ =<paramref name="M"/>[a,-,-] fulfills
         /// \f[ 
         /// \phi_{j n} + \sum_{m} M_{m n} \phi_{i m}
@@ -58,6 +60,11 @@ namespace BoSSS.Foundation {
         /// \f]
         /// </remarks>
         public void GetExtrapolationMatrices(int[,] CellPairs, MultidimensionalArray M, MultidimensionalArray Minv = null) {
+            // turn of instrumentation:
+            // this method is called on a per-cell basis, so instrumentation causes to much overhead.
+            var tracerStateBkup = Tracer.InstrumentationSwitch;
+            Tracer.InstrumentationSwitch = false;
+
             var m_Context = this.GridDat;
             int N = this.Length;
             int Esub = CellPairs.GetLength(0);
@@ -176,7 +183,11 @@ namespace BoSSS.Foundation {
                         Minv.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, M_tmp);
                     }
                 }
+
             }
+
+
+            Tracer.InstrumentationSwitch = tracerStateBkup; // restore previous state of tracer.
         }
 
         /// <summary>
