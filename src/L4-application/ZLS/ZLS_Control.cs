@@ -16,6 +16,10 @@ namespace ZwoLevelSetSolver {
 
         public ZLS_Control() : base() { }
 
+        public override Type GetSolverType() {
+            return typeof(ZLS);
+        }
+
         public ZLS_Control(int p) {
             UseImmersedBoundary = true;
             Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;

@@ -38,6 +38,12 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
+
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + SpeciesName;
+            var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            AddComponent(gravityComponent);
+            AddParameter(gravityOfSpecies);
         }
 
         public override string SpeciesName => speciesName;

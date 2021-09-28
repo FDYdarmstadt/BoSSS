@@ -47,36 +47,15 @@ namespace ZwoLevelSetSolver.ContactLine {
             return cpv.Parameters[cpv.Parameters.Length - 1];
         }
 
-        static Vector SurfaceNormal(double[] parameters, int D, int offSet) {
+        protected static Vector SurfaceNormal(double[] parameters, int D, int offSet) {
 
             Vector N = new Vector(D);
 
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 N[d] = parameters[d + offSet];
             }
-            N = N.Normalize();
+            N.NormalizeInPlace();
             return N;
-        }
-
-        protected static Vector Tangent(Vector Nsurf, Vector Nedge) {
-            Debug.Assert(Nsurf.Dim == Nedge.Dim);
-
-            int D = Nsurf.Dim;
-
-            Vector tau = new Vector(D);
-            for(int d1 = 0; d1 < D; d1++) {
-                for(int d2 = 0; d2 < D; d2++) {
-                    double nn = Nsurf[d1] * Nsurf[d2];
-                    if(d1 == d2) {
-                        tau[d1] += (1 - nn) * Nedge[d2];
-                    } else {
-                        tau[d1] += -nn * Nedge[d2];
-                    }
-                }
-            }
-
-            tau = tau.Normalize();
-            return tau;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

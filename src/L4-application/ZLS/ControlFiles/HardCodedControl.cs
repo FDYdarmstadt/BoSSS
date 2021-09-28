@@ -1054,7 +1054,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3) {
+        public static ZLS_Control BallInChannel(int p = 2, int kelem = 4) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
@@ -1188,7 +1188,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.MinSolverIterations = 2;
             C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
             
@@ -1213,13 +1213,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-2;
+            double dt = 5e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;

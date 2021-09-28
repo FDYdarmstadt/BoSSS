@@ -587,7 +587,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16, int AMRlvl = 0) {
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
@@ -676,7 +676,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region init
 
-            int K = 5;
+            int K = 0;
             VelocityX Vx = new VelocityX(K);
             VelocityY Vy = new VelocityY(K);
 
@@ -745,7 +745,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 0.001;
+            double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1;
@@ -758,9 +758,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
         public class VelocityX : IBoundaryAndInitialData {
             int K;
-
-            public VelocityX(int K) {
+            double amplitude;
+            public VelocityX(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
@@ -768,14 +769,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++) {
                     //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvorx(X, 2 * (k + 1)));
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(X, (k + 1)));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvorx(double[] X, double lamda) {
-                return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[1] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
@@ -785,9 +786,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
         };
         public class VelocityY : IBoundaryAndInitialData {
             int K;
+            double amplitude;
 
-            public VelocityY(int K) {
+            public VelocityY(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
@@ -795,14 +798,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++) {
                     //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvory(X, 2 * (k + 1)));
+                    sum = sum + (Math.Pow(-1, k) * Vvory(X,k + 1));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvory(double[] X, double lamda) {
-                return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[0] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {

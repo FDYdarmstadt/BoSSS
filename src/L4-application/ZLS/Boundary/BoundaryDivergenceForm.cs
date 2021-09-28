@@ -62,7 +62,7 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] Grad_pA, double[,] Grad_pB, double _vIN, double _vOUT, double[] Grad_vA, double[] Grad_vB) {
-            double flux = 0.5 * (_uIN[0] - _uOUT[0]) * (_vIN + _vOUT) * inp.Normal[d];
+            double flux = 0.5 * (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT) * inp.Normal[d];
             return flux;
         }
 

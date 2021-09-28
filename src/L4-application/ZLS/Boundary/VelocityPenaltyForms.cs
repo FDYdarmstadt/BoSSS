@@ -43,7 +43,9 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public IList<string> ParameterOrdering => new string[0];
 
-        MultidimensionalArray cj;
+        MultidimensionalArray cjOut;
+
+        MultidimensionalArray cjIn;
 
         double penalty;
 
@@ -56,31 +58,42 @@ namespace ZwoLevelSetSolver.Boundary {
             double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
             penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
-            cj = csB.CellLengthScales;
+            cjOut = csB.CellLengthScales;
+            cjIn = csA.CellLengthScales;
         }
 
-        double Penalty(int jCellIn, int jCellOut) {
-            double penaltySizeFactor_A = 1/cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1/cj[jCellOut] : 0;
-
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-
+        double PenaltyIn(int jCellIn) {
+            double penaltySizeFactor_A = 1/cjIn[jCellIn];
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penalty));
 
-            double µ = penaltySizeFactor * penalty;
+            double µ = penaltySizeFactor_A * penalty;
             if(µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
-            return 200;
             return µ;
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            double flux =  (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
-            flux *= Math.Max(viscosity, lame2);
+        double PenaltyOut(int jCellOut) {
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1 / cjOut[jCellOut] : 0;
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penalty));
+
+            double µ = penaltySizeFactor_B * penalty;
+            if (µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            //return 200;
+            return µ;
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, 
+            double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+
+            double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
+            double flux =  (_uIN[d] - _uOUT[d]) * penalty * ( _vIN - _vOUT) ;
+            flux *= Math.Min(viscosity, lame2);
             //double flux = (viscosity * (_uIN[d] - _uOUT[d]) * _vIN - lame2 * (_uIN[d] - _uOUT[d]) * _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;

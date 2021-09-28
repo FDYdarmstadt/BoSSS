@@ -43,7 +43,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
-            double pnlty = 2 * Penalty(inp.jCellIn, -1);
+            double pnlty = PenaltyIn(inp.jCellIn);
 
             Vector dirichlet = new Vector(D);
 
@@ -71,23 +71,32 @@ namespace ZwoLevelSetSolver.SolidPhase {
             cj = cs.CellLengthScales;
         }
 
-        double Penalty(int jCellIn, int jCellOut) {
+        double PenaltyIn(int jCellIn) {
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
-
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penalty));
 
-            double µ = penaltySizeFactor * penalty;
+            double µ = penaltySizeFactor_A * penalty;
             if(µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;
         }
+
+        double PenaltyOut(int jCellOut) {
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0;
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penalty));
+
+            double µ = penaltySizeFactor_B * penalty;
+            if (µ.IsNaNorInf())
+                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            return µ;
+        }
+
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double acc1 = 0.0;
@@ -95,9 +104,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 acc1 -= 0.5 * viscosity * ( _Grad_uIN[d, i] + _Grad_uOUT[d, i]) * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
                 acc1 -= 0.5 * viscosity * (_Grad_vIN[i] + _Grad_vOUT[i]) * (_uIN[d] - _uOUT[d]) * inp.Normal[i];  // symmetry term
             }
-
-            double pnlty = PenaltySafety * Penalty(inp.jCellIn, inp.jCellOut);
-            acc1 += (_uIN[d] - _uOUT[d]) * (_vIN - _vOUT) * pnlty * viscosity;
+            double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
+            acc1 += (_uIN[d] - _uOUT[d]) * PenaltySafety * penalty *(_vIN - _vOUT) * viscosity;
             return acc1;
         }
 

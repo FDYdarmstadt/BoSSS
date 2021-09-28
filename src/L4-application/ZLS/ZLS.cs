@@ -24,11 +24,27 @@ namespace ZwoLevelSetSolver {
     public class ZLS : XNSE<ZLS_Control> {
         
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
-            base.AddMultigridConfigLevel(configsLevel, iLevel);
-            
             int pVel = VelocityDegree();
             int D = this.GridData.SpatialDimension;
-            for(int d = 0; d < D; d++) {
+            // configurations for velocity
+            for (int d = 0; d < D; d++) {
+                var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                    DegreeS = new int[] { pVel },
+                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(NSEVariableNames.VelocityVector(D)[d]) }
+                };
+                configsLevel.Add(configVel_d);
+            }
+            // configuration for pressure
+            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+            var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                DegreeS = new int[] { pPrs },
+                mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(NSEVariableNames.Pressure) }
+            };
+            configsLevel.Add(configPres);
+
+            for (int d = 0; d < D; d++) {
                 var configDisplacement = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pVel },
                     mode = MultigridOperator.Mode.IdMass_DropIndefinite,
@@ -71,13 +87,16 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
             }
             opFactory.AddEquation(new SolidPhase.Continuity("C", D));
-            //opFactory.AddEquation(new PressurePenalty("A", -1));
-            //opFactory.AddEquation(new PressurePenalty("B", -1));
+            /*
+            opFactory.AddEquation(new PressurePenalty("A", -0.001));
+            opFactory.AddEquation(new PressurePenalty("B", -0.001));
+            //*/
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
             base.FinalOperatorSettings(XOP);
             XOP.IsLinear = false;
+
         }
 
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
@@ -132,10 +151,10 @@ namespace ZwoLevelSetSolver {
                 }
                 //ContactLine
                 //=====================
-                var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
-                opFactory.AddParameter(normalsParameter);
-                lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);
             }
+            var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
+            opFactory.AddParameter(normalsParameter);
+            lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);
             //*/
         }
 

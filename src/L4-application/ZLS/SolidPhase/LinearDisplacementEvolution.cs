@@ -32,8 +32,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);
 
-            var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
-            AddComponent(velocityBoundaryPenalty);
+            //var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
+            //AddComponent(velocityBoundaryPenalty);
         }
 
         public override string SpeciesName => speciesName;
