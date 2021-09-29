@@ -100,7 +100,7 @@ namespace ZwoLevelSetSolver {
         }
 
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
             //*
             for(int d = 0; d < D; ++d) {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
