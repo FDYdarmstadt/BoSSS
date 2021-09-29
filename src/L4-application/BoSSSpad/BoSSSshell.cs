@@ -567,6 +567,7 @@ namespace BoSSS.Application.BoSSSpad {
             return fo;
         }
 
+        /*
         static internal string _CurrentDocFile = null;
 
         /// <summary>
@@ -586,6 +587,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return _CurrentDocFile;
             }
         }
+        
 
         /// <summary>
         /// Directory where the current file is stored.
@@ -598,7 +600,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
-
+        */
         /// <summary>
         /// <see cref="GridImporter.Import(string)"/>
         /// </summary>
@@ -817,24 +819,23 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             if (supersampling > 3) {
-                Console.WriteLine("Plotting with a supersampling greater than 3 is deactivated because it would very likely exceed this machines memory.");
-                Console.WriteLine("Higher supersampling values are supported by external plot application.");
+                Console.WriteLine($"Supersampling {supersampling} requested, but limiting to 3 because higher values would very likely exceed this computers memory.");
+                Console.WriteLine($"Note: Higher supersampling values are supported by external plot application, or by using e.g. the Tecplot class directly.");
                 supersampling = 3;
             }
 
             string directory = Path.GetDirectoryName(filename);
             string FullPath;
             if (directory == null || directory.Length <= 0) {
-                directory = CurrentDocDir ?? "";
+                directory = Directory.GetCurrentDirectory();
                 FullPath = Path.Combine(directory, filename);
             } else {
                 FullPath = filename;
             }
 
             Console.WriteLine("Writing output file {0}...", FullPath);
-
-
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(flds, FullPath, time, supersampling);
+            Console.WriteLine("done.");
 
         }
 

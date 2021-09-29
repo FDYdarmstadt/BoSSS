@@ -1011,6 +1011,33 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// equal to <see cref="MPIMin(int,MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public long MPIMin(this long i) {
+            return MPIMin(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the maximum of <paramref name="i"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public long MPIMin(this long i, MPI_Comm comm) {
+            long loc = i;
+            unsafe {
+                long glob = long.MaxValue;
+                csMPI.Raw.Allreduce(
+                    (IntPtr)(&loc),
+                    (IntPtr)(&glob),
+                    1,
+                    csMPI.Raw._DATATYPE.LONG_LONG,
+                    csMPI.Raw._OP.MIN,
+                    comm);
+                return glob;
+            }
+        }
+
 
         /// <summary>
         /// Gathers single numbers form each MPI rank in an array
@@ -1085,7 +1112,7 @@ namespace MPI.Wrappers {
         /// Scatters form <paramref name="root"/> rank to all other ranks
         /// </summary>
         static public int[] MPIScatter(this int[] L, int recvCount, int root) {
-            return L.MPIScatter(root, recvCount, csMPI.Raw._COMM.WORLD);
+            return L.MPIScatter(recvCount, root, csMPI.Raw._COMM.WORLD);
         }
         
         /// <summary>
@@ -1095,12 +1122,13 @@ namespace MPI.Wrappers {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);
 
-            if(recvCount <= 0)
+            if(recvCount < 0)
                 throw new ArgumentOutOfRangeException("Receive size must be greater than 0.");
+
 
             int SndCount;
             if(rank == root) {
-                SndCount = L.Length;
+                SndCount = recvCount;
                 if(L.Length != recvCount * size)
                     throw new ArgumentOutOfRangeException("Send buffer length must be == receive count * number of processors.");
             } else {
@@ -1108,7 +1136,9 @@ namespace MPI.Wrappers {
             }
 
             int[] result = new int[recvCount];
-            
+
+            if(recvCount == 0)
+                return result;
 
             unsafe {
                 fixed(int* pL = L, pResult = result) {

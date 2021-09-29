@@ -35,7 +35,7 @@ namespace BoSSS.Application.BoSSSpad {
                 help.AdditionalNewLineAfterOption = true;
                 help.Copyright = new CopyrightInfo("Fachgebiet fuer Stroemungsdynamik, TU Darmstadt", 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021);
                 
-                help.AddPreOptionsLine("Bla, Bla, Bla");
+                help.AddPreOptionsLine("For available queues (aka. HPC servers, clusters, batch processors), see at your ~/.BoSSS/etc/BatchProcessorConfig.json file. ");
                 help.AddOptions(this);
 
                 return help;
@@ -124,7 +124,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return BoSSSshell.ExecutionQueues[idx];
 
             } else {
-                return BoSSSshell.ExecutionQueues.Where(client => client.Name.Contains(id)).Single();
+                return BoSSSshell.ExecutionQueues.Where(client => client.Name != null && client.Name.Contains(id)).Single();
             }
 
         }

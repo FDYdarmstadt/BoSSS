@@ -20,6 +20,7 @@ using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using log4net;
+using MPI.Wrappers;
 
 namespace ilPSP.Tracing {
 
@@ -65,8 +66,16 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Explicit switch for turning cone instrumentation on/off; this is useful when to much overhead is caused by instrumentation.
         /// </summary>
-        public static bool InstrumentationSwitch = true;
+        public static bool InstrumentationSwitch {
+            get {
+                return m_InstrumentationSwitch;
+            }
+            set {
+                m_InstrumentationSwitch = value;
+            }
+        }
 
+        static bool m_InstrumentationSwitch = true;
 
         static Tracer() {
             _Root = new MethodCallRecord(null, "root_frame");
@@ -85,9 +94,9 @@ namespace ilPSP.Tracing {
                 TotalTime.Stop();
                 _Root.m_TicksSpentInMethod = TotalTime.Elapsed.Ticks;
                 TotalTime.Start();
-#if TEST
-                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
-#endif
+//#if TEST
+//                Console.WriteLine("memory measuring activated. Use this only for Debugging / Testing. This will have an impact on performance.");
+//#endif
                 return _Root;
             }
         }
@@ -109,25 +118,7 @@ namespace ilPSP.Tracing {
             return ((MPI.Wrappers.IMPIdriver_wTimeTracer)MPI.Wrappers.csMPI.Raw).TicksSpent;
         }
 
-        /*
-        static private long GetMemory() {
-            long mem = 0;
-            Process myself = Process.GetCurrentProcess();
-#if TEST
-            {
-                try {
-                    //mem = myself.WorkingSet64 / (1024 * 1024);
-                    mem = myself.PrivateMemorySize64 / (1024 * 1024);
-                    //mem = GC.GetTotalMemory(false) / (1024 * 1024);
-                } catch (Exception e) {
-                    mem = 0;
-                }
-            }
-#endif
-            return mem;
-        }
-        */
-
+        
 
         private static readonly object padlock = new object();
 
@@ -202,6 +193,13 @@ namespace ilPSP.Tracing {
     /// </example>
     abstract public class Tmeas : IDisposable {
 
+               
+
+        /// <summary>
+        /// Hack to write <see cref="Info"/> also to cout.
+        /// </summary>
+        public bool InfoToConsole = false;
+
         /// <summary>
         /// logger to write the enter/leave -- messages to;
         /// </summary>
@@ -219,23 +217,24 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Must be initialized to write memory-tracing
         /// </summary>
-        public static TextWriter Memtrace;
+        public static TextWriter Memtrace;// = new System.IO.StreamWriter("memory_nocache." + ilPSP.Environment.MPIEnv.MPI_Rank + ".csv");
 
         public static int Memtrace_lineCount = 0;
         
         static long PreviousLineMem = 0;
 
-
+    
         /// <summary>
         /// Very expensive instrumentation option, slows down by a factor of two to three!!!
         /// </summary>
-        public static bool LogPrivateMem = false;
+        public static bool LogPrivateMem = true;
 
         /// <summary>
         /// current process to trace memory
         /// </summary>
         static protected long GetPrivateMemory() {
-
+            if(!Tracer.InstrumentationSwitch)
+                return 0;
 
             // expensive: 
             if(LogPrivateMem) {
@@ -269,7 +268,10 @@ namespace ilPSP.Tracing {
         }
                        
 
-        Stopwatch Watch;
+        /// <summary>
+        /// the internal stopwatch
+        /// </summary>
+        protected Stopwatch Watch;
 
         long PeakWorkingSet_onEntry;
         long WorkingSet_onEntry;
@@ -336,7 +338,34 @@ namespace ilPSP.Tracing {
         /// </summary>
         /// <param name="o"></param>
         public void Info(object o) {
-            m_Logger.Info(o);
+            if (DoLogging)
+                m_Logger.Info(o);
+
+            if(InfoToConsole)
+                Console.WriteLine(o);
+        }
+
+
+        /// <summary>
+        /// (selective) error - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Error(object o) {
+            if (DoLogging)
+                m_Logger.Error(o);
+
+            Console.Error.WriteLine(o);
+        }
+
+        /// <summary>
+        /// (selective) Warning - message
+        /// </summary>
+        /// <param name="o"></param>
+        public void Warning(object o) {
+            if (DoLogging)
+                m_Logger.Warn(o);
+
+            Console.WriteLine(o);
         }
 
 
@@ -444,7 +473,10 @@ namespace ilPSP.Tracing {
             }
         }
 
-        string _name;
+        /// <summary>
+        /// name of the time tracing block
+        /// </summary>
+        protected string _name;
 
         /// <summary>
         /// Message when the measurement starts.
@@ -457,29 +489,7 @@ namespace ilPSP.Tracing {
                 s_FtLogger.Info(elo + _name + " new stack depth = " + newDepth);
             }
 
-            /*if(Memtrace != null) {
-                Memtrace.Write(Memtrace_lineCount); 
-                Memtrace_lineCount++;
-                Memtrace.Write("\t");
-                Memtrace.Write(WorkingSet_onEntry);
-                long diff = WorkingSet_onEntry - PreviousLineMem;
-                PreviousLineMem = WorkingSet_onEntry;
-                Memtrace.Write("\t");
-                Memtrace.Write($"{Math.Round((double)WorkingSet_onEntry / (1024.0 * 1024.0))}");
-                Memtrace.Write("\t");
-                Memtrace.Write($"{Math.Round((double)diff / (1024.0 * 1024.0))}");
-                Memtrace.Write("\t");
-                Memtrace.Write(WorkingSet_onEntry);
-                Memtrace.Write("\t");
-
-                var _mcr = mcr;
-                while(_mcr != null) {
-                    Memtrace.Write(">");
-                    Memtrace.Write(_mcr.Name);
-                    _mcr = _mcr.ParrentCall;
-                }
-                Memtrace.WriteLine();
-            }*/
+            
             LogMemtrace(WorkingSet_onEntry, ">", mcr);
         }
 
@@ -511,26 +521,67 @@ namespace ilPSP.Tracing {
 
 
         void LogMemtrace(long WorkingSet, string Ch, MethodCallRecord mcr) {
+            string PrintMeg(long bytes) {
+                double megs = (double)bytes / (1024.0 * 1024.0);
+                return Math.Round(megs).ToString();
+            }
+
+
             if(Memtrace != null) {
-                Memtrace.Write(Memtrace_lineCount); 
+               
+
+
+                Memtrace.Write(Memtrace_lineCount); // col 0: line number
                 Memtrace_lineCount++;
                 Memtrace.Write("\t");
-                Memtrace.Write(WorkingSet);
+                Memtrace.Write(WorkingSet); // col 1: mem in Bytes
                 long diff = WorkingSet - PreviousLineMem;
                 PreviousLineMem = WorkingSet;
                 Memtrace.Write("\t");
-                Memtrace.Write($"{Math.Round((double)WorkingSet / (1024.0 * 1024.0))}");
+                Memtrace.Write($"{PrintMeg(WorkingSet)}"); // col 2: mem in megs
                 Memtrace.Write("\t");
-                Memtrace.Write($"{Math.Round((double)diff / (1024.0 * 1024.0))}");
+                Memtrace.Write($"{diff}"); // col 3: diff-mem in bytes
+                Memtrace.Write("\t");
+                Memtrace.Write($"{PrintMeg(diff)}"); // col 4: diff-mem in megs
                 Memtrace.Write("\t");
 
-                Memtrace.Write(Ch);
-                var _mcr = mcr;
-                while(_mcr != null) {
-                    Memtrace.Write(_mcr.Name);
-                    _mcr = _mcr.ParrentCall;
-                    if(_mcr != null)
-                        Memtrace.Write(">");
+                /*
+                long gcTot = WorkingSet;//.MPISum();
+                long gcMax = WorkingSet;//.MPIMax();
+                long gcMin = WorkingSet;//.MPIMin();
+
+                Memtrace.Write($"{gcTot}");
+                Memtrace.Write("\t");
+                Memtrace.Write($"{gcMax}");
+                Memtrace.Write("\t");
+                Memtrace.Write($"{gcMin}");
+                Memtrace.Write("\t");
+                
+
+                long mpiDiff = gcTot - PreviousLineMem_mpi;
+                PreviousLineMem_mpi = gcTot;
+                Memtrace.Write($"{PrintMeg(mpiDiff)}");
+                Memtrace.Write("\t");
+                */
+
+                using(var stw = new StringWriter()) {
+                    stw.Write(Ch);
+                    var _mcr = mcr;
+                    while(_mcr != null) {
+                        stw.Write(_mcr.Name);
+
+                        //if(_mcr.Name.Contains("AggregationGridBasis.BuildInjector_Lv1"))
+                        //    Debugger.Launch();
+
+                        _mcr = _mcr.ParrentCall;
+                        if(_mcr != null)
+                            stw.Write(">");
+                    }
+
+                    //if(stw.ToString().Contains("2.Execute>BoSSS.Solution.AdvancedSolvers.AggregationGridBasis.BuildInjector_Lv1"))
+                    //    Console.WriteLine("salkjdsalkdjsadjlösajfsafdkjahfkkjl");
+
+                    Memtrace.Write(stw.ToString());
                 }
                 Memtrace.WriteLine();
             }
@@ -563,12 +614,6 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class FuncTrace : Tmeas {
 
-        
-
-        /// <summary>
-        /// Hack to write <see cref="Info"/> also to cout.
-        /// </summary>
-        public bool InfoToConsole = false;
 
         /// <summary>
         /// ctor: logs the 'enter' - message
@@ -634,44 +679,9 @@ namespace ilPSP.Tracing {
         /// </summary>
         public override void Dispose() {
             base.Dispose();
-
-            
         }
 
-        /// <summary>
-        /// (selective) Info - message
-        /// </summary>
-        /// <param name="o"></param>
-        public void Info(object o) {
-            if (base.DoLogging)
-                m_Logger.Info(o);
-
-            if(InfoToConsole)
-                Console.WriteLine(o);
-        }
-
-
-        /// <summary>
-        /// (selective) error - message
-        /// </summary>
-        /// <param name="o"></param>
-        public void Error(object o) {
-            if (base.DoLogging)
-                m_Logger.Error(o);
-
-            Console.Error.WriteLine(o);
-        }
-
-        /// <summary>
-        /// (selective) Warning - message
-        /// </summary>
-        /// <param name="o"></param>
-        public void Warning(object o) {
-            if (base.DoLogging)
-                m_Logger.Warn(o);
-
-            Console.WriteLine(o);
-        }
+    
 
      
 
@@ -706,15 +716,20 @@ namespace ilPSP.Tracing {
         /// <param name="f">
         /// tracing of function which contains the block
         /// </param>
-        public BlockTrace(string Title, FuncTrace f) {
+        /// <param name="timeToCout">
+        /// if true, the time elapsed in the block will be printed to console 
+        /// </param>
+        public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
             if(!Tracer.InstrumentationSwitch)
                 return;
             string _name = Title;
             _f = f;
             m_Logger = _f.m_Logger;
-            
+            m_timeToCout = timeToCout;
             base.EnterMessage("BLKENTER ", _name);
         }
+
+        bool m_timeToCout = false;
 
         /*
         /// <summary>
@@ -733,5 +748,16 @@ namespace ilPSP.Tracing {
             }
         }
         */
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override void Dispose() {
+            base.Dispose();
+
+            if(m_timeToCout) {
+                Console.WriteLine(base._name + ": " + base.Watch.Elapsed.TotalSeconds + " sec.");
+            }
+        }
     }
 }

@@ -51,6 +51,7 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
+            //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //Debug.Assert(false, "remove me");
             //return;
 

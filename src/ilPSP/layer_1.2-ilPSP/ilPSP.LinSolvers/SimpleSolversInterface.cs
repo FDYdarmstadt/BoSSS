@@ -74,7 +74,7 @@ namespace ilPSP.LinSolvers {
                 () => new ilPSP.LinSolvers.MUMPS.MUMPSSolver() { Parallelism = Parallelism.SEQ }
             };
 
-            if(Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF))
+            if(Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF)) // solve matrices on SELF always sequentially!
                 SolverFallbackSeq = SolverFallbackSeq.Skip(1).ToArray();
 
             string CheckResidual() {

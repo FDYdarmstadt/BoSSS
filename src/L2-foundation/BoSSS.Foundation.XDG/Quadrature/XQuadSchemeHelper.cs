@@ -232,7 +232,8 @@ namespace BoSSS.Foundation.XDG {
                             var doublyCut = dCCEdges.Intersect(allRelevantEdges);
                             if (doublyCut.Count() > 0) {
                                 var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref);
+                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                                var factory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
                                 edgeQrIns.AddFactory(factory, doublyCut);
                             }
                         }
@@ -274,7 +275,8 @@ namespace BoSSS.Foundation.XDG {
                             CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
                             if (doublyCut.Count() > 0) {
                                 var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpJ, Kref);
+                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
+                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpJ, Kref, backupFactory);
                                 LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                             }
                         }
@@ -310,7 +312,8 @@ namespace BoSSS.Foundation.XDG {
                             CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
                             if (doublyCut.Count() > 0) {
                                 var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref);
+                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
                                 LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                             }
                         }
@@ -369,7 +372,8 @@ namespace BoSSS.Foundation.XDG {
                                     EdgeMask doublyCut = cutEdges.Intersect(GetCutEdges(Kref, jLevSet));
                                     if (doublyCut.Count() > 0) {
                                         var jmpJ = IdentifyWingA(jLevSet, sp);
-                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
+                                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, Kref);
+                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
                                         edgeQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                                     }
                                 }
@@ -760,7 +764,8 @@ namespace BoSSS.Foundation.XDG {
                                     CellMask doublyCut = GetCutCells(iLevSet, jLevSet).Intersect(_cutDom);
                                     if (doublyCut.Count() > 0) {
                                         var jmpJ = IdentifyWingA(jLevSet, sp);
-                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref);
+                                        var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
+                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
                                         volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                                     }
                                 }
@@ -832,8 +837,12 @@ namespace BoSSS.Foundation.XDG {
                             //Ist das so in Ordnung? Scheint keine Invariante zu verletzen.
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
-
-                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref);
+                            IQuadRuleFactory<QuadRule> backupFactory;
+                            if(iLevSet == 1)
+                                backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, Kref);
+                            else
+                                backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
+                            var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
                             LevSetQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                         }
                     }
