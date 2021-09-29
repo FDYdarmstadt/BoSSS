@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -257,7 +257,6 @@ namespace CNS {
                 var mapping2 = new CoordinateMapping(program.WorkingSet.ConservativeVariables);
 
                 var eval = op.GetEvaluatorEx(program.WorkingSet.ConservativeVariables,mapping2,residual.Mapping);
-                program.ResLogger.Residuals.Last().CoordinateMapping;
                 eval.Evaluate(1, 1, residual.CoordinateVector);
 
             });
