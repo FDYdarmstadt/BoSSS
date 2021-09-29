@@ -243,7 +243,25 @@ namespace CNS {
                 // parameters which are only known to the time-stepper...)
                 // Relation to residual logger?
             });
+        public static readonly DerivedVariable ResidualDensity = new DerivedVariable(
+            "residualDensity",
+            VariableTypes.Other,
+            delegate (DGField residual, CellMask cellMask, IProgram<CNSControl> program) {
+                residual.Clear();
 
+                throw new NotImplementedException();
+
+                SpatialOperator op = program.FullOperator.ToSpatialOperator(program.WorkingSet);
+
+                var mapping = new UnsetteledCoordinateMapping(program.WorkingSet.ConservativeVariables.Select((field) => field.Basis).ToArray());
+                var mapping2 = new CoordinateMapping(program.WorkingSet.ConservativeVariables);
+
+                var eval = op.GetEvaluatorEx(program.WorkingSet.ConservativeVariables,mapping2,residual.Mapping);
+                program.ResLogger.Residuals.Last().CoordinateMapping;
+                eval.Evaluate(1, 1, residual.CoordinateVector);
+
+            });
+        
         /// <summary>
         /// The optional vorticity field:
         /// \f[ \vec{\omega} = \nabla \times \vec{u} \f]
