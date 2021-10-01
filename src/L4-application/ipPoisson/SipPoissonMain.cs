@@ -352,7 +352,7 @@ namespace BoSSS.Application.SipPoisson {
 
                 
                 /*
-                this.RHS.CoordinateVector.FillRandom(0);
+                //this.RHS.CoordinateVector.FillRandom(0);
 
                 this.m_MgConfig = MultigridOperator.Mode.Eye;
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler);
@@ -360,14 +360,14 @@ namespace BoSSS.Application.SipPoisson {
                 T.Clear();
 
                 this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler);
-                Solution.AdvancedSolvers.Testing.OpAnalysisBase.DbeMatrix = UniSolver.LastMtx.CloneAs();
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
+                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.DbeMatrix = UniSolver.LastMtx.CloneAs();
                 double[] sol2 = T.CoordinateVector.ToArray();
                 T.Clear();
 
                 this.m_MgConfig = MultigridOperator.Mode.LeftInverse_DiagBlock;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler);
-                Solution.AdvancedSolvers.Testing.OpAnalysisBase.LidMatrix = UniSolver.LastMtx.CloneAs();
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
+                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.LidMatrix = UniSolver.LastMtx.CloneAs();
                 double[] sol3 = T.CoordinateVector.ToArray();
                 //T.Clear();
 
@@ -377,10 +377,6 @@ namespace BoSSS.Application.SipPoisson {
 
                 Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
                 //*/
-
-                //this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
-                this.OperatorAnalysis();
-
      
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -388,7 +384,7 @@ namespace BoSSS.Application.SipPoisson {
                     Error.AccLaidBack(-1.0, T);
 
                     double L2_ERR = Error.L2Norm();
-                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
+                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + " cells: " + L2_ERR);
                     last_L2_ERR = L2_ERR;
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 

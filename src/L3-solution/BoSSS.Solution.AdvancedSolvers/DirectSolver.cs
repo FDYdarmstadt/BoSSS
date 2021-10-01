@@ -227,12 +227,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             using(var tr = new FuncTrace()) {
                 B.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", RHS on entry: ");
-
-
+                
                 double[] Residual = this.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
                 using(var solver = GetSolver(m_Mtx)) {
+                    Converged = false;
                     SolverName = solver.GetType().FullName;
                     //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
                     IterCnt++;
@@ -242,6 +242,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(solver is PARDISOSolver pslv) {
                         m_UsedMemoryInLastCall = pslv.UsedMemory();
                     }
+                    Converged = true;
                 }
                 X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
@@ -284,6 +285,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             ErrMsg = stw.ToString();
                         }
                         Console.Error.WriteLine(ErrMsg);
+                        this.Converged = false;
                     }
                 }
 
@@ -322,7 +324,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public bool Converged {
-            get { return true; }
+            get;
+            private set;
         }
 
         public Action<int, double[], double[], MultigridOperator> IterationCallback {

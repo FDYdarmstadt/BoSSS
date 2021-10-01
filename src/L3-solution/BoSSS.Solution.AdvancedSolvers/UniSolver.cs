@@ -197,7 +197,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public MultigridOperator.ChangeOfBasisConfig[][] MgConfig;
 
-            public double time;
+            public double time = 1.0e30;
 
             /// <summary>
             /// Implementation of <see cref="OperatorEvalOrLin"/>
@@ -485,9 +485,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
         /// </param>
         static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
-            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null, 
-            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, 
-            AggregationGridData[] MultigridSequence = null, 
+            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
+            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null,
+            AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
 
@@ -611,10 +611,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if(optRHS != null)
                             RHSvec.AccV(1.0, new CoordinateVector(optRHS));
-                        
+
                         MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
-
-
+                        
                         NoOfIterations = solver.ThisLevelIterations;
                     }
                     solverIteration.Stop();
