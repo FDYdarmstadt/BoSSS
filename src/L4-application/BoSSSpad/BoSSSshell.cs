@@ -862,8 +862,19 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Default execution queue, used mainly by worksheets in the Continuous Integration Workflow;
+        /// </summary>
+        public static BatchProcessorClient GetDefaultQueue() {
+            // quick hack 
+            if(ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
+                return ExecutionQueues[2];
+            if(ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
+                return ExecutionQueues[0];
 
-
+            
+            return ExecutionQueues[0];
+        }
 
 
         /// <summary>
