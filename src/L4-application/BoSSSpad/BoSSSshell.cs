@@ -870,7 +870,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
                 return ExecutionQueues[2];
             if(ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
-                return ExecutionQueues[0];
+                return ExecutionQueues[1];
 
             
             return ExecutionQueues[0];
