@@ -165,9 +165,9 @@ namespace MPI.Wrappers.Utils {
         /// Ignored, when negative;
         /// </param>
         /// <param name="PrequesiteLibraries">
-        /// 1st index: correlates with library names
-        /// 2nd index: chain of required prequesites 
-        /// 3rd index: for each required prequesite, a list of alternatives.
+        /// - 1st index: correlates with library names
+        /// - 2nd index: chain of required prerequisites 
+        /// - 3rd index: for each required prerequisite, a list of alternatives.
         /// </param>
         protected DynLibLoader(string[] _LibNames, string[][][] PrequesiteLibraries, GetNameMangling[] NameMangling, PlatformID[] OsFilter, int[] PointerSizeFilter) {
             m_debugoutput = new StringWriter();

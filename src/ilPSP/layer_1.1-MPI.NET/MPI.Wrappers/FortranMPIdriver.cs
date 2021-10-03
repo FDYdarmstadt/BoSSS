@@ -144,8 +144,23 @@ namespace MPI.Wrappers {
         /// </summary>
         internal FortranMPIdriver()
             : base(
-				new string[] { "msmpi.dll", "libmpi_f77.so", "libfmpich.so", "libmpi_mpifh.so", "libmpifort.so", "openmpi/libmpi_mpifh.so", "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" },
-                new string[7][][],
+				new string[] { "msmpi.dll", 
+                    "libmpi_f77.so", 
+                    "libfmpich.so", // 2: Linux: MPICH
+                    "libmpi_mpifh.so", // 3: Linux: OpenMPI
+                    "libmpifort.so", 
+                    "openmpi/libmpi_mpifh.so", 
+                    "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" // 6: MacOS 
+                },
+                new string[7][][] {
+                    null,
+                    null,
+                    new string[2][] { new string[] { "libopen-pal.so" }, new string[] { "libopen-rte.so" } },
+                    null,
+                    null,
+                    null,
+                    null
+                },
 				new GetNameMangling[] { Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, MacOsMangling  },
                 //new PlatformID[] {PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
                 Helper(),
