@@ -314,7 +314,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 } else {
                     psi.FileName = @"jupyter";
-                    psi.Arguments = " nbconvert '" + fileToOpen + "' --to html --execute";
+                    psi.Arguments = " nbconvert " + fileToOpen + " --to html --execute";
 
                     p = Process.Start(psi);
                     p.WaitForExit();
