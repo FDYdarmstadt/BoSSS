@@ -157,7 +157,13 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
+	    //Console.WriteLine("Hello");   
+	    //BoSSS.Solution.Application.InitMPI();
+            //csMPI.Raw.Init(args);
+            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int sz);
+            //Console.WriteLine("Size ist: " + sz);
+	    //FinalizeMPI();
+	    //return;
             //DeleteOldPlotFiles();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(2);
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");

@@ -271,8 +271,10 @@ namespace MPI.Wrappers.Utils {
                     }
                 }
 
-                if (mainLibsuccess)
+                if (mainLibsuccess) {
+                    //Console.WriteLine(m_debugoutput.ToString());
                     return;
+                }
             }
 
             // error
@@ -291,6 +293,7 @@ namespace MPI.Wrappers.Utils {
                     + m_debugoutput.ToString()
                     + "------------------------------------------------------------------------" + System.Environment.NewLine);
             }
+            
         }
 
         static private string CatStrings(IEnumerable<string> s) {
