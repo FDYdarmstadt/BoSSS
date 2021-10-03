@@ -107,8 +107,8 @@ namespace MPI.Wrappers {
             PlatformID[] p = new PlatformID[7];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
-			p[2] = PlatformID.Unix;
-			p[3] = PlatformID.Unix;
+            p[2] = PlatformID.Unix;
+            p[3] = PlatformID.Unix;
             p[4] = PlatformID.Unix;
             p[5] = PlatformID.Unix;
             p[6] = PlatformID.MacOSX;
@@ -155,7 +155,7 @@ namespace MPI.Wrappers {
                 new string[7][][] {
                     null,
                     null,
-                    new string[2][] { new string[] { "libopen-pal.so" }, new string[] { "libopen-rte.so" } },
+                    new string[1][] { new string[] { "libBoSSSnative_mpi.so" } }, // fixes some load error that occurs with OpenMPI 2.0 and 3.0; for 4.0 it is not required but it does no harm; seems to correctly load `libopen-rte` and `libopen-pal`, which must be loaded before dynloading the mpi library (?)
                     null,
                     null,
                     null,
