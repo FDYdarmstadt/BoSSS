@@ -365,10 +365,11 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            DGField gravity = ParameterVarFields[names[0]];
-            gravity.Clear();
-            if(initial != null)
+            if (initial != null) {
+                DGField gravity = ParameterVarFields[names[0]];
+                gravity.Clear();
                 gravity.ProjectField(-rho, initial.SetTime(time));
+            }
         }
     }
 
@@ -413,14 +414,17 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
             DGField volforce = new SinglePhaseField(basis, names[0]);
-            volforce.ProjectField(-1, initial.SetTime(0.0));
+            if (initial != null)
+                volforce.ProjectField(-1, initial.SetTime(0.0));
             return new (string, DGField)[] { (names[0], volforce) };
         }
 
         public void ParameterUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            DGField volforce = ParameterVarFields[names[0]];
-            volforce.Clear();
-            volforce.ProjectField(-1, initial.SetTime(time));
+            if (initial != null) {
+                DGField volforce = ParameterVarFields[names[0]];
+                volforce.Clear();
+                volforce.ProjectField(-1, initial.SetTime(time));
+            }
         }
     }
 
@@ -467,7 +471,8 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            //VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D.ForLoop( d => new SinglePhaseField(basis, ParameterNames[d])) );
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {
@@ -518,7 +523,7 @@ namespace BoSSS.Solution.XNSECommon {
                 phaseInterface.DGLevelSet);
             for (int i = 0; i < parameters.Length; ++i) {
                 ParameterVarFields[parameters[i]].Clear();
-                ParameterVarFields[parameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                ParameterVarFields[parameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }
@@ -590,7 +595,7 @@ namespace BoSSS.Solution.XNSECommon {
             for (int i = 0; i < lsParameters.Length - 1; ++i) {
                 ParameterVarFields[lsParameters[i]].Clear();
                 if(filtLevSetGradient != null)
-                    ParameterVarFields[lsParameters[i]].Acc(1.0, filtLevSetGradient[i]);
+                    ParameterVarFields[lsParameters[i]].AccLaidBack(1.0, filtLevSetGradient[i]);
             }
         }
     }

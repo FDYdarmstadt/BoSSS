@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.IO;
@@ -156,7 +155,7 @@ namespace BoSSS.Application.BoSSSpad {
             var job = job2rest.LatestSession.CreateRestartJob();
             job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
             job.RetryCount = job2rest.RetryCount;
-            job.MemPerCPU = job2rest.MemPerCPU;
+            //job.MemPerCPU = job2rest.MemPerCPU;
             job.ExecutionTime = job2rest.ExecutionTime;
             return job;
         }

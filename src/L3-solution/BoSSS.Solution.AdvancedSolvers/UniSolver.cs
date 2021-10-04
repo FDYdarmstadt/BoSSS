@@ -459,11 +459,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// DG fields to store the solution.
         /// </param>
         /// <param name="nsc">
-        /// - configuration of the nonlinear solver (see also <see cref="BoSSS.Solution.AppControlSolver.NonLinearSolver"/>)
+        /// - configuration of the nonlinear solver 
         /// - if null, an default solver configuration is used
         /// </param>
         /// <param name="lsc">
-        /// - configuration of the linear solver (see also <see cref="BoSSS.Solution.Control.AppControlSolver.LinearSolver"/>)
+        /// - configuration of the linear solver 
         /// - if null, an default solver configuration is used 
         /// </param>
         /// <param name="MultigridSequence">
@@ -480,7 +480,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="queryHandler">
         /// if provided, logging of solver statistics to the unified query table used with the BoSSS database
         /// </param>
-        static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, 
+        /// <param name="optRHS">
+        /// An optional right-hand-side for the system; per Definition, it is independent of the solution.
+        /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
+        /// </param>
+        static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null, 
             NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, 
             AggregationGridData[] MultigridSequence = null, 
@@ -495,6 +499,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(verbose) {
                     Console.WriteLine($"Trying to solve equation (starting at {DateTime.Now})...");
                 }
+
+                if(optRHS != null)
+                    optRHS.EqualsPartition(Solution);
 
                 if(nsc == null) {
                     nsc = new NonLinearSolverConfig() {
@@ -598,6 +605,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var RHSvec = opAff.CloneAs();
                         RHSvec.ScaleV(-1);
+
+                        if(optRHS != null)
+                            RHSvec.AccV(1.0, new CoordinateVector(optRHS));
                         
                         MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
 

@@ -488,7 +488,7 @@ namespace BoSSS.Application.FSI_Solver {
                 DelayInit: true,
                 _ComputeOperatorMatrix: DelComputeOperatorMatrix,
                 abstractOperator: IBM_Op,
-                _UpdateLevelset: DelUpdateLevelset,
+                _UpdateLevelset: () => new ParticleTimestepping(this),
                 BDForder: bdfOrder,
                 _LevelSetHandling: ((FSI_Control)Control).Timestepper_LevelSetHandling,
                 _MassMatrixShapeandDependence: MassMatrixShape,
@@ -510,38 +510,56 @@ namespace BoSSS.Application.FSI_Solver {
         }
 
         /// <summary>
-        /// Calls level set update depending on level set handling method.
+        /// triggers particle temporal evolution and update of level-set
         /// </summary>
-        public override double DelUpdateLevelset(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-            double forces_PResidual = 0;
-            switch (((FSI_Control)Control).Timestepper_LevelSetHandling) {
-                case LevelSetHandling.None:
-                ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)Control).MovementFunc, phystime);
-                LevSet.ProjectField(Posfunction);
-                LsTrk.UpdateTracker(phystime + dt);
-                break;
+        class ParticleTimestepping : ISlaveTimeIntegrator {
 
-                case LevelSetHandling.Coupled_Iterative: {
-                    UpdateLevelSetParticles(phystime);
-                    int iterationCounter = 0;
-                    ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(LsTrk, spatialDim);
-                    forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)Control).fullyCoupledSplittingMaxIterations); ;
-                    Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
-                    throw new NotImplementedException("Moving interface solver will be implemented in the near future");
-                }
-
-                case LevelSetHandling.Coupled_Once:
-                case LevelSetHandling.LieSplitting:
-                case LevelSetHandling.FSILieSplittingFullyCoupled:
-                case LevelSetHandling.StrangSplitting:
-                UpdateLevelSetParticles(phystime);
-                break;
-
-                default:
-                throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)Control).Timestepper_LevelSetHandling);
+            public ParticleTimestepping(FSI_SolverMain __owner) {
+                m_owner = __owner;
             }
-            return forces_PResidual;
+            FSI_SolverMain m_owner;
+
+            public void Pop() {
+                throw new NotImplementedException();
+            }
+
+            public void Push() {
+                throw new NotImplementedException();
+            }
+
+            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+
+                double forces_PResidual = 0;
+                switch(((FSI_Control)(m_owner.Control)).Timestepper_LevelSetHandling) {
+                    case LevelSetHandling.None:
+                    ScalarFunction Posfunction = NonVectorizedScalarFunction.Vectorize(((FSI_Control)(m_owner.Control)).MovementFunc, phystime);
+                    m_owner.LevSet.ProjectField(Posfunction);
+                    m_owner.LsTrk.UpdateTracker(phystime + dt);
+                    break;
+
+                    case LevelSetHandling.Coupled_Iterative: {
+                        m_owner.UpdateLevelSetParticles(phystime);
+                        int iterationCounter = 0;
+                        ParticleHydrodynamics AllParticleHydrodynamics = new ParticleHydrodynamics(m_owner.LsTrk, m_owner.spatialDim);
+                        forces_PResidual = iterationCounter == 0 ? double.MaxValue : AllParticleHydrodynamics.CalculateParticleResidual(ref iterationCounter, ((FSI_Control)(m_owner.Control)).fullyCoupledSplittingMaxIterations); 
+                        Console.WriteLine("Current forces_PResidual:   " + forces_PResidual);
+                        throw new NotImplementedException("Moving interface solver will be implemented in the near future");
+                    }
+
+                    case LevelSetHandling.Coupled_Once:
+                    case LevelSetHandling.LieSplitting:
+                    case LevelSetHandling.FSILieSplittingFullyCoupled:
+                    case LevelSetHandling.StrangSplitting:
+                    m_owner.UpdateLevelSetParticles(phystime);
+                    break;
+
+                    default:
+                    throw new ApplicationException("unknown 'LevelSetMovement': " + ((FSI_Control)(m_owner.Control)).Timestepper_LevelSetHandling);
+                }
+                return forces_PResidual;
+            }
         }
+
 
         /// <summary>
         /// Level-set update.
@@ -1108,14 +1126,16 @@ namespace BoSSS.Application.FSI_Solver {
                 if (DebugSerialization) {
                     return new JsonTextReader(new StreamReader(s));
                 } else {
-                    return new BsonReader(s);
+                    throw new NotSupportedException("deprecated shit");
+                    //return new BsonReader(s);
                 }
             }
             JsonWriter GetJsonWriter(Stream s) {
                 if (DebugSerialization) {
                     return new JsonTextWriter(new StreamWriter(s));
                 } else {
-                    return new BsonWriter(s);
+                    throw new NotSupportedException("deprecated shit");
+                    //return new BsonWriter(s);
                 }
             }
             byte[] buffer = null;

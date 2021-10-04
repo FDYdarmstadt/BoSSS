@@ -17,9 +17,9 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using ilPSP;
 using BoSSS.Application.BoSSSpad;
+using System.Text;
 
 namespace BoSSS.Foundation.IO {
 

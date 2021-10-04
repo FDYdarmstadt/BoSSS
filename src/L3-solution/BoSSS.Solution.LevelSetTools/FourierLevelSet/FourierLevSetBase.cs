@@ -254,7 +254,7 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
     /// </summary>
     public abstract class FourierLevSetBase {
 
-        readonly FourierLevSetControl control;
+        readonly protected FourierLevSetControl control;
 
         /// <summary>
         /// Number of Fourier points for the fast Fourier transformation
@@ -883,7 +883,16 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                 VolMask = CellMask.GetFullMask(Curvature.Basis.GridDat);
 
             Curvature.Clear();
-            Curvature.ProjectField(1.0,
+            double vorzeichen = 1.0;
+            switch (this.control.innerphase) {
+                default:
+                case "A":
+                    break;
+                case "B":
+                    vorzeichen = -1.0;
+                    break;
+            }
+            Curvature.ProjectField(vorzeichen,
                 CurvEvaluation(mode),
                 new Foundation.Quadrature.CellQuadratureScheme(true, VolMask));
 

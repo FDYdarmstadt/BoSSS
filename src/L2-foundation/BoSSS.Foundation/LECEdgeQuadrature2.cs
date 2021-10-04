@@ -531,7 +531,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 Debug.Assert(AffineEdge == m_GridDat.iGeomEdges.IsEdgeAffineLinear(i + i0));
             }
 #endif
-
+            
             // evaluate Normals, transform Nodes and Parameters
             // ================================================
             this.ParametersAndNormals.Start();
@@ -545,7 +545,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             EvaluateParameters(i0, Length, NS);
             this.ParametersAndNormals.Stop();
 
-
+            
             // evaluate forms
             // ==============
             #region FLUX_EVAL
@@ -1048,7 +1048,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             }
             this.Loops.Stop();
             #endregion
-
+            
         }
 
         private MultidimensionalArray ExtractTrafo(MultidimensionalArray trafo, int N) {

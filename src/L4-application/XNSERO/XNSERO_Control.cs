@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// 
         /// </summary>
         public override void SetDGdegree(int p) {
-            SetFieldOptions(p, 2*p);
+            SetFieldOptions(p, Math.Max(4, 2 * p));
 
             FieldOptions.Add(VariableNames.Phoretic, new FieldOpts() {
                 Degree = p,

@@ -68,6 +68,8 @@ namespace BoSSS.Solution {
                     this.Log = new StreamWriter(LogFileName + ".txt");
                 }
             }
+            WriteHeader(this.Log);
+
         }
 
         /// <summary>
@@ -180,6 +182,7 @@ namespace BoSSS.Solution {
                 AppendToLog(d);
         }
 
+        /*
         /// <summary>
         /// writes an entire collection of values to the log
         /// </summary>
@@ -195,7 +198,7 @@ namespace BoSSS.Solution {
                 }
             }
         }
-
+        */
 
         /// <summary>
         /// Logfile 

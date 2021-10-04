@@ -81,6 +81,9 @@ namespace BoSSS.Solution {
         /// <returns></returns>
         public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup, TimestepNumber TimestepNoRestart) {
             // Create new model if number of cell classes has changed
+
+            Console.WriteLine("performing Loadbalancing ...");
+
             for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
                 if (CurrentCellCostEstimators[i] == null
                     || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
@@ -115,7 +118,10 @@ namespace BoSSS.Solution {
                 imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
             }
 
+
+
             if (!imbalanceTooLarge) {
+                Console.WriteLine("Imbalance not sufficiently high for load balancing!");
                 return null;
             }
 
@@ -131,16 +137,13 @@ namespace BoSSS.Solution {
                 return null;
             }
 
-            if (gridPartType != GridPartType.ParMETIS && gridPartType != GridPartType.clusterHilbert && cellCosts.Count > 1) {
-                throw new NotImplementedException("Multiple balance constraints only supported using ParMETIS or clusterHilbert for now");
-            }
 
             int[] result;
             switch (gridPartType) {
                 case GridPartType.METIS:
                     int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
                     noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                    result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts.Single());
+                    result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts);
                     isFirstRepartitioning = false;
                     break;
 

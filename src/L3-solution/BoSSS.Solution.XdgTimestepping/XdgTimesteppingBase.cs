@@ -33,7 +33,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// Callback-template for level-set updates.
+    /// Callback-template for spatial operator linearization or evaluation.
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
@@ -45,7 +45,11 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
     /// </param>
-    /// <param name="CurrentState"></param>
+    /// <param name="CurrentState">
+    /// Current solution, resp. linearization point;
+    /// For linear problems the output matrix and vector must be (per definition) independent of the linearization point,
+    /// otherwise the problem is nonlinear (see also <see cref="ISpatialOperator.IsLinear"/>).
+    /// </param>
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
@@ -58,7 +62,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-   
+   /*
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -79,11 +83,13 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>, <see cref="XdgTimesteppingBase.Config_LevelSetConvergenceCriterion"/>)
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
+    
 
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
     /// </summary>
     public delegate void DelPushLevelSetRelatedStuff();
+    */
 
     /// <summary>
     /// Controls the updating of the mass-matrix, resp. the temporal operator.
@@ -240,7 +246,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Callback routine to update the operator matrix.
+        /// Callback routine:
+        /// - either update operator linearization matrix 
+        /// - or evaluate the operator in the current linearization point
+        /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// </summary>
         public DelComputeOperatorMatrix ComputeOperatorMatrix {
             get;
@@ -272,7 +281,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         if(TemporalOperator is ConstantXTemporalOperator cxt) {
                             cxt.SetTrackerHack(this.m_LsTrk);
                         }
-
+                        
                         var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
                         builder.time = time;
 
@@ -288,7 +297,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Callback routine to update the level set.
         /// </summary>
-        public DelUpdateLevelset UpdateLevelset {
+        public Func<ISlaveTimeIntegrator> UpdateLevelset {
             get;
             protected set;
         }
@@ -500,9 +509,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                     */
                     
                     for (int i = 0; i < NF; i++) {
-                        double L2Res = R.Mapping.Fields[i].L2Norm();
-                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-                        totResi += L2Res.Pow2();
+                        var field = R.Mapping.Fields[i];
+                        if(field is XDGField) {
+                            foreach(var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
+                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                                m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
+                                totResi += L2Res.Pow2();
+                            }
+                        } else {
+                            double L2Res = field.L2Norm();
+                            m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                            totResi += L2Res.Pow2();
+                        }
                     }
                 } else {
 
@@ -526,6 +544,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 totResi = totResi.Sqrt();
                 m_ResLogger.CustomValue(totResi, "Total");
+
 
                 if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
                     m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
@@ -669,5 +688,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// The time associated with the current solution (<see cref="CurrentState"/>)
         /// </summary>
         public abstract double GetSimulationTime();
+
+
+
+        /// <summary>
+        /// Perform temporal integration
+        /// </summary>
+        /// <param name="phystime">
+        /// Physical time for the initial value.
+        /// </param>
+        /// <param name="dt">
+        /// Time-step size, must be the same value for each call in the lifetime of this object.
+        /// </param>
+        /// <param name="ComputeOnlyResidual">
+        /// If true, no solution is performed; only the residual of the actual solution is computed.
+        /// </param>
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        abstract public bool Solve(double phystime, double dt);
     }
 }

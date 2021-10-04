@@ -47,6 +47,8 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+
+
 #pragma warning disable 649
         /// <summary>
         /// dependent variable
@@ -156,13 +158,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.Cleanup();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(2, 40, 2, LinearSolverCode.exp_Kcycle_schwarz);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCurved();
-            //Assert.AreEqual(1, 2, "Remove Me!!");
-
-            //System.Environment.SetEnvironmentVariable("LD_LIBRARY_PATH", "/home/flori/bosss_install/bin/native/linux/amd64-openmpi", EnvironmentVariableTarget.User);
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2);
+            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
@@ -170,13 +168,15 @@ namespace BoSSS.Application.SipPoisson {
             pp = pp != null ? pp : "NIX";
             Console.WriteLine ("BOSSS_INSTALL : " + si3);
 
-            
+            DateTime hello = DateTime.Now;
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
                 return p;
             });
+            DateTime fino = DateTime.Now;
+            Console.WriteLine("Runtime totalo " + (fino - hello));
         }
 
         /// <summary>
@@ -200,7 +200,7 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /// <summary>
-        /// Spatial operator to assemble <see cref="LaplaceMtx"/> and <see cref="LaplaceAffine"/>.
+        /// Spatial operator used by <see cref="UniSolver.Solve"/>
         /// </summary>
         SpatialOperator LapaceIp;
 
@@ -355,21 +355,41 @@ namespace BoSSS.Application.SipPoisson {
                     base.TerminationKey = true;
                 }
 
-                //// Update matrices
-                //// ---------------
-
-                //UpdateMatrices();
-
 
                 // call solver
                 // -----------
-                //double mintime, maxtime;
-                //bool converged;
-                //int NoOfIterations;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                /*
+                this.RHS.CoordinateVector.FillRandom(0);
 
-                LinearSolverCode solvercodes = this.Control.LinearSolver.SolverCode;
+                this.m_MgConfig = MultigridOperator.Mode.Eye;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol1 = T.CoordinateVector.ToArray();
+                T.Clear();
 
-                this.LapaceIp.Solve(T.Mapping, this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol2 = T.CoordinateVector.ToArray();
+                T.Clear();
+
+                this.m_MgConfig = MultigridOperator.Mode.LeftInverse_DiagBlock;
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                double[] sol3 = T.CoordinateVector.ToArray();
+                //T.Clear();
+
+                double dist12 = sol1.L2Distance(sol2);
+                double dist13 = sol1.L2Distance(sol3);
+                double dist23 = sol2.L2Distance(sol3);
+
+                Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
+                */
+
+                //var Matrix_SIP_posdef = LapaceIp.ComputeMatrix(T.Mapping, new DGField[] { RHS }, T.Mapping);
+                //Matrix_SIP_posdef.Solve_Direct(T.CoordinateVector, RHS.CoordinateVector);
+
+
+
+
 
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -378,6 +398,7 @@ namespace BoSSS.Application.SipPoisson {
 
                     double L2_ERR = Error.L2Norm();
                     Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
+                    last_L2_ERR = L2_ERR;
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 
                 }
@@ -403,8 +424,12 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
+        internal double last_L2_ERR;
+
         List<DGField> MGColoring = new List<DGField>();
 
+
+        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
 
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
@@ -418,7 +443,7 @@ namespace BoSSS.Application.SipPoisson {
                     config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[] {
                         new MultigridOperator.ChangeOfBasisConfig() {
                             VarIndex = new int[] {0},
-                            mode = MultigridOperator.Mode.DiagBlockEquilib,
+                            mode = m_MgConfig,
                             DegreeS = new int[] { p }
                             //Degree = Math.Max(1, p - iLevel)
                         }
@@ -472,6 +497,8 @@ namespace BoSSS.Application.SipPoisson {
             //BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, Path.Combine(AnalyseOutputpath, "poisson_MG_coloring" + timestepNo + caseStr), phystime, superSampling);
         }
 
+
+       
     }
 
     /// <summary>

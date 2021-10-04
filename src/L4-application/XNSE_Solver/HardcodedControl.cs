@@ -35,6 +35,8 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.XDG;
+using BoSSS.Application.XNSE_Solver.Loadbalancing;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -53,6 +55,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int degree = 2,
             double dt = 2e-4,
             double elipsDelta = 0.1,
+            int resolution = 54,
             int NoOfTs = 100000) {
 
 
@@ -67,7 +70,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.ProjectName = "XNSE/Droplet";
             C.ProjectDescription = "Multiphase Droplet";
             C.Tags.Add("oscillating");
-            C.Tags.Add("fourier");
 
             // DG degrees
             // ==========
@@ -81,8 +83,8 @@ namespace BoSSS.Application.XNSE_Solver {
             const bool xPeriodic = false;
             const double VelXBase = 0.0;
 
-            int xkelem = 54;
-            int ykelem = 54;
+            int xkelem = resolution;
+            int ykelem = resolution;
             double xSize = -4.5 * BaseSize;
             double ySize = -4.5 * BaseSize;
 
@@ -90,8 +92,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             C.GridFunc = delegate {
-                double[] Xnodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, 55);
-                double[] Ynodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, 55);
+                double[] Xnodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, xkelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-4.5 * BaseSize, 4.5 * BaseSize, ykelem + 1);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: xPeriodic);
                 grd.EdgeTagNames.Add(1, "wall_lower");
                 grd.EdgeTagNames.Add(2, "wall_upper");
@@ -192,15 +194,12 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.Sigma = 72.75e-3; // kg / sec²     
             */
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             // misc. solver options
             // ====================
 
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-
-            //C.Solver_ConvergenceCriterion = 1.0e-6;
             C.LevelSet_ConvergenceCriterion = 1.0e-6;
 
 
@@ -238,10 +237,15 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
             C.NoOfTimesteps = NoOfTs;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 0;
 
             // haben fertig...
             // ===============
@@ -311,7 +315,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("velocity_inlet", "VelocityY#B", (X, t) => X[1]);
 
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
+            C.AgglomerationThreshold = 0.0;
 
             C.PhysicalParameters.useArtificialSurfaceForce = true;
             C.PhysicalParameters.rho_A = RHO_A;
@@ -340,8 +344,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
-        /// See publication, Section 6.3:
-        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+        /// See:
+        /// Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017,
+        /// section 6.3.
         /// </summary>
         public static XNSE_Control TaylorCouette(string _DbPath = null, int k = 3, int sizeFactor = 4) {
             XNSE_Control C = new XNSE_Control();
@@ -501,7 +506,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // misc. solver options
             // ====================
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
@@ -522,42 +527,110 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = false) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 10, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+            double anglev = 10;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.261;
+
+            var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad);
+            //C.LS_TrackerWidth = 6;
+            C.Rigidbody.SetParameters(pos, anglev, particleRad, SpaceDim);
+            C.Rigidbody.SpecifyShape(Shape.Cube);
+            C.Rigidbody.SetRotationAxis("x");
+            C.PhysicalParameters.IncludeConvection = IncludeConv;
+            return C;
+        }
+
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 10, int SpaceDim = 3, bool useAMR = false, int NoOfTimesteps = 3, bool writeToDB = true, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
+            
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.5001;
+            double rhoA = 890;
+            double muA = 1;
+            double Re = 1000;
+            double anglev = Re * muA / (1 - particleRad) / rhoA;
+            //double anglev = muA/(rhoA*(1- particleRad))*41.3 * Math.Sqrt((particleRad + 1) / (2* (1 - particleRad)));
+
+            var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, pos, anglev, particleRad);
+            C.Rigidbody.SetParameters(pos, anglev, particleRad, SpaceDim);
+            C.Rigidbody.SpecifyShape(Shape.Sphere);
+            C.PhysicalParameters.IncludeConvection = IncludeConv;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            //double dt = 1000;
+            //C.dtFixed = dt;
+            //C.NoOfTimesteps = NoOfTimesteps;
+            return C;
+        }
+
+        public static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, int NoOfTimesteps,bool writeToDB, bool tracing, bool loadbalancing, double[] pos, double anglev, double particleRad) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
-            //C.DbPath = @"D:\trash_db";
-            //C.AlternateDbPaths = new[] {
-            //    (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
-            //    (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
-            ////C.savetodb = C.DbPath != null;
-            C.savetodb = false;
+            if (writeToDB) {
+                var thisOS = System.Environment.OSVersion.Platform;
+                var MachineName = System.Environment.MachineName;
+                switch(thisOS) {
+                    case PlatformID.Unix:
+                        C.AlternateDbPaths = new[] {
+                            (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                        break;
+                    case PlatformID.Win32NT:
+                        if (MachineName == "PCMIT32") {
+                            C.DbPath = @"D:\trash_db";
+                            //C.DbPath = @"D:\2D_Partitioning_samples";
+                        } else {
+                            C.DbPath = @"\\dc1\userspace\kummer\bosss-db-sept21";
+                        }
+                        break;
+                    default:
+                        throw new Exception("No Db-path specified. You stupid?");
+                }               
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+                (@"\\dc1\userspace\kummer\bosss-db-sept21", default(string)).AddToArray(ref C.AlternateDbPaths);
+            }
+            C.savetodb = writeToDB;
             C.ProjectName = "XNSE/IBM_benchmark";
             C.ProjectDescription = "rotating cube";
-            C.Tags.Add("rotating");
-            C.Tags.Add("tracing");
+            C.Tags.Add(SpaceDim + "D");
 
             // DG degrees
             // ==========
 
-            C.SetFieldOptions(k, Math.Max(6,k*2));
-            C.GridPartType = GridPartType.Hilbert;
+            //C.SetFieldOptions(k, Math.Max(6, k * 2));
+            C.SetFieldOptions(k, Math.Max(k, 2));
             C.SessionName = "XNSE_rotsphere";
             C.saveperiod = 1;
-            //C.TracingNamespaces = "*";
-
+            if (tracing) 
+                C.TracingNamespaces = "*";
+            //IBMCestimator = new 
+            //C.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
 
             // grid and boundary conditions
             // ============================
 
             //// Create Grid
-            Console.WriteLine("...generating grid");
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 3, yMax = 1, zMax = 1;
+
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+                double range = xMax - xMin;
+                double interval = range / ilPSP.Environment.MPIEnv.MPI_Size;
+                return (int)((x - xMin) / interval);
+            };
+
             C.GridFunc = delegate {
 
                 // x-direction
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
+                
                 var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 //var _xNodes = GenericBlas.Logspace(0, 3, cells_x + 1);
                 // y-direction
@@ -580,6 +653,8 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentOutOfRangeException();
                 }
 
+                //grd.AddPredefinedPartitioning("debug", MakeDebugPart);
+
                 grd.EdgeTagNames.Add(1, "Velocity_inlet");
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.EdgeTagNames.Add(3, "Pressure_Outlet");
@@ -591,13 +666,24 @@ namespace BoSSS.Application.XNSE_Solver {
                     y = X[1];
                     if (SpaceDim == 3)
                         z = X[2];
-
-                    return 2;
+                    if (Math.Abs(x - xMin) < 1E-8)
+                        return 1;
+                    else
+                        return 3;
                 });
 
                 return grd;
 
             };
+            //C.GridPartType = GridPartType.Predefined;
+            //C.GridPartOptions = "debug";
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = loadbalancing;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
             //// Set Initial Conditions
             //C.InitialValues_Evaluators.Add("VelocityX", X => 0);
@@ -605,65 +691,245 @@ namespace BoSSS.Application.XNSE_Solver {
             //if (SpaceDim == 3)
             //    C.InitialValues_Evaluators.Add("VelocityZ", X => 0);
 
-
             // Phi (X,t): p-norm cube with forced rotation
+
+
+
+            //Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
+
+            //    if (pos.Length != X.Length)
+            //        throw new ArgumentException("check dimension of center of mass");
+
+            //    Vector angVelo = new Vector(new double[] { 0, 0, anglev });
+            //    Vector CenterofMass = new Vector(pos);
+            //    Vector radialVector = new Vector(X) - CenterofMass;
+            //    Vector transVelocity = new Vector(new double[SpaceDim]);
+            //    Vector pointVelocity;
+
+            //    switch (SpaceDim) {
+            //        case 2:
+            //        pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
+            //        break;
+            //        case 3:
+            //        pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
+            //        break;
+            //        default:
+            //        throw new NotImplementedException("this number of dimensions is not supported");
+            //    }
+
+            //    return pointVelocity;
+            //};
+
+            //Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
+            //Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
+            //Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
 
             // Physical Parameters
             // ===================
             const double rhoA = 1;
-            const double muA = 1;
+            const double muA = 1E-3;
+            double d_hyd = 2 * particleRad;
+            double Re = 100;
+            double VelocityIn = Re * muA / rhoA / d_hyd;
+            double ts = 2 * Math.PI / anglev;
+            double inletdelay = 5 * ts;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
             C.PhysicalParameters.rho_A = rhoA;
             C.PhysicalParameters.mu_A = muA;
-            double anglev = 10;
-            double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
+
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1); 
+            C.UseImmersedBoundary = true;
+            //if (C.UseImmersedBoundary) {
+            //    C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+            //    //C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+            //    //C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
+            //    //C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
+            //    //if (SpaceDim == 3)
+            //    //    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
+            //}
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
+            C.AddBoundaryValue("Pressure_Outlet");
+
+            //C.OperatorMatrixAnalysis = false;
+
+            // misc. solver options
+            // ====================
+
+            //C.EqualOrder = false;
+            //C.PressureStabilizationFactor = 1;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
+            C.AgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.ConvergenceCriterion = 1E-8;
+            C.LinearSolver.MaxSolverIterations = 100;
+            C.LinearSolver.MaxKrylovDim = 50;
+            C.LinearSolver.TargetBlockSize = 10000;
+            C.LinearSolver.verbose = true;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-6;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.Tags.Add("convection:" + C.PhysicalParameters.IncludeConvection);
+
+            C.AdaptiveMeshRefinement = useAMR;
+            if (useAMR) {
+                C.SetMaximalRefinementLevel(1);
+                C.AMR_startUpSweeps = 1;
+            }
+
+            // Timestepping
+            // ============
+
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            double dt = 0.01;
+            //C.dtMax = dt;
+            //C.dtMin = dt*1E-2;
+            C.dtFixed = dt;
+            C.NoOfTimesteps = NoOfTimesteps;
+
+            // haben fertig...
+            // ===============
+            return C;
+
+        }
+
+        public static XNSE_Control KarmanVortexStreet(int k=2, int Res=20, int SpaceDim=2, int NoOfTimeSteps=100 ,bool UseAMR=true, bool writeToDB=false, bool loadbalancing=true) {
+            XNSE_Control C = new XNSE_Control();
+
+            // Session Options
+            // ===================
+            if (writeToDB) {
+                var thisOS = System.Environment.OSVersion.Platform;
+                var MachineName = System.Environment.MachineName;
+                switch (thisOS) { 
+                    case PlatformID.Unix:
+                    C.AlternateDbPaths = new[] {
+                            (@"/work/scratch/jw52xeqa/DB_IBM_test", ""),
+                            (@"W:\work\scratch\jw52xeqa\DB_IBM_test","")};
+                    break;
+                    case PlatformID.Win32NT:
+                    if (MachineName == "PCMIT32") {
+                        C.DbPath = @"D:\trash_db";
+                        //C.DbPath = @"D:\2D_Partitioning_samples";
+                    } else {
+                        C.DbPath = @"\\hpccluster\hpccluster-scratch\weber\DB_IBM_test";
+                    }
+                    break;
+                    default:
+                    throw new Exception("No Db-path specified. You stupid?");
+                }
+                (@"C:\Users\flori\default_bosss_db", "stormbreaker").AddToArray(ref C.AlternateDbPaths);
+            }
+
+            C.savetodb = writeToDB;
+            C.saveperiod = 1;
+            C.ProjectName = "XNSE/IBM_benchmark";
+            C.ProjectDescription = "rotating cube";
+            C.SessionName = "XNSE_rotsphere";
+            C.Tags.Add(SpaceDim + "D");
 
 
+            // Create Grid (spacial discretization)
+            // ===================
+            C.SetFieldOptions(k, Math.Max(k, 2));
 
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double power = 10;
-                //anglev *= t < 0.005 ? Math.Sin(2000 * Math.PI * t - Math.PI / 2) / 2 + 0.5 : 1;
-                double angle = -(anglev * t) % (2 * Math.PI);
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 3, yMax = 1, zMax = 1;
+            double corr = ((xMax - xMin) / (yMax - yMin));
+
+            C.GridFunc = delegate {
+                // x-direction
+                var _xNodes = GenericBlas.Linspace(xMin, xMax, (int)(Res * corr + 1));
+                // y-direction
+                var _yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
+                // z-direction
+                var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
+                GridCommons grd;
+
                 switch (SpaceDim) {
                     case 2:
-                    //return -Math.Pow((Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)), 1.0/power)
-                    //+ particleRad; // 1e6
-
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //+ Math.Abs(particleRad);
-                    //return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                    grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+                    break;
 
                     case 3:
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                            Math.Abs(X[2] - pos[2])))
-                                            + particleRad;
+                    grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, Foundation.Grid.RefElements.CellType.Cube_Linear, false, false, false);
+                    break;
 
-                    //return -Math.Pow(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power)
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power),1.0/power)
-                    //+ particleRad;
+                    default:
+                    throw new ArgumentOutOfRangeException();
+                }
 
-                    //return -Math.Max(Math.Pow((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle), power))
-                    //+ Math.Pow((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle), power)
-                    //+ Math.Pow(X[2] - pos[2], power), 1.0 / power)
-                    //+ particleRad;
+                grd.EdgeTagNames.Add(1, "Velocity_inlet");
+                grd.EdgeTagNames.Add(2, "Wall");
+                grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+                grd.EdgeTagNames.Add(4, "FreeSlip");
 
-                    //return -Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle))
-                    //- Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle))
-                    //- Math.Abs(X[2] - pos[2])
-                    //+ Math.Abs(particleRad);
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    var X = _X;
+                    byte edgeID = 0;
+                    double x, y, z;
+                    x = X[0];
+                    y = X[1];
 
-                    //return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                    if (Math.Abs(x - xMin) < 1.0e-8)
+                        edgeID = 1;
+                    if (Math.Abs(x - xMax) < 1.0e-8)
+                        edgeID = 3;
+                    if (Math.Abs(y - yMax) < 1.0e-8 || Math.Abs(y - yMin) < 1.0e-8)
+                        edgeID = 3;
+                    if (SpaceDim == 3) {
+                        z = X[2];
+                        if (Math.Abs(z - zMin) < 1.0e-8 || Math.Abs(z - zMax) < 1.0e-8)
+                            edgeID = 3;
+                    }
+                    return edgeID;
+                });
+                return grd;
+            };
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1; // kg / m3
+            const double muA = 1E-3; // Pa*s
+            //const double muA = 1; // Pa*s
+            double[] pos = new double[SpaceDim];
+            const double radius = 0.5;
+            const double Re = 700;
+            double VeloMag = Re * muA / (2 * radius * rhoA);
+            double M = VeloMag/(SpaceDim == 3 ? 1.0/3.0 : 2.0/3.0);
+            C.Tags.Add("Re="+Re);
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            // Functions and Delegates
+            // ====================
+            Func<double[], double, double> SphereFunc = delegate (double[] X, double t) {
+                switch (SpaceDim) {
+                    case 2:
+                    // circle
+                    return -X[0] * X[0] - X[1] * X[1] + radius * radius;
+
+                    case 3:
+                    // sphere
+                    return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + radius * radius;
+
                     default:
                     throw new NotImplementedException();
                 }
@@ -674,7 +940,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 if (pos.Length != X.Length)
                     throw new ArgumentException("check dimension of center of mass");
 
-                Vector angVelo = new Vector(new double[] { 0, 0, anglev });
+                Vector angVelo = new Vector(new double[] { 0, 0, 0 });
                 Vector CenterofMass = new Vector(pos);
                 Vector radialVector = new Vector(X) - CenterofMass;
                 Vector transVelocity = new Vector(new double[SpaceDim]);
@@ -693,79 +959,340 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 return pointVelocity;
             };
-
             Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
             Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
             Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
 
-            var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
+            Func<double, double> timeramp = (double t) => (t <= 1.5? (Math.Sin(t - 1.5 / 2) + 1) : 2) / 2;
 
+            // Initial Conditions
+            // ====================
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
             C.UseImmersedBoundary = true;
             if (C.UseImmersedBoundary) {
-                //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
-                C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), SphereFunc);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
                 if (SpaceDim == 3)
                     C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             }
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.AddBoundaryValue("Wall");
 
-            //C.OperatorMatrixAnalysis = false;
+            // Boundary Conditions
+            // ====================
+            //C.AddBoundaryValue("FreeSlip");
+            //if(SpaceDim==2)
+            //    C.AddBoundaryValue("Velocity_inlet","VelocityX",(double[] X)=> M*(1-1/(yMax*yMax)*X[1]*X[1]));
+            //if (SpaceDim == 3)
+            //    C.AddBoundaryValue("Velocity_inlet", "VelocityX", (double[] X, double t) => M*(1 - 1 / (yMax * yMax) * X[1] * X[1] - 1 / (zMax * zMax) * X[2] * X[2])*(t<=1?t:1));
+            C.AddBoundaryValue("Velocity_inlet","VelocityX", (double[] X, double t) => VeloMag* timeramp(t));
+            C.AddBoundaryValue("Velocity_inlet", "VelocityY", (double[] X) => 0);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityZ", (double[] X) => 0);
+            C.AddBoundaryValue("Pressure_Outlet");
 
             // misc. solver options
+            C.LSContiProjectionMethod = ContinuityProjectionOption.None;
+            
+            
             // ====================
-
-            //C.EqualOrder = false;
-            //C.PressureStabilizationFactor = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-
             C.UseSchurBlockPrec = true;
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            //C.PressureBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.LinearSolver.NoOfMultigridLevels = 5;
+            
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxKrylovDim = 30;
+            C.LinearSolver.MaxSolverIterations = 200;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1.1123E-6;
+            C.NonLinearSolver.MaxSolverIterations = 5;
             C.NonLinearSolver.verbose = true;
-            
-            C.AdaptiveMeshRefinement = useAMR;
-            if (useAMR) {
-                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
+
+            C.Tags.Add("convection:" + C.PhysicalParameters.IncludeConvection);
+
+            // AMR
+            // ============
+            C.AdaptiveMeshRefinement = UseAMR;
+            if (UseAMR) {
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 4 });
                 C.AMR_startUpSweeps = 1;
             }
 
+            // Loadbalancing
+            // ============
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = loadbalancing;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
+
             // Timestepping
             // ============
-
-            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.001;
-            //C.dtMax = dt;
-            //C.dtMin = dt*1E-2;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            double dt = 0.1;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 1;
-
-            // haben fertig...
-            // ===============
+            C.NoOfTimesteps = NoOfTimeSteps;
 
             return C;
-
         }
 
+
+        public static XNSE_Control Rotating_Cube2(int dim = 3, int p = 2, int kelem = 20, bool useAMR = true) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            bool useIB = true;
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            string _DbPath = null;
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = _DbPath;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "RotatingCube3D";
+            C.SessionName = "SetupTest";
+
+            C.ContinueOnIoError = false;
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            #region degrees
+
+            C.FieldOptions.Add("VelocityX", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("VelocityY", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            if (dim == 3) {
+                C.FieldOptions.Add("VelocityZ", new FieldOpts() {
+                    Degree = p,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
+            C.FieldOptions.Add("Pressure", new FieldOpts() {
+                Degree = p - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("PhiDG", new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            C.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = Math.Max(p, 2),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            if (useIB) {
+                C.FieldOptions.Add("PhiDG2", new FieldOpts() {
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+                C.FieldOptions.Add("Phi2", new FieldOpts() {
+                    Degree = Math.Max(p, 2),
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                });
+            }
+            C.FieldOptions.Add("Curvature", new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            #endregion
+
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.Sigma = 0;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            C.GridFunc = delegate () {
+                double[] cube = GenericBlas.Linspace(-1.0, 1.0, kelem + 1);
+                GridCommons grd; 
+                if (dim == 3) 
+                    grd = Grid3D.Cartesian3DGrid(cube, cube, cube);
+                else
+                    grd = Grid2D.Cartesian2DGrid(cube, cube);
+
+                grd.EdgeTagNames.Add(1, "wall");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] - (1.0)) <= 1.0e-8)
+                        et = 1;
+                    if (dim == 3) {
+                        if (Math.Abs(X[2] + (1.0)) <= 1.0e-8)
+                            et = 1;
+                        if (Math.Abs(X[2] - (1.0)) <= 1.0e-8)
+                            et = 1;
+                    }
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] pos = new double[3];
+                double anglev = 10;
+                //double t = 0;
+                double angle = -(anglev * t) % (2 * Math.PI);
+                double particleRad = 0.261;
+
+                if (dim == 3) {
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                            Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+                                            Math.Abs(X[2] - pos[2])))
+                                            + particleRad;
+                } else {
+                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                        + particleRad;
+                }
+             
+            };
+
+          
+            if (useIB) {
+                C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+                C.UseImmersedBoundary = true;
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+            } else {
+                C.InitialValues_Evaluators_TimeDep.Add("Phi", PhiFunc);
+            }
+
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall");
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            C.solveKineticEnergyEquation = false;
+            //C.ComputeEnergyProperties = true;
+
+            C.CheckJumpConditions = false;
+            C.CheckInterfaceProps = false;
+
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
+            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            //C.Solver_MaxIterations = 80;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+
+            #endregion
+
+
+            // level set options
+            // ====================
+            #region solver
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            if (useIB)
+                C.Option_LevelSetEvolution2 = LevelSetEvolution.None;
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+
+            //C.InitSignedDistance = true;
+
+
+            C.AdaptiveMeshRefinement = useAMR;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
+            C.TimesteppingMode = compMode;
+
+            if (compMode == AppControl._TimesteppingMode.Transient) {
+                double dt = 1;
+                C.dtMax = dt;
+                C.dtMin = dt;
+                C.Endtime = 1000;
+                C.NoOfTimesteps = 2;
+            }
+
+            #endregion
+
+            return C;
+        }
 
 
         public static XNSE_Control CouettePoiseuille(string _DbPath = null, int p = 2) {
@@ -1140,7 +1667,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1566,7 +2093,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
@@ -1765,7 +2292,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -3455,7 +3982,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.ComputeEnergyProperties = false;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
@@ -4117,7 +4644,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
 
@@ -4320,7 +4847,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = Solution.XNSECommon.ViscosityMode.FullySymmetric;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -4501,7 +5028,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.LinearSolver.MaxSolverIterations = 50;

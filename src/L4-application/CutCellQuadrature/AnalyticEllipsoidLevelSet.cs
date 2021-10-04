@@ -23,6 +23,7 @@ using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Foundation.XDG;
 
 namespace CutCellQuadrature {
 
@@ -318,6 +319,10 @@ namespace CutCellQuadrature {
 
             result.Multiply(1.0, GradPhi, Q, ooNormGrad, 1.0, "ik", "ikd", "ikd", "ik");
 
+        }
+
+        public void CopyFrom(ILevelSet other) {
+            throw new NotImplementedException();
         }
 
         #endregion

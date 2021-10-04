@@ -48,14 +48,10 @@ namespace BoSSS.Application.ZwoLsTest {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
 
-            //AllUpTest.SetUp();
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, true);
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d, 1, XQuadFactoryHelper.MomentFittingVariants.Saye, false);
-            //AllUpTest.Teardown();
+            //InitMPI();
+            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.0d, 1, XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, true);
             //Assert.IsTrue(false, "Remove me");
-            //return;
-
-            //BoSSS.Application.ZwoLsTest.AllUpTest.AllUp(0.3d,3,OneStepGaussAndStokes,False)
+            
             BoSSS.Solution.Application._Main(
                 args,
                 true,
@@ -704,6 +700,8 @@ namespace BoSSS.Application.ZwoLsTest {
             base.NoOfTimesteps = 17;
             //base.NoOfTimesteps = 2;
             dt = 0.3;
+            LsTrk.UpdateTracker(phystime + dt); // required to ensure the internal time-levels are correct
+
             return dt;
         }
         

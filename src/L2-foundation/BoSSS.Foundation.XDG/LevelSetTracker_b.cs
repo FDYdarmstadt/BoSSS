@@ -25,6 +25,7 @@ using ilPSP;
 using BoSSS.Foundation.Comm;
 using System.Collections.Generic;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -85,12 +86,17 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
         public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
-
+#if TEST
+            MPICollectiveWatchDog.WatchAtRelease();
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+#endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
             //throw new NotImplementedException("todo");
@@ -238,6 +244,20 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
+            /// indexes of all available times, i.e. all valid indexes to access <see cref="this[int]"/>
+            /// </summary>
+            public int[] PopulatedIndices {
+                get {
+                    int[] ret = new int[GetPopulatedLength() + 1];
+                    for(int i = 0; i < ret.Length; i++)
+                        ret[i] = 1 - i;
+                    return ret;
+                }
+            }
+
+
+
+            /// <summary>
             /// Sontainer for previous states.
             /// </summary>
             List<T> History = new List<T>();
@@ -274,6 +294,17 @@ namespace BoSSS.Foundation.XDG {
                 }
                 m_Current = Replicator1(m_Current);
                 m_PushCount++;
+            }
+
+            internal T Pop(Func<T, T, T> Replacor1) {
+                T ret = m_Current;
+                m_Current = Replacor1(m_Current, History[0]);
+                for(int i = 0; i <= History.Count - 2; i++) {
+                    History[i] = History[i + 1];
+                }
+                History.RemoveAt(History.Count - 1);
+                m_PushCount--;
+                return ret;
             }
 
 

@@ -16,7 +16,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// Benchmark quantities for droplet-testcases, <see cref="Droplet"/>
     /// </summary>
     [Serializable]
-    public class Dropletlike : XNSEinSituPostProcessingModule {
+    public class Dropletlike : Dropletlike<XNSE_Control> { }
+
+    /// <summary>
+    /// Benchmark quantities for droplet-testcases, <see cref="Droplet"/>
+    /// </summary>
+    [Serializable]
+    public class Dropletlike<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
 
         /// <summary>
         /// SemiAxis
@@ -28,6 +34,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// filename
         /// </summary>
         protected override string LogFileName => LogfileName;
+
+        private int InnerSpecies;
+        public Dropletlike(int InnerSpecies) {
+            this.InnerSpecies = InnerSpecies;
+        }
+        public Dropletlike() : this(0) {
+        }
 
         /// <summary>
         /// 
@@ -46,7 +59,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             int numP = interP.Lengths[0];
             double[] Xcoord = new double[numP];
             double[] Ycoord = new double[numP];
-            for(int i = 0; i < numP; i++) {
+            for (int i = 0; i < numP; i++) {
                 Xcoord[i] = interP[i, 0];
                 Ycoord[i] = interP[i, 1];
             }
@@ -63,14 +76,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        
+
         double[] ComputeSphericalPorperties() {
 
             var SchemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), this.m_HMForder, 1).XQuadSchemeHelper;
 
             // area/volume
             double volume = 0.0;
-            SpeciesId spcId = LsTrk.SpeciesIdS[0];
+            SpeciesId spcId = LsTrk.SpeciesIdS[InnerSpecies];
             var vqs = SchemeHelper.GetVolumeQuadScheme(spcId);
             CellQuadrature.GetQuadrature(new int[] { 1 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, this.m_HMForder),
@@ -101,7 +114,5 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             return new double[] { volume, surface };
 
         }
-
-
-    }
+    }    
 }

@@ -116,11 +116,13 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case PhysicsMode.MixtureFraction:
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.MixtureFraction);
-                    break;
+                ScalarFunction = bcmap.bndFunction[VariableNames.MixtureFraction]; // 
+                break;
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Combustion:
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(m_D), VariableNames.Temperature); // Viscosity is only dependent on Temperature.
-                    break;
+                ScalarFunction = bcmap.bndFunction[VariableNames.Temperature];
+                break;
                 default:
                     throw new NotImplementedException();
 
@@ -154,6 +156,15 @@ namespace BoSSS.Solution.NSECommon {
         ///  - 2nd index: edge tag
         /// </summary>
         protected Func<double[], double, double>[][] velFunction;
+
+
+        /// <summary>
+        /// Dirichlet boundary values of temperature; 
+        ///  - 1st index: spatial dimension 
+        ///  - 2nd index: edge tag
+        /// </summary>
+        protected Func<double[], double, double>[] ScalarFunction;
+
 
         /// <summary>
         /// dissipation coefficient for the effective wall force
@@ -395,7 +406,7 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
-        /// Dirichlet boundary value: the given velocity at the boundary.
+        /// Velocity Dirichlet boundary value: the given velocity at the boundary.
         /// </summary>
         protected double g_Diri(double[] X, double time, int EdgeTag, int d) {
             if (this.g_Diri_Override == null) {
@@ -404,6 +415,16 @@ namespace BoSSS.Solution.NSECommon {
                 return g_Diri_Override(d, X);
             }
         }
+
+
+
+        /// <summary>
+        /// Temperature Dirichlet boundary value: the given temperature at the boundary.
+        /// </summary>
+        protected double T_Diri(double[] X, double time, int EdgeTag, int d) {        
+            return this.ScalarFunction[EdgeTag](X, time);
+        }
+
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
@@ -559,20 +580,28 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.Wall:
                 case IncompressibleBcType.NoSlipNeumann: {
-                        // inhom. Dirichlet b.c.
-                        // +++++++++++++++++++++
+                    // inhom. Dirichlet b.c.
+                    // +++++++++++++++++++++
 
-                        double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
 
-                        for (int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normal[d];
-                            Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
-                            Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
-                        }
-                        Acc *= base.m_alpha;
-                        Acc -= muA * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
-                        break;
+                    for (int d = 0; d < inp.D; d++) {
+                        double nd = inp.Normal[d];
+                        Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
+                        Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
                     }
+                    Acc *= base.m_alpha;
+
+                    double temperatureOut = this.T_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double[] viscArgsOut = new double[] { temperatureOut };
+                    double muB = this.Viscosity(viscArgsOut);
+
+                    // penalty term          
+                    double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+
+                    Acc -= muMax * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
+                    break;
+                }
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry: {
 
@@ -722,8 +751,16 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         Acc *= base.m_alpha;
 
-                        // penalty
-                        Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+                    double temperatureOut = this.T_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double[] viscArgsOut = new double[] { temperatureOut };
+                    double muB = this.Viscosity(viscArgsOut);
+
+                    // penalty term          
+                    double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+
+
+                    // penalty
+                    Acc -= muMax * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
 
                         break;
                     }
@@ -835,8 +872,19 @@ namespace BoSSS.Solution.NSECommon {
                         }
                         Acc *= base.m_alpha;
 
-                        // penalty
-                        Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+
+                    double temperatureOut = this.T_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double[] viscArgsOut = new double[] { temperatureOut };
+                    double muB = this.Viscosity(viscArgsOut);
+
+                    // penalty term          
+                    double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+
+
+
+
+                    // penalty
+                    Acc -= muMax * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
 
                         break;
                     }

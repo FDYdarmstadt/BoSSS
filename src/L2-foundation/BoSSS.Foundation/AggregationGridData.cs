@@ -736,6 +736,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// Clears (lots of) internal references for this object, to make sure that any attempt to use it leads to an exception.
         /// </summary>
         public void Invalidate() {
+            m_IsAlive = false;
             this.m_GeomCellData = null;
             this.m_LogicalCellData = null;
 
@@ -748,6 +749,15 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             this.m_VertexData = null;
             this.aggregationGrid = null;
             this.CellPartitioning = null;
+        }
+
+        bool m_IsAlive = true;
+
+        /// <summary>
+        /// indicates that <see cref="Invalidate"/> has been called
+        /// </summary>
+        public bool IsAlive() {
+            return m_IsAlive;
         }
     }
 }

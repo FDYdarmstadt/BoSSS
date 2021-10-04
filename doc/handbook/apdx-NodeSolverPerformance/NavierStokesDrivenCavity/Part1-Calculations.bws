@@ -1,47 +1,35 @@
 restart
 **************
-  Database Explorer v2
-  ____________________
+
+  BoSSSpad C# interpreter
+  _______________________
 
 Databases loaded:
-List of 24 instances of IDatabaseInfo {
-  0: { Session Count = 0; Grid Count = 2; Path = p:\BoSSS_DBs\Kovasznay }
-  1: { Session Count = 1; Grid Count = 1; Path = p:\BoSSS_DBs\ChannelFlow }
-  2: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\RectangularCylinder }
-  3: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\Cylinder3D }
-  4: { Session Count = 6; Grid Count = 1; Path = p:\BoSSS_DBs\MPI_Test }
-  5: { Session Count = 0; Grid Count = 0; Path = p:\BoSSS_DBs\3DSolverPerformance }
-  6: { Session Count = 2; Grid Count = 2; Path = P:\BoSSS_DBs\nonIBM_cylinder }
-  7: { Session Count = 12; Grid Count = 1; Path = P:\BoSSS_DBs\osciCylinder }
-  8: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\osciCylinder_new }
-  9: { Session Count = 21; Grid Count = 25; Path = P:\BoSSS_DBs\ImmersedBoundary }
-  10: { Session Count = 8; Grid Count = 44; Path = P:\BoSSS_DBs\ParticleInShearFlow\ }
-  11: { Session Count = 16; Grid Count = 46; Path = P:\BoSSS_DBs\ParticleUnderGravity }
-  12: { Session Count = 8; Grid Count = 31; Path = P:\BoSSS_DBs\fixedCylinder }
-  13: { Session Count = 0; Grid Count = 0; Path = P:\BoSSS_DBs\Paper_OsciCylinder }
-  14: { Session Count = 43; Grid Count = 45; Path = P:\BoSSS_DBs\IBMPaper }
-  15: { Session Count = 28; Grid Count = 15; Path = P:\BoSSS_DBs\Paper_IBM2D }
-  16: { Session Count = 38; Grid Count = 22; Path = P:\BoSSS_DBs\Paper_CellAgglo01_Penalty4 }
-  17: { Session Count = 52; Grid Count = 65; Path = P:\BoSSS_DBs\Sphere3D }
-  18: { Session Count = 22; Grid Count = 10; Path = P:\BoSSS_DBs\Performance }
-  19: { Session Count = 24; Grid Count = 14; Path = P:\BoSSS_DBs\PaperRevision }
-  20: { Session Count = 0; Grid Count = 0; Path = P:\Lichtenberg_DB }
-  21: { Session Count = 8; Grid Count = 469; Path = P:\BoSSS_DBs\Bug }
-  22: { Session Count = 22; Grid Count = 8; Path = P:\BoSSS_DBs\NodePerformance }
-  23: { Session Count = 136; Grid Count = 98; Path = L:\BoSSS_DB\Lichtenberg_DB }
+List of 2 instances of IDatabaseInfo {
+  0: { Session Count = 12; Grid Count = 31; Path = P:\testDB }
+  1: { Session Count = 2; Grid Count = 4; Path = D:\IBM }
 }
 
  Console ready for input. Type 'help' for help.
 
 ==============
-using BoSSS.Application.IBM_Solver;
+using BoSSS.Application.IBMSolver;
 using BoSSS.Foundation.Grid.RefElements;
-using BoSSS.Solution.Multigrid;
+using BoSSS.Solution;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using ilPSP.Tracing;
 **************
+(1,26): error CS0234: The type or namespace name `IBMSolver' does not exist in the namespace `BoSSS.Application'. Are you missing an assembly reference?
+(2,1): warning CS0105: The using directive for `BoSSS.Foundation.Grid.RefElements' appeared previously in this namespace
+(3,1): warning CS0105: The using directive for `BoSSS.Solution' appeared previously in this namespace
+(4,1): warning CS0105: The using directive for `System.Text' appeared previously in this namespace
+(5,1): warning CS0105: The using directive for `System.Threading.Tasks' appeared previously in this namespace
+(6,1): warning CS0105: The using directive for `System.Threading' appeared previously in this namespace
+(7,1): warning CS0105: The using directive for `ilPSP.Tracing' appeared previously in this namespace
+No. of errors|warnings: 1|6.
+
 ==============
 string WFlowName = "SolverPerformanceDrivenCavity";
 WorkflowMgm.Init(WFlowName);
@@ -844,6 +832,8 @@ string docpath    = Path.Combine(CurrentDocDir, SessTab.TableName + ".json");
 // save session table as file: this can be stored in our git 
 // repository
 SessTab.SaveToFile(docpath);
+**************
+==============
 **************
 ==============
 **************

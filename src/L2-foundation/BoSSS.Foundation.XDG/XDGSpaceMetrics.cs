@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,7 +17,7 @@ namespace BoSSS.Foundation.XDG {
     /// (e.g. measures of cut-cells and the mass matrix) depend on the 
     /// the chosen type (<see cref="XQuadFactoryHelper.MomentFittingVariants"/>) and order of the cut-cell quadrature, 
     /// therefore these are collected in this central object.
-    /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(XQuadFactoryHelper.MomentFittingVariants, int, int)"/>.
+    /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics"/>.
     /// </summary>
     public sealed class XDGSpaceMetrics {
 
@@ -30,8 +31,11 @@ namespace BoSSS.Foundation.XDG {
                 // ----
                 // init 
                 // ----
-
-                if(!speciesIds.IsSubsetOf(lsTrk.SpeciesIdS)) {
+#if TEST
+                MPICollectiveWatchDog.WatchAtRelease();
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+#endif
+                if (!speciesIds.IsSubsetOf(lsTrk.SpeciesIdS)) {
                     throw new ArgumentException();
                 }
                 CutCellQuadOrder = __quadorder;
@@ -91,7 +95,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// The owner object.
         /// </summary>
-        private LevelSetTracker Tracker {
+        public LevelSetTracker Tracker {
             get;
             set;
         }
@@ -167,7 +171,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        SpeciesId[] m_TotalSpeciesList;
+        //SpeciesId[] m_TotalSpeciesList;
 
         /// <summary>
         /// All species <see cref="LevelSetTracker.SpeciesIdS"/>.

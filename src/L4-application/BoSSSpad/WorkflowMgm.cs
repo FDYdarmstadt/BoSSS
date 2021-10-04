@@ -19,8 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BoSSS.Platform;
 using System.Diagnostics;
 using ilPSP.Utils;
@@ -259,15 +257,15 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
-                { 
+                {
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
                     if (InteractiveShell.databases != null) {
                         foreach (var db in InteractiveShell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
-//#if DEBUG 
-//                                return si.ProjectName.Equals(this.CurrentProject);
-//#else
+                                //#if DEBUG 
+                                //                                return si.ProjectName.Equals(this.CurrentProject);
+                                //#else
                                 Guid g = Guid.Empty;
                                 try {
                                     g = si.ID;
@@ -276,7 +274,7 @@ namespace BoSSS.Application.BoSSSpad {
                                     Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
                                     return false;
                                 }
-//#endif
+                                //#endif
                             });
                             ret.AddRange(SS);
                         }
@@ -289,6 +287,74 @@ namespace BoSSS.Application.BoSSSpad {
                 return m_Sessions;
             }
         }
+
+        DataTable m_Projects;
+        /// <summary>
+        /// A list of all available Projects
+        /// </summary>
+        public DataTable Projects {
+            get {
+
+
+                m_Projects = new DataTable("Projects");
+                // Create Project DataTable
+                {
+                    DataColumn column;
+
+                    // Create new DataColumn, set DataType,
+                    // ColumnName and add to DataTable.
+                    column = new DataColumn();
+                    column.DataType = typeof(string);
+                    column.ColumnName = "Name";
+                    column.ReadOnly = true;
+                    column.Unique = true;
+                    // Add the Column to the DataColumnCollection.
+                    m_Projects.Columns.Add(column);
+
+                    // Create second column.
+                    column = new DataColumn();
+                    column.DataType = typeof(int);
+                    column.ColumnName = "SessionCount";
+                    column.ReadOnly = false;
+                    column.Unique = false;
+                    // Add the column to the table.
+                    m_Projects.Columns.Add(column);
+
+                    // Create second column.
+                    column = new DataColumn();
+                    column.DataType = typeof(List<Guid>);
+                    column.ColumnName = "SessionIds";
+                    column.ReadOnly = false;
+                    column.Unique = false;
+                    // Add the column to the table.
+                    m_Projects.Columns.Add(column);
+                }
+
+                // Fill with values
+                { 
+                    if (InteractiveShell.databases != null) {
+                        foreach (var db in InteractiveShell.databases) {
+                            foreach(var si in db.Sessions) {
+                                DataRow[] foundProject = m_Projects.Select("Name = '"+si.ProjectName+"'");
+                                if (foundProject.Length != 0) {
+                                    foundProject[0]["SessionCount"] = (int)foundProject[0]["SessionCount"] + 1;
+                                    ((List<Guid>)foundProject[0]["SessionIds"]).Add(si.ID);
+                                } else {
+                                    DataRow newProject = m_Projects.NewRow();
+                                    newProject["Name"] = si.ProjectName;
+                                    newProject["SessionCount"] = 1;
+                                    newProject["SessionIds"] = new List<Guid> { si.ID };
+                                    m_Projects.Rows.Add(newProject);
+                                }
+                            }                            
+                        }
+                    }
+
+                }
+
+                return m_Projects;
+            }
+        }        
 
         /// <summary>
         /// A list of all tags in all sessions.

@@ -77,14 +77,28 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
         
-        /// <summary>
-        /// The memory (in MB) that is reserved for every core
-        /// </summary>
-        public string MemPerCPU {
-            set;
-            get;
-        }
+        /*
+         * Fk, Anmerkung:
+         * Sowas wie die folgenden Properties (MemPerCPU) sollten keine Eigenschaften des Job sein, weil es Scheduler-spezifisch ist.
+         * Der ganze Quatsch soll in die BatchProcessorConfig.json:
+         * ```
+         * "AdditionalBatchCommands": [
+         *          "#SBATCH -p test24",
+         *          "#SBATCH -C avx512",
+         *          "#SBATCH --mem-per-cpu=8000"
+         * ]
+         * ```
+         * 
 
+        ///// <summary>
+        ///// The memory (in MB) that is reserved for every core
+        ///// </summary>
+        //public string MemPerCPU {
+        //    set;
+        //    get;
+        //}
+
+        
         private int m_NumberOfNodes = -1;
 
         /// <summary>
@@ -94,50 +108,8 @@ namespace BoSSS.Application.BoSSSpad {
             get { return m_NumberOfNodes;  }
             set { m_NumberOfNodes = value;  }
         }
-
-        /*
-        string m_BatchProcessorIdentifierToken;
-
-        /// <summary>
-        /// (Optional) object used by batch processor (after calling <see cref="BatchProcessorClient.Submit(Job)"/>)
-        /// in order to identify the job.
-        /// </summary>
-        public string BatchProcessorIdentifierToken {
-            private set {
-                m_BatchProcessorIdentifierToken = value;
-            }
-            get {
-                var bpcToken = m_BatchProcessorIdentifierToken;
-
-                if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
-                    var directories = GetAllDeploymantDirectories();
-
-                    if(directories == null || directories.Length <= 0) {
-                        return null;
-                    }
-                    Array.Sort(directories, FuncComparerExtensions.ToComparer((DirectoryInfo a, DirectoryInfo b) => DateTime.Compare(a.CreationTime, b.CreationTime)));
-                    DirectoryInfo _DD = directories.Last();
-                    var DD = _DD.FullName;
-
-                    try {
-                        var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                        m_BatchProcessorIdentifierToken = l.Trim();
-
-                    } catch(Exception) {
-                        // job was probably deployed, but never submitted
-                        // ignore this.
-                    }
-                }
-
-                return m_BatchProcessorIdentifierToken;
-            }
-        }
-
-        /// <summary>
-        /// Some internal object that the job keeps for the batch processor
-        /// </summary>
-        object BatchProcessorObject;
         */
+
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -291,6 +263,16 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+
+        /// <summary>
+        /// Control, if set;
+        /// </summary>
+        public BoSSS.Solution.Control.AppControl Control {
+            get {
+                return m_ctrl;
+            }
+        }
+
    
         BoSSS.Solution.Control.AppControl m_ctrl;
         int m_ctrl_index;
@@ -306,51 +288,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(!bpc.IsDatabaseAllowed(m_ctrl)) {
                 throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
             }
-            /*
-            if(bpc.AllowedDatabasesPaths != null && bpc.AllowedDatabases.Count > 0) {
-                
-                IDatabaseInfo newDb = null;
-                if(ctrl_db == null) {
-                    newDb = bpc.AllowedDatabases[0];
-                } else {
-                    bool ok = false;
-                    foreach(var allow_dba in bpc.AllowedDatabases) {
-                        if(allow_dba.Equals(ctrl_db)) {
-                            ok = true;
-                            break;
-                        }
-                    }
-
-                    if(!ok)
-                        newDb = bpc.AllowedDatabases[0];
-                }
-
-                if(newDb != null) {
-                    Console.WriteLine("Resetting database for control object to " + newDb.ToString());
-
-                    //newDb.AlternateDbPaths
-
-
-
-                    m_ctrl.SetDatabase(newDb);
-                    ctrl_db = newDb;
-                }
-
-                Console.WriteLine("Submitting job with the following database info: ");
-                Console.WriteLine("Primary: " + m_ctrl.DbPath);
-                if(ctrl_db.AlternateDbPaths != null && ctrl_db.AlternateDbPaths.Length > 0) {
-                    int cnt = 0;
-                    foreach (var t in ctrl_db.AlternateDbPaths) {
-                        Console.WriteLine($" Alternative[{cnt}]: {t.DbPath}, MachineFilter: '{t.MachineFilter}'");
-                        cnt++;
-                    }
-                } else {
-                    Console.WriteLine("No alternative paths specified.");
-                }
-            } else {
-                Console.WriteLine("");
-            } 
-            */
+     
 
             // check grid & restart info
             // =========================
@@ -767,32 +705,38 @@ namespace BoSSS.Application.BoSSSpad {
                 // =======================
                 var filtDirs = new List<DirectoryInfo>();
                 using(new BlockTrace("DIRECTORY_FILTERING", tr)) {
+                    var mybind = new KnownTypesBinder(this);
+
+
                     foreach(DirectoryInfo dir in AllDirs) {
                         if(!DirIsKnown(dir)) {
 
-
-                            string ControlObj = Path.Combine(dir.FullName, "control.obj");
-                            if(File.Exists(ControlObj)) {
-                                var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj));
-                                if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
-                                    filtDirs.Add(new DirectoryInfo(dir.FullName));
-                                    continue;
-                                }
-                            }
-
-                            string ControlScript = Path.Combine(dir.FullName, "control.cs");
-                            if(File.Exists(ControlScript)) {
-                                int control_index = 0;
-                                int i = CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
-                                if(i >= 0) {
-                                    control_index = int.Parse(CommandLineArguments[i + 1]);
+                            try {
+                                string ControlObj = Path.Combine(dir.FullName, "control.obj");
+                                if(File.Exists(ControlObj)) {
+                                    var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj), mybind);
+                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                        filtDirs.Add(new DirectoryInfo(dir.FullName));
+                                        continue;
+                                    }
                                 }
 
-                                var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                                if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
-                                    filtDirs.Add(dir);
-                                    continue;
+                                string ControlScript = Path.Combine(dir.FullName, "control.cs");
+                                if(File.Exists(ControlScript)) {
+                                    int control_index = 0;
+                                    int i = CommandLineArguments.IndexWhere(arg => arg == "--pstudy_case");
+                                    if(i >= 0) {
+                                        control_index = int.Parse(CommandLineArguments[i + 1]);
+                                    }
+
+                                    var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
+                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                        filtDirs.Add(dir);
+                                        continue;
+                                    }
                                 }
+                            } catch (Exception e) {
+                                Console.Error.WriteLine($"Warning: unable process deployment directory {dir}: " + e.Message);
                             }
                         }
                     }
@@ -801,6 +745,44 @@ namespace BoSSS.Application.BoSSSpad {
                 // return
                 // ======
                 return filtDirs.ToArray();
+            }
+        }
+
+        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+
+            Job m_owner;
+
+            internal KnownTypesBinder(Job __owner) {
+                m_owner = __owner;
+
+                foreach(var a in __owner.AllDependentAssemblies) {
+                    var tt = new Dictionary<string, Type>();
+                    knownTypes.Add(a.GetName().Name, tt);
+                    foreach(var t in a.GetExportedTypes()) {
+                        tt.Add(t.FullName, t);
+                    }
+                }
+            }
+
+            Dictionary<string, Dictionary<string, Type>> knownTypes = new Dictionary<string, Dictionary<string, Type>>();
+
+            /*
+            public IList<Type> KnownTypes { get; set; }
+
+            public Type BindToType(string assemblyName, string typeName) {
+                return KnownTypes.SingleOrDefault(t => t.Name == typeName);
+            }
+
+            public void BindToName(Type serializedType, out string assemblyName, out string typeName) {
+                assemblyName = null;
+                typeName = serializedType.Name;
+            }
+            */
+            public override Type BindToType(string assemblyName, string typeName) {
+                var dd = knownTypes[assemblyName];
+                var tt = dd[typeName];
+
+                return tt;
             }
         }
 
@@ -1394,7 +1376,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        string m_ExecutionTime = "00:05:00";
+        string m_ExecutionTime = "05:00:00";
 
         /// <summary>
         /// Estimated execution time limit. Important for slurm queuing
@@ -1414,7 +1396,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Copies the executable files to the <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>, but does not submit the job.
         /// </summary>
         string DeployExecuteables() {
-
+            /*
             bool IsNotSystemAssembly(Assembly Ass, string MainAssemblyDir) {
                 PlatformID CurrentSys = System.Environment.OSVersion.Platform;
                 switch(CurrentSys) {
@@ -1425,12 +1407,12 @@ namespace BoSSS.Application.BoSSSpad {
                     default: {
                         return Path.GetDirectoryName(Ass.Location).Equals(MainAssemblyDir)
                             || Path.GetFileName(Ass.Location).StartsWith("BoSSS")
-                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP")
-                            || !Ass.GlobalAssemblyCache;
+                            || Path.GetFileName(Ass.Location).StartsWith("ilPSP");
+                            //|| !Ass.GlobalAssemblyCache;
                     }
                 }
             }
-
+            */
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
@@ -1447,6 +1429,18 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
+            static void CopyFilesRecursively(string sourcePath, string targetPath) {
+                //Now Create all of the directories
+                foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                    Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+                }
+
+                //Copy all the files & Replaces any files with the same name
+                foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                    File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+                }
+            }
+
 
             using (var tr = new FuncTrace()) {
                 Console.WriteLine("Deploying executables and additional files ...");
@@ -1457,13 +1451,24 @@ namespace BoSSS.Application.BoSSSpad {
                     //string SystemPath = Path.GetDirectoryName(typeof(object).Assembly.Location);
                     string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
                     foreach (var a in AllDependentAssemblies) {
-                        if (IsNotSystemAssembly(a, MainAssemblyDir)) {
-                            files.Add(a.Location);
-                            if(File.Exists(a.Location + ".config")) {
-                                files.Add(a.Location + ".config");
-                            }
-                        }
+                        // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
+                        // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
+                        string DelpoyAss = Path.Combine(MainAssemblyDir,  Path.GetFileName(a.Location));
 
+                        if (File.Exists(DelpoyAss)) {
+                            files.Add(DelpoyAss);
+
+                            string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
+                            string a_runtimeconfig_json = Path.Combine(MainAssemblyDir,Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
+
+                            foreach (var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                                if(File.Exists(a_acc)) {
+                                    files.Add(a_acc);
+                                }
+                            }
+                        } else {
+                            //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
+                        }
                     }
                
                     // test for really strange errors
@@ -1495,6 +1500,13 @@ namespace BoSSS.Application.BoSSSpad {
                         if (OriginDir == null || !OriginDir.Equals(Path.GetDirectoryName(fOrg))) {
                             OriginDir = Path.GetDirectoryName(fOrg);
                         }
+                    }
+
+                    // copy "runtimes" directory from .NET core/.NET5
+                    string runtimes_Src = Path.Combine(Path.GetDirectoryName(EntryAssembly.Location), "runtimes");
+                    string runtimes_Dst = Path.Combine(DeployDir, "runtimes");
+                    if(Directory.Exists(runtimes_Src)) {
+                        CopyFilesRecursively(runtimes_Src, runtimes_Dst);
                     }
                 }
                 Console.WriteLine("copied " + files.Count + " files.");

@@ -828,14 +828,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Movement induced by surface terms.
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 9) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 7, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
 
+            //C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Classic;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Steady;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
             bool quarterDomain = true;
 
@@ -918,11 +920,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Tags.Add("Ohnesorge Zahl = 0.76");
             C.PhysicalParameters.rho_A = 1260;
             C.PhysicalParameters.rho_B = 1260 * ratio;
-            C.PhysicalParameters.mu_A = 0.714;
-            C.PhysicalParameters.mu_B = 0.714 * ratio;
+            C.PhysicalParameters.mu_A = 0.0714;
+            C.PhysicalParameters.mu_B = 0.0714 * ratio;
             C.PhysicalParameters.Sigma = 7e-3;
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
 
             #endregion
@@ -1154,7 +1156,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitSignedDistance = true;
 
 
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = useAMR;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
@@ -1177,7 +1179,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 1000;
-                C.NoOfTimesteps = 1000;
+                C.NoOfTimesteps = 1; // 1000;
                 C.saveperiod = 4;
             }
 
@@ -1190,8 +1192,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="m"> mode m = {2, 3, 4} </param>
+        /// <param name="aP_index"> disturbance amplitude aP = {0.5, 0.7, 0.9} </param>
+        /// <param name="WNLT"> droplet shape according to the third order representation of the WLNT </param>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D_LegendrePolynomials(double f_2 = 0.5) {
+        public static XNSE_Control OscillatingDroplet3D_LegendrePolynomials(double r0, int m, int aP_index, bool WNLT = false) {
 
             XNSE_Control C = new XNSE_Control();
 
@@ -1222,6 +1227,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             #endregion
 
+
             // grid generation
             // ===============
             #region grid
@@ -1235,39 +1241,60 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
-            // prolate/oblate spheroid 
-            //double r = 0.21 * Lscale;
-            //double a = 1.25 * r;
-            //double b = 0.8 * r;
-            //double c = 0.8 * r;
-            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2() + (X[2] - 0.0).Pow2() / c.Pow2()).Sqrt() - 1); // ellipse                     
-
-            // Legndre polynomial m = 2 (spherical harmonics)
-            // f(theta) = gamma_2 + f_2 * P_2(theta) denotes
-            // with P_2(x) = (1/2)(3x^2-1) and gamma_2 = 35/(35 + 21*f_2^2 + 2*f_2^3)
-            // f_2 denotes the initial amplitude
 
             //double f_2 = 0.5;
-            double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
+            //double gam_2 = 35 / (35 + 21 * f_2.Pow2() + 2 * f_2.Pow(3));
 
+            //string f_2_string = f_2.ToString();
+            //string gam_2_string = gam_2.ToString();
+            //C.InitialValues.Add("Phi", new Formula("X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - " + gam_2_string 
+            //    + " * (1 + " + f_2_string + " * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1))", false));
+
+
+            double[] aP = { 0.5, 0.7, 0.9 };
+            string f = r0.ToString() + " * ";
+            switch(m) {
+                case 2: {
+                    string LegendrePoly = "0.5 * (3.0 * ( Math.Cos( Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), -X[2]) ) ).Pow2() - 1.0)";
+                    double[] a0 = new double[] { 0.94754, 0.89513, 0.82337 };   // for aP = {0.5, 0.7, 0.9} depending on aP (script available in Maple)
+                    f += "( " + a0[aP_index].ToString() + " + " + aP[aP_index].ToString() + " * " + LegendrePoly + ")";
+                    break;
+                }
+                case 3: {
+                    string LegendrePoly = "0.5 * (5.0 * (Math.Cos( Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), -X[2]) )).Pow(3) - 3.0 * Math.Cos( Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), -X[2]) ))";
+                    double[] a0 = new double[] { 0.9643, 0.93012, 0.88486 };    // for aP = {0.5, 0.7, 0.9} depending on aP (script available in Maple)
+                    f += "( " + a0[aP_index].ToString() + " + " + aP[aP_index].ToString() + " * " + LegendrePoly + ")";
+                    break;
+                }
+                case 4: {
+                    string LegendrePoly = "0.125 * (35.0 * (Math.Cos( Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), -X[2]) )).Pow(4) - 30.0 * (Math.Cos( Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), -X[2]) )).Pow(2) + 3.0)";
+                    double[] a0 = new double[] { 0.97146, 0.94344, 0.905485 };   // for aP = {0.5, 0.7, 0.9} depending on aP (script available in Maple)
+                    f += "( " + a0[aP_index].ToString() + " + " + aP[aP_index].ToString() + " * " + LegendrePoly + ")";
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            C.InitialValues.Add("Phi", new Formula("X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - " + f, false));
+
+
+
+            //// WLNT
+            //double m = 2;
+            //double eta0 = 0.7;
             //Func<double[], double> PhiFunc = delegate (double[] X) {
             //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
             //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
             //    double theta = Math.Atan2(r_xy, Math.Abs(X[2]));
-            //    double f = gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(theta)).Pow2() - 1));
-            //    double phi = r - f;
+            //    double eta = 1;
+            //    eta += eta0 * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0); // first order deformation
+            //    eta -= eta0.Pow2() / (2.0 * m + 1.0);    // second order correction for m;
+            //    eta -= (eta0.Pow(3) / 6.0) * 0.1142857;     // third order correction for m=2
+            //    double phi = r - eta;
             //    return phi;
             //};
-
-            //Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() 
-            //- gam_2 * (1 + f_2 * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1)));
-
-            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
-
-            string f_2_string = f_2.ToString();
-            string gam_2_string = gam_2.ToString();
-            C.InitialValues.Add("Phi", new Formula("X => ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt() - " + gam_2_string 
-                + " * (1 + " + f_2_string + " * 0.5 * (3 * (Math.Cos(Math.Atan2(((X[0]).Pow2() + (X[1]).Pow2()).Sqrt(), Math.Abs(X[2])))).Pow2() - 1))", false));
 
 
             #endregion
@@ -1333,13 +1360,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 27, int method = 0, double mu_scl = 1.0, bool onlyB = false) {
+        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 21, int method = 0, double mu_scl = 1.0, double tScale = 1.0) {
+            // cs:BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet_Kummer()
 
             XNSE_Control C = new XNSE_Control();
 
+            bool hysing = true;
+            bool kummer = false;
+
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
-            string _DbPath = null; // @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"\\dc1\userspace\yotov\bosss-db";
+            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+            //string _DbPath = @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
+            string _DbPath = null;
 
             // basic database options
             // ======================
@@ -1348,57 +1384,62 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "OscillatingDroplet";
-            C.SessionName = "OD_AirWater_Kummer";
-            
+            if (hysing) {
+                C.SessionName = "OD_meshStudy_Hysing2_mesh" + kelem + "_rerun";
+            } else {
+                C.SessionName = "OD_AirWater_";
+            }
+
             C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
             //C.LogPeriod = 10;
-            C.PostprocessingModules.Add(new Dropletlike());
+            C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 4 });
+
             #endregion
 
 
             // DG degrees
             // ==========
-            #region degrees
-
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-
-
-            #endregion
+            C.SetDGdegree(p);
 
 
             // Physical Parameters
             // ===================
             #region physics
 
-            // Air - Water: 
-            C.PhysicalParameters.rho_A = 1e3;
-            C.PhysicalParameters.rho_B = 1.2;
-            C.PhysicalParameters.mu_A = (onlyB) ? 1e-3 : 1e-3 * mu_scl;
-            C.PhysicalParameters.mu_B = 17.1e-6 * mu_scl;
-            C.PhysicalParameters.Sigma = 72.75e-3;
+            if (hysing) {
+                double rho = 1e4;
+                double mu = 1.0;
+                double sigma = 0.1;
+
+                C.Tags.Add("Hysing");
+                C.Tags.Add("La = 500");
+                C.PhysicalParameters.rho_A = rho;
+                C.PhysicalParameters.rho_B = rho;
+                C.PhysicalParameters.mu_A = mu;
+                C.PhysicalParameters.mu_B = mu;
+                C.PhysicalParameters.Sigma = sigma;
+
+            }
+
+            if (kummer) {
+
+                C.PhysicalParameters.rho_A = 1;
+                C.PhysicalParameters.rho_B = 1;
+                C.PhysicalParameters.mu_A = 0.5;
+                C.PhysicalParameters.mu_B = 0.05;
+                C.PhysicalParameters.Sigma = 0.1;
+            }
+
+            if (!hysing) {
+                // Air - Water: 
+                C.PhysicalParameters.rho_A = 1e3;
+                C.PhysicalParameters.rho_B = 1.2;
+                C.PhysicalParameters.mu_A = 1e-3 * mu_scl;
+                C.PhysicalParameters.mu_B = 17.1e-6 * mu_scl;
+                C.PhysicalParameters.Sigma = 72.75e-3;
+            }
+
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
@@ -1409,13 +1450,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 9e-2;
+            double Lscale = hysing ? 1.0 : 0.01;
+            double L = 1.0 * Lscale;
             //double xSize = 1.0;
             //double ySize = 1.0;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 0);
+                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 0);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "wall");
@@ -1443,45 +1485,29 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
+            double r = 0.25 * Lscale;
 
-            double a = 0.9185e-2;
-            double b = 0.7515e-2;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
+
+            double a = r;
+            double b = r;
+            if (hysing) {
+                a = 1.25 * r;
+                b = 0.8 * r;
+            } else {
+                a = 1.1 * r;
+                b = 0.91 * r;
+            }
             Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2()) - 1);          // ellipse                     
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            //C.InitialValues_Evaluators.Add("VelocityX#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("VelocityX#B", X => 0.0);
-
-            //double Pjump = sigma / r;
-            //C.InitialValues_Evaluators.Add("Pressure#A", X => Pjump);
-            //C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
-
-            //C.InitialValues_Evaluators.Add("GravityY#A", X => 0.0);
-            //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
-
-
+            
             //// restart
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("c95b2833-288e-4014-ba08-affa65a2398e");
             //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
-
-            #endregion
-
-
-            // exact solution
-            // ==============
-            #region exact
-
-            //C.Phi = ((X, t) => PhiFunc(X));
-
-            //C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            //C.ExactSolutionVelocity.Add("A", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-            //C.ExactSolutionVelocity.Add("B", new Func<double[], double, double>[] { (X, t) => 0.0, (X, t) => 0.0 });
-
-            //C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-            //C.ExactSolutionPressure.Add("A", (X, t) => Pjump);
-            //C.ExactSolutionPressure.Add("B", (X, t) => 0.0);
 
             #endregion
 
@@ -1501,11 +1527,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveKineticEnergyEquation = false;
 
-            C.ComputeEnergyProperties = true;
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2 * p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.ComputeEnergyProperties = true;
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2 * p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             C.CheckJumpConditions = false;
             C.CheckInterfaceProps = false;
@@ -1532,49 +1558,28 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
-
-            C.AdaptiveMeshRefinement = true;
-            C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            C.BaseRefinementLevel = 1;
-            //C.RefinementLevel = 4;
-
-            //C.ReInitPeriod = 100;
-            //C.useFiltLevSetGradientForEvolution = true;
-
-            //C.AdvancedDiscretizationOptions.LFFA = 0.9;
-            //C.AdvancedDiscretizationOptions.LFFB = 0.9;
+            //if (!hysing) {
+            //    C.AdaptiveMeshRefinement = true;
+            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    C.BaseRefinementLevel = 3;
+            //    C.AMR_startUpSweeps = 4;
+            //    C.RefinementLevel = 1;
+            //}
 
             //C.AdaptiveMeshRefinement = true;
             //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 1;
+            //C.BaseRefinementLevel = 2;
+            //C.AMR_startUpSweeps = 2;
             //C.SessionName = C.SessionName + "_AMR1";
 
-            int numSp = 1440;
-            double[] FourierP = new double[numSp];
-            double[] samplP = new double[numSp];
-            for (int sp = 0; sp < numSp; sp++) {
-                double angle = sp * (2 * Math.PI / (double)numSp);
-                FourierP[sp] = angle;
-                samplP[sp] = a * b / Math.Sqrt((a * Math.Cos(angle + Math.PI / 2)).Pow2() + (b * Math.Sin(angle + Math.PI / 2)).Pow2());
-            }
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
-            FourierLevSetControl FourierCntrl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 1.0 / (Math.Pow(2, C.BaseRefinementLevel) * (double)kelem)) {
-                center = new double[] { 0.0, 0.0 },
-                FourierEvolve = Fourier_Evolution.MaterialPoints,
-                centerMove = CenterMovement.Reconstructed,
-            };
-
-
-            C.SetLevelSetMethod(method, FourierCntrl);
-            //C.SessionName = "OscillatingDroplet_setup3_muScl"+mu_scl+"_methodStudy_k2_" + C.methodTagLS;
-
-
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+            //C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0;
             //C.PhysicalParameters.lambda_I = 2.0;
             //C.SessionName = C.SessionName + "_curvature";
-
-            C.AdvancedDiscretizationOptions.SetSurfaceTensionMaxValue = false;
+            //C.AdvancedDiscretizationOptions.SetSurfaceTensionMaxValue = false;
+            //C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDeformationRateLocal;
 
             #endregion
 
@@ -1584,27 +1589,27 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.Adaptive_3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
-            //C.LSunderrelax = 0.5;
-            //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
 
             C.TimesteppingMode = compMode;
-            //C.CompMode = AppControl._CompMode.Transient; 
-
-            double dt = 0.0005;
+            
+            double dt = (hysing) ? 0.5 : 1.5e-5 * tScale;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1.5;
-            C.NoOfTimesteps = (int)(1.5 / dt);
+            C.Endtime = (hysing) ? 1000 : 0.15;
+            C.NoOfTimesteps = (hysing) ? 2000 : (int)(0.15 / dt);
             C.saveperiod = 10;
-           
+
             #endregion
+
 
             return C;
         }
+
 
 
 

@@ -165,6 +165,18 @@ namespace BoSSS.Foundation.IO {
                 configAllreadyDone = true;
             }
 
+            /*
+            {
+                var CCA = new ColoredConsoleAppender();
+                CCA.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+                CCA.ActivateOptions();
+                BasicConfigurator.Configure(CCA);
+            
+            }
+            */
+
+
+
         }
 
         /// <summary>
@@ -241,7 +253,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// loads the grid identified by <paramref name="uid"/> from the
+        /// loads the grid identified by <paramref name="gridId"/> from the
         /// given <paramref name="database"/>
         /// </summary>
         /// <param name="gridId">The unique identifier of the grid.</param>

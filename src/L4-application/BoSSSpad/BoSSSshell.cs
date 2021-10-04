@@ -5,15 +5,17 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using Microsoft.DotNet.Interactive.Formatting;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -51,7 +53,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        
+
         /// <summary>
         /// Called on top of the Jupyter notebook, to initialize the BoSSS functionality
         /// </summary>
@@ -64,8 +66,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// ```
         /// </remarks>
         public static void Init() {
+            BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.SVG;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             BoSSS.Solution.Application.InitMPI();
+            CallRandomStuff();
             try {
 
 
@@ -84,7 +90,147 @@ namespace BoSSS.Application.BoSSSpad {
                      e.Message);
                 InteractiveShell.LastError = e;
             }
+
+
+            AddObjectFormatter<SinglePhaseField>();
+            AddObjectFormatter<Foundation.XDG.XDGField>();
+            AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
+            AddObjectFormatter<IGridData>();
+
+            AddObjectFormatter<ISessionInfo>();
+            AddObjectFormatter<IDatabaseInfo>();
+            AddObjectFormatter<ITimestepInfo>();
+
+            AddEnumFormatter<IGridInfo>();
+            AddEnumFormatter<IDatabaseInfo>();
+            AddEnumFormatter<ISessionInfo>();
+            AddEnumFormatter<ITimestepInfo>();
+
+            AddDictFormatter<string, Job>();
+            AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
+            AddObjectFormatter<Job>();
+            AddEnumFormatter<Job>();
         }
+
+        /// <summary>
+        /// calls random functions from BoSSS libraries to enforce loading of assemblies;
+        /// seems to be required for JSON serialization in order to resolve classes/assemblies
+        /// </summary>
+        static void CallRandomStuff() {
+            new BatchProcessorConfig();
+            
+            new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
+
+            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
+            var u = new SinglePhaseField(new Basis(g, 1), "u");
+
+            var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
+            mtx.AccEyeSp(2.0);
+            int L = mtx.RowPartitioning.LocalLength;
+            mtx.Solve_Direct(new double[L], new double[L]);
+            mtx.Solve_CG(new double[L], new double[L]);
+
+            using(var gp = new Gnuplot()) {
+
+            }
+
+            var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+
+        }
+
+
+
+        /// <summary>
+        /// Sets Text Formatter for objects of specific type
+        /// </summary>
+        public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
+            Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
+            Formatter.Register(
+                type: typeof(T),
+                formatter: (object obj, System.IO.TextWriter writer) => {
+
+                    T v = (T)obj;
+
+                    string valString;
+                    if(optValFormatter == null)
+                        valString = v != null ? v.ToString() : "NULL";
+                    else
+                        valString = v != null ? optValFormatter(v) : "NULL";
+                    writer.Write(valString);
+                });
+        }
+
+        /// <summary>
+        /// Sets Text Formatter for Dictionaries of specific type: <see cref="IDictionary{TKey, TValue}"/> 
+        /// </summary>
+        public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
+            var t = typeof(IDictionary<KeyType, ValType>);
+
+            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.Register(
+                type: t,
+                formatter: (object obj, System.IO.TextWriter writer) => {
+                    int i = 0;
+
+                    var enu = (IDictionary<KeyType, ValType>)obj;
+
+                    foreach(var kv in enu) {
+
+                        string valString;
+                        if(optValFormatter == null)
+                            valString = kv.Value != null ? kv.Value.ToString() : "NULL";
+                        else
+                            valString = kv.Value != null ? optValFormatter(kv.Value) : "NULL";
+
+                        string keyString;
+                        if(optKeyFormatter == null)
+                            keyString = kv.Key != null ? kv.Key.ToString() : "NULL";
+                        else
+                            keyString = kv.Key != null ? optKeyFormatter(kv.Value) : "NULL";
+
+                        writer.WriteLine("#" + i + ": " + kv.Value + "\t" + kv.Value.ToString());
+                        i++;
+                    }
+                });
+        }
+
+        /// <summary>
+        /// Sets Text Formatter for enumerations/lists of specific type: <see cref="IEnumerable{ValType}"/> 
+        /// </summary>
+        public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
+            var t = typeof(IEnumerable<ValType>);
+
+            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.Register(
+                type: t,
+                formatter: (object obj, System.IO.TextWriter writer) => {
+                    int i = 0;
+
+                    var enu = (IEnumerable<ValType>)obj;
+
+                    foreach(var v in enu) {
+                        string valString;
+                        if(optValFormatter == null)
+                            valString = v != null ? v.ToString() : "NULL";
+                        else
+                            valString = v != null ? optValFormatter(v) : "NULL";
+
+                        writer.WriteLine("#" + i + ": " + v.ToString());
+                        i++;
+                    }
+                });
+        }
+
+
+
+        /// <summary>
+        /// Just Demo
+        /// </summary>
+        public static void SayHello() {
+            Console.WriteLine("Hello");
+        }
+
+
 
         /// <summary>
         /// Opens the folder containing config files like the DBE.xml
@@ -129,6 +275,15 @@ namespace BoSSS.Application.BoSSSpad {
                 if (m_WorkflowMgm == null)
                     m_WorkflowMgm = new WorkflowMgm();
                 return m_WorkflowMgm;
+            }
+        }
+
+        /// <summary>
+        /// Alias for <see cref="WorkflowMgm"/>
+        /// </summary>
+        public static WorkflowMgm wmg {
+            get {
+                return WorkflowMgm;
             }
         }
 
@@ -314,6 +469,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
+           
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
@@ -411,6 +567,7 @@ namespace BoSSS.Application.BoSSSpad {
             return fo;
         }
 
+        /*
         static internal string _CurrentDocFile = null;
 
         /// <summary>
@@ -430,6 +587,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return _CurrentDocFile;
             }
         }
+        
 
         /// <summary>
         /// Directory where the current file is stored.
@@ -442,7 +600,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
-
+        */
         /// <summary>
         /// <see cref="GridImporter.Import(string)"/>
         /// </summary>
@@ -484,10 +642,34 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-                return gp.PlotNow();
+                return gp.PlotSVG();
             }
         }
 
+        /// <summary>
+        /// Simple plotting interface
+        /// </summary>
+        /// <returns>Output of <see cref="BoSSSpadGnuplotExtensions.PlotNow(Gnuplot)"/></returns>
+        static public object Plot(IEnumerable<double>[] X, IEnumerable<double>[] Y, string[] Name1 = null, string[] Format1 = null,
+            bool logX = false, bool logY = false) {
+
+            using (var gp = new Gnuplot()) {
+
+                IEnumerable<double>[] Xs = X;
+                IEnumerable<double>[] Ys = Y;
+
+                for (int i = 0; i < Xs.Length; i++) {
+                    if (Ys.ElementAtOrDefault(i) != null) {
+                        var f1 = new PlotFormat();
+                        if (Format1?.ElementAtOrDefault(i) != null)
+                            f1.FromString(Format1[i]);
+                        gp.PlotXY(Xs[i], Ys[i], title: Name1?.ElementAtOrDefault(i), format: f1, logX: logX, logY: logY);
+                    }
+                }
+
+                return gp.PlotSVG();
+            }
+        }
 
         /// <summary>
         /// Plotting of an grid with dummy data, 
@@ -620,7 +802,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
-            int susamp = Math.Max(flds.Max(f => f.Basis.Degree) + 1, 3);
+            int susamp = Math.Min(flds.Max(f => f.Basis.Degree) + 1, 4);
 
 
             Tecplot(filename, 0.0, susamp, flds);
@@ -637,24 +819,23 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             if (supersampling > 3) {
-                Console.WriteLine("Plotting with a supersampling greater than 3 is deactivated because it would very likely exceed this machines memory.");
-                Console.WriteLine("Higher supersampling values are supported by external plot application.");
+                Console.WriteLine($"Supersampling {supersampling} requested, but limiting to 3 because higher values would very likely exceed this computers memory.");
+                Console.WriteLine($"Note: Higher supersampling values are supported by external plot application, or by using e.g. the Tecplot class directly.");
                 supersampling = 3;
             }
 
             string directory = Path.GetDirectoryName(filename);
             string FullPath;
             if (directory == null || directory.Length <= 0) {
-                directory = CurrentDocDir ?? "";
+                directory = Directory.GetCurrentDirectory();
                 FullPath = Path.Combine(directory, filename);
             } else {
                 FullPath = filename;
             }
 
             Console.WriteLine("Writing output file {0}...", FullPath);
-
-
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(flds, FullPath, time, supersampling);
+            Console.WriteLine("done.");
 
         }
 
@@ -663,7 +844,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-
+            //Debugger.Launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();

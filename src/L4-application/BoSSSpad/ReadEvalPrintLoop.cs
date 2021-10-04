@@ -28,9 +28,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 using ilPSP.LinSolvers;
-
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -74,7 +73,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             cmpCont = new CompilerContext(
                 Settings, new ConsoleReportPrinter());
-            Evaluator eval = new Evaluator(cmpCont);
+            Evaluator eval = new(cmpCont);
             eval.InteractiveBaseClass = typeof(InteractiveShell);
 
             return eval;
@@ -108,6 +107,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms).Assembly);
+            eval.ReferenceAssembly(typeof(BoSSS.Solution.EnergyCommon.Dissipation).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection).Assembly);

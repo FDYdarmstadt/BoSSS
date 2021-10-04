@@ -11,6 +11,7 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -42,11 +43,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSERO_Solver.TestProgram.TestStickyTrap();
+            //TestProgram.TestRigidLevelSetProjection();
+            //TestProgram.TestParticleParameter();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow_Phoretic();
-            //throw new Exception("remove me");
+            //TestProgram.TestParticleInShearFlow();
+            //Assert.IsFalse(true, "remove me");
             
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
@@ -288,7 +289,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
-            dt = GetFixedTimestep();
+            dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             if (!CreatedLogger) {
                 CreatedLogger = true;

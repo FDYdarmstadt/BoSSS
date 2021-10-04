@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -107,7 +107,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            C.AgglomerationThreshold = 0.2;
             C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.LinearSolver.NoOfMultigridLevels = 1;
@@ -151,14 +151,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             // misc. solver options
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.AgglomerationThreshold = 0.1;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
             C.LinearSolver.NoOfMultigridLevels = 1;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-12;
 
             // Timestepping
             // ============
@@ -221,8 +221,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitializeMotion motion2 = new InitializeMotion(particleDensity2, false, true, true);
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }),
-                new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
-                new Particle_superEllipsoid(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
+                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
+                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
             C.SetParticles(particles);
             C.PhysicalParameters.IncludeConvection = false;
@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // misc. solver options
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MinSolverIterations = 1;

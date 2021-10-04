@@ -180,11 +180,12 @@ namespace CutCellQuadrature.TestCases {
         /// Initial value of a continuous integrand. Required for the testing
         /// of surface integrals
         /// </summary>
-        /// <param name="input">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="input">positions in space at which the function should be evaluated;
+        /// - 1st index: point index;
+        /// - 2nd index: spatial coordinate vector (from 0 to D-1);
         /// </param>
-        /// <param name="output">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="output">result of function evaluation;
+        /// - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
         /// </param>
         void ContinuousFieldInitialValue(MultidimensionalArray input, MultidimensionalArray output);
 
@@ -192,11 +193,12 @@ namespace CutCellQuadrature.TestCases {
         /// Initial value of a discontinuous integrand in regions with negative
         /// level set values. Required for the testing of volume integrals
         /// </summary>
-        /// <param name="input">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="input">positions in space at which the function should be evaluated;
+        /// - 1st index: point index;
+        /// - 2nd index: spatial coordinate vector (from 0 to D-1);
         /// </param>
-        /// <param name="output">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="output">result of function evaluation;
+        /// - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
         /// </param>
         void JumpingFieldSpeciesAInitialValue(MultidimensionalArray input, MultidimensionalArray output);
 
@@ -204,11 +206,12 @@ namespace CutCellQuadrature.TestCases {
         /// Initial value of a discontinuous integrand in regions with positive
         /// level set values. Required for the testing of volume integrals
         /// </summary>
-        /// <param name="input">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="input">positions in space at which the function should be evaluated;
+        /// - 1st index: point index;
+        /// - 2nd index: spatial coordinate vector (from 0 to D-1);
         /// </param>
-        /// <param name="output">
-        /// <see cref="ScalarFunction"/>
+        /// <param name="output">result of function evaluation;
+        /// - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
         /// </param>
         void JumpingFieldSpeciesBInitialValue(MultidimensionalArray input, MultidimensionalArray output);
     }
