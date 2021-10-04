@@ -79,7 +79,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 //};
                 return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
                     Parallelism = Parallelism.OMP,
-                    SymmIndefPivot = true
+                    SymmIndefPivot = true,
+                    CacheFactorization = false
                 };
             else
                 return new myCG();
@@ -91,10 +92,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <returns></returns>
         public static ISparseSolver PatchSolverFactory() {
             return new ilPSP.LinSolvers.PARDISO.PARDISOSolver() {
-                //Parallelism = Parallelism.SEQ,
-                //PrintStats = true,
+                Parallelism = Parallelism.SEQ,
                 SymmIndefPivot = true,
-                CacheFactorization = true
+                CacheFactorization = false
             };
             //return new ilPSP.LinSolvers.MUMPS.MUMPSSolver() {
             //    Parallelism = Parallelism.SEQ,

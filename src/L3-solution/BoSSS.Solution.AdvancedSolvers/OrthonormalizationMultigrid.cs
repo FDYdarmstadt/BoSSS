@@ -33,6 +33,7 @@ using ilPSP.Tracing;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -126,13 +127,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(MultigridOperator op) {
-            using (var tr = new FuncTrace()) {
+            using (var tr = new FuncTrace()) {             
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 if(op.LevelIndex == 0)
                     viz = new MGViz(op);
-
+                TrackMemory(1);
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
@@ -140,8 +141,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 MxxHistory.Clear();
                 SolHistory.Clear();
-
+                Alphas.Clear();
                 
+
                 // set operator
                 // ============
                 this.OpMatrix = Mtx;
@@ -149,7 +151,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #if TEST
                 Console.WriteLine("level: {0} cells: {1} degree: {2}", op.LevelIndex, op.Mapping.LocalNoOfBlocks, op.Degrees[0]);
 #endif
-
                 // initiate coarser level
                 // ======================
                 if (this.CoarserLevelSolver == null) {
@@ -185,6 +186,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+        private void TrackMemory(int pos) {
+#if TEST
+            if (m_MgOperator.LevelIndex != 0) return;
+            long memWork = 0, memPrivate = 0, memGC = 0;
+            Process myself = Process.GetCurrentProcess();
+            {
+                try {
+                    memWork = myself.WorkingSet64 / (1024 * 1024);
+                    memPrivate = myself.PrivateMemorySize64 / (1024 * 1024);
+                    memGC = GC.GetTotalMemory(false) / (1024 * 1024);
+                    memWork = memWork.MPISum();
+                    memPrivate = memPrivate.MPISum();
+                    memGC = memGC.MPISum();
+                } catch (Exception e) {
+                    Console.WriteLine(e.Message);
+                }
+            }
+            if (m_MgOperator.Mapping.MpiRank == 0) {
+                var strw = m_MTracker;
+                if (m_MTracker == null) {
+                    m_MTracker = new StreamWriter("MemoryTrack", true);
+                    strw = m_MTracker;
+                    strw.Write("pos\t");
+                    strw.Write("workingset\t");
+                    strw.Write("private\t");
+                    strw.Write("GC\t\n");
+                }
+                strw.Write(pos + "\t");
+                strw.Write(memWork + "\t");
+                strw.Write(memPrivate + "\t");
+                strw.Write(memGC + "\t\n");
+                strw.Flush();
+            }
+#endif
+        }
+
+        StreamWriter m_MTracker = null;
 
 #pragma warning disable 0649
         MGViz viz;
@@ -236,8 +275,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
                 Debug.Assert(B.Length == m_MgOperator.Mapping.LocalLength);
                 int L = Res.Length;
-                Res.SetV(B);
-                //Array.Copy(B, Res, L);
+                //Res.SetV(B);
+                Array.Copy(B, Res, L);
                 OpMatrix.SpMV(-1.0, X, 1.0, Res);
                 //Res.AccV(1.0, B);
 
@@ -621,7 +660,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         break;
                     }
 
-               
+                    TrackMemory(2);
 
                     // pre-smoother
                     // ------------
@@ -674,17 +713,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // coarse grid solver defined on COARSER MESH LEVEL:
                                 // this solver must perform restriction and prolongation
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                                // restriction of residual
-                                this.m_MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
-
+                                using (new BlockTrace("Restriction",f)) {
+                                    // restriction of residual
+                                    this.m_MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
+                                }
                                 // Berechnung der Grobgitterkorrektur
                                 double[] vlc = new double[Lc];
                                 this.CoarserLevelSolver.Solve(vlc, ResCoarse);
-
-                                // Prolongation der Grobgitterkorrektur
-                                this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
-
+                                using (new BlockTrace("Prolongation", f)) {
+                                    // Prolongation der Grobgitterkorrektur
+                                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                                }
 
                             } else {
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -777,21 +816,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
+            using (new FuncTrace()) {
 #if DEBUG
             {
-#else 
-            if(iter % 20 == 0 && iter > 1) {
+#else
+                if (iter % 20 == 0 && iter > 1) {
 #endif
-                double[] rTest = new double[Res.Length];
-                Residual(rTest, X, B); // Residual on this level; 
-                                       // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                double resDist = rTest.MPI_L2Dist(Res);
-                //Console.WriteLine("verified Residual: " + resDist);
-                double resNormTst = Res.MPI_L2Norm();
-                double XnormTest = X.MPI_L2Norm();
-                if(resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
-                    throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
-                //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                    double[] rTest = new double[Res.Length];
+                    Residual(rTest, X, B); // Residual on this level; 
+                                           // Test also fails if convergence criterium is to strict because then machine accuracy is reached
+                    double resDist = rTest.MPI_L2Dist(Res);
+                    //Console.WriteLine("verified Residual: " + resDist);
+                    double resNormTst = Res.MPI_L2Norm();
+                    double XnormTest = X.MPI_L2Norm();
+                    if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
+                        throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
+                    //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
+                }
             }
         }
 
@@ -911,6 +952,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
+            TrackMemory(3);
+            //if (m_MTracker != null) m_MTracker.Dispose();
             if (m_verbose && this.m_MgOperator.LevelIndex == 0) {
                 Console.WriteLine($"OrthoMG - total memory: {UsedMemory()} MB");
                 Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid()} MB");

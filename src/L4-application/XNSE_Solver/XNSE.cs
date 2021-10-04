@@ -1,6 +1,4 @@
-﻿//#define TEST
-
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -137,6 +135,15 @@ namespace BoSSS.Application.XNSE_Solver {
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
+        public override void Init(AppControl control) {
+            base.Init(control);
+            var ctrl = (control as XNSE_Control);
+            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
+                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            if (ctrl.Rigidbody.IsInitialized())
+                ctrl.Rigidbody.ArrangeAll(ctrl);
+        }
+
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
         /// - 2x the velocity degree in the Stokes case
@@ -256,7 +263,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 for(int d = 0; d < D; d++) {
                     Control.InitialValues_EvaluatorsVec.TryGetValue(VelocityNames[d], out VelFuncs[d]);
                 }
-
 
                 ILevelSetParameter levelSetVelocity = new ExplicitLevelSetVelocity(VariableNames.LevelSetCGidx(1), VelFuncs);
                 return levelSetVelocity;

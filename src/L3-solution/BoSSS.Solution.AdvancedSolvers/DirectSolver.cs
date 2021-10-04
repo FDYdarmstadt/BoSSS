@@ -231,6 +231,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Residual = this.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
+                /*
+<<<<<<< HEAD
                 using(var solver = GetSolver(m_Mtx)) {
                     Converged = false;
                     SolverName = solver.GetType().FullName;
@@ -243,11 +245,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         m_UsedMemoryInLastCall = pslv.UsedMemory();
                     }
                     Converged = true;
+=======
+*/
+                {
+                    if(m_Solver == null)
+                        m_Solver = GetSolver(m_Mtx);
+                    SolverName = m_Solver.GetType().FullName;
+                    //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
+                    IterCnt++;
+                    m_Solver.Solve(X, B);
+                    m_ThisLevelIterations++;
+                    //Console.WriteLine("done.");
+
+                    if(m_Solver is PARDISOSolver pslv) {
+                        m_UsedMemoryInLastCall = pslv.UsedMemory();
+                    }
                 }
+
                 X.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", solution after solver call: ");
 
-
-                m_ThisLevelIterations++;
 
                 if(Residual != null) {
                     //Console.Write("Checking residual (run {0}) ... ", IterCnt - 1);
@@ -298,6 +314,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        ISparseSolver m_Solver = null;
+
         int m_ThisLevelIterations;
 
         bool m_TestSolution = true;
@@ -345,6 +363,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Release internal memory
         /// </summary>
         public void Dispose() {
+            if(m_Solver != null)
+                m_Solver.Dispose();
             this.m_Mtx = null;
         }
 
