@@ -1,4 +1,4 @@
-﻿using BoSSS.Solution.AdvancedSolvers.Testing;
+using BoSSS.Solution.AdvancedSolvers.Testing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +10,8 @@ namespace ZwoLevelSetSolver {
     class Program {
 
         static void Main(string[] args) {
-            RunSolver(args);
-            //ConditionNumberScaling();
+            //RunSolver(args);
+            ConditionNumberScaling();
         }
 
         static void RunSolver(string[] args) {
