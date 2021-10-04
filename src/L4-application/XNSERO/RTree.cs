@@ -58,7 +58,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 InsertParticle(particleNode, Nodes[0]);
                     for (int i = 0; i < virtualDomainOrigin.Count(); i++) {
                         Vector virtualPosition = virtualDomainOrigin[i] + Particles[p].Motion.GetPosition();
-                        if (Particles[p].Motion.IsInsideOfPeriodicDomain(virtualPosition, (Tolerance + Particles[p].GetLengthScales().Max()))) {
+                        if (Particles[p].Motion.IsInsideOfPeriodicDomain(virtualPosition, 1.5 * (Particles[p].GetLengthScales().Max()))) 
+                        {
                             TreeNode particleNodePeriodic = new TreeNode(false, 0, FindSmallestEmptyID(), virtualDomainOrigin[i]);
                             InsertNodeToList(particleNodePeriodic);
                             particleNodePeriodic.ParticleID = p;

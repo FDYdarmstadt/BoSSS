@@ -305,24 +305,24 @@ namespace BoSSS.Application.FSI_Solver {
             double activeStress = 1;
             double nextParticleDistance = particleLength * 2.1;
             double domainLength = nextParticleDistance * noOfParticles;
-            //List<string> boundaryValues = new List<string> {
-            //    "Wall"
-            //};
-            //C.SetBoundaries(boundaryValues);
+            List<string> boundaryValues = new List<string> {
+                "Wall_upper","Wall_lower"
+            };
+            C.SetBoundaries(boundaryValues);
             C.GridPartType = Foundation.Grid.GridPartType.Hilbert;
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
+            C.SetGrid(10 * domainLength, domainLength, cellsPerUnitLength, false, true);
             C.SetAddaptiveMeshRefinement(0);
             C.hydrodynamicsConvergenceCriterion = 1e-4;
             C.minDistanceThreshold = 1 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 0.75;
             InitializeMotion motion = new InitializeMotion(C.gravity, particleDensity, false, false, false, 0);
-            double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
+            InitializeMotion noMotion = new InitializeMotion(C.gravity, particleDensity, false, true, true, 0);
             Random angle = new Random();
             Random insertParticle = new Random();
             int j = 0;
-            while(leftCorner + j * nextParticleDistance < domainLength / 2) {
+            while(-domainLength / 2 + nextParticleDistance / 2 + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
-                while (leftCorner + i * nextParticleDistance < domainLength / 2) {
+                while (-domainLength * 10 / 2 + nextParticleDistance / 2 + i * nextParticleDistance < domainLength / 2) {
                     double temp_insertParticle = insertParticle.Next(0, 3);
                     temp_insertParticle = temp_insertParticle.MPIBroadcast(0);
                     //if (temp_insertParticle != 0) 
@@ -332,12 +332,13 @@ namespace BoSSS.Application.FSI_Solver {
                         temp_angle = temp_angle.MPIBroadcast(0);
                         temp_angle2 = temp_angle2.MPIBroadcast(0);
                         double angle2 = temp_angle * 180 + temp_angle2 * Math.Pow(-1, i * j);
-                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance}, angle2, activeStress, new double[] { 0,0}));
+                        C.Particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength * 10 / 2 + nextParticleDistance / 2 + i * nextParticleDistance, -domainLength / 2 + nextParticleDistance / 2 + j * nextParticleDistance}, angle2, activeStress, new double[] { 0,0}));
                     }
                     i += 1;
                 }
                 j += 1;
             }
+            C.Particles.Add(new Particle_Ellipsoid(noMotion, domainLength / 4, domainLength / 4, new double[] { -domainLength * 3.5, 0 }, 0, 0));
 
             // misc. solver options
             // =============================  

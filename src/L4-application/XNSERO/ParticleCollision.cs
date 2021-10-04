@@ -123,7 +123,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
             double distanceThreshold = GridLengthScale / 10;
-            int counter = 0;
             if (MinDistance != 0)
                 distanceThreshold = MinDistance;
             // Step 2
@@ -187,7 +186,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                             int pID = potentialCollisionPartners[p0][p1];
                             if (!AlreadyAnalysed[p0][pID] && pID > p0) {
                                 AlreadyAnalysed[p0][pID] = true;
-                                Console.WriteLine("Calculating distance between particle " + p0 + " and " + pID + " Length " + potentialCollisionPartners[p0].Length);
                                 Particle[] currentParticles = new Particle[] { Particles[p0], Particles[pID] };
                                 CalculateMinimumDistance(currentParticles, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out bool temp_Overlapping);
                                 Overlapping[p0][pID] = temp_Overlapping;
@@ -223,7 +221,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                         break;
                     if(DetermineOnlyOverlap)
                         break;
-                    counter += 1;
                 }
                 if(DetermineOnlyOverlap)
                     break;
@@ -257,7 +254,6 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 Tree.UpdateTree(Particles, AccumulatedCollisionTimestep);
             }
-            Console.WriteLine("Counter " + counter);
         }
 
         private int[][] ClusterCollisionsContainingSameParticles() {
@@ -330,7 +326,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 if (Particles[FirstParticleID].Motion.IncludeTranslation || Particles[FirstParticleID].Motion.IncludeRotation)
                     detectCollisionVn_P1 = CalculateNormalSurfaceVelocity(SecondParticleID, normalVector, ClosestPoints[SecondParticleID][FirstParticleID]);
             }
-            return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.1 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
+            return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.01 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
         }
 
         private double CalculateNormalSurfaceVelocity(int particleID, Vector normalVector, Vector closestPoint) {

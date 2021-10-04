@@ -76,6 +76,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         hydrodynamics[offset + d] = tempHydrodynamics[d];
                 }
                 hydrodynamics = hydrodynamics.MPISum();
+                hydrodynamics = hydrodynamics.MPIBroadcast(0);
 
                 // Gravity, has to be added after MPISum()!
                 for (int p = 0; p < AllParticles.Count(); p++) {

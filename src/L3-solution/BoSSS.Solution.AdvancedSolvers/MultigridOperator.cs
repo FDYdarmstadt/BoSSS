@@ -52,63 +52,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return lsTrk;
         }
 
-        static private long[][] GetGlobalCellNeigbourship(UnsetteledCoordinateMapping map) {
-            var GlobalNumberOfCells = map.GridDat.CellPartitioning.TotalLength;
-            long[] externalCellsGlobalIndices = map.GridDat.iParallel.GlobalIndicesExternalCells;
-            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
-            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            for (long j = 0; j < J; j++) {
-                long globalIndex = j + map.GridDat.CellPartitioning.i0;
-                // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                Tuple<int, int, int>[] cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
-                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
-                for (int i = 0; i < cellNeighbours.Length; i++) {
-                    globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
-                }
-
-                // translate local neighbour index into global index
-                for (int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
-                    if (globalCellNeigbourship[globalIndex][i] < J)
-                        globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + map.GridDat.CellPartitioning.i0;
-                    else
-                        globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - J];
-                }
-            }
-
-            for (int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? map.GridDat.MpiRank : 0;
-                processID = processID.MPIMax();
-                globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
-            }
-
-            return globalCellNeigbourship;
-        }
-
-        /// <summary>
-        /// Returns the cutcells + neighbours on a global level.
-        /// </summary>
-        /// <param name="globalCellNeighbourship">
-        /// </param>
-        static private BitArray GetGlobalNearBand(BitArray levelSetCells, UnsetteledCoordinateMapping map) {
-            long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(map);
-            BitArray globalCutCells = new BitArray(checked((int)map.GridDat.CellPartitioning.TotalLength));
-            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int j = 0; j < J; j++) {
-                if (levelSetCells[j]) {
-                    int globalIndex = checked((int)(j + map.GridDat.CellPartitioning.i0));
-                    globalCutCells[globalIndex] = true;
-                    for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
-                        globalCutCells[(int)globalCellNeighbourship[globalIndex][i]] = true;
-                    }
-                }
-            }
-
-            for (int j = 0; j < globalCutCells.Length; j++) {
-                globalCutCells[j] = globalCutCells[j].MPIOr();
-            }
-            return globalCutCells;
-        }
-
         int FindPhaseDGCoordinate(UnsetteledCoordinateMapping map, int iVar, int jCell, AggregationGridBasis[] bases) {
             LevelSetTracker lsTrk = GetTracker(map);
             var basis = bases[iVar];
@@ -128,14 +71,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int neighborSearchDepth = 4;
             int jFound = -1;
             bool foundACell = false;
-            //Debugger.Launch();
             while (!foundACell && neighborSearchDepth >= 0) {
                 if (lsTrk != null) {
-                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(2, neighborSearchDepth)).GetBitMask();
-                    for (int i = 0; i < neighborSearchDepth - 2; i++) {
-                        if (neighborSearchDepth - 2 > 0)
-                            Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
-                    }
+                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(lsTrk.NearRegionWidth).GetBitMask();
                 } else {
                     Cells2avoid = null;
                 }

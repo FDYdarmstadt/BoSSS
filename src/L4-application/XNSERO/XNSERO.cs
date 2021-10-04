@@ -36,7 +36,6 @@ namespace BoSSS.Application.XNSERO_Solver {
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
     /// </remarks>
     public class XNSERO : XNSE<XNSERO_Control> {
-
         /// <summary>
         /// Main 
         /// </summary>
@@ -277,7 +276,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return levelSetVelocity;
         }
 
-        RTree tree = new RTree(2, 0.4);
+        RTree tree = new RTree(2, 0.1);
 
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
