@@ -63,6 +63,25 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
 
+
+        /// <summary>
+        /// Utility function for easier user interaction, (should) set all reasonable <see cref="FieldOptions"/>
+        /// </summary>
+        public override void SetDGdegree(int degree) {
+            FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 2,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("u", new FieldOpts() {
+                Degree = degree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add("V*", new FieldOpts() {
+                Degree = degree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
+
         
         /// <summary>
         /// Level-set velocity in normal direction.

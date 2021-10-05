@@ -722,6 +722,16 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /// <summary>
+        /// Loads table from a CSV-file.
+        /// </summary>
+        public static DataTable FromCSVFile(string filename, char ColSep = '\t', bool EnforceEqualColumns = false, bool writeHeader = true, bool writeRowIdx = false) {
+
+            using (var txt = new StreamReader(new FileStream(filename, FileMode.Open), new UTF8Encoding())) {
+                return ReadCSVFromStream(txt, ColSep, EnforceEqualColumns, writeHeader, writeRowIdx);
+            }
+        }
+
         static string WriteWhite(int I) {
             using (var t = new StringWriter()) {
                 for (int i = 0; i < I; i++) {
@@ -835,6 +845,56 @@ namespace BoSSS.Application.BoSSSpad {
                         txt.WriteLine();
                 }
             }
+        }
+
+        /// <summary>
+        /// Loads a table from a csv file
+        /// </summary>
+        public static DataTable ReadCSVFromStream(TextReader txt,
+            char ColSep, bool EnforceEqualColumns, bool readHeader, bool readRowIdx) {
+            if (readRowIdx)
+                throw new NotImplementedException("Setting 'readRowIdx' currently not supported.");
+            if (EnforceEqualColumns)
+                throw new NotImplementedException("Setting 'EnforceEqualColumns' currently not supported.");
+            if (!readHeader)
+                throw new ArgumentException("Need Header to name columns!");
+            if (EnforceEqualColumns && ColSep != ' ')
+                throw new ArgumentException("Setting 'EnforceEqualColumns' true requires the column separator to be the space character.");
+
+            DataTable table = new DataTable();
+
+            // first read header and create columns
+            int NoOfCols;
+
+            if (readHeader) {
+
+                string header = txt.ReadLine();
+                string[] ColumnNames;
+                ColumnNames = header.Split(ColSep);
+                NoOfCols = ColumnNames.Count();
+
+                if (NoOfCols <= 0)
+                    return null;
+
+                foreach (var col in ColumnNames)
+                    table.Columns.Add(col);
+            }
+
+            // read line for line and add rows
+            string line;
+            while((line = txt.ReadLine()) != null) {
+                string[] Columns = line.Split(ColSep);
+
+                if (Columns.Count() != table.Columns.Count)
+                    throw new ApplicationException("Cannot load csv table, make sure your entries do not contain the column separator by mistake");
+
+                DataRow row = table.NewRow();
+                row.ItemArray = Columns;
+                table.Rows.Add(row);
+            }
+
+            return table;
+            
         }
 
         /// <summary>

@@ -20,26 +20,29 @@ using BoSSS.Solution;
 namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
 
     public enum ClassifierType {
-        Species = 1,
-        CutCells = 2
+        VoidCutNormal = 1,
+        CutCells = 2,
+        Species = 3
     }
     
     public static class CellClassifier{ 
         public static (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IApplication<XNSE_Control> program, ClassifierType CType) {
             if (program.LsTrk == null)
                 throw new ArgumentNullException("LsTrk not initialized! Not good, I need it!");
+
             switch (CType) {
                 case ClassifierType.Species:
                     return SpeciesClassification(program);
                 case ClassifierType.CutCells:
                     return CutCellClassification(program);
+                case ClassifierType.VoidCutNormal:
+                    return VoidCutNormalClassification(program);
                 default:
                     throw new NotSupportedException("Type is not supported");
             }
         }
 
         private static (int noOfClasses, int[] cellToPerformanceClassMap) SpeciesClassification(IApplication<XNSE_Control> program) {
-            XNSE_Control XNSECtrl = program.Control as XNSE_Control;
             var LsTrk = program.LsTrk;
             if (LsTrk == null)
                 throw new NotSupportedException("Needs Information of Levelset tracker");
@@ -54,13 +57,40 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
             return (noOfClasses, cellToPerformanceClassMap);
         }
 
+
+        private static (int noOfClasses, int[] cellToPerformanceClassMap) VoidCutNormalClassification(IApplication<XNSE_Control> program) {
+            var LsTrk = program.LsTrk;
+            if (LsTrk == null)
+                throw new NotSupportedException("Needs Information of Levelset tracker");
+
+            int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+            int[] cellToPerformanceClassMap = new int[J];
+
+            (int,int[]) tyield = CutCellClassification(program);
+            int[] cutcellcostcluster = tyield.Item2;
+            int noOfClasses = tyield.Item1 + 1;
+
+            for (int iCell = 0; iCell < J; iCell++) {
+                bool AtLeastOneSpecies = LsTrk.Regions.GetNoOfSpecies(iCell)>=1;
+                cellToPerformanceClassMap[iCell] = AtLeastOneSpecies? 1 : 0;
+                cellToPerformanceClassMap[iCell] += cutcellcostcluster[iCell];
+            }
+
+            return (noOfClasses, cellToPerformanceClassMap);
+        }
+
+        /// <summary>
+        /// 0: non cutcell
+        /// 1: cutcell
+        /// </summary>
+        /// <param name="program"></param>
+        /// <returns></returns>
         private static (int noOfClasses, int[] cellToPerformanceClassMap) CutCellClassification(IApplication<XNSE_Control> program) {
-            XNSE_Control XNSECtrl = program.Control as XNSE_Control;
             var LsTrk = program.LsTrk;
             if (LsTrk == null)
                 throw new NotSupportedException("Needs a Information of Levelset tracker");
 
-            int noOfClasses = 2; // we distiguish only between cutcells and non-cutcells
+            int noOfClasses = 2; // we distinguish only between cutcells and non-cutcells
             int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellToPerformanceClassMap = new int[J];
             foreach (int j in LsTrk.Regions.GetCutCellMask().ItemEnum) {

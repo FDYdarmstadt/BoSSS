@@ -289,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                     Vector gradient = new Vector(grad[0, i, 0], grad[0, i, 1]);
                     rule.Weights[i] *= gradient.Abs() / Math.Abs(gradient[0]);
                 }
-            }
+            }            
             return rule;
         }
 
@@ -493,17 +493,23 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi;
 
+        private Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi1;
+
         Func<int, double> gram;
 
         public BruteForceEdgePointScheme(Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi,
+            Action<int, NodeSet, MultidimensionalArray, MultidimensionalArray> phi1,
             Func<int, double> gram) {
             this.phi = phi;
+            this.phi1 = phi1;
             this.gram = gram;
         }
 
         public void Initialize(int resolution) {
             phiValuesIn = MultidimensionalArray.Create(1, resolution);
             phiValuesOut = MultidimensionalArray.Create(1, resolution);
+            phiValuesIn1 = MultidimensionalArray.Create(1, 1);
+            phiValuesOut1 = MultidimensionalArray.Create(1, 1);
             CreateEdgeNodes(resolution);
         }
 
@@ -521,6 +527,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
 
         private MultidimensionalArray phiValuesOut;
 
+        private MultidimensionalArray phiValuesIn1;
+
+        private MultidimensionalArray phiValuesOut1;
+
         public QuadRule GetQuadRule(int edge) {
             phi(edge, edgeNodes, phiValuesIn, phiValuesOut);
 
@@ -528,8 +538,14 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int numberOfEdgeNodes = 0;
             for (int i = 0; i < nodeMap.Length - 1; ++i) {
                 if (phiValuesIn[0, i] * phiValuesIn[0, i+1] < 0) {
-                    nodeMap[i] = true;
-                    ++numberOfEdgeNodes;
+                    NodeSet edgeNodes1 = new NodeSet(Line.Instance, 1, 1);
+                    edgeNodes1[0] = edgeNodes[i];
+                    edgeNodes1.LockForever();
+                    phi1(edge, edgeNodes1, phiValuesIn1, phiValuesOut1);
+                    if(phiValuesIn1[0] > 0) {
+                        nodeMap[i] = true;
+                        ++numberOfEdgeNodes;
+                    }
                 }
             }
             QuadRule rule;
@@ -602,7 +618,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 rule.Nodes.LockForever();
             } else {
                 if(numberOfVolumeNodes != 1) {
-                    Console.WriteLine($"Warning: More than one levelSetintersection in Cell{cell}");
+                    Console.WriteLine($"Contact Line Operator Warning: More than one levelSetintersection in Cell{cell}");
                 }
                 double weight = gram(cell);
                 rule = ExtractQuadRule(nodeMap, numberOfVolumeNodes, weight);

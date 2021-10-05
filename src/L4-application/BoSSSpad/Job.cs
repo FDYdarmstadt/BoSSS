@@ -77,14 +77,28 @@ namespace BoSSS.Application.BoSSSpad {
             get;
         }
         
-        /// <summary>
-        /// The memory (in MB) that is reserved for every core
-        /// </summary>
-        public string MemPerCPU {
-            set;
-            get;
-        }
+        /*
+         * Fk, Anmerkung:
+         * Sowas wie die folgenden Properties (MemPerCPU) sollten keine Eigenschaften des Job sein, weil es Scheduler-spezifisch ist.
+         * Der ganze Quatsch soll in die BatchProcessorConfig.json:
+         * ```
+         * "AdditionalBatchCommands": [
+         *          "#SBATCH -p test24",
+         *          "#SBATCH -C avx512",
+         *          "#SBATCH --mem-per-cpu=8000"
+         * ]
+         * ```
+         * 
 
+        ///// <summary>
+        ///// The memory (in MB) that is reserved for every core
+        ///// </summary>
+        //public string MemPerCPU {
+        //    set;
+        //    get;
+        //}
+
+        
         private int m_NumberOfNodes = -1;
 
         /// <summary>
@@ -94,8 +108,8 @@ namespace BoSSS.Application.BoSSSpad {
             get { return m_NumberOfNodes;  }
             set { m_NumberOfNodes = value;  }
         }
+        */
 
-        
 
         /// <summary>
         /// Class which contains the main-method of the solver (or general application to launch).
@@ -274,51 +288,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(!bpc.IsDatabaseAllowed(m_ctrl)) {
                 throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
             }
-            /*
-            if(bpc.AllowedDatabasesPaths != null && bpc.AllowedDatabases.Count > 0) {
-                
-                IDatabaseInfo newDb = null;
-                if(ctrl_db == null) {
-                    newDb = bpc.AllowedDatabases[0];
-                } else {
-                    bool ok = false;
-                    foreach(var allow_dba in bpc.AllowedDatabases) {
-                        if(allow_dba.Equals(ctrl_db)) {
-                            ok = true;
-                            break;
-                        }
-                    }
-
-                    if(!ok)
-                        newDb = bpc.AllowedDatabases[0];
-                }
-
-                if(newDb != null) {
-                    Console.WriteLine("Resetting database for control object to " + newDb.ToString());
-
-                    //newDb.AlternateDbPaths
-
-
-
-                    m_ctrl.SetDatabase(newDb);
-                    ctrl_db = newDb;
-                }
-
-                Console.WriteLine("Submitting job with the following database info: ");
-                Console.WriteLine("Primary: " + m_ctrl.DbPath);
-                if(ctrl_db.AlternateDbPaths != null && ctrl_db.AlternateDbPaths.Length > 0) {
-                    int cnt = 0;
-                    foreach (var t in ctrl_db.AlternateDbPaths) {
-                        Console.WriteLine($" Alternative[{cnt}]: {t.DbPath}, MachineFilter: '{t.MachineFilter}'");
-                        cnt++;
-                    }
-                } else {
-                    Console.WriteLine("No alternative paths specified.");
-                }
-            } else {
-                Console.WriteLine("");
-            } 
-            */
+     
 
             // check grid & restart info
             // =========================
@@ -1406,7 +1376,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        string m_ExecutionTime = "00:05:00";
+        string m_ExecutionTime = "05:00:00";
 
         /// <summary>
         /// Estimated execution time limit. Important for slurm queuing
@@ -1491,7 +1461,7 @@ namespace BoSSS.Application.BoSSSpad {
                             string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
                             string a_runtimeconfig_json = Path.Combine(MainAssemblyDir,Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
 
-                            foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                            foreach (var a_acc in new[] { a_config, a_runtimeconfig_json }) {
                                 if(File.Exists(a_acc)) {
                                     files.Add(a_acc);
                                 }

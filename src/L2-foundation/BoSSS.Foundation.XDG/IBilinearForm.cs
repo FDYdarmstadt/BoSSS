@@ -61,10 +61,10 @@ namespace BoSSS.Foundation.XDG {
         /// Passes various coefficients to the equation component.
         /// </summary>
         /// <param name="csA">
-        /// Coefficient set related to negative species (<see cref="NegativeSpecies"/>)
+        /// Coefficient set related to negative species (<see cref="ILevelSetForm.NegativeSpecies"/>)
         /// </param>
         /// <param name="csB">
-        /// Coefficient set related to positive species (<see cref="PositiveSpecies"/>)
+        /// Coefficient set related to positive species (<see cref="ILevelSetForm.PositiveSpecies"/>)
         /// </param>
         /// <param name="DomainDGdeg">
         /// actual polynomial degree of domain variables

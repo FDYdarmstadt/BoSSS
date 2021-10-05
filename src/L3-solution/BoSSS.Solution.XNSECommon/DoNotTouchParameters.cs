@@ -132,6 +132,27 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
+    /// Options for the boundary type of the immersed boundary
+    /// </summary>
+    public enum IBM_BoundaryType {
+
+        /// <summary>
+        /// No Slip boundary
+        /// </summary>
+        NoSlip = 0,
+
+        /// <summary>
+        /// Navierslip boundary, (with cl handling)
+        /// </summary>
+        NavierSlip = 1,
+
+        /// <summary>
+        /// Freeslip boundary, (with cl handling)
+        /// </summary>
+        FreeSlip = 2,
+    }
+
+    /// <summary>
     /// Options for the friction coefficient in GNBC
     /// </summary>
     public enum NavierSlip_SlipLength {
@@ -355,6 +376,11 @@ namespace BoSSS.Solution.XNSECommon {
         [DataMember]
         public NavierSlip_SlipLength GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
 
+        /// <summary>
+        /// See <see cref="IBM_BoundaryType"/>
+        /// </summary>
+        [DataMember]
+        public IBM_BoundaryType IBM_BoundaryType = IBM_BoundaryType.NoSlip;
 
         //viscoelastic LDG stuff:
         //=========================
@@ -403,6 +429,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public double StressPenalty = 1.0;
+
+        /// <summary>
+        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride"/>
+        /// </summary>
+        [DataMember]
+        public bool DoubleCutSpecialQuadrature = false;
 
 
         /// <summary>

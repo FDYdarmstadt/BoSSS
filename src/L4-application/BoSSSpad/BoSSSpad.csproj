@@ -41,6 +41,9 @@
     <Compile Remove="WorksheetEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="CommandLine">
+      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="MathNet.Numerics">
       <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
@@ -69,11 +72,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\private-mag\XDGShock_MPITests\XDGShock_MPITests.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj" />
+	<ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
     <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
@@ -105,6 +110,7 @@
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
+    <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>git describe --long &gt; "$(ProjectDir)\version.txt"

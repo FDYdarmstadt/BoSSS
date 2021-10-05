@@ -139,6 +139,18 @@ namespace ilPSP.Tracing {
         public MethodCallRecord ParrentCall;
 
         /// <summary>
+        /// Depth in the call stack
+        /// </summary>
+        public int Depth {
+            get {
+                if(ParrentCall == null)
+                    return 1;
+                else
+                    return ParrentCall.Depth + 1;
+            }
+        }
+
+        /// <summary>
         /// all traces sub-calls
         /// </summary>
         [DataMember]
@@ -179,29 +191,32 @@ namespace ilPSP.Tracing {
         }
 
         [DataMember]
-        internal long m_Memory = 0;
+        internal long m_MemoryIncrease = 0;
+
+        [DataMember]
+        internal long m_PeakMemoryIncrease = 0;
 
         /// <summary>
-        /// memory of call without childcalls
+        /// memory allocation of call without child calls
         /// </summary>
         [JsonIgnore]
-        public long ExclusiveMemory {
+        public long ExclusiveMemoryIncrease {
             get {
                 long childs = 0;
                 foreach (var c in Calls.Values) {
-                    childs += c.m_Memory;
+                    childs += c.m_MemoryIncrease;
                 }
-                return m_Memory - childs;
+                return m_MemoryIncrease - childs;
             }
         }
 
         /// <summary>
-        /// memory of call including all child calls
+        /// memory allocation of call including all child calls
         /// </summary>
         [JsonIgnore]
-        public long InclusiveMemory {
+        public long InclusiveMemoryIncrease {
             get {
-                return m_Memory;
+                return m_MemoryIncrease;
             }
         }
 
@@ -210,6 +225,13 @@ namespace ilPSP.Tracing {
         /// </summary>
         [DataMember]
         internal long m_TicksSpentinBlocking = 0;
+
+        [JsonIgnore]
+        public TimeSpan TimeSpentInMPIBlocking {
+            get {
+                return new TimeSpan(m_TicksSpentinBlocking);
+            }
+        }
 
         /// <summary>
         /// Ticks spent in blocking MPI routines.
@@ -404,14 +426,34 @@ namespace ilPSP.Tracing {
             /// a report;
             /// </summary>
             override public string ToString() {
-                return string.Format(
-                    "'{0}': {1} calls, {2:0.###E-00} seconds, {3:F3} %  of '{4}', called by '{5}'",
-                    M.Name,
-                    M.CallCount,
-                    TimeSpentInMethod.TotalSeconds,
-                    RuntimeFraction * 100,
-                    RelativeRoot.Name,
-                    M.ParrentCall != null ? M.ParrentCall.Name : "nobody");
+                using(var stw = new StringWriter()) {
+                    stw.Write(string.Format(
+                        "'{0}': {1} calls, {2:0.###E-00} seconds, {3:F3} %  of '{4}', {5} MB allocated, {6} MB allocated exclusive, called by :",
+                        M.Name, // 0
+                        M.CallCount, // 1
+                        TimeSpentInMethod.TotalSeconds, //  2
+                        RuntimeFraction * 100, // 3 
+                        RelativeRoot.Name, // 4
+                        (double)(M.InclusiveMemoryIncrease) / (1024.0 * 1024.0), //  5
+                        (double)(M.ExclusiveMemoryIncrease) / (1024.0 * 1024.0))); // 6
+
+                    if(M.ParrentCall == null) {
+                        stw.Write("NOBODY");
+                    } else {
+                        var mcr = M.ParrentCall;
+                        while(mcr != null) {
+                            stw.Write(M.ParrentCall.Name);
+                            mcr = mcr.ParrentCall;
+                            if(mcr != null)
+                                stw.Write(">");
+                            else
+                                stw.Write(">X");
+                        }
+
+
+                    }
+                    return stw.ToString();
+                }
             }
         }
 
@@ -477,6 +519,8 @@ namespace ilPSP.Tracing {
             return R.Values.Select(l => new CollectionReport(l));
         }
 
+
+
         /// <summary>
         /// Recursive implementation of <see cref="CompleteCollectiveReport"/>
         /// </summary>
@@ -492,6 +536,32 @@ namespace ilPSP.Tracing {
             foreach (MethodCallRecord c in this.Calls.Values)
                 c.CollectiveReportRec(R);
         }
+
+
+        /// <summary>
+        /// flattens this entry and all childs recusively into a list
+        /// </summary>
+        public IEnumerable<MethodCallRecord> Flatten() {
+            var Ret = new List<MethodCallRecord>();
+            FlattenRecursive(Ret);
+            return Ret;
+        }
+
+
+        private void FlattenRecursive(List<MethodCallRecord> r) {
+            r.Add(this);
+            foreach(var mcr in this.Calls.Values)
+                mcr.FlattenRecursive(r);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            var m = this.GetMiniReport();
+            return m.ToString();
+        }
+
     }
 
     /// <summary>
@@ -566,9 +636,18 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Memory spent in traced child calls
         /// </summary>
-        public long ExclusiveMemorySpent {
+        public long ExclusiveMemoryIncrease {
             get {
-                return AllCalls.Sum(a => a.ExclusiveMemory);
+                return AllCalls.Sum(a => a.ExclusiveMemoryIncrease);
+            }
+        }
+
+        /// <summary>
+        /// Memory spent in traced child calls
+        /// </summary>
+        public long InclusiveMemoryIncrease {
+            get {
+                return AllCalls.Sum(a => a.InclusiveMemoryIncrease);
             }
         }
 
@@ -615,30 +694,28 @@ namespace ilPSP.Tracing {
                 }
             }
 
-            StringWriter stw = new StringWriter();
+            using(StringWriter stw = new StringWriter()) {
 
 
-            stw.Write(string.Format(
-                "'{0}': {1} calls, {2:F3}% / {4:0.##E-00} sec. runtime exclusive, {3:F3}% / {5:0.##E-00} sec. runtime inclusive child calls, called by: ",
-                    this.Name,
-                    this.CallCount,
-                    this.ExclusiveTimeFractionOfRoot * 100,
-                    this.TimeFractionOfRoot * 100,
-                    (new TimeSpan(this.ExclusiveTicks)).TotalSeconds,
-                    (new TimeSpan(this.TicksSpentInMethod)).TotalSeconds));
+                stw.Write($"'{this.Name}': {this.CallCount} calls, ");
+                stw.Write($"{(this.ExclusiveTimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:0.##E-00} sec. runtime exclusive, ");
+                stw.Write($"{(this.TimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:0.##E-00} sec. runtime inclusive child calls, ");
+                stw.Write($"{(double)(this.InclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00}/{(double)(this.ExclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00} MB allocated incl./excl., ");
+                stw.Write("called by: ");
+                        
+                stw.Write("'");
+                for(int i = 0; i < calledBy.Count; i++) {
+                    stw.Write(calledBy[i]);
+                    stw.Write("*");
+                    stw.Write(calledByCnt[i]);
+                    if(i < calledBy.Count - 1)
+                        stw.Write(",");
+                    else
+                        stw.Write("'");
+                }
 
-            stw.Write("'");
-            for (int i = 0; i < calledBy.Count; i++) {
-                stw.Write(calledBy[i]);
-                stw.Write("*");
-                stw.Write(calledByCnt[i]);
-                if (i < calledBy.Count - 1)
-                    stw.Write(",");
-                else
-                    stw.Write("'");
+                return stw.ToString();
             }
-
-            return stw.ToString();
         }
     }
 }

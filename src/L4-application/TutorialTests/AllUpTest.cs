@@ -83,10 +83,10 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("InitialValues/InitialValues.tex")]
+        [NUnitFileToCopyHack("InitialValues/InitialValues.ipynb")]
         [Test]
         static public void Run__InitialValues() {
-            RunWorksheet("InitialValues/InitialValues.tex");
+            RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -105,31 +105,31 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
+        [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
         [Test]
         static public void Run__GridGeneration() {
-            RunWorksheet("GridGeneration/GridGeneration.tex");
+            RunWorksheet("GridGeneration/GridGeneration.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartIBM/channel.tex")]
+        [NUnitFileToCopyHack("quickStartIBM/channel.ipynb")]
         [Test]
         static public void Run__channel() {
-            RunWorksheet("quickStartIBM/channel.tex");
+            RunWorksheet("quickStartIBM/channel.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.tex")]
+        [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.ipynb")]
         [Test]
         static public void Run__tutorialMatlab() {
-            RunWorksheet("shortTutorialMatlab/tutorialMatlab.tex");
+            RunWorksheet("shortTutorialMatlab/tutorialMatlab.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue2Basics/ue2Basics.tex")]
+        [NUnitFileToCopyHack("ue2Basics/ue2Basics.ipynb")]
         [Test]
         static public void Run__ue2Basics() {
-            RunWorksheet("ue2Basics/ue2Basics.tex");
+            RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
 #if !DEBUG

@@ -80,6 +80,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     throw new NotSupportedException();
 
                 m_SignedEdgeTag = (value & 0xFF) | (m_SignedEdgeTag & ~0xFF);
+
+
             }
             get {
                 int r;
@@ -89,6 +91,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     r = m_SignedEdgeTag & 0xFF;
                 }
                 Debug.Assert(r < 255, "in reserved value range");
+
                 return (byte)r;
             }
         }
@@ -103,8 +106,10 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public bool PeriodicInverse {
             get {
-                return (m_SignedEdgeTag & PeriodicInverseMask) != 0
+                bool r =  (m_SignedEdgeTag & PeriodicInverseMask) != 0
                     || m_SignedEdgeTag < 0; // legacy stuff
+
+                return r;
             }
             set {
                 if (m_SignedEdgeTag < 0)
@@ -114,6 +119,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     m_SignedEdgeTag |= PeriodicInverseMask;
                 else
                     m_SignedEdgeTag &= ~PeriodicInverseMask;
+
             }
         }
 
@@ -147,6 +153,14 @@ namespace BoSSS.Foundation.Grid.Classic {
         [DataMember]
         public bool ConformalNeighborship;
 
-       
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return $"Face index: {FaceIndex}, EdgeTag: {EdgeTag}, NeighCell_GlobalID: {NeighCell_GlobalID}, ConformalNeighborship: {ConformalNeighborship}, PeriodicInverse: {PeriodicInverse}, (m_SignedEdgeTag {m_SignedEdgeTag})";
+        }
+
+
     }
 }

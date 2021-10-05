@@ -131,6 +131,56 @@ namespace BoSSS.Application.SipPoisson {
         }
 
         /// <summary>
+        /// Test on a curved grid.
+        /// </summary>
+        public static SipControl TestSpherical() {
+            //BoSSS.Application.SipPoisson.SipHardcodedControl.TestCurved();
+            var R = new SipControl();
+            R.ProjectName = "ipPoison/curved";
+            R.savetodb = false;
+
+            //R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("T", new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
+            R.InitialValues_Evaluators.Add("RHS", X => 1.0);
+            R.InitialValues_Evaluators.Add("Tex", X => 1.0 / 6.0 * (X[0]*X[0]+ X[1] * X[1] + X[2]*X[2]) + 5.0/6.0);
+            R.ExactSolution_provided = true;
+            //R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //R.LinearSolver.TargetBlockSize = 1000;
+            R.SuperSampling = 2;
+            //R.NoOfMultigridLevels = 4;
+
+            R.GridFunc = delegate () {
+                double Ra = 0.1;
+                double Rb = 1;
+                int res = 32;
+                // phi, theta +/-5°
+                var grd = Grid3D.SphereCutout(GenericBlas.Logspace(Ra, Rb, res+1), GenericBlas.Linspace(-0.5 * 5.0/360,0.5 * 5.0/360, 2), GenericBlas.Linspace(-5.0 / 360, 5.0 / 360, 2));
+                grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
+                grd.EdgeTagNames.Add(2, BoundaryType.Neumann.ToString());
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte ret;
+                    if (Math.Abs(X.L2Norm() - Ra) < 1e-10 || Math.Abs(X.L2Norm() - Rb) < 1e-10) {
+                        ret = 1;
+                    } else {
+                        ret = 2;
+                    }
+                    return ret;
+                });
+                return grd;
+            };
+
+            R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T",
+                 delegate (double[] X) {
+                     return 1.0 / 6.0 * (X[0] * X[0] + X[1] * X[1] + X[2] * X[2]) + 5.0 / 6.0;
+                 });
+
+
+            return R;
+        }
+
+        /// <summary>
         /// Creates Nodes, yes it really does!
         /// </summary>
         /// <param name="res"></param>
@@ -197,8 +247,8 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0) {
-            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2)'
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
+            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.classic_pardiso)'
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
@@ -234,7 +284,7 @@ namespace BoSSS.Application.SipPoisson {
 
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver.SolverCode = solver;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
             R.LinearSolver.NoOfMultigridLevels = 10;
@@ -451,15 +501,15 @@ namespace BoSSS.Application.SipPoisson {
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
         public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5) {
+//            BoSSS.Application.SipPoisson.SipHardcodedControl.Square(16, 16, 2);
 
-            //Func<double[], double> exRhs = X => 2 * X[0] * X[0] + 2 * X[1] * X[1] - 4;
-            //Func<double[], double> exSol = X => (1.0 - X[0] * X[0]) * (1.0 - X[1] * X[1]);
-
-            //Func<double[], double> exSol = X => (1.0 - X[1]);
-            //Func<double[], double> exRhs = X => 0.0;
-
-            Func<double[], double> exSol = X => -Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5);
-            Func<double[], double> exRhs = X => (Math.PI * Math.PI * 0.5 * Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5)); // == - /\ exSol
+            double ax = 1.0; // must be an odd number to comply with homogeneous boundary condition
+            double ay = 1.0; // must be an odd number to comply with homogeneous boundary condition
+            Func<double[], double> exSol =
+                    (X => Math.Cos(X[0] * ax * Math.PI * 0.5) * Math.Cos(X[1] * ay * Math.PI * 0.5));
+            Func<double[], double> exRhs =
+                    (X => -((ax.Pow2() + ay.Pow2()) / 4.0) * Math.PI.Pow2()
+                         * Math.Cos(X[0] * ax * Math.PI * 0.5) * Math.Cos(X[1] * ay * Math.PI * 0.5)); // == - /\ exSol
 
 
             var R = new SipControl();
@@ -468,13 +518,13 @@ namespace BoSSS.Application.SipPoisson {
             //R.DbPath = "D:\\BoSSS-db";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
             //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             R.SuppressExceptionPrompt = true;
             //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
@@ -497,9 +547,12 @@ namespace BoSSS.Application.SipPoisson {
 
             R.NoOfSolverRuns = 1;
 
-            R.AdaptiveMeshRefinement = true;
-            R.NoOfTimesteps = 5;
+            R.AdaptiveMeshRefinement = false;
+            R.NoOfTimesteps = 1;
+            R.ImmediatePlotPeriod = 1;
+            R.SuperSampling = 2;
 
+            //R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }

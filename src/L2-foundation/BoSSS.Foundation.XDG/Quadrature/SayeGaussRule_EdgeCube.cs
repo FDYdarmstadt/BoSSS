@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             MultidimensionalArray weightArr = new MultidimensionalArray(1);
             weightArr.Allocate(1);
             weightArr[0] = weight;
-            return new SayeQuadRule(node, weightArr);
+            return new SayeQuadRule(node, weightArr, RefElement);
         }
     }
 }

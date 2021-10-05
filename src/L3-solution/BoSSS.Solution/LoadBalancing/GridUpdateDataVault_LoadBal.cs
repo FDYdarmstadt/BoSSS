@@ -291,7 +291,14 @@ namespace BoSSS.Solution {
                         (int iLevSet, int iFace)[][] LevSetCoincidingFaces = new (int iLevSet, int iFace)[m_newJ][];
                         this.RestoreVector<(int iLevSet, int iFace)[],(int iLevSet, int iFace)[][]>(LevSetCoincidingFaces, GetLSlevsetcoincidingfacesName(iH));
 
-                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, RegionCode, LevSetCoincidingFaces, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
+                        m_NewTracker.ReplaceCurrentTimeLevel(
+                            new LevelSetTracker.TrackerBackup() {
+                                LevelSets = tmpLS,
+                                Regions = RegionCode,
+                                LevSetCoincidingFaces = LevSetCoincidingFaces, 
+                                Version = m_LsTrkPrivData.Versions[1 - iH],
+                                time = m_LsTrkPrivData.Times[1 - iH]
+                            });
 
                         if(iH < 1) {
                             m_NewTracker.PushStacks();
