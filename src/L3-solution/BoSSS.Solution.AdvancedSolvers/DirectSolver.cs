@@ -100,6 +100,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
 
+                if(m_Solver != null) {
+                    m_Solver.Dispose();
+                    m_Solver = null;
+                }
+
                 m_Mtx = Mtx;
             }
         }
@@ -231,6 +236,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] Residual = this.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
+                
                 /*
 <<<<<<< HEAD
                 using(var solver = GetSolver(m_Mtx)) {
@@ -365,6 +371,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Dispose() {
             if(m_Solver != null)
                 m_Solver.Dispose();
+            m_Solver = null;
             this.m_Mtx = null;
         }
 
