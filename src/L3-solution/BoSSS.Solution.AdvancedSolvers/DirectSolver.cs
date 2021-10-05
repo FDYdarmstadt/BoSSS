@@ -260,6 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
                     IterCnt++;
                     m_Solver.Solve(X, B);
+                    this.Converged = true; 
                     m_ThisLevelIterations++;
                     //Console.WriteLine("done.");
 

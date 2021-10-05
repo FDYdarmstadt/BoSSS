@@ -830,20 +830,31 @@ namespace ilPSP.Connectors.Matlab {
         /// Kills the MATLAB process
         /// </summary>
         public void Dispose() {
-            if (SuccessfulExe) {
-                try {
-                    TempDirMutex.WaitOne();
-                    foreach(var f in CreatedFiles) {
-                        File.Delete(f);
+            //using(new FuncTrace()) {
+            { 
+                if(SuccessfulExe) {
+                    try {
+                        TempDirMutex.WaitOne();
+                        foreach(var f in CreatedFiles) {
+                            try {
+                                File.Delete(f);
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"BatchModeConnector: {e.GetType()} during deletion of file {f}: {e.Message}");
+                            }
+                        }
+                        if(DelWorkingDir) {
+                            try {
+                                Directory.Delete(WorkingDirectory.FullName, true);
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"BatchModeConnector: {e.GetType()} during deletion of directory {WorkingDirectory.FullName}: {e.Message}");
+                            }
+                        }
+                    } finally {
+                        TempDirMutex.ReleaseMutex();
                     }
-                    if(DelWorkingDir) {
-                        Directory.Delete(WorkingDirectory.FullName, true);
-                    }
-                } finally {
-                    TempDirMutex.ReleaseMutex();
+                } else {
+                    // keeping files for diagnostic purposes
                 }
-            } else {
-                // keeping files for diagnostic purposes
             }
         }
     }
