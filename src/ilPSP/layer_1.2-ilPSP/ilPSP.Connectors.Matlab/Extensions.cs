@@ -124,7 +124,7 @@ namespace ilPSP.Connectors.Matlab {
             using (var connector = new BatchmodeConnector(WorkingPath: __WorkingPath)) {
 
                 MultidimensionalArray output = MultidimensionalArray.Create(MPISize, 1);
-                connector.PutSparseMatrixRankExclusive(M, "Matrix");
+                connector.PutSparseMatrixPerMPIrank(M, "Matrix");
                 connector.CreateOutputBuffer(MPISize,"cond");
                 for (int iRank=0; iRank < MPISize; iRank++) {
                     string cmdline = String.Format("cond({0}) = condest(Matrix_{1});",iRank+1,iRank);
