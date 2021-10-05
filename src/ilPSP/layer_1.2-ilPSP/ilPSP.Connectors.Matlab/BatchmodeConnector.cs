@@ -426,7 +426,6 @@ namespace ilPSP.Connectors.Matlab {
         /// <typeparam name="T"></typeparam>
         /// <param name="vec">vector to transfer</param>
         /// <param name="MatlabName">the name which <paramref name="vec"/> should have in the MATLAB session</param>
-        /// <param name="comm">MPI communicator</param>
         public void PutVector<T>(T vec, string MatlabName) where T : IEnumerable<double> {
             var comm = csMPI.Raw._COMM.WORLD;
             ilPSP.MPICollectiveWatchDog.Watch(comm);
@@ -446,14 +445,13 @@ namespace ilPSP.Connectors.Matlab {
         }
 
         /// <summary>
-        /// transfers multiple vectors <paramref name="vec"/> to MATLAB.
-        /// note: <paramref name="MatlabName"/>is extended with "_rank",
-        /// which is the MPIrank
+        /// Transfers a vector without MPI-gathering <paramref name="vec"/> on rank 0, i.e. multiple vectors, one per MPI process.
+        /// <paramref name="MatlabName"/>is extended with a suffix `_rank`, where `rank` is the respective MPI rank.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="vec"></param>
         /// <param name="MatlabName"></param>
-        public void PutVectorRankExclusive<T>(T vec, string MatlabName) where T : IEnumerable<double> {
+        public void PutVectorPerMPIrank<T>(T vec, string MatlabName) where T : IEnumerable<double> {
             int rank;
             var comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out rank);
@@ -485,7 +483,13 @@ namespace ilPSP.Connectors.Matlab {
         }
 
 
-        public void PutMatrixRankExclusive(IMatrix M, string MatlabName) {
+        /// <summary>
+        /// Transfers a matrix without MPI-gathering <paramref name="M"/> on rank 0, i.e. multiple matrices, one per MPI process.
+        /// <paramref name="MatlabName"/>is extended with a suffix `_rank`, where `rank` is the respective MPI rank.
+        /// </summary>
+        /// <param name="M"></param>
+        /// <param name="MatlabName"></param>
+        public void PutMatrixPerMPIrank(IMatrix M, string MatlabName) {
             int rank;
             var comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out rank);
@@ -518,13 +522,12 @@ namespace ilPSP.Connectors.Matlab {
 
 
         /// <summary>
-        /// transfers multiple matrices <paramref name="M"/> to MATLAB.
-        /// note: <paramref name="MatlabName"/>is extended with "_rank",
-        /// which is the MPIrank
+        /// Transfers a sparse matrix without MPI-gathering <paramref name="M"/> on rank 0, i.e. multiple matrices, one per MPI process.
+        /// <paramref name="MatlabName"/>is extended with a suffix `_rank`, where `rank` is the respective MPI rank.
         /// </summary>
         /// <param name="M"></param>
         /// <param name="MatlabName"></param>
-        public void PutSparseMatrixRankExclusive(IMutableMatrixEx M, string MatlabName) {
+        public void PutSparseMatrixPerMPIrank(IMutableMatrixEx M, string MatlabName) {
             int rank;
             var comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out rank);
@@ -645,8 +648,6 @@ namespace ilPSP.Connectors.Matlab {
         /// imports a vector form MATLAB; 
         /// </summary>
         /// <param name="MatlabName">name of the vector, </param>
-        /// <param name="P">partitioning of the vector among MPI processes</param>
-        /// <returns></returns>
         public void GetVector(string MatlabName) {
             throw new NotImplementedException();
         }
@@ -669,11 +670,11 @@ namespace ilPSP.Connectors.Matlab {
         /// executes some MATLAB command
         /// </summary>
         /// <param name="MatlabCommand">the MATLAB command</param>
+        /// <param name="formatParams"></param>
         public void Cmd(string MatlabCommand, params object[] formatParams) {
             ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
             if (Executed == true) {
-                throw new InvalidOperationException(
-                                                    "No commands can be added after Execute has been called.");
+                throw new InvalidOperationException("No commands can be added after Execute has been called.");
             }
 
             if (Rank == 0) {
@@ -829,20 +830,31 @@ namespace ilPSP.Connectors.Matlab {
         /// Kills the MATLAB process
         /// </summary>
         public void Dispose() {
-            if (SuccessfulExe) {
-                try {
-                    TempDirMutex.WaitOne();
-                    foreach(var f in CreatedFiles) {
-                        File.Delete(f);
+            //using(new FuncTrace()) {
+            { 
+                if(SuccessfulExe) {
+                    try {
+                        TempDirMutex.WaitOne();
+                        foreach(var f in CreatedFiles) {
+                            try {
+                                File.Delete(f);
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"BatchModeConnector: {e.GetType()} during deletion of file {f}: {e.Message}");
+                            }
+                        }
+                        if(DelWorkingDir) {
+                            try {
+                                Directory.Delete(WorkingDirectory.FullName, true);
+                            } catch(Exception e) {
+                                Console.Error.WriteLine($"BatchModeConnector: {e.GetType()} during deletion of directory {WorkingDirectory.FullName}: {e.Message}");
+                            }
+                        }
+                    } finally {
+                        TempDirMutex.ReleaseMutex();
                     }
-                    if(DelWorkingDir) {
-                        Directory.Delete(WorkingDirectory.FullName, true);
-                    }
-                } finally {
-                    TempDirMutex.ReleaseMutex();
+                } else {
+                    // keeping files for diagnostic purposes
                 }
-            } else {
-                // keeping files for diagnostic purposes
             }
         }
     }

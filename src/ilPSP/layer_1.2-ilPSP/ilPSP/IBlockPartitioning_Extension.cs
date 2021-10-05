@@ -69,8 +69,10 @@ namespace ilPSP {
         /// <param name="FrameBlockSize">
         /// <see cref="IBlockPartitioning.AllBlockSizesEqual"/>;
         /// The size of the frame block:
-        /// - if negative, not used; in this case, the length of each block can be different and is defined by the sub-blocking, i.e. by <paramref name="_Subblk_i0"/>, <paramref name="_SubblkLen"/> and <paramref name="_BlockType"/>. In this case <see cref="AllBlockSizesEqual"/> is false.
-        /// - if positive, a frame of constant size is assumed around each block, i.e. the index range of the i-th block starts at index i*<paramref name="FrameBlockSize"/>; then <see cref="AllBlockSizesEqual"/> is true. However, the sub-blocking can still differ from block to block.
+        /// - if negative, not used; in this case, the length and layout of each block can be different and is induced by <paramref name="B"/>. 
+        ///   In this case <see cref="IBlockPartitioning.AllBlockSizesEqual"/> is false.
+        /// - if positive, a frame of constant size is assumed around each block, i.e. the index range of the i-th block starts at index i*<paramref name="FrameBlockSize"/>; 
+        ///   then <see cref="IBlockPartitioning.AllBlockSizesEqual"/> is true. However, the sub-blocking can still differ from block to block.
         /// </param>
         /// <returns></returns>
         public static BlockPartitioning GetSubBlocking<T>(this IBlockPartitioning B, T SubvectorIdx, MPI_Comm comm, int FrameBlockSize = -1) 

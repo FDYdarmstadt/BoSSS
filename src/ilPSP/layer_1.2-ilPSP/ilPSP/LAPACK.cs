@@ -766,7 +766,7 @@ namespace ilPSP.Utils {
         }
 
         /// <summary>
-        /// See <see cref="http://www.netlib.org/lapack/double/dorgqr.f"/>
+        /// See: http://www.netlib.org/lapack/double/dorgqr.f"
         /// </summary>
         public unsafe delegate void _DORGQR(ref int M, ref int N, ref int K, double* A, ref int LDA, double* TAU, double* WORK, ref int LWORK, out int INFO);
 

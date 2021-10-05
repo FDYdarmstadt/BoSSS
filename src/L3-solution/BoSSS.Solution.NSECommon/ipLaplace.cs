@@ -138,6 +138,7 @@ namespace BoSSS.Solution.NSECommon {
             if(mu.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
 
+           
             return mu;
         }
 
