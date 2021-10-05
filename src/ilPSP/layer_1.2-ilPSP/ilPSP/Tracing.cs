@@ -643,7 +643,7 @@ namespace ilPSP.Tracing {
             base.EnterMessage("ENTERING ", _name);
         }
 
-        // <summary>
+        /// <summary>
         /// ctor: logs the 'enter' - message
         /// </summary>
         public FuncTrace(string UserName) : base() {

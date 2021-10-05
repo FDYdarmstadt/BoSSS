@@ -33,6 +33,8 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DocumentationFile>bin\Release\ilPSP.XML</DocumentationFile>
     <NoWarn>1591</NoWarn>
+    <WarningLevel>5</WarningLevel>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject>
