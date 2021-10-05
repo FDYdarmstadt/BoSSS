@@ -144,7 +144,9 @@ namespace BoSSS.Application.XNSFE_Solver {
                DefineConvective(d, D, config);
             } else {
                 //  ... and when the convective terms are turned off we still need the contribution below
-                AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));                
+                if (config.isRecoilPressure) {
+                    AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                }
             }           
 
             if (config.isViscous) {
@@ -194,11 +196,15 @@ namespace BoSSS.Application.XNSFE_Solver {
                 // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
                 // for the moving mesh discretization this condition is already contained in the convective terms
                 // therefore we only need these terms when using splitting...
-                AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                if (config.isRecoilPressure) {
+                    AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                }
                 AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                 AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
             } else {
-                AddComponent(new ConvectionAtLevelSet_MovingMesh_withMassFlux(d, D, physParams, FirstSpeciesName, SecondSpeciesName));
+                if (config.isRecoilPressure) {
+                    AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                }
             }
         }
     }
@@ -352,7 +358,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
         protected override void DefineConvective(int dimension, double Tsat, XNSFE_OperatorConfiguration config) {
             if (config.isMovingMesh) {
-                AddComponent(new HeatConvectionAtLevelSet_MovingMesh_withMassflux(dimension, Tsat, config.getPhysParams, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new HeatFluxAtLevelSet_Evaporation_StrongCoupling(dimension, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
             } else {
                 ThermalParameters thermParams = config.getThermParams;
                 DoNotTouchParameters dntParams = config.getDntParams;

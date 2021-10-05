@@ -43,5 +43,18 @@ namespace BoSSS.Application.XNSFE_Solver {
         public void SetHeatSource(string species, IBoundaryAndInitialData g) {
             this.InitialValues[VariableNames.HeatSource + "#" + species] = g;
         }
+
+        /// <summary>
+        /// Setting time dependent heat source (either A or B (or in case of IBM) C).
+        /// </summary>
+        public void SetHeatSource(string species, Func<double[], double, double> g) {
+            this.InitialValues_Evaluators_TimeDep[VariableNames.HeatSource + "#" + species] = g;
+        }
+
+        /// <summary>
+        /// include recoil pressure.
+        /// </summary>
+        public bool IncludeRecoilPressure = true;        
+
     }
 }

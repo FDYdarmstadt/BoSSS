@@ -426,7 +426,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -440,13 +440,16 @@ namespace BoSSS.Solution.XNSECommon {
                     throw new NotImplementedException();
                 }
             }
-            
+
 
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
-            AddComponent(conv);
+            if (!isMovingMesh) {
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+                AddComponent(conv);
+            }
+            // when moving mesh, nothing to do here
         }
     }
 
@@ -468,8 +471,11 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
-            AddComponent(conv);
+            if (!isMovingMesh) {
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
+                AddComponent(conv);
+            }
+            // when moving mesh, nothing to do here
         }
     }
 

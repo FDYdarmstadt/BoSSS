@@ -1427,6 +1427,12 @@ namespace BoSSS.Solution.XheatCommon {
             Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
             Ret *= -1.0;
 
+            //double a = 1.0;
+            //// Robin condition from A-side
+            //Ret += a * (uA[0] - g_D) * (vA - 0);
+            //// Robin condition from B-side
+            //Ret += a * (g_D - uB[0]) * (0 - vB);
+
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
         }

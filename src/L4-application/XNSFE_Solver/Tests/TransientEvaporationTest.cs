@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
-    class SteadyStateEvaporationTest : IXNSFETest {
+    class TransientEvaporationTest : IXNSFETest {
 
         public bool TestImmersedBoundary => false;
 
@@ -33,7 +33,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         /// ctor..
         /// </summary>
         /// <param name="angle"></param>
-        public SteadyStateEvaporationTest(double angle = 0.0) {
+        public TransientEvaporationTest(double angle = 0.0) {
             this.angle = angle;
             this.ROT = AffineTrafo.Some2DRotation(angle);
         }
@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public double mu_B => 1.0;
 
-        public double Sigma => 1.0;
+        public double Sigma => 0.0;
 
         public double c_A => 1.0;
 
@@ -63,7 +63,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public int SpatialDimension => 2;
 
-        public double dt => 5e-4;
+        public double dt => 1e-4;
 
         public double rho_A => 1.0;
 
@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public bool Material => false;
 
-        public bool steady => true;
+        public bool steady => false;
 
         public bool IncludeConvection => true;
 
@@ -119,13 +119,14 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             double qv = 10.0;
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
             config.Add("slipsymmetry_ZeroGradient", new AppControl.BoundaryValueCollection());
-            
-            config.Add("pressure_dirichlet_ConstantTemperature_lower", new AppControl.BoundaryValueCollection());
-            config.Add("velocity_inlet_ZeroGradient_upper", new AppControl.BoundaryValueCollection());
 
-            config["pressure_dirichlet_ConstantTemperature_lower"].Evaluators.Add("Temperature#B", (X, t) => this.T_sat + (qv / this.k_B) * (zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]));
-            config["velocity_inlet_ZeroGradient_upper"].Evaluators.Add("VelocityY#A", (X, t) => -0.1 * Math.Cos(angle));
-            config["velocity_inlet_ZeroGradient_upper"].Evaluators.Add("VelocityX#A", (X, t) => 0.1 * Math.Sin(angle));
+            config.Add("wall_ConstantHeatFlux_lower", new AppControl.BoundaryValueCollection());
+            config.Add("pressure_Dirichlet_ZeroGradient_upper", new AppControl.BoundaryValueCollection());
+
+            config["wall_ConstantHeatFlux_lower"].Evaluators.Add("HeatFluxX#B", (X, t) => qv* Math.Sin(angle));
+            config["wall_ConstantHeatFlux_lower"].Evaluators.Add("HeatFluxY#B", (X, t) => -qv* Math.Cos(angle));
+            config["pressure_Dirichlet_ZeroGradient_upper"].Evaluators.Add("Pressure#A", (X, t) => 0.0);
+
 
             return config;
         }
@@ -141,14 +142,14 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0];
+            return (X, t) => (zi0 + qv / (rho_B * h_vap) * t) - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0];
         }
 
         public Func<double[], double, double> GetPress(string species) {
             double dp = -(qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
             switch (species) {
-                case "A": { return (X,t) => 0.0 + dp; }
-                case "B": { return (X, t) => 0.0; }
+                case "A": { return (X,t) => 0.0; }
+                case "B": { return (X, t) => 0.0 - dp; }
                 default: { throw new ArgumentException(); }
             }
         }
@@ -156,15 +157,15 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         public Func<double[], double, double> GetT(string species) {
             switch (species) {
                 case "A": { return (X, t) => this.T_sat; }
-                case "B": { return (X, t) => this.T_sat + (qv / this.k_B) * (zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]); }
+                case "B": { return (X, t) => this.T_sat + (qv / this.k_B) * ((zi0 + qv / (rho_B * h_vap) * t) - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]); }
                 default: { throw new ArgumentException(); }
             }
         }
 
         public Func<double[], double, double> GetU(string species, int d) {
             switch (species) {
-                case "A": { return (X, t) => d == 0 ? 0.1 * Math.Sin(angle) : d == 1 ? -0.1 * Math.Cos(angle) : throw new ArgumentException(); }
-                case "B": { return (X, t) => d == 0 ? 1.0 * Math.Sin(angle) : d == 1 ? -1.0 * Math.Cos(angle) : throw new ArgumentException(); }
+                case "A": { return (X, t) => d == 0 ? -0.9 * Math.Sin(angle) : d == 1 ? 0.9 * Math.Cos(angle) : throw new ArgumentException(); }
+                case "B": { return (X, t) => 0.0; }
                 default: { throw new ArgumentException(); }
             }
         }
