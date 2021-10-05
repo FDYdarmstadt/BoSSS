@@ -15,7 +15,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// <summary>
     /// 
     /// </summary>
-    public class WaveLikeLogging : XNSEinSituPostProcessingModule {
+    public class WaveLikeLogging : WaveLikeLogging<XNSE_Control> { }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class WaveLikeLogging<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
 
         /// <summary>
         /// 

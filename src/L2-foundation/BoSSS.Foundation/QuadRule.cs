@@ -25,7 +25,7 @@ using BoSSS.Foundation.Grid.RefElements;
 namespace BoSSS.Foundation.Quadrature {
 
     /// <summary>
-    /// a container for quadrature rules
+    /// a container for quadrature rules, used by the <see cref="Foundation.Quadrature.Quadrature{TQuadRule, TDomain}"/> class
     /// </summary>
     public class QuadRule : ICloneable, IEquatable<QuadRule> {
 
@@ -66,10 +66,9 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Nodes (i.e. Points in the domain at which the integrand is evaluated);<br/>
-        /// 1st index: node index; <br/>
-        /// 2nd index: spatial coordinate index,
-        /// 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
+        /// Nodes (i.e. Points in the domain at which the integrand is evaluated);
+        /// - 1st index: node index; 
+        /// - 2nd index: spatial coordinate index, valid indexes are 0 for 1D and 0,1 for 2D and 0,1,2 for 3D;
         /// </summary>
         public NodeSet Nodes;
         

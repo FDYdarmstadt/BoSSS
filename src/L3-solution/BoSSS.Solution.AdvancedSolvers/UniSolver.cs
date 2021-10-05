@@ -459,11 +459,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// DG fields to store the solution.
         /// </param>
         /// <param name="nsc">
-        /// - configuration of the nonlinear solver (see also <see cref="BoSSS.Solution.AppControlSolver.NonLinearSolver"/>)
+        /// - configuration of the nonlinear solver 
         /// - if null, an default solver configuration is used
         /// </param>
         /// <param name="lsc">
-        /// - configuration of the linear solver (see also <see cref="BoSSS.Solution.Control.AppControlSolver.LinearSolver"/>)
+        /// - configuration of the linear solver 
         /// - if null, an default solver configuration is used 
         /// </param>
         /// <param name="MultigridSequence">

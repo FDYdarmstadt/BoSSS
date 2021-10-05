@@ -39,6 +39,7 @@ using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using ilPSP;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -76,6 +77,17 @@ namespace BoSSS.Application.XNSE_Solver {
         virtual public bool UseImmersedBoundary {
             get;
             set;
+        }
+
+        /// <summary>
+        /// Temporary. Suggestion: Move Rigid body benchmarks to FSI solver in future.
+        /// Sets Parameter for Rigidbody.
+        /// </summary>
+        [DataMember]
+        public XRigid Rigidbody = new XRigid();
+
+        public void SetMaximalRefinementLevel(int maxLvl) {
+            this.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxLvl });
         }
 
         /// <summary>
@@ -710,6 +722,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [DataMember]
         public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
+
 
         /// <summary>
         /// Configuring <see cref="AppControl._TimesteppingMode.Steady"/> sets the <see cref="TimeSteppingScheme.ImplicitEuler"/>

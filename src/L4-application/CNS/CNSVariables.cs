@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -248,16 +248,12 @@ namespace CNS {
             VariableTypes.Other,
             delegate (DGField residual, CellMask cellMask, IProgram<CNSControl> program) {
                 residual.Clear();
-
-                throw new NotImplementedException();
-
+                
                 SpatialOperator op = program.FullOperator.ToSpatialOperator(program.WorkingSet);
-
                 var mapping = new UnsetteledCoordinateMapping(program.WorkingSet.ConservativeVariables.Select((field) => field.Basis).ToArray());
                 var mapping2 = new CoordinateMapping(program.WorkingSet.ConservativeVariables);
 
                 var eval = op.GetEvaluatorEx(program.WorkingSet.ConservativeVariables,mapping2,residual.Mapping);
-                program.ResLogger.Residuals.Last().CoordinateMapping;
                 eval.Evaluate(1, 1, residual.CoordinateVector);
 
             });

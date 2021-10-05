@@ -30,12 +30,12 @@ using ilPSP;
 using System.Diagnostics;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
-using BoSSS.Application.XNSE_Solver.Legacy;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -44,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// non-trivial cases.
     /// </summary>
     [TestFixture]
-    public static class XNSE_Solver_MPItest {
+    public class XNSE_Solver_MPItest {
 
         [Test]
         static public void ParallelRisingDroplet() {
@@ -84,59 +84,10 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-
-        //[Test]
-        static public void Rotating_Cube_compare4to1() {
-            /*
-            Unhandled Exception:
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-             */
-            var C = Rotating_Cube(3, 20, 2, false);
-            string bla = "IOTest_ofVelocity";
-
-            using (var solver = new XNSE()) {
-               
-
-                solver.Init(C);
-                solver.RunSolverMode();
-
-                var grid = solver.GridData;
-                var testIO = new TestingIO(grid, bla, 1);
-                LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
-
-                var projCheck = new TestingIO(solver.GridData, $"{bla}.csv", 1);
-                projCheck.AddDGField(PhiDG);
-                projCheck.AddDGField(PhiCG);
-                projCheck.DoIOnow();
-
-                Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
-                Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
-            }
-        }
-
         [Test]
-        public static void LoadbalancingAndAMR_Activated() {
-            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR: true, useLoadBal: true);
-
-            using (var solver = new XNSE()) {
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
-        }
-
-        [Test]
-        public static void BadInitiallyDistributionTest() {
-            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR:false, useLoadBal: true , UsePredefPartitioning: true);
+        public static void BadInitiallyDistributionTest(
+            [Values(true,false)] bool useAMR) {
+            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR, useLoadBal: true , UsePredefPartitioning: true);
             //Debugger.Launch();
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -154,10 +105,32 @@ System.ArgumentException: DG degree seems different
             }
         }
 
+        //[Test]
+        //public static void PardisoFailsInProjection() {
+        //    // 4 cores
+        //    var C = Rotating_Sphere(1, 10, 3, false, false, false);
+        //    using (var solver = new XNSE()) {
+        //        solver.Init(C);
+        //        solver.RunSolverMode();
+        //    }
+        //}
+
         [Test]
-        public static void PardisoFailsInProjection() {
-            // 4 cores
-            var C = Rotating_Sphere(1, 10, 3, false, false, false);
+        public static void emptyMaskInSchwarz() {
+            // This test simulates bad initial distribution of void cells over ranks
+            // which would lead to an error within Schwarz solver
+            // because of voidcells Schwarzblocks would be empty
+            // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
+            var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 1000;
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -192,8 +165,11 @@ System.ArgumentException: DG degree seems different
             return;
             */
 
+        
+
             BoSSS.Solution.Application.InitMPI();
-            BadInitiallyDistributionTest();
+            //BadInitiallyDistributionTest();
+            emptyMaskInSchwarz();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -511,6 +487,10 @@ System.ArgumentException: DG degree seems different
 
         }
 
+        public static XNSE_Control PartlyCoverdDomain(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Parted, UsePredefPartitioning);
+        }
+
         public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
             return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube, UsePredefPartitioning);
         }
@@ -522,6 +502,7 @@ System.ArgumentException: DG degree seems different
         enum Geometry {
             Cube = 0,
             Sphere = 1,
+            Parted = 2
         }
 
         public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
@@ -563,12 +544,47 @@ System.ArgumentException: DG degree seems different
             };
         }
 
+        private static Func<double[], double, double> GenPhiFunc(double anglev, Geometry Gshape, int SpaceDim, double particleRad, double[] pos) {
+            return delegate (double[] X, double t) {
+                double angle = -(anglev * t) % (2 * Math.PI);
+                switch (Gshape) {
+                    case Geometry.Cube:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                            + particleRad;
+                        case 3:
+                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                                Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                                + particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    };
+                    case Geometry.Sphere:
+                    switch (SpaceDim) {
+                        case 2:
+                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                        case 3:
+                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                        default:
+                        throw new NotImplementedException("Dimension not supported");
+                    }
+                    case Geometry.Parted:
+                        return -X[0] + 0.7;
+                    default:
+                    throw new NotImplementedException("Shape unknown");
+                }
+            };
+        }
+
         private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
 
             C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
             C.ProjectName = "XNSE/IBM_test";
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
@@ -608,35 +624,7 @@ System.ArgumentException: DG degree seems different
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
 
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
-                double angle = -(anglev * t) % (2 * Math.PI);
-                switch (Gshape) {
-                    case Geometry.Cube:
-                    switch (SpaceDim) {
-                        case 2:
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                            + particleRad;
-                        case 3:
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                                Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
-                                                + particleRad;
-                        default:
-                        throw new NotImplementedException("Dimension not supported");
-                    };
-                    case Geometry.Sphere:
-                    switch (SpaceDim) {
-                        case 2:
-                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
-                        case 3:
-                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
-                        default:
-                        throw new NotImplementedException("Dimension not supported");
-                    }
-                    default:
-                    throw new NotImplementedException("Shape unknown");
-                }
-            };
+            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim,particleRad,pos);
 
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
@@ -696,7 +684,7 @@ System.ArgumentException: DG degree seems different
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 50000;
+            C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
@@ -713,6 +701,7 @@ System.ArgumentException: DG degree seems different
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
             C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping
             // ============
@@ -727,9 +716,16 @@ System.ArgumentException: DG degree seems different
             return C;
         }
 
+        public Func<double[], double, double> GetPhi() {
+            throw new NotImplementedException();
+        }
 
+        public GridCommons CreateGrid(int Resolution) {
+            throw new NotImplementedException();
+        }
 
-
-
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            throw new NotImplementedException();
+        }
     }
 }
