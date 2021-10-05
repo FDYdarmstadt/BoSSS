@@ -594,12 +594,14 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return ret;
         }
 
-
-        string VarNames {
+        /// <summary>
+        /// Turn VarGroup into Names
+        /// </summary>
+        public string VarNames {
             get {
                 int[] vgs = this.VarGroup;
                 if(vgs.Length <= 1) {
-                    return "Var0";
+                    return "Var" + vgs[0];
                 } else {
                     Array.Sort(vgs);
 
