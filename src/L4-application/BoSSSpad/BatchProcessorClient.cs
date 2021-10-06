@@ -357,6 +357,26 @@ namespace BoSSS.Application.BoSSSpad {
 
             return InteractiveShell.OpenOrCreateDatabase(fullPath);
         }
+
+        /// <summary>
+        /// Creates (or opens) a database in a location which is ensured to work with this batch processor
+        /// </summary>
+        public IDatabaseInfo CreateTempDatabase() {
+            DirectoryInfo TempDir;
+            {
+                var rnd = new Random();
+                bool Exists = false;
+                do {
+                    var tempPath = Path.GetTempPath();
+                    var tempDir = rnd.Next().ToString();
+                    TempDir = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                    Exists = TempDir.Exists;
+                } while (Exists == true);
+            }
+            
+            string path = TempDir.FullName;
+            return CreateOrOpenCompatibleDatabase(path);
+        }
     }
 
     /// <summary>

@@ -308,7 +308,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     //p.StandardInput.WriteLine("dir");
                     p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
-                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
+                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute --allow-errors");
                     p.StandardInput.WriteLine("exit");
                     p.WaitForExit();
 
