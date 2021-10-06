@@ -288,7 +288,6 @@ namespace BoSSS.Application.BoSSSpad {
 
         private static int RunJupyter(string fileToOpen) {
             ProcessStartInfo psi = new ProcessStartInfo();
-            psi.FileName = @"C:\Windows\System32\cmd.exe";
 
             psi.WorkingDirectory = Directory.GetCurrentDirectory();
 
@@ -301,14 +300,26 @@ namespace BoSSS.Application.BoSSSpad {
                 JupyterMutex.WaitOne();
                 Console.WriteLine("Mutex obtained!");
 
-                var p = Process.Start(psi);
+                Process p;
+                if(System.OperatingSystem.IsWindows()) {
+                    psi.FileName = @"C:\Windows\System32\cmd.exe";
 
-                //p.StandardInput.WriteLine("dir");
-                p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
-                p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
-                p.StandardInput.WriteLine("exit");
-                p.WaitForExit();
+                    p = Process.Start(psi);
 
+                    //p.StandardInput.WriteLine("dir");
+                    p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
+                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
+                    p.StandardInput.WriteLine("exit");
+                    p.WaitForExit();
+
+                } else {
+                    psi.FileName = @"jupyter";
+                    psi.Arguments = " nbconvert " + fileToOpen + " --to html --execute "; // --allow-errors
+
+                    p = Process.Start(psi);
+                    p.WaitForExit();
+
+                }
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("Done with notebook");
                 Console.WriteLine("Exit code " + p.ExitCode);

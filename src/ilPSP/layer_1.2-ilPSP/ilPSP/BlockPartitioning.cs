@@ -400,8 +400,8 @@ namespace ilPSP {
         /// Block index.
         /// </param>
         /// <returns>
-        /// The block type, 
-        /// an index into <see cref="BlockLen"/>, <see cref="Subblk_i0"/>, <see cref="SubblkLen"/>.
+        /// The block type, which can e.g. be used as an argument for 
+        /// an index into <see cref="GetSubblkLen"/> and <see cref="GetSubblk_i0(int)"/>.
         /// </returns>
         public int GetBlockType(long iBlock) {
             m_BlocksPartition.TestIfInLocalRange(iBlock);

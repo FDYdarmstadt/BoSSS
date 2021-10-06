@@ -115,8 +115,8 @@ namespace AdvancedSolverTests.SubBlocking {
                 using(BatchmodeConnector matlab = new BatchmodeConnector()) {
                     matlab.PutSparseMatrix(M, "M");
                     // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
-                    matlab.PutSparseMatrixRankExclusive(subM, "M_sub");
-                    matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                    matlab.PutSparseMatrixPerMPIrank(subM, "M_sub");
+                    matlab.PutVectorPerMPIrank(GlobIdx, "Idx");
                     matlab.Cmd("M_0 = M(Idx_0, Idx_0);");
                     matlab.Cmd("M_1 = M(Idx_1, Idx_1);");
                     matlab.Cmd("M_2 = M(Idx_2, Idx_2);");
@@ -183,8 +183,8 @@ namespace AdvancedSolverTests.SubBlocking {
                 using(BatchmodeConnector matlab = new BatchmodeConnector()) {
                     matlab.PutSparseMatrix(M, "M");
                     // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
-                    matlab.PutSparseMatrixRankExclusive(subM, "M_sub");
-                    matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                    matlab.PutSparseMatrixPerMPIrank(subM, "M_sub");
+                    matlab.PutVectorPerMPIrank(GlobIdx, "Idx");
                     matlab.Cmd("M_0 = M(Idx_0, Idx_0);");
                     matlab.Cmd("M_1 = M(Idx_1, Idx_1);");
                     matlab.Cmd("M_2 = M(Idx_2, Idx_2);");
@@ -266,8 +266,8 @@ namespace AdvancedSolverTests.SubBlocking {
 
                         matlab.PutSparseMatrix(M, "M");
                         // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
-                        matlab.PutSparseMatrixRankExclusive(M_sub, "M_sub");
-                        matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                        matlab.PutSparseMatrixPerMPIrank(M_sub, "M_sub");
+                        matlab.PutVectorPerMPIrank(GlobIdx, "Idx");
                         matlab.Cmd("M_0 = full(M(Idx_0, Idx_0));");
                         matlab.Cmd("M_1 = full(M(Idx_1, Idx_1));");
                         matlab.Cmd("M_2 = full(M(Idx_2, Idx_2));");
@@ -416,8 +416,8 @@ namespace AdvancedSolverTests.SubBlocking {
 
                     matlab.PutSparseMatrix(M, "M");
                     // note: M_sub lives on Comm_Self, therefore we have to distinguish between procs ...
-                    matlab.PutSparseMatrixRankExclusive(M_sub, "M_sub");
-                    matlab.PutVectorRankExclusive(GlobIdx, "Idx");
+                    matlab.PutSparseMatrixPerMPIrank(M_sub, "M_sub");
+                    matlab.PutVectorPerMPIrank(GlobIdx, "Idx");
                     matlab.Cmd("M_0 = full(M(Idx_0, Idx_0));");
                     matlab.Cmd("M_1 = full(M(Idx_1, Idx_1));");
                     matlab.Cmd("M_2 = full(M(Idx_2, Idx_2));");

@@ -787,7 +787,6 @@ namespace BoSSS.Solution {
         /// </summary>
         public static void FinalizeMPI() {
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
-
         }
 
         /// <summary>

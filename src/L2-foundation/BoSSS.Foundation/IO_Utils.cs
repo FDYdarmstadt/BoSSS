@@ -192,7 +192,7 @@ namespace BoSSS.Foundation.IO {
                             Console.Error.WriteLine("WARNING: illegal BoSSS installation; missing directory '" + _di.FullName + "';");
                         }
                     } else {
-                        Console.Error.WriteLine("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system setings.");
+                        Console.Error.WriteLine("WARNING: Native libraries: local search failed, missing BOSSS_INSTALL - depending on system settings.");
                         _di = new DirectoryInfo(".");
                     }
 

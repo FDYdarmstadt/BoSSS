@@ -60,12 +60,40 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     [TestFixture]
     static public partial class LevelSetUnitTests {
 
-
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
         [Test]
+        public static void LevelSetAdvectionTest2D_fwd(
+           [Values(2, 3, 4)] int LSdegree,
+           [Values(0, 1, 2)] int AMRlevel,
+           [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+           [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+            LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, false);
+
+        }
+
+        
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+        [Test]
+        public static void LevelSetAdvectionTest2D_reverse(
+           [Values(2, 3, 4)] int LSdegree,
+           [Values(0, 1, 2)] int AMRlevel,
+           [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+           [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+            LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, true);
+        }
+
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        /// </summary>
+
         public static void LevelSetAdvectionTest2D(
+
             [Values(2, 3, 4)] int LSdegree,
             [Values(0, 1, 2)] int AMRlevel,
             [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
@@ -88,10 +116,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
             C.SkipSolveAndEvaluateResidual = true;
 
-            string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
-
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
 
             LevelSetTest(Tst, C);
 
