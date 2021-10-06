@@ -346,7 +346,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(Path.IsPathRooted(dbDir))
                 throw new ArgumentException("Expecting a relative path.");
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
-                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database.");
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             var pp = AllowedDatabasesPaths[0];
 
@@ -362,20 +362,23 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
         public IDatabaseInfo CreateTempDatabase() {
-            DirectoryInfo TempDir;
+             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
+
+            string relPath = null;
             {
                 var rnd = new Random();
-                bool Exists = false;
+                bool Exists;
                 do {
-                    var tempPath = Path.GetTempPath();
+                    var pathOffset = AllowedDatabasesPaths[0].LocalMountPath;
                     var tempDir = rnd.Next().ToString();
-                    TempDir = new DirectoryInfo(Path.Combine(tempPath, tempDir));
-                    Exists = TempDir.Exists;
+                    var __TempDir = new DirectoryInfo(Path.Combine(pathOffset, tempDir));
+                    Exists = __TempDir.Exists;
+                    relPath = tempDir;
                 } while (Exists == true);
             }
-            
-            string path = TempDir.FullName;
-            return CreateOrOpenCompatibleDatabase(path);
+                        
+            return CreateOrOpenCompatibleDatabase(relPath);
         }
     }
 
