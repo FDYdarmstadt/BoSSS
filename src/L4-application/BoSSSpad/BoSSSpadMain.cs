@@ -287,7 +287,22 @@ namespace BoSSS.Application.BoSSSpad {
         private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
 
         private static int RunJupyter(string fileToOpen) {
+            int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
+            if(RetVal == 0)
+                return 0;
+
+            // if we have an error, we have no output; then, the error might be hard to fix;
+            // therefore, we have to re-run with `--allow-errors`;
+            // Rem.: if --allow-errors is used, the return value of `jupyter nbconvert` is always 0; therefore we would not detect any error if we use it beforehand.
+            //       as an alternative, one might convert to a notebook (`--to notebook --execute --allow-errors --output out.ipynb` 
+            //       and then parse the `out.ipynb` for exceptions and errors.
+            RunJupyter(fileToOpen, true);
+            return RetVal;
+        }
+
+        private static int RunJupyter(string fileToOpen, bool AllowErrors) {
             ProcessStartInfo psi = new ProcessStartInfo();
+            string SuffixAllowErrors = AllowErrors ? "--allow-errors" : "";
 
             psi.WorkingDirectory = Directory.GetCurrentDirectory();
 
@@ -308,13 +323,14 @@ namespace BoSSS.Application.BoSSSpad {
 
                     //p.StandardInput.WriteLine("dir");
                     p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
-                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute --allow-errors");
+                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute " + SuffixAllowErrors);
                     p.StandardInput.WriteLine("exit");
+
                     p.WaitForExit();
 
                 } else {
                     psi.FileName = @"jupyter";
-                    psi.Arguments = " nbconvert " + fileToOpen + " --to html --execute --allow-errors";
+                    psi.Arguments = " nbconvert " + fileToOpen + " --to html --execute " + SuffixAllowErrors; 
 
                     p = Process.Start(psi);
                     p.WaitForExit();
