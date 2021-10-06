@@ -197,7 +197,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public MultigridOperator.ChangeOfBasisConfig[][] MgConfig;
 
-            public double time;
+            public double time = 1.0e30;
 
             /// <summary>
             /// Implementation of <see cref="OperatorEvalOrLin"/>
@@ -459,11 +459,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// DG fields to store the solution.
         /// </param>
         /// <param name="nsc">
-        /// - configuration of the nonlinear solver (see also <see cref="BoSSS.Solution.AppControlSolver.NonLinearSolver"/>)
+        /// - configuration of the nonlinear solver 
         /// - if null, an default solver configuration is used
         /// </param>
         /// <param name="lsc">
-        /// - configuration of the linear solver (see also <see cref="BoSSS.Solution.Control.AppControlSolver.LinearSolver"/>)
+        /// - configuration of the linear solver 
         /// - if null, an default solver configuration is used 
         /// </param>
         /// <param name="MultigridSequence">
@@ -485,9 +485,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
         /// </param>
         static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
-            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null, 
-            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, 
-            AggregationGridData[] MultigridSequence = null, 
+            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
+            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null,
+            AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
 
@@ -562,7 +562,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     G.verbose = verbose;
                     G.AssembleMatrix(out var opMtx, out double[] opAff, out var MassMatrix, G.SolutionFields, true, out _);
-                   
+
+                 
+
                     // setup of multigrid operator
                     // ---------------------------
 
@@ -592,7 +594,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
                         Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
                     }
-
+                    //LastMtx = MultigridOp.OperatorMatrix.CloneAs();
+                    
                     // call the linear solver
                     // ----------------------
 
@@ -608,9 +611,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if(optRHS != null)
                             RHSvec.AccV(1.0, new CoordinateVector(optRHS));
-                        
-                        MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
 
+                        MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
+                        
                         NoOfIterations = solver.ThisLevelIterations;
                     }
                     solverIteration.Stop();
@@ -685,6 +688,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
         }
+
+        //public static BlockMsrMatrix LastMtx;
         
         /// <summary>
         /// Easy-to-use driver routine for operator analysis
@@ -727,6 +732,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                    Mapping,
                    MgConfig, op);
             }
+
 
             return ana.GetNamedProperties();
         }

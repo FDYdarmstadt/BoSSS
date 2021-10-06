@@ -758,7 +758,11 @@ namespace BoSSS.Application.MultigridTest
         /// </summary>
         [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest(
+#if DEBUG
+            [Values(0, 1)] int p,
+#else
             [Values(0, 1, 2, 3)] int p,
+#endif
             [Values(0.0, 0.3)] double AggregationThreshold,
             [Values(0, 1)] int TrackerWidth)
         {
@@ -868,8 +872,12 @@ namespace BoSSS.Application.MultigridTest
         /// </summary>
         [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest_2(
+#if DEBUG
+            [Values(0, 1)] int p,
+#else
             [Values(0, 1, 2, 3)] int p,
-            [Values(0.0, 0.3)] double AggregationThreshold)
+#endif     
+            [Values(0.0, 0.3)] double AggregationThreshold) //
         {
 
             var mode = MultigridOperator.Mode.IdMass; // !!!!! Test work only with orthonormalization at each level. !!!!

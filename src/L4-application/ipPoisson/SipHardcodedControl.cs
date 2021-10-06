@@ -40,6 +40,7 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     static public class SipHardcodedControl {
 
+        /*
         public static SipControl ConvergenceTest(int Res = 20, int Dim = 2, LinearSolverCode solver_name = LinearSolverCode.exp_Kcycle_schwarz, int deg = 1) {
 
             if(Dim != 2 && Dim != 3)
@@ -89,7 +90,8 @@ namespace BoSSS.Application.SipPoisson {
                  });
 
             return R;
-        }
+        }*/
+
 
         /// <summary>
         /// Test on a curved grid.
@@ -501,15 +503,15 @@ namespace BoSSS.Application.SipPoisson {
         /// Poisson Equation on a (-1,1)x(-1,1), Dirichlet everywhere
         /// </summary>
         public static SipControl Square(int xRes = 5, int yRes = 5, int deg = 5) {
+//            BoSSS.Application.SipPoisson.SipHardcodedControl.Square(16, 16, 2);
 
-            //Func<double[], double> exRhs = X => 2 * X[0] * X[0] + 2 * X[1] * X[1] - 4;
-            //Func<double[], double> exSol = X => (1.0 - X[0] * X[0]) * (1.0 - X[1] * X[1]);
-
-            //Func<double[], double> exSol = X => (1.0 - X[1]);
-            //Func<double[], double> exRhs = X => 0.0;
-
-            Func<double[], double> exSol = X => -Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5);
-            Func<double[], double> exRhs = X => (Math.PI * Math.PI * 0.5 * Math.Cos(X[0] * Math.PI * 0.5) * Math.Cos(X[1] * Math.PI * 0.5)); // == - /\ exSol
+            double ax = 1.0; // must be an odd number to comply with homogeneous boundary condition
+            double ay = 1.0; // must be an odd number to comply with homogeneous boundary condition
+            Func<double[], double> exSol =
+                    (X => Math.Cos(X[0] * ax * Math.PI * 0.5) * Math.Cos(X[1] * ay * Math.PI * 0.5));
+            Func<double[], double> exRhs =
+                    (X => -((ax.Pow2() + ay.Pow2()) / 4.0) * Math.PI.Pow2()
+                         * Math.Cos(X[0] * ax * Math.PI * 0.5) * Math.Cos(X[1] * ay * Math.PI * 0.5)); // == - /\ exSol
 
 
             var R = new SipControl();
@@ -518,16 +520,15 @@ namespace BoSSS.Application.SipPoisson {
             //R.DbPath = "D:\\BoSSS-db";
 
             R.FieldOptions.Add("T", new FieldOpts() { Degree = deg, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = 4 });
+            R.FieldOptions.Add("Tex", new FieldOpts() { Degree = deg + 2 });
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
             //R.LinearSolver.NoOfMultigridLevels = 2;
             //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz_directcoarse;
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             R.SuppressExceptionPrompt = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-
+            
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
                 double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
@@ -547,9 +548,12 @@ namespace BoSSS.Application.SipPoisson {
 
             R.NoOfSolverRuns = 1;
 
-            R.AdaptiveMeshRefinement = true;
-            R.NoOfTimesteps = 5;
+            R.AdaptiveMeshRefinement = false;
+            R.NoOfTimesteps = 1;
+            //R.ImmediatePlotPeriod = 1;
+            //R.SuperSampling = 2;
 
+            R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }

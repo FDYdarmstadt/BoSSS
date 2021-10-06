@@ -106,7 +106,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
-                    double Slope = LogLogRegression(xVals, yVals);
+                    double Slope = xVals.LogLogRegression(yVals);
 
                     gp.PlotXY(xVals, yVals, logX: true, logY: true, title:yName, format:(fmt.WithLineColor(Kount).WithPointType(Kount)));
                     gp.SetXLabel(ttt.Item1.ToString());
@@ -257,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
-                    double Slope = LogLogRegression(xVals, yVals);
+                    double Slope = xVals.LogLogRegression(yVals);
 
                     testData.Add(yName, yVals);
 
@@ -289,7 +289,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
 
-                    double Slope = LogLogRegression(xVals, yVals);
+                    double Slope = DoubleExtensions.LogLogRegression(xVals, yVals);
 
                     Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
                 }
@@ -382,7 +382,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     if(!Enum.TryParse(ydes, out XAxisDesignation dummy)) {
                         var yVals = ret[ydes];
 
-                        double slope = LogLogRegression(xVals, yVals);
+                        double slope = DoubleExtensions.LogLogRegression(xVals, yVals);
                         Console.WriteLine($"   slope of {ydes}: {slope}");
 
                     }
@@ -434,7 +434,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             Grid_1Dres
         }
 
-
+        /*
         private static double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
             double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
             double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
@@ -455,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             return a;
         }
-
+        */
         
 
     }

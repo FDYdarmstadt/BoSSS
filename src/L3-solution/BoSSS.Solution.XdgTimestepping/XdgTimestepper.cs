@@ -643,7 +643,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         Debug.Assert(OpMtx.InfNorm() == 0.0);
                         switch(XdgOperator.LinearizationHint) {
 
-                            case LinearizationHint.AdHoc: using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft)) {
+                            case LinearizationHint.AdHoc: using(new BlockTrace("XDG-LinearizationHint.AdHoc", ft, false)) {
                                 this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
 
@@ -659,7 +659,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.FDJacobi: using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft)){
+                            case LinearizationHint.FDJacobi: using(new BlockTrace("XDG-LinearizationHint.FDJacobi", ft, false)){
                                 var mtxBuilder = XdgOperator.GetFDJacobianBuilder(LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
@@ -672,7 +672,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 return;
                             }
 
-                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft)){
+                            case LinearizationHint.GetJacobiOperator: using(new BlockTrace("XDG-LinearizationHint.GetJacobiOperator", ft, false)){
                                 var op = GetJacobiXdgOperator();
 
                                 if(JacobiParameterVars == null)
@@ -696,7 +696,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // ++++++++++++++++++++++++
 
 
-                        using(new BlockTrace("XDG-Evaluate", ft)) {
+                        using(new BlockTrace("XDG-Evaluate", ft, false)) {
                             this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
@@ -879,11 +879,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     success = m_RK_Timestepper.Solve(phystime, dt);
                 }
             }
-
+ 
             double[] AvailTimesAfter;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
-                AvailTimesAfter = LsTrk.RegionsHistory.AvailabelIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
-                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt * 1e-7, "Error in Level-Set tracker time");
+                AvailTimesAfter = LsTrk.RegionsHistory.AvailableIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
+                if(!AvailTimesAfter[0].ApproxEqual(phystime + dt))
+                    throw new ApplicationException($"Internal algorithm inconsistency: Error in Level-Set tracker time; expecting time {phystime + dt}, but most recent tracker time is {AvailTimesAfter[0]}");
             }
              
             if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime + dt))

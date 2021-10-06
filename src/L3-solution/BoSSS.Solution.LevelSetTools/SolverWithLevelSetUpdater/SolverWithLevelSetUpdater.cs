@@ -1,4 +1,6 @@
-﻿using BoSSS.Foundation;
+﻿
+//#define TEST
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -169,7 +171,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
-                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.Phasefield:
                     case LevelSetEvolution.None: 
@@ -248,20 +249,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             this.Control.AgglomerationThreshold, this.GridData);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
-                        break;
-                    }
-                    case LevelSetEvolution.LaplaceExtension: {
-                        ILevelSetEvolver laplaceExtEvo;
-                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                            laplaceExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
-                            GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData, false);
-                        } else {
-                            laplaceExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
-                            GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData, false);
-                        }
-                        lsUpdater.AddEvolver(LevelSetCG, laplaceExtEvo);
                         break;
                     }
                     case LevelSetEvolution.Phasefield: {
@@ -365,7 +352,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.Prescribed:
                     case LevelSetEvolution.StokesExtension:
-                    case LevelSetEvolution.LaplaceExtension:
                     case LevelSetEvolution.FastMarching:
                     case LevelSetEvolution.None: {
                         pair.DGLevelSet.Clear();
@@ -566,11 +552,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
             }
 #if TEST
-            MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
+            var MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");
             MPIrankField.AccConstant(this.MPIRank);
             base.RegisterField(MPIrankField, IOListOption.Always);
 
-            CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
+            var CostClusterField = new SinglePhaseField(new Basis(this.GridData, 0), "CostCluster");
             var MaskSpcA = LsTrk.Regions.GetSpeciesMask("A");
             var VoidMask = CellMask.Complement(MaskSpcA);
 
