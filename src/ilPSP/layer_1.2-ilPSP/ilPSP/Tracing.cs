@@ -227,7 +227,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Very expensive instrumentation option, slows down by a factor of two to three!!!
         /// </summary>
-        public static bool LogPrivateMem = true;
+        public static bool LogPrivateMem = false;
 
         /// <summary>
         /// current process to trace memory
@@ -643,7 +643,7 @@ namespace ilPSP.Tracing {
             base.EnterMessage("ENTERING ", _name);
         }
 
-        // <summary>
+        /// <summary>
         /// ctor: logs the 'enter' - message
         /// </summary>
         public FuncTrace(string UserName) : base() {

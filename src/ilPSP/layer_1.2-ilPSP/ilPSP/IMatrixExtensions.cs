@@ -844,10 +844,12 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// General matrix/matrix multiplication:
-        /// Based on Level 3 Blas routine dgemm
-        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
-        /// define wether Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
+        /// General matrix/matrix multiplication, 
+        /// based on Level 3 Blas routine `dgemm`:
+        /// 
+        /// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="C"/>;
+        /// 
+        /// Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
         /// </summary>
         static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
             where Matrix1 : IMatrix
@@ -1821,7 +1823,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Calculates the inverse of this matrix and stores the result in <paramref name="target"/>.
+        /// Calculates the inverse of this matrix and returns it without modifying the <paramref name="source"/>.
         /// </summary>
         /// <param name="source">the original matrix</param>
         static public MultidimensionalArray InvertTo<M1>(this M1 source)
@@ -1842,7 +1844,6 @@ namespace ilPSP {
         /// Calculates the inverse of this matrix and stores it in-place.
         /// </summary>
         /// <param name="Mtx"></param>
-        /// <param name="target">the return value</param>
         static public void InvertInPlace<M1>(this M1 Mtx)
             where M1 : IMatrix {
             int m_NoOfCols = Mtx.NoOfCols, m_NoOfRows = Mtx.NoOfRows;
@@ -2653,7 +2654,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Alternative for <see cref="GetSolutionSpace{T}(T)"> using Lapack routine dgesvd
+        /// Alternative for <see cref="GetSolutionSpace{T}(T)"/> using Lapack routine dgesvd
         /// Converts an implicit subspace representation (given as the solution of a singular matrix <paramref name="Mtx"/>)
         /// into an explicit representation.
         /// </summary>

@@ -1,0 +1,8 @@
+# configured to ignore BoSSSpad binaries
+runtimes/
+*.dll
+*.exe
+*.xml
+*.deps.json
+*.runtimeconfig.json
+*.dll.config
