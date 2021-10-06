@@ -784,6 +784,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Useful if memory peaks in linear solver tend to burst the memory.
         /// int1: number of iterations
         /// int2: multigrid level
+        /// int3: block
         /// </summary>
         public Func<int, int, int, bool> ActivateCachingOfBlockMatrix {
             private get;
@@ -986,10 +987,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 using (new BlockTrace(Caching,tr)) {
                                     bool DelayedCaching = ActivateCachingOfSolver(iPart);
                                     if (DelayedCaching) Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
-                                    blockSolvers[iPart].Solve(xi, bi);
+                                    try {
+                                        blockSolvers[iPart].Solve(xi, bi);
+                                    } catch (ArithmeticException aex) {
+                                        Console.WriteLine(aex.Message);
+                                        throw aex;
+                                    }
                                     bool IsDisposed = DisposeSchwarzBlocks(iPart);
                                 }
-
+                                tr.Info("left blocksolve");
                           
                                 //SingleFilter(xi);
                             }
@@ -1000,15 +1006,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                         }
                     }
-
+                    tr.Info("entering overlapscaling");
                     using (new BlockTrace("overlap_scaling", tr)) {
                         if (Overlap > 0 && EnableOverlapScaling) {
                             // block solutions stored on *external* indices will be accumulated on other processors.
-                            XExchange.TransceiveStartImReturn();
-                            XExchange.TransceiveFinish(1.0);
-
+                            try {
+                                XExchange.TransceiveStartImReturn();
+                                XExchange.TransceiveFinish(1.0);
+                            } catch (Exception ex) {
+                                Console.WriteLine(ex.Message);
+                                throw ex;
+                            }
+ 
                             if (iIter < FixedNoOfIterations - 1)
-                                XExchange.Vector_Ext.ClearEntries();
+                                 XExchange.Vector_Ext.ClearEntries();
 
                             var SolScale = this.SolutionScaling;
                             for (int l = 0; l < LocLength; l++) {
@@ -1016,6 +1027,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
                     }
+                    tr.Info("leaving overlapscaling");
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
