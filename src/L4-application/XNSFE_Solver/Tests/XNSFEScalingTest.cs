@@ -13,36 +13,34 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.XNSFE_Solver.Tests {
     class XNSFEScalingTest : IXNSFETest {
 
-        public bool TestImmersedBoundary => phases == 3;
+        public bool TestImmersedBoundary => false;
 
         /// <summary>
         /// nix
         /// </summary>
         public Func<double[], double, double> GetPhi2() {
-            return (X, t) => -(X[1] + 1.0); // will never be called, as long as 'TestImmersedBoundary' == false;
+            throw new NotImplementedException();//return (X, t) => -(X[1] + 1.0); // will never be called, as long as 'TestImmersedBoundary' == false;
         }
 
         public Func<double[], double, double> GetPhi2U(int d) {
-            return (X, t) => 0.0;
+            throw new NotImplementedException(); //return (X, t) => 0.0;
         }
 
         double angle;
         AffineTrafo ROT;
 
         int setup;
-        int phases;
         bool equal;
 
         /// <summary>
         /// ctor..
         /// </summary>
         /// <param name="angle"></param>
-        public XNSFEScalingTest(int Setup, int NoOfPhases, bool EqualFluids) {
+        public XNSFEScalingTest(int Setup, bool EqualFluids) {
             this.angle = 0.0;
             this.ROT = AffineTrafo.Some2DRotation(angle);
 
             setup = Setup;
-            phases = NoOfPhases;
             equal = EqualFluids;
         }
 
@@ -95,9 +93,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
         public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7 };
 
         public GridCommons CreateGrid(int Resolution) {
-            double Start = phases == 3 ? -3.0 : -1.0;
             double[] Xnodes = GenericBlas.Linspace(-1, 1, Resolution + 1);
-            double[] Ynodes = GenericBlas.Linspace(Start, 1, phases == 3 ? 2 * Resolution + 1 : Resolution + 2);
+            double[] Ynodes = GenericBlas.Linspace(-1, 1, Resolution + 2);
             var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
 
             grd.EdgeTagNames.Add(1, "wall_ConstantHeatFlux");
@@ -137,7 +134,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         double R => 0.9;
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => phases == 1 ? -1.0 : -X[1];
+            return (X, t) => -X[1];
         }
 
         public Func<double[], double, double> GetPress(string species) {            
