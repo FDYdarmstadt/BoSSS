@@ -73,7 +73,7 @@ namespace BoSSS.Solution.NSECommon {
             this.YO0 = YO0;
             this.zst = zst;
 
-            this.cp = GetCpFlameSheet(7.0); // Dimensional value
+            this.cp = cpRef;// GetCpFlameSheet(7.0); // Dimensional value
 
             this.MatParamsMode = MatParamsMode;
 

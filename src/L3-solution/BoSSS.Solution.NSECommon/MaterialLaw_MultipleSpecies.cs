@@ -182,9 +182,7 @@ namespace BoSSS.Solution.NSECommon {
             switch (myCpCalculationsMode) {
                 case CpCalculationMode.onlyN2:
                     double DimensionalTemperature = arguments[0] * TRef;
-                    cp = thermoProperties.getCp("N2", DimensionalTemperature) / this.cpRef; // Using correlation for N2...
-                                                                                            //double cphack = (-6e-8 * DimensionalTemperature * DimensionalTemperature + 0.0003 * DimensionalTemperature + 0.9334); // this is a not so exact correlation obtained after "combining" the two correlations of he nasa polinomials for nitrogen
-                                                                                            //cp = cphack / cpRef;
+                    cp = thermoProperties.getCp("N2", DimensionalTemperature) / this.cpRef; // Using correlation for N2...                                                                                        
                     break;
 
                 case CpCalculationMode.mixture:

@@ -2133,8 +2133,8 @@ namespace BoSSS.Solution {
                 // resp. 'LoadRestart(..)'!!!
                 // ================================================================================
 
-                //if (this.Control.RestartInfo == null) {
-                { 
+                if (this.Control.RestartInfo == null) {
+                    //{ 
                     CreateEquationsAndSolvers(null);
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
