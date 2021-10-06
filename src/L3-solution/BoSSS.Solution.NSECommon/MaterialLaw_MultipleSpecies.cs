@@ -31,15 +31,24 @@ namespace BoSSS.Solution.NSECommon {
     /// </summary>
     public class MaterialLaw_MultipleSpecies : MaterialLaw {
         [DataMember] private MaterialParamsMode MatParamsMode;
+        [DataMember] private CpCalculationMode myCpCalculationsMode;
+
         [DataMember] public double R;
-        [DataMember] private double[] MolarMasses;
-        [DataMember] public double T_ref;
+        [DataMember] public double[] MolarMasses;
+        [DataMember] public double T_RefSutherland;
+
+        /// <summary>
+        /// Heat of Reaction
+        /// </summary>
+        [DataMember] public double Q;
 
         [DataMember]
         protected bool rhoOne;
 
+
+
         [DataMember]
-        protected bool cpOne;
+        private double cpRef;
 
         [DataMember]
         public OneStepChemicalModel m_ChemModel;
@@ -47,15 +56,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, bool _cpOne, double gasConstant, double T_ref,OneStepChemicalModel chemModel) {
+        public MaterialLaw_MultipleSpecies(double[] MolarMasses, MaterialParamsMode MatParamsMode, bool _rhoOne, double gasConstant, double TRefSutherland, OneStepChemicalModel chemModel, double _cpRef, CpCalculationMode mycpMode) {
             this.MatParamsMode = MatParamsMode;
             this.R = gasConstant;
             this.thermoProperties = new ThermodynamicalProperties();
             this.MolarMasses = MolarMasses;
-            this.T_ref = T_ref;
+            this.T_RefSutherland = TRefSutherland;
             this.rhoOne = _rhoOne;
-            this.cpOne = _cpOne;
+
+            this.cpRef = _cpRef;
             m_ChemModel = chemModel;
+            myCpCalculationsMode = mycpMode;
         }
 
         public ThermodynamicalProperties thermoProperties;
@@ -93,6 +104,30 @@ namespace BoSSS.Solution.NSECommon {
         /// </returns>
         public override double GetDensity(params double[] phi) {
             return GetDensity(ThermodynamicPressure, phi);
+        }
+
+        /// <summary>
+        /// Modes for cp calculation
+        /// </summary>
+        public enum CpCalculationMode {
+
+            /// <summary>
+            /// Use nasa correlation of Nitrogen
+            /// Useful for combustion systems where both inflows are diluted in inert.
+            /// </summary>
+            onlyN2,
+
+            /// <summary>
+            /// Use nasa correlations for each component
+            /// The mixture cp is calculated by asuming an ideal gas, i.e.
+            /// cp_mixture = sum_i(cp,i*Y_i)
+            /// </summary>
+            mixture,
+
+            /// <summary>
+            /// Use a constant value
+            /// </summary>
+            constant
         }
 
         /// <summary>
@@ -141,20 +176,36 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public override double GetMixtureHeatCapacity(double[] arguments) {
             double cp;
-            if (!cpOne) {
-                double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
-                for (int n = 1; n < arguments.Length; n++) {
-                    lastMassFract -= arguments[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
-                }
 
-                arguments = ArrayTools.Cat(arguments, lastMassFract);
-                double TRef = 300;
-                double DimensionalTemperature = arguments[0] * TRef;
-                double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
-                string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
-                cp = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature);
-            } else {
-                cp = 1.0;
+            double TRef = 300;
+
+            switch (myCpCalculationsMode) {
+                case CpCalculationMode.onlyN2:
+                    double DimensionalTemperature = arguments[0] * TRef;
+                    cp = thermoProperties.getCp("N2", DimensionalTemperature) / this.cpRef; // Using correlation for N2...                                                                                        
+                    break;
+
+                case CpCalculationMode.mixture:
+                    double DimensionalTemperature2 = arguments[0] * TRef;
+                    double lastMassFract = 1.0; // The last mass fraction is calculated here, because the other ones are given as arguments and not as parameters.
+                    for (int n = 1; n < arguments.Length; n++) {
+                        lastMassFract -= arguments[n]; // Mass fraction calculated as Yn = 1- sum_i^n-1(Y_i);
+                    }
+                    arguments = ArrayTools.Cat(arguments, lastMassFract);
+                    double[] massFractions = arguments.Skip(1).Take(arguments.Length - 1).ToArray();
+                    string[] names = new string[] { "CH4", "O2", "CO2", "H2O", "N2" };
+                    double cpMixture = thermoProperties.Calculate_Cp_Mixture(massFractions, names, DimensionalTemperature2) ;
+
+
+                    cp = cpMixture / cpRef;
+                    break;
+
+                case CpCalculationMode.constant:
+                    cp = 1.0; // => cpRef/cpRef
+                    break;
+
+                default:
+                    throw new NotImplementedException();
             }
 
             return cp;
@@ -201,8 +252,8 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case MaterialParamsMode.Sutherland: {
-                        double S = 110.56;
-                        visc = Math.Pow(phi, 1.5) * (1 + S / T_ref) / (phi + S / T_ref);
+                        double S = 110.5;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_RefSutherland) / (phi + S / T_RefSutherland);
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {
@@ -239,7 +290,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         public double GetMassDeterminedThermodynamicPressure(double InitialMass, XDGField Temperature) {
             var TemperatureA = Temperature.GetSpeciesShadowField("A");
-            var basis = new Basis(TemperatureA.GridDat, TemperatureA.Basis.Degree * 2); // Degree
+
+            var basis = new Basis(TemperatureA.GridDat, 23); // Degree
             var omega = new SinglePhaseField(TemperatureA.Basis); // 1 / T
             //var omega = new XDGField(Temperature.Basis); // 1 / T
             omega.ProjectField(1.0,

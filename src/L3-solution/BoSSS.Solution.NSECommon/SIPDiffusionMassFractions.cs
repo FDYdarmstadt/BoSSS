@@ -26,7 +26,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="prmsOK"></param>
         /// <param name="massFractionComponent"></param>
         /// <param name="numOfSpecies"></param>
-        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Schmidt, double[] Lewis, bool prmsOK, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  prmsOK, massFractionComponent + 1) {
+        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Schmidt, double[] Lewis, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  false, massFractionComponent + 1) {
             this.EoS = EoS;
             this.numOfSpecies = numOfSpecies;
             this.BcMap = BcMap;
@@ -60,7 +60,7 @@ namespace BoSSS.Solution.NSECommon {
         double m_schmidt;
 
         /// <summary>
-        /// Array of Lewis numbers
+        /// Components Lewis numbers
         /// </summary>
         double[] m_lewis;
 
