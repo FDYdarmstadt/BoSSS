@@ -526,7 +526,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         double m_CurrentPhystime;
 
         private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime) {
-            double ActualLevSetRelTime) {
 
             // detect whether the stage s is explicit or not: (implicit schemes can have some explicit stages too)
             bool isExplicit = m_RKscheme.a[s, s] == 0;
