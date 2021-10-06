@@ -158,9 +158,12 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             //BoSSS.Solution.Application.InitMPI();
+            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int sz);
+            //Console.WriteLine("Size ist: " + sz);
             //DeleteOldPlotFiles();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorConvergence3D(2);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(2);
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
+            //FinalizeMPI();
 
             string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
             string pp = System.Environment.GetEnvironmentVariable ("PATH");
@@ -325,22 +328,12 @@ namespace BoSSS.Application.SipPoisson {
             }
         }
 
-        
-        /*
-        protected void CustomItCallback(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-            //+1 because of startindex=0 and +1 because lowest level, does not count as mlevel
-            
-        }
-        */
-        
         /// <summary>
         /// Single run of the solver
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
-                //this.WriteSEMMatrices();
-
-                if (Control.ExactSolution_provided) {
+                 if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 
@@ -359,21 +352,25 @@ namespace BoSSS.Application.SipPoisson {
                 // call solver
                 // -----------
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+
+                
                 /*
-                this.RHS.CoordinateVector.FillRandom(0);
+                //this.RHS.CoordinateVector.FillRandom(0);
 
                 this.m_MgConfig = MultigridOperator.Mode.Eye;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler);
                 double[] sol1 = T.CoordinateVector.ToArray();
                 T.Clear();
 
                 this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
+                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.DbeMatrix = UniSolver.LastMtx.CloneAs();
                 double[] sol2 = T.CoordinateVector.ToArray();
                 T.Clear();
 
                 this.m_MgConfig = MultigridOperator.Mode.LeftInverse_DiagBlock;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
+                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
+                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.LidMatrix = UniSolver.LastMtx.CloneAs();
                 double[] sol3 = T.CoordinateVector.ToArray();
                 //T.Clear();
 
@@ -382,22 +379,15 @@ namespace BoSSS.Application.SipPoisson {
                 double dist23 = sol2.L2Distance(sol3);
 
                 Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
-                */
-
-                //var Matrix_SIP_posdef = LapaceIp.ComputeMatrix(T.Mapping, new DGField[] { RHS }, T.Mapping);
-                //Matrix_SIP_posdef.Solve_Direct(T.CoordinateVector, RHS.CoordinateVector);
-
-
-
-
-
+                //*/
+     
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
                     Error.AccLaidBack(1.0, Tex);
                     Error.AccLaidBack(-1.0, T);
 
                     double L2_ERR = Error.L2Norm();
-                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + ": " + L2_ERR);
+                    Console.WriteLine("\t\tL2 error on " + this.Grid.NumberOfCells + " cells: " + L2_ERR);
                     last_L2_ERR = L2_ERR;
                     base.QueryHandler.ValueQuery("SolL2err", L2_ERR, true);
 

@@ -77,7 +77,7 @@ namespace ilPSP.LinSolvers {
             if(Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF)) // solve matrices on SELF always sequentially!
                 SolverFallbackSeq = SolverFallbackSeq.Skip(1).ToArray();
 
-            string CheckResidual() {
+            string CheckResidual(Type t) {
                 double[] Residual = B.ToArray();
                 if(object.ReferenceEquals(B, Residual))
                     throw new ApplicationException("ToArray does not work as expected.");
@@ -94,7 +94,7 @@ namespace ilPSP.LinSolvers {
                 if(RelResidualNorm > 1.0e-10) {
                     string ErrMsg;
                     using(var stw = new System.IO.StringWriter()) {
-                        stw.WriteLine("Stokes Extension: High residual from direct solver.");
+                        stw.WriteLine("Linear Solver: High residual from direct solver " + t + ".");
                         stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
                         stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
                         stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
@@ -116,12 +116,17 @@ namespace ilPSP.LinSolvers {
             string LastError = null;
             foreach(var f in SolverFallbackSeq) {
                 using(var slv = f()) {
+                    //Console.WriteLine("Using solver: " + slv.GetType() + " ...");
                     slv.DefineMatrix(Matrix);
                     var SolRes = slv.Solve(X, B.ToArray());
 
-                    LastError = CheckResidual();
-                    if(LastError == null)
+                    LastError = CheckResidual(slv.GetType());
+                    if(LastError == null) {
+                        //Console.WriteLine("residual is fine.");
                         return;
+                    } else {
+                        //Console.WriteLine("some error.");
+                    }
                 }
             }
 
