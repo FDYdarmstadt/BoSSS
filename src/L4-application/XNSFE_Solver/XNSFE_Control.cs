@@ -5,6 +5,7 @@ using BoSSS.Solution.NSECommon;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -54,6 +55,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <summary>
         /// include recoil pressure.
         /// </summary>
+        [DataMember]
         public bool IncludeRecoilPressure = true;
 
         /// <summary>
@@ -61,6 +63,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// => switch to Robin B.C. on interface, highly experimental,
         /// careful "slip" value is hardcoded 10/2021
         /// </summary>
+        [DataMember]
         public bool MaterialAtContactLine = false;
 
     }
