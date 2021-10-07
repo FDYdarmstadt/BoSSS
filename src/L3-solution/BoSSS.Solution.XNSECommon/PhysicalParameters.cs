@@ -36,10 +36,10 @@ namespace BoSSS.Solution.XNSECommon {
         public bool IncludeConvection;
 
         /// <summary>
-        /// Include Diffusive Term
+        /// Include Diffusive Term, standard: this is on
         /// </summary>
         [DataMember]
-        public bool IncludeDiffusion;
+        public bool IncludeDiffusion = true;
 
         /// <summary>
         /// density of fluid A
