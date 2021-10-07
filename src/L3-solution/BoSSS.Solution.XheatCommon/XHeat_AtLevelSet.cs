@@ -1430,7 +1430,7 @@ namespace BoSSS.Solution.XheatCommon {
                 Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
                 Ret *= -1.0;
             } else {
-                double a = 1.0 * inp.X[0];
+                double a = 1.0 * inp.X[0].Pow2();
                 // Robin condition from A-side
                 Ret += a * (uA[0] - g_D) * (vA - 0);
                 // Robin condition from B-side

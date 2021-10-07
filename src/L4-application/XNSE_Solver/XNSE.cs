@@ -654,7 +654,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public override double GetTimestep() {
             double dt = this.Control.dtFixed;
-            double s = 0.25; // safety factor
+            double s = 0.5; // safety factor
 
 
             var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
