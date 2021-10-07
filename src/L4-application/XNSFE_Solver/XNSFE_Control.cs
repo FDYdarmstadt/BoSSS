@@ -54,7 +54,14 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <summary>
         /// include recoil pressure.
         /// </summary>
-        public bool IncludeRecoilPressure = true;        
+        public bool IncludeRecoilPressure = true;
+
+        /// <summary>
+        /// let temperature gradient vanish at contactline 
+        /// => switch to Robin B.C. on interface, highly experimental,
+        /// careful "slip" value is hardcoded 10/2021
+        /// </summary>
+        public bool MaterialAtContactLine = false;
 
     }
 }

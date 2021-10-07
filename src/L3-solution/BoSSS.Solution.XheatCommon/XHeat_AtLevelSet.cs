@@ -1326,7 +1326,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         //LevelSetTracker m_LsTrk;
 
-        public ConductivityAtLevelSet_withMassflux(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat) {
+        public ConductivityAtLevelSet_withMassflux(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, bool ZeroGradientAtContactline) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
@@ -1334,7 +1334,7 @@ namespace BoSSS.Solution.XheatCommon {
 
             //this.DirichletCond = _DiriCond;
             this.Tsat = _Tsat;
-
+            this.ZeroGradientAtContactline = ZeroGradientAtContactline;
             //m_LsTrk = lstrk;
 
         }
@@ -1347,6 +1347,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         //bool DirichletCond;
         double Tsat;
+        bool ZeroGradientAtContactline;
 
 
         /// <summary>
@@ -1406,32 +1407,35 @@ namespace BoSSS.Solution.XheatCommon {
             Ret += pnlty * wPenalty * vA * (uA[0] - Tsat) - pnlty * wPenalty * vB * (Tsat - uB[0]);
             */
 
+
             double g_D = Tsat;
 
-            // dirichlet condition from A-side
-            for (int d = 0; d < inp.D; d++) {
-                double nd = inp.Normal[d];
-                Ret += (kA * Grad_uA[0, d]) * (vA) * nd;
-                Ret += (kA * Grad_vA[d]) * (uA[0] - g_D) * nd;
+            if (!ZeroGradientAtContactline) {
+                // dirichlet condition from A-side
+                for (int d = 0; d < inp.D; d++) {
+                    double nd = inp.Normal[d];
+                    Ret += (kA * Grad_uA[0, d]) * (vA) * nd;
+                    Ret += (kA * Grad_vA[d]) * (uA[0] - g_D) * nd;
+                }
+
+                Ret -= wPenalty * (uA[0] - g_D) * (vA - 0) * pnlty;
+
+                // dirichlet condition from B-side
+                for (int d = 0; d < inp.D; d++) {
+                    double nd = inp.Normal[d];
+                    Ret += (kB * Grad_uB[0, d]) * (-vB) * nd;
+                    Ret += (kB * Grad_vB[d]) * (g_D - uB[0]) * nd;
+                }
+
+                Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
+                Ret *= -1.0;
+            } else {
+                double a = 1.0 * inp.X[0];
+                // Robin condition from A-side
+                Ret += a * (uA[0] - g_D) * (vA - 0);
+                // Robin condition from B-side
+                Ret += a * (g_D - uB[0]) * (0 - vB);
             }
-
-            Ret -= wPenalty * (uA[0] - g_D) * (vA - 0) * pnlty;
-
-            // dirichlet condition from B-side
-            for (int d = 0; d < inp.D; d++) {
-                double nd = inp.Normal[d];
-                Ret += (kB * Grad_uB[0, d]) * (-vB) * nd;
-                Ret += (kB * Grad_vB[d]) * (g_D - uB[0]) * nd;
-            }
-
-            Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
-            Ret *= -1.0;
-
-            //double a = 1.0;
-            //// Robin condition from A-side
-            //Ret += a * (uA[0] - g_D) * (vA - 0);
-            //// Robin condition from B-side
-            //Ret += a * (g_D - uB[0]) * (0 - vB);
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;

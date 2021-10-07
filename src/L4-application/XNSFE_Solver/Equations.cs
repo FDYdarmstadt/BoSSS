@@ -322,7 +322,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
                 double penalty = dntParams.PenaltySafety;
 
-                var Visc = new ConductivityAtLevelSet_withMassflux(dimension, kA, kB, penalty * 1.0, Tsat);
+                var Visc = new ConductivityAtLevelSet_withMassflux(dimension, kA, kB, penalty * 1.0, Tsat, config.isMaterialAtContactLine);
                 AddComponent(Visc);
             } else {
                 throw new NotImplementedException();
