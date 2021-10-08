@@ -560,6 +560,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 if ((int)this.Control.TimeSteppingScheme >= 100) {
                     // this is a RK scheme, set here the maximum 
                     dt = this.GetTimestep();
+                    if(phystime + dt > this.Control.Endtime) {
+                        Console.WriteLine("restricting time-step to reach end-time");
+                        dt = this.Control.Endtime - phystime;
+                    }
                 } else {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
