@@ -531,13 +531,13 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSE_Control C = new XNSE_Control();
 
             int NoOfTimeSteps = 10;
-            int k = 2;
+            int k = 3;
             bool IncludeConvection = true;
-            int Res = 10;
+            int Res = 15;
             int SpaceDim = 3;
             bool Steady = false;
             bool useLoadBal = true;
-            bool useAMR = false;
+            bool useAMR = true;
             var Gshape = Shape.Cube;
 
             C.GridFunc = delegate {
@@ -678,7 +678,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdaptiveMeshRefinement = useAMR;
             if (useAMR) {
                 C.SetMaximalRefinementLevel(2);
-                C.AMR_startUpSweeps = 1;
+                C.AMR_startUpSweeps = 0;
             }
 
             // Timestepping
@@ -698,7 +698,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 20, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 1, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 15, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 1, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
             double Re = 1000;
             double particleRad = 0.261;
 
@@ -933,7 +933,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
-            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1E-6;
             C.LinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxKrylovDim = 50;
