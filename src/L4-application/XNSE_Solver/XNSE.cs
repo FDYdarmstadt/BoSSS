@@ -319,12 +319,12 @@ namespace BoSSS.Application.XNSE_Solver {
                 var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
                 for (int d = 0; d < D; d++) {
                     d.AddToArray(ref confMomConti.VarIndex);
-                    Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                    //pVel.AddToArray(ref confMomConti.DegreeS);
+                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pVel.AddToArray(ref confMomConti.DegreeS);
                 }
                 D.AddToArray(ref confMomConti.VarIndex);
-                Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                //pPrs.AddToArray(ref confMomConti.DegreeS);
+                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                pPrs.AddToArray(ref confMomConti.DegreeS);
 
                 confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
