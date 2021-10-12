@@ -86,9 +86,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
 // Upwinding:
             if(VelocityIn*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal); // outflow
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
             } else {
-                return 0.0; // inflow
+                return 0.0 * (_vIN); // inflow
             }
 
             /*
@@ -129,9 +129,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             // Upwinding:
             if(VelocityAvg*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal);
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
             } else {
-                return rho * _uOT[D] * (VelocityOt * inp.Normal);
+                return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
             }
 
             /*

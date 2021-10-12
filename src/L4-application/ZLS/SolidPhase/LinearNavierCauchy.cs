@@ -39,17 +39,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
-            /*
+            
             // laplacian of displacement:
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
-            //eulerAlmansi0.PenaltySafety = 0.0;
+            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
             AddComponent(eulerAlmansi0);
 
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
             AddComponent(eulerAlmansi1);
-            //eulerAlmansi1.PenaltySafety = 0.0;
-            */Console.WriteLine("##################### Rem: displacement coupling deakt.");
-
+            
             var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
 

@@ -144,7 +144,7 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         /// <summary>
-        /// a little switch...
+        /// a little switch; turns everything off, except the penalty terms.
         /// </summary>
         protected double m_alpha = 1.0;
 
@@ -183,7 +183,8 @@ namespace BoSSS.Solution.NSECommon {
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
-                acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell) * this.m_alpha;
+                acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell);
+            acc *= this.m_alpha;
             return acc;
         }
 

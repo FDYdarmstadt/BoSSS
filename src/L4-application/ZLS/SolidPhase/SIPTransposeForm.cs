@@ -14,8 +14,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string species;
         int d;
         string[] variableNames;
-        public double PenaltySafety = 1.0;
-        public SIPTransposeForm(string species, string[] variables, int d, double viscosity) {
+        public double PenaltySafety;
+        public SIPTransposeForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
+            this.PenaltySafety = __PenaltySafety;
             this.species = species;
             this.viscosity = viscosity;
             this.variableNames = variables;

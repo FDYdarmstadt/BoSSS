@@ -664,12 +664,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             var StencilCondNoVizS = new List<DGField>();
 
             var Ret = new Dictionary<string, double>();
-            int k = 0;
+            //int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
-                if(k == 0)
-                    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
-                Console.WriteLine("################ remember to deactivate me ^^^^^  ");
+                //if(k == 0)
+                //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
+                //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
@@ -683,7 +683,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (plotStencilCondNumViz) {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
-                k++;
+                //k++;
             }
 
             if(StencilCondNoVizS.Count > 0) {

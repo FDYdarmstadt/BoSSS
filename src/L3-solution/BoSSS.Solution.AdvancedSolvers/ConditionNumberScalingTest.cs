@@ -33,7 +33,14 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <param name="title">
         /// Gnuplot title/output filename
         /// </param>
-        static public void Perform(IEnumerable<AppControl> controls, bool plot = false, string title = "") {
+        /// <param name="ThrowAssertions">
+        /// assertions are thrown if the slopes of the condition number are too high, c.f. <see cref="ExpectedSlopes"/>;
+        /// should always be true for testing
+        /// </param>
+        /// <returns>
+        /// <see cref="ResultData"/>
+        /// </returns>
+        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, bool plot = false, string title = "", bool ThrowAssertions = true) {
             var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);
             t.RunAndLog();
@@ -80,7 +87,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            t.CheckResults();
+            if(ThrowAssertions)
+                t.CheckResults();
+
+            return t.ResultData;
         }
 
         /// <summary>

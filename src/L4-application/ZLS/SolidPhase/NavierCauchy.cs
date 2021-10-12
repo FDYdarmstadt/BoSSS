@@ -19,6 +19,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
+        static public double EulerAlamansiPenalty = 1.0;
+
         public NavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
@@ -32,15 +34,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
                 d, material.Density);
-            AddComponent(convection);
+            //AddComponent(convection);
             
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
 
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
             AddComponent(eulerAlmansi0);
 
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
             AddComponent(eulerAlmansi1);
             
             //if(d == 0) {

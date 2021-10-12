@@ -11,14 +11,15 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
 
     /// <summary>
-    /// For debugging only, to be delted
+    /// Symmetric interior penalty with only penalties
     /// </summary>
-    class Fake_ipFlux : BoSSS.Solution.NSECommon.SIPLaplace, ISpeciesFilter {
+    class Penalty_ipFlux : BoSSS.Solution.NSECommon.SIPLaplace, ISpeciesFilter {
 
-       public Fake_ipFlux(double penalty_const, string varName, double visc)
+       public Penalty_ipFlux(double penalty_const, string varName, double visc)
             : base(penalty_const, varName) //
         {
             m_visc = visc;
+            base.m_alpha = 0.0;
         }
 
      
@@ -42,14 +43,79 @@ namespace ZwoLevelSetSolver.SolidPhase {
             return true;
         }
 
-        //public override TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.None;
+        /*
+        override public double InnerEdgeForm(ref BoSSS.Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            double Acc = 0.0;
 
-        //public override TermActivationFlags InnerEdgeTerms => base.InnerEdgeTerms;
+            double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+            double nuB = this.Nu(inp.X, inp.Parameters_OUT, inp.jCellOut);
 
-        //public override TermActivationFlags VolTerms => base.VolTerms;
 
-        
+            for(int d = 0; d < inp.D; d++) {
+                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
+            }
+            Acc *= this.m_alpha;
+
+            double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
+
+
+            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
+
+
+            //for(int d = 0; d < inp.D; d++) {
+            //    Acc -= 1.0 * (nuA * _Grad_uA[0, d] - nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+            //    //Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
+            //}
+
+
+
+            return Acc;
+
+        }
+
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        override public double BoundaryEdgeForm(ref BoSSS.Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            double Acc = 0.0;
+
+            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+
+            if(this.IsDirichlet(ref inp)) {
+                // inhom. Dirichlet b.c.
+                // +++++++++++++++++++++
+
+                double g_D = this.g_Diri(ref inp);
+
+                for(int d = 0; d < inp.D; d++) {
+                    double nd = inp.Normal[d];
+                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                    Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                }
+                Acc *= this.m_alpha;
+
+                Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+
+            } else {
+
+                double g_N = this.g_Neum(ref inp);
+
+                Acc += nuA * g_N * _vA * this.m_alpha;
+            }
+            return Acc;
+        }
+
+        public override TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.AllOn;
+
+        public override TermActivationFlags InnerEdgeTerms => TermActivationFlags.AllOn;
+        */
     }
+
+
+
 
 
     /// <summary>
@@ -60,11 +126,12 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string species;
         int d;
         string[] variableNames;
-        public double PenaltySafety = 1.3;
+        public double PenaltySafety;
 
-        public SIPForm(string species, string[] variables, int d, double viscosity) {
+        public SIPForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
             this.species = species;
             this.viscosity = viscosity;
+            this.PenaltySafety = __PenaltySafety;
             if(this.viscosity <= 0.0) {
                 throw new ArgumentException($"Viscosity must be positive, but got a value of {this.viscosity}");
             }
