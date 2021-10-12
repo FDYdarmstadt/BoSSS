@@ -64,10 +64,10 @@ namespace ZwoLevelSetSolver {
 
             ZLS_Control.DisplacementDegOffset = 0;
             ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = +1.0;
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = 1.0;
-            SolidPhase.Continuity.ContinuityInDisplacement = false;
-            SolidPhase.Continuity.ContinuityStabilization = false;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0;
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0;
+            SolidPhase.Continuity.ContinuityInDisplacement = true;
+            SolidPhase.Continuity.ContinuityStabilization = true;
 
 
             using(var q = new ZLS()) {
