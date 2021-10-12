@@ -217,6 +217,21 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected int PressureDegree() {
+            int pPres;
+            if(Pressure != null)
+                return Pressure.Basis.Degree;
+            if(this.Control.FieldOptions.TryGetValue(VariableNames.Pressure, out FieldOpts v)) {
+                pPres = v.Degree;
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Pressure not found");
+            }
+            return pPres;
+        }
+
         
 
         private IncompressibleMultiphaseBoundaryCondMap m_boundaryMap;

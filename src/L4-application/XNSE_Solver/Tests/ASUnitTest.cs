@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingViscosityJumpTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingViscosityJumpTest-p" + deg);
         }
 
 #if !DEBUG
@@ -245,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingStaticDropletTest-p" + deg);
         }
 
 
@@ -273,7 +273,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
 
@@ -1049,7 +1049,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: Name);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
 #endif
         }
 

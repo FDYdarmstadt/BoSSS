@@ -28,14 +28,18 @@ namespace ZwoLevelSetSolver {
             SetDGdegree(p);
 
             FieldOptions.Add(VariableNames.DisplacementX, new FieldOpts() {
-                Degree = p,
+                Degree = p + DisplacementDegOffset,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
             FieldOptions.Add(VariableNames.DisplacementY, new FieldOpts() {
-                Degree = p,
+                Degree = p + DisplacementDegOffset,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
+
+        public static int DisplacementDegOffset = 0;
     }
+
+
 }

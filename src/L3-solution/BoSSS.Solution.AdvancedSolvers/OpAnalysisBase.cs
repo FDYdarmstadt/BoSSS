@@ -15,6 +15,7 @@ using System.Diagnostics;
 using BoSSS.Solution.AdvancedSolvers;
 using NUnit.Framework;
 using ilPSP.Tracing;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
@@ -77,7 +78,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         
         BlockMsrMatrix m_Mass;
         
-        BlockMsrMatrix m_OpMtx;
+        BlockMsrMatrix m_OpMtx; // un-treated operator matrix
         double[] localRHS;
         
         MultigridOperator m_MultigridOp;
@@ -535,7 +536,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return DisturbanceMeasure;
         }
 
-
+        /// <summary>
+        /// The operator matrix after compactification (i.e. elimination of un-used DOFs),
+        /// application of reference points (<see cref="ISpatialOperator.FreeMeanValue"/>),
+        /// and block-preconditioning.
+        /// </summary>
+        public BlockMsrMatrix PrecondOpMatrix {
+            get {
+                return m_MultigridOp.OperatorMatrix.CloneAs();
+            }
+        }
 
 
         /// <summary>
@@ -551,7 +561,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             var Mtx = m_MultigridOp.OperatorMatrix;
 
-
+            //bool Comparison = this.VarGroup.SetEquals(new int[] { 1 });
 
 
             // Blocks and selectors 
@@ -561,28 +571,35 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
             FullSel.VariableSelector(this.VarGroup);
 
-            
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
             // Matlab
             // ======
 
             double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
             
-            MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
+            MultidimensionalArray output = MultidimensionalArray.Create(4, 1);
             //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-
-                // if Octave should be used instead of Matlab....
-                // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                //if(Comparison) {
+                //    string compPath = $"Mtx_ipPoisson-J{J}.txt";
+                //    File.Copy(compPath, Path.Combine(bmc.WorkingDirectory.FullName, "comp.txt"), false);
+                //}
 
                 bmc.PutSparseMatrix(Mtx, "FullMatrix");
 
                 bmc.PutVector(Full_0Vars, "Full_0Vars");
 
-                bmc.Cmd("output = ones(2,1);");
+                bmc.Cmd("output = ones(4,1);");
+
 
                 bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
-               
+
+                //if(Comparison) {
+                //    bmc.Cmd("compMtx = ReadMsr('comp.txt');");
+                //    bmc.Cmd("output(2) = norm(compMtx - FullMatrix(Full_0Vars,Full_0Vars), inf);");
+                //    bmc.Cmd("output(3) = condest(compMtx);");
+                //}
 
                 bmc.GetMatrix(output, "output");
                 bmc.Execute(false);
@@ -591,8 +608,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
                 
 
-                Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
-
+                Console.WriteLine($"MATLAB condition number vars {VarNames}: {condestFull:0.###e-00}");
+                //if(Comparison) {
+                //    Console.WriteLine($"MATLAB condition number check matrix vars {VarNames}: {output[2, 0]:0.###e-00}");
+                //    Console.WriteLine($"MATLAB matrix check {VarNames}: {output[1, 0]:0.###e-00}");
+                //}
                 
                 return condestFull;
             }
@@ -800,7 +820,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             get {
                 int[] vgs = this.VarGroup;
                 if(vgs.Length <= 1) {
-                    return "Var0";
+                    return "Var" + vgs[0];
                 } else {
                     Array.Sort(vgs);
 

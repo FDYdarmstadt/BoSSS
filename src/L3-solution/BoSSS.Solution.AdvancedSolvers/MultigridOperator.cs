@@ -164,8 +164,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// global index
-        /// cell in which the reference point is located
+        /// (MPI) global index of cell in which the reference point is located
         /// </summary>
         long m_ReferenceCell;
 
@@ -563,7 +562,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 #if DEBUG
                         for(long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
-                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
+                            //Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
                         }
 #endif
                     }

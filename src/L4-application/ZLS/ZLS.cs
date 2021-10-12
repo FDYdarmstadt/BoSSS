@@ -18,40 +18,70 @@ using ZwoLevelSetSolver.ContactLine;
 using NSEVariableNames = BoSSS.Solution.NSECommon.VariableNames;
 using NSEEquationNames = BoSSS.Solution.NSECommon.EquationNames;
 using BoSSS.Solution.XNSECommon;
+using ilPSP;
+using BoSSS.Solution.Utils;
 
 namespace ZwoLevelSetSolver {
 
     public class ZLS : XNSE<ZLS_Control> {
+
+        /// <summary>
+        /// Usually, the term "DG order of the calculation" means the velocity degree.
+        /// </summary>
+        protected int DisplacementDegree() {
+            int pDspl;
+            if(this.Control.FieldOptions.TryGetValue("Displacement*", out FieldOpts v)) {
+                pDspl = v.Degree;
+            } else if(this.Control.FieldOptions.TryGetValue(VariableNames.DisplacementX, out FieldOpts v1)) {
+                pDspl = v1.Degree;
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
+            }
+            return pDspl;
+        }
         
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
-            int pVel = VelocityDegree();
             int D = this.GridData.SpatialDimension;
+            int pVel = VelocityDegree();
+            int pPrs = PressureDegree();
+            int pDispl = DisplacementDegree();
+
+
+            
             // configurations for velocity
             for (int d = 0; d < D; d++) {
                 var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pVel },
-                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                    mode = MultigridOperator.Mode.Eye,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(NSEVariableNames.VelocityVector(D)[d]) }
                 };
                 configsLevel.Add(configVel_d);
             }
             // configuration for pressure
-            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             var configPres = new MultigridOperator.ChangeOfBasisConfig() {
                 DegreeS = new int[] { pPrs },
-                mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                mode = MultigridOperator.Mode.Eye,
                 VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(NSEVariableNames.Pressure) }
             };
             configsLevel.Add(configPres);
-
+            // configuration for displacements
             for (int d = 0; d < D; d++) {
                 var configDisplacement = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pVel },
-                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                    DegreeS = new int[] { pDispl },
+                    mode = MultigridOperator.Mode.Eye,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.DisplacementVector(D)[d]) }
                 };
                 configsLevel.Add(configDisplacement);
             }
+            
+            /*
+            configsLevel.Add(
+                new MultigridOperator.ChangeOfBasisConfig() {
+                    DegreeS = new int[] { pVel, pVel, pPrs, pDispl, pDispl },
+                    mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
+                    VarIndex = new int[] { 0, 1, 2, 3, 4 }
+                });
+            */
         }
 
         protected override void SetInitial(double t) {
@@ -65,7 +95,7 @@ namespace ZwoLevelSetSolver {
         }
 
         //Artificial Viscosity Term in displacement transport equations
-        double displacementViscosity = 0.00;
+        internal static double displacementViscosity = 0.0;
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             
@@ -73,8 +103,7 @@ namespace ZwoLevelSetSolver {
                 if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new LinearNavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new LinearDisplacementEvolution("C", d, D, displacementViscosity));
-
-                }else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                } else if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                     opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
                     opFactory.AddEquation(new DisplacementEvolution("C", d, D, displacementViscosity));
                 } else {
@@ -87,10 +116,7 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
             }
             opFactory.AddEquation(new SolidPhase.Continuity("C", D));
-            /*
-            opFactory.AddEquation(new PressurePenalty("A", -0.001));
-            opFactory.AddEquation(new PressurePenalty("B", -0.001));
-            //*/
+            
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
@@ -162,7 +188,7 @@ namespace ZwoLevelSetSolver {
             //Update Calls
             dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
-            Timestepping.Solve(phystime, dt, false);
+            Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
             Console.WriteLine($"done with time step {TimestepNo}");
             return dt;
         }
@@ -180,6 +206,38 @@ namespace ZwoLevelSetSolver {
             } else {
                 throw new ArgumentOutOfRangeException();
             }
+        }
+
+        /// <summary>
+        /// automatized analysis of condition number 
+        /// </summary>
+        public override IDictionary<string, double> OperatorAnalysis() {
+            int D = this.Grid.SpatialDimension;
+
+            int[] varGroup_mom = D.ForLoop(i => i); ;
+            int[] varGroup_Stokes = varGroup_mom.Cat(D);
+            int[] varGroup_Diplacement = D.ForLoop(i => i + D + 1);
+            int[] varGroup_all = (2 * D + 1).ForLoop(i => i);
+
+            var res = this.Timestepping.OperatorAnalysis(new[] {
+                varGroup_mom, 
+                varGroup_Stokes,
+                varGroup_Diplacement, 
+                varGroup_all 
+            }); // 
+
+            // filter only those results that we want;
+            // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls
+            var ret = new Dictionary<string, double>();
+            foreach(var kv in res) {
+                if(kv.Key.ToLowerInvariant().Contains("innercut") || kv.Key.ToLowerInvariant().Contains("bndycut")) {
+                    // ignore
+                } else {
+                    ret.Add(kv.Key, kv.Value);
+                }
+            }
+
+            return ret;
         }
     }
 }

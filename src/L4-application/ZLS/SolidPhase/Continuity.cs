@@ -10,30 +10,37 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
+        internal static bool ContinuityInDisplacement = false;
+        internal static bool ContinuityStabilization = false;
+
         string spcName;
 
         public Continuity(string spcName, int D) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
-                //*
-                string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
-                AddVariableNames(variableName);
-                var divergence = new Divergence(spcName, variableName, i);
-                AddComponent(divergence);
-                //*/
 
-                /*
-                string variableName1 = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
-                AddVariableNames(variableName1);
-                var divergence1 = new Divergence(spcName, variableName1, i);
-                AddComponent(divergence1);
+
+                if(ContinuityInDisplacement) {
+                    string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
+                    AddVariableNames(variableName);
+                    var divergence = new Divergence(spcName, variableName, i);
+                    AddComponent(divergence);
+                } else {
+                    string variableName1 = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                    AddVariableNames(variableName1);
+                    var divergence1 = new Divergence(spcName, variableName1, i);
+                    AddComponent(divergence1);
+                }
                 //*/
             }
-            //*
-            string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
-            AddVariableNames(pressure);
-            var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1);
-            AddComponent(pressurePenalty);
+
+            
+            if(ContinuityStabilization) {
+                string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
+                AddVariableNames(pressure);
+                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1); // Must scale with viscosity, see Die Pietro
+                AddComponent(pressurePenalty);
+            }
             //*/
         }
 

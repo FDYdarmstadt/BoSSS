@@ -27,20 +27,20 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <param name="controls">
         /// a set of control object over which the scaling is investigated
         /// </param>
-        /// <param name="plotAndWait">
+        /// <param name="plot">
         /// if true, an interactive Gnuplot session is opened
         /// </param>
         /// <param name="title">
         /// Gnuplot title/output filename
         /// </param>
-        static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false, string title = "") {
+        static public void Perform(IEnumerable<AppControl> controls, bool plot = false, string title = "") {
             var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);
             t.RunAndLog();
 
             t.PrintResults(Console.Out);
             
-            if(plotAndWait) {
+            if(plot) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
 
@@ -267,8 +267,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            //CSVFile.SaveToCSVFile<IEnumerable<double>, double>(testData, "ConditionNumberScalingTest_dataSet.txt");
-            Console.WriteLine("warning no output-file - ToDo");
+            CSVFile.SaveToCSVFile<IEnumerable<double>>(testData, "ConditionNumberScalingTest_dataSet-" + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".txt");
+            //Console.WriteLine("warning no output-file - ToDo");
 
         }
 

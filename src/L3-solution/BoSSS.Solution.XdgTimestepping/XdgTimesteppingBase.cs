@@ -651,18 +651,26 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
             
             if(VarGroups == null) {
                 int NoOfVar = this.CurrentStateMapping.Fields.Count;
                 VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
             }
 
+            var StencilCondNoVizS = new List<DGField>();
+
             var Ret = new Dictionary<string, double>();
+            int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+                if(k == 0)
+                    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
+                Console.WriteLine("################ remember to deactivate me ^^^^^  ");
+
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 
@@ -672,15 +680,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                if (plotStencilCondNumV) {
-                    var fullStencil = ana.StencilCondNumbersV();
-                    ana.VarGroup = new int[] { 0, 1 };
-                    var sipStencil = ana.StencilCondNumbersV();
-                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
-                    //ana.VarGroup = new int[] { 2 };
-                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                if (plotStencilCondNumViz) {
+                    StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
+                k++;
+            }
 
+            if(StencilCondNoVizS.Count > 0) {
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
             }
 
             return Ret;

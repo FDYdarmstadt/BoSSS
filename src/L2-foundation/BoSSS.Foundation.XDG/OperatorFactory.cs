@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                         }
                     }
                     if(!bfound)
+                        //Console.Error.WriteLine($"Smells like configuration error: an parameter {OtherPname} is specified by the operator, but none of the updaters seems to care about this parameter.");
                         throw new ArgumentException($"Smells like configuration error: an parameter {OtherPname} is specified by the operator, but none of the updaters seems to care about this parameter.");
                 }
 

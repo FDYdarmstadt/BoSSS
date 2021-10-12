@@ -47,6 +47,27 @@ namespace BoSSS.Application.SipPoisson {
     /// </summary>
     public class SipPoissonMain : Application<SipControl> {
 
+        /// <summary>
+        /// Main routine
+        /// </summary>
+        /// <param name="args"></param>
+        static void Main(string[] args) {
+            BoSSS.Solution.Application.InitMPI();
+            //DeleteOldPlotFiles();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(2);
+            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
+            FinalizeMPI();
+            return;
+
+            /*
+            _Main(args, false, delegate () {
+                SipPoissonMain p = new SipPoissonMain();
+                Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
+                    + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
+                return p;
+            });
+            */
+        }
 
 
 #pragma warning disable 649
@@ -137,6 +158,8 @@ namespace BoSSS.Application.SipPoisson {
         }
         */
 
+
+        /*
 #if !DEBUG
         static void MyHandler(object sender, UnhandledExceptionEventArgs args) {
             Exception e = (Exception)args.ExceptionObject;
@@ -145,47 +168,20 @@ namespace BoSSS.Application.SipPoisson {
             System.Environment.Exit(-1234);
         }
 #endif
-
+*/
         /// <summary>
         /// Ensures availability of <see cref="BoSSS.Solution.Statistic.ForeignGridValue"/>
         /// </summary>
         public Type EnsureReference = typeof(ForeignGridValue);
 
 
-        /// <summary>
-        /// Main routine
-        /// </summary>
-        /// <param name="args"></param>
-        static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
-            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int sz);
-            //Console.WriteLine("Size ist: " + sz);
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(2);
-            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
-            //FinalizeMPI();
-
-            string si3 = System.Environment.GetEnvironmentVariable ("BOSSS_INSTALL");
-            string pp = System.Environment.GetEnvironmentVariable ("PATH");
-            si3 = si3 != null ? si3 : "NIX";
-            pp = pp != null ? pp : "NIX";
-            Console.WriteLine ("BOSSS_INSTALL : " + si3);
-
-            DateTime hello = DateTime.Now;
-            _Main(args, false, delegate () {
-                SipPoissonMain p = new SipPoissonMain();
-                Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
-                    + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
-                return p;
-            });
-            DateTime fino = DateTime.Now;
-            Console.WriteLine("Runtime totalo " + (fino - hello));
-        }
+       
 
         /// <summary>
         /// Sets the multigrid coloring
         /// </summary>
         protected override void SetInitial(double t) {
+            /*
 #if !DEBUG
             //this will suppress exception prompts
             //Workaround to prevent disturbance while executing batch-client
@@ -194,7 +190,7 @@ namespace BoSSS.Application.SipPoisson {
                 currentDomain.UnhandledException += new UnhandledExceptionEventHandler(MyHandler);
             }
 #endif
-
+            */
             base.SetInitial(t);
 
             
@@ -351,35 +347,16 @@ namespace BoSSS.Application.SipPoisson {
 
                 // call solver
                 // -----------
+                //LastMatrix = this.LapaceIp.GetMatrix(T.Mapping, MgConfig: this.MgConfig);
+                //Console.WriteLine("Remember to re-activate solver !!!!!!!");
                 this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: true, queryHandler: base.QueryHandler);
 
+                //long J = this.GridData.CellPartitioning.TotalLength;
+                //LastMatrix.SaveToTextFileSparse($"LaplaceMtx-J{J}.txt");
+                //double condNo = LastMatrix.condest();
+                //Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
                 
-                /*
-                //this.RHS.CoordinateVector.FillRandom(0);
-
-                this.m_MgConfig = MultigridOperator.Mode.Eye;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler);
-                double[] sol1 = T.CoordinateVector.ToArray();
-                T.Clear();
-
-                this.m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
-                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.DbeMatrix = UniSolver.LastMtx.CloneAs();
-                double[] sol2 = T.CoordinateVector.ToArray();
-                T.Clear();
-
-                this.m_MgConfig = MultigridOperator.Mode.LeftInverse_DiagBlock;
-                this.LapaceIp.Solve(T.Mapping, MgConfig: this.MgConfig, lsc: this.Control.LinearSolver, MultigridSequence: base.MultigridSequence, verbose: false, queryHandler: base.QueryHandler, JustResi:true);
-                //Solution.AdvancedSolvers.Testing.OpAnalysisBase.LidMatrix = UniSolver.LastMtx.CloneAs();
-                double[] sol3 = T.CoordinateVector.ToArray();
-                //T.Clear();
-
-                double dist12 = sol1.L2Distance(sol2);
-                double dist13 = sol1.L2Distance(sol3);
-                double dist23 = sol2.L2Distance(sol3);
-
-                Console.WriteLine($"Test distances: {dist12}  --  {dist23}  --  {dist13}");
-                //*/
+               
      
                 if (base.Control.ExactSolution_provided) {
                     Error.Clear();
@@ -419,10 +396,13 @@ namespace BoSSS.Application.SipPoisson {
         List<DGField> MGColoring = new List<DGField>();
 
 
-        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
+        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.Eye; //DiagBlockEquilib;
 
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
+
+                Console.WriteLine("Remenber to remove EYE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
                 //Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
                 int p = this.T.Basis.Degree;
                 int NoOfLevels = this.MultigridSequence.Length;
@@ -515,6 +495,17 @@ namespace BoSSS.Application.SipPoisson {
             double v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             return v;
         }
+
+        public override double Nu(double[] x, double[] p, int jCell) {
+            return 0.001;
+        }
+
+        //public override TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.None;
+
+        //public override TermActivationFlags InnerEdgeTerms => base.InnerEdgeTerms;
+
+        //public override TermActivationFlags VolTerms => base.VolTerms;
+
 
         protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
