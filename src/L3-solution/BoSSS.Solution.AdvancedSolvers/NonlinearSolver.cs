@@ -306,24 +306,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
         /// </param>
         protected void Update(IEnumerable<DGField> CurrentState, double[] U0, double HomotopyValue) {
-            /*
-            DGField[] U0fields = this.ProblemMapping.BasisS.Select(
-                delegate(Basis b) {
-                    DGField ret;
-                    if (b is XDGBasis) {
-                        XDGField xf = new XDGField(b as XDGBasis);
-                        xf.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-                        ret = xf;
-                    } else {
-                        ret = new SinglePhaseField(b);
-                    }
-                    return ret;
-                }).ToArray();
-
-            CoordinateVector u0Raw = new CoordinateVector(U0fields);
-
-            CurrentLin.TransformSolFrom(u0Raw, U0);
-            */
            
             this.UpdateLinearization(CurrentState, HomotopyValue);
             CurrentLin.TransformSolInto(new CoordinateVector(CurrentState), U0);
@@ -364,6 +346,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
+        }
+
+        public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+
+            int L = this.CurrentLin.Mapping.LocalLength;
+         
+            if(CurrentLin.FreeMeanValue.Any()) {
+
+                double[] ResidualBeforMeanCor = new double[L];
+                double[] ResidualAfterMeanCor = new double[L];
+
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
+                double a = ResidualBeforMeanCor.MPI_L2Norm();
+
+                DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                if(flds.Length != FreeMeanValue.Length)
+                    throw new ApplicationException();
+
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
+                        flds[iFld].AccConstant(2000.1234);
+                    }
+                }
+
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
+                double b = ResidualAfterMeanCor.MPI_L2Norm();
+
+
+                double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+
+
+
+                double RefVal = Math.Max(a, b);
+                if(Math.Abs(a-b) > RefVal*1e-6) {
+                    throw new ArithmeticException("Something seems wrong with `FreeMeanValue`: drastic change of operator residual.");
+                }
+            }
+
         }
 
 

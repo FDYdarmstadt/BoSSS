@@ -222,12 +222,17 @@ namespace ZwoLevelSetSolver {
             int[] varGroup_Diplacement = D.ForLoop(i => i + D + 1);
             int[] varGroup_all = (2 * D + 1).ForLoop(i => i);
 
-            var res = this.Timestepping.OperatorAnalysis(new[] {
+            int[][] groups = new[] {
                 varGroup_mom, 
-                varGroup_Stokes,
-                varGroup_Diplacement, 
-                varGroup_all 
-            }); // 
+                //varGroup_Stokes,
+                varGroup_Diplacement,
+                varGroup_all
+            };
+            if(SolidPhase.Continuity.ContinuityInDisplacement) {
+                varGroup_Stokes.AddToArray(ref groups);
+            }
+
+            var res = this.Timestepping.OperatorAnalysis(groups);
 
             // filter only those results that we want;
             // this is a DG app, but it uses the LevelSetTracker; therefore, we want to filter analysis results for cut cells and only return uncut cells resutls

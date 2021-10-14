@@ -500,7 +500,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //this.m_Agglomerator.Extrapolate(X, X.Mapping);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
 
-                    /*
+                   
+                    // plotting during Newton iterations:  
                     CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
                         DGField r = f.CloneAs();
                         r.Identification = "Sol_" + r.Identification;
@@ -508,7 +509,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }));
                     Mgop.TransformSolFrom(Solution, currentSol);
                     Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
-                    */
+                    
                     
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];

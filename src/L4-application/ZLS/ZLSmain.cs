@@ -55,25 +55,37 @@ namespace ZwoLevelSetSolver {
 
             BoSSS.Solution.Application.InitMPI();
 
-            const int res = 8;
+            const int res = 4;
 
             var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
             C.SkipSolveAndEvaluateResidual = false;
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
-            C.NonLinearSolver.MaxSolverIterations = 1000;
+            C.NonLinearSolver.MinSolverIterations = 200;
+            C.NonLinearSolver.MaxSolverIterations = 220;
 
             ZLS_Control.DisplacementDegOffset = 0;
             ZLS.displacementViscosity = 0.0;
             SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0;
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0;
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
             SolidPhase.Continuity.ContinuityStabilization = true;
 
 
+            //ZLS_Control.DisplacementDegOffset = 0;
+            //ZLS.displacementViscosity = 0.0;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.3;
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // divergence when negative...
+            //SolidPhase.Continuity.ContinuityInDisplacement = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false;
+
+
+            //C.dtFixed = 1.0;
+            C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+
             using(var q = new ZLS()) {
                 q.Init(C);
                 q.RunSolverMode();
-                q.OperatorAnalysis();
+                //q.OperatorAnalysis();
             }
 
             BoSSS.Solution.Application.FinalizeMPI();
@@ -96,10 +108,10 @@ namespace ZwoLevelSetSolver {
 
             ZLS_Control.DisplacementDegOffset = 0;
             ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0;
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0;
-            SolidPhase.Continuity.ContinuityInDisplacement = false;
-            SolidPhase.Continuity.ContinuityStabilization = false;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0;
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = 1.0;
+            SolidPhase.Continuity.ContinuityInDisplacement = true;
+            SolidPhase.Continuity.ContinuityStabilization = true;
 
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));

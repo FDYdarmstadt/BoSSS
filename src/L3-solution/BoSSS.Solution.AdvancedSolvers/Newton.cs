@@ -691,7 +691,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // fix the pressure
             // ----------------
+            base.TestFreeMeanValue(SolutionVec, HomotopyValue);
             if(CurrentLin.FreeMeanValue.Any()) {
+
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
@@ -704,6 +706,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         flds[iFld].AccConstant(-mean);
                     }
                 }
+
             }
 
 
