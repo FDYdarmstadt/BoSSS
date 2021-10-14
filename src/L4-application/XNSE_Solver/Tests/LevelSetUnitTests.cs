@@ -91,6 +91,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
+
         public static void LevelSetAdvectionTest2D(
 
             [Values(2, 3, 4)] int LSdegree,
