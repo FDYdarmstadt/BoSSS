@@ -374,13 +374,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
                 double b = ResidualAfterMeanCor.MPI_L2Norm();
 
-
+                
                 double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
 
 
+                //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
+                //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
 
-                double RefVal = Math.Max(a, b);
-                if(Math.Abs(a-b) > RefVal*1e-6) {
+                double RefVal = Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(a, b)*1e-7);
+                if(Math.Abs(a-b) > RefVal) {
                     throw new ArithmeticException("Something seems wrong with `FreeMeanValue`: drastic change of operator residual.");
                 }
             }
