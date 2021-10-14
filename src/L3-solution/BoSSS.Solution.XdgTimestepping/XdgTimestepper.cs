@@ -638,7 +638,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // ++++++++++++++++++++++++
 
 
-                        using(new BlockTrace("XDG-Evaluate", ft, true)) {
+                        using(new BlockTrace("XDG-Evaluate:", ft, true)) {
                             this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
