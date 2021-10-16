@@ -348,6 +348,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.LinearizationRHS.ScaleV(-1.0);
         }
 
+
+        /// <summary>
+        /// This method tests that, 
+        /// if any entry in <see cref="ISpatialOperator.FreeMeanValue"/> is true, 
+        /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
+        /// </summary>
         public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
 
             int L = this.CurrentLin.Mapping.LocalLength;
@@ -375,10 +381,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double b = ResidualAfterMeanCor.MPI_L2Norm();
 
                 
-                double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
-                ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
-
-
+                //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
                 //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
                 //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
 

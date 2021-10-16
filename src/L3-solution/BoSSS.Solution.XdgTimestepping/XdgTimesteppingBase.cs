@@ -496,19 +496,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     R.Clear();
 
                     Mgop.TransformRhsFrom(R, currentRes);
-                    //Mgop.TransformSolFrom(X, currentSol);
-                    //this.m_Agglomerator.Extrapolate(X, X.Mapping);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
                    
                     // plotting during Newton iterations:  
-                    CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
-                        DGField r = f.CloneAs();
-                        r.Identification = "Sol_" + r.Identification;
-                        return r;
-                    }));
-                    Mgop.TransformSolFrom(Solution, currentSol);
-                    Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
+                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
                     
                     
                     for (int i = 0; i < NF; i++) {
@@ -649,8 +641,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected BlockMsrMatrix m_PrecondMassMatrix;
 
+        
+
         /// <summary>
-        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability,
+        /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
@@ -672,6 +667,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
                 //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
 
+
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 
@@ -684,6 +680,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (plotStencilCondNumViz) {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
+
+
+                /*{
+                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                    var bla = ana.MinimalEigen();
+                    Console.WriteLine("done: " + bla.lambdaMin);
+                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }*/
                 //k++;
             }
 

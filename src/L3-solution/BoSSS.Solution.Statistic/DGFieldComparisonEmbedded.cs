@@ -33,7 +33,7 @@ namespace BoSSS.Solution.Statistic {
     /// <summary>
     /// Utility functions to compare DG fields from different, but geometrically embedded, grids.
     /// </summary>
-    public static class DGFieldComparison {
+    public static class DGFieldComparisonEmbedded {
 
         /// <summary>
         /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
@@ -61,8 +61,14 @@ namespace BoSSS.Solution.Statistic {
         /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
         /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
         /// </param>
-        public static void ComputeErrors( IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] GridRes, out Dictionary<string,long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {  
+        /// <param name="SelectionFunc">
+        /// if specified, all cells where this evaluates as false are ignored. 
+        /// </param>
+        public static void ComputeErrors(IEnumerable<string> FieldsToCompare,
+            IEnumerable<ITimestepInfo> timestepS,
+            out double[] GridRes, 
+            out Dictionary<string,long[]> __DOFs, 
+            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {  
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");
@@ -212,8 +218,8 @@ namespace BoSSS.Solution.Statistic {
         }
 
         /// <summary>
-        /// Pretty much the same functionality as <see cref="ComputeErrors(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[], Func{double[], bool})"/>.
-        /// However all compared timesteps are on the same grid (and physical time) and we compare to the simulation using the smallest temporal resolution
+        /// Temporal convergence, 
+        /// i.e. all compared timesteps are on the same grid (and physical time) and we compare to the simulation using the smallest temporal resolution
         /// </summary>
         /// <param name="FieldsToCompare">
         /// Identification (<see cref="DGField.Identification"/>) of the fields which should be compared.
@@ -221,8 +227,8 @@ namespace BoSSS.Solution.Statistic {
         /// <param name="timestepS">
         /// A collection of solutions on different grid resolutions.
         /// </param>
-        /// <param name="GridRes">
-        /// On exit, the resolution of the different grids.
+        /// <param name="TempRes">
+        /// On exit, various timestep sizes of the solutions.
         /// </param>
         /// <param name="L2Errors">
         /// On exit, the L2 error 
@@ -234,11 +240,17 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="FieldsToCompare"/>).
         /// </param>
         /// <param name="timestepIds">
-        /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
-        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
+        /// on exit, the timestep id which correlate with the individual <paramref name="timestepS"/>.
+        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to resolution).
+        /// </param>
+        /// <param name="SelectionFunc">
+        /// if specified, all cells where this evaluates as false are ignored. 
         /// </param>
         public static void ComputeErrorsTemporal(IEnumerable<string> FieldsToCompare, IEnumerable<ITimestepInfo> timestepS,
-          out double[] TempRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {
+          out double[] TempRes, 
+          out Dictionary<string, long[]> __DOFs, 
+          out Dictionary<string, double[]> L2Errors, 
+          out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {
             using (var tr = new FuncTrace()) {
                 if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
                     throw new ArgumentException("empty list of field names.");

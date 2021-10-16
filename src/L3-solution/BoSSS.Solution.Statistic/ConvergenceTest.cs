@@ -1,0 +1,200 @@
+﻿using BoSSS.Foundation;
+using BoSSS.Solution.Control;
+using ilPSP;
+using NUnit.Framework;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace BoSSS.Solution.Statistic {
+
+    /// <summary>
+    /// Utility functions to test for solver convergence
+    /// </summary>
+    static public class ConvergenceTest {
+
+        /*
+        public static void XNSESolverConvergenceTest(AppControl[] CS, bool useExactSolution, double[] ExpectedSlopes) {
+            int D;
+            int NoOfMeshes = CS.Length;
+
+            double[] hS = new double[NoOfMeshes];
+            MultidimensionalArray errorS = null;
+            string[] Names = null;
+
+            IApplication[] solvers = new IApplication[NoOfMeshes];
+            if (useExactSolution) {
+
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSE()) {
+                    var solverClass = C.GetSolverType();
+                    IApplication solver = (IApplication) Activator.CreateInstance(solverClass);
+                    solvers[k] = solver;
+                    {
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+                        var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
+                        double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        double[] ErrThresh = Tst.AcceptableL2Error;
+
+                        if (k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                            Names = new string[LastErrors.Length];
+                            if (ExpectedSlopes.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if (LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if (LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+                        for (int i = 0; i < ErrThresh.Length; i++) {
+                            Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                            Names[i] = solver.Operator.DomainVar[i];
+                        }
+
+                        errorS.SetRow(k, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+                    }
+
+                }
+            } else {
+                if (NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+                throw new NotImplementedException("todo");
+            }
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
+
+                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+            }
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
+                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+
+            foreach (var s in solvers) {
+                s.Dispose();
+            }
+        }
+        */
+
+        public static void SolverConvergenceTest_Experimental(this AppControl[] CS, IDictionary<string,(double expectedSlope, NormType normType)> fildNamesAndSlopes) {
+            int D = -1;
+            int NoOfMeshes = CS.Length;
+
+            if(CS.Length < 3)
+                throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact (experimental convergence).");
+
+
+
+            // step 1: compute solutions on different resolutions
+            // ===================================================
+
+            IApplication[] solvers = new IApplication[NoOfMeshes];
+            List<IEnumerable<DGField>> solutionOnDifferentResolutions = new List<IEnumerable<DGField>>();
+            {
+
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSE()) {
+                    var solverClass = C.GetSolverType();
+                    IApplication solver = (IApplication) Activator.CreateInstance(solverClass);
+                    solvers[k] = solver;
+                    {
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        if(D < 0) {
+                            D = solver.Grid.SpatialDimension;
+                        } else {
+                            if(D != solver.Grid.SpatialDimension)
+                                throw new ArgumentException("unable to compare simulations in different spatial dimensions.");
+                        }
+
+                        ////-------------------Evaluate Error ---------------------------------------- 
+                        //var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
+                        //double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        //double[] ErrThresh = Tst.AcceptableL2Error;
+
+                        //if (k == 0) {
+                        //    errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                        //    Names = new string[LastErrors.Length];
+                        //    if (ExpectedSlopes.Length != Names.Length)
+                        //        throw new ArgumentOutOfRangeException();
+                        //} else {
+                        //    if (LastErrors.Length != Names.Length)
+                        //        throw new ApplicationException();
+                        //}
+
+                        //if (LastErrors.Length != ErrThresh.Length)
+                        //    throw new ApplicationException();
+                        //for (int i = 0; i < ErrThresh.Length; i++) {
+                        //    Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                        //    Names[i] = solver.Operator.DomainVar[i];
+                        //}
+
+                        //errorS.SetRow(k, LastErrors);
+                        //hS[k] = evaluator.GetGrid_h();
+
+                        var solutionAtResolutions = fildNamesAndSlopes.Keys.Select(
+                            fieldName => solver.IOFields.Where(f => f.Identification == fieldName).Single());
+
+                        solutionOnDifferentResolutions.Add(solutionAtResolutions.ToArray());
+                    }
+
+                }
+            }
+
+            // step 2: compute errors in specified norms
+            // ===================================================
+
+            DGFieldComparisonNonEmb.ComputeErrors_L2(
+                solutionOnDifferentResolutions, out var GridGes, out var DOFs, out var errorS);
+
+
+
+            // step 3: check slopes
+            // ===================================================
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
+
+                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+            }
+
+            for (int i = 0; i < errorS.GetLength(1); i++) {
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
+                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            }
+
+            foreach (var s in solvers) {
+                s.Dispose();
+            }
+        }
+
+    }
+}

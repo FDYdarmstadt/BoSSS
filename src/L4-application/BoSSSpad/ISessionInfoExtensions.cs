@@ -1112,7 +1112,7 @@ namespace BoSSS.Foundation.IO {
         /// given <paramref name="sessions"/> by computing the errors with
         /// respect to the solution on the finest corresponding grid by making
         /// use of
-        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors"/>.
+        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparisonEmbedded.ComputeErrors"/>.
         /// The result is then grouped according to the polynomial degree of
         /// field <paramref name="fieldName"/>.
         /// </summary>

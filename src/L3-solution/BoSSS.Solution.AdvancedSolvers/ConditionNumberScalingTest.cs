@@ -319,7 +319,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             private set;
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        static public int RunNumber;
 
         /// <summary>
         /// Phase 1: runs the solvers and stores results in <see cref="ResultData"/>.
@@ -338,7 +341,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Console.WriteLine("================================================================");
                 Console.WriteLine($"Condition Number Scaling Analysis:  Run {Counter} of {this.Controls.Count()}");
                 Console.WriteLine("================================================================");
-                
+                RunNumber = Counter;
 
                 using(var solver = (BoSSS.Solution.IApplication)Activator.CreateInstance(st)) {
                     Console.WriteLine("  Starting Solver...");

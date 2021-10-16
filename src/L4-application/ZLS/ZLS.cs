@@ -74,19 +74,12 @@ namespace ZwoLevelSetSolver {
                 configsLevel.Add(configDisplacement);
             }
             
-            /*
-            configsLevel.Add(
-                new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pVel, pVel, pPrs, pDispl, pDispl },
-                    mode = MultigridOperator.Mode.LeftInverse_DiagBlock,
-                    VarIndex = new int[] { 0, 1, 2, 3, 4 }
-                });
-            */
+         
         }
 
         protected override void SetInitial(double t) {
             base.SetInitial(t);
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //
         }
 
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
@@ -94,8 +87,12 @@ namespace ZwoLevelSetSolver {
             DefineSolidPhase(D, opFactory, lsUpdater);
         }
 
-        //Artificial Viscosity Term in displacement transport equations
-        internal static double displacementViscosity = 0.0;
+
+        
+        /// <summary>
+        /// Artificial Viscosity Term in displacement transport equations
+        /// </summary>
+        static internal double displacementViscosity = 0.0;
 
 
         
@@ -228,7 +225,7 @@ namespace ZwoLevelSetSolver {
                 varGroup_Diplacement,
                 varGroup_all
             };
-            if(SolidPhase.Continuity.ContinuityInDisplacement) {
+            if(!SolidPhase.Continuity.ContinuityInDisplacement) {
                 varGroup_Stokes.AddToArray(ref groups);
             }
 

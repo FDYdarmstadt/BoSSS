@@ -13,49 +13,19 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            RunSolver(args);
-            //ConditionNumberScaling();
+            BoSSS.Solution.Application.InitMPI();
+
+            //RunSolver(args);
+            ConditionNumberScaling();
 
             //ParameterSweep();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
-            /*
-            BoSSS.Solution.Application.InitMPI();
+            /*            
 
-            const int res = 8;
-
-            var C0 = BoSSS.Application.SipPoisson.SipHardcodedControl.Square(res, res, 2);
-            using(var r = new BoSSS.Application.SipPoisson.SipPoissonMain()) {
-                r.Init(C0);
-                r.RunSolverMode();
-
-
-                var MTX = BoSSS.Application.SipPoisson.SipPoissonMain.LastMatrix;
-                long J = r.GridData.CellPartitioning.TotalLength;
-                MTX.SaveToTextFileSparse($"Mtx_ipPoisson-J{J}.txt");
-                double condNo = MTX.condest();
-                Console.WriteLine($"Matlab condition number estimate {J} cells: " + condNo);
-
-                
-            }
-
-            var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
-            C.SkipSolveAndEvaluateResidual = true;
-            C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
-            using(var q = new ZLS()) {
-                q.Init(C);
-                q.RunSolverMode();
-                q.OperatorAnalysis();
-            }
-
-            BoSSS.Solution.Application.FinalizeMPI();
-            */
-
-
-            BoSSS.Solution.Application.InitMPI();
-
-            const int res = 4;
+            const int res = 16;
 
             var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
             C.SkipSolveAndEvaluateResidual = false;
@@ -63,34 +33,32 @@ namespace ZwoLevelSetSolver {
             C.NonLinearSolver.MinSolverIterations = 200;
             C.NonLinearSolver.MaxSolverIterations = 220;
 
-            ZLS_Control.DisplacementDegOffset = 0;
+            // Displacement - Divergence
             ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0;
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // divergence when negative...
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
             SolidPhase.Continuity.ContinuityStabilization = true;
 
-
-            //ZLS_Control.DisplacementDegOffset = 0;
+            ////Velocity - Divergence : this is shit
             //ZLS.displacementViscosity = 0.0;
-            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.3;
-            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // divergence when negative...
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0; // must be positive for Newton convergence when Zero
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0; // seems to be not required; works for +1, 0, -1
             //SolidPhase.Continuity.ContinuityInDisplacement = false;
-            //SolidPhase.Continuity.ContinuityStabilization = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false; // seems to have no benefit for condition number
 
 
-            //C.dtFixed = 1.0;
-            C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+            C.dtFixed = 1.0;
+            //C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+            
 
             using(var q = new ZLS()) {
                 q.Init(C);
                 q.RunSolverMode();
                 //q.OperatorAnalysis();
             }
-
-            BoSSS.Solution.Application.FinalizeMPI();
-
-            /*
+            */
+                        
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
@@ -103,19 +71,29 @@ namespace ZwoLevelSetSolver {
             double dt = 1.0e200,
             BoSSS.Solution.Control.NonLinearSolverCode slvCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton
             ) {
-            ZLS.InitMPI();
+            
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
 
-            ZLS_Control.DisplacementDegOffset = 0;
-            ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0;
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = 1.0;
+            // Displacement-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            ZLS.displacementViscosity = 1.0;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
-            SolidPhase.Continuity.ContinuityStabilization = true;
+            SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
+
+            //// Velocity-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            //ZLS.displacementViscosity = 0.0;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0;
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0;
+            //SolidPhase.Continuity.ContinuityInDisplacement = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false; // does not help
 
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
-            //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
             //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
 
             foreach(var c in controlFiles) {
@@ -128,11 +106,61 @@ namespace ZwoLevelSetSolver {
                     c.dtFixed = dt;
                 }
 
-
+                
             }
             ConditionNumberScalingTest.Perform(controlFiles, true);
         }
 
+
+
+        static void ConvergenceNumberScaling(int p = 2,
+            double dt = 1.0e200,
+            BoSSS.Solution.Control.NonLinearSolverCode slvCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton
+            ) {
+            
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            List<ZLS_Control> controlFiles = new List<ZLS_Control>();
+
+            // Displacement-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            ZLS.displacementViscosity = 1.0;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
+            SolidPhase.Continuity.ContinuityInDisplacement = true;
+            SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
+
+            //// Velocity-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            //ZLS.displacementViscosity = 0.0;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0;
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0;
+            //SolidPhase.Continuity.ContinuityInDisplacement = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false; // does not help
+
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
+            //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
+
+            foreach(var c in controlFiles) {
+                c.SkipSolveAndEvaluateResidual = true;
+                c.NonLinearSolver.SolverCode = slvCode;
+                if(dt >= 1e10)
+                    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+                else {
+                    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
+                    c.dtFixed = dt;
+                }
+
+                
+            }
+            ConditionNumberScalingTest.Perform(controlFiles, true);
+        }
+
+
+
+
+        /*
         class Case {
             public Dictionary<string, object> Keys;
             public Dictionary<string, double> Results;
@@ -191,6 +219,7 @@ namespace ZwoLevelSetSolver {
             }
 
         }
+        */
     }
 
 }

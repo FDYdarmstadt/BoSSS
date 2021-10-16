@@ -83,6 +83,15 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         
         MultigridOperator m_MultigridOp;
 
+        /// <summary>
+        /// Les operaeur
+        /// </summary>
+        public MultigridOperator MultigridOp {
+            get {
+                return m_MultigridOp;
+            }
+        }
+
 
         /// <summary>
         /// user-defined indices of depended variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
@@ -106,6 +115,27 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Computes the minimal Eigenvalue and related Eigenvector using PARDISO
+        /// </summary>
+        public (double lambdaMin, double[] V) MinimalEigen() {
+            var Mtx = this.PrecondOpMatrix;
+            int L = Mtx.RowPartitioning.LocalLength;
+
+            // extract sub-matrix
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+            var bla = Part.MinimalEigen();
+
+            double[] Vret = new double[L];
+            mask.AccSubVec(bla.V, Vret);
+
+            return (bla.lambdaMin, Vret);
         }
 
 
@@ -816,7 +846,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         }
 
 
-        string VarNames {
+        /// <summary>
+        /// 
+        /// </summary>
+        public string VarNames {
             get {
                 int[] vgs = this.VarGroup;
                 if(vgs.Length <= 1) {

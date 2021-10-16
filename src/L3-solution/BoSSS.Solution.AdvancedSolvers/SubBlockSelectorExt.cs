@@ -141,7 +141,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         /// <param name="sbs">sub block selection defined by dev</param>
         /// <param name="ExtRows">external rows collected from other MPI-processes on this proc</param>
-        public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows=null) {
+        public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows = null) {
             m_map = sbs.GetMapping;
             m_ExtRows = ExtRows;
             m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
@@ -412,11 +412,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Get SubMatrix corresponding to this <see cref="BlockMask"/>.
         /// With the ignore flags, coupling blocks can be left out (e.g. blocks containing level-set).
-        /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are concidered.
+        /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are considered.
         /// Probably slower than <see cref="GetSubBlockMatrix(BlockMsrMatrix)"/>.
         /// </summary>
         /// <remarks>
-        /// If you are using <see cref="ignoreSpecCoupling"/>, you may dismiss coupling with other cells.
+        /// If you are using <paramref name="ignoreCellCoupling"/>, you may dismiss coupling with other cells.
         /// By comparison to variables, whose ordering is fixed in the mapping, this does not hold for species.
         /// E.g. iSpc=0 is not corresponding to the same species within every cell
         /// </remarks>
