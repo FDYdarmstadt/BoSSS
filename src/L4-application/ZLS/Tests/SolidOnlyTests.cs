@@ -67,8 +67,8 @@ namespace ZwoLevelSetSolver.Tests {
                 (VariableNames.DisplacementX, p - 1.5, NormType.L2_embedded),
                 (VariableNames.DisplacementY, p - 1.5, NormType.L2_embedded),
                 (BoSSS.Solution.NSECommon.VariableNames.Pressure, p - 1.5, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 0.7, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityY, p - 0.7, NormType.L2_embedded));
+                (BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 1.2, NormType.L2_embedded),
+                (BoSSS.Solution.NSECommon.VariableNames.VelocityY, p - 1.2, NormType.L2_embedded));
 
         }
 

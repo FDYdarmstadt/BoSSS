@@ -86,7 +86,7 @@ namespace BoSSS.Solution.Gnuplot {
 
 
             // set terminal
-            gp.Terminal = string.Format("set terminal svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
+            gp.Terminal = string.Format("svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
 
             // set output file
             gp.OutputFile = OutfileName;

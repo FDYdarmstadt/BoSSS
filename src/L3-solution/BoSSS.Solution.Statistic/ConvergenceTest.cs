@@ -177,17 +177,7 @@ namespace BoSSS.Solution.Statistic {
             DGFieldComparison.ComputeErrors(
                 solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
 
-            var plt = new BoSSS.Solution.Gnuplot.Plot2Ddata();
-            plt.LogX = true;
-            plt.LogY = true;
-            plt.Title = Title;
-            foreach(var ttt in fildNamesAndSlopes) {
-                plt.AddDataGroup(ttt.FieldName + "-" + ttt.normType.ToString(), hS, errorS[ttt.FieldName]);
-            }
-
-            string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");           
-            plt.SaveToSVG($"Convergence-{DateNtime}.svg");
-
+            
 
 
             // step 3: check slopes
@@ -199,6 +189,24 @@ namespace BoSSS.Solution.Statistic {
 
                 Console.WriteLine($"Convergence slope for Error of '{fieldName}': \t{slope}\t(Expecting: {ttt.expectedSlope} in norm {ttt.normType})");
             }
+
+            var plt = new BoSSS.Solution.Gnuplot.Plot2Ddata();
+            plt.LogX = true;
+            plt.LogY = true;
+            plt.Title = Title;
+            int cnt = 0;
+            var allPoints = Enum.GetValues(typeof(PointTypes));
+            var allColors = Enum.GetValues(typeof(LineColors));
+            foreach(var ttt in fildNamesAndSlopes) {
+                plt.AddDataGroup(ttt.FieldName + "-" + ttt.normType.ToString(), hS, errorS[ttt.FieldName]);
+                plt.dataGroups.Last().Format.PointType = (PointTypes) allPoints.GetValue(cnt % allPoints.Length);
+                plt.dataGroups.Last().Format.LineColor = (LineColors) allColors.GetValue(cnt % allColors.Length);
+                cnt++;
+            }
+
+            string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");           
+            plt.SaveToSVG($"Convergence-{DateNtime}.svg");
+
 
 
             foreach(var ttt in fildNamesAndSlopes) {

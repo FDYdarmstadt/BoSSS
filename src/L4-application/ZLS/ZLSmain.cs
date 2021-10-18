@@ -14,14 +14,15 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.InitMPI();
 
-            RunSolver(args);
+            //RunSolver(args);
             //ConditionNumberScaling();
-            //RotationConvergenceTest();
+
+            Tests.SolidOnlyTests.RotationConvergenceTest(2);
 
             //ParameterSweep();
-            //BoSSS.Solution.Application.FinalizeMPI();
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
