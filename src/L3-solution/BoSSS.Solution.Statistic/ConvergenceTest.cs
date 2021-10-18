@@ -94,8 +94,9 @@ namespace BoSSS.Solution.Statistic {
         }
         */
 
-        public static void SolverConvergenceTest_Experimental(this AppControl[] CS, IDictionary<string,(double expectedSlope, NormType normType)> fildNamesAndSlopes) {
+        public static void SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, params (string FieldName, double expectedSlope, NormType normType)[] fildNamesAndSlopes) {
             int D = -1;
+            var CS = __CS.ToArray();
             int NoOfMeshes = CS.Length;
 
             if(CS.Length < 3)
@@ -160,8 +161,8 @@ namespace BoSSS.Solution.Statistic {
                         //errorS.SetRow(k, LastErrors);
                         //hS[k] = evaluator.GetGrid_h();
 
-                        var solutionAtResolutions = fildNamesAndSlopes.Keys.Select(
-                            fieldName => solver.IOFields.Where(f => f.Identification == fieldName).Single());
+                        var solutionAtResolutions = fildNamesAndSlopes.Select(
+                            ttt => solver.IOFields.Where(f => f.Identification == ttt.FieldName).Single());
 
                         solutionOnDifferentResolutions.Add(solutionAtResolutions.ToArray());
                     }
@@ -172,24 +173,26 @@ namespace BoSSS.Solution.Statistic {
             // step 2: compute errors in specified norms
             // ===================================================
 
-            DGFieldComparisonNonEmb.ComputeErrors_L2(
-                solutionOnDifferentResolutions, out var GridGes, out var DOFs, out var errorS);
+            DGFieldComparison.ComputeErrors(
+                solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
 
 
 
             // step 3: check slopes
             // ===================================================
+            foreach(var ttt in fildNamesAndSlopes) {
+                string fieldName = ttt.FieldName;
+                
+                var slope = hS.LogLogRegression(errorS[fieldName]);
 
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression(errorS.GetColumn(i));
-
-                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
+                Console.WriteLine($"Convergence slope for Error of '{fieldName}': \t{slope}\t(Expecting: {ttt.expectedSlope} in norm {ttt.normType})");
             }
 
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression(errorS.GetColumn(i));
-                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
-            }
+
+            //for (int i = 0; i < errorS.GetLength(1); i++) {
+            //    var slope = hS.LogLogRegression(errorS.GetColumn(i));
+            //    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+            //}
 
             foreach (var s in solvers) {
                 s.Dispose();

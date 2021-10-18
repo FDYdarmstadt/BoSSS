@@ -39,6 +39,203 @@ namespace BoSSS.Solution.Statistic {
         /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
         /// convergence study, where the solution on the finest grid is assumed to be exact.
         /// </summary>
+        /// <param name="fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="fields"/>).
+        /// </param>
+        public static void ComputeErrors_L2(IList<IEnumerable<DGField>> fields,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            ComputeErrors((DGField f) => f.L2Norm(),
+                fields, out GridRes, out __DOFs, out Errors);
+        }
+
+        /// <summary>
+        /// Computes H1 norms (aka. Sobolev norm) between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="fields"/>).
+        /// </param>
+        public static void ComputeErrors_H1(IList<IEnumerable<DGField>> fields,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            ComputeErrors((DGField f) => f.H1Norm(),
+                fields, out GridRes, out __DOFs, out Errors);
+
+
+        }
+
+        /// <summary>
+        /// Computes H1 norms (aka. Sobolev norm) between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="fields"/>).
+        /// </param>
+        public static void ComputeErrors_L2noMean(IList<IEnumerable<DGField>> fields,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            ComputeErrors((DGField f) => f.L2Norm_IgnoreMean(),
+                fields, out GridRes, out __DOFs, out Errors);
+
+
+        }
+
+
+
+       
+        static void ComputeErrors(
+            Func<DGField, double> NormFunc,
+            IList<IEnumerable<DGField>> fields,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
+            Func<ilPSP.Vector, bool> SelectionFunc = null) {
+            using(var tr = new FuncTrace()) {
+
+                // Grids and coarse-to-fine -- mappings.
+                GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
+
+                int[][] Fine2CoarseMapS = new int[gDataS.Length - 1][]; // 1st index: level; 2n index: cell index on finest level
+                for(int iLevel = 0; iLevel < Fine2CoarseMapS.Length; iLevel++) {
+                    ComputeFine2CoarseMap(gDataS.Last(), gDataS[iLevel], out Fine2CoarseMapS[iLevel]);
+                }
+
+                int[] FieldsToCompare = fields[0].Count().ForLoop(i => i); // haCK
+                string[] IdentificationS = fields[0].Select(f => f.Identification).ToArray(); // more hack
+
+                // extrapolate to fine grid
+                Dictionary<int, List<DGField>> injectedFields = new Dictionary<int, List<DGField>>();
+                Dictionary<string, List<int>> DOFs = new Dictionary<string, List<int>>();
+
+                foreach(int index in FieldsToCompare) {
+                 
+                    List<DGField> fields_Identification = new List<DGField>(); // fields for different resolutions
+                    List<int> dofs_Idenitification = new List<int>();
+
+                    DGField finestSolution = fields.Last().ElementAt(index);
+
+                    for(int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
+                        //Console.WriteLine("Injecting '{0}' from level {1} to finest grid...", Identification, iLevel);
+                        tr.Info(string.Format("Injecting '{0}' from level {1} to finest grid...", index, iLevel));
+
+
+                        DGField coarseSolution = fields[iLevel].ElementAt(index);
+
+                        if(finestSolution.GetType() != coarseSolution.GetType())
+                            throw new NotSupportedException();
+                        if(coarseSolution.Basis.Degree != finestSolution.Basis.Degree)
+                            throw new NotSupportedException();
+
+                        if(finestSolution is XDGField) {
+                            XDGField _coarseSolution = (XDGField)coarseSolution;
+                            XDGField _finestSolution = (XDGField)finestSolution;
+                            XDGField injectedSolution = new XDGField(_finestSolution.Basis, index + "-inj-" + iLevel);
+
+                            InjectXDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
+
+                            fields_Identification.Add(injectedSolution);
+                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
+                        } else if(finestSolution is SinglePhaseField) {
+                            SinglePhaseField _coarseSolution = (SinglePhaseField)coarseSolution;
+                            SinglePhaseField _finestSolution = (SinglePhaseField)finestSolution;
+                            SinglePhaseField injectedSolution = new SinglePhaseField(_finestSolution.Basis, index + "-inj-" + iLevel);
+
+                            InjectDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
+
+                            fields_Identification.Add(injectedSolution);
+                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
+                        } else {
+                            throw new NotSupportedException("DG field type '" + finestSolution.GetType().FullName + "' not supported, Identification is '" + finestSolution.Identification + "'");
+                        }
+
+                        tr.Info(string.Format("done."));
+                        //Console.WriteLine("done.");
+                    }
+
+                    fields_Identification.Add(finestSolution);
+                    injectedFields.Add(index, fields_Identification);
+                    DOFs.Add(IdentificationS[index], dofs_Idenitification);
+                }
+                __DOFs = new Dictionary<string, long[]>();
+                foreach(var kv in DOFs) {
+                    __DOFs.Add(kv.Key, kv.Value.Select((int iii) => (long)iii).ToArray());
+                }
+
+
+                // compute the errors
+                Errors = new Dictionary<string, double[]>();
+                foreach(int index in FieldsToCompare) {
+                
+
+                    double[] L2Error = new double[gDataS.Length - 1];
+
+                    for(int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
+                        //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
+                        tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", index, iLevel));
+
+                        DGField Error = injectedFields[index].Last().CloneAs();
+                        DGField injSol = injectedFields[index].ElementAt(iLevel);
+                        Error.Acc(-1.0, injSol);
+
+                        L2Error[iLevel] = NormFunc(Error);
+
+                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
+                        tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
+                    }
+
+                    Errors.Add(IdentificationS[index], L2Error);
+                }
+
+                GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
+
+            }
+        }
+
+
+
+
+        /// <summary>
+        /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
         /// <param name="FieldsToCompare">
         /// Identification (<see cref="DGField.Identification"/>) of the fields which should be compared.
         /// </param>
@@ -64,7 +261,7 @@ namespace BoSSS.Solution.Statistic {
         /// <param name="SelectionFunc">
         /// if specified, all cells where this evaluates as false are ignored. 
         /// </param>
-        public static void ComputeErrors(IEnumerable<string> FieldsToCompare,
+        public static void ComputeErrors_L2(IEnumerable<string> FieldsToCompare,
             IEnumerable<ITimestepInfo> timestepS,
             out double[] GridRes, 
             out Dictionary<string,long[]> __DOFs, 
@@ -123,97 +320,8 @@ namespace BoSSS.Solution.Statistic {
                     }
                 }
 
-
-                // Grids and coarse-to-fine -- mappings.
-                GridData[] gDataS = fields.Select(fc => (GridData)(fc.First().GridDat)).ToArray();
-
-                int[][] Fine2CoarseMapS = new int[gDataS.Length - 1][]; // 1st index: level; 2n index: cell index on finest level
-                for (int iLevel = 0; iLevel < Fine2CoarseMapS.Length; iLevel++) {
-                    ComputeFine2CoarseMap(gDataS.Last(), gDataS[iLevel], out Fine2CoarseMapS[iLevel]);
-                }
-
-                // extrapolate to fine grid
-                Dictionary<string, List<DGField>> injectedFields = new Dictionary<string, List<DGField>>();
-                Dictionary<string, List<int>> DOFs = new Dictionary<string, List<int>>();
-
-                foreach (string Identification in FieldsToCompare) {
-                    List<DGField> fields_Identification = new List<DGField>(); // fields for different resolutions
-                    List<int> dofs_Idenitification = new List<int>();
-
-                    DGField finestSolution = fields.Last().Single(f => f.Identification == Identification);
-
-                    for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
-                        //Console.WriteLine("Injecting '{0}' from level {1} to finest grid...", Identification, iLevel);
-                        tr.Info(string.Format("Injecting '{0}' from level {1} to finest grid...", Identification, iLevel));
-
-
-                        DGField coarseSolution = fields[iLevel].Single(f => f.Identification == Identification);
-
-                        if (finestSolution.GetType() != coarseSolution.GetType())
-                            throw new NotSupportedException();
-                        if (coarseSolution.Basis.Degree != finestSolution.Basis.Degree)
-                            throw new NotSupportedException();
-
-                        if (finestSolution is XDGField) {
-                            XDGField _coarseSolution = (XDGField)coarseSolution;
-                            XDGField _finestSolution = (XDGField)finestSolution;
-                            XDGField injectedSolution = new XDGField(_finestSolution.Basis, Identification + "-inj-" + iLevel);
-
-                            InjectXDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
-
-                            fields_Identification.Add(injectedSolution);
-                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
-                        } else if (finestSolution is SinglePhaseField) {
-                            SinglePhaseField _coarseSolution = (SinglePhaseField)coarseSolution;
-                            SinglePhaseField _finestSolution = (SinglePhaseField)finestSolution;
-                            SinglePhaseField injectedSolution = new SinglePhaseField(_finestSolution.Basis, Identification + "-inj-" + iLevel);
-
-                            InjectDGField(Fine2CoarseMapS[iLevel], injectedSolution, _coarseSolution);
-
-                            fields_Identification.Add(injectedSolution);
-                            dofs_Idenitification.Add(coarseSolution.Mapping.GetTotalNoOfDOFs());
-                        } else {
-                            throw new NotSupportedException("DG field type '" + finestSolution.GetType().FullName + "' not supported, Identification is '" + finestSolution.Identification + "'");
-                        }
-
-                        tr.Info(string.Format("done."));
-                        //Console.WriteLine("done.");
-                    }
-
-                    fields_Identification.Add(finestSolution);
-                    injectedFields.Add(Identification, fields_Identification);
-                    DOFs.Add(Identification, dofs_Idenitification);
-                }
-                __DOFs = new Dictionary<string, long[]>();
-                foreach (var kv in DOFs) {
-                    __DOFs.Add(kv.Key, kv.Value.Select((int iii) => (long)iii).ToArray());
-                }
-
-
-                // compute the errors
-                L2Errors = new Dictionary<string, double[]>();
-                foreach (string Identification in FieldsToCompare) {
-
-                    double[] L2Error = new double[gDataS.Length - 1];
-
-                    for (int iLevel = 0; iLevel < gDataS.Length - 1; iLevel++) {
-                        //Console.WriteLine("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel);
-                        tr.Info(string.Format("Computing L2 error of '{0}' on level {1} ...", Identification, iLevel));
-
-                        DGField Error = injectedFields[Identification].Last().CloneAs();
-                        DGField injSol = injectedFields[Identification].ElementAt(iLevel);
-                        Error.Acc(-1.0, injSol);
-
-                        L2Error[iLevel] = Error.L2Norm();
-
-                        //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
-                        tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
-                    }
-
-                    L2Errors.Add(Identification, L2Error);
-                }
-
-                GridRes = gDataS.Take(gDataS.Length - 1).Select(gd => gd.Cells.h_minGlobal).ToArray();
+                // continue in other routine
+                ComputeErrors_L2(fields, out GridRes, out __DOFs, out L2Errors);
             }
         }
 

@@ -25,7 +25,7 @@ namespace BoSSS.Solution.Statistic {
         /// onto the DG field <paramref name="target"/>.
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
@@ -33,7 +33,7 @@ namespace BoSSS.Solution.Statistic {
 
 
 
-                if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
+                if(object.ReferenceEquals(source.GridDat, target.GridDat)) {
                     // +++++++++++++++++
                     // equal grid branch
                     // +++++++++++++++++
@@ -61,7 +61,7 @@ namespace BoSSS.Solution.Statistic {
                     //
 
                     int MPIsize = target.GridDat.MpiSize;
-                    
+
 
                     // pass 1: collect all points
                     // ==========================
@@ -110,7 +110,7 @@ namespace BoSSS.Solution.Statistic {
                     // perform the real projection
                     // ===========================
 
-                    
+
                     int lc = 0;
                     void ProjectionIntegrand(MultidimensionalArray input, MultidimensionalArray output) {
 
@@ -146,10 +146,10 @@ namespace BoSSS.Solution.Statistic {
             int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
             int quadOrder = maxDeg * 3 + 3;
 
-            if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+            if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-            if (object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
+            if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
                 // ++++++++++++++
                 // equal meshes
                 // ++++++++++++++
@@ -157,11 +157,11 @@ namespace BoSSS.Solution.Statistic {
 
                 double errPow2 = A.L2Error(B, domain).Pow2();
 
-                if (IgnoreMeanValue) {
+                if(IgnoreMeanValue) {
                     // domain volume
                     double Vol = 0;
                     int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for (int j = 0; j < J; j++) {
+                    for(int j = 0; j < J; j++) {
                         Vol += A.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
@@ -183,7 +183,7 @@ namespace BoSSS.Solution.Statistic {
 
 
                 DGField fine, coarse;
-                if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
                     fine = A;
                     coarse = B;
                 } else {
@@ -206,12 +206,12 @@ namespace BoSSS.Solution.Statistic {
 
                 double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
 
-                if (IgnoreMeanValue == true) {
+                if(IgnoreMeanValue == true) {
 
                     // domain volume
                     double Vol = 0;
                     int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for (int j = 0; j < J; j++) {
+                    for(int j = 0; j < J; j++) {
                         Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
                     }
                     Vol = Vol.MPISum();
@@ -241,14 +241,14 @@ namespace BoSSS.Solution.Statistic {
         /// </param>
         /// <returns></returns>
         static public double H1Distance(this ConventionalDGField A, ConventionalDGField B, CellQuadratureScheme scheme = null) {
-            if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+            if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
             int D = A.GridDat.SpatialDimension;
 
             double Acc = 0.0;
             Acc += L2Distance(A, B, false, scheme).Pow2();
-            for (int d = 0; d < D; d++) {
+            for(int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
                 dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 
@@ -259,6 +259,65 @@ namespace BoSSS.Solution.Statistic {
             }
 
             return Acc.Sqrt();
+        }
+
+
+        /// <summary>
+        /// Approximate H1 norm (aka. Sobolev norm) of a DG field;
+        /// </summary>
+        /// <param name="A"></param>
+        /// <param name="mask">
+        /// a cell quadrature scheme on the coarse of the two meshes
+        /// </param>
+        /// <returns></returns>
+        static public double H1Norm(this DGField A, CellMask mask = null) {
+
+            int D = A.GridDat.SpatialDimension;
+
+            double Acc = 0.0;
+            Acc += A.L2Norm();
+            for(int d = 0; d < D; d++) {
+                DGField dA_dd = A.CloneAs();
+                dA_dd.Clear();
+                dA_dd.Derivative(1.0, A, d, mask);
+
+                Acc += dA_dd.L2Norm(mask).Pow2();
+            }
+
+            return Acc.Sqrt();
+        }
+
+
+        /// <summary>
+        /// L2 norm of a DG field, without the mean value (i.e. typically a norm used for hydrodynamic pressure, where the mean value is not relevant).
+        /// I.e., for some field $`f `$, we compute $ \left| f -  \langle f \rangle \right| $, where $` \langle f \rangle `$ is the average value;
+        /// Therefore, we have the relation
+        /// ```math
+        ///   \left| f -  \langle f \rangle \right|^2 = \left| f \right|^2 - \langle f \rangle^2 | \Omega |
+        /// ```
+        /// </summary>
+        static public double L2Norm_IgnoreMean(this DGField A, CellMask domain = null) {
+
+            if(domain == null)
+                domain = CellMask.GetFullMask(A.GridDat);
+
+            // L2 norm
+            double errPow2 = A.L2Norm(domain).Pow2();
+
+            // domain volume
+            double Vol = 0;
+            foreach(int j in domain.ItemEnum) {
+                Vol += A.GridDat.iGeomCells.GetCellVolume(j);
+            }
+            Vol = Vol.MPISum();
+
+            // mean value
+            double mean = A.GetMeanValueTotal(domain);
+
+            // Note: for a field p, we have 
+            // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
+            return Math.Sqrt(errPow2 - mean * mean * Vol);
+
         }
     }
 }

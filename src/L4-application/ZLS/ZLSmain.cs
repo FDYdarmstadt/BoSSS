@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using ZwoLevelSetSolver.Tests;
 using ilPSP.LinSolvers;
 using ilPSP.Connectors.Matlab;
-
+using BoSSS.Solution.Statistic;
+using NUnit.Framework;
 
 namespace ZwoLevelSetSolver {
     class ZLSmain {
@@ -16,14 +17,15 @@ namespace ZwoLevelSetSolver {
             BoSSS.Solution.Application.InitMPI();
 
             //RunSolver(args);
-            ConditionNumberScaling();
+            //ConditionNumberScaling();
+            RotationConvergenceTest();
 
             //ParameterSweep();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
-            /*            
+                    
 
             const int res = 16;
 
@@ -57,8 +59,9 @@ namespace ZwoLevelSetSolver {
                 q.RunSolverMode();
                 //q.OperatorAnalysis();
             }
-            */
+            
                         
+            /*
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
@@ -157,8 +160,56 @@ namespace ZwoLevelSetSolver {
             ConditionNumberScalingTest.Perform(controlFiles, true);
         }
 
+        static void RotationConvergenceTest(int p = 2,
+            double dt = 1.0e200,
+            BoSSS.Solution.Control.NonLinearSolverCode slvCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton
+            ) {
+
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            List<ZLS_Control> controlFiles = new List<ZLS_Control>();
+
+            // Displacement-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            ZLS.displacementViscosity = 1.0;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
+            SolidPhase.Continuity.ContinuityInDisplacement = true;
+            SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
+
+            //// Velocity-Divergence
+            //ZLS_Control.DisplacementDegOffset = 0;
+            //ZLS.displacementViscosity = 0.0;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0;
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0;
+            //SolidPhase.Continuity.ContinuityInDisplacement = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false; // does not help
+
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
+            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
+            //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
+
+            foreach(var c in controlFiles) {
+                Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);
+                c.NonLinearSolver.SolverCode = slvCode;
+                if(dt >= 1e10)
+                    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+                else {
+                    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
+                    c.dtFixed = dt;
+                }
 
 
+            }
+
+            controlFiles.SolverConvergenceTest_Experimental(
+                (VariableNames.DisplacementX, p, NormType.L2_embedded),
+                (VariableNames.DisplacementY, p, NormType.L2_embedded),
+                (BoSSS.Solution.NSECommon.VariableNames.Pressure, p, NormType.L2_embedded),
+                (BoSSS.Solution.NSECommon.VariableNames.VelocityX, p, NormType.L2_embedded),
+                (BoSSS.Solution.NSECommon.VariableNames.VelocityY, p, NormType.L2_embedded));
+
+        }
 
         /*
         class Case {

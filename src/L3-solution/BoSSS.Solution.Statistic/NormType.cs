@@ -20,9 +20,22 @@ namespace BoSSS.Solution.Statistic {
     public enum NormType {
 
         /// <summary>
-        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors"/>; very accurate, but requires geometrically embedded meshes
+        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>; 
+        /// very accurate, but requires geometrically embedded meshes
         /// </summary>
         L2_embedded,
+
+        /// <summary>
+        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_L2noMean(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>; 
+        /// very accurate, but requires geometrically embedded meshes
+        /// </summary>
+        L2noMean_embedded,
+
+        /// <summary>
+        /// Norm by <see cref="DGFieldComparisonEmbedded.ComputeErrors_H1(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>; 
+        /// very accurate, but requires geometrically embedded meshes
+        /// </summary>
+        H1_embedded,
 
         /// <summary>
         /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>
