@@ -265,7 +265,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // ... otherwise, we do the best we can and iterate until no further improvement can be made
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info("NEWTON: trying to converge as far as possible");
+                    tr.Info($"NEWTON: trying to converge as far as possible (ConvCrit is {ConvCrit})");
                     bool terminateLoop = false;
 
 
@@ -316,7 +316,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // reached minimum convergence criterion
 
                             double ALNR = LastAverageNormReduction();
-                            tr.Info($"minimal convergence criterion not reached, LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
+                            tr.Info($"minimal build-in convergence criterion reached ({_MinConvCrit * fnorminit + _MinConvCrit}), LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
 #if TEST
                             ALNR = 0;
 #endif
@@ -330,14 +330,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //success = true;
                                 //terminateLoop = true;
                             }
+                        } else {
+                            tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
                         }
 
                         if(itc >= MaxIter) {
                             // run out of iterations
+                            tr.Info($"Maximum number of iterations reached ({MaxIter}) - terminating.");
                             terminateLoop = true;
                         }
                     } else {
-                        tr.Info($"**NOT** terminating now, minimal convergence criterion not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
+                        tr.Info($"**NOT** terminating now, minimal number of iterations (iteration {itc}, minimum is {MinIter}) not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
                     }
 
                     return terminateLoop;

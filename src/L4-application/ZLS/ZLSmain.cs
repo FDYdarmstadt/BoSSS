@@ -16,24 +16,24 @@ namespace ZwoLevelSetSolver {
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
 
-            //RunSolver(args);
+            RunSolver(args);
             //ConditionNumberScaling();
-
-            Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
 
             //ParameterSweep();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
-            /*
+            
             const int res = 16;
 
             var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
             C.SkipSolveAndEvaluateResidual = false;
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
-            C.NonLinearSolver.MinSolverIterations = 200;
-            C.NonLinearSolver.MaxSolverIterations = 220;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0;
+            //C.NonLinearSolver.MinSolverIterations = 200;
+            C.NonLinearSolver.MaxSolverIterations = 20;
 
             // Displacement - Divergence
             ZLS.displacementViscosity = 0.0;
@@ -50,7 +50,7 @@ namespace ZwoLevelSetSolver {
             //SolidPhase.Continuity.ContinuityStabilization = false; // seems to have no benefit for condition number
 
 
-            //C.dtFixed = 1.0;
+            C.dtFixed = 0.1;
             //C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
             
 
@@ -59,9 +59,9 @@ namespace ZwoLevelSetSolver {
                 q.RunSolverMode();
                 //q.OperatorAnalysis();
             }
-            */
-                        
             
+                        
+            /*
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();

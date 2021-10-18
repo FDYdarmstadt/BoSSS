@@ -115,11 +115,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.NonLinearSolver.MaxSolverIterations = 5;
-            C.NonLinearSolver.MinSolverIterations = 0;
             C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0; // solve as accurate as possible
             C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;

@@ -20,6 +20,7 @@ using NSEEquationNames = BoSSS.Solution.NSECommon.EquationNames;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using BoSSS.Solution.Utils;
+using NUnit.Framework;
 
 namespace ZwoLevelSetSolver {
 
@@ -184,12 +185,15 @@ namespace ZwoLevelSetSolver {
             //*/
         }
 
+        internal bool LastSolverSuccess;
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
-            Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine($"done with time step {TimestepNo}");
+            LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
+            Console.WriteLine($"done with time step {TimestepNo}, Solver success ? {LastSolverSuccess}");
+            Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
             return dt;
         }
 

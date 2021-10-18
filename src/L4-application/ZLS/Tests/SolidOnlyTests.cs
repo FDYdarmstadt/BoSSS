@@ -19,7 +19,6 @@ namespace ZwoLevelSetSolver.Tests {
         public static void RotationConvergenceTest([Values(2,3,4)] int p = 2
             ) {
             double dt = 1.0e200;
-            BoSSS.Solution.Control.NonLinearSolverCode slvCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
 
             BoSSS.Solution.Application.DeleteOldPlotFiles();
@@ -27,7 +26,7 @@ namespace ZwoLevelSetSolver.Tests {
 
             // Displacement-Divergence
             //ZLS_Control.DisplacementDegOffset = 0;
-            ZLS.displacementViscosity = 1.0;
+            //ZLS.displacementViscosity = 1.0;
             SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
@@ -51,8 +50,8 @@ namespace ZwoLevelSetSolver.Tests {
                 Assert.IsTrue(c.SkipSolveAndEvaluateResidual == false);
                 c.dtFixed = dt;
                 Assert.IsTrue(c.TimesteppingMode == BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady);
-
-                //c.NonLinearSolver.SolverCode = slvCode;
+                c.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
+                c.NonLinearSolver.ConvergenceCriterion = 0.0; // as accurate as possible
                 //if(dt >= 1e10)
                 //    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
                 //else {
@@ -63,7 +62,7 @@ namespace ZwoLevelSetSolver.Tests {
 
             }
 
-            controlFiles.SolverConvergenceTest_Experimental("SolisSolverConvP" + p,
+            controlFiles.SolverConvergenceTest_Experimental("SolidSolverConvP" + p,
                 (VariableNames.DisplacementX, p - 1.5, NormType.L2_embedded),
                 (VariableNames.DisplacementY, p - 1.5, NormType.L2_embedded),
                 (BoSSS.Solution.NSECommon.VariableNames.Pressure, p - 1.5, NormType.L2_embedded),
