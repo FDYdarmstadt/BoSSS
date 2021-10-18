@@ -52,12 +52,7 @@ namespace ZwoLevelSetSolver.Tests {
                 Assert.IsTrue(c.TimesteppingMode == BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady);
                 c.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
                 c.NonLinearSolver.ConvergenceCriterion = 0.0; // as accurate as possible
-                //if(dt >= 1e10)
-                //    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
-                //else {
-                //    c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
-                //    c.dtFixed = dt;
-                //}
+                c.NonLinearSolver.MaxSolverIterations = 100; 
 
 
             }
