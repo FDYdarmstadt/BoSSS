@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.Tests {
 
 
         [Test]
-        public static void RotationConvergenceTest([Values(2,3,4)] int p = 2
+        public static void RotationConvergenceTest([Values(2)] int p = 2
             ) {
             double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
