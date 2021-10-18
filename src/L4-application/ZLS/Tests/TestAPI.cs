@@ -15,6 +15,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.Tests {
+
+    
     struct SolutionTestField {
         public string Name;
         public double AcceptableL2Error;
@@ -160,4 +162,6 @@ namespace ZwoLevelSetSolver.Tests {
 
         }
     }
+    
+
 }

@@ -194,6 +194,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// XDG Equations for bulk phase.
     /// </summary>
     public abstract class BulkEquation : SpatialEquation, ICodomainEquation<BulkEquation> {
+        
         /// <summary>
         /// Name of species for which equation is valid.
         /// </summary>

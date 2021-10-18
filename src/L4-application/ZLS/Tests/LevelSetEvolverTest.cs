@@ -16,10 +16,11 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.Tests {
     
-    class LevelSetEvolverTest {
+    [TestFixture]
+    static class LevelSetEvolverTest {
 
         [Test]
-        static void Test(
+        public static void Test(
             [Values(1, 2, 3, 4)] int degree,
             [Values(0.0, 0.1)] double agglomerationTreshold
             ) {

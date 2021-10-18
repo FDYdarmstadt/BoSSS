@@ -690,7 +690,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// returns the subvector
         /// corresponding to <see cref="BlockMask"/>.
-        /// Entries of subvector are taken from the local (<paramref name="locFullVector"/>)
+        /// Entries of subvector are taken from the local (<paramref name="locfullVector"/>)
         /// and external (<paramref name="extFullVector"/>) part of the unmasked vector.
         /// </summary>
         /// <param name="extFullVector">input, external part of unmasked vector</param>

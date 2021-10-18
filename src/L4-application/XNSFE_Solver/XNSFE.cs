@@ -291,11 +291,11 @@ namespace BoSSS.Application.XNSFE_Solver {
 
                 if (config.conductMode != ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                     for (int d = 0; d < D; ++d) {
-                        throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
                         opFactory.AddEquation(new HeatFlux("A", d, D, thermBoundaryMap, config));
                         opFactory.AddEquation(new HeatFlux("B", d, D, thermBoundaryMap, config));
                         opFactory.AddEquation(new HeatFluxInterface("A", "B", D, d, thermBoundaryMap, config));
                     }
+                    throw new ApplicationException("Warning using LDG Formulation for Heat, this is untested. Remove this statement only if you now what you are doing!");
                 }
             } else {
                 throw new NotSupportedException();

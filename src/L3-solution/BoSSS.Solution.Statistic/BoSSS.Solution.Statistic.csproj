@@ -46,6 +46,7 @@
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.XDG\BoSSS.Foundation.XDG.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+    <ProjectReference Include="..\BoSSS.Solution.Gnuplot\BoSSS.Solution.Gnuplot.csproj" />
     <ProjectReference Include="..\BoSSS.Solution\BoSSS.Solution.csproj" />
   </ItemGroup>
   <ItemGroup>

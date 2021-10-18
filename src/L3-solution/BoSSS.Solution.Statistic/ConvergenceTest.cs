@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using NUnit.Framework;
 using System;
@@ -94,7 +95,7 @@ namespace BoSSS.Solution.Statistic {
         }
         */
 
-        public static void SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, params (string FieldName, double expectedSlope, NormType normType)[] fildNamesAndSlopes) {
+        public static void SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, string Title, params (string FieldName, double expectedSlope, NormType normType)[] fildNamesAndSlopes) {
             int D = -1;
             var CS = __CS.ToArray();
             int NoOfMeshes = CS.Length;
@@ -176,6 +177,17 @@ namespace BoSSS.Solution.Statistic {
             DGFieldComparison.ComputeErrors(
                 solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
 
+            var plt = new BoSSS.Solution.Gnuplot.Plot2Ddata();
+            plt.LogX = true;
+            plt.LogY = true;
+            plt.Title = Title;
+            foreach(var ttt in fildNamesAndSlopes) {
+                plt.AddDataGroup(ttt.FieldName + "-" + ttt.normType.ToString(), hS, errorS[ttt.FieldName]);
+            }
+
+            string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");           
+            plt.SaveToSVG($"Convergence-{DateNtime}.svg");
+
 
 
             // step 3: check slopes
@@ -189,10 +201,14 @@ namespace BoSSS.Solution.Statistic {
             }
 
 
-            //for (int i = 0; i < errorS.GetLength(1); i++) {
-            //    var slope = hS.LogLogRegression(errorS.GetColumn(i));
-            //    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
-            //}
+            foreach(var ttt in fildNamesAndSlopes) {
+                string fieldName = ttt.FieldName;
+                
+                var slope = hS.LogLogRegression(errorS[fieldName]);
+
+                Assert.GreaterOrEqual(slope, ttt.expectedSlope, $"Convergence Slope of {fieldName} is degenerate: got {slope}, expecting at lease {ttt.expectedSlope} in norm {ttt.normType}");
+            }
+
 
             foreach (var s in solvers) {
                 s.Dispose();
