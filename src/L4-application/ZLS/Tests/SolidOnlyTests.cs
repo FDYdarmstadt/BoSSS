@@ -66,7 +66,51 @@ namespace ZwoLevelSetSolver.Tests {
 
         }
 
+        /// <summary>
+        /// Here to fix something that works somehow, eventually.
+        /// Just one working test, for a positive feeling!
+        /// </summary>
+        [Test]
+        public static void RunSolver([Values(2)] int p = 2,
+                                    [Values(16)] int res = 16) {
+            // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RunSolver
+            
+            var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, res);
+            C.SkipSolveAndEvaluateResidual = false;
+            C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0;
+            //C.NonLinearSolver.MinSolverIterations = 200;
+            C.NonLinearSolver.MaxSolverIterations = 20;
 
+            // Displacement - Divergence
+            ZLS.displacementViscosity = 0.0;
+            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
+            SolidPhase.Continuity.ContinuityInDisplacement = true;
+            SolidPhase.Continuity.ContinuityStabilization = true;
+
+            ////Velocity - Divergence : this is shit
+            //ZLS.displacementViscosity = 0.0;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0; // must be positive for Newton convergence when Zero
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0; // seems to be not required; works for +1, 0, -1
+            //SolidPhase.Continuity.ContinuityInDisplacement = false;
+            //SolidPhase.Continuity.ContinuityStabilization = false; // seems to have no benefit for condition number
+
+
+            //C.dtFixed = 0.1;
+            //C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+            
+
+            using(var q = new ZLS()) {
+                q.Init(C);
+                q.RunSolverMode();
+
+                Assert.IsTrue(q.LastSolverSuccess, "Nonlinear solver did not converge.");
+            }
+            
+                        
+            
+        }
 
     }
 }

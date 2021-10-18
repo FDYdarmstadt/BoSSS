@@ -15,6 +15,7 @@ namespace ZwoLevelSetSolver {
 
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
 
             RunSolver(args);
             //ConditionNumberScaling();
@@ -26,7 +27,7 @@ namespace ZwoLevelSetSolver {
 
         static void RunSolver(string[] args) {
             
-            const int res = 16;
+            const int res = 32;
 
             var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
             C.SkipSolveAndEvaluateResidual = false;
@@ -50,8 +51,8 @@ namespace ZwoLevelSetSolver {
             //SolidPhase.Continuity.ContinuityStabilization = false; // seems to have no benefit for condition number
 
 
-            C.dtFixed = 0.1;
-            //C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
+            //C.dtFixed = 0.1;
+            C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
             
 
             using(var q = new ZLS()) {

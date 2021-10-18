@@ -499,8 +499,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
                    
                     // plotting during Newton iterations:  
-                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
+                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
                     
                     
                     for (int i = 0; i < NF; i++) {
