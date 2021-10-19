@@ -435,6 +435,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         //public static BlockMsrMatrix DbeMatrix;
         //public static BlockMsrMatrix LidMatrix;
 
+
+
         public double MatrixStabilityTest() {
 
             // setup original and alternative operator
@@ -601,7 +603,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
             FullSel.VariableSelector(this.VarGroup);
 
-            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
+            //long J = grd.CellPartitioning.TotalLength;
+
             // Matlab
             // ======
 
