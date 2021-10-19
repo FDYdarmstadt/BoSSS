@@ -611,7 +611,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             double[] step = new double[CurSol.Length];
 
-            DGField[] dgREs;
             // How should the inverse of the Jacobian be approximated?
             if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
                 // ++++++++++++++++++++++++++
@@ -629,8 +628,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                 step.ScaleV(-1);
-                dgREs = null;
-
+                
             } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
                 // Option: use 'external' solver
@@ -652,16 +650,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                 }
 
-                //var bkup = CurrentLin.SetPressureReferencePointRHS(CurRes);
-
-                dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
-                Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
+                //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
+                //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                 solver.Solve(step, CurRes);
                 step.ScaleV(-1);
-
-                //foreach(var e in bkup)
-                //    CurRes[e.idx] = e.val;
-
             } else {
                 throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
             }
@@ -675,12 +667,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OldSolClone = null;
             }
 
-            var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
-            var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
-            
-
-            DGField pressure = SolutionVec.Mapping.Fields[2];
-            Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
+            //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
+            //var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
+            //DGField pressure = SolutionVec.Mapping.Fields[2];
+            //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
             switch(Globalization) {
                 case GlobalizationOption.Dogleg:
@@ -704,16 +694,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 base.AbstractOperator.SolverSafeguard(oldSol, newSol);
             }
 
-            
- 
-
             // fix the pressure
             // ----------------
             base.TestFreeMeanValue(SolutionVec, HomotopyValue);
-            
             if(CurrentLin.FreeMeanValue.Any()) {
-
-
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
                 if(flds.Length != FreeMeanValue.Length)
@@ -737,9 +721,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
 
                     if(FreeMeanValue[iFld]) {
-                        Console.WriteLine("Mean value before correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                        //Console.WriteLine("Mean value before correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                         flds[iFld].AccConstant(-MeanValues[iFld]);
-                        Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                        //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                     }
                 }
             }
@@ -758,9 +742,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            // plotting during Newton iterations:  
-            var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
-            Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
+            //// plotting during Newton iterations:  
+            //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
+            //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
 
 
             // residual evaluation & callback
