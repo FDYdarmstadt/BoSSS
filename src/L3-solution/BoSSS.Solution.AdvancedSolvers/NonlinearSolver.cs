@@ -213,7 +213,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="HomotopyValue">
         /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
         /// </param>
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue) {
+        /// <param name="ApplyRef">
+        /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="MultigridOperator.FreeMeanValue"/>
+        /// </param>        
+        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue, bool ApplyRef = false) {
             if(alpha != 1.0)
                 throw new NotSupportedException("some moron has removed this");
 
@@ -256,7 +259,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // }
             }
 #endif
-            CurrentLin.TransformRhsInto(OpEvalRaw, Output, false);
+            CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
         }
 
         int EvaluationCounter = 0;

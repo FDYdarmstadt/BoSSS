@@ -33,8 +33,8 @@ namespace ZwoLevelSetSolver {
             C.SkipSolveAndEvaluateResidual = false;
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 0.0;
-            //C.NonLinearSolver.MinSolverIterations = 200;
-            C.NonLinearSolver.MaxSolverIterations = 20;
+            C.NonLinearSolver.MinSolverIterations = 20;
+            C.NonLinearSolver.MaxSolverIterations = 25;
 
             // Displacement - Divergence
             ZLS.displacementViscosity = 0.0;

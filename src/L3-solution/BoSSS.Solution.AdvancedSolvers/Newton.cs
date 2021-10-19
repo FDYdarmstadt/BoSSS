@@ -610,8 +610,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // --------------------------
 
             double[] step = new double[CurSol.Length];
-                
 
+            DGField[] dgREs;
             // How should the inverse of the Jacobian be approximated?
             if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
                 // ++++++++++++++++++++++++++
@@ -629,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                 step.ScaleV(-1);
-
+                dgREs = null;
 
             } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
@@ -652,8 +652,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                 }
 
+                //var bkup = CurrentLin.SetPressureReferencePointRHS(CurRes);
+
+                dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
+                Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                 solver.Solve(step, CurRes);
                 step.ScaleV(-1);
+
+                //foreach(var e in bkup)
+                //    CurRes[e.idx] = e.val;
 
             } else {
                 throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
@@ -667,6 +674,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 OldSolClone = null;
             }
+
+            var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
+            var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
+            
+
+            DGField pressure = SolutionVec.Mapping.Fields[2];
+            Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
             switch(Globalization) {
                 case GlobalizationOption.Dogleg:
@@ -690,11 +704,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 base.AbstractOperator.SolverSafeguard(oldSol, newSol);
             }
 
-
+            
+ 
 
             // fix the pressure
             // ----------------
             base.TestFreeMeanValue(SolutionVec, HomotopyValue);
+            
             if(CurrentLin.FreeMeanValue.Any()) {
 
 
@@ -703,15 +719,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
+                int RefCellLocal = CurrentLin.ReferenceCell_local;
+               
+                double[] MeanValues = new double[flds.Length];
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    
                     if(FreeMeanValue[iFld]) {
-                        double mean = flds[iFld].GetMeanValueTotal(null);
-                        flds[iFld].AccConstant(-mean);
+                        //double mean = flds[iFld].GetMeanValueTotal(null);
+
+                        if(RefCellLocal >= 0)
+                            MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        //flds[iFld].AccConstant(-mean);
                     }
                 }
+                MeanValues = MeanValues.MPISum();
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
 
+                    if(FreeMeanValue[iFld]) {
+                        Console.WriteLine("Mean value before correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                        flds[iFld].AccConstant(-MeanValues[iFld]);
+                        Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                    }
+                }
             }
-
+            
 
 
             // update linearization
@@ -726,9 +758,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            // plotting during Newton iterations:  
+            var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
+            Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
+
+
             // residual evaluation & callback
             // ------------------------------
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);
             norm_CurRes = CurRes.MPI_L2Norm();
 
 
