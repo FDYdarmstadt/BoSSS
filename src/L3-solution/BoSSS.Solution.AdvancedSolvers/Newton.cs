@@ -635,6 +635,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var solver = this.Precond;
                 solver.Init(CurrentLin);
+                CurrentLin.OperatorMatrix.SaveToTextFileSparse("NewtonMatrix.txt");
                 step.ClearEntries();
                 var check = CurRes.CloneAs();
                 solver.ResetStat();
