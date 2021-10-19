@@ -53,8 +53,9 @@ namespace BoSSS.Application.SipPoisson {
         /// <param name="args"></param>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            //DeleteOldPlotFiles();
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(2);
+            DeleteOldPlotFiles();
+            BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
             FinalizeMPI();
             return;
@@ -66,7 +67,7 @@ namespace BoSSS.Application.SipPoisson {
                     + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
                 return p;
             });
-            */
+            //*/
         }
 
 
@@ -396,14 +397,10 @@ namespace BoSSS.Application.SipPoisson {
         List<DGField> MGColoring = new List<DGField>();
 
 
-        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.Eye; //DiagBlockEquilib;
+        MultigridOperator.Mode m_MgConfig = MultigridOperator.Mode.DiagBlockEquilib;
 
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
-
-                Console.WriteLine("Remenber to remove EYE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-                //Console.WriteLine("Polynomgrad wird nicht mehr reduziert!!!");
                 int p = this.T.Basis.Degree;
                 int NoOfLevels = this.MultigridSequence.Length;
                 var config = new MultigridOperator.ChangeOfBasisConfig[NoOfLevels][];
@@ -496,9 +493,9 @@ namespace BoSSS.Application.SipPoisson {
             return v;
         }
 
-        public override double Nu(double[] x, double[] p, int jCell) {
-            return 0.001;
-        }
+        //public override double Nu(double[] x, double[] p, int jCell) {
+        //    return 0.001;
+        //}
 
         //public override TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.None;
 
