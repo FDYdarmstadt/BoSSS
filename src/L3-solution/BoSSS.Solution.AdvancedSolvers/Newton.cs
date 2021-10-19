@@ -746,7 +746,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
             //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
 
-
             // residual evaluation & callback
             // ------------------------------
             EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);

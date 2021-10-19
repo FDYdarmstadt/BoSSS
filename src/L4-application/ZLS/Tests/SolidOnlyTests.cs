@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.Tests {
 
 
         [Test]
-        public static void RotationConvergenceTest([Values(2)] int p = 2
+        public static void RotationConvergenceTest([Values(2, 3, 4)] int p = 2
             ) {
             double dt = 1.0e200;
             // --test=ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest
@@ -60,9 +60,11 @@ namespace ZwoLevelSetSolver.Tests {
             controlFiles.SolverConvergenceTest_Experimental("SolidSolverConvP" + p,
                 (VariableNames.DisplacementX, p - 1.5, NormType.L2_embedded),
                 (VariableNames.DisplacementY, p - 1.5, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.Pressure, p - 1.5, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 1.2, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.VelocityY, p - 1.2, NormType.L2_embedded));
+                (BoSSS.Solution.NSECommon.VariableNames.Pressure, p - 1.5, NormType.L2_embedded)
+                // in a steady-state setting, the velocity is 0.0; therefore, we cannot measure convergence
+                //(BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 1.2, NormType.L2_embedded),
+                //(BoSSS.Solution.NSECommon.VariableNames.VelocityY, p - 1.2, NormType.L2_embedded)
+                );
 
         }
 
