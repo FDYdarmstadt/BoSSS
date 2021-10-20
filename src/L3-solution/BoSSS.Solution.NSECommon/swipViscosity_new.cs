@@ -435,7 +435,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV/* | TermActivationFlags.V | TermActivationFlags.GradV*/);
             }
         }
 

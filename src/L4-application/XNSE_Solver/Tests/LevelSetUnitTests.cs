@@ -38,7 +38,7 @@ using BoSSS.Solution.Tecplot;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
-    interface IXNSElsTest : IXNSETest {
+    public interface IXNSElsTest : IXNSETest {
 
         /// <summary>
         /// compute a suitable timestep for various combinations of grid resolutions and level-set degrees
@@ -235,7 +235,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
 
-        private static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {
+        public static void LevelSetTest(IXNSETest Tst, XNSE_Control C, string IO = null) {
 
             using (var solver = new XNSE()) {
 
