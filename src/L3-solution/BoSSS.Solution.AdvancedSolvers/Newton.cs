@@ -696,18 +696,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // fix the pressure
             // ----------------
-            base.TestFreeMeanValue(SolutionVec, HomotopyValue);
             if(CurrentLin.FreeMeanValue.Any()) {
+                if(itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
+                    base.TestFreeMeanValue(SolutionVec, HomotopyValue);
+
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
                 if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
                 int RefCellLocal = CurrentLin.ReferenceCell_local;
-               
+
                 double[] MeanValues = new double[flds.Length];
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
-                    
+
                     if(FreeMeanValue[iFld]) {
                         //double mean = flds[iFld].GetMeanValueTotal(null);
 
