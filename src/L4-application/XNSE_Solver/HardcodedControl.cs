@@ -527,18 +527,18 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control testcube() {
+        public static XNSE_Control testcube(
+            int NoOfTimeSteps = 10,
+            int k = 3,
+            bool IncludeConvection = true,
+            int Res = 10,
+            int SpaceDim = 3,
+            bool Steady = false,
+            bool useLoadBal = true,
+            bool useAMR = false,
+            Shape Gshape = Shape.Cube
+        ) {
             XNSE_Control C = new XNSE_Control();
-
-            int NoOfTimeSteps = 10;
-            int k = 3;
-            bool IncludeConvection = true;
-            int Res = 15;
-            int SpaceDim = 3;
-            bool Steady = false;
-            bool useLoadBal = true;
-            bool useAMR = true;
-            var Gshape = Shape.Cube;
 
             C.GridFunc = delegate {
 

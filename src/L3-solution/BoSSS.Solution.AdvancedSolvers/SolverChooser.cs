@@ -1570,7 +1570,7 @@ namespace BoSSS.Solution {
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.OMP,
+                        SolverVersion = Parallelism.SEQ,
                         TestSolution = false,
                         ActivateCaching = delayedCaching2,
                     };
