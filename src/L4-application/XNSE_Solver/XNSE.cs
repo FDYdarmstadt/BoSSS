@@ -366,6 +366,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// <summary>
+        /// Operator/equation assembly
+        /// </summary>
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -391,6 +394,21 @@ namespace BoSSS.Application.XNSE_Solver {
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+
+
+            // elementary checks on operator
+            int D = XOP.CodomainVar.Count - 1;
+
+            if(XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            if(XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            for(int d = 0; d < D; d++) {
+                if(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationComponent(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+                if(XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+            }
         }
 
         /// <summary>
@@ -569,10 +587,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
-
-                //Console.WriteLine("Spatial dimension is: " + GridData.SpatialDimension);
-
-               
+                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");

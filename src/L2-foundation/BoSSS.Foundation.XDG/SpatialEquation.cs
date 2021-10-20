@@ -318,10 +318,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             foreach (SpatialEquation equation in SpatialEquations) {
                 yield return equation;
             }
-            foreach (SpatialEquation equation in InterfaceEquations) {
+            foreach (SpatialEquation equation in BulkEquations) {
                 yield return equation;
             }
-            foreach (SpatialEquation equation in BulkEquations) {
+            foreach (SpatialEquation equation in InterfaceEquations) {
                 yield return equation;
             }
         }

@@ -6,11 +6,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// <summary>
     /// Factory to create a spatial operator.
     /// Usage:
-    /// 1)  Create System by:
-    ///     - Adding Equations: <see cref="AddEquation(BulkEquation)"/> (and variants)
-    ///     - Adding Parameters (Parameters are fields, e.g. spatially dependent viscosity): <see cref="AddParameter(ParameterS)"/>
-    ///     - Adding Coefficients (Coefficients are single numbers, e.g. the Reynolds number): <see cref="AddCoefficient(Coefficient)"/>
-    /// 2)  Create spatial operator by calling GetSpatialOperator 
+    /// 1. Create System by:
+    ///    - Adding Equations: <see cref="AddEquation(BulkEquation)"/> (and variants)
+    ///    - Adding Parameters (Parameters are fields, e.g. spatially dependent viscosity): <see cref="AddParameter(ParameterS)"/>
+    ///    - Adding Coefficients (Coefficients are single numbers, e.g. the Reynolds number): <see cref="AddCoefficient(Coefficient)"/>
+    /// 2. Create spatial operator by calling GetSpatialOperator 
     /// </summary>
     public class OperatorFactory {
         SystemOfEquations eqSystem;
