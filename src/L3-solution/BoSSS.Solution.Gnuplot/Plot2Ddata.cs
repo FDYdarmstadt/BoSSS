@@ -130,6 +130,16 @@ namespace BoSSS.Solution.Gnuplot {
                 this.Values = new double[0];
             }
 
+            /// <summary>
+            /// Empty constructor for deserialization only.
+            /// </summary>
+            private XYvalues() {
+
+                this.Name = null;
+                this.Abscissas = new double[0];
+                this.Values = new double[0];
+            }
+
             #region ICloneable Members
 
             /// <summary>
@@ -350,10 +360,22 @@ namespace BoSSS.Solution.Gnuplot {
         public string Title = null;
 
         /// <summary>
+        /// Set font of title of the plot.
+        /// </summary>
+        [DataMember]
+        public double TitleFont = 0.0;
+
+        /// <summary>
         /// Fontsize for the Labels.
         /// </summary>
         [DataMember]
         public double LabelFont = 16.0;
+
+        /// <summary>
+        /// Fontsize for the Labels title.
+        /// </summary>
+        [DataMember]
+        public double LabelTitleFont = 0.0;
 
         /// <summary>
         /// Turn the legend (the key, in gnuplot terms) on or off.
@@ -1185,8 +1207,16 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.SetX2Label(this.X2label);
                 gp.SetY2Label(this.Y2label);
 
+                if (this.LabelTitleFont != 0.0) {
+                    gp.Cmd($"set xlabel font ',{this.LabelTitleFont}'");
+                    gp.Cmd($"set ylabel font ',{this.LabelTitleFont}'");
+                }
+
                 gp.SetTitle(this.Title);
 
+                if(this.TitleFont != 0.0) {
+                    gp.Cmd($"set title font ',{this.TitleFont}'");
+                }
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
