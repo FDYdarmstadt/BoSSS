@@ -2461,6 +2461,9 @@ namespace ilPSP {
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 
                     LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
+                    if(INFO > 0)
+                        return double.PositiveInfinity;
+
                     if(INFO != 0)
                         throw new ArithmeticException("LAPACK DGETRF info is " + INFO);
                     

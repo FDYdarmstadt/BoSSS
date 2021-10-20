@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Call to solver/smoother.
         /// </summary>
         /// <param name="X">
-        /// On entry: initial guess for the solution; on exit: aproximate solution after applying the solver/smoother <paramref name="iter"/> times.
+        /// On entry: initial guess for the solution; on exit: approximate solution after applying the solver/smoother.
         /// </param>
         /// <param name="B">
         /// On entry: the right-hand-side of the system.

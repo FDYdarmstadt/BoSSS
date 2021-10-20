@@ -8,32 +8,7 @@ using System.Linq;
 
 namespace BoSSS.Application.BoSSSpad {
 
-    /// <summary>
-    /// Encodes in which norms convergence is tested (<see cref="WorkflowMgm.SpatialConvergence"/>)
-    /// </summary>
-    public enum NormType {
-
-        /// <summary>
-        /// Norm by <see cref="DGFieldComparison.ComputeErrors"/>; very accurate, but requires geometrically embedded meshes
-        /// </summary>
-        L2_embedded,
-
-        /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>; less accurate than <see cref="L2_embedded"/>, but provides results on arbitrary meshes
-        /// </summary>
-        L2_approximate,
-
-        /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>.
-        /// </summary>
-        L2noMean_approximate,
-
-
-        /// <summary>
-        /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_H1(IEnumerable{string}, IEnumerable{ITimestepInfo}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, out Guid[])"/>
-        /// </summary>
-        H1_approximate
-    }
+    
 
 
     /// <summary>
@@ -149,7 +124,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
 
                     // compute L2-errors
-                    DGFieldComparison.ComputeErrors(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
+                    DGFieldComparisonEmbedded.ComputeErrors_L2(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
 
                     // record errors
                     foreach(var id in Fields_L2emb) {

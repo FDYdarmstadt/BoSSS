@@ -131,9 +131,9 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public bool GravitySource = false;
 
-        /// <summary>
-        /// updating algorithm for u
-        /// </summary>
+        // <summary>
+        // updating algorithm for u
+        // </summary>
         //[DataMember]
         //public bool UpdateUAlg = false;
 

@@ -337,7 +337,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
             } else {
-                Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing ma be saved.");
+                Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing may be saved.");
             }
 
             // finally, serialize the object

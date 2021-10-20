@@ -220,6 +220,9 @@ namespace BoSSS.Solution.Statistic {
             ComputeErrors(DistFunc, __fields, out GridRes, out __DOFs, out Errors);
         }
 
+        /// <summary>
+        /// computation based on time-steps
+        /// </summary>
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
           IEnumerable<string> FieldsToCompare, 
           IEnumerable<ITimestepInfo> timestepS,
@@ -273,7 +276,9 @@ namespace BoSSS.Solution.Statistic {
             }
         }
 
-
+        /// <summary>
+        /// computation based on DG-fields
+        /// </summary>
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
           IList<IEnumerable<DGField>> __fields, 
           out double[] GridRes, 

@@ -530,8 +530,8 @@ namespace BoSSS.Application.SipPoisson {
             R.SuppressExceptionPrompt = true;
             
             R.GridFunc = delegate () {
-                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
-                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
+                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes + 1);
+                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes + 1);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
@@ -553,7 +553,6 @@ namespace BoSSS.Application.SipPoisson {
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-            R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }
