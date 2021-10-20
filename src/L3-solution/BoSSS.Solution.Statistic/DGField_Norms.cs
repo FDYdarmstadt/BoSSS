@@ -171,7 +171,7 @@ namespace BoSSS.Solution.Statistic {
 
                     // Note: for a field p, we have 
                     // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
-                    return Math.Sqrt(errPow2 - mean * mean * Vol);
+                    return Math.Sqrt((errPow2 - mean * mean * Vol).Abs());
                 } else {
                     return Math.Sqrt(errPow2);
                 }
@@ -316,7 +316,7 @@ namespace BoSSS.Solution.Statistic {
 
             // Note: for a field p, we have 
             // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
-            return Math.Sqrt(errPow2 - mean * mean * Vol);
+            return Math.Sqrt((errPow2 - mean * mean * Vol).Abs());
 
         }
     }

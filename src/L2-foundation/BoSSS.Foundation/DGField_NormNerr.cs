@@ -462,6 +462,27 @@ namespace BoSSS.Foundation {
             return LxError(function, null, scheme.SaveCompile(this.GridDat, order)).Sqrt();
         }
 
+
+        /// <summary>
+        /// Computes L2 distance, **ignoring any constant offset** (e.g. for comparing floating pressures) with default quadrature
+        /// </summary>
+        public double L2ErrorNoMean(ScalarFunction function, int order, CellQuadratureScheme scheme = null) {
+            var rule = scheme.SaveCompile(this.GridDat, order);
+
+            // pass 1: compute mean value:
+            double meanDiff = LxError(function, (double[] X, double thisVal, double functionVal) => thisVal - functionVal, rule);
+            // pass 2: compute L2 distance
+            double L2distPow2 = LxError(function, (double[] X, double thisVal, double functionVal) => (thisVal - functionVal - meanDiff).Pow2(), scheme.SaveCompile(this.GridDat, order));
+
+
+            Console.WriteLine("######## Mean difference: " + meanDiff);
+            Console.WriteLine("######## L2 distance:     " + L2distPow2);
+
+            return L2distPow2.Sqrt();
+
+        }
+
+
         /// <summary>
         /// Computes L2 measure with default quadrature
         /// </summary>
