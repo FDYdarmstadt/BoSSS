@@ -368,20 +368,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
                 double a = ResidualBeforMeanCor.MPI_L2Norm();
+                double aa = SolutionVec.L2Norm();
+
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
                 if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
+                const double arbitrary_distortion_value = 2000.1234;
+
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
                     if(FreeMeanValue[iFld]) {
-                        flds[iFld].AccConstant(2000.1234);
+                        flds[iFld].AccConstant(arbitrary_distortion_value);
                     }
                 }
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
                 double b = ResidualAfterMeanCor.MPI_L2Norm();
+                double bb = SolutionVec.L2Norm();
+
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
+                        flds[iFld].AccConstant(-arbitrary_distortion_value);
+                    }
+                }
 
                 
                 //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
@@ -389,9 +400,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
                 //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
 
-                double RefVal = Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(a, b)*1e-7);
+                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(a, b)*1e-7), Math.Abs(aa-bb)*1e-7);
                 if(Math.Abs(a-b) > RefVal) {
-                    throw new ArithmeticException("Something seems wrong with `FreeMeanValue`: drastic change of operator residual.");
+                    throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {a}; residual after distortion {b}");
                 }
             }
 

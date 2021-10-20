@@ -112,6 +112,7 @@ namespace BoSSS.Application.XNSE_Solver {
             */
 
             //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1d, 0.1d, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
@@ -379,7 +380,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            FinalOperatorSettings(XOP);
+            FinalOperatorSettings(XOP, D);
             XOP.Commit();
 
             return XOP;
@@ -389,7 +390,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
         /// <param name="XOP"></param>
-        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
+        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
@@ -397,8 +398,6 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             // elementary checks on operator
-            int D = XOP.CodomainVar.Count - 1;
-
             if(XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
                 throw new ApplicationException("Operator configuration messed up.");
             if(XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
