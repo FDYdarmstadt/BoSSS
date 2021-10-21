@@ -66,5 +66,19 @@ namespace BoSSS.Application.XNSFE_Solver {
         [DataMember]
         public bool MaterialAtContactLine = false;
 
+        /// <summary>
+        /// Set Field Options, i.e. the DG degrees
+        /// </summary>
+        public override void SetFieldOptions(int Degree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+            if (Degree < 1)
+                throw new ArgumentOutOfRangeException("Degree must be 1 at minimum.");
+
+            base.SetFieldOptions(Degree, LevSetDegree);
+
+            FieldOptions.Add("Temperature", new FieldOpts() {
+                Degree = Degree,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
     }
 }
