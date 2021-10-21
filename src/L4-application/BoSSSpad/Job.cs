@@ -563,6 +563,16 @@ namespace BoSSS.Application.BoSSSpad {
             int? ExitCodeCache = null;
 
 
+            bool ReadExitCache() {
+                string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
+                if(!File.Exists(path))
+                    return false;
+
+
+            }
+
+
+
             /// <summary>
             /// Status of the deployment
             /// </summary>
@@ -574,25 +584,34 @@ namespace BoSSS.Application.BoSSSpad {
                     if(m_owner.AssignedBatchProc == null)
                         return JobStatus.PreActivation;
 
-                    var s = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
-                    string ExitCodeStr = s.ExitCode.HasValue ? s.ExitCode.Value.ToString() : "null";
-                    this.ExitCodeCache = s.ExitCode;
+                    JobStatus bpc_status;
+                    int? ExitCode;
+                    try {
+                        (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
+                        //string ExitCodeStr = ExitCode.HasValue ? ExitCode.Value.ToString() : "null";
+                        this.ExitCodeCache = ExitCode;
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"{e.GetType().Name} during job status evaluation: {e.Message}");
+                        bpc_status = JobStatus.Unknown;
+                        ExitCode = null;
+                    }
 
-                    if(s.Item1 == JobStatus.FinishedSuccessful) {
-                        StatusCache = s.Item1;
-                        if(s.ExitCode == null || s.ExitCode != 0)
+
+                    if(bpc_status == JobStatus.FinishedSuccessful) {
+                        StatusCache = bpc_status;
+                        if(ExitCode == null || ExitCode != 0)
                             throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FinishedSuccessful}, but exit code is {ExitCodeStr} -- expecting 0.");
                     }
                         
-                    if(s.Item1 == JobStatus.FailedOrCanceled) {
-                        StatusCache = s.Item1;
-                        if(s.ExitCode == null || s.ExitCode == 0)
+                    if(bpc_status == JobStatus.FailedOrCanceled) {
+                        StatusCache = bpc_status;
+                        if(ExitCode == null || ExitCode == 0)
                             this.ExitCodeCache = -655321;
                         //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
 
                     }
 
-                    return s.Item1;
+                    return bpc_status;
                 }
             }
 
