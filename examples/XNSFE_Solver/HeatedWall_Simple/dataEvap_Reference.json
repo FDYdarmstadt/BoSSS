@@ -36197,7 +36197,7 @@
   {
     "dataGroups": [
       {
-        "Name": "Q-Evap:0",
+        "Name": "q:0",
         "UseX2": false,
         "UseY2": false,
         "Abscissas": [
@@ -39208,7 +39208,7 @@
         ]
       },
       {
-        "Name": "Q-Evap:0.05",
+        "Name": "q:0.05",
         "UseX2": false,
         "UseY2": false,
         "Abscissas": [
@@ -42219,7 +42219,7 @@
         ]
       },
       {
-        "Name": "Q-Evap:0.1",
+        "Name": "q:0.1",
         "UseX2": false,
         "UseY2": false,
         "Abscissas": [
@@ -45230,7 +45230,7 @@
         ]
       },
       {
-        "Name": "Q-Evap:0.2",
+        "Name": "q:0.2",
         "UseX2": false,
         "UseY2": false,
         "Abscissas": [
