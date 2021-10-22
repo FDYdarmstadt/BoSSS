@@ -371,5 +371,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         [DataMember]
         public bool UsePhoreticField = false;
+
+        /// <summary>
+        /// switch to turn the averaged equations on/off
+        /// </summary>
+        [DataMember]
+        public bool UseAveragedEquations = false;
     }
 }

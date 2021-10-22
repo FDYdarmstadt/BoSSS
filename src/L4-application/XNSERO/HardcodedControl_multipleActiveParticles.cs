@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // Particle Properties
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
-            double activeStress = 1e1;
+            double activeStress = -1e1;
             double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
             List<string> boundaryValues = new List<string> {
@@ -85,12 +85,12 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 j += 1;
             }
-            C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 1);
-            C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 1);
+            C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 0);
+            C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
             C.SetParticles(particles);
             C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
@@ -159,7 +159,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================  
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: 10);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;
@@ -229,7 +229,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetParticles(particles);
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: 50);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;

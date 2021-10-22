@@ -19,7 +19,6 @@ using System.IO;
 using System.Linq;
 
 namespace BoSSS.Application.XNSERO_Solver {
-
     /// <summary>
     /// eXtended Navier Stokes Equation plus Rigid Object (XNSERO) Solver
     /// Fluid-Rigid Body solver, based on XDG.
@@ -165,11 +164,44 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <remarks>base: Navier Stokes, if(...): phoretic field</remarks>
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
-            base.DefineSystem(D, opFactory, lsUpdater);
+            if (Control.UseAveragedEquations) {
+                XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+                // === mass equations === //
+                DefineContinuityEquation(opFactory, config, D);
 
-            if (Control.UsePhoreticField) {
-                opFactory.AddEquation(new Equations.PhoreticFieldBulk());
+                // === momentum equations === //
+                for (int d = 0; d < D; ++d) {
+                    DefineMomentumEquation(opFactory, config, d, D);
+
+                    // Add additional volume forces
+                    if (config.isVolForce) {
+                        var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
+                        opFactory.AddParameter(VolForceA);
+                        var VolForceB = VolumeForce.CreateFrom("B", d, D, Control, Control.GetVolumeForce("B", d));
+                        opFactory.AddParameter(VolForceB);
+                    }
+                }
+
+                
+            } else {
+                base.DefineSystem(D, opFactory, lsUpdater);
+
+                if (Control.UsePhoreticField) {
+                    opFactory.AddEquation(new Equations.PhoreticFieldBulk());
+                }
             }
+        }
+
+        /// <summary>
+        /// Override this method to customize the assembly of the continuity equation
+        /// </summary>
+        /// <param name="opFactory"></param>
+        /// <param name="config"></param>
+        /// <param name="D">Spatial dimension (2 or 3)</param>
+        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
+            opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
+            opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
+            opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
         }
 
 
