@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public virtual void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
             if(VelDegree < 1)
                 throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
             

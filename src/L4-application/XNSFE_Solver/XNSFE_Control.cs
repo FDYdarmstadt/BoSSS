@@ -69,11 +69,11 @@ namespace BoSSS.Application.XNSFE_Solver {
         /// <summary>
         /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public override void SetFieldOptions(int Degree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public override void SetDGdegree(int Degree) {
             if (Degree < 1)
                 throw new ArgumentOutOfRangeException("Degree must be 1 at minimum.");
 
-            base.SetFieldOptions(Degree, LevSetDegree);
+            base.SetDGdegree(Degree);
 
             FieldOptions.Add("Temperature", new FieldOpts() {
                 Degree = Degree,
