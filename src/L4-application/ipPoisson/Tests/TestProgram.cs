@@ -249,7 +249,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
             }
 
-            ConditionNumberScalingTest.Perform(Controls, false);
+            ConditionNumberScalingTest.Perform(Controls, true, "CondnumberSlopes");
         }
 
 #if !DEBUG

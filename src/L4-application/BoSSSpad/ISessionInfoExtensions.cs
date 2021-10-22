@@ -33,6 +33,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Foundation.IO {
 
@@ -1112,7 +1113,7 @@ namespace BoSSS.Foundation.IO {
         /// given <paramref name="sessions"/> by computing the errors with
         /// respect to the solution on the finest corresponding grid by making
         /// use of
-        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors"/>.
+        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors(IList{IEnumerable{DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, NormType)"/>.
         /// The result is then grouped according to the polynomial degree of
         /// field <paramref name="fieldName"/>.
         /// </summary>

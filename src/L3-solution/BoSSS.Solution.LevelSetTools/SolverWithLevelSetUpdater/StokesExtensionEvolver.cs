@@ -42,7 +42,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
             this.m_grd = grd;
-            timeStepOrder = 3;
+            timeStepOrder = 2;
         }
 
         IGridData m_grd;

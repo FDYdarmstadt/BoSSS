@@ -164,10 +164,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// global index
-        /// cell in which the reference point is located
+        /// (MPI) global index of cell in which the reference point is located
         /// </summary>
         long m_ReferenceCell;
+
+        /// <summary>
+        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="ISpatialOperator.FreeMeanValue"/>) is located
+        /// </summary>
+        public long ReferenceCell {
+            get {
+                return m_ReferenceCell;
+            }
+        }
+
+        /// <summary>
+        /// - on owner process: <see cref="ReferenceCell"/> in local coordinates
+        /// - negative otherwise
+        /// </summary>
+        public int ReferenceCell_local {
+            get {
+                int RefCellLocal;
+                if(BaseGridProblemMapping.IsInLocalRange(ReferenceCell))
+                    RefCellLocal = BaseGridProblemMapping.TransformIndexToLocal(ReferenceCell);
+                else
+                    RefCellLocal = int.MinValue;
+                return RefCellLocal;
+            }
+        }
+
+
+
+
+        //public int ReferenceCell {
+        //    get {
+        //        var part = BaseGridProblemMapping.GridDat.CellPartitioning;
+        //        if(part.IsInLocalRange()
+
+        //    }
+
+        //}
 
         /// <summary>
         /// Global Indices into <see cref="BaseGridProblemMapping"/>
@@ -563,7 +598,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 #if DEBUG
                         for(long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
-                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
+                            //Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
                         }
 #endif
                     }
@@ -1163,7 +1198,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT, bool ApplyRef)
             where T1 : IList<double>
-            where T2 : IList<double> 
+            where T2 : IList<double> //
         {
             if(this.FinerLevel != null)
                 throw new NotSupportedException("Only supported on finest level.");

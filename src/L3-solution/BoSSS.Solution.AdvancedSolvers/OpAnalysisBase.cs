@@ -15,6 +15,7 @@ using System.Diagnostics;
 using BoSSS.Solution.AdvancedSolvers;
 using NUnit.Framework;
 using ilPSP.Tracing;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
@@ -77,10 +78,19 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         
         BlockMsrMatrix m_Mass;
         
-        BlockMsrMatrix m_OpMtx;
+        BlockMsrMatrix m_OpMtx; // un-treated operator matrix
         double[] localRHS;
         
         MultigridOperator m_MultigridOp;
+
+        /// <summary>
+        /// Les operaeur
+        /// </summary>
+        public MultigridOperator MultigridOp {
+            get {
+                return m_MultigridOp;
+            }
+        }
 
 
         /// <summary>
@@ -105,6 +115,27 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Computes the minimal Eigenvalue and related Eigenvector using PARDISO
+        /// </summary>
+        public (double lambdaMin, double[] V) MinimalEigen() {
+            var Mtx = this.PrecondOpMatrix;
+            int L = Mtx.RowPartitioning.LocalLength;
+
+            // extract sub-matrix
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+            var bla = Part.MinimalEigen();
+
+            double[] Vret = new double[L];
+            mask.AccSubVec(bla.V, Vret);
+
+            return (bla.lambdaMin, Vret);
         }
 
 
@@ -404,6 +435,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         //public static BlockMsrMatrix DbeMatrix;
         //public static BlockMsrMatrix LidMatrix;
 
+
+
         public double MatrixStabilityTest() {
 
             // setup original and alternative operator
@@ -535,7 +568,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return DisturbanceMeasure;
         }
 
-
+        /// <summary>
+        /// The operator matrix after compactification (i.e. elimination of un-used DOFs),
+        /// application of reference points (<see cref="ISpatialOperator.FreeMeanValue"/>),
+        /// and block-preconditioning.
+        /// </summary>
+        public BlockMsrMatrix PrecondOpMatrix {
+            get {
+                return m_MultigridOp.OperatorMatrix.CloneAs();
+            }
+        }
 
 
         /// <summary>
@@ -551,7 +593,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             var Mtx = m_MultigridOp.OperatorMatrix;
 
-
+            //bool Comparison = this.VarGroup.SetEquals(new int[] { 1 });
 
 
             // Blocks and selectors 
@@ -561,28 +603,36 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
             FullSel.VariableSelector(this.VarGroup);
 
-            
+            //long J = grd.CellPartitioning.TotalLength;
+
             // Matlab
             // ======
 
             double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
             
-            MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
+            MultidimensionalArray output = MultidimensionalArray.Create(4, 1);
             //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-
-                // if Octave should be used instead of Matlab....
-                // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                //if(Comparison) {
+                //    string compPath = $"Mtx_ipPoisson-J{J}.txt";
+                //    File.Copy(compPath, Path.Combine(bmc.WorkingDirectory.FullName, "comp.txt"), false);
+                //}
 
                 bmc.PutSparseMatrix(Mtx, "FullMatrix");
 
                 bmc.PutVector(Full_0Vars, "Full_0Vars");
 
-                bmc.Cmd("output = ones(2,1);");
+                bmc.Cmd("output = ones(4,1);");
+
 
                 bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
-               
+
+                //if(Comparison) {
+                //    bmc.Cmd("compMtx = ReadMsr('comp.txt');");
+                //    bmc.Cmd("output(2) = norm(compMtx - FullMatrix(Full_0Vars,Full_0Vars), inf);");
+                //    bmc.Cmd("output(3) = condest(compMtx);");
+                //}
 
                 bmc.GetMatrix(output, "output");
                 bmc.Execute(false);
@@ -591,8 +641,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
                 
 
-                Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
-
+                Console.WriteLine($"MATLAB condition number vars {VarNames}: {condestFull:0.###e-00}");
+                //if(Comparison) {
+                //    Console.WriteLine($"MATLAB condition number check matrix vars {VarNames}: {output[2, 0]:0.###e-00}");
+                //    Console.WriteLine($"MATLAB matrix check {VarNames}: {output[1, 0]:0.###e-00}");
+                //}
                 
                 return condestFull;
             }

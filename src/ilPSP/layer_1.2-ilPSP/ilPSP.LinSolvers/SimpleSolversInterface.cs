@@ -53,6 +53,41 @@ namespace ilPSP.LinSolvers {
             }
         }
 
+        static string CheckResidual<V,W>(this IMutableMatrixEx Matrix, V X, W B, Type t)
+            where V : IList<double>
+            where W : IList<double> //
+        {
+            double[] Residual = B.ToArray();
+            if(object.ReferenceEquals(B, Residual))
+                throw new ApplicationException("ToArray does not work as expected.");
+            double RhsNorm = B.L2NormPow2().MPISum().Sqrt();
+            double MatrixInfNorm = Matrix.InfNorm();
+            Matrix.SpMV(-1.0, X, 1.0, Residual);
+
+            double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
+            double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+            double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
+            double RelResidualNorm = ResidualNorm / Denom;
+
+
+            if(RelResidualNorm > 1.0e-10) {
+                string ErrMsg;
+                using(var stw = new System.IO.StringWriter()) {
+                    stw.WriteLine("Linear Solver: High residual from direct solver " + t + ".");
+                    stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
+                    stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
+                    stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
+                    stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
+                    stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
+
+                    ErrMsg = stw.ToString();
+                }
+                return ErrMsg;
+            } else {
+                return null;
+            }
+        }
+
         /// <summary>
         /// Solves a linear system using a direct solver.
         /// </summary>
@@ -77,40 +112,7 @@ namespace ilPSP.LinSolvers {
             if(Matrix.MPI_Comm.Equals(csMPI.Raw._COMM.SELF)) // solve matrices on SELF always sequentially!
                 SolverFallbackSeq = SolverFallbackSeq.Skip(1).ToArray();
 
-            string CheckResidual(Type t) {
-                double[] Residual = B.ToArray();
-                if(object.ReferenceEquals(B, Residual))
-                    throw new ApplicationException("ToArray does not work as expected.");
-                double RhsNorm = B.L2NormPow2().MPISum().Sqrt();
-                double MatrixInfNorm = Matrix.InfNorm();
-                Matrix.SpMV(-1.0, X, 1.0, Residual);
-
-                double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-                double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
-                double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
-                double RelResidualNorm = ResidualNorm / Denom;
-
-
-                if(RelResidualNorm > 1.0e-10) {
-                    string ErrMsg;
-                    using(var stw = new System.IO.StringWriter()) {
-                        stw.WriteLine("Linear Solver: High residual from direct solver " + t + ".");
-                        stw.WriteLine("    L2 Norm of RHS:         " + RhsNorm);
-                        stw.WriteLine("    L2 Norm of Solution:    " + SolutionNorm);
-                        stw.WriteLine("    L2 Norm of Residual:    " + ResidualNorm);
-                        stw.WriteLine("    Relative Residual norm: " + RelResidualNorm);
-                        stw.WriteLine("    Matrix Inf norm:        " + MatrixInfNorm);
-
-                        ErrMsg = stw.ToString();
-                    }
-                    return ErrMsg;
-                } else {
-                    return null;
-                }
-            }
-
-
-
+            
             //*
 
             string LastError = null;
@@ -120,7 +122,7 @@ namespace ilPSP.LinSolvers {
                     slv.DefineMatrix(Matrix);
                     var SolRes = slv.Solve(X, B.ToArray());
 
-                    LastError = CheckResidual(slv.GetType());
+                    LastError = CheckResidual(Matrix, X, B, slv.GetType());
                     if(LastError == null) {
                         //Console.WriteLine("residual is fine.");
                         return;
@@ -152,6 +154,56 @@ namespace ilPSP.LinSolvers {
 
                     return slv.LastCondNo;
                 }
+            }
+        }
+
+        /// <summary>
+        /// Computes the minimal Eigenvalue and related Eigenvector using PARDISO
+        /// </summary>
+        static public (double lambdaMin, double[] V) MinimalEigen(this IMutableMatrixEx Mtx, double tol = 1.0e-6) {
+           
+            int L = Mtx.RowPartitioning.LocalLength;
+            using(var slv = new ilPSP.LinSolvers.PARDISO.PARDISOSolver()) {
+                slv.CacheFactorization = true;
+                slv.DefineMatrix(Mtx);
+
+                double invMinLambda = 0;
+                double[] Evect = new double[L];
+                double[] tmp = new double[L];
+
+                Evect.FillRandom();
+                for(int i = 0; i < 100; i++) {
+                    double norm = Evect.MPI_L2Norm();
+                    Evect.ScaleV(1.0 / norm);
+                    slv.Solve(tmp, Evect);
+
+
+                    string Correcto = Mtx.CheckResidual(tmp, Evect, slv.GetType());
+                    if(Correcto != null) {
+                        // PARDISO seems unable to solve the system:
+                        // use the fallback levels in other routine:
+
+                        Mtx.Solve_Direct(tmp, Evect);
+                    }
+
+                    // Monitor change in Eigenvalue:
+                    double prev_invMinLambda = invMinLambda;
+                    invMinLambda = tmp.MPI_InnerProd(Evect);
+                    double ChangeNorm = Math.Abs(invMinLambda - prev_invMinLambda)/Math.Max(invMinLambda.Abs(), prev_invMinLambda.Abs());
+                    //Console.WriteLine(i + " -- Change norm is: " + ChangeNorm);
+
+                    // prepare for next loop:
+                    var a = Evect;
+                    Evect = tmp;
+                    tmp = a;
+
+                    if(ChangeNorm < tol)
+                        break;
+                }
+
+                double normFin = Evect.MPI_L2Norm();
+                Evect.ScaleV(1.0 / normFin);
+                return (1.0 / invMinLambda, Evect);
             }
         }
     }

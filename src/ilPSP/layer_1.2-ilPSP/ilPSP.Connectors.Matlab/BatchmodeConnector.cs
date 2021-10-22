@@ -602,6 +602,13 @@ namespace ilPSP.Connectors.Matlab {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public void Cmd() {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Quick hack to return the 2nd output argument from output from `"[V, C] = voronoin(...);"`.
         /// </summary>
         public void GetStaggeredIntArray(int[][] A, string MatlabName) {
