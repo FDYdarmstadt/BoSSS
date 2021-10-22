@@ -44,6 +44,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
         public XRigid() {
+            
         }
 
         public void SetParameters(double[] pos, double anglevelocity, double partRadius, int SpaceDim) {
