@@ -264,7 +264,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // ... otherwise, we do the best we can and iterate until no further improvement can be made
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    tr.Info("NEWTON: trying to converge as far as possible");
+                    tr.Info($"NEWTON: trying to converge as far as possible (ConvCrit is {ConvCrit})");
                     bool terminateLoop = false;
 
 
@@ -315,7 +315,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // reached minimum convergence criterion
 
                             double ALNR = LastAverageNormReduction();
-                            tr.Info($"minimal convergence criterion not reached, LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
+                            tr.Info($"minimal build-in convergence criterion reached ({_MinConvCrit * fnorminit + _MinConvCrit}), LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
 #if TEST
                             ALNR = 0;
 #endif
@@ -329,14 +329,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 //success = true;
                                 //terminateLoop = true;
                             }
+                        } else {
+                            tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
                         }
 
                         if(itc >= MaxIter) {
                             // run out of iterations
+                            tr.Info($"Maximum number of iterations reached ({MaxIter}) - terminating.");
                             terminateLoop = true;
                         }
                     } else {
-                        tr.Info($"**NOT** terminating now, minimal convergence criterion not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
+                        tr.Info($"**NOT** terminating now, minimal number of iterations (iteration {itc}, minimum is {MinIter}) not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
                     }
 
                     return terminateLoop;
@@ -606,7 +609,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // --------------------------
 
             double[] step = new double[CurSol.Length];
-                
 
             // How should the inverse of the Jacobian be approximated?
             if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
@@ -625,8 +627,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                 step.ScaleV(-1);
-
-
+                
             } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
                 // Option: use 'external' solver
@@ -648,9 +649,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                 }
 
+                //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
+                //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                 solver.Solve(step, CurRes);
                 step.ScaleV(-1);
-
             } else {
                 throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
             }
@@ -663,6 +665,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 OldSolClone = null;
             }
+
+            //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
+            //var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
+            //DGField pressure = SolutionVec.Mapping.Fields[2];
+            //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
             switch(Globalization) {
                 case GlobalizationOption.Dogleg:
@@ -686,25 +693,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 base.AbstractOperator.SolverSafeguard(oldSol, newSol);
             }
 
-
-
             // fix the pressure
             // ----------------
             if(CurrentLin.FreeMeanValue.Any()) {
+                if(itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
+                    base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
                 if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
+                int RefCellLocal = CurrentLin.ReferenceCell_local;
+
+                double[] MeanValues = new double[flds.Length];
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
+
                     if(FreeMeanValue[iFld]) {
-                        double mean = flds[iFld].GetMeanValueTotal(null);
-                        flds[iFld].AccConstant(-mean);
+                        //double mean = flds[iFld].GetMeanValueTotal(null);
+
+                        if(RefCellLocal >= 0)
+                            MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        //flds[iFld].AccConstant(-mean);
+                    }
+                }
+                MeanValues = MeanValues.MPISum();
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+
+                    if(FreeMeanValue[iFld]) {
+                        //Console.WriteLine("Mean value before correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                        flds[iFld].AccConstant(-MeanValues[iFld]);
+                        //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                     }
                 }
             }
-
+            
 
 
             // update linearization
@@ -719,9 +743,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            //// plotting during Newton iterations:  
+            //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
+            //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
+
             // residual evaluation & callback
             // ------------------------------
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);
             norm_CurRes = CurRes.MPI_L2Norm();
 
 

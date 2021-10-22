@@ -652,7 +652,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <paramref name="fieldName"/> in the given
         /// <paramref name="timesteps"/> by computing the errors with respect
         /// to the solution on the finest corresponding grid by making use of
-        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors"/>.
+        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors(IList{IEnumerable{DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, NormType)"/>.
         /// The result is then grouped according to the polynomial degree of field
         /// <paramref name="fieldName"/>.
         /// </summary>
@@ -687,41 +687,49 @@ namespace BoSSS.Application.BoSSSpad {
                 double[] resolution;
                 Guid[] tsiIds;
 
-                if (normType == NormType.L2_embedded) {
-                    DGFieldComparison.ComputeErrors(
-                        new string[] { fieldName },
+                //if(normType == NormType.L2_embedded) {
+                //    DGFieldComparisonEmbedded.ComputeErrors_L2(
+                //        new string[] { fieldName },
+                //        group.ToArray(),
+                //        out resolution,
+                //        out DOFs,
+                //        out errors,
+                //        out tsiIds);
+                //} else if(normType == NormType.L2_approximate) {
+                //    DGFieldComparisonNonEmb.ComputeErrors_L2(
+                //        new string[] { fieldName },
+                //        group.ToArray(),
+                //        out resolution,
+                //        out DOFs,
+                //        out errors,
+                //        out tsiIds);
+                //} else if(normType == NormType.L2noMean_approximate) {
+                //    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
+                //        new string[] { fieldName },
+                //        group.ToArray(),
+                //        out resolution,
+                //        out DOFs,
+                //        out errors,
+                //        out tsiIds);
+                //} else if(normType == NormType.H1_approximate) {
+                //    DGFieldComparisonNonEmb.ComputeErrors_H1(
+                //        new string[] { fieldName },
+                //        group.ToArray(),
+                //        out resolution,
+                //        out DOFs,
+                //        out errors,
+                //        out tsiIds);
+                //} else {
+                //    throw new NotImplementedException();
+                //}
+                DGFieldComparison.ComputeErrors(new string[] { fieldName },
                         group.ToArray(),
                         out resolution,
                         out DOFs,
                         out errors,
-                        out tsiIds);
-                } else if(normType == NormType.L2_approximate ) {
-                    DGFieldComparisonNonEmb.ComputeErrors_L2(
-                        new string[] { fieldName },
-                        group.ToArray(),
-                        out resolution,
-                        out DOFs,
-                        out errors,
-                        out tsiIds);
-                } else if(normType == NormType.L2noMean_approximate ) {
-                    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
-                        new string[] { fieldName },
-                        group.ToArray(),
-                        out resolution,
-                        out DOFs,
-                        out errors,
-                        out tsiIds);
-                }else if(normType == NormType.H1_approximate ) {
-                    DGFieldComparisonNonEmb.ComputeErrors_H1(
-                        new string[] { fieldName },
-                        group.ToArray(),
-                        out resolution,
-                        out DOFs,
-                        out errors,
-                        out tsiIds);
-                } else {
-                    throw new NotImplementedException();
-                }
+                        out tsiIds,
+                        normType);
+
 
                 double dim = timesteps.First().Grid.SpatialDimension;
 

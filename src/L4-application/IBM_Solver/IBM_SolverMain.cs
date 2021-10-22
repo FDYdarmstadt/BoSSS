@@ -836,7 +836,7 @@ namespace BoSSS.Application.IBM_Solver {
                 //base.RegisterField(Grad_p);
 
                 #region Get Drag and Lift Coefficiant
-                ///*
+                //*
                 //if (phystime == 0 && Log_DragAndLift==null) {
                 //    if ((base.MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 //        Log_DragAndLift = base.DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
@@ -855,7 +855,7 @@ namespace BoSSS.Application.IBM_Solver {
                 ////oldtorque = torque;
                 //torque = IBMSolverUtils.GetTorque(Velocity, Pressure, this.LsTrk, this.Control.PhysicalParameters.mu_A / this.Control.PhysicalParameters.rho_A, this.Control.particleRadius);
 
-                ///*
+                //*
                 //if ((base.MPIRank == 0) && (Log_DragAndLift != null)) {
                 //    string line;
                 //    if (this.GridData.SpatialDimension == 3) {

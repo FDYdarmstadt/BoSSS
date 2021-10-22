@@ -181,6 +181,10 @@ namespace BoSSS.Application.TutorialTests {
     /// Runs some Jupyter Notebook or old BoSSS worksheet (.bws, .tex) as a test.
     /// </summary>
     public class NotebookRunner : IDisposable {
+
+        /// <summary>
+        /// 
+        /// </summary>
         public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
             NotebookPartialPath = __NotebookPartialPath;
             DirectoryOffset = __DirectoryOffset;
@@ -194,6 +198,12 @@ namespace BoSSS.Application.TutorialTests {
             OneTimeTearDown();
         }
 
+        /// <summary>
+        /// see https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-dispose
+        /// </summary>
+        protected virtual void Dispose(bool disposing) {
+            this.Dispose();
+        }
 
 
         string NotebookPartialPath;
