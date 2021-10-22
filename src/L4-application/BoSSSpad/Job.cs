@@ -646,7 +646,7 @@ namespace BoSSS.Application.BoSSSpad {
                         alreadyKnow = ReadExitCache(out bpc_status, out ExitCode);
 
                         if(!alreadyKnow)
-                            (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
+                            (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
                         ExitCodeStr = ExitCode.HasValue ? ExitCode.Value.ToString() : "null";
                         this.ExitCodeCache = ExitCode;
                     } catch(Exception e) {
@@ -760,6 +760,12 @@ namespace BoSSS.Application.BoSSSpad {
                     return new DirectoryInfo[0];
 
                 bool DirMatch(DirectoryInfo dir1, DirectoryInfo dir2) {
+                    if (dir1 == null && dir2 == null)
+                        return true;
+                    if (dir1 == null) // dir2 must be not null
+                        return false;
+                    if (dir2 == null) // dir1 must be not null
+                        return false;
                     string _dir1 = dir1.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     string _dir2 = dir2.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     return _dir1.Equals(_dir2);
@@ -1277,7 +1283,7 @@ namespace BoSSS.Application.BoSSSpad {
                     var rr = bpc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
-                    Deployment dep = AllDeployments.SingleOrDefault(d => d.BatchProcessorIdentifierToken.Equals(rr.id));
+                    Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
                     if(dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
