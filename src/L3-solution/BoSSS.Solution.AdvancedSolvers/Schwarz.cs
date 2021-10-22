@@ -985,7 +985,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 string Caching = (blockSolvers[iPart] is PARDISOSolver) && (blockSolvers[iPart] as PARDISOSolver).CacheFactorization ? "caching" : "nocaching";
                                 using (new BlockTrace(Caching,tr)) {
                                     bool DelayedCaching = ActivateCachingOfSolver(iPart);
-                                    if (DelayedCaching) Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
+                                    if (DelayedCaching) 
+                                        Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
                                     blockSolvers[iPart].Solve(xi, bi);
                                     bool IsDisposed = DisposeSchwarzBlocks(iPart);
                                 }
