@@ -567,6 +567,9 @@ namespace BoSSS.Application.BoSSSpad {
                 ExitCode = null;
                 status = JobStatus.Unknown;
 
+                if (this.DeploymentDirectory == null)
+                    return false;
+
                 string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
                 if(!File.Exists(path))
                     return false;
@@ -1233,7 +1236,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-
+                //Debugger.Launch();
                 if(DeleteOldDeploymentsAndSessions || UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
