@@ -563,11 +563,55 @@ namespace BoSSS.Application.BoSSSpad {
             int? ExitCodeCache = null;
 
 
-            bool ReadExitCache() {
+            bool ReadExitCache(out JobStatus status, out int? ExitCode) {
+                ExitCode = null;
+                status = JobStatus.Unknown;
+
                 string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
                 if(!File.Exists(path))
                     return false;
 
+                try {
+                    using(var str = new StreamReader(path)) {
+                        string l1 = str.ReadLine();
+                        status = Enum.Parse<JobStatus>(l1);
+                        string l2 = str.ReadLine();
+                        if(!l2.IsEmptyOrWhite()) {
+                            ExitCode = int.Parse(l2);
+                        }
+                    }
+
+                } catch (Exception) {
+                    return false;
+                }
+                return true;
+            }
+
+            /// <summary>
+            /// If job deployment is finished (<see cref="JobStatus.FinishedSuccessful"/> or <see cref="JobStatus.FailedOrCanceled"/>),
+            /// the <paramref name="status"/> and <paramref name="ExitCode"/> are stored in a file within the deployment directory.
+            /// 
+            /// This has two advantages:
+            /// - less load for the job manager
+            /// - most job managers forget jobs after a couple of days, so we better rememeber.
+            /// </summary>
+            void RememberCache(JobStatus status, int? ExitCode) {
+                
+
+                string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
+                
+
+                try {
+                    using(var str = new StreamWriter(path)) {
+                        str.WriteLine(status.ToString());
+                        if(ExitCode != null)
+                            str.WriteLine(ExitCode.Value);
+                        str.Flush();
+                    }
+
+                } catch (Exception) {
+                   
+                }
 
             }
 
@@ -586,8 +630,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                     JobStatus bpc_status;
                     int? ExitCode;
+                    bool alreadyKnow = true;
                     try {
-                        (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
+
+                        alreadyKnow = ReadExitCache(out bpc_status, out ExitCode);
+
+                        if(!alreadyKnow)
+                            (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
                         //string ExitCodeStr = ExitCode.HasValue ? ExitCode.Value.ToString() : "null";
                         this.ExitCodeCache = ExitCode;
                     } catch(Exception e) {
@@ -601,6 +650,8 @@ namespace BoSSS.Application.BoSSSpad {
                         StatusCache = bpc_status;
                         if(ExitCode == null || ExitCode != 0)
                             throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FinishedSuccessful}, but exit code is {ExitCodeStr} -- expecting 0.");
+                        if(!alreadyKnow)
+                            RememberCache(bpc_status, ExitCode);
                     }
                         
                     if(bpc_status == JobStatus.FailedOrCanceled) {
@@ -608,7 +659,8 @@ namespace BoSSS.Application.BoSSSpad {
                         if(ExitCode == null || ExitCode == 0)
                             this.ExitCodeCache = -655321;
                         //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
-
+                        if(!alreadyKnow)
+                            RememberCache(bpc_status, ExitCode);
                     }
 
                     return bpc_status;
