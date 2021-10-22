@@ -522,15 +522,19 @@ namespace BoSSS.Application.BoSSSpad {
             public string BatchProcessorIdentifierToken {
                 get {
                     if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
-                        string DD = this.DeploymentDirectory.FullName;
-                        if(DD != null && Directory.Exists(DD))
-                        try {
-                            var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                            m_BatchProcessorIdentifierToken = l.Trim();
+                        string DD = this.DeploymentDirectory?.FullName;
+                        if (DD != null && Directory.Exists(DD)) {
+                            try
+                            {
+                                var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                                m_BatchProcessorIdentifierToken = l.Trim();
 
-                        } catch(Exception) {
-                            // job was probably deployed, but never submitted
-                            // ignore this.
+                            }
+                            catch (Exception)
+                            {
+                                // job was probably deployed, but never submitted
+                                // ignore this.
+                            }
                         }
                     }
 
@@ -599,6 +603,8 @@ namespace BoSSS.Application.BoSSSpad {
             /// - most job managers forget jobs after a couple of days, so we better rememeber.
             /// </summary>
             void RememberCache(JobStatus status, int? ExitCode) {
+
+
                 
 
                 string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
@@ -1236,7 +1242,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                //Debugger.Launch();
+                Debugger.Launch();
                 if(DeleteOldDeploymentsAndSessions || UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
