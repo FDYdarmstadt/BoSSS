@@ -143,89 +143,97 @@ namespace BoSSS.Solution.Statistic {
         /// </param>
         /// <returns></returns>
         static public double L2Distance(this ConventionalDGField A, ConventionalDGField B, bool IgnoreMeanValue = false, CellQuadratureScheme scheme = null) {
-            int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
-            int quadOrder = maxDeg * 3 + 3;
+            using (var tr = new FuncTrace()) {
+                int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
+                int quadOrder = maxDeg * 3 + 3;
+                tr.Info($"L2Distance {A.Identification} -- {B.Identification}...");
+                tr.Info($"Quad order degree: {quadOrder}, for field {A.Identification} deg = {A.Basis.Degree}, field {B.Identification} deg = {B.Basis.Degree}");
 
-            if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
-                throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-            if(object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
-                // ++++++++++++++
-                // equal meshes
-                // ++++++++++++++
-                CellMask domain = scheme != null ? scheme.Domain : null;
+                if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+                    throw new ArgumentException("Both fields must have the same spatial dimension.");
 
-                double errPow2 = A.L2Error(B, domain).Pow2();
+                if (object.ReferenceEquals(A.GridDat, B.GridDat) && false) {
+                    // ++++++++++++++
+                    // equal meshes
+                    // ++++++++++++++
+                    CellMask domain = scheme != null ? scheme.Domain : null;
 
-                if(IgnoreMeanValue) {
-                    // domain volume
-                    double Vol = 0;
-                    int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
-                        Vol += A.GridDat.iGeomCells.GetCellVolume(j);
+                    tr.Info("equal meshes");
+                    double errPow2 = A.L2Error(B, domain).Pow2();
+                    tr.Info("error^2 = " + errPow2);
+                    if (IgnoreMeanValue) {
+                        // domain volume
+                        double Vol = 0;
+                        int J = A.GridDat.iGeomCells.NoOfLocalUpdatedCells;
+                        for (int j = 0; j < J; j++) {
+                            Vol += A.GridDat.iGeomCells.GetCellVolume(j);
+                        }
+                        Vol = Vol.MPISum();
+
+                        // mean value
+                        double mean = A.GetMeanValueTotal(domain) - B.GetMeanValueTotal(domain);
+                        tr.Info("mean value = " + mean);
+
+                        // Note: for a field p, we have 
+                        // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
+                        return Math.Sqrt((errPow2 - mean * mean * Vol).Abs());
+                    } else {
+                        tr.Info("norm WITH mean value");
+                        return Math.Sqrt(errPow2);
                     }
-                    Vol = Vol.MPISum();
 
-                    // mean value
-                    double mean = A.GetMeanValueTotal(domain) - B.GetMeanValueTotal(domain);
-
-                    // Note: for a field p, we have 
-                    // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
-                    return Math.Sqrt((errPow2 - mean * mean * Vol).Abs());
                 } else {
-                    return Math.Sqrt(errPow2);
-                }
+                    // ++++++++++++++++++
+                    // different meshes
+                    // ++++++++++++++++++
 
-            } else {
-                // ++++++++++++++++++
-                // different meshes
-                // ++++++++++++++++++
-
-
-                DGField fine, coarse;
-                if(A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
-                    fine = A;
-                    coarse = B;
-                } else {
-                    fine = B;
-                    coarse = A;
-                }
-
-                var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
-
-                var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
-
-                void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
-                    int L = input.GetLength(0);
-                    Debug.Assert(output.GetLength(0) == L);
-
-                    eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
-
-                }
-
-
-                double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
-
-                if(IgnoreMeanValue == true) {
-
-                    // domain volume
-                    double Vol = 0;
-                    int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
-                    for(int j = 0; j < J; j++) {
-                        Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
+                    tr.Info("Different meshes...");
+                    DGField fine, coarse;
+                    if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                        fine = A;
+                        coarse = B;
+                    } else {
+                        fine = B;
+                        coarse = A;
                     }
-                    Vol = Vol.MPISum();
 
-                    // mean value times domain volume 
-                    double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
+                    var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
+                    var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
+
+                    void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
+                        int L = input.GetLength(0);
+                        Debug.Assert(output.GetLength(0) == L);
+
+                        eval.Evaluate(1.0, new DGField[] { fine }, input, 0.0, output.ResizeShallow(L, 1));
+
+                    }
 
 
-                    // Note: for a field p, we have 
-                    // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
-                    return Math.Sqrt(errPow2 - meanVol * meanVol / Vol);
-                } else {
+                    double errPow2 = coarse.LxError(FineEval, (double[] X, double fC, double fF) => (fC - fF).Pow2(), CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
+                    tr.Info("error^2 = " + errPow2);
 
-                    return Math.Sqrt(errPow2);
+                    if (IgnoreMeanValue == true) {
+
+                        // domain volume
+                        double Vol = 0;
+                        int J = coarse.GridDat.iGeomCells.NoOfLocalUpdatedCells;
+                        for (int j = 0; j < J; j++) {
+                            Vol += coarse.GridDat.iGeomCells.GetCellVolume(j);
+                        }
+                        Vol = Vol.MPISum();
+
+                        // mean value times domain volume 
+                        double meanVol = coarse.LxError(FineEval, (double[] X, double fC, double fF) => fC - fF, CompQuadRule, Quadrature_ChunkDataLimitOverride: int.MaxValue);
+                        tr.Info("mean value * domain volume = " + meanVol + ", domain volume = " + Vol);
+
+                        // Note: for a field p, we have 
+                        // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
+                        return Math.Sqrt(Math.Max(0, errPow2 - meanVol * meanVol / Vol));
+                    } else {
+                        tr.Info("norm WITH mean value");
+                        return Math.Sqrt(errPow2);
+                    }
                 }
             }
         }
@@ -316,7 +324,7 @@ namespace BoSSS.Solution.Statistic {
 
             // Note: for a field p, we have 
             // || p - <p> ||^2 = ||p||^2 - <p>^2*vol
-            return Math.Sqrt((errPow2 - mean * mean * Vol).Abs());
+            return Math.Sqrt(Math.Max(0, errPow2 - mean * mean * Vol));
 
         }
     }

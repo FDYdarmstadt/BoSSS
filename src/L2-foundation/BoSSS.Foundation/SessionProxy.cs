@@ -244,7 +244,12 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public IDictionary<string, object> KeysAndQueries {
             get {
-                return RealSessionInfo.KeysAndQueries;
+                //DateTime st = DateTime.Now;
+                //Console.Write("Accessing KeysAndQueries...");
+                var ret =  RealSessionInfo.KeysAndQueries;
+                //TimeSpan duration = DateTime.Now - st;
+                //Console.WriteLine(" done. (took " + duration + ").");
+                return ret;
             }
         }
 

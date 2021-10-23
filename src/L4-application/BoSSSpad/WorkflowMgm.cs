@@ -257,6 +257,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
+                //Console.WriteLine("Updatting Sessions...");
+                DateTime st = DateTime.Now;
                 {
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
@@ -283,6 +285,8 @@ namespace BoSSS.Application.BoSSSpad {
                     m_Sessions = ret.ToArray();
                     m_Sessions_CacheTime = DateTime.Now;
                 }
+                //TimeSpan duration = DateTime.Now - st;
+                //Console.WriteLine("done. (took " + duration + ")");
 
                 return m_Sessions;
             }
