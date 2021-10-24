@@ -474,10 +474,6 @@ namespace BoSSS.Foundation {
             // pass 2: compute L2 distance
             double L2distPow2 = LxError(function, (double[] X, double thisVal, double functionVal) => (thisVal - functionVal - meanDiff).Pow2(), scheme.SaveCompile(this.GridDat, order));
 
-
-            Console.WriteLine("######## Mean difference: " + meanDiff);
-            Console.WriteLine("######## L2 distance:     " + L2distPow2);
-
             return L2distPow2.Sqrt();
 
         }

@@ -19,6 +19,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.Statistic;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -679,81 +680,82 @@ namespace BoSSS.Application.BoSSSpad {
         /// the result.
         /// </returns>
         public static Plot2Ddata ToEstimatedGridConvergenceData(this IEnumerable<ITimestepInfo> timesteps, string fieldName, bool xAxis_Is_hOrDof = true, NormType normType = NormType.L2_approximate) {
-            Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
-            foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
+            using (var tr = new FuncTrace()) {
+                Dictionary<string, double[][]> dataGroups = new Dictionary<string, double[][]>();
+                foreach (var group in timesteps.GroupBy(t => t.Fields.Find(fieldName).Basis.Degree)) {
+                    tr.Info($"ToEstimatedGridConvergenceData {fieldName}...");
+                    Dictionary<string, long[]> DOFs;
+                    Dictionary<string, double[]> errors;
+                    double[] resolution;
+                    Guid[] tsiIds;
 
-                Dictionary<string, long[]> DOFs;
-                Dictionary<string, double[]> errors;
-                double[] resolution;
-                Guid[] tsiIds;
-
-                //if(normType == NormType.L2_embedded) {
-                //    DGFieldComparisonEmbedded.ComputeErrors_L2(
-                //        new string[] { fieldName },
-                //        group.ToArray(),
-                //        out resolution,
-                //        out DOFs,
-                //        out errors,
-                //        out tsiIds);
-                //} else if(normType == NormType.L2_approximate) {
-                //    DGFieldComparisonNonEmb.ComputeErrors_L2(
-                //        new string[] { fieldName },
-                //        group.ToArray(),
-                //        out resolution,
-                //        out DOFs,
-                //        out errors,
-                //        out tsiIds);
-                //} else if(normType == NormType.L2noMean_approximate) {
-                //    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
-                //        new string[] { fieldName },
-                //        group.ToArray(),
-                //        out resolution,
-                //        out DOFs,
-                //        out errors,
-                //        out tsiIds);
-                //} else if(normType == NormType.H1_approximate) {
-                //    DGFieldComparisonNonEmb.ComputeErrors_H1(
-                //        new string[] { fieldName },
-                //        group.ToArray(),
-                //        out resolution,
-                //        out DOFs,
-                //        out errors,
-                //        out tsiIds);
-                //} else {
-                //    throw new NotImplementedException();
-                //}
-                DGFieldComparison.ComputeErrors(new string[] { fieldName },
-                        group.ToArray(),
-                        out resolution,
-                        out DOFs,
-                        out errors,
-                        out tsiIds,
-                        normType);
-
-
-                double dim = timesteps.First().Grid.SpatialDimension;
-
-                Debug.Assert(errors.ContainsKey(fieldName));
-                Debug.Assert(errors[fieldName].Length == resolution.Length);
-
-                Debug.Assert(DOFs.ContainsKey(fieldName));
-                Debug.Assert(DOFs[fieldName].Length == resolution.Length);
+                    //if(normType == NormType.L2_embedded) {
+                    //    DGFieldComparisonEmbedded.ComputeErrors_L2(
+                    //        new string[] { fieldName },
+                    //        group.ToArray(),
+                    //        out resolution,
+                    //        out DOFs,
+                    //        out errors,
+                    //        out tsiIds);
+                    //} else if(normType == NormType.L2_approximate) {
+                    //    DGFieldComparisonNonEmb.ComputeErrors_L2(
+                    //        new string[] { fieldName },
+                    //        group.ToArray(),
+                    //        out resolution,
+                    //        out DOFs,
+                    //        out errors,
+                    //        out tsiIds);
+                    //} else if(normType == NormType.L2noMean_approximate) {
+                    //    DGFieldComparisonNonEmb.ComputeErrors_L2noMean(
+                    //        new string[] { fieldName },
+                    //        group.ToArray(),
+                    //        out resolution,
+                    //        out DOFs,
+                    //        out errors,
+                    //        out tsiIds);
+                    //} else if(normType == NormType.H1_approximate) {
+                    //    DGFieldComparisonNonEmb.ComputeErrors_H1(
+                    //        new string[] { fieldName },
+                    //        group.ToArray(),
+                    //        out resolution,
+                    //        out DOFs,
+                    //        out errors,
+                    //        out tsiIds);
+                    //} else {
+                    //    throw new NotImplementedException();
+                    //}
+                    DGFieldComparison.ComputeErrors(new string[] { fieldName },
+                            group.ToArray(),
+                            out resolution,
+                            out DOFs,
+                            out errors,
+                            out tsiIds,
+                            normType);
 
 
-                //double[][] resolutionsAndErrors = new double[2][] {
-                //    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
-                //    errors[fieldName] };
+                    double dim = timesteps.First().Grid.SpatialDimension;
 
-                double[] xValues = xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => Math.Pow((double)ix, 1.0 / dim)).ToArray();
-                double[] yValues = errors[fieldName];
-                if(xAxis_Is_hOrDof == false)
-                    // data is sorted according to mesh width, this may not be equal to sorting according to No. of. DOF 
-                    Array.Sort(xValues, yValues);
+                    Debug.Assert(errors.ContainsKey(fieldName));
+                    Debug.Assert(errors[fieldName].Length == resolution.Length);
 
-                dataGroups.Add(group.Key.ToString(), new double[2][] { xValues, yValues });
+                    Debug.Assert(DOFs.ContainsKey(fieldName));
+                    Debug.Assert(DOFs[fieldName].Length == resolution.Length);
+
+                    //double[][] resolutionsAndErrors = new double[2][] {
+                    //    xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => (double)ix).ToArray(),
+                    //    errors[fieldName] };
+
+                    double[] xValues = xAxis_Is_hOrDof ? resolution : DOFs[fieldName].Select(ix => Math.Pow((double)ix, 1.0 / dim)).ToArray();
+                    double[] yValues = errors[fieldName];
+                    if (xAxis_Is_hOrDof == false)
+                        // data is sorted according to mesh width, this may not be equal to sorting according to No. of. DOF 
+                        Array.Sort(xValues, yValues);
+
+                    dataGroups.Add(group.Key.ToString(), new double[2][] { xValues, yValues });
+                }
+
+                return new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY();
             }
-
-            return new Plot2Ddata(dataGroups.ToArray()).WithLogX().WithLogY();
         }
 
         /// <summary>
