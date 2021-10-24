@@ -1386,7 +1386,7 @@ namespace BoSSS.Solution.XNSECommon {
             int D = LsTrk.GridDat.SpatialDimension;
             int p = LevSet.Basis.Degree;
             if (sgrd == null)
-                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(0);
+                sgrd = LsTrk.Regions.GetCutCellSubgrid4LevSet(1);
 
             int quadRule = (quadRuleOrderForNodeSet < 0) ? p * 2 : quadRuleOrderForNodeSet;
             NodeSet[] Nodes = LsTrk.GridDat.Grid.RefElements.Select(Kref => Kref.GetQuadratureRule(quadRule).Nodes).ToArray();
@@ -1394,7 +1394,7 @@ namespace BoSSS.Solution.XNSECommon {
             int K = Nodes.Max(nds => nds.NoOfNodes);
             int numP = Jsub * K;
 
-            var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(LsTrk, 0, sgrd, Nodes);
+            var cp = new BoSSS.Solution.LevelSetTools.ClosestPointFinder(LsTrk, 1, sgrd, Nodes);
 
             MultidimensionalArray ClosestPoints = cp.X0_global_Resorted;
 

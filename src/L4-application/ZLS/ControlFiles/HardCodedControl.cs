@@ -5,6 +5,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
@@ -12,6 +13,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using ZwoLevelSetSolver.SolidPhase;
+using ZwoLevelSetSolver.ZLSinSituPostProcessing;
 
 namespace ZwoLevelSetSolver.ControlFiles {
 
@@ -885,6 +887,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
+            C.PostprocessingModules.Add(new BeamPositionLogging());
 
             int D = 2;
 
@@ -990,7 +993,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double power = 2;
             double a = 0.05;
             double b = 0.475;
-            double velX = 0.05;
+            double velX = 0.01;
 
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
@@ -1087,14 +1090,198 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-2;
+            double dt = 1e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 50;
             C.NoOfTimesteps = 500000;
+            C.saveperiod = 1;
+
+            #endregion
+
+            return C;
+        }
+
+        public static ZLS_Control InvertedFlagint(int p = 2, int kelem = 25, int AMRlvl = 0)
+        {
+            ZLS_Control C = new ZLS_Control(p);
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+            C.AgglomerationThreshold = 0.3;
+            C.NoOfMultigridLevels = 1;
+            //C.PostprocessingModules.Add(new BeamPositionLogging());
+
+            int D = 2;
+
+            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
+
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
+            //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
+            //_DbPath = @"D:\BoSSS src\DB"
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.savetodb = false;
+            C.ProjectName = "ZLSTestVerticalBeam";
+            //C.ProjectDescription = "Vertical Beam in channel";
+
+            C.ContinueOnIoError = false;
+
+            //C.LogValues = XNSE_Control.LoggingValues.MovingContactLine;
+            //C.PostprocessingModules.Add(new MovingContactLineLogging());
+
+            #endregion
+
+            // Physical Parameters
+            // ===================
+            #region physics
+
+            C.PhysicalParameters.rho_A = 1.2;
+            C.PhysicalParameters.rho_B = 1.2;
+            C.PhysicalParameters.mu_A = 1.51e-5;
+            C.PhysicalParameters.mu_B = 1.51e-5;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            C.Material = new Flag_Test();
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double xSize = 1.2;
+            double ySize = 1.2;
+
+            C.GridFunc = delegate ()
+            {
+
+                double[] Xnodes = GenericBlas.Linspace(0, xSize, kelem + 1);
+                double[] Ynodes = GenericBlas.Linspace(-ySize/2, ySize/2, kelem + 1);
+
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
+
+                grd.EdgeTagNames.Add(1, "freeslip_lower");
+                grd.EdgeTagNames.Add(2, "freeslip_upper");
+                grd.EdgeTagNames.Add(3, "pressure_outlet_left");
+                grd.EdgeTagNames.Add(4, "velocity_inlet_right");
+
+                grd.DefineEdgeTags(delegate (double[] X)
+                {
+                    byte et = 0;
+
+                    if (Math.Abs(X[1] + ySize/2) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - ySize/2) <= 1.0e-8)
+                        et = 2;
+                    if (Math.Abs(X[0] ) <= 1.0e-8)
+                        et = 3;
+                    if (Math.Abs(X[0] - xSize) <= 1.0e-8)
+                        et = 4;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // Initial Values
+            // ==============
+            #region init
+
+            double power = 2;
+            double a = 0.51;
+            double b = 0.01;
+            double velX = -5;
+
+            Func<double[], double> PhiFunc = (X => -1);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            Func<double[], double> Phi1Func = delegate (double[] X)
+            {
+
+                return -Math.Pow((Math.Pow(Math.Abs(X[0] / a), power) + Math.Pow(Math.Abs(X[1] / b), power)), 1.0 / 1.0) + 1;
+
+                //return -((X[0]).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() + 0.3;
+
+            };
+
+            C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
+
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => velX);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => velX);
+            C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
+
+            #endregion
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("freeslip_lower");
+            C.AddBoundaryValue("freeslip_upper");
+            C.AddBoundaryValue("pressure_outlet_left");
+            C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", X => velX);
+            C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", X => velX);
+
+            #endregion
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
+            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
+            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
+
+            C.NonLinearSolver.MaxSolverIterations = 80;
+            C.NonLinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 50;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
+            C.LinearSolver.ConvergenceCriterion = 1e-10;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-12;
+
+            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 2;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+            //C.CheckJumpConditions = true;
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
+            C.TimesteppingMode = compMode;
+            double dt = 1e-3;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 50;
+            C.NoOfTimesteps = 100;
             C.saveperiod = 1;
 
             #endregion
@@ -1200,7 +1387,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
-            double v0 = 1;
             C.InitialValues_Evaluators.Add("VelocityX#A", X => 0);
             C.InitialValues_Evaluators.Add("VelocityX#B", X => 0);
             C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
@@ -1210,18 +1396,22 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // boundary conditions
             // ===================
             #region BC
-            //double R(double t) {
-            //    if (t < 1) {
-            //        return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
-            //    } else {
-            //        return 1;
-            //    }
-            //}
+            double R(double t)
+            {
+                if (t < 1)
+                {
+                    return (35 + (-84 + (70 - 20 * t) * t) * t) * t * t * t * t;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
 
             double vmax = 0.1;
             double inflow(double[] x, double t) {
-                    //return v0 + R(t) * vmax;
-                return 0.1;
+                return R(t) * vmax;
+                //return 0.1;
             }
 
 
@@ -1411,8 +1601,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
             double velX = 0.1;
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => velX);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => velX);
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => 0);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => 0);
             C.InitialValues_Evaluators.Add("VelocityX#C", X => 0);
 
             //solid with velocity
@@ -1682,7 +1872,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
@@ -1700,13 +1890,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             //double dt = 0.0001;
             //C.dtMax = dt;
             //C.dtMin = dt;
-            C.Endtime = 0.5;
+            //C.Endtime = 0.5;
             //C.NoOfTimesteps = 1000;
             C.saveperiod = 1;
 
@@ -1906,7 +2096,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-         
+            //C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
@@ -1953,7 +2143,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++)
                 {
-                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvorx(X, 2 * (k + 1)));
                 }
                 return sum;
@@ -1986,7 +2176,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
                 for (int k = 0; k <= K; k++)
                 {
-                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvory(X, 2 * (k + 1)));
                 }
                 return sum;

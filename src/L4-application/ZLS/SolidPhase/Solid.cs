@@ -66,8 +66,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Ball() {
             PoissonsRatio = 0.5;
-            ModulusOfElasticity = 0.01;
-            Density = 3;
+            ModulusOfElasticity = 3;
+            Viscosity = 0.5;
+            Density = 1;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
@@ -79,6 +80,20 @@ namespace ZwoLevelSetSolver.SolidPhase {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 10;
             Density = 3;
+            Viscosity = 0.1;
+            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
+            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
+        }
+    }
+    class Flag_Test : Solid
+    {
+
+        public Flag_Test()
+        {
+            PoissonsRatio = 0.5;
+            ModulusOfElasticity = 2.38e9;
+            Density = 1.2;
+            Viscosity = 0.01;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
@@ -89,7 +104,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             PoissonsRatio = 0.5;
             ModulusOfElasticity = 3;
             Density = 1;
-            Viscosity = 0.1;
+            Viscosity = 0.01;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
