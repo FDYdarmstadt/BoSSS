@@ -6,6 +6,7 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using log4net.Appender;
 using log4net.Config;
@@ -171,7 +172,7 @@ namespace BoSSS.Application.BoSSSpad {
             BasicConfigurator.Configure(fa);
             logger_output = fa;
 
-
+            Tracer.NamespacesToLog = new string[] { "" };
         }
 
 
