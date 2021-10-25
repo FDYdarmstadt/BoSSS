@@ -312,7 +312,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             try {
                 Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                //JupyterMutex.WaitOne();
+                JupyterMutex.WaitOne();
                 Console.WriteLine("Mutex obtained!");
 
                 Process p;
@@ -341,7 +341,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Exit code " + p.ExitCode);
                 return p.ExitCode;
             } finally {
-                //JupyterMutex.ReleaseMutex();
+                JupyterMutex.ReleaseMutex();
             }
         }
 
