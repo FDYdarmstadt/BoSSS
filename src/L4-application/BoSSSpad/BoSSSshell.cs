@@ -159,6 +159,7 @@ namespace BoSSS.Application.BoSSSpad {
                 System.IO.Directory.CreateDirectory(tracingDir);
             DateTime nau = DateTime.Now;
             string baseneme = Path.Combine(tracingDir, $"trace.{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}.txt");
+            Console.WriteLine("Tracing file: " + baseneme);
 
             tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
             tracertxt = new StreamWriter(tracerfile);
