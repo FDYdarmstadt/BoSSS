@@ -680,8 +680,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
-
-                /*{
+                /*
+                {
                     Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
                     var bla = ana.MinimalEigen();
                     Console.WriteLine("done: " + bla.lambdaMin);
