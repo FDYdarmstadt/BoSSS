@@ -108,6 +108,8 @@ namespace BoSSS.Solution.NSECommon {
             m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
             
             this.LengthScales = cs.CellLengthScales;
+
+            //this.LengthScales = ((Foundation.Grid.Classic.GridData)(cs.GrdDat)).Cells.CellLengthScale;
         }
 
         /// <summary>
@@ -128,7 +130,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected virtual double GetPenalty(int jCellIn, int jCellOut) {
             double cj_in = 1.0/LengthScales[jCellIn];
-
             
             double mu = m_penalty_base*m_penalty_deg * cj_in;
             if(jCellOut >= 0) {
@@ -138,11 +139,12 @@ namespace BoSSS.Solution.NSECommon {
             if(mu.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
 
+           
             return mu;
         }
 
         /// <summary>
-        /// a little switch...
+        /// a little switch; turns everything off, except the penalty terms.
         /// </summary>
         protected double m_alpha = 1.0;
 
@@ -150,7 +152,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Volume terms plus source terms for non-homogeneous boundary conditions
         /// </summary>
-        public TermActivationFlags BoundaryEdgeTerms {
+        virtual public TermActivationFlags BoundaryEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
             }
@@ -159,7 +161,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// as induced by the SIP method
         /// </summary>
-        public TermActivationFlags InnerEdgeTerms {
+        virtual public TermActivationFlags InnerEdgeTerms {
             get {
                 return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
             }
@@ -181,7 +183,8 @@ namespace BoSSS.Solution.NSECommon {
         public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
-                acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell) * this.m_alpha;
+                acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell);
+            acc *= this.m_alpha;
             return acc;
         }
 

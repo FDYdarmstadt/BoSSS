@@ -30,9 +30,8 @@ namespace ilPSP {
 
 
         /// <summary>
-        /// Throws an exception, if <see cref="IsInLocalRange(int)"/>(<paramref name="i"/>) evaluates to false;
+        /// Throws an exception, if <see cref="IPartitioning.IsInLocalRange"/>(<paramref name="i"/>) evaluates to false;
         /// </summary>
-        /// <param name="i"></param>
         static public void TestIfInLocalRange(this IPartitioning p, long i) {
             if (!p.IsInLocalRange(i)) {
                 long i0 = p.i0;
@@ -59,7 +58,7 @@ namespace ilPSP {
         
         /// <summary>
         /// first indices for each process; size is equal to number of processors (<see cref="IPartitioning.MpiSize"/> plus 1;
-        /// first entry is always 0, last entry is equal to <see cref="m_TotalLength"/>;
+        /// first entry is always 0, last entry is equal to <see cref="IPartitioning.TotalLength"/>;
         /// </summary>
         static public long[] GetI0s(this IPartitioning p) {
             int sz = p.MpiSize;
