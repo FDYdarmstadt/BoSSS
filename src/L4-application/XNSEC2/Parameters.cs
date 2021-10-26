@@ -524,12 +524,14 @@ namespace BoSSS.Application.XNSEC {
         public override DelParameterFactory Factory => ViscosityFactory;
         private string paramName;
 
-        private MaterialLaw m_EoS;
+        private MaterialLaw m_EoS_A;
+        private MaterialLaw m_EoS_B;
         private int m_NumberOfChemicalComponents;
 
-        public Viscosity(MaterialLaw EoS) {
+        public Viscosity(MaterialLaw EoS_A, MaterialLaw EoS_B) {
             paramName = VariableNames.Mu;
-            m_EoS = EoS;
+            m_EoS_A = EoS_A;
+            m_EoS_B = EoS_B;
         }
 
         private (string, DGField)[] ViscosityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -548,9 +550,11 @@ namespace BoSSS.Application.XNSEC {
             var Temperature = (XDGField)DomainVarFields[VariableNames.Temperature];
             mu.Clear();
 
-            string[] species = new string[] { "A"/*, "B" */};
+            string[] species = new string[] { "A", "B" };
 
             foreach(var sp in species) {
+                MaterialLaw EoS = sp == "A" ? m_EoS_A : m_EoS_B;
+
                 mu.GetSpeciesShadowField(sp).ProjectField(1.0,
                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                        int K = result.GetLength(1);
@@ -560,7 +564,7 @@ namespace BoSSS.Application.XNSEC {
                        for(int j = 0; j < Len; j++) {
                            for(int k = 0; k < K; k++) {
                                double Temperature = tempT[j, k];
-                               result[j, k] = m_EoS.GetViscosity(Temperature);
+                               result[j, k] = EoS.GetViscosity(Temperature);
                            }
                        }
                    }, new Foundation.Quadrature.CellQuadratureScheme(true, null));

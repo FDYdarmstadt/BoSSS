@@ -15,7 +15,7 @@ namespace BoSSS.Application.XNSEC {
     /// </summary>
     static public partial class FullNSEControlExamples {
         static public XNSEC_Control NaturalConvectionSquareCavityTest_Homotopy() {
-            var C = NaturalConvectionSquareCavity(2, 20, 1e6, -1, null);
+            var C = NaturalConvectionSquareCavity(2, 20, 1e4, -1, null);
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.MassDetermined;
             C.savetodb = false;
             //C.NonLinearSolver.ConvergenceCriterion = 1e-9;

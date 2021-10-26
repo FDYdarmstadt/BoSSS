@@ -321,9 +321,9 @@ namespace BoSSS.Application.XNSEC {
 
             C.SkipSolveAndEvaluateResidual = false;
             C.rhoOne = true;
-            C.ImmediatePlotPeriod = 1;
-            C.savetodb = true;
-            C.DbPath = @"C:\Databases\BoSSS_DB";
+            //C.ImmediatePlotPeriod = 1;
+            //C.savetodb = true;
+            //C.DbPath = @"C:\Databases\BoSSS_DB";
 
             //C.Solver_MaxIterations = 100;
             XNSECSolverTest(Tst, C);

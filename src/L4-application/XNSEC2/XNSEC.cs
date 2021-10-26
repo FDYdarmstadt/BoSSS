@@ -27,7 +27,7 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
-            InitMPI();
+            //InitMPI();
             //DeleteOldPlotFiles();
 
             //NUnitTest.COMBUSTION_TEST();
@@ -70,7 +70,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.TwoPhaseIncompressibleSteadyPoiseuilleFlowTest(); // TODO!
             ////NUnitTest.ThermodynamicPressureTest(); // TODO
 
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow()", "--delplt" }, false, delegate () {
+            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow_DifferentDensities()", "--delplt" }, false, delegate () {
             //    var p = new XNSEC();
             //    return p;
             //});
@@ -345,7 +345,7 @@ namespace BoSSS.Application.XNSEC {
 
         virtual protected void DefineAditionalParameters(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int D, LevelSetUpdater lsUpdater, int quadOrder) {
             opFactory.AddParameter(new Density(EoS_A, EoS_B, config.NoOfChemicalSpecies));
-            opFactory.AddParameter(new Viscosity(EoS_A));
+            opFactory.AddParameter(new Viscosity(EoS_A,EoS_B));
             opFactory.AddParameter(new HeatCapacity(EoS_A));
 
             // === additional parameters === //
