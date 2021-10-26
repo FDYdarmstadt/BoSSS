@@ -196,7 +196,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void LevelSetAdvectionTest2D_fwd(
            [Values(2, 3, 4)] int LSdegree,
            [Values(0, 1, 2)] int AMRlevel,
@@ -210,7 +210,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        [Test]
+        //[Test]
         public static void LevelSetAdvectionTest2D_reverse(
            [Values(2, 3, 4)] int LSdegree,
            [Values(0, 1, 2)] int AMRlevel,
