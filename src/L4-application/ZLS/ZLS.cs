@@ -49,7 +49,7 @@ namespace ZwoLevelSetSolver {
         }
 
         //Artificial Viscosity Term in displacement transport equations
-        double displacementViscosity = 0;
+        double displacementViscosity = 0.001;
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             

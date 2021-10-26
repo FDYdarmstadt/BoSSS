@@ -1295,6 +1295,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.1;
             C.NoOfMultigridLevels = 1;
+            C.PostprocessingModules.Add(new LsAreaLogging());
 
             int D = 2;
 
@@ -1489,6 +1490,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
+            C.PostprocessingModules.Add(new LsAreaLogging());
 
             int D = 2;
 
