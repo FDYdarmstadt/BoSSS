@@ -635,7 +635,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var solver = this.Precond;
                 solver.Init(CurrentLin);
-                CurrentLin.OperatorMatrix.SaveToTextFileSparse("NewtonMatrix.txt");
+                CurrentLin.OperatorMatrix.SaveToTextFileSparse("newtonMat_numberofCellsX="+ this.CurrentLin.GridData.Grid.NumberOfCells/3 +"_t=01_P=" + this.CurrentLin.Degrees.First() + "_it=" +  itc +".txt");
+                
+                var Eigen = CurrentLin.OperatorMatrix.MinimalEigen();
+                DGField[] EigenVect_DG = CurrentLin.ProlongateToDG(Eigen.V);
+
                 step.ClearEntries();
                 var check = CurRes.CloneAs();
                 solver.ResetStat();
