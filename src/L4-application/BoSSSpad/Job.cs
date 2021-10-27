@@ -1139,15 +1139,33 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
+            string EscapeKack(string p) {
+                if (p.Contains(' ')) {
+                    // i hate escaping
+                    if (System.IO.Path.DirectorySeparatorChar == '\\') {
+                        // probably windows --> use quotes
+                        p = "\"" + p + "\"";
+                    } else {
+                        // Linux etc.
+                        p = p.Replace(" ", "\\ ");
+                    }
+
+                }
+                return p;
+            }
+
             string StderrFile = AssignedBatchProc.GetStderrFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
             string StdoutFile = AssignedBatchProc.GetStdoutFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
 
             if (StdoutFile != null && StderrFile != null) {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = typeof(btail.TailMain).Assembly.Location;
+                psi.UseShellExecute = true;
+                psi.WindowStyle = ProcessWindowStyle.Normal;
+                psi.FileName = "dotnet";
+                psi.Arguments = EscapeKack(typeof(btail.TailMain).Assembly.Location);
                 btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
 
-                Console.WriteLine("Starting console...");
+                Console.WriteLine($"Starting external console ...");
                 Console.WriteLine("(You may close the new window at any time, the job will continue.)");
 
                 Process p = Process.Start(psi);
