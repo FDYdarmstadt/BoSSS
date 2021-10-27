@@ -288,7 +288,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         private static int RunJupyter(string fileToOpen) {
             int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
-            if(RetVal == 0)
+            /*if(RetVal == 0)
                 return 0;
 
             // if we have an error, we have no output; then, the error might be hard to fix;
@@ -296,7 +296,7 @@ namespace BoSSS.Application.BoSSSpad {
             // Rem.: if --allow-errors is used, the return value of `jupyter nbconvert` is always 0; therefore we would not detect any error if we use it beforehand.
             //       as an alternative, one might convert to a notebook (`--to notebook --execute --allow-errors --output out.ipynb` 
             //       and then parse the `out.ipynb` for exceptions and errors.
-            RunJupyter(fileToOpen, true);
+            RunJupyter(fileToOpen, true);*/
             return RetVal;
         }
 
@@ -310,22 +310,33 @@ namespace BoSSS.Application.BoSSSpad {
             //psi.RedirectStandardOutput = true;
             //psi.RedirectStandardError = true;
 
+            bool MutexReleased = false;
             try {
                 Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
                 JupyterMutex.WaitOne();
                 Console.WriteLine("Mutex obtained!");
-
+                
                 Process p;
                 if(System.OperatingSystem.IsWindows()) {
                     psi.FileName = @"C:\Windows\System32\cmd.exe";
 
+                    // wait here a bit to avoid a port conflict...
+                    // when two notebooks are started simultaneously, we might run into the following:
+                    //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
                     p = Process.Start(psi);
+                    Random rnd = new Random();
+                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode()%2217));
 
                     //p.StandardInput.WriteLine("dir");
                     p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                     p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute " + SuffixAllowErrors);
                     p.StandardInput.WriteLine("exit");
 
+                    // wait here a bit more...
+                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode()%2217));
+
+                    JupyterMutex.ReleaseMutex();
+                    MutexReleased = true;
                     p.WaitForExit();
 
                 } else {
@@ -341,7 +352,8 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Exit code " + p.ExitCode);
                 return p.ExitCode;
             } finally {
-                JupyterMutex.ReleaseMutex();
+                if(!MutexReleased)
+                    JupyterMutex.ReleaseMutex();
             }
         }
 

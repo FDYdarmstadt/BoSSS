@@ -1,8 +1,10 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.IO;
+using ilPSP;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace BoSSS.Solution.Statistic {
@@ -40,9 +42,10 @@ namespace BoSSS.Solution.Statistic {
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
             NormType nt) {
             using(var tr = new FuncTrace()) {
+                tr.Info($"ComputeErrors {fields[0].Select(f => f.Identification).ToConcatString("", ", ", "")} in norm {nt}...");
 
 
-                switch(nt) {
+                switch (nt) {
                     case NormType.H1_approximate:
                     DGFieldComparisonNonEmb.ComputeErrors_H1(fields, out GridRes, out __DOFs, out Errors);
                     return;
@@ -108,8 +111,9 @@ namespace BoSSS.Solution.Statistic {
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors, out Guid[] timestepIds,
             NormType nt) {
             using(var tr = new FuncTrace()) {
-
-                switch(nt) {
+                tr.InfoToConsole = false;
+                tr.Info($"ComputeErrors {FieldsToCompare.ToConcatString("",", ","")} in norm {nt}...");
+                switch (nt) {
                     case NormType.H1_approximate:
                     DGFieldComparisonNonEmb.ComputeErrors_H1(FieldsToCompare, timestepS, out GridRes, out __DOFs, out Errors, out timestepIds);
                     return;

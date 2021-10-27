@@ -150,31 +150,7 @@ namespace BoSSS.Application.Rheology {
         [DataMember]
         public bool RaiseWeissenberg = false;
 
-        /*
-        /// <summary>
-        /// which increment?
-        /// </summary>
-        [DataMember]
-        public double WeissenbergIncrement = 0.1;
         
-        /// <summary>
-        /// Use Persson Sensor to detect high energy modes of singularities
-        /// </summary>
-        [DataMember]
-        public bool UsePerssonSensor = false;
-
-        /// <summary>
-        /// bound for perssonsensor should be around 1e-7 - 1e-8 that there is refinement or art. diffusion behind the cylinder!
-        /// </summary>
-        [DataMember]
-        public double SensorLimit = 1e-7;
-
-        /// <summary>
-        /// Use artificial Diffusion for smoothing singularities in stresses
-        /// </summary>
-        [DataMember]
-        public bool UseArtificialDiffusion = false;
-        */
         /// <summary>
         /// Use finite differences Jacobian for Linearization
         /// </summary>

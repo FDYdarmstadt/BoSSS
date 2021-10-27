@@ -26,7 +26,7 @@ namespace ZwoLevelSetSolver {
         }
 
         static void RunSolver(string[] args) {
-            
+            /*
             const int res = 32;
 
             var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
@@ -60,9 +60,9 @@ namespace ZwoLevelSetSolver {
                 q.RunSolverMode();
                 //q.OperatorAnalysis();
             }
-            
+            */
                         
-            /*
+            
             ZLS._Main(args, false, delegate () {
                 //Control file from runtime via args
                 var p = new ZLS();
