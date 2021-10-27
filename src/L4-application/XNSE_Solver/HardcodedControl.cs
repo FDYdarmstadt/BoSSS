@@ -528,11 +528,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public static XNSE_Control testcube(
-            int NoOfTimeSteps = 10,
+            int NoOfTimeSteps = 1,
             int k = 2,
             bool IncludeConvection = false,
-            int Res = 20,
-            int SpaceDim = 2,
+            int Res = 15,
+            int SpaceDim = 3,
             bool Steady = false,
             bool useLoadBal = true,
             bool useAMR = false,
@@ -669,7 +669,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-3;
             C.NonLinearSolver.MaxSolverIterations = 5;
@@ -702,8 +702,8 @@ namespace BoSSS.Application.XNSE_Solver {
             int NoOfTimeSteps = 10,
             int k = 2,
             bool IncludeConvection = false,
-            int Res = 20,
-            int SpaceDim = 2,
+            int Res = 15,
+            int SpaceDim = 3,
             bool Steady = false,
             bool useLoadBal = true,
             bool useAMR = false,
@@ -719,8 +719,8 @@ namespace BoSSS.Application.XNSE_Solver {
             if (MachineName == "PCMIT32")
                 C.DbPath = @"D:\trash_db";
 
-            Guid SID = new Guid("69f5a206-3527-4863-b087-5e3e36c3718b");
-            C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("10"));
+            Guid SID = new Guid("7edc2ae0-fb80-4226-b9e2-0fc97f1d4931");
+            C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
 
             C.SessionName = "test";
             if (IncludeConvection) {
@@ -825,7 +825,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 15, int SpaceDim = 3, bool useAMR = true, int NoOfTimesteps = 1, bool writeToDB = false, bool tracing = false, bool loadbalancing = true, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 15, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             double Re = 1000;
             double particleRad = 0.261;
 
@@ -834,6 +834,12 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Rigidbody.SpecifyShape(Shape.Cube);
             C.Rigidbody.SetRotationAxis("z");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
+           
+            C.FieldOptions.Add("Residual-MomentumX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
             return C;
         }
 
