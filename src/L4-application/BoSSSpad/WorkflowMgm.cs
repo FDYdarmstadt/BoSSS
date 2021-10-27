@@ -517,7 +517,7 @@ namespace BoSSS.Application.BoSSSpad {
                 r.DefineEdgeTags(EdgeTagFunc);
 
             this.DefaultDatabase.SaveGrid(ref r, force:false);
-
+            m_Grids = null; // trigger re-read;
             return r;
         }
 
@@ -527,6 +527,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public GridCommons SaveGrid(GridCommons g) {
             this.DefaultDatabase.SaveGrid(ref g, force:false);
+            m_Grids = null; // trigger re-read;
             return g;
         }
         

@@ -131,6 +131,12 @@ namespace BoSSS.Solution.Control {
             if(other.TimeSteppingScheme != this.TimeSteppingScheme)
                 return false;
 
+            if(other.MultiStepInit != this.MultiStepInit)
+                return false;
+
+            if(other.LevelSet_ConvergenceCriterion != this.LevelSet_ConvergenceCriterion)
+                return false;
+
             if (!IEnumerableExtensions.SetEquals(this.activeAMRlevelIndicators, other.activeAMRlevelIndicators))
                 return false;
 
