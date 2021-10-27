@@ -1,4 +1,6 @@
 ﻿using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
+using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -127,6 +129,9 @@ namespace BoSSS.Solution.Control {
                 return false;
 
             if(other.TimeSteppingScheme != this.TimeSteppingScheme)
+                return false;
+
+            if (!IEnumerableExtensions.SetEquals(this.activeAMRlevelIndicators, other.activeAMRlevelIndicators))
                 return false;
 
 

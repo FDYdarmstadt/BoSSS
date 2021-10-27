@@ -742,6 +742,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
+            //System.Diagnostics.Debugger.Launch();
             if(!base.Equals(obj))
                 return false;
 
