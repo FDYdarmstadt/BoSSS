@@ -27,7 +27,6 @@ namespace ZwoLevelSetSolver.Tests {
             // Displacement-Divergence
             //ZLS_Control.DisplacementDegOffset = 0;
             //ZLS.displacementViscosity = 1.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
             SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
@@ -53,8 +52,6 @@ namespace ZwoLevelSetSolver.Tests {
                 c.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
                 c.NonLinearSolver.ConvergenceCriterion = 0.0; // as accurate as possible
                 c.NonLinearSolver.MaxSolverIterations = 100; 
-
-
             }
 
             controlFiles.SolverConvergenceTest_Experimental("SolidSolverConvP" + p,
@@ -86,7 +83,6 @@ namespace ZwoLevelSetSolver.Tests {
 
             // Displacement - Divergence
             ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
             SolidPhase.Continuity.ContinuityStabilization = true;

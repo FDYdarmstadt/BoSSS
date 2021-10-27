@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
     public class Solid {
-        public double PoissonsRatio { get; protected set; }
-        
-        //In GPA
-        public double ModulusOfElasticity { get; protected set; }
+        public double PoissonsRatio;
 
-        public double Viscosity { get; protected set; }
+        //In GPA
+        public double ModulusOfElasticity;
+
+        public double Viscosity;
 
         //In g/cc
-        public double Density { get; protected set; }
+        public double Density;
 
-        public double Lame1 { get; protected set; }
+        public double Lame1;
 
         //Schubmodul
-        public double Lame2 { get; protected set; }
+        public double Lame2;
 
     }
 

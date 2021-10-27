@@ -18,7 +18,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
         Solid material;
 
         string codomainName;
-
         
         public LinearNavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;

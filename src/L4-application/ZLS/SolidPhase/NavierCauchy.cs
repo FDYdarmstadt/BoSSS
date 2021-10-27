@@ -45,13 +45,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
             AddComponent(eulerAlmansi1);
             
-            //if(d == 0) {
             var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
-            //} else {
-            //    var viscosity = new Fake_ipFlux(1.3, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Viscosity);
-            //    AddComponent(viscosity);
-            //}
+            
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             string gravityOfSpecies = gravity + "#" + SpeciesName;
             var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);

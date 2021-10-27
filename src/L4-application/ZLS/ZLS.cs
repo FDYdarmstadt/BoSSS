@@ -87,16 +87,12 @@ namespace ZwoLevelSetSolver {
             base.DefineSystem(D, opFactory, lsUpdater);
             DefineSolidPhase(D, opFactory, lsUpdater);
         }
-
-
         
         /// <summary>
         /// Artificial Viscosity Term in displacement transport equations
         /// </summary>
         static internal double displacementViscosity = 0.0;
 
-
-        
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             

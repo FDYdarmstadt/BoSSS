@@ -11,8 +11,6 @@ using ZwoLevelSetSolver.SolidPhase;
 namespace ZwoLevelSetSolver.SolidPhase {
     class DisplacementEvolution : BulkEquation {
 
-        static public double onlyPenaltyPenalty = 0;
-
         string speciesName;
 
         string codomainName; 
@@ -34,10 +32,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
                 // since evaluation of SIP forms is quite costly; 
                 AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
-            }
-
-            if(onlyPenaltyPenalty != 0) {
-                AddComponent(new Penalty_ipFlux(onlyPenaltyPenalty, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 1.0));
             }
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
