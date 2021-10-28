@@ -181,6 +181,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.Submit"/>. 
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
+            var started = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
+            if(started) {
+                Console.WriteLine("Warning: MiniBatchProcessor server was not running, started by job activation; it might be beneficial to start `MiniBatchProcessor.dll` externally, for the future.");
+            }
+
+
             string FullName = GetFullJobName(myJob);
             //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {

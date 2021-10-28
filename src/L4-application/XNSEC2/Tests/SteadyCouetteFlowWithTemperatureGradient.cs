@@ -20,10 +20,9 @@ namespace BoSSS.Application.XNSEC {
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.ImmediatePlotPeriod = 1;
-            //C.NonLinearSolver.UsePresRefPoint = false;
             //C.rhoOne = true;
 
- 
+
             return C;
         }
 
@@ -133,7 +132,7 @@ namespace BoSSS.Application.XNSEC {
             C.Reynolds = 10.0;
             C.Prandtl = 0.71;
             C.Froude = Math.Sqrt(2 * C.Prandtl * (1.6 - 0.4) / (1.6 + 0.4));
-            C.PressureReferencePoint = new double[] { 0.5*1, 0.5 *1};
+            C.PressureReferencePoint = new double[] { 0.5*0, 0.5 *0};
 
             C.Schmidt = 1.0;
             C.PenaltyViscMomentum = 1.0;

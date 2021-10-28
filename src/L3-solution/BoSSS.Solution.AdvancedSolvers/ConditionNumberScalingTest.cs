@@ -27,20 +27,27 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// <param name="controls">
         /// a set of control object over which the scaling is investigated
         /// </param>
-        /// <param name="plotAndWait">
+        /// <param name="plot">
         /// if true, an interactive Gnuplot session is opened
         /// </param>
         /// <param name="title">
         /// Gnuplot title/output filename
         /// </param>
-        static public void Perform(IEnumerable<AppControl> controls, bool plotAndWait = false, string title = "") {
+        /// <param name="ThrowAssertions">
+        /// assertions are thrown if the slopes of the condition number are too high, c.f. <see cref="ExpectedSlopes"/>;
+        /// should always be true for testing
+        /// </param>
+        /// <returns>
+        /// <see cref="ResultData"/>
+        /// </returns>
+        static public IDictionary<string, double[]> Perform(IEnumerable<AppControl> controls, bool plot = false, string title = "", bool ThrowAssertions = true) {
             var t = new ConditionNumberScalingTest(title);
             t.SetControls(controls);
             t.RunAndLog();
 
             t.PrintResults(Console.Out);
             
-            if(plotAndWait) {
+            if(plot) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int MPIrank);
                 csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPIsize);
 
@@ -80,7 +87,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            t.CheckResults();
+            if(ThrowAssertions)
+                t.CheckResults();
+
+            return t.ResultData;
         }
 
         /// <summary>
@@ -267,8 +277,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 }
             }
 
-            //CSVFile.SaveToCSVFile<IEnumerable<double>, double>(testData, "ConditionNumberScalingTest_dataSet.txt");
-            Console.WriteLine("warning no output-file - ToDo");
+            CSVFile.SaveToCSVFile<IEnumerable<double>>(testData, "ConditionNumberScalingTest_dataSet-" + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".txt");
+            //Console.WriteLine("warning no output-file - ToDo");
 
         }
 
@@ -309,7 +319,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             private set;
         }
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        static public int RunNumber;
 
         /// <summary>
         /// Phase 1: runs the solvers and stores results in <see cref="ResultData"/>.
@@ -328,7 +341,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Console.WriteLine("================================================================");
                 Console.WriteLine($"Condition Number Scaling Analysis:  Run {Counter} of {this.Controls.Count()}");
                 Console.WriteLine("================================================================");
-                
+                RunNumber = Counter;
 
                 using(var solver = (BoSSS.Solution.IApplication)Activator.CreateInstance(st)) {
                     Console.WriteLine("  Starting Solver...");

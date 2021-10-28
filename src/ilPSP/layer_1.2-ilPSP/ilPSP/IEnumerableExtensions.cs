@@ -737,7 +737,10 @@ namespace ilPSP {
                 int L = ie.Count();
                 int cnt = 0;
                 foreach(var o in ie) {
-                    stw.Write(o);
+                    if (o != null)
+                        stw.Write(o);
+                    else
+                        stw.Write("Null");
                     if(cnt < (L - 1))
                         stw.Write(separator);
                     cnt++;

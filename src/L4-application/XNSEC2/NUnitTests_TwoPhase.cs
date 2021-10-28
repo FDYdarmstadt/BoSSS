@@ -14,11 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
-using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.AdvancedSolvers.Testing;
@@ -31,13 +29,10 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Utils;
-using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
 
@@ -46,9 +41,6 @@ namespace BoSSS.Application.XNSEC {
     /// </summary>
     [TestFixture]
     static public partial class NUnitTest {
-
-
-
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
@@ -72,11 +64,12 @@ namespace BoSSS.Application.XNSEC {
 #endif
             ) {
             var Tst = new ViscosityJumpTest(spatialDimension);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode, 1);
+      
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode, constantDensity: true, 1);
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
             C.SkipSolveAndEvaluateResidual =/* false;//*/ C.AgglomerationThreshold <= 1e-6;
-            C.rhoOne = true;
+
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
             //C.UseSelfMadeTemporalOperator = false;
@@ -101,15 +94,14 @@ namespace BoSSS.Application.XNSEC {
 #else
             const int GridRes = 4; // resolutions 2, 4, etc. place level-set at cell boundary
 #endif
-
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, GridResolution: GridRes, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode);
+            bool constantDensity = true;
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, constantDensity: constantDensity, GridResolution: GridRes, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode);
             C.SkipSolveAndEvaluateResidual = !performsolve;
-            C.rhoOne = true;
-            C.EnableTemperature = false;
+             C.EnableTemperature = false;
             C.EnableMassFractions = false;
             C.ImmediatePlotPeriod = 1;
             XNSECSolverTest(Tst, C);
-            if(spatialDimension == 2)
+            if (spatialDimension == 2)
                 ASScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfTensionMode);
         }
 
@@ -119,16 +111,13 @@ namespace BoSSS.Application.XNSEC {
 
             double AgglomerationTreshold = 0.1;
 
-            var LaLa = new List<XNSE_Control>();
+            var LaLa = new List<XNSEC_Control>();
             foreach(var Res in ResolutionS) {
-                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode, GridResolution: Res);
-                C.SkipSolveAndEvaluateResidual = false;
-                C.rhoOne = true;
-                C.EnableTemperature = false;
-                C.EnableMassFractions = false;
+                var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, constantDensity: true, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode, GridResolution: Res);
+                C.SkipSolveAndEvaluateResidual = true;
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: Name);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
 #endif
         }
 
@@ -155,8 +144,7 @@ namespace BoSSS.Application.XNSEC {
 
             var Tst = new ChannelTest(angle);
             int gridResolution = 1;
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, gridResolution);
-            C.rhoOne = true;
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, gridResolution);
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -182,15 +170,47 @@ namespace BoSSS.Application.XNSEC {
             int resolution = 2;
 
             var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PolynomialTestForConvection(spatialDimension);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, resolution);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
-            C.rhoOne = true;
             //C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.MaxSolverIterations = 5;
             XNSECSolverTest(Tst, C);
         }
+
+        /// <summary>
+        /// Tests a fixed level set in a constant velocity field
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="AgglomerationTreshold"></param>
+        /// <param name="SolverMode_performsolve"></param>
+        /// <param name="CutCellQuadratureType"></param>
+        /// <param name="stm"></param>
+        [Test]
+        public static void PseudoTwoDimensionalTwoPhaseFlow(
+            [Values(2)] int deg,
+            [Values(0, 0.1)] double AgglomerationTreshold,
+            [Values(false, true)] bool SolverMode_performsolve,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(false, true)] bool differentFluids
+            ) {
+            ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
+
+            int resolution = 10;            
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
+            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
+   
+            
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            XNSECSolverTest(Tst, C);
+
+            //ASScalingTest(Tst, new[] { 8, 16, 32,64 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+        }
+
+
 
 
         /// <summary>
@@ -198,14 +218,12 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         //[Test]
         public static void LevelSetAdvectionTest2D_fwd(
-           [Values(2, 3, 4)] int LSdegree,
-           [Values(0, 1, 2)] int AMRlevel,
-           [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-           [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
+               [Values(2, 3, 4)] int LSdegree,
+               [Values(0, 1, 2)] int AMRlevel,
+               [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
+               [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
             LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, false);
-
         }
-
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
@@ -219,8 +237,6 @@ namespace BoSSS.Application.XNSEC {
             LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, true);
         }
 
-
-
         public static void LevelSetAdvectionTest2D(
 
     [Values(2, 3, 4)] int LSdegree,
@@ -229,7 +245,7 @@ namespace BoSSS.Application.XNSEC {
     [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
     [Values(false, true)] bool reversed) {
             int gridResolution;
-            switch(LSdegree) {
+            switch (LSdegree) {
                 case 2: gridResolution = 3; break;
                 case 3: gridResolution = 2; break;
                 //case 4: gridResolution = 1; break;
@@ -237,7 +253,7 @@ namespace BoSSS.Application.XNSEC {
                 gridResolution = 1; break;
             }
 
-            if(LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
+            if (LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
                 return;
 
             var Tst = new LevelSetAdvectionTestXNSEC(2, LSdegree, reversed);
@@ -254,9 +270,6 @@ namespace BoSSS.Application.XNSEC {
             //Solution.Application.DeleteOldPlotFiles(); // delete plot files if we don't throw an exception!
         }
 
-
-
-
         public class LevelSetAdvectionTestXNSEC : LevelSetAdvectionTest, IXNSEClsTest {
 
             public LevelSetAdvectionTestXNSEC(int spatDim, int LevelSetDegree, bool reversed) : base(spatDim, LevelSetDegree, reversed) {
@@ -269,9 +282,9 @@ namespace BoSSS.Application.XNSEC {
             public double[] GravityDirection => new double[] { 0, 0, 0 };
 
             public Func<double[], double, double> GetMassFractions(string species, int q) {
-                switch(base.SpatialDimension) {
+                switch (base.SpatialDimension) {
                     case 2:
-                    if(q == 0) {
+                    if (q == 0) {
                         return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
                     } else {
                         throw new ArgumentOutOfRangeException();
@@ -282,7 +295,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetTemperature(string species) {
-                switch(base.SpatialDimension) {
+                switch (base.SpatialDimension) {
                     case 2:
                     return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
 
@@ -305,19 +318,13 @@ namespace BoSSS.Application.XNSEC {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
-
             var Tst = new TranspiratingChannelTestXNSEC(U2, periodicity);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, GridResolution: 1); // surface tension plays no role in this test, so ignore it
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, GridResolution: 1); // surface tension plays no role in this test, so ignore it
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
             C.EnableTemperature = false;
-            C.EnableMassFractions= false;
-
-            //C.FieldOptions[VariableNames.Temperature].Degree = 1;
-            //for(int i = 0; i < C.NumberOfChemicalSpecies; i++) {
-            //    C.FieldOptions[VariableNames.MassFraction_n(i)].Degree = 1;
-            //}
+            C.EnableMassFractions = false;
 
             C.SkipSolveAndEvaluateResidual = false;
             C.rhoOne = true;
@@ -331,7 +338,9 @@ namespace BoSSS.Application.XNSEC {
             //    ScalingTest(Tst, new[] { 1, 2, 3 }, vmode, deg);
             //}
         }
+
         public class TranspiratingChannelTestXNSEC : TranspiratingChannelTest, IXNSECTest {
+
             public TranspiratingChannelTestXNSEC(double _U2, bool periodic = false, int spatDim = 2) : base(_U2, periodic, spatDim) {
             }
 
@@ -342,7 +351,7 @@ namespace BoSSS.Application.XNSEC {
             public double[] GravityDirection => new double[] { 0, 0, 0 };
 
             /// <summary>
-            /// 
+            ///
             /// </summary>
             public new double[] AcceptableL2Error {
                 get {
@@ -352,24 +361,23 @@ namespace BoSSS.Application.XNSEC {
             }
 
             /// <summary>
-            /// 
+            ///
             /// </summary>
             public new double[] AcceptableResidual {
                 get {
                     double[] Resi = (SpatialDimension == 2) ?
                         new double[] { 5e-8, 5e-8, 5e-8, 5e-8, 5e-8 } : new double[] { 5e-8, 5e-8, 5e-8, 5e-8, 5e-8, 5e-8 };
 
-                    if(base.m_periodic)
+                    if (base.m_periodic)
                         Resi.ScaleV(5);
                     return Resi;
                 }
             }
 
-
             public Func<double[], double, double> GetMassFractions(string species, int q) {
-                switch(base.SpatialDimension) {
+                switch (base.SpatialDimension) {
                     case 2:
-                    if(q == 0) {
+                    if (q == 0) {
                         return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
                     } else {
                         throw new ArgumentOutOfRangeException();
@@ -380,7 +388,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetTemperature(string species) {
-                switch(base.SpatialDimension) {
+                switch (base.SpatialDimension) {
                     case 2:
                     return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
 
@@ -390,15 +398,8 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
-
-
         public interface IXNSEClsTest : IXNSElsTest, IXNSECTest {
-
-
         }
-
-
-
 
         private static XNSEC_Control LSTstObj2CtrlObj(IXNSEClsTest tst, int FlowSolverDegree, int maxNoTimesteps,
             LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
@@ -427,7 +428,7 @@ namespace BoSSS.Application.XNSEC {
             // boundary conditions
             // ===================
 
-            foreach(var kv in tst.GetBoundaryConfig()) {
+            foreach (var kv in tst.GetBoundaryConfig()) {
                 C.BoundaryValues.Add(kv);
             }
 
@@ -448,17 +449,17 @@ namespace BoSSS.Application.XNSEC {
             C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
             C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
 
-            foreach(var spc in new[] { "A", "B" }) {
+            foreach (var spc in new[] { "A", "B" }) {
                 C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
                 C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
 
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
 
-                for(int d = 0; d < D; d++) {
+                for (int d = 0; d < D; d++) {
                     Func<double[], double, double> Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
                     C.SetGravity(spc, d, Gravity_d);
                 }
@@ -498,7 +499,7 @@ namespace BoSSS.Application.XNSEC {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
 
             // adaptive mesh refinement
-            if(AMRlevel > 0) {
+            if (AMRlevel > 0) {
                 C.AdaptiveMeshRefinement = true;
                 C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
                 C.AMR_startUpSweeps = AMRlevel;
@@ -593,14 +594,14 @@ namespace BoSSS.Application.XNSEC {
 
             public Func<double[], double> GetF(string species, int d) {
                 double rho = double.NaN;
-                switch(species) {
+                switch (species) {
                     case "A": rho = rho_A; break;
                     case "B":
                     rho = rho_B; break;
                     throw new ArgumentException();
                 }
 
-                if(mu_A == 0.0 && mu_B == 0) {
+                if (mu_A == 0.0 && mu_B == 0) {
                     return (X => 0.0);
                 } else {
                     double sc = Math.Min(this.mu_A, this.mu_B);
@@ -614,9 +615,9 @@ namespace BoSSS.Application.XNSEC {
             public Func<double[], double, double> GetU(string species, int d) {
                 double a2, a1, a0;
 
-                if(species == "A") {
+                if (species == "A") {
                     ParabolaCoeffs_A(out a2, out a1, out a0);
-                } else if(species == "B") {
+                } else if (species == "B") {
                     ParabolaCoeffs_B(out a2, out a1, out a0);
                 } else
                     throw new ArgumentException();
@@ -642,11 +643,11 @@ namespace BoSSS.Application.XNSEC {
                 double muA = this.mu_A;
                 double muB = this.mu_B;
 
-                if(muA <= 0.0 && muB <= 0.0) {
+                if (muA <= 0.0 && muB <= 0.0) {
                     muA = 0.001;
                     muB = 0.001;
                 }
-                if(muA <= 0.0 != muB <= 0.0)
+                if (muA <= 0.0 != muB <= 0.0)
                     throw new NotSupportedException();
 
                 double sc = Math.Min(muA, muB);
@@ -664,11 +665,11 @@ namespace BoSSS.Application.XNSEC {
                 double muA = this.mu_A;
                 double muB = this.mu_B;
 
-                if(muA <= 0.0 && muB <= 0.0) {
+                if (muA <= 0.0 && muB <= 0.0) {
                     muA = 0.001;
                     muB = 0.001;
                 }
-                if(muA <= 0.0 != muB <= 0.0)
+                if (muA <= 0.0 != muB <= 0.0)
                     throw new NotSupportedException();
 
                 double sc = Math.Min(muA, muB);
@@ -689,7 +690,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public GridCommons CreateGrid(int Resolution) {
-                if(Resolution < 1)
+                if (Resolution < 1)
                     throw new ArgumentException();
 
                 //var yNodes = GenericBlas.Linspace(-1, 1, 9);
@@ -701,7 +702,7 @@ namespace BoSSS.Application.XNSEC {
 
                 var __yNodes = new double[] { -1, -0.8, -0.6, 0.6, 1.0 };
                 var _yNodes = new double[(__yNodes.Length - 1) * Resolution + 1];
-                for(int i = 0; i < __yNodes.Length - 1; i++) {
+                for (int i = 0; i < __yNodes.Length - 1; i++) {
                     double[] part = GenericBlas.Linspace(__yNodes[i], __yNodes[i + 1], Resolution + 1);
                     _yNodes.SetSubVector(part, i * Resolution, part.Length);
                 }
@@ -709,7 +710,7 @@ namespace BoSSS.Application.XNSEC {
                 //var _yNodes = GenericBlas.Linspace(-1, 1, 6);
 
                 var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2 * 4, 3 * Resolution + 1), _yNodes, periodicX: periodic);
-                if(periodic) {
+                if (periodic) {
                     grd.EdgeTagNames.Add(1, "wall_top");
                     grd.EdgeTagNames.Add(2, "wall_bottom");
 
@@ -718,11 +719,11 @@ namespace BoSSS.Application.XNSEC {
                         double x = X[0];
                         double y = X[1];
 
-                        if(Math.Abs(y - (-1)) < 1.0e-6)
+                        if (Math.Abs(y - (-1)) < 1.0e-6)
                             // bottom wall
                             return 2;
 
-                        if(Math.Abs(y - (+1)) < 1.0e-6)
+                        if (Math.Abs(y - (+1)) < 1.0e-6)
                             // top wall
                             return 1;
 
@@ -742,19 +743,19 @@ namespace BoSSS.Application.XNSEC {
                         double x = X[0];
                         double y = X[1];
 
-                        if(Math.Abs(y - (-1)) < 1.0e-6)
+                        if (Math.Abs(y - (-1)) < 1.0e-6)
                             // bottom wall
                             return 2;
 
-                        if(Math.Abs(y - (+1)) < 1.0e-6)
+                        if (Math.Abs(y - (+1)) < 1.0e-6)
                             // top wall
                             return 1;
 
-                        if(Math.Abs(x - (-2)) < 1.0e-6)
+                        if (Math.Abs(x - (-2)) < 1.0e-6)
                             // inlet
                             return 3;
 
-                        if(Math.Abs(x - (2 * 4)) < 1.0e-6)
+                        if (Math.Abs(x - (2 * 4)) < 1.0e-6)
                             // outlet
                             return 4;
 
@@ -781,8 +782,8 @@ namespace BoSSS.Application.XNSEC {
                 config["wall_bottom"].Evaluators.Add(VariableNames.Temperature + "#B", (X, t) => 1.0);
                 config["wall_bottom"].Evaluators.Add(VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
                 config["wall_bottom"].Evaluators.Add(VariableNames.MassFraction0 + "#B", (X, t) => 1.0);
-                if(!periodic) {
-                    if(!this.ROT.ApproximateEquals(AffineTrafo.Some2DRotation(0.0)))
+                if (!periodic) {
+                    if (!this.ROT.ApproximateEquals(AffineTrafo.Some2DRotation(0.0)))
                         throw new NotSupportedException();
 
                     double A_a0, A_a1, A_a2, B_a0, B_a1, B_a2;
@@ -889,9 +890,5 @@ namespace BoSSS.Application.XNSEC {
 
             public double[] GravityDirection => new double[] { 0, 0, 0 };
         }
-
-
-    
-    
     }
 }

@@ -14,7 +14,7 @@ namespace BoSSS.Application.XNSEC {
     /// </summary>
     static public partial class FullNSEControlExamples {
 
-        public static XNSEC_Control PseudoTwoDimensionalTwoPhaseFlow(int p = 1, int kelem = 5, int wallBC = 0) {
+        public static XNSEC_Control PseudoTwoDimensionalTwoPhaseFlow(int p = 1, int kelem = 5) {
             XNSEC_Control C = new XNSEC_Control();
 
             string _DbPath = null;
@@ -30,7 +30,7 @@ namespace BoSSS.Application.XNSEC {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSEC/Channel";
-            C.ProjectDescription = "Channel flow  testing";
+            C.ProjectDescription = "XNSEC testing";
             #endregion db
 
             // DG degrees
@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSEC {
             #region physics
 
             C.PhysicalParameters.rho_A = 1.0;
-            C.PhysicalParameters.rho_B = 0.5;
+            C.PhysicalParameters.rho_B = 1.0;
             C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.mu_B = 1;
             double sigma = 0.0; // No surface tension
@@ -112,60 +112,37 @@ namespace BoSSS.Application.XNSEC {
             #region BC
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => 1.0);
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => 1.0);
-            //C.AddBoundaryValue("velocity_inlet_left", "Temperature#A", (X, t) => 1.0);
-            //C.AddBoundaryValue("velocity_inlet_left", "Temperature#B", (X, t) => 1.0);
+            C.AddBoundaryValue("velocity_inlet_left", "Temperature#A", (X, t) => 1.0);
+            C.AddBoundaryValue("velocity_inlet_left", "Temperature#B", (X, t) => 1.0);
+
+
             C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", (X, t) => 1.0);
             C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", (X, t) => 1.0);
-            //C.AddBoundaryValue("velocity_inlet_right", "Temperature#A", (X, t) => 1.0);
-            //C.AddBoundaryValue("velocity_inlet_right", "Temperature#B", (X, t) => 1.0);
+            C.AddBoundaryValue("velocity_inlet_right", "Temperature#A", (X, t) => 1.0);
+            C.AddBoundaryValue("velocity_inlet_right", "Temperature#B", (X, t) => 1.0);
 
             #endregion BC
 
 
             #region solver
 
-            //C.ComputeEnergyProperties = true;
-            //C.solveKineticEnergyEquation = true;
-            ////C.CheckJumpConditions = true;
-            //C.kinEViscousDiscretization = Solution.EnergyCommon.KineticEnergyViscousSourceTerms.laplaceKinE;
-            //C.kinEPressureDiscretization = Solution.EnergyCommon.KineticEnergyPressureSourceTerms.divergence;
-            //C.withDissipativePressure = false;
-
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.Phi = (X,t) => ((X[0] - (center[0]+U*t)).Pow2() + (X[1] - center[1]).Pow2()).Sqrt() - radius;
-
-            //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
-            //C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
-            //C.useFiltLevSetGradientForEvolution = true;
-            //C.ReInitPeriod = 1;
-            //C.ReInitOnRestart = true;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-            //C.SkipSolveAndEvaluateResidual = true;
 
-            C.AdaptiveMeshRefinement = false;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
-            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
-            //C.BaseRefinementLevel = 2;
-            //C.RefinementLevel = 2;
 
-            C.InitSignedDistance = false;
-            C.adaptiveReInit = false;
+   
 
             #endregion solver
 
@@ -176,11 +153,7 @@ namespace BoSSS.Application.XNSEC {
 
             C.SkipSolveAndEvaluateResidual = false;
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            //C.dtFixed = 0.1;
-
-            //C.NonLinearSolver.MinSolverIterations = 1;
-            //C.NonLinearSolver.MaxSolverIterations = 1;
-            //C.NoOfTimesteps = 100; // 500;
+            C.NonLinearSolver.MaxSolverIterations = 5;
             C.saveperiod = 10;
 
             #endregion time
@@ -206,7 +179,7 @@ namespace BoSSS.Application.XNSEC {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "XNSEC/Channel";
-            C.ProjectDescription = "Channel flow  testing";
+            C.ProjectDescription = "Channel flow testing";
 
             //C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.ChannelFlow;
@@ -222,10 +195,10 @@ namespace BoSSS.Application.XNSEC {
 
             #region physics
 
-            C.PhysicalParameters.rho_A = 1.0;
-            C.PhysicalParameters.rho_B = 0.5;
-            C.PhysicalParameters.mu_A = 1;
-            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 2;
+            C.PhysicalParameters.mu_A = 1*0;
+            C.PhysicalParameters.mu_B = 1*0;
             double sigma = 0.0; // No surface tension
             C.PhysicalParameters.Sigma = sigma;
 
@@ -278,18 +251,18 @@ namespace BoSSS.Application.XNSEC {
 
             #region init
 
-            Func<double[], double> PhiFunc = (X => X[0] - 2.1);
+            Func<double[], double> PhiFunc = (X => X[0] - 2.0);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            double U = 0.0;
-            C.InitialValues_Evaluators.Add("VelocityX#A", X => 1.0);
-            C.InitialValues_Evaluators.Add("VelocityX#B", X => 1.0);
+            double U = +1.0;
+            C.InitialValues_Evaluators.Add("VelocityX#A", X => U);
+            C.InitialValues_Evaluators.Add("VelocityX#B", X => U*2);
 
-            //C.InitialValues_Evaluators.Add("Temperature#A", X => 1.0);
-            //C.InitialValues_Evaluators.Add("Temperature#B", X => 1.0);
+            C.InitialValues_Evaluators.Add("Temperature#A", X => 1.0);
+            C.InitialValues_Evaluators.Add("Temperature#B", X => 1.0);
 
-            //C.InitialValues_Evaluators.Add("MassFraction0#A", X => 1.0);
-            //C.InitialValues_Evaluators.Add("MassFraction0#B", X => 1.0);
+            C.InitialValues_Evaluators.Add("MassFraction0#A", X => 1.0);
+            C.InitialValues_Evaluators.Add("MassFraction0#B", X => 1.0);
 
             #endregion init
 
@@ -310,21 +283,21 @@ namespace BoSSS.Application.XNSEC {
             #region BC
 
 
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => 1.0);
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => 1.0);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", (X, t) => U);
+            //C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", (X, t) => U);
             C.AddBoundaryValue("velocity_inlet_left", "Temperature#A", (X, t) => 1.0);
             C.AddBoundaryValue("velocity_inlet_left", "Temperature#B", (X, t) => 1.0);
 
 
-            C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", (X, t) => 2.0);
-            C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", (X, t) => 2.0);
+            //C.AddBoundaryValue("velocity_inlet_right", "VelocityX#A", (X, t) => U);
+            C.AddBoundaryValue("velocity_inlet_right", "VelocityX#B", (X, t) => U*2);
             C.AddBoundaryValue("velocity_inlet_right", "Temperature#A", (X, t) => 1.0);
             C.AddBoundaryValue("velocity_inlet_right", "Temperature#B", (X, t) => 1.0);
 
             #endregion BC
 
             // misc. solver options
-            // ====================y
+            // ====================
 
             #region solver
 

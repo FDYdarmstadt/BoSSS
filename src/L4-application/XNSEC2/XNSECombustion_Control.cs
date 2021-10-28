@@ -495,11 +495,11 @@ namespace BoSSS.Application.XNSEC {
         //    }
         //}
 
-        /// <summary>
-        /// Chemical Constants
-        /// </summary>
-        [DataMember]
-        private ChemicalConstants m_ChemConst;
+        ///// <summary>
+        ///// Chemical Constants
+        ///// </summary>
+        //[DataMember]
+        //private ChemicalConstants m_ChemConst;
 
         public ChemicalConstants CC {
             get; set;

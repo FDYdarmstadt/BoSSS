@@ -31,6 +31,205 @@ namespace BoSSS.Application.XNSEC {
 
     static public partial class FullNSEControlExamples {
 
+        public class PseudoTwoDimensional_TwoPhaseFlow : IXNSECTest {
+            public bool TestImmersedBoundary => false;
+
+            /// <summary>
+            /// nix
+            /// </summary>
+            public Func<double[], double, double> GetPhi2() {
+                throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+            }
+
+            public Func<double[], double, double> GetPhi2U(int d) {
+                throw new NotImplementedException();
+            }
+
+            private int m_SpatialDimension = 2;
+            private bool m_differentDensities;
+
+            public PseudoTwoDimensional_TwoPhaseFlow(bool differentDensities) {
+                m_differentDensities = differentDensities;
+            }
+
+            public Func<double[], double, double> GetPhi() {
+                return ((_2D)(delegate (double x, double y) {
+                    return (x - 2.0);
+                })).Convert_xy2X().Convert_X2Xt();
+            }
+
+            public Func<double[], double, double> GetU(string species, int d) {
+                if (d == 0) {
+                    if (species == "A") {
+                        return ((_2D)((x, y) => 1.0)).Convert_xy2X().Convert_X2Xt();
+                    } else if (species == "B") {
+                        if (m_differentDensities) {
+                            return ((_2D)((x, y) => 2.0)).Convert_xy2X().Convert_X2Xt();
+                        } else {
+                            return ((_2D)((x, y) => 1.0)).Convert_xy2X().Convert_X2Xt();
+                        }
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                } else if (d == 1) {
+                    return ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt();
+                } else {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            public double dt {
+                get {
+                    return 1.0;
+                }
+            }
+
+            public GridCommons CreateGrid(int Resolution) {
+                if (Resolution < 1)
+                    throw new ArgumentException();
+
+                double L = 5;
+                double H = 2;
+                double[] Xnodes = GenericBlas.Linspace(0, L, Resolution + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, H, 4);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicY: true);
+
+                grd.EdgeTagNames.Add(1, "velocity_inlet_left");
+                grd.EdgeTagNames.Add(2, "velocity_inlet_right");
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    if (Math.Abs(X[0]) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] - L) <= 1.0e-8)
+                        et = 2;
+                    return et;
+                });
+
+                return grd;
+            }
+
+            public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+                var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
+
+                config.Add("velocity_inlet_left", new AppControl.BoundaryValueCollection());
+                config["velocity_inlet_left"].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", (X, t) => 1.0);
+                config["velocity_inlet_left"].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", (X, t) => 0.0);
+                config["velocity_inlet_left"].Evaluators.Add(VariableNames.Temperature + "#A", (X, t) => 1.0);
+                config["velocity_inlet_left"].Evaluators.Add(VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
+
+                config.Add("velocity_inlet_right", new AppControl.BoundaryValueCollection());
+                config["velocity_inlet_right"].Evaluators.Add(VariableNames.Velocity_d(0) + "#A", (X, t) => m_differentDensities ? 2.0 : 1.0);
+                config["velocity_inlet_right"].Evaluators.Add(VariableNames.Velocity_d(1) + "#A", (X, t) => 0.0);
+                config["velocity_inlet_right"].Evaluators.Add(VariableNames.Temperature + "#A", (X, t) => 1.0);
+                config["velocity_inlet_right"].Evaluators.Add(VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
+
+                return config;
+            }
+
+            public Func<double[], double, double> GetPress(string species) {
+                return (X, t) => 0.0;
+            }
+
+            public double rho_A {
+                get { return 1.0; }
+            }
+
+            public double rho_B {
+                get { return m_differentDensities? 0.5:1.0; }
+            }
+
+            public double mu_A {
+                get { return 0.0; }
+            }
+
+            public double mu_B {
+                get { return 0.0; }
+            }
+
+            public ScalarFunction GetS(double time) {
+                return (m_SpatialDimension == 2) ? ((_2D)((x, y) => 0)).Vectorize() : ((_3D)((x, y, z) => 0)).Vectorize();
+            }
+
+            public Func<double[], double> GetF(string species, int d) {
+                if (d == 0) {
+                    return ((_2D)((x, y) => 0.0)).Convert_xy2X();
+                } else if (d == 1) {
+                    return ((_2D)((x, y) => 0.0)).Convert_xy2X();
+                } else {
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            public Func<double[], double, double> GetTemperature(string species) {
+                switch (m_SpatialDimension) {
+                    case 2:
+                    return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
+
+                    default:
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            public Func<double[], double, double> GetMassFractions(string species, int q) {
+                switch (m_SpatialDimension) {
+                    case 2:
+                    if (q == 0) {
+                        return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
+                    } else {
+                        throw new ArgumentOutOfRangeException();
+                    }
+                    default:
+                    throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            public double Sigma {
+                get { return 0.0; }
+            }
+
+            public bool Material {
+                get { return true; }
+            }
+
+            public bool steady {
+                get { return true; }
+            }
+
+            public bool IncludeConvection {
+                get { return true; }
+            }
+
+            public int LevelsetPolynomialDegree {
+                get { return 4; }
+            }
+
+            public double[] AcceptableL2Error {
+                get {
+                    return (m_SpatialDimension == 2) ?
+                      new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
+                }
+            }
+
+            public double[] AcceptableResidual {
+                get {
+                    return (m_SpatialDimension == 2) ?
+                      new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 } : new double[] { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 };
+                }
+            }
+
+            public int SpatialDimension {
+                get {
+                    return m_SpatialDimension;
+                }
+            }
+
+            public int NumberOfChemicalComponents => 1;
+
+            public bool ChemicalReactionTermsActive => false;
+
+            public double[] GravityDirection => new double[] { 0.0, 0.0, 0.0 };
+        }
+
         public class PolynomialTestForConvection : IXNSECTest {
             public bool TestImmersedBoundary => false;
 
@@ -52,7 +251,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetPhi() {
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
                     return ((_2D)(delegate (double x, double y) {
                         //return 1;
@@ -68,21 +267,21 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetU(string species, int d) {
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
-                    if(d == 0) {
+                    if (d == 0) {
                         return ((_2D)((x, y) => x * x)).Convert_xy2X().Convert_X2Xt();
-                    } else if(d == 1) {
+                    } else if (d == 1) {
                         return ((_2D)((x, y) => -2 * x * y)).Convert_xy2X().Convert_X2Xt();
                     } else {
                         throw new ArgumentOutOfRangeException();
                     }
                     case 3:
-                    if(d == 0) {
+                    if (d == 0) {
                         return ((_3D)((x, y, z) => x * x)).Convert_xyz2X().Convert_X2Xt();
-                    } else if(d == 1) {
+                    } else if (d == 1) {
                         return ((_3D)((x, y, z) => -2 * x * y)).Convert_xyz2X().Convert_X2Xt();
-                    } else if(d == 2) {
+                    } else if (d == 2) {
                         return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
                     } else {
                         throw new ArgumentOutOfRangeException();
@@ -99,12 +298,12 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public GridCommons CreateGrid(int Resolution) {
-                if(Resolution < 1)
+                if (Resolution < 1)
                     throw new ArgumentException();
 
                 GridCommons grd;
 
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
                     grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-2, 2, 5 * Resolution + 1),
                         GenericBlas.Linspace(-2, 2, 5 * Resolution + 1));
@@ -141,7 +340,7 @@ namespace BoSSS.Application.XNSEC {
                 config["Velocity_Inlet"].Evaluators.Add(VariableNames.Velocity_d(1) + "#B", (X, t) => -2.0 * X[0] * X[1]);
                 config["Velocity_Inlet"].Evaluators.Add(VariableNames.Temperature + "#B", (X, t) => 1.0);
                 config["Velocity_Inlet"].Evaluators.Add(VariableNames.MassFraction0 + "#B", (X, t) => 1.0);
-                if(m_SpatialDimension == 3) {
+                if (m_SpatialDimension == 3) {
                     config["Velocity_Inlet"].Evaluators.Add(VariableNames.Velocity_d(2) + "#A", (X, t) => 0.0);
                     config["Velocity_Inlet"].Evaluators.Add(VariableNames.Velocity_d(2) + "#B", (X, t) => 0.0);
                 }
@@ -174,21 +373,21 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double> GetF(string species, int d) {
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
-                    if(d == 0) {
+                    if (d == 0) {
                         return ((_2D)((x, y) => 2.0 * x * x * x)).Convert_xy2X();
-                    } else if(d == 1) {
+                    } else if (d == 1) {
                         return ((_2D)((x, y) => 2.0 * x * x * y)).Convert_xy2X();
                     } else {
                         throw new ArgumentOutOfRangeException();
                     }
                     case 3:
-                    if(d == 0) {
+                    if (d == 0) {
                         return ((_3D)((x, y, z) => 2.0 * x * x * x)).Convert_xyz2X();
-                    } else if(d == 1) {
+                    } else if (d == 1) {
                         return ((_3D)((x, y, z) => 2.0 * x * x * y)).Convert_xyz2X();
-                    } else if(d == 2) {
+                    } else if (d == 2) {
                         return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X();
                     } else {
                         throw new ArgumentOutOfRangeException();
@@ -199,7 +398,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetTemperature(string species) {
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
                     return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
 
@@ -209,9 +408,9 @@ namespace BoSSS.Application.XNSEC {
             }
 
             public Func<double[], double, double> GetMassFractions(string species, int q) {
-                switch(m_SpatialDimension) {
+                switch (m_SpatialDimension) {
                     case 2:
-                    if(q == 0) {
+                    if (q == 0) {
                         return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
                     } else {
                         throw new ArgumentOutOfRangeException();

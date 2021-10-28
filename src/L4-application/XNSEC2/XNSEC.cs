@@ -46,20 +46,17 @@ namespace BoSSS.Application.XNSEC {
 
             //NUnitTest.LevelSetAdvectionTest2D(2, 0, Solution.LevelSetTools.LevelSetEvolution.FastMarching, Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
             //NUnitTest.BcTest_PressureOutletTest(2, 2, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
-
-
-
+            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: true);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             //XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
 
             //XNSFE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0, 3, 0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, NonLinearSolverCode.Newton);
 
-
             //NUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
             //Console.WriteLine("tests passed!!!!!!!!!!!");
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-
 
             //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
 
@@ -70,10 +67,10 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.TwoPhaseIncompressibleSteadyPoiseuilleFlowTest(); // TODO!
             ////NUnitTest.ThermodynamicPressureTest(); // TODO
 
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow_DifferentDensities()", "--delplt" }, false, delegate () {
-            //    var p = new XNSEC();
-            //    return p;
-            //});
+            BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow()", "--delplt" }, false, delegate () {
+                var p = new XNSEC();
+                return p;
+            });
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 4./ XNSEC.exe - c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.NaturalConvectionSquareCavityTest()"
@@ -91,11 +88,11 @@ namespace BoSSS.Application.XNSEC {
                 bool argsParseSuccess;
                 argsParseSuccess = parser.ParseArguments(args, opt);
 
-                if(!argsParseSuccess) {
+                if (!argsParseSuccess) {
                     System.Environment.Exit(-1);
                 }
 
-                if(opt.ControlfilePath != null) {
+                if (opt.ControlfilePath != null) {
                     opt.ControlfilePath = opt.ControlfilePath.Trim();
                 }
 
@@ -105,7 +102,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Error while determining control type, using default behavior for 'XNSEC_Control'");
             }
 
-            if(MixtureFractionCalculation) {
+            if (MixtureFractionCalculation) {
                 _Main(args, false, delegate () {
                     var p = new XNSEC_MixtureFraction();
                     return p;
@@ -126,7 +123,7 @@ namespace BoSSS.Application.XNSEC {
         #region Operator configuration
 
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
-            if(iLevSet == 0) {
+            if (iLevSet == 0) {
                 // Main Difference to base implementation:
                 //var levelSetVelocity = new LevelSetVelocityEvaporative("Phi", GridData.SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters, new XNSFE_OperatorConfiguration(Control);
 
@@ -157,7 +154,7 @@ namespace BoSSS.Application.XNSEC {
         /// $`n = 0$`, the degree of the integrand immensely simplifies to $`(p - 1)$`.
         /// </remarks>
         override public int QuadOrder() {
-            if(Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
+            if (Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.Saye
                && Control.CutCellQuadratureType != XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes) {
                 throw new ArgumentException($"The XNSE solver is only verified for cut-cell quadrature rules " +
                     $"{XQuadFactoryHelper.MomentFittingVariants.Saye} and {XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes}; " +
@@ -169,7 +166,7 @@ namespace BoSSS.Application.XNSEC {
 
             int degU = VelocityDegree();
             int quadOrder = degU * (this.Control.PhysicalParameters.IncludeConvection ? 4 : 2);
-            if(this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
+            if (this.Control.CutCellQuadratureType == XQuadFactoryHelper.MomentFittingVariants.Saye) {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
@@ -200,9 +197,9 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         protected int VelocityDegree() {
             int pVel;
-            if(this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
+            if (this.Control.FieldOptions.TryGetValue("Velocity*", out FieldOpts v)) {
                 pVel = v.Degree;
-            } else if(this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1)) {
+            } else if (this.Control.FieldOptions.TryGetValue(BoSSS.Solution.NSECommon.VariableNames.VelocityX, out FieldOpts v1)) {
                 pVel = v1.Degree;
             } else {
                 throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
@@ -218,7 +215,7 @@ namespace BoSSS.Application.XNSEC {
             int pMassFraction = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.MassFraction0].Degree;
 
             // configurations for velocity
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pVel },
                     mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
@@ -248,7 +245,7 @@ namespace BoSSS.Application.XNSEC {
             // configurations for Mass fractions
             int NumberOfSpecies = Control.NumberOfChemicalSpecies;
             var massFractionNames = VariableNames.MassFractions(NumberOfSpecies);
-            for(int i = 0; i < (NumberOfSpecies); i++) {
+            for (int i = 0; i < (NumberOfSpecies); i++) {
                 var configMF = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pMassFraction },
                     //mode = MultigridOperator.Mode.Eye,
@@ -267,7 +264,7 @@ namespace BoSSS.Application.XNSEC {
         private ThermalMultiphaseBoundaryCondMap m_thermBoundaryMap;
 
         protected override IncompressibleBoundaryCondMap GetBcMap() {
-            if(boundaryMap == null)
+            if (boundaryMap == null)
                 boundaryMap = new LowMachCombustionMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, new string[] { "A", "B" }, Control.NumberOfChemicalSpecies);
 
             //if(m_thermBoundaryMap == null) {
@@ -290,10 +287,10 @@ namespace BoSSS.Application.XNSEC {
 
             var ChemicalModel = new OneStepChemicalModel(Control.VariableOneStepParameters, Control.YFuelInlet, Control.YOxInlet);
 
-            if(boundaryMap.PhysMode == PhysicsMode.Combustion) {
+            if (boundaryMap.PhysMode == PhysicsMode.Combustion) {
                 EoS_A = new MaterialLaw_MultipleSpecies(Control.MolarMasses, Control.MatParamsMode, Control.rhoOne, Control.R_gas, Control.T_ref_Sutherland, ChemicalModel, Control.cpRef, Control.HeatCapacityMode);
                 EoS_B = new MaterialLaw_MultipleSpecies(Control.MolarMasses, Control.MatParamsMode, Control.rhoOne, Control.R_gas, Control.T_ref_Sutherland, ChemicalModel, Control.cpRef, Control.HeatCapacityMode);
-            } else if(boundaryMap.PhysMode == PhysicsMode.MixtureFraction) {
+            } else if (boundaryMap.PhysMode == PhysicsMode.MixtureFraction) {
                 EoS_A = new MaterialLawMixtureFractionNew(Control.T_ref_Sutherland, Control.MolarMasses, Control.MatParamsMode, Control.rhoOne, Control.R_gas, Control.HeatRelease, Control.TOxInlet, Control.TFuelInlet, Control.YOxInlet, Control.YFuelInlet, Control.zSt, Control.CC, ChemicalModel, Control.cpRef, Control.smoothingFactor);
                 EoS_B = new MaterialLawMixtureFractionNew(Control.T_ref_Sutherland, Control.MolarMasses, Control.MatParamsMode, Control.rhoOne, Control.R_gas, Control.HeatRelease, Control.TOxInlet, Control.TFuelInlet, Control.YOxInlet, Control.YFuelInlet, Control.zSt, Control.CC, ChemicalModel, Control.cpRef, Control.smoothingFactor);
             } else {
@@ -314,10 +311,10 @@ namespace BoSSS.Application.XNSEC {
             // ============================
             // Momentum
             // ============================
-            for(int d = 0; d < D; ++d) {
+            for (int d = 0; d < D; ++d) {
                 DefineMomentumEquations(opFactory, config, d, D, lsUpdater);
                 //Add Gravitation
-                if(config.isGravity) {
+                if (config.isGravity) {
                     var GravA = Gravity.CreateFrom("A", d, D, Control, Control.PhysicalParameters.rho_A, Control.GetGravity("A", d));
                     opFactory.AddParameter(GravA);
                     var GravB = Gravity.CreateFrom("B", d, D, Control, Control.PhysicalParameters.rho_B, Control.GetGravity("B", d));
@@ -333,7 +330,7 @@ namespace BoSSS.Application.XNSEC {
             // ============================
             // Continuity
             // ============================
-            if(config.isContinuity) {
+            if (config.isContinuity) {
                 DefineContinuityEquation(opFactory, config, D, lsUpdater);
             }
 
@@ -345,13 +342,13 @@ namespace BoSSS.Application.XNSEC {
 
         virtual protected void DefineAditionalParameters(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int D, LevelSetUpdater lsUpdater, int quadOrder) {
             opFactory.AddParameter(new Density(EoS_A, EoS_B, config.NoOfChemicalSpecies));
-            opFactory.AddParameter(new Viscosity(EoS_A,EoS_B));
+            opFactory.AddParameter(new Viscosity(EoS_A, EoS_B));
             opFactory.AddParameter(new HeatCapacity(EoS_A));
 
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if(((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection)) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+            if (((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection)) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -363,14 +360,14 @@ namespace BoSSS.Application.XNSEC {
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
 
-            if(config.isEvaporation) {
+            if (config.isEvaporation) {
                 //Console.WriteLine("Including mass transfer.");
 
-                if(this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton) throw new ApplicationException("Evaporation only implemented with use of Newton-solver!");
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton) throw new ApplicationException("Evaporation only implemented with use of Newton-solver!");
 
                 var MassFluxExt = new MassFluxExtension_Evaporation(config);
                 lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
-                if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddParameter(MassFluxExt);
                 }
             }
@@ -379,7 +376,7 @@ namespace BoSSS.Application.XNSEC {
 
             opFactory.AddCoefficient(new BoSSS.Application.XNSFE_Solver.EvapMicroRegion());
 
-            if(config.prescribedMassflux != null)
+            if (config.prescribedMassflux != null)
                 opFactory.AddCoefficient(new PrescribedMassFlux(config));
         }
 
@@ -408,14 +405,14 @@ namespace BoSSS.Application.XNSEC {
             // Energy equations (Temperature)
             //================================
 
-            if(config.TemperatureEquationOK) {
+            if (config.TemperatureEquationOK) {
                 opFactory.AddEquation(new LowMachEnergy("A", D, boundaryMap, config, EoS_A, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
                 opFactory.AddEquation(new LowMachEnergy("B", D, boundaryMap, config, EoS_B, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
 
-                if(config.isEvaporation) {
+                if (config.isEvaporation) {
                     //opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
-                     opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
+                    opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
                 }
                 opFactory.AddParameter(new dp0dt(EoS_A, Control.Reynolds, Control.Prandtl));
 
@@ -429,12 +426,12 @@ namespace BoSSS.Application.XNSEC {
             // Mass Fractions equations
             //================================
 
-            for(int s = 0; s < config.NoOfChemicalSpecies; s++) {
-                if(config.MassFractionEquationsOK) {
+            for (int s = 0; s < config.NoOfChemicalSpecies; s++) {
+                if (config.MassFractionEquationsOK) {
                     int chemicalSpeciesCounter = s;
                     opFactory.AddEquation(new LowMachMassFraction("A", D, boundaryMap, config, EoS_A, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses));
                     opFactory.AddEquation(new LowMachMassFraction("B", D, boundaryMap, config, EoS_B, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses));
-                    if(Control.ChemicalReactionActive) {
+                    if (Control.ChemicalReactionActive) {
                         opFactory.AddParameter(new ReactionRate(EoS_A));
                     }
                 } else {// Add identity equation for each MF
@@ -460,7 +457,7 @@ namespace BoSSS.Application.XNSEC {
 
             // Momentum
             // ============================
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 opFactory.AddEquation(new LowMachUnsteadyEquationPart("A", D, VariableNames.VelocityVector(D)[d], EquationNames.MomentumEquationComponent(d), NoOfChemSpecies, EoS_A));
                 opFactory.AddEquation(new LowMachUnsteadyEquationPart("B", D, VariableNames.VelocityVector(D)[d], EquationNames.MomentumEquationComponent(d), NoOfChemSpecies, EoS_B));
             }
@@ -477,7 +474,7 @@ namespace BoSSS.Application.XNSEC {
 
             // Mass Fractions
             // ============================
-            for(int s = 0; s < NoOfChemSpecies; s++) {
+            for (int s = 0; s < NoOfChemSpecies; s++) {
                 opFactory.AddEquation(new LowMachUnsteadyEquationPart("A", D, VariableNames.MassFractions(NoOfChemSpecies)[s], EquationNames.SpeciesMassBalanceName(s), NoOfChemSpecies, EoS_A));
                 opFactory.AddEquation(new LowMachUnsteadyEquationPart("B", D, VariableNames.MassFractions(NoOfChemSpecies)[s], EquationNames.SpeciesMassBalanceName(s), NoOfChemSpecies, EoS_B));
             }
@@ -506,7 +503,7 @@ namespace BoSSS.Application.XNSEC {
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
 
-            if(Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+            if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                 Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
             } else {
@@ -521,7 +518,7 @@ namespace BoSSS.Application.XNSEC {
             // ============================
             // Self made temporal operator
             // ============================
-            if(Control.UseSelfMadeTemporalOperator && (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient)) {
+            if (Control.UseSelfMadeTemporalOperator && (base.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient)) {
                 Console.WriteLine("Using low Mach temporal operator");
                 OperatorFactory temporalOperatorFactory = new OperatorFactory();
                 DefineTemporalTerm(D, temporalOperatorFactory);
@@ -530,8 +527,8 @@ namespace BoSSS.Application.XNSEC {
 
                 var DependentTemporalOp = new DependentXTemporalOperator(XOP);
 
-                foreach(var c in temporalXOP.CodomainVar) {
-                    foreach(var d in temporalXOP.EquationComponents[c]) {
+                foreach (var c in temporalXOP.CodomainVar) {
+                    foreach (var d in temporalXOP.EquationComponents[c]) {
                         DependentTemporalOp.EquationComponents[c].Add(d);
                     }
                 }
@@ -543,13 +540,13 @@ namespace BoSSS.Application.XNSEC {
             //// Solver-Controlled Homotopy<
             ////============================
 
-            if(this.Control.HomotopyApproach == XNSEC_Control.HomotopyType.Automatic) {
-                if(Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.Reynolds) {
+            if (this.Control.HomotopyApproach == XNSEC_Control.HomotopyType.Automatic) {
+                if (Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.Reynolds) {
                     this.CurrentHomotopyValue = Control.Reynolds;
                     XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
-                        if(HomotopyScalar < 0.0)
+                        if (HomotopyScalar < 0.0)
                             throw new ArgumentOutOfRangeException();
-                        if(HomotopyScalar > 1.0)
+                        if (HomotopyScalar > 1.0)
                             throw new ArgumentOutOfRangeException();
 
                         // Using a linear function to prescribe the homotopy  path
@@ -581,12 +578,12 @@ namespace BoSSS.Application.XNSEC {
                     };
                 }
 
-                if(Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.VelocityInletMultiplier) {
+                if (Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.VelocityInletMultiplier) {
                     this.CurrentHomotopyValue = Control.homotopieAimedValue;
                     XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
-                        if(HomotopyScalar < 0.0)
+                        if (HomotopyScalar < 0.0)
                             throw new ArgumentOutOfRangeException();
-                        if(HomotopyScalar > 1.0)
+                        if (HomotopyScalar > 1.0)
                             throw new ArgumentOutOfRangeException();
 
                         ////Linear
@@ -613,12 +610,12 @@ namespace BoSSS.Application.XNSEC {
                     };
                 }
 
-                if(Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.HeatOfCombustion) {
+                if (Control.HomotopyVariable == XNSEC_Control.HomotopyVariableEnum.HeatOfCombustion) {
                     this.CurrentHomotopyValue = Control.homotopieAimedValue;
                     XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
-                        if(HomotopyScalar < 0.0)
+                        if (HomotopyScalar < 0.0)
                             throw new ArgumentOutOfRangeException();
-                        if(HomotopyScalar > 1.0)
+                        if (HomotopyScalar > 1.0)
                             throw new ArgumentOutOfRangeException();
 
                         ////Linear
@@ -641,7 +638,7 @@ namespace BoSSS.Application.XNSEC {
                     };
                 }
             }
-            if(Control.VariableBounds != null) {
+            if (Control.VariableBounds != null) {
                 Console.WriteLine("Using solver safe guard!");
                 XOP.SolverSafeguard = DelValidationCombustion;
             }
@@ -660,12 +657,12 @@ namespace BoSSS.Application.XNSEC {
             }
             set {
                 double oldVal;
-                if(XOP.UserDefinedValues["A"].ContainsKey(Control.homotopieVariableName))
+                if (XOP.UserDefinedValues["A"].ContainsKey(Control.homotopieVariableName))
                     oldVal = CurrentHomotopyValue;
                 else
                     oldVal = double.NegativeInfinity;
 
-                if(oldVal != value)
+                if (oldVal != value)
                     Console.WriteLine("setting" + Control.homotopieVariableName + " to " + value);
                 XOP.UserDefinedValues["A"][Control.homotopieVariableName] = value;
             }
@@ -675,7 +672,7 @@ namespace BoSSS.Application.XNSEC {
             //Update Calls
             dt = GetTimestep();
 
-            if(Control.timeDerivativeEnergyp0_OK) {
+            if (Control.timeDerivativeEnergyp0_OK) {
                 //    var p0_old = this.Parameters.Where(f => f.Identification == VariableNames.ThermodynamicPressure + "_t0").Single();
                 //    var p0 = this.Parameters.Where(f => f.Identification == VariableNames.ThermodynamicPressure).Single();
                 //    p0_old.Clear();
@@ -695,12 +692,12 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("Duration of this timestep: " + overallduration);
             Console.WriteLine($"done with time step {TimestepNo}");
 
-            if(Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
                 CalcErrors();
             }
 
             //Calculate nusselt number
-            if((Control.EdgeTagsNusselt != null)) {
+            if ((Control.EdgeTagsNusselt != null)) {
                 Console.WriteLine("Calculating nusselt numbers!");
                 var temperatureXdg = (XDGField)(CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
                 var temp = temperatureXdg.ProjectToSinglePhaseField(4);
@@ -719,8 +716,8 @@ namespace BoSSS.Application.XNSEC {
             //        );
             //}
 
-            if(Control.TimesteppingMode == AppControl._TimesteppingMode.Steady /*&& Control.NoOfTimesteps == TimestepNo*/) {
-                if(!SolverSuccess) {
+            if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady /*&& Control.NoOfTimesteps == TimestepNo*/) {
+                if (!SolverSuccess) {
                     //Console.WriteLine("SOLVER_ERROR!");
                     base.CurrentSessionInfo.AddTag("NOTCONVERGED");
                     //throw new Exception("Solver couldnt find a solution");
@@ -743,7 +740,7 @@ namespace BoSSS.Application.XNSEC {
         public override void PostRestart(double time, TimestepNumber timestep) {
             base.PostRestart(time, timestep);
 
-            if(Control.UseMixtureFractionsForCombustionInitialization) {
+            if (Control.UseMixtureFractionsForCombustionInitialization) {
                 var ChemicalModel = new OneStepChemicalModel(Control.VariableOneStepParameters, Control.YFuelInlet, Control.YOxInlet);
                 var m_EoS = new MaterialLawMixtureFractionNew(Control.T_ref_Sutherland, Control.MolarMasses, Control.MatParamsMode, Control.rhoOne, Control.R_gas, Control.HeatRelease, Control.TOxInlet, Control.TFuelInlet, Control.YOxInlet, Control.YFuelInlet, Control.zSt, Control.CC, ChemicalModel, Control.cpRef, Control.smoothingFactor);
 
@@ -756,7 +753,7 @@ namespace BoSSS.Application.XNSEC {
                 //var MixtureFraction = new XDGField((XDGBasis)basis, VariableNames.MixtureFraction);
                 base.RegisterField(MixtureFraction, IOListOption.Always);
 
-                foreach(var id in names) {
+                foreach (var id in names) {
                     var fieldToTransform = FindField(this.m_RegisteredFields.ToArray(), id);
                     var fieldToTransform_A = ((XDGField)fieldToTransform).GetSpeciesShadowField("A");
                     fieldToTransform_A.Clear();
@@ -765,8 +762,8 @@ namespace BoSSS.Application.XNSEC {
                         int K = result.GetLength(1);
                         MultidimensionalArray ZArr = MultidimensionalArray.Create(Len, K);
                         MixtureFraction.Evaluate(j0, Len, NS, ZArr);
-                        for(int j = 0; j < Len; j++) {
-                            for(int k = 0; k < K; k++) {
+                        for (int j = 0; j < Len; j++) {
+                            for (int k = 0; k < K; k++) {
                                 result[j, k] = m_EoS.getVariableFromZ(ZArr[j, k], id);
                             }
                         }
@@ -778,20 +775,20 @@ namespace BoSSS.Application.XNSEC {
         protected override void CreateFields() {
             base.CreateFields();
 
-            if(Control.UseMixtureFractionsForCombustionInitialization) {
+            if (Control.UseMixtureFractionsForCombustionInitialization) {
                 base.RegisterField(new XDGField((XDGBasis)(this.m_RegisteredFields.Where(f => f.Identification == VariableNames.Temperature).First().Basis), VariableNames.MixtureFraction), IOListOption.Always);
             }
 
             // Create fields for analytical solution and errors
-            if(Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
+            if (Control.AnalyticsolutionSwitch || !Control.ExactSolutionVelocity.IsNullOrEmpty()) {
                 // Errors:
                 var errFields = InstantiateErrorFields();
-                foreach(var f in errFields) {
+                foreach (var f in errFields) {
                     base.RegisterField(f, IOListOption.Always);
                 }
                 // Analytical Solutions
                 var AnSolFields = InstantiateAnalyticalSolFields();
-                foreach(var f in AnSolFields) {
+                foreach (var f in AnSolFields) {
                     base.RegisterField(f, IOListOption.Always);
                 }
             }
@@ -817,9 +814,9 @@ namespace BoSSS.Application.XNSEC {
             varOut.Clear();
             varOut = varIn.CloneAs();
             int idx = 0;
-            foreach(var f in varIn) { // Loop over each DGField of the solution array
-                foreach(var varName in Bounds.Keys) { // Iterate over dictionary with fields to be repaired
-                    if(f.Identification == varName) {
+            foreach (var f in varIn) { // Loop over each DGField of the solution array
+                foreach (var varName in Bounds.Keys) { // Iterate over dictionary with fields to be repaired
+                    if (f.Identification == varName) {
                         double MinBound = Bounds[varName].Item1;
                         double MaxBound = Bounds[varName].Item2;
 
@@ -829,22 +826,22 @@ namespace BoSSS.Application.XNSEC {
 
                         // now check if values are inside bounds. If not, repair them
                         int lowcount = 0; int topcount = 0;
-                        foreach(var cell in AllCells.ItemEnum) {
+                        foreach (var cell in AllCells.ItemEnum) {
                             bool BoundedLow = (mins[cell] > MinBound);
                             bool BoundedTop = (maxs[cell] < MaxBound);
 
-                            if(!BoundedLow) { // repair
+                            if (!BoundedLow) { // repair
                                 ((XDGField)(varOut[idx])).SetMeanValueAB(cell, MinBound);
                                 //varOut[idx].SetMeanValue(cell, MinBound);
                                 lowcount++;
                             }
-                            if(!BoundedTop) { // repair
+                            if (!BoundedTop) { // repair
                                 ((XDGField)(varOut[idx])).SetMeanValueAB(cell, MaxBound);
                                 //varOut[idx].SetMeanValue(cell, MaxBound);
                                 topcount++;
                             }
                         }
-                        if(lowcount > 0 || topcount > 0) {
+                        if (lowcount > 0 || topcount > 0) {
                             Console.WriteLine(f.Identification + " is out of bounds in {0} cells.", lowcount + topcount);
                         }
                     }

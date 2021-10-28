@@ -6,7 +6,11 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
+using log4net.Appender;
+using log4net.Config;
+using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections;
@@ -90,7 +94,7 @@ namespace BoSSS.Application.BoSSSpad {
                      e.Message);
                 InteractiveShell.LastError = e;
             }
-
+            InitTraceFile();
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
@@ -105,6 +109,7 @@ namespace BoSSS.Application.BoSSSpad {
             AddEnumFormatter<IDatabaseInfo>();
             AddEnumFormatter<ISessionInfo>();
             AddEnumFormatter<ITimestepInfo>();
+            AddEnumFormatter<Job.Deployment>();
 
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
@@ -135,12 +140,40 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+        }
 
 
-            AddObjectFormatter<ITimestepInfo>();
-            AddEnumFormatter<ITimestepInfo>();
+        static TextWriterAppender logger_output = null;
+        static Stream tracerfile;
+        static TextWriter tracertxt;
 
-            AddEnumFormatter<DGField>();
+        static void InitTraceFile() {
+
+            if (logger_output != null)
+                throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
+
+
+            string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            string tracingDir = Path.Combine(settingsDir, "bossspad-trace");
+            if (!System.IO.Directory.Exists(tracingDir))
+                System.IO.Directory.CreateDirectory(tracingDir);
+            DateTime nau = DateTime.Now;
+            string baseneme = Path.Combine(tracingDir, $"trace.{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}.txt");
+            Console.WriteLine("Tracing file: " + baseneme);
+
+            tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
+            tracertxt = new StreamWriter(tracerfile);
+
+            TextWriterAppender fa = new TextWriterAppender();
+            fa.ImmediateFlush = true;
+            //fa.Writer = Console.Out;
+            fa.Writer = tracertxt;
+            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            fa.ActivateOptions();
+            BasicConfigurator.Configure(fa);
+            logger_output = fa;
+
+            Tracer.NamespacesToLog = new string[] { "" };
         }
 
 

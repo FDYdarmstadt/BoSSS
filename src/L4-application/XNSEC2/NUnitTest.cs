@@ -167,7 +167,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// Tests the Taylor vortex flow
         /// </summary>
-        //[Test]
+        [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             using(var p = new XNSEC()) {
                 var c = BoSSS.Application.XNSEC.FullNSEControlExamples.NUnitUnsteadyTaylorVortex();
@@ -178,7 +178,7 @@ namespace BoSSS.Application.XNSEC {
                 double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
                 double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
                 double thres_vel = 0.02;
-                double thres_p = 0.04;
+                double thres_p = 0.55;
 
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_vel + ")");
                 Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_vel + ")");
@@ -207,7 +207,7 @@ namespace BoSSS.Application.XNSEC {
                 double err_T = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Temperature];
                 double thres_u = 9e-6;
                 double thres_v = 6e-5;
-                double thres_p = 0.07;
+                double thres_p = 0.09;
                 double thres_T = 6e-6;
 
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
@@ -477,6 +477,7 @@ namespace BoSSS.Application.XNSEC {
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
+            bool constantDensity,
             int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
@@ -490,8 +491,11 @@ namespace BoSSS.Application.XNSEC {
             C.ProjectDescription = "Test";
             C.EnableMassFractions = false;
             C.EnableTemperature = false;
+            C.rhoOne = constantDensity;
+
             // DG degree
             // =========
+
             C.NumberOfChemicalSpecies = tst.NumberOfChemicalComponents;
             C.SetDGdegree(FlowSolverDegree);
 
@@ -590,7 +594,7 @@ namespace BoSSS.Application.XNSEC {
             }
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             //C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.NonLinearSolver.MaxSolverIterations = 3;
             //C.Solver_ConvergenceCriterion = 1e-9;

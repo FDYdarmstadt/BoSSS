@@ -250,7 +250,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
         public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
-            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.classic_pardiso)'
+            // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.exp_Kcycle_schwarz)'
             xRes = (int)Math.Pow(xRes, PowRes);
             yRes = (int)Math.Pow(yRes, PowRes);
             zRes = (int)Math.Pow(zRes, PowRes);
@@ -530,8 +530,8 @@ namespace BoSSS.Application.SipPoisson {
             R.SuppressExceptionPrompt = true;
             
             R.GridFunc = delegate () {
-                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes);
-                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes);
+                double[] xNodes = GenericBlas.Linspace(-1, 1, xRes + 1);
+                double[] yNodes = GenericBlas.Linspace(-1, 1, yRes + 1);
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
 
                 grd.EdgeTagNames.Add(1, BoundaryType.Dirichlet.ToString());
@@ -553,7 +553,6 @@ namespace BoSSS.Application.SipPoisson {
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-            R.penalty_poisson = 0.001; // then, it should fail
 
             return R;
         }

@@ -16,18 +16,15 @@ namespace BoSSS.Application.XNSEC {
         /// NUnit test
         /// </summary>
         static public XNSEC_Control NUnitUnsteadyTaylorVortex() {
-            var C = UnsteadyTaylorVortex(3, 7);
-            C.rhoOne = false;
-            C.timeDerivativeConti_OK = false;
+            var C = UnsteadyTaylorVortex(2, 7);
+            C.rhoOne = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-7;
-            //C.NonLinearSolver.MaxSolverIterations = 20;
+
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.DbPath = null;// @"C:\Databases\BoSSS_DB";
             C.savetodb = false;
             C.ChemicalReactionActive = false;
-            C.ImmediatePlotPeriod = 1;
             C.UseSelfMadeTemporalOperator = false;
             C.timeDerivativeConti_OK = false;
             C.timeDerivativeEnergyp0_OK = false;
@@ -49,8 +46,8 @@ namespace BoSSS.Application.XNSEC {
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.physicsMode = PhysicsMode.Combustion;
-            C.Endtime = 0.5;
-            C.dtFixed = 0.05;
+            C.Endtime = 0.01;
+            C.dtFixed = 0.001;
             C.NumberOfChemicalSpecies = 1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
@@ -110,7 +107,7 @@ namespace BoSSS.Application.XNSEC {
 
             // Analytic solutions
             // ===================
-            double time = 0.5;
+            double time = C.Endtime;
             double reynolds = C.Reynolds;
             Func<double[], double> _AnalyticVelocityX = X => -Cos(PI * X[0]) * Sin(PI * X[1]) * Exp(-2.0 * PI * PI * time / reynolds);
             Func<double[], double> _AnalyticVelocityY = X => Sin(PI * X[0]) * Cos(PI * X[1]) * Exp(-2.0 * PI * PI * time / reynolds);
