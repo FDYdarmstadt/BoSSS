@@ -123,9 +123,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // we are expecting 'BoSSS.PlotGen.dll' to be in the same dir as BoSSSpad binary
             Assembly a = typeof(BoSSSpadMain).Assembly;
-            string plotGenPath = Path.Combine(
-                System.IO.Path.GetDirectoryName(a.Location),
-                "BoSSS.PlotGenerator.dll");
+            string plotGenPath = a.Location;
 
             if (!File.Exists(plotGenPath)) {
                 throw new Exception(plotGenPath + " could not be found.");
@@ -148,7 +146,8 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             Process plotProcess = new Process();
-            plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
+            plotProcess.StartInfo.UseShellExecute = true;
+            plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
             plotProcess.StartInfo.WorkingDirectory = outputPath; // quick fix: Tecplot creates temp files, working dir needs to be writeable
             if (config.NumberOfProcesses == 1) {
                 plotProcess.StartInfo.FileName = "dotnet";
