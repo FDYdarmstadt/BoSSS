@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Activation of second level-set.
+        /// Activation of second level-set (fluid/solid boundary)
         /// </summary>
         [DataMember]
         virtual public bool UseImmersedBoundary {
